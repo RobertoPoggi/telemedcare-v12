@@ -1278,8 +1278,10 @@ app.post('/api/lead', async (c) => {
   try {
     console.log('📨 TeleMedCare V10.3.8-Cloudflare: Nuovo lead ricevuto')
     
-    // Inizializza database se necessario
-    await initializeDatabase(c.env.DB)
+    // Inizializza database se disponibile
+    if (c.env.DB) {
+      await initializeDatabase(c.env.DB)
+    }
     
     // Parse form data
     const formData = await c.req.formData()
@@ -1349,48 +1351,57 @@ app.post('/api/lead', async (c) => {
 
     console.log('✅ Dati normalizzati:', JSON.stringify(normalizedLead, null, 2))
 
-    // Salva nel database D1
-    await c.env.DB.prepare(`
-      INSERT INTO leads (
-        id, nome_richiedente, cognome_richiedente, email_richiedente, telefono_richiedente,
-        nome_assistito, cognome_assistito, data_nascita_assistito, eta_assistito, parentela_assistito,
-        pacchetto, condizioni_salute, priority, preferenza_contatto,
-        vuole_contratto, intestazione_contratto, cf_richiedente, indirizzo_richiedente,
-        cf_assistito, indirizzo_assistito, vuole_brochure, vuole_manuale,
-        note, gdpr_consent, timestamp, fonte, versione, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      normalizedLead.id,
-      normalizedLead.nomeRichiedente,
-      normalizedLead.cognomeRichiedente,
-      normalizedLead.emailRichiedente,
-      normalizedLead.telefonoRichiedente,
-      normalizedLead.nomeAssistito,
-      normalizedLead.cognomeAssistito,
-      normalizedLead.dataNascitaAssistito,
-      normalizedLead.etaAssistito,
-      normalizedLead.parentelaAssistito,
-      normalizedLead.pacchetto,
-      normalizedLead.condizioniSalute,
-      normalizedLead.priority,
-      normalizedLead.preferenzaContatto,
-      normalizedLead.vuoleContratto ? 1 : 0,
-      normalizedLead.intestazioneContratto,
-      normalizedLead.cfRichiedente,
-      normalizedLead.indirizzoRichiedente,
-      normalizedLead.cfAssistito,
-      normalizedLead.indirizzoAssistito,
-      normalizedLead.vuoleBrochure ? 1 : 0,
-      normalizedLead.vuoleManuale ? 1 : 0,
-      normalizedLead.note,
-      normalizedLead.gdprConsent ? 1 : 0,
-      normalizedLead.timestamp,
-      normalizedLead.fonte,
-      normalizedLead.versione,
-      normalizedLead.status
-    ).run()
 
-    console.log('💾 TeleMedCare V10.3.8-Cloudflare: Lead salvato nel database D1')
+
+    // Salva nel database D1 se disponibile
+    if (c.env.DB) {
+      // Salva nel database D1
+      await c.env.DB.prepare(`
+        INSERT INTO leads (
+          id, nome_richiedente, cognome_richiedente, email_richiedente, telefono_richiedente,
+          nome_assistito, cognome_assistito, data_nascita_assistito, eta_assistito, parentela_assistito,
+          pacchetto, condizioni_salute, priority, preferenza_contatto,
+          vuole_contratto, intestazione_contratto, cf_richiedente, indirizzo_richiedente,
+          cf_assistito, indirizzo_assistito, vuole_brochure, vuole_manuale,
+          note, gdpr_consent, timestamp, fonte, versione, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        normalizedLead.id,
+        normalizedLead.nomeRichiedente,
+        normalizedLead.cognomeRichiedente,
+        normalizedLead.emailRichiedente,
+        normalizedLead.telefonoRichiedente,
+        normalizedLead.nomeAssistito,
+        normalizedLead.cognomeAssistito,
+        normalizedLead.dataNascitaAssistito,
+        normalizedLead.etaAssistito,
+        normalizedLead.parentelaAssistito,
+        normalizedLead.pacchetto,
+        normalizedLead.condizioniSalute,
+        normalizedLead.priority,
+        normalizedLead.preferenzaContatto,
+        normalizedLead.vuoleContratto ? 1 : 0,
+        normalizedLead.intestazioneContratto,
+        normalizedLead.cfRichiedente,
+        normalizedLead.indirizzoRichiedente,
+        normalizedLead.cfAssistito,
+        normalizedLead.indirizzoAssistito,
+        normalizedLead.vuoleBrochure ? 1 : 0,
+        normalizedLead.vuoleManuale ? 1 : 0,
+        normalizedLead.note,
+        normalizedLead.gdprConsent ? 1 : 0,
+        normalizedLead.timestamp,
+        normalizedLead.fonte,
+        normalizedLead.versione,
+        normalizedLead.status
+      ).run()
+
+      console.log('💾 TeleMedCare V10.3.8-Cloudflare: Lead salvato nel database D1')
+    } else {
+      // Modalità development senza D1 - logga i dati
+      console.log('💾 TeleMedCare V10.3.8-Cloudflare: Lead processato (DB non configurato)')
+      console.log('📝 Lead Data:', JSON.stringify(normalizedLead, null, 2))
+    }
     
     // Elaborazione workflow email
     const workflowResults = await elaboraWorkflowEmail(normalizedLead, leadId)
@@ -1417,6 +1428,13 @@ app.post('/api/lead', async (c) => {
 // API endpoint per recuperare i lead (admin)
 app.get('/api/leads', async (c) => {
   try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato - modalità development'
+      }, 400)
+    }
+    
     const leads = await c.env.DB.prepare('SELECT * FROM leads ORDER BY created_at DESC LIMIT 100').all()
     return c.json({
       success: true,
@@ -1611,7 +1629,7 @@ async function inviaEmailBenvenuto(leadData: any, leadId: string): Promise<boole
     
     const prezzi = CONFIG.PREZZI[leadData.pacchetto as keyof typeof CONFIG.PREZZI] || CONFIG.PREZZI.Base;
     const dataAttivazione = new Date();
-    dataAttivazione.setDays(dataAttivazione.getDate() + 10); // 10 giorni lavorativi
+    dataAttivazione.setDate(dataAttivazione.getDate() + 10); // 10 giorni lavorativi
     
     const emailData = {
       NOME_CLIENTE: leadData.nomeRichiedente || 'Cliente',
@@ -1641,242 +1659,248 @@ async function inviaEmailBenvenuto(leadData: any, leadId: string): Promise<boole
   }
 }
 
-// Workflow email completo TeleMedCare V10.3.8
-async function elaboraWorkflowEmail(leadData: any, leadId: string): Promise<any> {
-  console.log('🔄 TeleMedCare V10.3.8-Cloudflare: Inizio workflow email per lead:', leadId);
-  
-  const results = {
-    notificaInfo: false,
-    documentazione: false,
-    contratto: false,
-    emailCliente: false
-  };
-  
+async function inviaEmailDocumentiInformativi(leadData: any, leadId: string): Promise<boolean> {
   try {
-    // 1. Invia sempre email di notifica a info@medicagb.it
-    console.log('📧 Step 1: Invio email notifica a info@medicagb.it');
-    results.notificaInfo = await inviaEmailNotificaInfo(leadData, leadId);
+    console.log('📧 Preparazione email documenti informativi per lead:', leadId);
     
-    // 2. Se richiede brochure o manuale, invia documentazione
-    if (leadData.vuoleBrochure || leadData.vuoleManuale) {
-      console.log('📋 Step 2: Invio documentazione richiesta');
-      results.documentazione = await inviaEmailDocumentazione(leadData, leadId);
-    }
+    const prezzi = CONFIG.PREZZI[leadData.pacchetto as keyof typeof CONFIG.PREZZI] || CONFIG.PREZZI.Base;
     
-    // 3. Se richiede contratto, genera e invia contratto personalizzato
-    if (leadData.vuoleContratto) {
-      console.log('📄 Step 3: Generazione e invio contratto');
-      results.contratto = await generaEInviaContratto(leadData, leadId);
-    }
+    const emailData = {
+      NOME_CLIENTE: leadData.nomeRichiedente || 'Cliente',
+      PACCHETTO: leadData.pacchetto || 'Base',
+      NOME_ASSISTITO: leadData.nomeAssistito || '',
+      COGNOME_ASSISTITO: leadData.cognomeAssistito || '',
+      LEAD_ID: leadId,
+      DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
+      PREZZO_PIANO: `€${prezzi.primoAnno} + IVA (primo anno)`,
+      MANUALE_RICHIESTO: leadData.vuoleManuale
+    };
     
-    // 4. Invia email di conferma al cliente
-    console.log('📨 Step 4: Invio email conferma al cliente');
-    results.emailCliente = await inviaEmailConfermaCliente(leadData, leadId);
+    const templateDocumenti = `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <title>Documenti Informativi TeleMedCare</title>
+        <style>
+            body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #0ea5e9; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>📋 Documenti Informativi TeleMedCare</h2>
+            </div>
+            
+            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+            
+            <p>Grazie per l'interesse mostrato verso i nostri servizi <strong>TeleMedCare {{PACCHETTO}}</strong>. Come richiesto, abbiamo preparato per Lei la documentazione informativa completa.</p>
+            
+            <p>Il nostro servizio è pensato per <strong>{{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</strong> e rappresenta una soluzione innovativa per la gestione della salute a distanza.</p>
+            
+            <div class="section">
+                <h4>📋 Riepilogo della Sua richiesta</h4>
+                <ul>
+                    <li><strong>Codice pratica:</strong> {{LEAD_ID}}</li>
+                    <li><strong>Data richiesta:</strong> {{DATA_RICHIESTA}}</li>
+                    <li><strong>Pacchetto:</strong> {{PACCHETTO}}</li>
+                    <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
+                    <li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h4>📄 Documentazione Allegata</h4>
+                <ul>
+                    <li>📋 <strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi e vantaggi della telemedicina</li>
+                    ${leadData.vuoleManuale ? '<li>📖 <strong>Manuale Utente</strong> - Guida completa all\'utilizzo del dispositivo SiDLY</li>' : ''}
+                </ul>
+            </div>
+            
+            <p>Il pacchetto <strong>{{PACCHETTO}}</strong> è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto medico completo e personalizzato.</p>
+            
+            <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
+            
+            <p><strong>Cordiali saluti,</strong><br>
+            Il Team TeleMedCare - Medica GB S.r.l.</p>
+        </div>
+    </body>
+    </html>`;
     
-    console.log('✅ Workflow email completato con successo per lead:', leadId);
-    return results;
+    const htmlBody = sostituisciPlaceholder(templateDocumenti, emailData);
+    const subject = `📋 Documenti Informativi TeleMedCare - ${leadData.pacchetto} (${leadId})`;
     
-  } catch (error) {
-    console.error('❌ Errore nel workflow email per lead', leadId, ':', error);
-    return results;
-  }
-}
-
-async function inviaEmailDocumentazione(leadData: any, leadId: string): Promise<boolean> {
-  try {
-    console.log('📋 Preparazione email documentazione per lead:', leadId);
-    
-    const documenti = [];
-    if (leadData.vuoleBrochure) documenti.push('Brochure SiDLY Care Pro');
-    if (leadData.vuoleManuale) documenti.push('Manuale d\'uso dispositivo');
-    
-    const subject = `📄 Documentazione TeleMedCare - ${documenti.join(' e ')}`;
-    
-    // Template semplificato per documentazione
-    const htmlBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #1e40af;">📄 Documentazione TeleMedCare</h2>
-      <p>Gentile ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente},</p>
-      <p>Come richiesto, Le inviamo in allegato la documentazione per i servizi TeleMedCare:</p>
-      <ul>
-        ${documenti.map(doc => `<li>${doc}</li>`).join('')}
-      </ul>
-      <p>Per qualsiasi domanda, non esiti a contattarci.</p>
-      <p>Cordiali saluti,<br><strong>Team TeleMedCare - Medica GB S.r.l.</strong></p>
-    </div>`;
-    
-    console.log('📨 EMAIL DOCUMENTAZIONE DA INVIARE A:', leadData.emailRichiedente);
+    console.log('📨 EMAIL DOCUMENTI DA INVIARE A:', leadData.emailRichiedente);
     console.log('📋 OGGETTO:', subject);
     
-    // TODO: Integrare con servizio email reale e allegati
-    console.log('✅ Email documentazione preparata con successo');
+    // TODO: Allegare PDF brochure e manuale se richiesto
+    console.log('✅ Email documenti informativi preparata con successo');
     return true;
     
   } catch (error) {
-    console.error('❌ Errore invio email documentazione:', error);
+    console.error('❌ Errore invio email documenti informativi:', error);
     return false;
   }
 }
 
-async function generaEInviaContratto(leadData: any, leadId: string): Promise<boolean> {
+async function inviaEmailContratto(leadData: any, leadId: string): Promise<boolean> {
   try {
-    console.log('📄 Generazione contratto per lead:', leadId);
+    console.log('📧 Preparazione email contratto per lead:', leadId);
     
-    const tipoContratto = leadData.pacchetto === 'Avanzato' ? 'Avanzato' : 'Base';
     const prezzi = CONFIG.PREZZI[leadData.pacchetto as keyof typeof CONFIG.PREZZI] || CONFIG.PREZZI.Base;
     
-    // Dati per il contratto
-    const contractData = {
-      NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
-      COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
-      DATA_NASCITA: leadData.dataNascitaAssistito || '',
-      CODICE_FISCALE_ASSISTITO: leadData.cfAssistito || leadData.cfRichiedente,
-      INDIRIZZO_ASSISTITO: leadData.indirizzoAssistito || leadData.indirizzoRichiedente,
-      TELEFONO_ASSISTITO: leadData.telefonoRichiedente,
-      EMAIL_ASSISTITO: leadData.emailRichiedente,
-      IMPORTO_PRIMO_ANNO: `€${prezzi.primoAnno}`,
-      DATA_CONTRATTO: new Date().toLocaleDateString('it-IT'),
-      DATA_INIZIO_SERVIZIO: new Date().toLocaleDateString('it-IT'),
-      // Calcola data scadenza (12 mesi dopo)
-      DATA_SCADENZA: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
+    const emailData = {
+      NOME_CLIENTE: leadData.nomeRichiedente || 'Cliente',
+      PIANO_SERVIZIO: prezzi.nome,
+      PREZZO_PIANO: `€${prezzi.primoAnno} + IVA (primo anno)`,
+      CODICE_CLIENTE: leadId
     };
     
-    const subject = `📜 Contratto ${tipoContratto} TeleMedCare - Codice Lead: ${leadId}`;
+    const templateContratto = `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <title>Contratto TeleMedCare</title>
+        <style>
+            body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+            .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6; }
+            .steps { counter-reset: step-counter; }
+            .step { counter-increment: step-counter; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+            .step:before { content: counter(step-counter); background: #3b82f6; color: white; font-weight: bold; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>📋 Contratto TeleMedCare</h2>
+            </div>
+            
+            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+            
+            <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, Le inviamo in allegato il contratto per il servizio <strong>{{PIANO_SERVIZIO}}</strong> e la brochure aziendale.</p>
+            
+            <div class="section">
+                <h4>📋 Il Suo piano TeleMedCare</h4>
+                <ul>
+                    <li><strong>Piano:</strong> {{PIANO_SERVIZIO}}</li>
+                    <li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+                    <li><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h4>✅ Perché ha fatto la scelta giusta</h4>
+                <ul>
+                    <li><strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale</li>
+                    <li><strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve</li>
+                    <li><strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h4>📝 Prossimi passi per l'attivazione</h4>
+                <div class="steps">
+                    <div class="step">Legga attentamente il contratto allegato</div>
+                    <div class="step">Firmi in ogni pagina richiesta e nell'ultima pagina</div>
+                    <div class="step">Ci invii il contratto firmato via email o WhatsApp</div>
+                    <div class="step">Riceverà il dispositivo entro 10 giorni lavorativi</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h4>💰 Vantaggi Economici e Fiscali</h4>
+                <ul>
+                    <li>✅ <strong>Detrazione Fiscale 19%:</strong> Il servizio è detraibile come spesa sanitaria nel 730</li>
+                    <li>✅ <strong>Possibili Rimborsi INPS:</strong> Per ISEE sotto €6.000 + Legge 104</li>
+                </ul>
+            </div>
+            
+            <p>Siamo qui per accompagnarLa in ogni step di questo percorso. Non esiti a contattarci per qualsiasi chiarimento o domanda.</p>
+            
+            <p style="text-align: center; font-weight: 600; color: #1e40af; font-size: 18px;">Benvenuto/a nella famiglia TeleMedCare!</p>
+            
+            <p><strong>Il Team TeleMedCare</strong><br>
+            Medica GB S.r.l.<br>
+            <em>"La tecnologia che Le salva salute e vita"</em></p>
+        </div>
+    </body>
+    </html>`;
     
-    const htmlBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #1e40af;">📜 Contratto TeleMedCare ${tipoContratto}</h2>
-      <p>Gentile ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente},</p>
-      <p>Come richiesto, Le inviamo in allegato il contratto per il servizio <strong>${prezzi.nome}</strong>.</p>
-      
-      <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
-        <h3>Dettagli del contratto:</h3>
-        <ul>
-          <li><strong>Servizio:</strong> ${prezzi.nome}</li>
-          <li><strong>Costo primo anno:</strong> €${prezzi.primoAnno} + IVA 22%</li>
-          <li><strong>Costo rinnovo:</strong> €${prezzi.rinnovo} + IVA 22%</li>
-          <li><strong>Codice Lead:</strong> ${leadId}</li>
-        </ul>
-      </div>
-      
-      <p>La preghiamo di:</p>
-      <ol>
-        <li>Leggere attentamente il contratto</li>
-        <li>Firmarlo se concorda con i termini</li>
-        <li>Restituircelo via email per procedere con l'attivazione</li>
-      </ol>
-      
-      <p>Per qualsiasi chiarimento, non esiti a contattarci.</p>
-      <p>Cordiali saluti,<br><strong>Team TeleMedCare - Medica GB S.r.l.</strong></p>
-    </div>`;
+    const htmlBody = sostituisciPlaceholder(templateContratto, emailData);
+    const subject = `📋 Contratto TeleMedCare - ${prezzi.nome} (${leadId})`;
     
     console.log('📨 EMAIL CONTRATTO DA INVIARE A:', leadData.emailRichiedente);
     console.log('📋 OGGETTO:', subject);
-    console.log('📄 DATI CONTRATTO:', contractData);
     
-    // TODO: Generare PDF contratto e allegarlo
-    console.log('✅ Contratto generato e email preparata con successo');
+    // TODO: Generare e allegare PDF contratto personalizzato
+    console.log('✅ Email contratto preparata con successo');
     return true;
     
   } catch (error) {
-    console.error('❌ Errore generazione/invio contratto:', error);
+    console.error('❌ Errore invio email contratto:', error);
     return false;
   }
 }
 
-async function inviaEmailConfermaCliente(leadData: any, leadId: string): Promise<boolean> {
+// Workflow email principale
+async function elaboraWorkflowEmail(leadData: any, leadId: string) {
+  console.log('🔄 Avvio workflow email per lead:', leadId);
+  
+  const results = {
+    notificaInfo: false,
+    documentiInformativi: false,
+    contratto: false,
+    timestamp: new Date().toISOString()
+  };
+
   try {
-    console.log('📨 Preparazione email conferma per cliente:', leadId);
+    // 1. Invio notifica a info@medicagb.it (SEMPRE)
+    results.notificaInfo = await inviaEmailNotificaInfo(leadData, leadId);
     
-    const subject = `✅ Richiesta TeleMedCare ricevuta - Codice: ${leadId}`;
+    // 2. Invio documenti informativi se richiesti
+    if (leadData.vuoleBrochure || leadData.vuoleManuale) {
+      results.documentiInformativi = await inviaEmailDocumentiInformativi(leadData, leadId);
+    }
     
-    const htmlBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-        <h2>✅ Richiesta Ricevuta</h2>
-        <p>TeleMedCare - La tecnologia che ti salva salute e vita</p>
-      </div>
-      
-      <p>Gentile ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente},</p>
-      
-      <p>Grazie per aver scelto i servizi TeleMedCare di Medica GB S.r.l.</p>
-      
-      <div style="background: #f0f9ff; padding: 15px; border-radius: 6px; border-left: 4px solid #0ea5e9; margin: 20px 0;">
-        <h3>La Sua richiesta:</h3>
-        <ul>
-          <li><strong>Servizio:</strong> ${leadData.pacchetto || 'Da definire'}</li>
-          <li><strong>Codice richiesta:</strong> ${leadId}</li>
-          <li><strong>Data richiesta:</strong> ${new Date().toLocaleDateString('it-IT')}</li>
-        </ul>
-      </div>
-      
-      <h3>📞 Prossimi passi:</h3>
-      <ol>
-        <li><strong>Verifica:</strong> Il nostro team verificherà la Sua richiesta</li>
-        <li><strong>Contatto:</strong> La contatteremo entro 24 ore lavorative</li>
-        <li><strong>Consulenza:</strong> Riceverà una consulenza personalizzata gratuita</li>
-        <li><strong>Attivazione:</strong> Procederemo con l'attivazione del servizio</li>
-      </ol>
-      
-      <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0; text-align: center;">
-        <strong>💡 La contatteremo entro 24 ore per finalizzare la sua richiesta</strong>
-      </div>
-      
-      <h3>📞 Contatti:</h3>
-      <ul>
-        <li><strong>Email:</strong> info@medicagb.it</li>
-        <li><strong>Telefono:</strong> +39 331 643 2390 (Roberto Poggi)</li>
-        <li><strong>Telefono:</strong> +39 335 730 1206 (Stefania Rocca)</li>
-        <li><strong>Website:</strong> www.medicagb.it</li>
-      </ul>
-      
-      <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 30px;">
-        <p style="margin: 0;"><strong>Team TeleMedCare - Medica GB S.r.l.</strong></p>
-        <p style="margin: 5px 0 0 0;">La Sua sicurezza è la nostra priorità</p>
-      </div>
-    </div>`;
+    // 3. Invio contratto se richiesto
+    if (leadData.vuoleContratto) {
+      results.contratto = await inviaEmailContratto(leadData, leadId);
+    }
     
-    console.log('📨 EMAIL CONFERMA DA INVIARE A:', leadData.emailRichiedente);
-    console.log('📋 OGGETTO:', subject);
-    
-    // TODO: Integrare con servizio email reale
-    console.log('✅ Email conferma cliente preparata con successo');
-    return true;
+    console.log('✅ Workflow email completato per lead:', leadId);
+    return results;
     
   } catch (error) {
-    console.error('❌ Errore invio email conferma cliente:', error);
-    return false;
+    console.error('❌ Errore nel workflow email:', error);
+    return results;
   }
 }
 
-// Funzione per inizializzare il database
+// Inizializzazione database D1
 async function initializeDatabase(db: D1Database) {
   try {
-    // Crea la tabella leads se non esiste
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS leads (
         id TEXT PRIMARY KEY,
-        
-        -- Dati Richiedente
         nome_richiedente TEXT NOT NULL,
         cognome_richiedente TEXT NOT NULL,
         email_richiedente TEXT NOT NULL,
         telefono_richiedente TEXT,
-        
-        -- Dati Assistito  
         nome_assistito TEXT NOT NULL,
         cognome_assistito TEXT NOT NULL,
         data_nascita_assistito TEXT,
         eta_assistito TEXT,
         parentela_assistito TEXT,
-        
-        -- Servizio e Condizioni
         pacchetto TEXT,
         condizioni_salute TEXT,
         priority TEXT,
         preferenza_contatto TEXT,
-        
-        -- Richieste Aggiuntive
         vuole_contratto INTEGER DEFAULT 0,
         intestazione_contratto TEXT,
         cf_richiedente TEXT,
@@ -1885,36 +1909,20 @@ async function initializeDatabase(db: D1Database) {
         indirizzo_assistito TEXT,
         vuole_brochure INTEGER DEFAULT 0,
         vuole_manuale INTEGER DEFAULT 0,
-        
-        -- Messaggi e Consenso
         note TEXT,
         gdpr_consent INTEGER DEFAULT 0,
-        
-        -- Metadata Sistema
         timestamp TEXT NOT NULL,
-        fonte TEXT DEFAULT 'Landing Page V10.3.8-Cloudflare',
-        versione TEXT DEFAULT 'V10.3.8-Cloudflare',
+        fonte TEXT,
+        versione TEXT,
         status TEXT DEFAULT 'nuovo',
-        
-        -- Timestamp automatici
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `).run()
-
-    // Crea indici per performance
-    await db.prepare(`
-      CREATE INDEX IF NOT EXISTS idx_leads_email_richiedente ON leads(email_richiedente)
-    `).run()
     
-    await db.prepare(`
-      CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)
-    `).run()
-    
-    console.log('✅ TeleMedCare V10.3.8-Cloudflare: Database inizializzato correttamente')
+    console.log('✅ Database D1 inizializzato correttamente')
   } catch (error) {
-    console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore inizializzazione database:', error)
-    throw error
+    console.error('❌ Errore inizializzazione database:', error)
   }
 }
 
