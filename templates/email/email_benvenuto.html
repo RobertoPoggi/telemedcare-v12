@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benvenuto in TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .welcome-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border-left: 4px solid #0ea5e9;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #374151;
+        }
+        .value {
+            color: #1f2937;
+        }
+        .steps {
+            counter-reset: step-counter;
+        }
+        .step {
+            counter-increment: step-counter;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+        }
+        .step:before {
+            content: counter(step-counter);
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .step:last-child {
+            border-bottom: none;
+        }
+        .footer {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="welcome-title">Benvenuto/a {{NOME_CLIENTE}}!</div>
+            <div style="font-size: 18px;">🎉 Congratulazioni per la Sua scelta!</div>
+        </div>
+
+        <p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
+
+        <div class="highlight">
+            La Sua sicurezza è la nostra priorità!
+        </div>
+
+        <div class="section">
+            <h3 style="margin-top: 0; color: #1e40af;">📋 Riepilogo del Suo servizio:</h3>
+            <div class="summary-item">
+                <span class="label">Piano:</span>
+                <span class="value">{{PIANO_SERVIZIO}}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Costo:</span>
+                <span class="value">{{COSTO_SERVIZIO}}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Data Attivazione:</span>
+                <span class="value">{{DATA_ATTIVAZIONE}}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Codice Cliente:</span>
+                <span class="value">{{CODICE_CLIENTE}}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3 style="margin-top: 0; color: #1e40af;">Servizi inclusi nel Suo piano:</h3>
+            <div>{{SERVIZI_INCLUSI}}</div>
+        </div>
+
+        <div class="section">
+            <h3 style="margin-top: 0; color: #1e40af;">🚀 I prossimi passi:</h3>
+            <div class="steps">
+                <div class="step">
+                    <strong>Consegna Dispositivo:</strong> Riceverà il dispositivo SiDLY entro 10 giorni lavorativi
+                </div>
+                <div class="step">
+                    <strong>Configurazione:</strong> Riceverà una e-mail per la configurazione personalizzata
+                </div>
+                <div class="step">
+                    <strong>Training:</strong> Sessione di formazione gratuita per imparare ad usare il dispositivo tramite Tutorial
+                </div>
+                <div class="step">
+                    <strong>Attivazione (solo Servizio Avanzato):</strong> Verrà contattato dalla Centrale Operativa per il test completo di funzionamento
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p style="margin: 0; font-size: 18px; font-weight: 600;">Benvenuto/a nella famiglia TeleMedCare!</p>
+            <p style="margin: 5px 0 0 0;">Siamo lieti di averLa con noi e non vediamo l'ora di offrirLe la tranquillità e la sicurezza che merita.</p>
+            <p style="margin: 15px 0 0 0; font-style: italic;">Il Team TeleMedCare</p>
+        </div>
+    </div>
+</body>
+</html>
