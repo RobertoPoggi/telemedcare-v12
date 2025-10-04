@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documenti Informativi TeleMedCare</title>
+    <style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
+
+      .email-container {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .email-content {
+        padding: 30px;
+      }
+
+      .info-section {
+        background: #f8fafc;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .document-list {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .footer {
+        background: #f8fafc;
+        color: #6b7280;
+        text-align: center;
+        padding: 20px;
+        font-size: 14px;
+      }
+
+      .highlight {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 16px;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1 style="margin: 0; font-size: 28px;">📋 Documenti Informativi</h1>
+            <p style="margin: 10px 0 0; font-size: 16px; opacity: 0.9;">TeleMedCare - La sua salute, sempre connessa</p>
+        </div>
+
+        <div class="email-content">
+            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+
+            <p>La ringraziamo per l'interesse mostrato nei confronti dei nostri servizi TeleMedCare. Come da Lei richiesto, Le inviamo tutta la documentazione informativa relativa al piano <span class="highlight">{{PACCHETTO}}</span> per l'assistito {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}.</p>
+
+            <div class="info-section">
+                <h3 style="margin-top: 0; color: #1e40af;">📝 Riepilogo Richiesta</h3>
+                <ul>
+                    <li><strong>Data Richiesta:</strong> {{DATA_RICHIESTA}}</li>
+                    <li><strong>Piano Selezionato:</strong> {{PACCHETTO}}</li>
+                    <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
+                    <li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+                    <li><strong>ID Richiesta:</strong> {{LEAD_ID}}</li>
+                </ul>
+            </div>
+
+            <div class="document-list">
+                <h3 style="margin-top: 0; color: #d68910;">📦 Documentazione Allegata</h3>
+                <ul>
+                    <li>🔹 <strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi</li>
+                    <li>🔹 <strong>Scheda Tecnica SiDLY Care Pro</strong> - Specifiche del dispositivo medico</li>
+                    <li>🔹 <strong>Informativa Prezzi e Piani</strong> - Dettagli economici e opzioni disponibili</li>
+                    {{#if MANUALE_RICHIESTO}}
+                    <li>🔹 <strong>Manuale Utente Completo</strong> - Guida all'utilizzo del dispositivo</li>
+                    {{/if}}
+                    <li>🔹 <strong>Informativa Privacy e Consensi</strong> - Trattamento dati e GDPR</li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <h3 style="margin-top: 0; color: #1e40af;">🎯 Perché Scegliere TeleMedCare?</h3>
+                <ul>
+                    <li><strong>Innovazione Sociale:</strong> Cambiamo il paradigma della cura tradizionale</li>
+                    <li><strong>Tecnologia Certificata:</strong> Dispositivo medico Classe IIa certificato CE</li>
+                    <li><strong>Assistenza H24:</strong> Monitoraggio continuo e supporto sempre attivo</li>
+                    <li><strong>Detraibilità Fiscale:</strong> Spesa sanitaria detraibile al 19% nel 730</li>
+                </ul>
+            </div>
+
+            <p><strong>🔔 Prossimi Passi:</strong></p>
+            <ol>
+                <li>Esamini attentamente la documentazione allegata</li>
+                <li>Non esiti a contattarci per chiarimenti o domande</li>
+                <li>Quando sarà pronto/a, Le invieremo il contratto personalizzato</li>
+                <li>Attiveremo il servizio entro 10 giorni lavorativi dalla firma</li>
+            </ol>
+
+            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <p style="margin: 0; font-weight: 600; color: #1e40af;">💬 Siamo sempre disponibili!</p>
+                <p style="margin: 5px 0 0; font-size: 14px;">Il nostro team è a Sua completa disposizione per qualsiasi chiarimento. La Sua tranquillità è la nostra priorità.</p>
+            </div>
+
+            <p>Cordiali saluti,</p>
+            <p><strong>Il Team TeleMedCare - Medica GB S.r.l.</strong><br>
+            <em>"La tecnologia che Le salva salute e vita"</em></p>
+
+            <hr style="margin: 30px 0; border: none; height: 1px; background-color: #e5e7eb;">
+
+            <p style="font-size: 14px; color: #6b7280;">
+                📞 <strong>Contatti:</strong><br>
+                Email: info@telemedcare.it | Telefono: +39 331 643 2390<br>
+                WhatsApp: +39 331 643 2390 | Sito: www.telemedcare.it
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>TeleMedCare</strong> - Medica GB S.r.l.</p>
+            <p>Corso Giuseppe Garibaldi, 34 - 20121 Milano | P.IVA: 12435130963</p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                Ricevuta questa email per errore? <a href="mailto:privacy@telemedcare.it" style="color: #3b82f6;">Contattaci</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

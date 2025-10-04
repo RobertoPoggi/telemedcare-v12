@@ -1,5 +1,7 @@
 {
-  "name": "webapp",
+  "name": "telemedcare-v11-modular",
+  "version": "11.0.0",
+  "description": "TeleMedCare V11.0 Modular - Enterprise Lead Management System",
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev dist --d1=telemedcare-leads --local --ip 0.0.0.0 --port 3000",

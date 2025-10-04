@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurazione SiDLY CARE - Dati Cliente</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+         {
+            body { -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .form-section {
+            border-left: 4px solid #3B82F6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <div class="gradient-bg text-white py-6 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Configurazione SiDLY CARE</h1>
+                    <p class="text-blue-100 mt-2">Completa i dati per l'attivazione del servizio</p>
+                </div>
+                <div class="text-right">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Ctext x='50' y='25' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-size='12' font-weight='bold'%3EMedica GB%3C/text%3E%3C/svg%3E" alt="Medica GB" class="h-10">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <form id="configurazione-form" class="space-y-8">
+            <!-- Dati Anagrafici -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-user text-blue-600 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Dati Anagrafici</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+                        <input type="text" id="nome" name="nome" value="Mario" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cognome *</label>
+                        <input type="text" id="cognome" name="cognome" value="Rossi" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data di Nascita *</label>
+                        <input type="date" id="data_nascita" name="data_nascita" value="1950-03-15" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Età</label>
+                        <input type="text" id="eta" name="eta" value="74 anni" readonly class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Peso (kg)</label>
+                        <input type="number" id="peso" name="peso" value="75" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Altezza (cm)</label>
+                        <input type="number" id="altezza" name="altezza" value="170" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Telefono *</label>
+                        <input type="tel" id="telefono" name="telefono" value="335 123 4567" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="email" name="email" value="mario.rossi@email.it" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Indirizzo *</label>
+                        <input type="text" id="indirizzo" name="indirizzo" value="Via Roma 123, 20121 Milano (MI)" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contatti di Emergenza -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-phone-alt text-red-600 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Contatti di Emergenza</h2>
+                </div>
+                
+                <!-- Contatto 1 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm mr-2">1</span>
+                        Contatto Primario *
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" name="contatto1_nome" value="Anna" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
+                            <input type="text" name="contatto1_cognome" value="Rossi" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefono</label>
+                            <input type="tel" name="contatto1_telefono" value="347 987 6543" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contatto 2 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm mr-2">2</span>
+                        Contatto Secondario
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" name="contatto2_nome" value="Luca" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
+                            <input type="text" name="contatto2_cognome" value="Rossi" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefono</label>
+                            <input type="tel" name="contatto2_telefono" value="338 456 7890" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contatto 3 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm mr-2">3</span>
+                        Contatto Terziario
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
+                            <input type="text" name="contatto3_nome" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
+                            <input type="text" name="contatto3_cognome" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Telefono</label>
+                            <input type="tel" name="contatto3_telefono" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Condizioni Mediche -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-heartbeat text-red-600 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Condizioni Mediche</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="ipertensione" checked class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Ipertensione arteriosa</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="diabete" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Diabete</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="cardiopatia" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Cardiopatia</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="demenza" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Demenza/Alzheimer</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="ictus" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Ictus</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="parkinson" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Morbo di Parkinson</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="epilessia" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Epilessia</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <input type="checkbox" name="patologie[]" value="oncologica" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <span class="ml-3 text-gray-700">Patologia oncologica</span>
+                    </label>
+                </div>
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Altre patologie o note mediche</label>
+                    <textarea name="altre_patologie" rows="3" placeholder="Inserisci altre condizioni mediche rilevanti..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+
+            <!-- Farmaci -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-pills text-green-600 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Farmaci e Terapie</h2>
+                </div>
+                <div id="farmaci-container">
+                    <div class="farmaco-item bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nome farmaco</label>
+                                <input type="text" name="farmaco_nome[]" value="Ramipril" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Dosaggio</label>
+                                <input type="text" name="farmaco_dosaggio[]" value="5 mg" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Orario</label>
+                                <input type="time" name="farmaco_orario[]" value="08:00" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" onclick="aggiungi_farmaco()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Aggiungi farmaco
+                </button>
+            </div>
+
+            <!-- Note aggiuntive -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center mb-6">
+                    <i class="fas fa-sticky-note text-yellow-600 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Note Aggiuntive</h2>
+                </div>
+                <textarea name="note_aggiuntive" rows="4" placeholder="Inserisci eventuali note aggiuntive, allergie, esigenze particolari..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="text-center">
+                    <button type="submit" class="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg">
+                        <i class="fas fa-paper-plane mr-2"></i>Invia Configurazione
+                    </button>
+                    <p class="text-gray-600 mt-4">I dati verranno inviati in modo sicuro per la configurazione del dispositivo SiDLY CARE</p>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Success Message -->
+    <div id="success-message" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md mx-4">
+            <div class="text-center">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Configurazione Inviata!</h3>
+                <p class="text-gray-600">I dati sono stati inviati correttamente. Riceverete conferma dell'attivazione entro 24 ore.</p>
+                <button onclick="document.getElementById('success-message').classList.add('hidden')" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize EmailJS
+        emailjs.init('-JEWqtrkLWqAEvuoW');
+
+        // Calculate age from birth date
+        document.getElementById('data_nascita').addEventListener('change', function() {
+            const birthDate = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            
+            document.getElementById('eta').value = age + ' anni';
+        });
+
+        // Add new medication
+        function aggiungi_farmaco() {
+            const container = document.getElementById('farmaci-container');
+            const newFarmaco = document.createElement('div');
+            newFarmaco.className = 'farmaco-item bg-gray-50 p-4 rounded-lg mb-4';
+            newFarmaco.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome farmaco</label>
+                        <input type="text" name="farmaco_nome[]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Dosaggio</label>
+                        <input type="text" name="farmaco_dosaggio[]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Orario</label>
+                        <input type="time" name="farmaco_orario[]" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="mt-2 text-red-600 hover:text-red-800">
+                    <i class="fas fa-trash mr-1"></i>Rimuovi
+                </button>
+            `;
+            container.appendChild(newFarmaco);
+        }
+
+        // Handle form submission
+        document.getElementById('configurazione-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Basic fields
+            for (let [key, value] of formData.entries()) {
+                if (key.includes('[]')) {
+                    const cleanKey = key.replace('[]', '');
+                    if (!data[cleanKey]) data[cleanKey] = [];
+                    data[cleanKey].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            // Prepare email data
+            const emailData = {
+                to_email: 'info@medicagb.it',
+                client_name: data.nome + ' ' + data.cognome,
+                client_data: JSON.stringify(data, null, 2),
+                submission_date: new Date().toLocaleDateString('it-IT'),
+                submission_time: new Date().toLocaleTimeString('it-IT')
+            };
+            
+            // Send email notification
+            emailjs.send('service_ku6guc3', 'template_6m9wx7t', emailData)
+                .then(function(response) {
+                    console.log('Email sent successfully:', response);
+                    document.getElementById('success-message').classList.remove('hidden');
+                })
+                .catch(function(error) {
+                    console.log('Email error:', error);
+                    alert('Errore nell\'invio. Riprova più tardi.');
+                });
+            
+            // Here you would also send data to Google Sheets
+            // This would typically be done via a Google Apps Script Web App
+            console.log('Configuration data:', data);
+        });
+
+        // Auto-calculate age on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const birthDateInput = document.getElementById('data_nascita');
+            if (birthDateInput.value) {
+                birthDateInput.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDpgdMzdSNqKwZbxKIo%2FLBmp56R3AtKCsoDXUE2sZZeVgtPlM%2BJjo3sQEt9fSRLXseyROf1oNesW02dkWNv%2FdjVk3Q6QelrduR8sK0Pnf71mnQOhbBlJYBUxC%2B0%2F2jyWCOaKNaFT%2Bl9S5XJ%2BSs1dvugtyiZhILdNQ2yDk5FTttfOHUjsaW9HOepzzEoxKxZ1LRyQMK8m4Vi2W%2F3SOrMr4cNFvHcrszjgqGIh7v6a3xCJVTpwrd%2BDfNNV4SA4c7ai3k4i1v9QXqOcDk2KcIbE30LPLa2qCgdRinx3%2FvEJFyCbQRrAfwcJZwghwtHTX%2Bo1hwxU7YS3hliKbGVIx3%2F6mHI1tYuJM5yFvX5TfxZ42LX0jjvXB%2FcVh59MotZoj50mjCk6kD%2BLJbekrJELvhMWQRBFRm%2FqqHNrdTYwzYA0OD4u3cRDLY%2Fk4YyYw3uPZfSU9nMuRI1UjAYggsY6%2BWIt9pVumaTwFXV2n9NgOnBk1z7HK4hxFk8ekwZURE%2Bc8KcZJFY8991lmanmZ5O3ZERYWT9Y%3D";
+        window.__genspark_locale = "it-IT";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDpgdMzdSNqKwZbxKIo/LBmp56R3AtKCsoDXUE2sZZeVgtPlM+Jjo3sQEt9fSRLXseyROf1oNesW02dkWNv/djVk3Q6QelrduR8sK0Pnf71mnQOhbBlJYBUxC+0/2jyWCOaKNaFT+l9S5XJ+Ss1dvugtyiZhILdNQ2yDk5FTttfOHUjsaW9HOepzzEoxKxZ1LRyQMK8m4Vi2W/3SOrMr4cNFvHcrszjgqGIh7v6a3xCJVTpwrd+DfNNV4SA4c7ai3k4i1v9QXqOcDk2KcIbE30LPLa2qCgdRinx3/vEJFyCbQRrAfwcJZwghwtHTX+o1hwxU7YS3hliKbGVIx3/6mHI1tYuJM5yFvX5TfxZ42LX0jjvXB/cVh59MotZoj50mjCk6kD+LJbekrJELvhMWQRBFRm/qqHNrdTYwzYA0OD4u3cRDLY/k4YyYw3uPZfSU9nMuRI1UjAYggsY6+WIt9pVumaTwFXV2n9NgOnBk1z7HK4hxFk8ekwZURE+c8KcZJFY8991lmanmZ5O3ZERYWT9Y=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
