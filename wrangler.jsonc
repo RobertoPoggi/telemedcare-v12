@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "telemedcare-leads",
-      "database_id": ""
+      "database_id": "local-database-for-development"
     }
   ]
 }

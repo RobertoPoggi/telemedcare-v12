@@ -20,7 +20,7 @@
  * • Capacità: 10,000+ lead/ora
  * • ML Model refresh: ogni 24h automatico
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */

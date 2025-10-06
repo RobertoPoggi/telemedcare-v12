@@ -21,7 +21,7 @@
  * • Data retention: 24 mesi
  * • Concurrent users: 100+
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */
@@ -1308,7 +1308,7 @@ export class TeleMedCareReports {
         template: templateId,
         generatoIl: new Date().toISOString(),
         periodo: kpi.periodoAnalisi,
-        versione: '10.3.8'
+        versione: '11.0'
       },
       kpi,
       opzioni

@@ -1138,7 +1138,59 @@ app.get('/', (c) => {
               <div class="grid md:grid-cols-2 gap-6 mt-6">
                 <div>
                   <label class="block text-gray-700 font-semibold mb-2">Data di Nascita Assistito *</label>
-                  <input type="date" name="dataNascitaAssistito" id="data_nascita_assistito" onchange="calcolaEta()" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <!-- Campi Data User-Friendly con Auto-Navigate -->
+                  <div class="flex space-x-2">
+                    <div class="flex-1">
+                      <input 
+                        type="number" 
+                        name="giornoNascita" 
+                        id="giorno_nascita" 
+                        placeholder="GG" 
+                        min="1" 
+                        max="31" 
+                        maxlength="2"
+                        required 
+                        class="w-full px-3 py-3 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        oninput="autoNavigateDate(this, 'mese_nascita', 2)"
+                        onchange="validaEAggiornaSiData()"
+                      >
+                      <label class="text-xs text-gray-500 block text-center mt-1">Giorno</label>
+                    </div>
+                    <div class="flex-1">
+                      <input 
+                        type="number" 
+                        name="meseNascita" 
+                        id="mese_nascita" 
+                        placeholder="MM" 
+                        min="1" 
+                        max="12" 
+                        maxlength="2"
+                        required 
+                        class="w-full px-3 py-3 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        oninput="autoNavigateDate(this, 'anno_nascita', 2)"
+                        onchange="validaEAggiornaSiData()"
+                      >
+                      <label class="text-xs text-gray-500 block text-center mt-1">Mese</label>
+                    </div>
+                    <div class="flex-1">
+                      <input 
+                        type="number" 
+                        name="annoNascita" 
+                        id="anno_nascita" 
+                        placeholder="AAAA" 
+                        min="1920" 
+                        max="2024" 
+                        maxlength="4"
+                        required 
+                        class="w-full px-3 py-3 text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        oninput="autoNavigateDate(this, null, 4)"
+                        onchange="validaEAggiornaSiData()"
+                      >
+                      <label class="text-xs text-gray-500 block text-center mt-1">Anno</label>
+                    </div>
+                  </div>
+                  <!-- Campo hidden per compatibilità con l'API esistente -->
+                  <input type="hidden" name="dataNascitaAssistito" id="data_nascita_assistito">
                 </div>
                 <div>
                   <label class="block text-gray-700 font-semibold mb-2">Luogo di Nascita Assistito *</label>
@@ -1310,7 +1362,7 @@ app.get('/', (c) => {
                 <i class="fas fa-check-circle text-2xl mr-3"></i>
                 <strong class="text-lg">✓ Successo!</strong>
               </div>
-              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V10.3.8. Riceverai conferma via email con i documenti richiesti!</span>
+              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V11.0. Riceverai conferma via email con i documenti richiesti!</span>
             </div>
             <div id="error_message" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-md animate-fade-in">
               <div class="flex items-center">
@@ -1324,7 +1376,7 @@ app.get('/', (c) => {
                 <i class="fas fa-spinner fa-spin text-2xl mr-3"></i>
                 <strong class="text-lg">⏳ Invio in corso...</strong>
               </div>
-              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V10.3.8, attendi un momento.</span>
+              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V11.0, attendi un momento.</span>
             </div>
           </div>
         </div>
@@ -1392,19 +1444,19 @@ app.get('/', (c) => {
     </section>
 
     <script type="text/javascript">
-      // TeleMedCare V10.3.8 - Integrazione Cloudflare Pages + Hono DEFINITIVA
+      // TeleMedCare V11.0 - Integrazione Cloudflare Pages + Hono DEFINITIVA
       // MODIFICA: Sostituito Google Apps Script con endpoint Hono /api/lead
 
-      // Configurazione sistema V10.3.8 DEFINITIVA
+      // Configurazione sistema V11.0 DEFINITIVA
       const TELEMEDCARE_CONFIG = {
-        API_URL: '/api/lead', // Nuovo endpoint Hono locale
-        VERSION: 'V10.3.8-Cloudflare',
-        SOURCE: 'Landing Page TeleMedCare V10.3.8-Cloudflare'
+        API_URL: '/api/forms/process-telemedcare-lead', // Endpoint con automazione completa
+        VERSION: 'V11.0-Modular-Enterprise',
+        SOURCE: 'Landing Page TeleMedCare V11.0 Modular Enterprise'
       };
 
       // Calcolo automatico dell'età - SISTEMA PERFETTO MANTENUTO
       function calcolaEta() {
-        console.log('🔢 TeleMedCare V10.3.8-Cloudflare: Calcolo età avviato');
+        console.log('🔢 TeleMedCare V11.0-Cloudflare: Calcolo età avviato');
         
         const dataInput = document.getElementById('data_nascita_assistito');
         const etaInput = document.getElementById('eta_assistito');
@@ -1412,12 +1464,12 @@ app.get('/', (c) => {
         if (dataInput && dataInput.value) {
           try {
             const dateValue = dataInput.value;
-            console.log('📅 TeleMedCare V10.3.8-Cloudflare: Data inserita:', dateValue);
+            console.log('📅 TeleMedCare V11.0-Cloudflare: Data inserita:', dateValue);
             
             // Parsing corretto della data
             const parts = dateValue.split('-');
             if (parts.length !== 3) {
-              console.warn('⚠️ TeleMedCare V10.3.8-Cloudflare: Formato data non valido');
+              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Formato data non valido');
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1428,7 +1480,7 @@ app.get('/', (c) => {
 
             // Verifica anno ragionevole (1900-2024)
             if (year < 1900 || year > 2024) {
-              console.warn('⚠️ TeleMedCare V10.3.8-Cloudflare: Anno non valido:', year);
+              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Anno non valido:', year);
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1438,7 +1490,7 @@ app.get('/', (c) => {
 
             // Verifica che la data non sia futura
             if (birthDate > today) {
-              console.warn('⚠️ TeleMedCare V10.3.8-Cloudflare: Data futura non consentita');
+              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Data futura non consentita');
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1453,7 +1505,7 @@ app.get('/', (c) => {
 
             // Controllo età ragionevole
             if (age < 0 || age > 150) {
-              console.warn('⚠️ TeleMedCare V10.3.8-Cloudflare: Età non ragionevole:', age);
+              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Età non ragionevole:', age);
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1462,9 +1514,9 @@ app.get('/', (c) => {
               etaInput.value = age + ' anni';
             }
 
-            console.log('✅ TeleMedCare V10.3.8-Cloudflare: Età calcolata correttamente: ' + age + ' anni');
+            console.log('✅ TeleMedCare V11.0-Cloudflare: Età calcolata correttamente: ' + age + ' anni');
           } catch (error) {
-            console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore calcolo età:', error);
+            console.error('❌ TeleMedCare V11.0-Cloudflare: Errore calcolo età:', error);
             if (etaInput) etaInput.value = 'Errore calcolo';
           }
         } else {
@@ -1472,9 +1524,84 @@ app.get('/', (c) => {
         }
       }
 
+      // Auto-navigazione campi data user-friendly
+      function autoNavigateDate(currentField, nextFieldId, maxLength) {
+        // Pulisce il valore da caratteri non numerici
+        currentField.value = currentField.value.replace(/[^0-9]/g, '');
+        
+        // Se ha raggiunto la lunghezza massima, naviga al prossimo campo
+        if (currentField.value.length >= maxLength && nextFieldId) {
+          const nextField = document.getElementById(nextFieldId);
+          if (nextField) {
+            nextField.focus();
+          }
+        }
+        
+        // Valida il campo corrente
+        validaCampoData(currentField);
+      }
+
+      // Validazione specifica per i campi data
+      function validaCampoData(field) {
+        const value = parseInt(field.value);
+        const fieldName = field.name;
+        
+        if (fieldName === 'giornoNascita') {
+          if (value < 1 || value > 31) {
+            field.setCustomValidity('Inserisci un giorno valido (1-31)');
+          } else {
+            field.setCustomValidity('');
+          }
+        } else if (fieldName === 'meseNascita') {
+          if (value < 1 || value > 12) {
+            field.setCustomValidity('Inserisci un mese valido (1-12)');
+          } else {
+            field.setCustomValidity('');
+          }
+        } else if (fieldName === 'annoNascita') {
+          const currentYear = new Date().getFullYear();
+          if (value < 1920 || value > currentYear) {
+            field.setCustomValidity('Inserisci un anno valido (1920-' + currentYear + ')');
+          } else {
+            field.setCustomValidity('');
+          }
+        }
+      }
+
+      // Funzione che compone la data completa e aggiorna il campo hidden
+      function validaEAggiornaSiData() {
+        const giorno = document.getElementById('giorno_nascita').value.padStart(2, '0');
+        const mese = document.getElementById('mese_nascita').value.padStart(2, '0');
+        const anno = document.getElementById('anno_nascita').value;
+        
+        // Controlla che tutti i campi siano compilati
+        if (giorno && mese && anno && anno.length === 4) {
+          // Valida la data
+          const dataCompleta = anno + '-' + mese + '-' + giorno;
+          const dataOggetto = new Date(anno, mese - 1, giorno);
+          
+          // Verifica che la data sia valida
+          if (dataOggetto.getFullYear() == anno && 
+              dataOggetto.getMonth() == (mese - 1) && 
+              dataOggetto.getDate() == giorno) {
+            
+            // Aggiorna il campo hidden per compatibilità con l'API esistente
+            document.getElementById('data_nascita_assistito').value = dataCompleta;
+            
+            // Calcola l'età automaticamente
+            calcolaEta();
+            
+            console.log('✅ Data validata e composta:', dataCompleta);
+          } else {
+            console.warn('⚠️ Data non valida:', giorno + '/' + mese + '/' + anno);
+            document.getElementById('data_nascita_assistito').value = '';
+          }
+        }
+      }
+
       // Toggle intestazione contratto - SISTEMA PERFETTO MANTENUTO
       function toggleIntestazioneContratto() {
-        console.log('🔄 TeleMedCare V10.3.8-Cloudflare: Toggle intestazione contratto');
+        console.log('🔄 TeleMedCare V11.0-Cloudflare: Toggle intestazione contratto');
         
         const checkbox = document.getElementById('vuole_contratto');
         const section = document.getElementById('intestazione_contratto_section');
@@ -1482,7 +1609,7 @@ app.get('/', (c) => {
         if (checkbox && section) {
           if (checkbox.checked) {
             section.classList.remove('hidden');
-            console.log('✅ TeleMedCare V10.3.8-Cloudflare: Sezione contratto mostrata');
+            console.log('✅ TeleMedCare V11.0-Cloudflare: Sezione contratto mostrata');
           } else {
             section.classList.add('hidden');
             
@@ -1497,14 +1624,14 @@ app.get('/', (c) => {
             const radioButtons = document.querySelectorAll('input[name="intestazioneContratto"]');
             radioButtons.forEach(radio => radio.checked = false);
             
-            console.log('👁️ TeleMedCare V10.3.8-Cloudflare: Sezione contratto nascosta');
+            console.log('👁️ TeleMedCare V11.0-Cloudflare: Sezione contratto nascosta');
           }
         }
       }
 
       // Toggle campi dinamici CF/Indirizzo - SISTEMA PERFETTO MANTENUTO
       function toggleCampiDinamici() {
-        console.log('🔄 TeleMedCare V10.3.8-Cloudflare: Toggle campi dinamici CF/Indirizzo');
+        console.log('🔄 TeleMedCare V11.0-Cloudflare: Toggle campi dinamici CF/Indirizzo');
         
         const richiedenteRadio = document.querySelector('input[name="intestazioneContratto"][value="richiedente"]');
         const assistitoRadio = document.querySelector('input[name="intestazioneContratto"][value="assistito"]');
@@ -1518,10 +1645,10 @@ app.get('/', (c) => {
         // Mostra il campo appropriato
         if (richiedenteRadio && richiedenteRadio.checked && campiRichiedente) {
           campiRichiedente.style.display = 'block';
-          console.log('👤 TeleMedCare V10.3.8-Cloudflare: Mostrati campi richiedente');
+          console.log('👤 TeleMedCare V11.0-Cloudflare: Mostrati campi richiedente');
         } else if (assistitoRadio && assistitoRadio.checked && campiAssistito) {
           campiAssistito.style.display = 'block';
-          console.log('🏥 TeleMedCare V10.3.8-Cloudflare: Mostrati campi assistito');
+          console.log('🏥 TeleMedCare V11.0-Cloudflare: Mostrati campi assistito');
         }
       }
 
@@ -1545,7 +1672,7 @@ app.get('/', (c) => {
             case 'success':
               if (successMsg) successMsg.classList.remove('hidden');
               container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              console.log('✅ TeleMedCare V10.3.8-Cloudflare: Messaggio successo mostrato');
+              console.log('✅ TeleMedCare V11.0-Cloudflare: Messaggio successo mostrato');
               setTimeout(() => {
                 if (container) container.classList.add('hidden');
               }, 10000);
@@ -1554,7 +1681,7 @@ app.get('/', (c) => {
             case 'error':
               if (errorMsg) errorMsg.classList.remove('hidden');
               container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              console.log('❌ TeleMedCare V10.3.8-Cloudflare: Messaggio errore mostrato');
+              console.log('❌ TeleMedCare V11.0-Cloudflare: Messaggio errore mostrato');
               setTimeout(() => {
                 if (container) container.classList.add('hidden');
               }, 12000);
@@ -1562,13 +1689,13 @@ app.get('/', (c) => {
               
             case 'loading':
               if (loadingMsg) loadingMsg.classList.remove('hidden');
-              console.log('⏳ TeleMedCare V10.3.8-Cloudflare: Messaggio loading mostrato');
+              console.log('⏳ TeleMedCare V11.0-Cloudflare: Messaggio loading mostrato');
               break;
           }
         }
       }
 
-      // Preparazione dati per Hono API V10.3.8 - MAPPATURA COMPLETA
+      // Preparazione dati per Hono API V11.0 - MAPPATURA COMPLETA
       function prepareLeadData(formData) {
         const leadData = {};
 
@@ -1577,19 +1704,19 @@ app.get('/', (c) => {
           leadData[key] = value || '';
         }
 
-        // Gestione checkbox con mappatura corretta V10.3.8
+        // Gestione checkbox con mappatura corretta V11.0
         leadData.vuoleContratto = formData.has('vuoleContratto') ? 'Si' : 'No';
         leadData.vuoleBrochure = formData.has('vuoleBrochure') ? 'Si' : 'No';
         leadData.vuoleManuale = formData.has('vuoleManuale') ? 'Si' : 'No';
         leadData.gdprConsent = formData.has('gdprConsent') ? 'on' : '';
 
-        // Metadati sistema V10.3.8
+        // Metadati sistema V11.0
         leadData.timestamp = new Date().toISOString();
         leadData.source = TELEMEDCARE_CONFIG.SOURCE;
         leadData.sistemaVersione = TELEMEDCARE_CONFIG.VERSION;
         leadData.requestType = 'POST';
 
-        console.log('📦 TeleMedCare V10.3.8-Cloudflare: Dati preparati per invio:', leadData);
+        console.log('📦 TeleMedCare V11.0-Cloudflare: Dati preparati per invio:', leadData);
         return leadData;
       }
 
@@ -1599,7 +1726,7 @@ app.get('/', (c) => {
         
         for (let field of required) {
           if (!formData.get(field) || formData.get(field).trim() === '') {
-            console.error('❌ TeleMedCare V10.3.8-Cloudflare: Campo obbligatorio mancante: ' + field);
+            console.error('❌ TeleMedCare V11.0-Cloudflare: Campo obbligatorio mancante: ' + field);
             alert('Il campo "' + field + '" è obbligatorio');
             return false;
           }
@@ -1609,53 +1736,60 @@ app.get('/', (c) => {
         const email = formData.get('emailRichiedente');
         const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
         if (!emailRegex.test(email)) {
-          console.error('❌ TeleMedCare V10.3.8-Cloudflare: Email non valida:', email);
+          console.error('❌ TeleMedCare V11.0-Cloudflare: Email non valida:', email);
           alert('Inserisci un indirizzo email valido');
           return false;
         }
 
         // Validazione GDPR
         if (!formData.has('gdprConsent')) {
-          console.error('❌ TeleMedCare V10.3.8-Cloudflare: Consenso GDPR obbligatorio');
+          console.error('❌ TeleMedCare V11.0-Cloudflare: Consenso GDPR obbligatorio');
           alert('È necessario accettare il trattamento dei dati personali');
           return false;
         }
 
-        console.log('✅ TeleMedCare V10.3.8-Cloudflare: Validazione form completata');
+        console.log('✅ TeleMedCare V11.0-Cloudflare: Validazione form completata');
         return true;
       }
 
-      // Invio al Hono API V10.3.8 - SISTEMA ROBUSTO
+      // Invio al Hono API V11.0 - SISTEMA ROBUSTO
       async function submitToHonoAPI(leadData) {
-        console.log('🚀 TeleMedCare V10.3.8-Cloudflare: Invio a Hono API iniziato');
-        console.log('🔗 TeleMedCare V10.3.8-Cloudflare: URL endpoint:', TELEMEDCARE_CONFIG.API_URL);
+        console.log('🚀 TeleMedCare V11.0: Invio a sistema automazione completa iniziato');
+        console.log('🔗 TeleMedCare V11.0: URL endpoint automazione:', TELEMEDCARE_CONFIG.API_URL);
 
         try {
-          console.log('📤 TeleMedCare V10.3.8-Cloudflare: Invio POST con FormData');
-          
-          const formData = new FormData();
-          Object.keys(leadData).forEach(key => {
-            if (leadData[key]) {
-              formData.append(key, leadData[key]);
-            }
-          });
+          console.log('📤 TeleMedCare V11.0: Invio POST con JSON per automazione completa');
 
           const response = await fetch(TELEMEDCARE_CONFIG.API_URL, {
             method: 'POST',
-            body: formData
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(leadData)
           });
 
           if (response.ok) {
             const result = await response.json();
-            console.log('✅ TeleMedCare V10.3.8-Cloudflare: Risposta ricevuta:', result);
-            return { status: 'success', message: 'Lead inviato con successo al sistema Hono', data: result };
+            console.log('✅ TeleMedCare V11.0: Risposta ricevuta:', result);
+            
+            // Gestisce la risposta del nuovo endpoint automazione
+            if (result.success) {
+              console.log('🤖 Automazione schedulata:', result.automationScheduled ? 'SÌ' : 'NO');
+              if (result.automationTasks) {
+                console.log('📧 Email automatiche programmate:', result.automationTasks.length);
+              }
+              return { status: 'success', message: result.message || 'Lead processato con successo', data: result };
+            } else {
+              console.error('❌ Errore dal server:', result.message);
+              return { status: 'error', message: result.message || 'Errore elaborazione lead' };
+            }
           } else {
-            console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore HTTP:', response.status);
+            console.error('❌ TeleMedCare V11.0: Errore HTTP:', response.status);
             return { status: 'error', message: 'Errore del server durante l\\'invio' };
           }
 
         } catch (error) {
-          console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore invio:', error);
+          console.error('❌ TeleMedCare V11.0-Cloudflare: Errore invio:', error);
           return { status: 'error', message: 'Errore di rete durante l\\'invio' };
         }
       }
@@ -1663,7 +1797,7 @@ app.get('/', (c) => {
       // Gestione form submission
       async function handleFormSubmission(event) {
         event.preventDefault();
-        console.log('📝 TeleMedCare V10.3.8-Cloudflare: Form submission avviato');
+        console.log('📝 TeleMedCare V11.0-Cloudflare: Form submission avviato');
 
         // Mostra loading
         showMessage('loading');
@@ -1681,12 +1815,13 @@ app.get('/', (c) => {
           // Preparazione dati
           const leadData = prepareLeadData(formData);
 
-          // Invio a Hono API V10.3.8
+          // Invio a Hono API V11.0
           const result = await submitToHonoAPI(leadData);
 
           // Gestione risposta
           if (result.status === 'success') {
-            console.log('✅ TeleMedCare V10.3.8-Cloudflare: Lead elaborato con successo');
+            console.log('✅ TeleMedCare V11.0: Lead elaborato e automazione schedulata');
+            console.log('🤖 Automazione:', result.data && result.data.automationScheduled ? 'ATTIVA' : 'NON ATTIVA');
             showMessage('success');
             form.reset();
             
@@ -1699,19 +1834,19 @@ app.get('/', (c) => {
             if (contractSection) contractSection.classList.add('hidden');
             
           } else {
-            console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore dal server:', result.message);
+            console.error('❌ TeleMedCare V11.0: Errore dal server:', result.message);
             showMessage('error');
           }
 
         } catch (error) {
-          console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore generale:', error);
+          console.error('❌ TeleMedCare V11.0: Errore generale automazione:', error);
           showMessage('error');
         }
       }
 
       // Validazione campi in tempo reale
       function setupFieldValidation() {
-        console.log('🛠️ TeleMedCare V10.3.8-Cloudflare: Setup validazione campi');
+        console.log('🛠️ TeleMedCare V11.0-Cloudflare: Setup validazione campi');
         
         // Email validation
         const emailField = document.querySelector('input[name="emailRichiedente"]');
@@ -1757,7 +1892,7 @@ app.get('/', (c) => {
 
       // Smooth scrolling per navigazione
       function setupSmoothScrolling() {
-        console.log('🎢 TeleMedCare V10.3.8-Cloudflare: Setup smooth scrolling');
+        console.log('🎢 TeleMedCare V11.0-Cloudflare: Setup smooth scrolling');
         
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
           anchor.addEventListener('click', function(e) {
@@ -1775,18 +1910,18 @@ app.get('/', (c) => {
         });
       }
 
-      // Inizializzazione sistema V10.3.8 - COMPLETO
+      // Inizializzazione sistema V11.0 - COMPLETO
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 TeleMedCare V10.3.8-Cloudflare: Inizializzazione sistema avviata');
-        console.log('📊 TeleMedCare V10.3.8-Cloudflare: Versione sistema:', TELEMEDCARE_CONFIG.VERSION);
-        console.log('🔗 TeleMedCare V10.3.8-Cloudflare: Endpoint API:', TELEMEDCARE_CONFIG.API_URL);
+        console.log('🚀 TeleMedCare V11.0-Cloudflare: Inizializzazione sistema avviata');
+        console.log('📊 TeleMedCare V11.0-Cloudflare: Versione sistema:', TELEMEDCARE_CONFIG.VERSION);
+        console.log('🔗 TeleMedCare V11.0-Cloudflare: Endpoint API:', TELEMEDCARE_CONFIG.API_URL);
 
         try {
           // Setup form submission
           const form = document.getElementById('leadForm');
           if (form) {
             form.addEventListener('submit', handleFormSubmission);
-            console.log('✅ TeleMedCare V10.3.8-Cloudflare: Form handler collegato');
+            console.log('✅ TeleMedCare V11.0-Cloudflare: Form handler collegato');
           }
 
           // Setup field validation
@@ -1795,18 +1930,37 @@ app.get('/', (c) => {
           // Setup smooth scrolling
           setupSmoothScrolling();
 
-          // Setup data nascita listener
+          // Setup campi data user-friendly con auto-navigazione
+          const giornoInput = document.getElementById('giorno_nascita');
+          const meseInput = document.getElementById('mese_nascita');  
+          const annoInput = document.getElementById('anno_nascita');
+          
+          if (giornoInput && meseInput && annoInput) {
+            // Listener per validazione e auto-navigazione
+            giornoInput.addEventListener('input', () => autoNavigateDate(giornoInput, 'mese_nascita', 2));
+            meseInput.addEventListener('input', () => autoNavigateDate(meseInput, 'anno_nascita', 2));
+            annoInput.addEventListener('input', () => autoNavigateDate(annoInput, null, 4));
+            
+            // Listener per aggiornamento data completa
+            giornoInput.addEventListener('change', validaEAggiornaSiData);
+            meseInput.addEventListener('change', validaEAggiornaSiData);
+            annoInput.addEventListener('change', validaEAggiornaSiData);
+            
+            console.log('📅 TeleMedCare V11.0: Campi data user-friendly configurati con auto-navigazione');
+          }
+          
+          // Mantieni il listener per il campo hidden (compatibilità)
           const dataInput = document.getElementById('data_nascita_assistito');
           if (dataInput) {
             dataInput.addEventListener('change', calcolaEta);
-            console.log('📅 TeleMedCare V10.3.8-Cloudflare: Listener calcolo età collegato');
+            console.log('📅 TeleMedCare V11.0: Listener calcolo età mantenuto per compatibilità');
           }
 
           // Setup checkbox listeners
           const vuoleContrattoCheckbox = document.getElementById('vuole_contratto');
           if (vuoleContrattoCheckbox) {
             vuoleContrattoCheckbox.addEventListener('change', toggleIntestazioneContratto);
-            console.log('📋 TeleMedCare V10.3.8-Cloudflare: Listener contratto collegato');
+            console.log('📋 TeleMedCare V11.0-Cloudflare: Listener contratto collegato');
           }
 
           // Setup radio listeners per intestazione contratto
@@ -1815,10 +1969,10 @@ app.get('/', (c) => {
             radio.addEventListener('change', toggleCampiDinamici);
           });
 
-          console.log('🎯 TeleMedCare V10.3.8-Cloudflare: Inizializzazione completata con successo');
+          console.log('🎯 TeleMedCare V11.0-Cloudflare: Inizializzazione completata con successo');
 
         } catch (error) {
-          console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore durante inizializzazione:', error);
+          console.error('❌ TeleMedCare V11.0-Cloudflare: Errore durante inizializzazione:', error);
         }
       });
 
@@ -1830,7 +1984,7 @@ app.get('/', (c) => {
         toggleCampiDinamici: toggleCampiDinamici
       };
 
-      console.log('🏁 TeleMedCare V10.3.8-Cloudflare: Sistema completamente caricato e operativo');
+      console.log('🏁 TeleMedCare V11.0-Cloudflare: Sistema completamente caricato e operativo');
     </script>
 
     <!-- Schema.org Structured Data per SEO -->
@@ -1969,7 +2123,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
 // API endpoint per ricevere i lead dal form
 app.post('/api/lead', async (c) => {
   try {
-    console.log('📨 TeleMedCare V10.3.8-Cloudflare: Nuovo lead ricevuto')
+    console.log('📨 TeleMedCare V11.0-Cloudflare: Nuovo lead ricevuto')
     
     // Inizializza database se disponibile
     if (c.env.DB) {
@@ -2043,8 +2197,8 @@ app.post('/api/lead', async (c) => {
 
       // Metadata Sistema
       timestamp: timestamp,
-      fonte: String(leadData.fonte || 'Landing Page V10.3.8-Cloudflare'),
-      versione: String(leadData.versione || 'V10.3.8-Cloudflare'),
+      fonte: String(leadData.fonte || 'Landing Page V11.0-Cloudflare'),
+      versione: String(leadData.versione || 'V11.0-Cloudflare'),
       status: 'nuovo'
     }
 
@@ -2095,10 +2249,10 @@ app.post('/api/lead', async (c) => {
         normalizedLead.status
       ).run()
 
-      console.log('💾 TeleMedCare V10.3.8-Cloudflare: Lead salvato nel database D1')
+      console.log('💾 TeleMedCare V11.0-Cloudflare: Lead salvato nel database D1')
     } else {
       // Modalità development senza D1 - logga i dati
-      console.log('💾 TeleMedCare V10.3.8-Cloudflare: Lead processato (DB non configurato)')
+      console.log('💾 TeleMedCare V11.0-Cloudflare: Lead processato (DB non configurato)')
       console.log('📝 Lead Data:', JSON.stringify(normalizedLead, null, 2))
     }
     
@@ -2116,7 +2270,7 @@ app.post('/api/lead', async (c) => {
     })
 
   } catch (error) {
-    console.error('❌ TeleMedCare V10.3.8-Cloudflare: Errore elaborazione lead:', error)
+    console.error('❌ TeleMedCare V11.0-Cloudflare: Errore elaborazione lead:', error)
     return c.json({
       success: false,
       error: 'Errore interno del server'
@@ -2155,7 +2309,7 @@ app.get('/api/status', (c) => {
     version: 'V11.0-Modular-Enterprise',
     enterprise: true,
     modules: ['lead-config', 'lead-core', 'lead-channels', 'lead-conversion', 'lead-scoring', 'lead-reports', 'dispositivi', 'pdf', 'utils', 'logging'],
-    compatibility: 'V10.3.8-Cloudflare'
+    compatibility: 'V11.0-Cloudflare'
   })
 })
 
@@ -2553,7 +2707,374 @@ async function inviaEmailContratto(leadData: any, leadId: string): Promise<boole
 
 
 // ===============================
-// TELEMEDC ARE V10.3.8 MODULARE ENTERPRISE API ENDPOINTS
+// TELEMEDC ARE V11.0 MONITORING & ADMIN ENDPOINTS
+// ===============================
+
+// Endpoint di monitoraggio completo del sistema
+app.get('/api/admin/monitor', async (c) => {
+  try {
+    const monitoring = {
+      system: {
+        version: 'TeleMedCare V11.0 Modular Enterprise',
+        timestamp: new Date().toISOString(),
+        status: 'OPERATIONAL'
+      },
+      database: {},
+      automation: {},
+      recent_leads: [],
+      recent_automations: []
+    };
+
+    // Controllo database - ultimi lead
+    try {
+      const leads = await c.env.DB.prepare(`
+        SELECT id, nomeRichiedente, cognomeRichiedente, emailRichiedente, 
+               nomeAssistito, cognomeAssistito, created_at, status
+        FROM leads 
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `).all();
+      
+      monitoring.recent_leads = leads.results || [];
+      monitoring.database.status = 'CONNECTED';
+      monitoring.database.leads_count = leads.results?.length || 0;
+    } catch (dbError) {
+      monitoring.database.status = 'ERROR';
+      monitoring.database.error = dbError.message;
+    }
+
+    // Controllo automazioni - task schedulati
+    try {
+      const automations = await c.env.DB.prepare(`
+        SELECT id, leadId, automationType, scheduledDate, scheduledTime, 
+               status, priority, createdAt
+        FROM automation_tasks 
+        ORDER BY createdAt DESC 
+        LIMIT 15
+      `).all();
+      
+      monitoring.recent_automations = automations.results || [];
+      monitoring.automation.status = 'ACTIVE';
+      monitoring.automation.scheduled_tasks = automations.results?.length || 0;
+      
+      // Conta per stato
+      const tasksByStatus = (automations.results || []).reduce((acc, task) => {
+        acc[task.status] = (acc[task.status] || 0) + 1;
+        return acc;
+      }, {});
+      
+      monitoring.automation.tasks_by_status = tasksByStatus;
+    } catch (autoError) {
+      monitoring.automation.status = 'ERROR'; 
+      monitoring.automation.error = autoError.message;
+    }
+
+    return c.json({
+      success: true,
+      monitoring,
+      message: 'Sistema monitorato con successo'
+    });
+
+  } catch (error) {
+    console.error('❌ Errore monitoraggio sistema:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Errore nel monitoraggio del sistema',
+      details: error.message 
+    }, 500);
+  }
+});
+
+// Endpoint per inizializzazione database
+app.post('/api/admin/init-database', async (c) => {
+  try {
+    // Crea la tabella leads
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id TEXT PRIMARY KEY,
+        nomeRichiedente TEXT NOT NULL,
+        cognomeRichiedente TEXT NOT NULL,
+        emailRichiedente TEXT NOT NULL,
+        telefonoRichiedente TEXT NOT NULL,
+        nomeAssistito TEXT NOT NULL,
+        cognomeAssistito TEXT NOT NULL,
+        dataNascitaAssistito DATE,
+        luogoNascitaAssistito TEXT,
+        etaAssistito TEXT,
+        pacchetto TEXT,
+        priority TEXT,
+        preferitoContatto TEXT,
+        vuoleContratto TEXT DEFAULT 'No',
+        sistemaVersione TEXT DEFAULT 'V11.0',
+        status TEXT DEFAULT 'NEW',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    // Crea la tabella automation_tasks
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS automation_tasks (
+        id TEXT PRIMARY KEY,
+        leadId TEXT NOT NULL,
+        automationType TEXT NOT NULL,
+        emailTemplate TEXT,
+        scheduledDate DATE NOT NULL,
+        scheduledTime TIME NOT NULL,
+        priority TEXT DEFAULT 'MEDIUM',
+        status TEXT DEFAULT 'SCHEDULED',
+        attemptNumber INTEGER DEFAULT 1,
+        executedAt DATETIME,
+        completedAt DATETIME,
+        emailSent BOOLEAN DEFAULT FALSE,
+        executionData TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    // Inserisce dati di test
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO leads (
+        id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+        nomeAssistito, cognomeAssistito, dataNascitaAssistito, luogoNascitaAssistito, etaAssistito,
+        pacchetto, priority, preferitoContatto, status
+      ) VALUES 
+      ('LEAD_TEST_001', 'Mario', 'Rossi', 'mario.rossi@example.com', '+39 331 123 4567',
+       'Giuseppe', 'Rossi', '1940-05-15', 'Milano', '84 anni',
+       'Avanzato', 'Alta', 'Email', 'NEW'),
+      ('LEAD_TEST_002', 'Anna', 'Bianchi', 'anna.bianchi@example.com', '+39 335 765 4321',
+       'Maria', 'Bianchi', '1935-12-03', 'Roma', '89 anni', 
+       'Base', 'Media', 'Telefono', 'CONTACTED')
+    `).run();
+
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO automation_tasks (
+        id, leadId, automationType, scheduledDate, scheduledTime, priority, status, executionData
+      ) VALUES 
+      ('AUTO_001', 'LEAD_TEST_001', 'NOTIFICA_INFO', '2025-10-05', '23:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@medicagb.it","customerName":"Mario Rossi"}'),
+      ('AUTO_002', 'LEAD_TEST_001', 'INVIO_CONTRATTO', '2025-10-05', '23:05', 'HIGH', 'SCHEDULED', '{"emailTemplate":"email_invio_contratto","customerName":"Mario Rossi"}'),
+      ('AUTO_003', 'LEAD_TEST_002', 'NOTIFICA_INFO', '2025-10-04', '15:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@medicagb.it","customerName":"Anna Bianchi"}'),
+      ('AUTO_004', 'LEAD_TEST_002', 'DOCUMENTI_INFORMATIVI', '2025-10-04', '15:05', 'MEDIUM', 'COMPLETED', '{"emailTemplate":"email_documenti_informativi","customerName":"Anna Bianchi"}'),
+      ('AUTO_005', 'LEAD_TEST_002', 'PROMEMORIA_3GIORNI', '2025-10-07', '10:00', 'MEDIUM', 'SCHEDULED', '{"emailTemplate":"email_promemoria","customerName":"Anna Bianchi"}')
+    `).run();
+
+    return c.json({
+      success: true,
+      message: 'Database inizializzato con successo con dati di test',
+      tables_created: ['leads', 'automation_tasks'],
+      test_data: 'Inseriti 2 lead e 5 automation tasks di esempio'
+    });
+
+  } catch (error) {
+    console.error('❌ Errore inizializzazione database:', error);
+    return c.json({
+      success: false,
+      error: 'Errore inizializzazione database',
+      details: error.message
+    }, 500);
+  }
+});
+
+// Endpoint per visualizzazione dati in formato HTML
+app.get('/admin/monitor', async (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TeleMedCare V11.0 - Monitoraggio Sistema</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-gray-100">
+        <div class="min-h-screen p-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-chart-line text-blue-600 mr-3"></i>
+                        TeleMedCare V11.0 - Monitor Sistema
+                    </h1>
+                    <p class="text-gray-600">Dashboard di monitoraggio in tempo reale</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-database text-green-600 mr-2"></i>Database Status
+                        </h2>
+                        <div id="database-status">Caricamento...</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-robot text-purple-600 mr-2"></i>Sistema Automazione
+                        </h2>
+                        <div id="automation-status">Caricamento...</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-users text-blue-600 mr-2"></i>Ultimi Lead Registrati
+                    </h2>
+                    <div id="recent-leads">Caricamento...</div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-envelope text-orange-600 mr-2"></i>Automazioni Email Schedulate
+                    </h2>
+                    <div id="recent-automations">Caricamento...</div>
+                </div>
+
+                <div class="mt-6 flex justify-center space-x-4">
+                    <button onclick="loadMonitoringData()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-sync mr-2"></i>Aggiorna Dati
+                    </button>
+                    <a href="/" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-home mr-2"></i>Torna alla Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            async function loadMonitoringData() {
+                try {
+                    const response = await fetch('/api/admin/monitor');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        updateDashboard(data.monitoring);
+                    } else {
+                        console.error('Errore API:', data.error);
+                    }
+                } catch (error) {
+                    console.error('Errore caricamento dati:', error);
+                }
+            }
+
+            function updateDashboard(monitoring) {
+                // Database Status
+                const dbStatus = document.getElementById('database-status');
+                const dbColor = monitoring.database.status === 'CONNECTED' ? 'green' : 'red';
+                dbStatus.innerHTML = \`
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center">
+                            <i class="fas fa-circle text-\${dbColor}-500 mr-2"></i>
+                            Status: \${monitoring.database.status}
+                        </span>
+                        <span class="text-gray-600">Lead: \${monitoring.database.leads_count || 0}</span>
+                    </div>
+                \`;
+
+                // Automation Status  
+                const autoStatus = document.getElementById('automation-status');
+                const autoColor = monitoring.automation.status === 'ACTIVE' ? 'green' : 'red';
+                autoStatus.innerHTML = \`
+                    <div class="flex items-center justify-between">
+                        <span class="flex items-center">
+                            <i class="fas fa-circle text-\${autoColor}-500 mr-2"></i>
+                            Status: \${monitoring.automation.status}
+                        </span>
+                        <span class="text-gray-600">Task: \${monitoring.automation.scheduled_tasks || 0}</span>
+                    </div>
+                    <div class="mt-2 text-sm text-gray-600">
+                        \${Object.entries(monitoring.automation.tasks_by_status || {}).map(([status, count]) => 
+                            \`<span class="inline-block bg-gray-100 px-2 py-1 rounded mr-2">\${status}: \${count}</span>\`
+                        ).join('')}
+                    </div>
+                \`;
+
+                // Recent Leads
+                const leadsDiv = document.getElementById('recent-leads');
+                if (monitoring.recent_leads.length > 0) {
+                    leadsDiv.innerHTML = \`
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">ID</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Richiedente</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Assistito</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Email</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    \${monitoring.recent_leads.map(lead => \`
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm text-gray-900">\${lead.id}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-900">\${lead.nomeAssistito} \${lead.cognomeAssistito}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">\${lead.emailRichiedente}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-500">\${new Date(lead.created_at).toLocaleString('it-IT')}</td>
+                                        </tr>
+                                    \`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    \`;
+                } else {
+                    leadsDiv.innerHTML = '<p class="text-gray-500">Nessun lead registrato</p>';
+                }
+
+                // Recent Automations
+                const automationsDiv = document.getElementById('recent-automations');
+                if (monitoring.recent_automations.length > 0) {
+                    automationsDiv.innerHTML = \`
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Lead ID</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Tipo Email</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Schedulata</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Priorità</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    \${monitoring.recent_automations.map(auto => \`
+                                        <tr>
+                                            <td class="px-4 py-2 text-sm text-gray-900">\${auto.leadId}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-900">\${auto.automationType}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">\${auto.scheduledDate} \${auto.scheduledTime}</td>
+                                            <td class="px-4 py-2">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                                    \${auto.status === 'SCHEDULED' ? 'bg-yellow-100 text-yellow-800' : 
+                                                      auto.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 
+                                                      auto.status === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}">
+                                                    \${auto.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">\${auto.priority}</td>
+                                        </tr>
+                                    \`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    \`;
+                } else {
+                    automationsDiv.innerHTML = '<p class="text-gray-500">Nessuna automazione schedulata</p>';
+                }
+            }
+
+            // Carica i dati all'avvio
+            loadMonitoringData();
+
+            // Auto-refresh ogni 30 secondi
+            setInterval(loadMonitoringData, 30000);
+        </script>
+    </body>
+    </html>
+  `);
+});
+
+// ===============================
+// TELEMEDC ARE V11.0 MODULARE ENTERPRISE API ENDPOINTS
 // ===============================
 
 // ========== LEAD CONFIG MODULE ==========
@@ -3194,7 +3715,7 @@ app.get('/api/enterprise/system/health', async (c) => {
 // Inizializzazione database D1 Enterprise
 async function initializeDatabase(db: D1Database) {
   try {
-    console.log('🔧 TeleMedCare V10.3.8 MODULARE: Inizializzazione database enterprise...')
+    console.log('🔧 TeleMedCare V11.0 MODULARE: Inizializzazione database enterprise...')
     
     // Per compatibilità, creiamo almeno la tabella leads di base
     // Il sistema completo dovrebbe usare le migrazioni in migrations/0001_initial_schema.sql
@@ -3261,7 +3782,7 @@ async function initializeDatabase(db: D1Database) {
       ('cache_ttl_seconds', '3600', 'performance')
     `).run()
     
-    console.log('✅ TeleMedCare V10.3.8 MODULARE: Database enterprise inizializzato correttamente')
+    console.log('✅ TeleMedCare V11.0 MODULARE: Database enterprise inizializzato correttamente')
     console.log('📋 NOTA: Per il sistema completo, eseguire le migrazioni: npx wrangler d1 migrations apply webapp-production --local')
     
     // Inizializza repository documenti
@@ -4208,37 +4729,36 @@ app.post('/api/forms/process-telemedcare-lead', async (c) => {
       })
     }
     
-    // 4. Lead informativo (non richiede contratto immediato) - Schedula follow-up automatico
+    // 4. Lead informativo (non richiede contratto immediato) - Schedula automazione completa
     else {
-      // Schedula follow-up automatico
-      const { FollowUpService } = await import('./modules/followup-service')
-      const followupService = FollowUpService.getInstance()
+      // Schedula automazione email completamente automatica
+      const { AutomationService } = await import('./modules/automation-service')
+      const automationService = AutomationService.getInstance()
       
-      const followupSchedule = {
+      const automationSchedule = {
         leadId: `LEAD_${Date.now()}`,
-        customerName: `${leadData.nome} ${leadData.cognome}`,
-        customerPhone: leadData.telefono,
-        customerEmail: leadData.email,
-        preferredContactMethod: leadData.preferitoContatto || 'Telefono',
-        urgencyLevel: leadData.urgenzaRichiesta || 'Media urgenza',
+        customerName: `${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+        customerEmail: leadData.emailRichiedente,
+        serviceInterest: leadData.pacchetto || 'Informazioni generali',
+        urgencyLevel: leadData.urgenza || 'normale',
         leadSource: 'telemedcare_landing',
-        serviceInterest: leadData.servizioInteresse || 'Informazioni generali',
-        contractRequested: false
+        contractRequested: false,
+        preferredContactMethod: leadData.preferenzaContatto || 'email'
       }
       
-      const followupResult = await followupService.scheduleFollowUpCall(followupSchedule)
+      const automationResult = await automationService.scheduleLeadAutomation(automationSchedule)
       
       return c.json({
         success: true,
         leadProcessed: true,
         contractGenerated: false,
         validation,
-        followupScheduled: followupResult.success,
-        followupCall: followupResult.followUpCall,
-        message: followupResult.success 
-          ? 'Lead salvato e follow-up schedulato automaticamente'
-          : 'Lead salvato, errore schedulazione follow-up',
-        nextAction: 'SCHEDULE_FOLLOWUP'
+        automationScheduled: automationResult.success,
+        automationTasks: automationResult.automationTasks,
+        message: automationResult.success 
+          ? 'Lead salvato e automazione email schedulata (5 email automatiche programmate)'
+          : 'Lead salvato, errore schedulazione automazione',
+        nextAction: 'EMAIL_AUTOMATION_STARTED'
       })
     }
     
@@ -4328,74 +4848,70 @@ app.post('/api/forms/test', async (c) => {
 // FOLLOW-UP CALL API ENDPOINTS  
 // =====================================================================
 
-// Endpoint per schedulare follow-up automatico da lead
-app.post('/api/followup/schedule', async (c) => {
+// Endpoint per schedulare automazione email da lead  
+app.post('/api/automation/schedule', async (c) => {
   try {
     const scheduleData = await c.req.json()
     
-    if (!scheduleData.leadId || !scheduleData.customerName || !scheduleData.customerPhone) {
-      return c.json({ success: false, error: 'Parametri obbligatori mancanti' }, 400)
+    if (!scheduleData.leadId || !scheduleData.customerName || !scheduleData.customerEmail) {
+      return c.json({ success: false, error: 'Parametri obbligatori mancanti (leadId, customerName, customerEmail)' }, 400)
     }
     
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const result = await followupService.scheduleFollowUpCall(scheduleData)
+    const result = await automationService.scheduleLeadAutomation(scheduleData)
     
     return c.json({
       success: result.success,
-      followUpCall: result.followUpCall,
+      automationTasks: result.automationTasks,
       error: result.error,
-      message: result.success ? 'Follow-up schedulato automaticamente' : 'Errore schedulazione',
+      message: result.success ? 'Automazione email schedulata (5 email automatiche programmate)' : 'Errore schedulazione',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    console.error('❌ Errore schedulazione follow-up:', error)
-    return c.json({ success: false, error: 'Errore schedulazione follow-up' }, 500)
+    console.error('❌ Errore schedulazione automazione:', error)
+    return c.json({ success: false, error: 'Errore schedulazione automazione' }, 500)
   }
 })
 
-// Test endpoint per FollowUpService
-app.post('/api/followup/test', async (c) => {
+// Test endpoint per AutomationService
+app.post('/api/automation/test', async (c) => {
   try {
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
     // Test scheduling con dati esempio
     const testSchedule = {
-      leadId: 'lead_test_001',
-      customerName: 'Mario Rossi',
-      customerPhone: '+39 333 123 4567',
-      customerEmail: 'mario.rossi@email.com',
-      preferredContactMethod: 'Telefono' as const,
-      urgencyLevel: 'Alta urgenza' as const,
-      leadSource: 'landing_page',
-      serviceInterest: 'TeleAssistenza Avanzata',
-      contractRequested: true,
-      bestTimeToCall: '10:00-12:00',
-      timezone: 'Europe/Rome'
+      leadId: 'lead_test_automation_001',
+      customerName: 'Maria Test',
+      customerEmail: 'maria.test@email.com',
+      serviceInterest: 'TeleAssistenza Base',
+      urgencyLevel: 'normale',
+      leadSource: 'landing_page_test',
+      contractRequested: false,
+      preferredContactMethod: 'email'
     }
     
-    const scheduleResult = await followupService.scheduleFollowUpCall(testSchedule)
-    const todayFollowUps = await followupService.getTodayFollowUps()
-    const stats = await followupService.getFollowUpStats('today')
-    const rules = followupService.getActiveRules()
-    const operators = followupService.getAvailableOperators()
+    const scheduleResult = await automationService.scheduleLeadAutomation(testSchedule)
+    const todayTasks = await automationService.getTodayAutomationTasks()
+    const stats = await automationService.getAutomationStats('today')
+    const readyTasks = await automationService.getTasksReadyForExecution()
     
     return c.json({
       success: true,
       test: {
         scheduleResult,
-        todayFollowUps: todayFollowUps.length,
+        todayTasks: todayTasks.length,
+        tasksScheduled: scheduleResult.automationTasks?.length || 0,
         stats,
-        rulesCount: rules.length,
-        operatorsCount: operators.length
+        readyTasksCount: readyTasks.length
       },
-      message: 'Test FollowUpService completato',
+      message: 'Test AutomationService completato - Sistema completamente automatizzato (NESSUN operatore umano)',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
-    console.error('❌ Errore test follow-up:', error)
+    console.error('❌ Errore test automazione:', error)
     return c.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Errore test'
@@ -4403,56 +4919,56 @@ app.post('/api/followup/test', async (c) => {
   }
 })
 
-// ========== FOLLOW-UP MANAGEMENT ENDPOINTS ==========
+// ========== AUTOMATION MANAGEMENT ENDPOINTS ==========
 
-// Ottieni tutti i follow-up di oggi
-app.get('/api/followup/today', async (c) => {
+// Ottieni tutti i task di automazione di oggi
+app.get('/api/automation/today', async (c) => {
   try {
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const todayFollowUps = await followupService.getTodayFollowUps()
+    const todayTasks = await automationService.getTodayAutomationTasks()
     
     return c.json({
       success: true,
-      followUps: todayFollowUps,
-      count: todayFollowUps.length
+      automationTasks: todayTasks,
+      count: todayTasks.length
     })
   } catch (error) {
-    console.error('❌ Errore recupero follow-up oggi:', error)
-    return c.json({ success: false, error: 'Errore recupero follow-up' }, 500)
+    console.error('❌ Errore recupero task automazione oggi:', error)
+    return c.json({ success: false, error: 'Errore recupero task automazione' }, 500)
   }
 })
 
-// Ottieni follow-up per operatore
-app.get('/api/followup/operator/:operatorId', async (c) => {
+// Ottieni task automazione per lead specifico
+app.get('/api/automation/lead/:leadId', async (c) => {
   try {
-    const operatorId = c.req.param('operatorId')
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const leadId = c.req.param('leadId')
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const operatorFollowUps = await followupService.getFollowUpsByOperator(operatorId)
+    const leadTasks = await automationService.getAutomationTasksByLead(leadId)
     
     return c.json({
       success: true,
-      followUps: operatorFollowUps,
-      operator: operatorId,
-      count: operatorFollowUps.length
+      automationTasks: leadTasks,
+      leadId: leadId,
+      count: leadTasks.length
     })
   } catch (error) {
-    console.error('❌ Errore recupero follow-up operatore:', error)
-    return c.json({ success: false, error: 'Errore recupero follow-up operatore' }, 500)
+    console.error('❌ Errore recupero task automazione lead:', error)
+    return c.json({ success: false, error: 'Errore recupero task automazione lead' }, 500)
   }
 })
 
-// Ottieni statistiche follow-up
-app.get('/api/followup/stats/:period?', async (c) => {
+// Ottieni statistiche automazione
+app.get('/api/automation/stats/:period?', async (c) => {
   try {
     const period = c.req.param('period') || 'today'
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const stats = await followupService.getFollowUpStats(period as any)
+    const stats = await automationService.getAutomationStats(period as any)
     
     return c.json({
       success: true,
@@ -4460,53 +4976,1078 @@ app.get('/api/followup/stats/:period?', async (c) => {
       period
     })
   } catch (error) {
-    console.error('❌ Errore statistiche follow-up:', error)
-    return c.json({ success: false, error: 'Errore statistiche follow-up' }, 500)
+    console.error('❌ Errore statistiche automazione:', error)
+    return c.json({ success: false, error: 'Errore statistiche automazione' }, 500)
   }
 })
 
-// Completa un follow-up call
-app.post('/api/followup/:followUpId/complete', async (c) => {
+// Completa task automazione
+app.post('/api/automation/:taskId/complete', async (c) => {
   try {
-    const followUpId = parseInt(c.req.param('followUpId'))
-    const { outcome, notes, nextAction } = await c.req.json()
+    const taskId = c.req.param('taskId')
+    const { success, errorMessage, executionData } = await c.req.json()
     
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const result = await followupService.completeFollowUp(followUpId, {
-      outcome,
-      notes,
-      nextAction
+    const result = await automationService.completeAutomationTask(taskId, {
+      success,
+      errorMessage,
+      executionData
     })
     
     return c.json({
       success: true,
-      followUpCall: result.followUpCall,
-      message: 'Follow-up completato con successo'
+      task: result.task,
+      message: 'Task automazione completato con successo'
     })
   } catch (error) {
-    console.error('❌ Errore completamento follow-up:', error)
-    return c.json({ success: false, error: 'Errore completamento follow-up' }, 500)
+    console.error('❌ Errore completamento task automazione:', error)
+    return c.json({ success: false, error: 'Errore completamento task automazione' }, 500)
   }
 })
 
-// Lista operatori disponibili
-app.get('/api/followup/operators', async (c) => {
+// Task pronti per esecuzione (per sistema di processamento)
+app.get('/api/automation/ready', async (c) => {
   try {
-    const { FollowUpService } = await import('./modules/followup-service')
-    const followupService = FollowUpService.getInstance()
+    const { AutomationService } = await import('./modules/automation-service')
+    const automationService = AutomationService.getInstance()
     
-    const operators = followupService.getAvailableOperators()
+    const readyTasks = await automationService.getTasksReadyForExecution()
     
     return c.json({
       success: true,
-      operators
+      readyTasks,
+      count: readyTasks.length
     })
   } catch (error) {
-    console.error('❌ Errore lista operatori:', error)
-    return c.json({ success: false, error: 'Errore lista operatori' }, 500)
+    console.error('❌ Errore recupero task pronti:', error)
+    return c.json({ success: false, error: 'Errore recupero task pronti' }, 500)
   }
+})
+
+// ========== EMAIL PREVIEW E TEST ==========
+
+// Import email preview service
+import EmailPreviewService from './modules/email-preview-service.ts'
+
+// Lista template email disponibili
+app.get('/api/email/templates', async (c) => {
+  try {
+    const emailService = EmailPreviewService.getInstance()
+    const templates = emailService.getAvailableTemplates()
+    
+    return c.json({
+      success: true,
+      templates,
+      count: templates.length
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero template:', error)
+    return c.json({ success: false, error: 'Errore recupero template email' }, 500)
+  }
+})
+
+// Preview template email specifico
+app.get('/api/email/preview/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const emailService = EmailPreviewService.getInstance()
+    
+    // Genera dati di test automatici
+    const testData = emailService.generateTestData(templateId)
+    const recipientEmail = testData.emailCliente || testData.emailRichiedente || 'test@medicagb.it'
+    
+    const result = await emailService.renderEmailPreview(templateId, testData, recipientEmail)
+    
+    return c.json({
+      success: result.success,
+      preview: result.previewData,
+      validation: result.validationErrors,
+      metadata: result.testMetadata
+    })
+  } catch (error) {
+    console.error('❌ Errore preview email:', error)
+    return c.json({ success: false, error: 'Errore preview email' }, 500)
+  }
+})
+
+// Preview email con dati personalizzati
+app.post('/api/email/preview/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const { variables, recipientEmail } = await c.req.json()
+    
+    const emailService = EmailPreviewService.getInstance()
+    const result = await emailService.renderEmailPreview(templateId, variables, recipientEmail)
+    
+    return c.json({
+      success: result.success,
+      preview: result.previewData,
+      validation: result.validationErrors,
+      metadata: result.testMetadata
+    })
+  } catch (error) {
+    console.error('❌ Errore preview personalizzato:', error)
+    return c.json({ success: false, error: 'Errore preview personalizzato' }, 500)
+  }
+})
+
+// Simula invio email per test
+app.post('/api/email/test-send/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const { variables, recipientEmail } = await c.req.json()
+    
+    const emailService = EmailPreviewService.getInstance()
+    const result = await emailService.simulateEmailSend(templateId, variables, recipientEmail)
+    
+    return c.json({
+      success: result.success,
+      simulation: result.simulationResult,
+      error: result.error
+    })
+  } catch (error) {
+    console.error('❌ Errore test invio:', error)
+    return c.json({ success: false, error: 'Errore test invio email' }, 500)
+  }
+})
+
+// Genera dati test per template specifico
+app.get('/api/email/test-data/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const emailService = EmailPreviewService.getInstance()
+    
+    const testData = emailService.generateTestData(templateId)
+    const template = emailService.getTemplate(templateId)
+    
+    return c.json({
+      success: true,
+      template,
+      testData,
+      recipientEmail: testData.emailCliente || testData.emailRichiedente || 'test@medicagb.it'
+    })
+  } catch (error) {
+    console.error('❌ Errore generazione dati test:', error)
+    return c.json({ success: false, error: 'Errore generazione dati test' }, 500)
+  }
+})
+
+// ========== CONTRACT PREVIEW E TEST ==========
+
+// Import contract preview service
+import ContractPreviewService from './modules/contract-preview-service.ts'
+
+// Lista template contratti disponibili
+app.get('/api/contracts/templates', async (c) => {
+  try {
+    const contractService = ContractPreviewService.getInstance()
+    const templates = contractService.getAvailableTemplates()
+    
+    return c.json({
+      success: true,
+      templates,
+      count: templates.length
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero template contratti:', error)
+    return c.json({ success: false, error: 'Errore recupero template contratti' }, 500)
+  }
+})
+
+// Preview contratto specifico con dati test
+app.get('/api/contracts/preview/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const contractService = ContractPreviewService.getInstance()
+    
+    // Genera dati di test automatici
+    const testData = contractService.generateTestData(templateId)
+    
+    const result = await contractService.renderContractPreview(templateId, testData)
+    
+    return c.json({
+      success: result.success,
+      preview: result.previewData,
+      validation: result.validationErrors,
+      metadata: result.testMetadata
+    })
+  } catch (error) {
+    console.error('❌ Errore preview contratto:', error)
+    return c.json({ success: false, error: 'Errore preview contratto' }, 500)
+  }
+})
+
+// Preview contratto con dati personalizzati
+app.post('/api/contracts/preview/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const { variables } = await c.req.json()
+    
+    const contractService = ContractPreviewService.getInstance()
+    const result = await contractService.renderContractPreview(templateId, variables)
+    
+    return c.json({
+      success: result.success,
+      preview: result.previewData,
+      validation: result.validationErrors,
+      metadata: result.testMetadata
+    })
+  } catch (error) {
+    console.error('❌ Errore preview contratto personalizzato:', error)
+    return c.json({ success: false, error: 'Errore preview contratto personalizzato' }, 500)
+  }
+})
+
+// Simula firma elettronica
+app.post('/api/contracts/simulate-signature/:contractId', async (c) => {
+  try {
+    const contractId = c.req.param('contractId')
+    const signerData = await c.req.json()
+    
+    const contractService = ContractPreviewService.getInstance()
+    const result = await contractService.simulateElectronicSignature(contractId, signerData)
+    
+    return c.json({
+      success: result.success,
+      signature: result.signatureResult,
+      error: result.error
+    })
+  } catch (error) {
+    console.error('❌ Errore simulazione firma:', error)
+    return c.json({ success: false, error: 'Errore simulazione firma' }, 500)
+  }
+})
+
+// Genera dati test per contratto specifico
+app.get('/api/contracts/test-data/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const contractService = ContractPreviewService.getInstance()
+    
+    const testData = contractService.generateTestData(templateId)
+    const template = contractService.getTemplate(templateId)
+    
+    return c.json({
+      success: true,
+      template,
+      testData
+    })
+  } catch (error) {
+    console.error('❌ Errore generazione dati test contratto:', error)
+    return c.json({ success: false, error: 'Errore generazione dati test contratto' }, 500)
+  }
+})
+
+// ========== EMAIL TEST INTERFACE ==========
+
+// Pagina test email templates
+app.get('/email-test', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TeleMedCare V11.0 - Test Email Templates</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <style>
+            .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            .template-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; transition: all 0.3s; }
+            .template-card:hover { border-color: #3b82f6; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15); }
+            .template-card.active { border-color: #10b981; background: #f0fdf4; }
+            .preview-frame { border: 1px solid #d1d5db; border-radius: 8px; background: white; }
+            .code-block { background: #1f2937; color: #e5e7eb; padding: 1rem; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.875rem; }
+        </style>
+    </head>
+    <body class="bg-gray-50">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-lg">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold">TeleMedCare V11.0</h1>
+                        <p class="text-blue-100">Sistema Test Email Templates</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/dashboard" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-chart-line mr-2"></i>Dashboard
+                        </a>
+                        <a href="/" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-home mr-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Template Selection Panel -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-envelope text-blue-500 mr-2"></i>
+                            Template Email
+                        </h3>
+                        <div id="templateList" class="space-y-3">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-gray-700 mb-3">Azioni Test</h4>
+                            <div class="space-y-2">
+                                <button onclick="previewTemplate()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-eye mr-2"></i>Preview Template
+                                </button>
+                                <button onclick="testSendEmail()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-paper-plane mr-2"></i>Simula Invio
+                                </button>
+                                <button onclick="downloadPreview()" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-download mr-2"></i>Scarica HTML
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Data Panel -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-database text-green-500 mr-2"></i>
+                            Dati Test
+                        </h3>
+                        <div id="testDataEditor" class="space-y-3">
+                            <p class="text-gray-500 text-sm">Seleziona un template per vedere i dati disponibili</p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button onclick="generateNewTestData()" class="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Genera Nuovi Dati
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-desktop text-purple-500 mr-2"></i>
+                                Preview Email
+                            </h3>
+                            <div class="flex space-x-2">
+                                <button onclick="toggleView('desktop')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm">Desktop</button>
+                                <button onclick="toggleView('mobile')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">Mobile</button>
+                                <button onclick="toggleView('code')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">HTML</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Email Info Bar -->
+                        <div id="emailInfo" class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <span class="font-semibold text-gray-600">Subject:</span>
+                                    <p id="emailSubject" class="text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-600">To:</span>
+                                    <p id="emailRecipient" class="text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-600">Size:</span>
+                                    <p id="emailSize" class="text-gray-800">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Frame -->
+                        <div id="previewContainer" class="preview-frame" style="height: 600px;">
+                            <div class="flex items-center justify-center h-full text-gray-500">
+                                <div class="text-center">
+                                    <i class="fas fa-envelope text-4xl mb-4"></i>
+                                    <p class="text-lg">Seleziona un template per vedere l'anteprima</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Test Results -->
+                        <div id="testResults" class="mt-6 hidden">
+                            <h4 class="font-semibold text-gray-700 mb-3">Risultati Test</h4>
+                            <div id="testResultsContent" class="space-y-2">
+                                <!-- Populated by test results -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- JavaScript -->
+        <script>
+            let currentTemplate = null;
+            let currentTestData = {};
+            let templates = [];
+
+            // Initialize page
+            document.addEventListener('DOMContentLoaded', function() {
+                loadTemplateList();
+            });
+
+            // Load available templates
+            async function loadTemplateList() {
+                try {
+                    const response = await axios.get('/api/email/templates');
+                    templates = response.data.templates;
+                    
+                    const listContainer = document.getElementById('templateList');
+                    listContainer.innerHTML = '';
+                    
+                    templates.forEach(template => {
+                        const card = createTemplateCard(template);
+                        listContainer.appendChild(card);
+                    });
+                } catch (error) {
+                    console.error('Errore caricamento template:', error);
+                    document.getElementById('templateList').innerHTML = 
+                        '<p class="text-red-500 text-sm">Errore caricamento template</p>';
+                }
+            }
+
+            // Create template card element
+            function createTemplateCard(template) {
+                const card = document.createElement('div');
+                card.className = 'template-card cursor-pointer';
+                card.onclick = () => selectTemplate(template);
+                
+                const typeColors = {
+                    'notifica': 'bg-blue-100 text-blue-800',
+                    'documento': 'bg-green-100 text-green-800', 
+                    'contratto': 'bg-purple-100 text-purple-800',
+                    'promemoria': 'bg-yellow-100 text-yellow-800',
+                    'benvenuto': 'bg-pink-100 text-pink-800',
+                    'conferma': 'bg-indigo-100 text-indigo-800'
+                };
+                
+                const typeColor = typeColors[template.templateType] || 'bg-gray-100 text-gray-800';
+                
+                card.innerHTML = \`
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 text-sm">\${template.name}</h4>
+                            <p class="text-gray-600 text-xs mt-1">\${template.description}</p>
+                            <div class="flex items-center mt-2">
+                                <span class="px-2 py-1 rounded text-xs \${typeColor}">\${template.templateType}</span>
+                                <span class="ml-2 text-xs text-gray-500">\${template.requiredVariables.length} vars</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 ml-2"></i>
+                    </div>
+                \`;
+                
+                return card;
+            }
+
+            // Select template
+            async function selectTemplate(template) {
+                currentTemplate = template;
+                
+                // Update UI
+                document.querySelectorAll('.template-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                event.currentTarget.classList.add('active');
+                
+                // Load test data for template
+                try {
+                    const response = await axios.get(\`/api/email/test-data/\${template.id}\`);
+                    currentTestData = response.data.testData;
+                    
+                    updateTestDataEditor();
+                    previewTemplate();
+                } catch (error) {
+                    console.error('Errore caricamento dati test:', error);
+                }
+            }
+
+            // Update test data editor
+            function updateTestDataEditor() {
+                const editor = document.getElementById('testDataEditor');
+                editor.innerHTML = '';
+                
+                Object.keys(currentTestData).forEach(key => {
+                    const field = document.createElement('div');
+                    field.innerHTML = \`
+                        <label class="block text-sm font-medium text-gray-700 mb-1">\${key}</label>
+                        <input type="text" 
+                               value="\${currentTestData[key]}" 
+                               onchange="updateTestData('\${key}', this.value)"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    \`;
+                    editor.appendChild(field);
+                });
+            }
+
+            // Update test data value
+            function updateTestData(key, value) {
+                currentTestData[key] = value;
+            }
+
+            // Preview template
+            async function previewTemplate() {
+                if (!currentTemplate) {
+                    alert('Seleziona un template prima');
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
+                        variables: currentTestData,
+                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                    });
+                    
+                    if (response.data.success) {
+                        const preview = response.data.preview;
+                        
+                        // Update email info
+                        document.getElementById('emailInfo').classList.remove('hidden');
+                        document.getElementById('emailSubject').textContent = preview.renderedSubject;
+                        document.getElementById('emailRecipient').textContent = preview.recipientEmail;
+                        document.getElementById('emailSize').textContent = preview.estimatedSize;
+                        
+                        // Update preview
+                        const previewContainer = document.getElementById('previewContainer');
+                        previewContainer.innerHTML = \`<iframe srcdoc="\${escapeHtml(preview.renderedContent)}" style="width: 100%; height: 100%; border: none;"></iframe>\`;
+                        
+                    } else {
+                        alert('Errore preview: ' + (response.data.validation ? response.data.validation.join(', ') : 'Errore sconosciuto'));
+                    }
+                } catch (error) {
+                    console.error('Errore preview:', error);
+                    alert('Errore durante il preview');
+                }
+            }
+
+            // Test send email
+            async function testSendEmail() {
+                if (!currentTemplate) {
+                    alert('Seleziona un template prima');
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post(\`/api/email/test-send/\${currentTemplate.id}\`, {
+                        variables: currentTestData,
+                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                    });
+                    
+                    const resultsDiv = document.getElementById('testResults');
+                    const contentDiv = document.getElementById('testResultsContent');
+                    
+                    resultsDiv.classList.remove('hidden');
+                    
+                    if (response.data.success) {
+                        const sim = response.data.simulation;
+                        contentDiv.innerHTML = \`
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                    <span class="font-semibold text-green-800">Test Invio Riuscito</span>
+                                </div>
+                                <div class="text-sm text-green-700 space-y-1">
+                                    <p><strong>Message ID:</strong> \${sim.messageId}</p>
+                                    <p><strong>Delivery Time:</strong> \${Math.round(sim.deliveryTime)}ms</p>
+                                    <p><strong>Recipient:</strong> \${sim.previewData.recipientEmail}</p>
+                                </div>
+                            </div>
+                        \`;
+                    } else {
+                        contentDiv.innerHTML = \`
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                                    <span class="font-semibold text-red-800">Test Invio Fallito</span>
+                                </div>
+                                <p class="text-sm text-red-700">\${response.data.error}</p>
+                            </div>
+                        \`;
+                    }
+                } catch (error) {
+                    console.error('Errore test invio:', error);
+                    alert('Errore durante il test invio');
+                }
+            }
+
+            // Generate new test data
+            async function generateNewTestData() {
+                if (!currentTemplate) return;
+                
+                try {
+                    const response = await axios.get(\`/api/email/test-data/\${currentTemplate.id}\`);
+                    currentTestData = response.data.testData;
+                    updateTestDataEditor();
+                } catch (error) {
+                    console.error('Errore generazione dati:', error);
+                }
+            }
+
+            // Download preview HTML
+            async function downloadPreview() {
+                if (!currentTemplate) {
+                    alert('Seleziona un template prima');
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
+                        variables: currentTestData,
+                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                    });
+                    
+                    if (response.data.success) {
+                        const content = response.data.preview.renderedContent;
+                        const blob = new Blob([content], { type: 'text/html' });
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = \`\${currentTemplate.id}_preview.html\`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }
+                } catch (error) {
+                    console.error('Errore download:', error);
+                    alert('Errore durante il download');
+                }
+            }
+
+            // Utility function
+            function escapeHtml(html) {
+                return html.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            // Toggle view mode
+            function toggleView(mode) {
+                // Implementation for different view modes (desktop/mobile/code)
+                console.log('Toggle view mode:', mode);
+            }
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// Pagina test contratti PDF
+app.get('/contract-test', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TeleMedCare V11.0 - Test Contratti PDF</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <style>
+            .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            .contract-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; transition: all 0.3s; }
+            .contract-card:hover { border-color: #3b82f6; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15); }
+            .contract-card.active { border-color: #10b981; background: #f0fdf4; }
+            .preview-frame { border: 1px solid #d1d5db; border-radius: 8px; background: white; overflow-y: auto; }
+        </style>
+    </head>
+    <body class="bg-gray-50">
+        <!-- Header -->
+        <header class="gradient-bg text-white shadow-lg">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold">TeleMedCare V11.0</h1>
+                        <p class="text-blue-100">Sistema Test Contratti PDF</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <a href="/email-test" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-envelope mr-2"></i>Test Email
+                        </a>
+                        <a href="/dashboard" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-chart-line mr-2"></i>Dashboard
+                        </a>
+                        <a href="/" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-home mr-2"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Contract Selection Panel -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-file-contract text-green-500 mr-2"></i>
+                            Template Contratti
+                        </h3>
+                        <div id="contractList" class="space-y-3">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-gray-700 mb-3">Azioni Test</h4>
+                            <div class="space-y-2">
+                                <button onclick="previewContract()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-eye mr-2"></i>Preview Contratto
+                                </button>
+                                <button onclick="testSignature()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-signature mr-2"></i>Simula Firma
+                                </button>
+                                <button onclick="downloadContract()" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-download mr-2"></i>Scarica HTML
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contract Data Panel -->
+                    <div class="bg-white rounded-xl p-6 shadow-sm mt-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-user-edit text-blue-500 mr-2"></i>
+                            Dati Cliente
+                        </h3>
+                        <div id="contractDataEditor" class="space-y-3">
+                            <p class="text-gray-500 text-sm">Seleziona un contratto per vedere i dati disponibili</p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button onclick="generateNewContractData()" class="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                <i class="fas fa-sync-alt mr-2"></i>Genera Nuovi Dati
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                                Preview Contratto PDF
+                            </h3>
+                            <div class="flex space-x-2">
+                                <button onclick="toggleView('contract')" class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">Contratto</button>
+                                <button onclick="toggleView('signature')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">Firma</button>
+                                <button onclick="toggleView('download')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">Export</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Contract Info Bar -->
+                        <div id="contractInfo" class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <span class="font-semibold text-gray-600">Contratto ID:</span>
+                                    <p id="contractId" class="text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-600">Tipo:</span>
+                                    <p id="contractType" class="text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-600">Pagine:</span>
+                                    <p id="contractPages" class="text-gray-800">-</p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-600">Dimensione:</span>
+                                    <p id="contractSize" class="text-gray-800">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Frame -->
+                        <div id="previewContainer" class="preview-frame" style="height: 600px;">
+                            <div class="flex items-center justify-center h-full text-gray-500">
+                                <div class="text-center">
+                                    <i class="fas fa-file-contract text-4xl mb-4"></i>
+                                    <p class="text-lg">Seleziona un contratto per vedere l'anteprima</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Signature Test Results -->
+                        <div id="signatureResults" class="mt-6 hidden">
+                            <h4 class="font-semibold text-gray-700 mb-3">Risultati Firma Elettronica</h4>
+                            <div id="signatureResultsContent" class="space-y-2">
+                                <!-- Populated by signature test results -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- JavaScript -->
+        <script>
+            let currentContract = null;
+            let currentContractData = {};
+            let contracts = [];
+            let currentPreviewData = null;
+
+            // Initialize page
+            document.addEventListener('DOMContentLoaded', function() {
+                loadContractList();
+            });
+
+            // Load available contracts
+            async function loadContractList() {
+                try {
+                    const response = await axios.get('/api/contracts/templates');
+                    contracts = response.data.templates;
+                    
+                    const listContainer = document.getElementById('contractList');
+                    listContainer.innerHTML = '';
+                    
+                    contracts.forEach(contract => {
+                        const card = createContractCard(contract);
+                        listContainer.appendChild(card);
+                    });
+                } catch (error) {
+                    console.error('Errore caricamento contratti:', error);
+                    document.getElementById('contractList').innerHTML = 
+                        '<p class="text-red-500 text-sm">Errore caricamento contratti</p>';
+                }
+            }
+
+            // Create contract card element
+            function createContractCard(contract) {
+                const card = document.createElement('div');
+                card.className = 'contract-card cursor-pointer';
+                card.onclick = () => selectContract(contract);
+                
+                const typeColors = {
+                    'BASE': 'bg-blue-100 text-blue-800',
+                    'AVANZATO': 'bg-purple-100 text-purple-800', 
+                    'PROFORMA': 'bg-green-100 text-green-800'
+                };
+                
+                const typeColor = typeColors[contract.contractType] || 'bg-gray-100 text-gray-800';
+                
+                card.innerHTML = \`
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 text-sm">\${contract.name}</h4>
+                            <p class="text-gray-600 text-xs mt-1">\${contract.description}</p>
+                            <div class="flex items-center mt-2 space-x-2">
+                                <span class="px-2 py-1 rounded text-xs \${typeColor}">\${contract.contractType}</span>
+                                <span class="text-xs text-gray-500">\${contract.requiredVariables.length} campi</span>
+                                <span class="text-xs text-green-600 font-semibold">€\${contract.pricing.firstYear}</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 ml-2"></i>
+                    </div>
+                \`;
+                
+                return card;
+            }
+
+            // Select contract
+            async function selectContract(contract) {
+                currentContract = contract;
+                
+                // Update UI
+                document.querySelectorAll('.contract-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                event.currentTarget.classList.add('active');
+                
+                // Load test data for contract
+                try {
+                    const response = await axios.get(\`/api/contracts/test-data/\${contract.id}\`);
+                    currentContractData = response.data.testData;
+                    
+                    updateContractDataEditor();
+                    previewContract();
+                } catch (error) {
+                    console.error('Errore caricamento dati contratto:', error);
+                }
+            }
+
+            // Update contract data editor
+            function updateContractDataEditor() {
+                const editor = document.getElementById('contractDataEditor');
+                editor.innerHTML = '';
+                
+                Object.keys(currentContractData).forEach(key => {
+                    const field = document.createElement('div');
+                    field.innerHTML = \`
+                        <label class="block text-sm font-medium text-gray-700 mb-1">\${key}</label>
+                        <input type="text" 
+                               value="\${currentContractData[key]}" 
+                               onchange="updateContractData('\${key}', this.value)"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    \`;
+                    editor.appendChild(field);
+                });
+            }
+
+            // Update contract data value
+            function updateContractData(key, value) {
+                currentContractData[key] = value;
+            }
+
+            // Preview contract
+            async function previewContract() {
+                if (!currentContract) {
+                    alert('Seleziona un contratto prima');
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post(\`/api/contracts/preview/\${currentContract.id}\`, {
+                        variables: currentContractData
+                    });
+                    
+                    if (response.data.success) {
+                        const preview = response.data.preview;
+                        currentPreviewData = preview;
+                        
+                        // Update contract info
+                        document.getElementById('contractInfo').classList.remove('hidden');
+                        document.getElementById('contractId').textContent = preview.contractId;
+                        document.getElementById('contractType').textContent = preview.template.contractType;
+                        document.getElementById('contractPages').textContent = preview.estimatedPages;
+                        document.getElementById('contractSize').textContent = preview.estimatedSize;
+                        
+                        // Update preview
+                        const previewContainer = document.getElementById('previewContainer');
+                        previewContainer.innerHTML = \`<iframe srcdoc="\${escapeHtml(preview.renderedContent)}" style="width: 100%; height: 100%; border: none;"></iframe>\`;
+                        
+                    } else {
+                        alert('Errore preview: ' + (response.data.validation ? response.data.validation.join(', ') : 'Errore sconosciuto'));
+                    }
+                } catch (error) {
+                    console.error('Errore preview contratto:', error);
+                    alert('Errore durante il preview contratto');
+                }
+            }
+
+            // Test signature
+            async function testSignature() {
+                if (!currentContract || !currentPreviewData) {
+                    alert('Genera prima un preview del contratto');
+                    return;
+                }
+                
+                const signerData = {
+                    nome: currentContractData.nomeCliente || 'Test',
+                    cognome: currentContractData.cognomeCliente || 'User',
+                    cf: currentContractData.cfCliente || 'TSTURS80A01F205X',
+                    email: currentContractData.emailCliente || 'test@example.com'
+                };
+                
+                try {
+                    const response = await axios.post(\`/api/contracts/simulate-signature/\${currentPreviewData.contractId}\`, signerData);
+                    
+                    const resultsDiv = document.getElementById('signatureResults');
+                    const contentDiv = document.getElementById('signatureResultsContent');
+                    
+                    resultsDiv.classList.remove('hidden');
+                    
+                    if (response.data.success) {
+                        const sig = response.data.signature;
+                        contentDiv.innerHTML = \`
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                    <span class="font-semibold text-green-800">Firma Elettronica Simulata</span>
+                                </div>
+                                <div class="text-sm text-green-700 space-y-1">
+                                    <p><strong>Signature ID:</strong> \${sig.signatureId}</p>
+                                    <p><strong>Signed At:</strong> \${new Date(sig.signedAt).toLocaleString('it-IT')}</p>
+                                    <p><strong>Verification Code:</strong> \${sig.verificationCode}</p>
+                                    <p><strong>Signer:</strong> \${sig.signerInfo.nome} \${sig.signerInfo.cognome}</p>
+                                </div>
+                            </div>
+                        \`;
+                    } else {
+                        contentDiv.innerHTML = \`
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-times-circle text-red-500 mr-2"></i>
+                                    <span class="font-semibold text-red-800">Firma Elettronica Fallita</span>
+                                </div>
+                                <p class="text-sm text-red-700">\${response.data.error}</p>
+                            </div>
+                        \`;
+                    }
+                } catch (error) {
+                    console.error('Errore test firma:', error);
+                    alert('Errore durante il test firma');
+                }
+            }
+
+            // Generate new contract data
+            async function generateNewContractData() {
+                if (!currentContract) return;
+                
+                try {
+                    const response = await axios.get(\`/api/contracts/test-data/\${currentContract.id}\`);
+                    currentContractData = response.data.testData;
+                    updateContractDataEditor();
+                } catch (error) {
+                    console.error('Errore generazione dati contratto:', error);
+                }
+            }
+
+            // Download contract HTML
+            async function downloadContract() {
+                if (!currentContract || !currentPreviewData) {
+                    alert('Genera prima un preview del contratto');
+                    return;
+                }
+                
+                try {
+                    const content = currentPreviewData.renderedContent;
+                    const blob = new Blob([content], { type: 'text/html' });
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = \`contratto_\${currentPreviewData.contractId}.html\`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error('Errore download contratto:', error);
+                    alert('Errore durante il download contratto');
+                }
+            }
+
+            // Utility function
+            function escapeHtml(html) {
+                return html.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            // Toggle view mode
+            function toggleView(mode) {
+                console.log('Toggle view mode:', mode);
+                // Implementation for different view modes
+            }
+        </script>
+    </body>
+    </html>
+  `)
 })
 
 // ========== DASHBOARD MANAGEMENT ==========
@@ -4579,14 +6120,14 @@ app.get('/dashboard', (c) => {
                     <p class="text-sm text-gray-500 mt-1"><span id="availableDevices">--</span> disponibili</p>
                 </div>
 
-                <!-- Follow-up Oggi -->
+                <!-- Automazione Oggi -->
                 <div class="metric-card card-hover transition-all">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-gray-600 text-sm font-medium">Follow-up Oggi</h3>
-                        <i class="fas fa-phone text-purple-500 text-xl"></i>
+                        <h3 class="text-gray-600 text-sm font-medium">Automazione Oggi</h3>
+                        <i class="fas fa-robot text-purple-500 text-xl"></i>
                     </div>
-                    <div class="text-2xl font-bold text-gray-800" id="todayFollowups">--</div>
-                    <p class="text-sm text-gray-500 mt-1">Chiamate schedulate</p>
+                    <div class="text-2xl font-bold text-gray-800" id="todayAutomation">--</div>
+                    <p class="text-sm text-gray-500 mt-1">Email automatiche</p>
                 </div>
 
                 <!-- Conversion Rate -->
@@ -4596,7 +6137,7 @@ app.get('/dashboard', (c) => {
                         <i class="fas fa-chart-line text-orange-500 text-xl"></i>
                     </div>
                     <div class="text-2xl font-bold text-gray-800" id="conversionRate">--%</div>
-                    <p class="text-sm text-gray-500 mt-1">Follow-up → Contratti</p>
+                    <p class="text-sm text-gray-500 mt-1">Email → Contratti</p>
                 </div>
             </div>
 
@@ -4621,39 +6162,39 @@ app.get('/dashboard', (c) => {
                 </div>
             </div>
 
-            <!-- Operatori e Follow-up -->
+            <!-- Automazione e Performance -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                <!-- Performance Operatori -->
+                <!-- Performance Email Automazione -->
                 <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                        <i class="fas fa-user-tie text-purple-500 mr-2"></i>
-                        Performance Operatori
+                        <i class="fas fa-robot text-purple-500 mr-2"></i>
+                        Performance Email Automazione
                     </h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-gray-200">
-                                    <th class="text-left py-3 px-2">Operatore</th>
-                                    <th class="text-center py-3 px-2">Chiamate</th>
-                                    <th class="text-center py-3 px-2">Conversioni</th>
+                                    <th class="text-left py-3 px-2">Tipo Email</th>
+                                    <th class="text-center py-3 px-2">Inviate</th>
+                                    <th class="text-center py-3 px-2">Aperte</th>
                                     <th class="text-center py-3 px-2">Rate</th>
                                     <th class="text-center py-3 px-2">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="operatorTable">
+                            <tbody id="automationTable">
                                 <!-- Populated by JavaScript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Follow-up di Oggi -->
+                <!-- Automazione di Oggi -->
                 <div class="bg-white rounded-xl p-6 shadow-sm">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">
                         <i class="fas fa-calendar-day text-orange-500 mr-2"></i>
-                        Follow-up Oggi
+                        Automazione Oggi
                     </h3>
-                    <div id="todayFollowupList" class="space-y-3">
+                    <div id="todayAutomationList" class="space-y-3">
                         <!-- Populated by JavaScript -->
                     </div>
                 </div>
@@ -4708,9 +6249,8 @@ app.get('/dashboard', (c) => {
                 try {
                     await Promise.all([
                         loadKPIData(),
-                        loadFollowupData(), 
-                        loadDeviceData(),
-                        loadOperatorData()
+                        loadAutomationData(), 
+                        loadDeviceData()
                     ]);
                     
                     document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('it-IT');
@@ -4753,61 +6293,58 @@ app.get('/dashboard', (c) => {
                 }
             }
 
-            // Carica dati follow-up
-            async function loadFollowupData() {
+            // Carica dati automazione
+            async function loadAutomationData() {
                 try {
                     const [todayResponse, statsResponse] = await Promise.all([
-                        axios.get('/api/followup/today'),
-                        axios.get('/api/followup/stats/today')
+                        axios.get('/api/automation/today'),
+                        axios.get('/api/automation/stats/today')
                     ]);
                     
-                    const todayFollowups = todayResponse.data.followUps;
+                    const todayTasks = todayResponse.data.automationTasks;
                     const stats = statsResponse.data.stats;
                     
-                    document.getElementById('todayFollowups').textContent = todayFollowups.length;
+                    document.getElementById('todayAutomation').textContent = todayTasks.length;
+                    document.getElementById('conversionRate').textContent = (stats.conversionRate * 100).toFixed(1) + '%';
                     
-                    // Popola lista follow-up oggi
-                    updateTodayFollowupList(todayFollowups);
+                    // Popola lista automazione oggi
+                    updateTodayAutomationList(todayTasks);
+                    
+                    // Popola tabella performance automazione
+                    updateAutomationTable(stats.automationPerformance);
                 } catch (error) {
-                    console.error('Errore caricamento follow-up:', error);
-                    document.getElementById('todayFollowups').textContent = '--';
+                    console.error('Errore caricamento automazione:', error);
+                    document.getElementById('todayAutomation').textContent = '--';
+                    document.getElementById('conversionRate').textContent = '--%';
                 }
             }
 
-            // Carica dati operatori
-            async function loadOperatorData() {
-                try {
-                    const [operatorsResponse, statsResponse] = await Promise.all([
-                        axios.get('/api/followup/operators'),
-                        axios.get('/api/followup/stats/today')
-                    ]);
-                    
-                    const operators = operatorsResponse.data.operators;
-                    const stats = statsResponse.data.stats;
-                    
-                    updateOperatorTable(operators, stats.operatorPerformance);
-                } catch (error) {
-                    console.error('Errore caricamento operatori:', error);
-                }
-            }
-
-            // Aggiorna tabella operatori
-            function updateOperatorTable(operators, performance) {
-                const tbody = document.getElementById('operatorTable');
+            // Aggiorna tabella performance automazione
+            function updateAutomationTable(performance) {
+                const tbody = document.getElementById('automationTable');
                 tbody.innerHTML = '';
                 
-                performance.forEach(perf => {
-                    const operator = operators.find(op => op.operatorId === perf.operatorId);
-                    if (!operator) return;
+                const emailTypes = [
+                    { key: 'emailWelcome', name: 'Email Benvenuto', icon: 'fas fa-hand-paper' },
+                    { key: 'brochureSent', name: 'Brochure', icon: 'fas fa-file-pdf' },
+                    { key: 'manualSent', name: 'Manuale SiDLY', icon: 'fas fa-book' },
+                    { key: 'reminders', name: 'Promemoria', icon: 'fas fa-bell' }
+                ];
+                
+                emailTypes.forEach(type => {
+                    const perf = performance[type.key];
+                    if (!perf) return;
                     
                     const row = \`
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="py-3 px-2">
-                                <div class="font-medium">\${operator.operatorName}</div>
-                                <div class="text-xs text-gray-500">\${operator.specializations[0] || 'Generale'}</div>
+                                <div class="flex items-center">
+                                    <i class="\${type.icon} text-blue-500 mr-2"></i>
+                                    <div class="font-medium">\${type.name}</div>
+                                </div>
                             </td>
-                            <td class="text-center py-3 px-2">\${perf.calls}</td>
-                            <td class="text-center py-3 px-2">\${perf.conversions}</td>
+                            <td class="text-center py-3 px-2">\${perf.sent}</td>
+                            <td class="text-center py-3 px-2">\${perf.opened || perf.downloaded || perf.converted}</td>
                             <td class="text-center py-3 px-2">
                                 <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                                     \${(perf.rate * 100).toFixed(1)}%
@@ -4822,26 +6359,38 @@ app.get('/dashboard', (c) => {
                 });
             }
 
-            // Aggiorna lista follow-up oggi
-            function updateTodayFollowupList(followUps) {
-                const container = document.getElementById('todayFollowupList');
+            // Aggiorna lista automazione oggi
+            function updateTodayAutomationList(tasks) {
+                const container = document.getElementById('todayAutomationList');
                 container.innerHTML = '';
                 
-                if (followUps.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-sm">Nessun follow-up programmato per oggi</p>';
+                if (tasks.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm">Nessuna automazione programmata per oggi</p>';
                     return;
                 }
                 
-                followUps.slice(0, 5).forEach(followup => {
+                const typeLabels = {
+                    'EMAIL_WELCOME': 'Benvenuto',
+                    'SEND_BROCHURE': 'Brochure',
+                    'SEND_MANUAL': 'Manuale',
+                    'REMINDER_3DAYS': 'Promemoria 3g',
+                    'REMINDER_7DAYS': 'Promemoria 7g'
+                };
+                
+                tasks.slice(0, 5).forEach(task => {
+                    const statusColor = task.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                       task.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                                       'bg-blue-100 text-blue-800';
+                    
                     const item = \`
                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
-                                <p class="font-medium text-sm">\${followup.scheduledTime}</p>
-                                <p class="text-xs text-gray-500">\${followup.callType}</p>
+                                <p class="font-medium text-sm">\${task.scheduledTime}</p>
+                                <p class="text-xs text-gray-500">\${typeLabels[task.automationType] || task.automationType}</p>
                             </div>
                             <div class="text-right">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                                    \${followup.priority}
+                                <span class="px-2 py-1 \${statusColor} rounded-full text-xs">
+                                    \${task.status}
                                 </span>
                             </div>
                         </div>
@@ -5026,5 +6575,918 @@ app.post('/api/devices/:deviceId/assign/:leadId', async (c) => {
     return c.json({ success: false, error: 'Errore assegnazione dispositivo' }, 500)
   }
 })
+
+// ====================================
+// TeleMedCare V11.0 - DATA MANAGEMENT APIs
+// ====================================
+
+// Import Data Management Service
+import { DataManagementService } from './modules/data-management-service'
+
+// Pagina Dashboard per visualizzazione dati
+app.get('/admin/data-dashboard', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TeleMedCare V11.0 - Dashboard Dati</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+          .gradient-bg { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          }
+          .card-shadow { 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+          }
+        </style>
+    </head>
+    <body class="bg-gray-50">
+        <div class="min-h-screen">
+            <!-- Header -->
+            <header class="gradient-bg shadow-lg">
+                <div class="container mx-auto px-6 py-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <i class="fas fa-chart-bar text-3xl text-white"></i>
+                            <div>
+                                <h1 class="text-2xl font-bold text-white">TeleMedCare V11.0</h1>
+                                <p class="text-blue-100">Dashboard Gestione Dati Enterprise</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span id="systemStatus" class="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-semibold">
+                                <i class="fas fa-circle mr-1"></i>Sistema Attivo
+                            </span>
+                            <a href="/" class="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-home mr-2"></i>Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="container mx-auto px-6 py-8">
+                <!-- Statistiche Overview -->
+                <div class="grid lg:grid-cols-4 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-semibold">LEADS TOTALI</p>
+                                <p id="totalLeads" class="text-3xl font-bold text-blue-600">-</p>
+                            </div>
+                            <i class="fas fa-users text-2xl text-blue-500"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-semibold">ASSISTITI ATTIVI</p>
+                                <p id="assistitiAttivi" class="text-3xl font-bold text-green-600">-</p>
+                            </div>
+                            <i class="fas fa-user-check text-2xl text-green-500"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-semibold">CONTRATTI FIRMATI</p>
+                                <p id="contrattiFirmati" class="text-3xl font-bold text-purple-600">-</p>
+                            </div>
+                            <i class="fas fa-file-signature text-2xl text-purple-500"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-semibold">LOGS OGGI</p>
+                                <p id="logsOggi" class="text-3xl font-bold text-orange-600">-</p>
+                            </div>
+                            <i class="fas fa-list-alt text-2xl text-orange-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="bg-white rounded-xl shadow-lg mb-8">
+                    <div class="border-b">
+                        <nav class="-mb-px flex space-x-8 px-6">
+                            <button onclick="showTab('leads')" class="tab-btn py-4 px-2 border-b-2 border-blue-500 text-blue-600 font-semibold" data-tab="leads">
+                                <i class="fas fa-users mr-2"></i>Leads
+                            </button>
+                            <button onclick="showTab('assistiti')" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="assistiti">
+                                <i class="fas fa-user-check mr-2"></i>Assistiti
+                            </button>
+                            <button onclick="showTab('workflow')" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="workflow">
+                                <i class="fas fa-tasks mr-2"></i>Workflow
+                            </button>
+                            <button onclick="showTab('logs')" class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="logs">
+                                <i class="fas fa-list-alt mr-2"></i>System Logs
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- LEADS TAB -->
+                    <div id="leadsTab" class="tab-content p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-800">Gestione Leads</h2>
+                            <div class="flex items-center space-x-4">
+                                <input type="text" id="leadsSearch" placeholder="Cerca leads..." 
+                                       class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="searchLeads()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    <i class="fas fa-search mr-2"></i>Cerca
+                                </button>
+                                <button onclick="loadLeads()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                    <i class="fas fa-sync mr-2"></i>Aggiorna
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefono</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leadsTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
+                                            Caricamento leads...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ASSISTITI TAB -->
+                    <div id="assistitiTab" class="tab-content p-6 hidden">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-800">Gestione Assistiti</h2>
+                            <div class="flex items-center space-x-4">
+                                <input type="text" id="assistitiSearch" placeholder="Cerca assistiti..." 
+                                       class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="searchAssistiti()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                    <i class="fas fa-search mr-2"></i>Cerca
+                                </button>
+                                <button onclick="loadAssistiti()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                                    <i class="fas fa-sync mr-2"></i>Aggiorna
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Codice</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contratto</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversione</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assistitiTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
+                                            Caricamento assistiti...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- WORKFLOW TAB -->
+                    <div id="workflowTab" class="tab-content p-6 hidden">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-800">Tracking Workflow</h2>
+                            <button onclick="loadWorkflows()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                <i class="fas fa-sync mr-2"></i>Aggiorna
+                            </button>
+                        </div>
+                        
+                        <div id="workflowContent">
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
+                                Seleziona un assistito per visualizzare il workflow
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LOGS TAB -->
+                    <div id="logsTab" class="tab-content p-6 hidden">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-800">System Logs</h2>
+                            <div class="flex items-center space-x-4">
+                                <select id="logLevelFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">Tutti i livelli</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                                <select id="logTypeFilter" class="px-4 py-2 border border-gray-300 rounded-lg">
+                                    <option value="">Tutti i tipi</option>
+                                    <option value="CONVERSIONE_LEAD">Conversione Lead</option>
+                                    <option value="EMAIL_SENT">Email Inviata</option>
+                                    <option value="WORKFLOW_UPDATE">Aggiornamento Workflow</option>
+                                    <option value="SYSTEM_ERROR">Errore Sistema</option>
+                                </select>
+                                <button onclick="loadLogs()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                                    <i class="fas fa-sync mr-2"></i>Aggiorna
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modulo</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Messaggio</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Livello</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logsTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
+                                            Caricamento logs...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal per dettagli -->
+        <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-96 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="modalTitle" class="text-xl font-bold text-gray-800">Dettagli</h3>
+                        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="modalContent" class="text-gray-700">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script>
+            let currentTab = 'leads';
+            let currentLeadsPage = 1;
+            let currentAssistitiPage = 1;
+            let currentLogsPage = 1;
+
+            // Tab Management
+            function showTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('border-blue-500', 'text-blue-600');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                });
+                
+                document.getElementById(tabName + 'Tab').classList.remove('hidden');
+                document.querySelector(\`[data-tab="\${tabName}"]\`).classList.add('border-blue-500', 'text-blue-600');
+                document.querySelector(\`[data-tab="\${tabName}"]\`).classList.remove('border-transparent', 'text-gray-500');
+                
+                currentTab = tabName;
+                
+                // Load data for active tab
+                if (tabName === 'leads') loadLeads();
+                else if (tabName === 'assistiti') loadAssistiti();
+                else if (tabName === 'logs') loadLogs();
+            }
+
+            // Load Statistics
+            async function loadStats() {
+                try {
+                    const response = await axios.get('/api/data/stats');
+                    const stats = response.data.stats;
+                    
+                    document.getElementById('totalLeads').textContent = stats.total_leads;
+                    document.getElementById('assistitiAttivi').textContent = stats.assistiti_attivi;
+                    document.getElementById('contrattiFirmati').textContent = stats.contratti_firmati;
+                    document.getElementById('logsOggi').textContent = stats.logs_oggi;
+                } catch (error) {
+                    console.error('Errore caricamento statistiche:', error);
+                }
+            }
+
+            // Leads Management
+            async function loadLeads(page = 1) {
+                try {
+                    const response = await axios.get(\`/api/data/leads?page=\${page}\`);
+                    const { leads, total } = response.data;
+                    
+                    const tbody = document.getElementById('leadsTableBody');
+                    tbody.innerHTML = leads.map(lead => \`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.id}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.emailRichiedente}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefonoRichiedente}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full \${lead.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : lead.status === 'CONVERTED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                                    \${lead.status}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${new Date(lead.created_at).toLocaleDateString('it-IT')}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <button onclick="viewLeadDetails('\${lead.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="convertLeadToAssistito('\${lead.id}')" class="text-green-600 hover:text-green-800" 
+                                        \${lead.status === 'CONVERTED' ? 'disabled' : ''}>
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    \`).join('');
+                    
+                } catch (error) {
+                    console.error('Errore caricamento leads:', error);
+                    document.getElementById('leadsTableBody').innerHTML = \`
+                        <tr><td colspan="7" class="px-4 py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Errore caricamento leads
+                        </td></tr>
+                    \`;
+                }
+            }
+
+            // Assistiti Management
+            async function loadAssistiti(page = 1) {
+                try {
+                    const response = await axios.get(\`/api/data/assistiti?page=\${page}\`);
+                    const { assistiti, total } = response.data;
+                    
+                    const tbody = document.getElementById('assistitiTableBody');
+                    tbody.innerHTML = assistiti.map(assistito => \`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 text-sm text-gray-900 font-mono">\${assistito.codice_assistito}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${assistito.nome} \${assistito.cognome}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${assistito.email}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${assistito.tipo_contratto}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full \${assistito.stato === 'ATTIVO' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                    \${assistito.stato}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${new Date(assistito.data_conversione).toLocaleDateString('it-IT')}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <button onclick="viewAssistitoDetails(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="viewWorkflow(\${assistito.id})" class="text-purple-600 hover:text-purple-800">
+                                    <i class="fas fa-tasks"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    \`).join('');
+                    
+                } catch (error) {
+                    console.error('Errore caricamento assistiti:', error);
+                    document.getElementById('assistitiTableBody').innerHTML = \`
+                        <tr><td colspan="7" class="px-4 py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Errore caricamento assistiti
+                        </td></tr>
+                    \`;
+                }
+            }
+
+            // Logs Management
+            async function loadLogs(page = 1) {
+                try {
+                    const livello = document.getElementById('logLevelFilter').value;
+                    const tipo = document.getElementById('logTypeFilter').value;
+                    
+                    let url = \`/api/data/logs?page=\${page}\`;
+                    if (livello) url += \`&livello=\${livello}\`;
+                    if (tipo) url += \`&tipo=\${tipo}\`;
+                    
+                    const response = await axios.get(url);
+                    const { logs, total } = response.data;
+                    
+                    const tbody = document.getElementById('logsTableBody');
+                    tbody.innerHTML = logs.map(log => \`
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 text-sm text-gray-900">\${new Date(log.timestamp).toLocaleString('it-IT')}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${log.tipo}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${log.modulo}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${log.messaggio}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full \${
+                                    log.livello === 'ERROR' ? 'bg-red-100 text-red-800' :
+                                    log.livello === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-blue-100 text-blue-800'
+                                }">
+                                    \${log.livello}
+                                </span>
+                            </td>
+                        </tr>
+                    \`).join('');
+                    
+                } catch (error) {
+                    console.error('Errore caricamento logs:', error);
+                    document.getElementById('logsTableBody').innerHTML = \`
+                        <tr><td colspan="5" class="px-4 py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Errore caricamento logs
+                        </td></tr>
+                    \`;
+                }
+            }
+
+            // Search Functions
+            async function searchLeads() {
+                const query = document.getElementById('leadsSearch').value;
+                if (!query.trim()) {
+                    loadLeads();
+                    return;
+                }
+                
+                try {
+                    const response = await axios.get(\`/api/data/leads/search?q=\${encodeURIComponent(query)}\`);
+                    const leads = response.data.results;
+                    
+                    const tbody = document.getElementById('leadsTableBody');
+                    if (leads.length === 0) {
+                        tbody.innerHTML = \`
+                            <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                <i class="fas fa-search mr-2"></i>Nessun risultato trovato per: \${query}
+                            </td></tr>
+                        \`;
+                    } else {
+                        tbody.innerHTML = leads.map(lead => \`
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.id}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.emailRichiedente}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefonoRichiedente}</td>
+                                <td class="px-4 py-4 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full \${lead.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : lead.status === 'CONVERTED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
+                                        \${lead.status}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${new Date(lead.created_at).toLocaleDateString('it-IT')}</td>
+                                <td class="px-4 py-4 text-sm">
+                                    <button onclick="viewLeadDetails('\${lead.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="convertLeadToAssistito('\${lead.id}')" class="text-green-600 hover:text-green-800">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        \`).join('');
+                    }
+                } catch (error) {
+                    console.error('Errore ricerca leads:', error);
+                }
+            }
+
+            async function searchAssistiti() {
+                const query = document.getElementById('assistitiSearch').value;
+                if (!query.trim()) {
+                    loadAssistiti();
+                    return;
+                }
+                
+                try {
+                    const response = await axios.get(\`/api/data/assistiti/search?q=\${encodeURIComponent(query)}\`);
+                    const assistiti = response.data.results;
+                    
+                    const tbody = document.getElementById('assistitiTableBody');
+                    if (assistiti.length === 0) {
+                        tbody.innerHTML = \`
+                            <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                <i class="fas fa-search mr-2"></i>Nessun risultato trovato per: \${query}
+                            </td></tr>
+                        \`;
+                    } else {
+                        tbody.innerHTML = assistiti.map(assistito => \`
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-4 text-sm text-gray-900 font-mono">\${assistito.codice_assistito}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${assistito.nome} \${assistito.cognome}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${assistito.email}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${assistito.tipo_contratto}</td>
+                                <td class="px-4 py-4 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full \${assistito.stato === 'ATTIVO' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                        \${assistito.stato}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${new Date(assistito.data_conversione).toLocaleDateString('it-IT')}</td>
+                                <td class="px-4 py-4 text-sm">
+                                    <button onclick="viewAssistitoDetails(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mr-2">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="viewWorkflow(\${assistito.id})" class="text-purple-600 hover:text-purple-800">
+                                        <i class="fas fa-tasks"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        \`).join('');
+                    }
+                } catch (error) {
+                    console.error('Errore ricerca assistiti:', error);
+                }
+            }
+
+            // Detail Functions
+            async function viewLeadDetails(leadId) {
+                try {
+                    const response = await axios.get(\`/api/data/leads/\${leadId}\`);
+                    const lead = response.data.lead;
+                    
+                    document.getElementById('modalTitle').textContent = \`Lead #\${lead.id} - \${lead.nomeRichiedente} \${lead.cognomeRichiedente}\`;
+                    document.getElementById('modalContent').innerHTML = \`
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-800 mb-2">Dati Richiedente</h4>
+                                <p><strong>Nome:</strong> \${lead.nomeRichiedente} \${lead.cognomeRichiedente}</p>
+                                <p><strong>Email:</strong> \${lead.emailRichiedente}</p>
+                                <p><strong>Telefono:</strong> \${lead.telefonoRichiedente}</p>
+                                <p><strong>Codice Fiscale:</strong> \${lead.cfRichiedente || 'Non fornito'}</p>
+                                <p><strong>Indirizzo:</strong> \${lead.indirizzoRichiedente || 'Non fornito'}</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800 mb-2">Dati Assistito</h4>
+                                <p><strong>Nome:</strong> \${lead.nomeAssistito} \${lead.cognomeAssistito}</p>
+                                <p><strong>Data Nascita:</strong> \${lead.dataNascitaAssistito || 'Non fornita'}</p>
+                                <p><strong>Codice Fiscale:</strong> \${lead.cfAssistito || 'Non fornito'}</p>
+                                <p><strong>Indirizzo:</strong> \${lead.indirizzoAssistito || 'Non fornito'}</p>
+                                <p><strong>Pacchetto:</strong> \${lead.pacchetto || 'Non specificato'}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="font-semibold text-gray-800 mb-2">Informazioni Lead</h4>
+                            <p><strong>Stato:</strong> \${lead.status}</p>
+                            <p><strong>Sorgente:</strong> \${lead.sourceUrl || 'Non specificata'}</p>
+                            <p><strong>Data Registrazione:</strong> \${new Date(lead.created_at).toLocaleString('it-IT')}</p>
+                            <p><strong>Privacy:</strong> \${lead.consensoPrivacy === 'on' ? 'Accettato' : 'Non accettato'}</p>
+                            <p><strong>GDPR:</strong> \${lead.gdprConsent === 'on' ? 'Accettato' : 'Non accettato'}</p>
+                            \${lead.note ? \`<p><strong>Note:</strong> \${lead.note}</p>\` : ''}
+                        </div>
+                    \`;
+                    document.getElementById('detailModal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Errore caricamento dettagli lead:', error);
+                }
+            }
+
+            async function viewAssistitoDetails(assistitoId) {
+                try {
+                    const response = await axios.get(\`/api/data/assistiti/\${assistitoId}\`);
+                    const assistito = response.data.assistito;
+                    
+                    document.getElementById('modalTitle').textContent = \`Assistito \${assistito.codice_assistito} - \${assistito.nome} \${assistito.cognome}\`;
+                    document.getElementById('modalContent').innerHTML = \`
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-800 mb-2">Dati Assistito</h4>
+                                <p><strong>Codice:</strong> \${assistito.codice_assistito}</p>
+                                <p><strong>Nome:</strong> \${assistito.nome} \${assistito.cognome}</p>
+                                <p><strong>Email:</strong> \${assistito.email}</p>
+                                <p><strong>Telefono:</strong> \${assistito.telefono}</p>
+                                <p><strong>Data Nascita:</strong> \${assistito.data_nascita}</p>
+                                <p><strong>Codice Fiscale:</strong> \${assistito.codice_fiscale}</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800 mb-2">Contratto</h4>
+                                <p><strong>Tipo:</strong> \${assistito.tipo_contratto}</p>
+                                <p><strong>Numero:</strong> \${assistito.numero_contratto || 'Non assegnato'}</p>
+                                <p><strong>Valore:</strong> \${assistito.valore_contratto ? '€' + assistito.valore_contratto : 'N/A'}</p>
+                                <p><strong>Stato:</strong> \${assistito.stato}</p>
+                                <p><strong>Data Conversione:</strong> \${new Date(assistito.data_conversione).toLocaleString('it-IT')}</p>
+                                \${assistito.data_attivazione ? \`<p><strong>Attivazione:</strong> \${new Date(assistito.data_attivazione).toLocaleString('it-IT')}</p>\` : ''}
+                            </div>
+                        </div>
+                        \${assistito.imei_dispositivo ? \`
+                            <div class="mt-4">
+                                <h4 class="font-semibold text-gray-800 mb-2">Dispositivo</h4>
+                                <p><strong>IMEI:</strong> \${assistito.imei_dispositivo}</p>
+                            </div>
+                        \` : ''}
+                        \${assistito.note_mediche || assistito.contatto_emergenza || assistito.medico_curante ? \`
+                            <div class="mt-4">
+                                <h4 class="font-semibold text-gray-800 mb-2">Informazioni Mediche</h4>
+                                \${assistito.note_mediche ? \`<p><strong>Note Mediche:</strong> \${assistito.note_mediche}</p>\` : ''}
+                                \${assistito.contatto_emergenza ? \`<p><strong>Contatto Emergenza:</strong> \${assistito.contatto_emergenza}</p>\` : ''}
+                                \${assistito.medico_curante ? \`<p><strong>Medico Curante:</strong> \${assistito.medico_curante}</p>\` : ''}
+                            </div>
+                        \` : ''}
+                    \`;
+                    document.getElementById('detailModal').classList.remove('hidden');
+                } catch (error) {
+                    console.error('Errore caricamento dettagli assistito:', error);
+                }
+            }
+
+            async function viewWorkflow(assistitoId) {
+                try {
+                    const response = await axios.get(\`/api/data/workflow/\${assistitoId}\`);
+                    const workflow = response.data.workflow;
+                    
+                    showTab('workflow');
+                    
+                    document.getElementById('workflowContent').innerHTML = \`
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Workflow Assistito ID: \${assistitoId}</h3>
+                            \${workflow.map((phase, index) => \`
+                                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center \${
+                                            phase.stato === 'COMPLETATO' ? 'bg-green-500 text-white' :
+                                            phase.stato === 'IN_PROGRESS' ? 'bg-blue-500 text-white' :
+                                            'bg-gray-300 text-gray-600'
+                                        }">
+                                            \${index + 1}
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow">
+                                        <h4 class="font-semibold text-gray-800">\${phase.fase.replace(/_/g, ' ')}</h4>
+                                        <p class="text-sm text-gray-600">Stato: \${phase.stato}</p>
+                                        <p class="text-sm text-gray-500">Inizio: \${new Date(phase.data_inizio).toLocaleString('it-IT')}</p>
+                                        \${phase.data_completamento ? \`<p class="text-sm text-gray-500">Completamento: \${new Date(phase.data_completamento).toLocaleString('it-IT')}</p>\` : ''}
+                                        \${phase.note ? \`<p class="text-sm text-gray-600">Note: \${phase.note}</p>\` : ''}
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full \${
+                                            phase.stato === 'COMPLETATO' ? 'bg-green-100 text-green-800' :
+                                            phase.stato === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }">
+                                            \${phase.stato}
+                                        </span>
+                                    </div>
+                                </div>
+                            \`).join('')}
+                        </div>
+                    \`;
+                } catch (error) {
+                    console.error('Errore caricamento workflow:', error);
+                    document.getElementById('workflowContent').innerHTML = \`
+                        <div class="text-center py-8 text-red-500">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Errore caricamento workflow
+                        </div>
+                    \`;
+                }
+            }
+
+            async function convertLeadToAssistito(leadId) {
+                if (!confirm('Sei sicuro di voler convertire questo lead in assistito?')) {
+                    return;
+                }
+                
+                try {
+                    const response = await axios.post(\`/api/data/leads/\${leadId}/convert\`, {
+                        tipo_contratto: 'BASE'
+                    });
+                    
+                    if (response.data.success) {
+                        alert('Lead convertito con successo in assistito!');
+                        loadLeads();
+                        loadStats();
+                    } else {
+                        alert('Errore nella conversione: ' + response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Errore conversione lead:', error);
+                    alert('Errore durante la conversione del lead');
+                }
+            }
+
+            function closeModal() {
+                document.getElementById('detailModal').classList.add('hidden');
+            }
+
+            // Initialize Dashboard
+            document.addEventListener('DOMContentLoaded', function() {
+                loadStats();
+                loadLeads();
+                
+                // Set up event listeners
+                document.getElementById('logLevelFilter').addEventListener('change', loadLogs);
+                document.getElementById('logTypeFilter').addEventListener('change', loadLogs);
+                
+                // Auto-refresh stats every 30 seconds
+                setInterval(loadStats, 30000);
+            });
+        </script>
+    </body>
+    </html>
+  `)
+})
+
+// API Endpoints per Data Management
+
+// Statistics API
+app.get('/api/data/stats', async (c) => {
+  try {
+    const dataService = new DataManagementService(c.env.DB);
+    const stats = await dataService.getDataStats();
+    
+    return c.json({ success: true, stats });
+  } catch (error) {
+    console.error('Error fetching data stats:', error);
+    return c.json({ success: false, error: 'Errore nel recupero delle statistiche' }, 500);
+  }
+});
+
+// Leads APIs
+app.get('/api/data/leads', async (c) => {
+  try {
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '50');
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const result = await dataService.getAllLeads(page, limit);
+    
+    return c.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return c.json({ success: false, error: 'Errore nel recupero dei leads' }, 500);
+  }
+});
+
+app.get('/api/data/leads/search', async (c) => {
+  try {
+    const query = c.req.query('q') || '';
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const results = await dataService.searchLeads(query);
+    
+    return c.json({ success: true, results });
+  } catch (error) {
+    console.error('Error searching leads:', error);
+    return c.json({ success: false, error: 'Errore nella ricerca dei leads' }, 500);
+  }
+});
+
+app.get('/api/data/leads/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const lead = await dataService.getLeadById(id);
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404);
+    }
+    
+    return c.json({ success: true, lead });
+  } catch (error) {
+    console.error('Error fetching lead:', error);
+    return c.json({ success: false, error: 'Errore nel recupero del lead' }, 500);
+  }
+});
+
+app.post('/api/data/leads/:id/convert', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const { tipo_contratto, numero_contratto, valore_contratto } = await c.req.json();
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const result = await dataService.convertLeadToAssistito(id, tipo_contratto, numero_contratto, valore_contratto);
+    
+    return c.json(result);
+  } catch (error) {
+    console.error('Error converting lead:', error);
+    return c.json({ success: false, error: 'Errore nella conversione del lead' }, 500);
+  }
+});
+
+// Assistiti APIs
+app.get('/api/data/assistiti', async (c) => {
+  try {
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '50');
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const result = await dataService.getAllAssistiti(page, limit);
+    
+    return c.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error fetching assistiti:', error);
+    return c.json({ success: false, error: 'Errore nel recupero degli assistiti' }, 500);
+  }
+});
+
+app.get('/api/data/assistiti/search', async (c) => {
+  try {
+    const query = c.req.query('q') || '';
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const results = await dataService.searchAssistiti(query);
+    
+    return c.json({ success: true, results });
+  } catch (error) {
+    console.error('Error searching assistiti:', error);
+    return c.json({ success: false, error: 'Errore nella ricerca degli assistiti' }, 500);
+  }
+});
+
+app.get('/api/data/assistiti/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'));
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const assistito = await dataService.getAssistitoById(id);
+    
+    if (!assistito) {
+      return c.json({ success: false, error: 'Assistito non trovato' }, 404);
+    }
+    
+    return c.json({ success: true, assistito });
+  } catch (error) {
+    console.error('Error fetching assistito:', error);
+    return c.json({ success: false, error: 'Errore nel recupero dell\'assistito' }, 500);
+  }
+});
+
+// Workflow APIs
+app.get('/api/data/workflow/:assistitoId', async (c) => {
+  try {
+    const assistitoId = parseInt(c.req.param('assistitoId'));
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const workflow = await dataService.getWorkflowByAssistitoId(assistitoId);
+    
+    return c.json({ success: true, workflow });
+  } catch (error) {
+    console.error('Error fetching workflow:', error);
+    return c.json({ success: false, error: 'Errore nel recupero del workflow' }, 500);
+  }
+});
+
+app.post('/api/data/workflow/:assistitoId/update', async (c) => {
+  try {
+    const assistitoId = parseInt(c.req.param('assistitoId'));
+    const { fase, stato, note } = await c.req.json();
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const success = await dataService.updateWorkflowPhase(assistitoId, fase, stato, note);
+    
+    return c.json({ success });
+  } catch (error) {
+    console.error('Error updating workflow:', error);
+    return c.json({ success: false, error: 'Errore nell\'aggiornamento del workflow' }, 500);
+  }
+});
+
+// Logs APIs
+app.get('/api/data/logs', async (c) => {
+  try {
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '100');
+    const tipo = c.req.query('tipo');
+    const livello = c.req.query('livello');
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const result = await dataService.getSystemLogs(page, limit, tipo, livello);
+    
+    return c.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    return c.json({ success: false, error: 'Errore nel recupero dei logs' }, 500);
+  }
+});
+
+app.post('/api/data/logs', async (c) => {
+  try {
+    const { tipo, modulo, messaggio, dettagli, livello, assistitoId, leadId } = await c.req.json();
+    
+    const dataService = new DataManagementService(c.env.DB);
+    const success = await dataService.addSystemLog(tipo, modulo, messaggio, dettagli, livello, assistitoId, leadId);
+    
+    return c.json({ success });
+  } catch (error) {
+    console.error('Error adding log:', error);
+    return c.json({ success: false, error: 'Errore nell\'aggiunta del log' }, 500);
+  }
+});
 
 export default app

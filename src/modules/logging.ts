@@ -20,7 +20,7 @@
  * • Retention: 7 anni audit, 1 anno operativo
  * • Throughput: 10,000 eventi/sec
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */
@@ -268,7 +268,7 @@ export class TeleMedCareLogger {
         ...event,
         id: this.generateEventId(),
         timestamp: new Date(),
-        version: '10.3.8',
+        version: '11.0',
         environment: this.detectEnvironment()
       };
       

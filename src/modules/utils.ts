@@ -20,7 +20,7 @@
  * • QR generation: <100ms
  * • Encryption/decrypt: <50ms
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */
@@ -1056,7 +1056,7 @@ export class CodeGenerator {
   } {
     const qrData = {
       type: 'telemedcare_device',
-      version: '10.3.8',
+      version: '11.0',
       deviceId,
       timestamp: Date.now(),
       ...metadata

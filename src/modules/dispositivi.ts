@@ -20,7 +20,7 @@
  * • Stock alerts: <5min latency
  * • Barcode scan: <2s processing
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */
@@ -35,7 +35,7 @@ export interface DispositivoSiDLY {
   // ===== DATI PRODOTTO =====
   modello: string;               // "SiDLY Care Pro V11.0"
   codiceArticolo: string;        // Codice catalogo (SKU)
-  versione: string;              // Versione hardware (es. "10.3.8")
+  versione: string;              // Versione hardware (es. "11.0")
   revisioneHW: string;           // Revisione PCB (es. "Rev. C")
   
   // ===== CERTIFICAZIONI E COMPLIANCE =====
@@ -80,7 +80,7 @@ export interface DispositivoSiDLY {
   
   // ===== CONFIGURAZIONE TECNICA =====
   firmware: {
-    versione: string;            // "10.3.8.2024.10.03"
+    versione: string;            // "11.0.2024.10.03"
     dataAggiornamento: Date;
     updateDisponibile?: {
       versione: string;
@@ -523,8 +523,8 @@ export class TeleMedCareDispositivi {
       d.garanzia.dataScadenza && d.garanzia.dataScadenza <= tra30giorni && d.stato === 'attivo'
     );
     
-    // Firmware obsoleti (versione < 10.3.8)
-    const versioneCorrente = '10.3.8';
+    // Firmware obsoleti (versione < 11.0)
+    const versioneCorrente = '11.0';
     const firmwareObsoleti = dispositivi.filter(d => 
       this.confrontaVersioni(d.firmware.versione, versioneCorrente) < 0
     );
@@ -598,7 +598,7 @@ export class TeleMedCareDispositivi {
     }
     
     if (filtri.firmwareObsoleto) {
-      const versioneCorrente = '10.3.8';
+      const versioneCorrente = '11.0';
       risultati = risultati.filter(d => 
         this.confrontaVersioni(d.firmware.versione, versioneCorrente) < 0
       );
@@ -949,7 +949,7 @@ export class TeleMedCareDispositivi {
   }
   
   private async verificaFirmwareObsoleti(): Promise<AlertInventario | null> {
-    const versioneCorrente = '10.3.8';
+    const versioneCorrente = '11.0';
     const obsoleti = Array.from(this.inventario.values()).filter(d => 
       d.stato === 'attivo' && this.confrontaVersioni(d.firmware.versione, versioneCorrente) < 0
     );
@@ -1180,7 +1180,7 @@ export class TeleMedCareDispositivi {
         serialNumber: `SIDLY${Date.now().toString().slice(-8)}${i}`,
         modello: 'SiDLY Care Pro V11.0',
         codiceArticolo: 'SIDLY-CARE-PRO-2024',
-        versione: '10.3.8',
+        versione: '11.0',
         revisioneHW: 'Rev. C',
         
         certificazioni: {
@@ -1210,7 +1210,7 @@ export class TeleMedCareDispositivi {
         },
         
         firmware: {
-          versione: i <= 7 ? '10.3.8.2024.10.03' : '10.3.7.2024.09.15', // Alcuni obsoleti
+          versione: i <= 7 ? '11.0.2024.10.03' : '10.3.7.2024.09.15', // Alcuni obsoleti
           dataAggiornamento: new Date(Date.now() - Math.random() * 15 * 24 * 60 * 60 * 1000)
         },
         
@@ -1310,7 +1310,7 @@ export async function registraDispositivoRapido(
     serialNumber,
     modello: 'SiDLY Care Pro V11.0',
     codiceArticolo: 'SIDLY-CARE-PRO-2024',
-    versione: '10.3.8',
+    versione: '11.0',
     revisioneHW: 'Rev. C',
     
     certificazioni: {
@@ -1338,7 +1338,7 @@ export async function registraDispositivoRapido(
     },
     
     firmware: {
-      versione: '10.3.8.2024.10.03',
+      versione: '11.0.2024.10.03',
       dataAggiornamento: new Date()
     },
     

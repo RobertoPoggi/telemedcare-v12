@@ -14,6 +14,8 @@
     "db:migrate:prod": "wrangler d1 migrations apply telemedcare-leads",
     "db:console:local": "wrangler d1 execute telemedcare-leads --local",
     "db:console:prod": "wrangler d1 execute telemedcare-leads",
+    "db:seed": "wrangler d1 execute telemedcare-leads --local --file=./seed.sql",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
     "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
     "test": "curl http://localhost:3000"
   },

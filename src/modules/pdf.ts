@@ -21,7 +21,7 @@
  * • Compressione: <500KB per PDF
  * • Uptime: 99.9%
  * 
- * @version 10.3.8-ENTERPRISE
+ * @version 11.0-ENTERPRISE
  * @author TeleMedCare Development Team
  * @date 2024-10-03
  */
