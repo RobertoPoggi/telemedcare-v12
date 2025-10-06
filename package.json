@@ -8,16 +8,41 @@
     "dev:vite": "vite",
     "build": "vite build",
     "preview": "wrangler pages dev dist",
+    
     "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy:prod": "./scripts/deploy-production.sh",
+    "deploy:test": "wrangler pages deploy dist --project-name telemedcare-test --env test",
+    "deploy:staging": "wrangler pages deploy dist --project-name telemedcare-staging --env staging",
+    
+    "env:create:production": "./scripts/deploy-production.sh",
+    "env:create:test": "./scripts/create-test-environment.sh",
+    "env:clone": "./scripts/clone-environment.sh",
+    "env:clone:prod": "./scripts/clone-environment.sh production false",
+    "env:clone:dev": "./scripts/clone-environment.sh development true",
+    
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "db:migrate:local": "wrangler d1 migrations apply telemedcare-leads --local",
-    "db:migrate:prod": "wrangler d1 migrations apply telemedcare-leads",
-    "db:console:local": "wrangler d1 execute telemedcare-leads --local",
-    "db:console:prod": "wrangler d1 execute telemedcare-leads",
-    "db:seed": "wrangler d1 execute telemedcare-leads --local --file=./seed.sql",
-    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
     "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
-    "test": "curl http://localhost:3000"
+    "test": "curl http://localhost:3000",
+    "test:health": "curl http://localhost:3000/api/system/health",
+    "test:functional": "curl -X POST http://localhost:3000/api/test/functional/run",
+    "test:stress": "curl -X POST http://localhost:3000/api/test/stress/start -d '{\"assistiti_count\":10}' -H 'Content-Type: application/json'",
+    
+    "db:migrate:local": "wrangler d1 migrations apply telemedcare-leads --local",
+    "db:migrate:test": "wrangler d1 migrations apply telemedcare_test_01",
+    "db:migrate:staging": "wrangler d1 migrations apply telemedcare_staging",
+    "db:migrate:prod": "wrangler d1 migrations apply telemedcare_database",
+    
+    "db:seed": "wrangler d1 execute telemedcare-leads --local --file=./seed.sql",
+    "db:seed:test": "wrangler d1 execute telemedcare_test_01 --file=./seed-test.sql",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
+    
+    "db:console:local": "wrangler d1 execute telemedcare-leads --local",
+    "db:console:test": "wrangler d1 execute telemedcare_test_01",
+    "db:console:staging": "wrangler d1 execute telemedcare_staging", 
+    "db:console:prod": "wrangler d1 execute telemedcare_database",
+    
+    "docs:init": "curl -X POST http://localhost:3000/api/docs/initialize",
+    "docs:generate": "curl -X POST http://localhost:3000/api/docs/generate"
   },
   "dependencies": {
     "hono": "^4.9.9"

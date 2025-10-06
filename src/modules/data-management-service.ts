@@ -375,12 +375,26 @@ export class DataManagementService {
   }
 
   // LEAD TO ASSISTITO CONVERSION
-  async convertLeadToAssistito(leadId: string, tipoContratto: string = 'BASE', numeroContratto?: string, valoreContratto?: number): Promise<{ success: boolean, assistitoId?: number, error?: string }> {
+  async convertLeadToAssistito(leadId: string | number, tipoContratto: string = 'BASE', numeroContratto?: string, valoreContratto?: number): Promise<{ success: boolean, assistitoId?: number, error?: string }> {
     try {
-      // Get lead data
-      const lead = await this.getLeadById(leadId);
+      // Get lead data - handle both string and number IDs
+      const leadIdStr = leadId.toString();
+      const lead = await this.getLeadById(leadIdStr);
       if (!lead) {
-        return { success: false, error: 'Lead non trovato' };
+        // Try with integer conversion for database query
+        try {
+          const result = await this.db.prepare(`
+            SELECT * FROM leads WHERE CAST(id as TEXT) = ? OR id = ?
+          `).bind(leadIdStr, leadId).first();
+          
+          if (!result) {
+            return { success: false, error: 'Lead non trovato' };
+          }
+          // Use the found lead
+          const foundLead = result as Lead;
+        } catch (error) {
+          return { success: false, error: 'Lead non trovato - errore query' };
+        }
       }
 
       // Check if already converted

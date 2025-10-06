@@ -1,16 +1,66 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "webapp",
-  "compatibility_date": "2025-10-03",
+  "compatibility_date": "2025-10-06",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  
+  // Environment: Development (local)
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "telemedcare-leads",
       "database_id": "local-database-for-development"
     }
-  ]
+  ],
+
+  // Environment configurations per deployment
+  "env": {
+    "test": {
+      "name": "telemedcare-test",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "telemedcare_test_01",
+          "database_id": "test-database-01-placeholder"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "test",
+        "DEBUG_MODE": "true"
+      }
+    },
+    
+    "staging": {
+      "name": "telemedcare-staging", 
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "telemedcare_staging",
+          "database_id": "staging-database-placeholder"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "DEBUG_MODE": "false"
+      }
+    },
+    
+    "production": {
+      "name": "telemedcare-production",
+      "d1_databases": [
+        {
+          "binding": "DB", 
+          "database_name": "telemedcare_database",
+          "database_id": "production-database-placeholder"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "DEBUG_MODE": "false"
+      }
+    }
+  }
 }

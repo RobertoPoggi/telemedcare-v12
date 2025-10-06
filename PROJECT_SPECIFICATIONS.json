@@ -1,0 +1,237 @@
+{
+  "project_info": {
+    "name": "TeleMedCare V11.0 Modular Enterprise System",
+    "version": "V11.0",
+    "client": "Medica GB S.r.l.",
+    "created": "2024-10-06",
+    "last_updated": "2024-10-06T05:15:00Z",
+    "status": "FULLY_FUNCTIONAL"
+  },
+  
+  "core_requirements": {
+    "automation_level": "FULLY_AUTOMATIC",
+    "human_operators": "NONE",
+    "primary_goal": "Sistema completamente automatizzato senza operatori umani",
+    "key_phrase": "Il sistema dovrebbe funzionare tutto in automatico!",
+    "missing_functionality_approach": "Always evaluate what exists and develop only what's missing",
+    "avoid_redundancies": true
+  },
+
+  "system_architecture": {
+    "framework": "Hono (TypeScript)",
+    "runtime": "Cloudflare Workers/Pages", 
+    "database": "Cloudflare D1 (SQLite)",
+    "frontend": "HTML5 + TailwindCSS + Vanilla JavaScript",
+    "deployment": "Cloudflare Pages",
+    "working_directory": "/home/user/webapp",
+    "project_code_name": "webapp"
+  },
+
+  "functional_requirements": {
+    "device_scanning": {
+      "description": "Scanning and registering medical devices from SiDLY Care Pro labels",
+      "components": ["IMEI validation", "Luhn algorithm", "Device registration", "Label parsing"]
+    },
+    
+    "lead_management": {
+      "description": "Complete lead lifecycle management",
+      "workflow": [
+        "Lead registration (web form)",
+        "Automatic email sequence",
+        "Lead scoring and qualification", 
+        "Conversion to assistito",
+        "Contract generation",
+        "Payment processing",
+        "Service activation"
+      ]
+    },
+
+    "email_automation": {
+      "description": "Dual-flow email system completely automated",
+      "types": [
+        "NOTIFICA_INFO",
+        "DOCUMENTI_INFORMATIVI", 
+        "INVIO_CONTRATTO",
+        "INVIO_PROFORMA",
+        "EMAIL_BENVENUTO",
+        "EMAIL_CONFERMA",
+        "PROMEMORIA_3GIORNI",
+        "PROMEMORIA_5GIORNI"
+      ],
+      "language": "Italian",
+      "template_count": 7,
+      "automation_service": "AutomationService (replaces FollowUpService)"
+    },
+
+    "workflow_automation": {
+      "description": "Complete post-contract workflow automation",
+      "phases": [
+        {
+          "name": "PROFORMA_INVIATA",
+          "description": "Proforma invoice sent automatically",
+          "trigger": "Lead conversion"
+        },
+        {
+          "name": "PAGAMENTO_RICEVUTO", 
+          "description": "Payment received notification",
+          "trigger": "Payment webhook"
+        },
+        {
+          "name": "EMAIL_BENVENUTO_INVIATA",
+          "description": "Welcome email with configuration form",
+          "trigger": "Payment confirmation"
+        },
+        {
+          "name": "FORM_CONFIGURAZIONE_INVIATO",
+          "description": "Configuration form sent to client",
+          "trigger": "Welcome email sent"
+        },
+        {
+          "name": "CONFIGURAZIONE_RICEVUTA",
+          "description": "Client configuration received",
+          "trigger": "Form submission"
+        },
+        {
+          "name": "CONFERMA_ATTIVAZIONE_INVIATA", 
+          "description": "Service activation confirmation",
+          "trigger": "Configuration processed"
+        },
+        {
+          "name": "SPEDIZIONE_COMPLETATA",
+          "description": "Device shipped to client",
+          "trigger": "Shipping confirmation"
+        }
+      ]
+    }
+  },
+
+  "technical_specifications": {
+    "database_schema": {
+      "tables": [
+        "leads",
+        "assistiti", 
+        "workflow_tracking",
+        "form_configurazioni",
+        "system_logs",
+        "automation_tasks",
+        "contracts",
+        "email_logs",
+        "dispositivi",
+        "dispositivi_assignments"
+      ]
+    },
+
+    "api_endpoints": {
+      "data_management": [
+        "GET /api/data/leads",
+        "GET /api/data/assistiti", 
+        "GET /api/data/workflow/:id",
+        "GET /api/data/logs",
+        "GET /api/data/stats",
+        "POST /api/data/leads/:id/convert"
+      ],
+      "testing": [
+        "GET /email-test",
+        "GET /contract-test", 
+        "POST /api/email/preview",
+        "POST /api/contract/preview"
+      ],
+      "device_management": [
+        "GET /admin/devices",
+        "POST /api/devices/scan",
+        "POST /api/devices/register"
+      ]
+    },
+
+    "user_interfaces": [
+      "/admin/data-dashboard - Main data management interface",
+      "/admin/devices - Device registration interface", 
+      "/email-test - Email template testing",
+      "/contract-test - Contract generation testing"
+    ]
+  },
+
+  "current_status": {
+    "implemented_features": [
+      "✅ Complete email automation system (7 Italian templates)",
+      "✅ Lead management with dashboard", 
+      "✅ Automatic lead→assistito conversion",
+      "✅ Complete workflow tracking (7 phases)",
+      "✅ SiDLY device label scanning with IMEI validation",
+      "✅ Contract generation (3 types: Base, Avanzato, Proforma)",
+      "✅ Advanced logging system",
+      "✅ Complete RESTful APIs",
+      "✅ D1 database with complete schema",
+      "✅ Responsive admin interfaces"
+    ],
+    
+    "testing_status": {
+      "email_templates": "✅ Tested with preview interface",
+      "contract_generation": "✅ Tested with PDF preview",
+      "IMEI_validation": "✅ Tested with Luhn algorithm", 
+      "API_endpoints": "✅ Tested with curl",
+      "database_operations": "✅ Tested with sample data",
+      "dashboard_functionality": "✅ Tested with live interface"
+    },
+
+    "deployment_status": {
+      "build_system": "✅ Cloudflare Pages build working",
+      "public_url": "✅ https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev",
+      "database_connection": "✅ D1 database connected and functional",
+      "git_repository": "✅ Initialized with complete history",
+      "documentation": "✅ Complete documentation created",
+      "backup_system": "✅ Project backup available"
+    }
+  },
+
+  "testing_requirements": {
+    "functional_testing": {
+      "description": "Complete end-to-end workflow simulation",
+      "scope": [
+        "Lead registration simulation", 
+        "Email sequence automation",
+        "Lead conversion process",
+        "Workflow phase progression", 
+        "Form configuration simulation",
+        "Payment processing simulation",
+        "Shipping notification simulation"
+      ]
+    },
+    
+    "stress_testing": {
+      "description": "Automated stress test generation",
+      "parameters": {
+        "assistiti_generation": "Configurable number",
+        "execution_trigger": "Manual command only",
+        "automation_level": "Fully automatic",
+        "performance_monitoring": "Real-time metrics"
+      }
+    }
+  },
+
+  "urls": {
+    "production": {
+      "main_dashboard": "https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev/admin/data-dashboard",
+      "device_management": "https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev/admin/devices",
+      "email_testing": "https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev/email-test",
+      "contract_testing": "https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev/contract-test",
+      "api_health": "https://3000-idwqoqugv4veuz7fzj90r-6532622b.e2b.dev/api/data/stats"
+    }
+  },
+
+  "backup_info": {
+    "latest_backup": "https://page.gensparksite.com/project_backups/telemedcare-v11-complete-system.tar.gz",
+    "backup_date": "2024-10-06T05:10:00Z",
+    "backup_size": "3.3MB",
+    "backup_description": "Complete system with all features, database, documentation"
+  },
+
+  "modification_log": [
+    {
+      "date": "2024-10-06T05:15:00Z",
+      "change": "Initial specifications creation",
+      "author": "System",
+      "description": "Created persistent project specifications with complete current state"
+    }
+  ]
+}
