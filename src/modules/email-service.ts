@@ -404,6 +404,20 @@ export class EmailService {
     
     return results
   }
+
+  /**
+   * Ottiene tutti i template disponibili
+   */
+  getAllTemplates(): Record<string, EmailTemplate> {
+    return EMAIL_TEMPLATES
+  }
+
+  /**
+   * Ottiene un template specifico per ID
+   */
+  getTemplate(templateId: string): EmailTemplate | null {
+    return EMAIL_TEMPLATES[templateId.toUpperCase()] || null
+  }
 }
 
 // =====================================================================

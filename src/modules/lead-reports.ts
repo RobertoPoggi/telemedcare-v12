@@ -1567,3 +1567,103 @@ export async function exportReportRapido(
   return risultato.file;
 }
 
+/**
+ * CORREZIONI: Funzioni mancanti richieste dall'index
+ */
+
+export async function calcolaKPICompleti(
+  dataInizio?: Date,
+  dataFine?: Date,
+  filtri?: any
+): Promise<{
+  success: boolean
+  kpi?: KPIMetrics
+  error?: string
+}> {
+  try {
+    console.log('📊 Calcolo KPI completi')
+
+    const inizio = dataInizio || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 giorni fa
+    const fine = dataFine || new Date()
+
+    const kpi = await reportsEngine.calcolaKPICompleti(inizio, fine)
+
+    return {
+      success: true,
+      kpi
+    }
+
+  } catch (error) {
+    console.error('❌ Errore calcolo KPI:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore calcolo KPI'
+    }
+  }
+}
+
+export async function generaDatiWidget(
+  widgetId: string,
+  parametri?: any
+): Promise<{
+  success: boolean
+  widget?: DashboardWidget
+  error?: string
+}> {
+  try {
+    console.log(`📈 Generazione dati widget: ${widgetId}`)
+
+    const widget = await reportsEngine.generaDatiWidget(widgetId, parametri)
+
+    return {
+      success: true,
+      widget
+    }
+
+  } catch (error) {
+    console.error('❌ Errore generazione widget:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore generazione widget'
+    }
+  }
+}
+
+export async function generaExportReport(
+  templateId: string,
+  dataInizio: Date,
+  dataFine: Date,
+  configurazione?: any
+): Promise<{
+  success: boolean
+  file?: string
+  formato?: string
+  dimensione?: number
+  error?: string
+}> {
+  try {
+    console.log(`📄 Generazione export report: ${templateId}`)
+
+    const risultato = await reportsEngine.generaExportReport(
+      templateId,
+      dataInizio,
+      dataFine,
+      configurazione
+    )
+
+    return {
+      success: true,
+      file: risultato.file,
+      formato: risultato.formato,
+      dimensione: risultato.dimensione
+    }
+
+  } catch (error) {
+    console.error('❌ Errore export report:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore export report'
+    }
+  }
+}
+

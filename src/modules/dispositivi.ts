@@ -1385,3 +1385,113 @@ export async function cercaPerIMEI(imei: string, db?: any): Promise<any> {
   return await getDispositiviEngine().cercaDispositivoPerIMEI(imei);
 }
 
+/**
+ * CORREZIONI: Funzioni mancanti richieste dall'index
+ */
+
+export async function registraDispositivo(
+  dispositivoData: any
+): Promise<{
+  success: boolean
+  dispositivoId?: string
+  errore?: string
+}> {
+  try {
+    console.log('📱 Registrazione dispositivo tramite wrapper')
+    
+    const engine = getDispositiviEngine()
+    const risultato = await engine.registraDispositivo(dispositivoData)
+    
+    return risultato
+    
+  } catch (error) {
+    console.error('❌ Errore wrapper registrazione dispositivo:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore registrazione dispositivo'
+    }
+  }
+}
+
+export async function assegnaDispositivoACliente(
+  leadId: string,
+  partnerId: string,
+  opzioni?: any
+): Promise<{
+  success: boolean
+  dispositivo?: any
+  errore?: string
+}> {
+  try {
+    console.log(`📱 Assegnazione dispositivo a cliente: ${leadId}`)
+    
+    const engine = getDispositiviEngine()
+    const risultato = await engine.assegnaDispositivoACliente(leadId, partnerId, opzioni)
+    
+    return risultato
+    
+  } catch (error) {
+    console.error('❌ Errore assegnazione dispositivo:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore assegnazione dispositivo'
+    }
+  }
+}
+
+export async function creaRichiestaRMA(
+  dispositivoId: string,
+  motivoRMA: string,
+  descrizione?: string
+): Promise<{
+  success: boolean
+  richiestaId?: string
+  errore?: string
+}> {
+  try {
+    console.log(`🔧 Creazione richiesta RMA per dispositivo: ${dispositivoId}`)
+    
+    const engine = getDispositiviEngine()
+    const risultato = await engine.creaRichiestaRMA(dispositivoId, motivoRMA, descrizione)
+    
+    return risultato
+    
+  } catch (error) {
+    console.error('❌ Errore creazione RMA:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore creazione richiesta RMA'
+    }
+  }
+}
+
+export async function ottieniInventarioCompleto(
+  filtri?: any
+): Promise<{
+  success: boolean
+  dispositivi?: any[]
+  totale?: number
+  errore?: string
+}> {
+  try {
+    console.log('📋 Ottenimento inventario completo')
+    
+    const engine = getDispositiviEngine()
+    const dispositivi = await engine.cercaDispositivi(filtri || {})
+    const statistiche = await engine.getStatisticheInventario()
+    
+    return {
+      success: true,
+      dispositivi,
+      totale: statistiche.totaleDispositivi
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore ottenimento inventario:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore ottenimento inventario completo'
+    }
+  }
+}
+

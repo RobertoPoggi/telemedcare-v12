@@ -1772,3 +1772,90 @@ export async function generaContrattoRapido(
   return risultato.urlFile!;
 }
 
+/**
+ * CORREZIONI: Funzioni mancanti richieste dall'index
+ */
+
+export async function generaPDFPersonalizzato(
+  documentoData: any,
+  templateId: string,
+  opzioni?: any
+): Promise<{
+  success: boolean
+  urlFile?: string
+  dimensione?: number
+  errore?: string
+}> {
+  try {
+    console.log(`📄 Generazione PDF personalizzato: ${templateId}`)
+    
+    const risultato = await pdfEngine.generaPDFPersonalizzato(documentoData, templateId, opzioni)
+    
+    return risultato
+    
+  } catch (error) {
+    console.error('❌ Errore generazione PDF:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore generazione PDF personalizzato'
+    }
+  }
+}
+
+export async function avviaBatchGeneration(
+  documenti: any[],
+  templateId: string,
+  opzioni?: any
+): Promise<{
+  success: boolean
+  risultati?: Array<{
+    id: string
+    success: boolean
+    urlFile?: string
+    errore?: string
+  }>
+  errore?: string
+}> {
+  try {
+    console.log(`📄 Avvio batch generation per ${documenti.length} documenti`)
+    
+    const risultati = []
+    
+    for (const documento of documenti) {
+      try {
+        const risultato = await pdfEngine.generaPDFPersonalizzato(documento, templateId, opzioni)
+        risultati.push({
+          id: documento.id || `doc_${Date.now()}`,
+          success: risultato.success,
+          urlFile: risultato.urlFile,
+          errore: risultato.errore
+        })
+      } catch (error) {
+        risultati.push({
+          id: documento.id || `doc_${Date.now()}`,
+          success: false,
+          errore: error instanceof Error ? error.message : 'Errore documento'
+        })
+      }
+    }
+    
+    return {
+      success: true,
+      risultati
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore batch generation:', error)
+    return {
+      success: false,
+      errore: error instanceof Error ? error.message : 'Errore batch generation'
+    }
+  }
+}
+
+// Default export for compatibility with index.tsx
+export default {
+  generaPDFPersonalizzato,
+  avviaBatchGeneration
+}
+

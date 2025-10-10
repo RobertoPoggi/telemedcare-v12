@@ -76,6 +76,23 @@ export interface SystemLog {
   timestamp: string;
 }
 
+export interface Contract {
+  id: string;
+  leadId: string;
+  contractType: string;
+  contractTemplate?: string;
+  contractData?: string;
+  pdfUrl?: string;
+  pdfGenerated: boolean;
+  fileSize?: number;
+  status: string;
+  generatedAt?: string;
+  sentAt?: string;
+  signedAt?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DataStats {
   total_leads: number;
   leads_attivi: number;
@@ -197,6 +214,60 @@ export class DataManagementService {
       return result.results as Assistito[];
     } catch (error) {
       console.error('Error searching assistiti:', error);
+      return [];
+    }
+  }
+
+  // CONTRACTS MANAGEMENT
+  async getAllContracts(page: number = 1, limit: number = 50): Promise<{ contracts: Contract[], total: number }> {
+    const offset = (page - 1) * limit;
+    
+    try {
+      // Get contracts with pagination
+      const contractsResult = await this.db.prepare(`
+        SELECT * FROM contracts 
+        ORDER BY created_at DESC 
+        LIMIT ? OFFSET ?
+      `).bind(limit, offset).all();
+
+      // Get total count
+      const countResult = await this.db.prepare('SELECT COUNT(*) as count FROM contracts').first();
+      
+      return {
+        contracts: contractsResult.results as Contract[],
+        total: (countResult as any)?.count || 0
+      };
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+      return { contracts: [], total: 0 };
+    }
+  }
+
+  async getContractById(id: string): Promise<Contract | null> {
+    try {
+      const result = await this.db.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first();
+      return result ? (result as Contract) : null;
+    } catch (error) {
+      console.error('Error fetching contract:', error);
+      return null;
+    }
+  }
+
+  async searchContracts(query: string): Promise<Contract[]> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM contracts 
+        WHERE id LIKE ? 
+           OR leadId LIKE ? 
+           OR contractType LIKE ? 
+           OR status LIKE ?
+        ORDER BY created_at DESC 
+        LIMIT 100
+      `).bind(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`).all();
+      
+      return result.results as Contract[];
+    } catch (error) {
+      console.error('Error searching contracts:', error);
       return [];
     }
   }

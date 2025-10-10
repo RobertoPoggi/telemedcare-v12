@@ -334,7 +334,7 @@ export class TeleMedCareScoring {
     return Math.min(Math.max(score, 0), 100);
   }
   
-  private scoreMedico(fattori: ScoringFactori): number {
+  private scoreMedico(fattori: ScoringFactors): number {
     let score = 20;
     
     // Patologie principali (peso maggiore per croniche)
@@ -930,6 +930,123 @@ export const scoringEngine = new TeleMedCareScoring();
 /**
  * UTILITIES PER INTEGRAZIONE RAPIDA
  */
+
+/**
+ * CORREZIONE: Funzione calcolaScoreCompleto mancante per l'index
+ */
+export async function calcolaScoreCompleto(
+  leadId: string,
+  fattori: Partial<ScoringFactors>,
+  includiPredizioni: boolean = true
+): Promise<{
+  success: boolean
+  scoreResult?: ScoreResult
+  error?: string
+}> {
+  try {
+    console.log(`🎯 Calcolo score completo per lead: ${leadId}`)
+
+    // Valori default per fattori mancanti
+    const fattoriCompleti: ScoringFactors = {
+      eta: fattori.eta || 45,
+      genere: fattori.genere || 'N',
+      provincia: fattori.provincia || 'RM',
+      cap: fattori.cap || '00100',
+      orarioContatto: fattori.orarioContatto || 10,
+      giornoSettimana: fattori.giornoSettimana || 2,
+      canaleDiAcquisizione: fattori.canaleDiAcquisizione || 'WEB_DIRECT',
+      tentativiContatto: fattori.tentativiContatto || 1,
+      patologiePrincipali: fattori.patologiePrincipali || [],
+      graditaMedica: fattori.graditaMedica || 5,
+      frequenzaVisite: fattori.frequenzaVisite || 2,
+      dispositivoPreferito: fattori.dispositivoPreferito || 'Smartphone',
+      competenzaTech: fattori.competenzaTech || 5,
+      fasciaDiReddito: fattori.fasciaDiReddito || 'MEDIA',
+      capacitaDiSpesa: fattori.capacitaDiSpesa || 50,
+      interazioniTotali: fattori.interazioniTotali || 1,
+      tempoSulSito: fattori.tempoSulSito || 60,
+      pagineMostrate: fattori.pagineMostrate || 3,
+      downloadBrochure: fattori.downloadBrochure || false,
+      momentoContatto: fattori.momentoContatto || new Date(),
+      urgenzaDichiarata: fattori.urgenzaDichiarata || 3,
+      disponibilitaOraria: fattori.disponibilitaOraria || ['9-12', '14-17']
+    }
+
+    const scoreResult = await scoringEngine.calcolaScoreCompleto(leadId, fattoriCompleti, includiPredizioni)
+
+    return {
+      success: true,
+      scoreResult
+    }
+
+  } catch (error) {
+    console.error('❌ Errore calcolo score completo:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore calcolo score completo'
+    }
+  }
+}
+
+/**
+ * CORREZIONE: Funzione generaRaccomandazioni mancante per l'index
+ */
+export async function generaRaccomandazioni(
+  leadId: string,
+  fattori: Partial<ScoringFactors>
+): Promise<{
+  success: boolean
+  raccomandazioni?: RecommendedAction[]
+  strategiaOptimale?: string
+  priorita?: number
+  error?: string
+}> {
+  try {
+    console.log(`💡 Generazione raccomandazioni per lead: ${leadId}`)
+
+    // Calcola score completo per ottenere raccomandazioni
+    const fattoriCompleti: ScoringFactors = {
+      eta: fattori.eta || 45,
+      genere: fattori.genere || 'N',
+      provincia: fattori.provincia || 'RM',
+      cap: fattori.cap || '00100',
+      orarioContatto: fattori.orarioContatto || 10,
+      giornoSettimana: fattori.giornoSettimana || 2,
+      canaleDiAcquisizione: fattori.canaleDiAcquisizione || 'WEB_DIRECT',
+      tentativiContatto: fattori.tentativiContatto || 1,
+      patologiePrincipali: fattori.patologiePrincipali || [],
+      graditaMedica: fattori.graditaMedica || 5,
+      frequenzaVisite: fattori.frequenzaVisite || 2,
+      dispositivoPreferito: fattori.dispositivoPreferito || 'Smartphone',
+      competenzaTech: fattori.competenzaTech || 5,
+      fasciaDiReddito: fattori.fasciaDiReddito || 'MEDIA',
+      capacitaDiSpesa: fattori.capacitaDiSpesa || 50,
+      interazioniTotali: fattori.interazioniTotali || 1,
+      tempoSulSito: fattori.tempoSulSito || 60,
+      pagineMostrate: fattori.pagineMostrate || 3,
+      downloadBrochure: fattori.downloadBrochure || false,
+      momentoContatto: fattori.momentoContatto || new Date(),
+      urgenzaDichiarata: fattori.urgenzaDichiarata || 3,
+      disponibilitaOraria: fattori.disponibilitaOraria || ['9-12', '14-17']
+    }
+
+    const risultato = await scoringEngine.calcolaScoreCompleto(leadId, fattoriCompleti, true)
+
+    return {
+      success: true,
+      raccomandazioni: risultato.azioniConsigliate,
+      strategiaOptimale: risultato.strategiaOptimale,
+      priorita: risultato.prioritaContatto
+    }
+
+  } catch (error) {
+    console.error('❌ Errore generazione raccomandazioni:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore generazione raccomandazioni'
+    }
+  }
+}
 
 export async function calcolaScoreRapido(
   leadId: string, 

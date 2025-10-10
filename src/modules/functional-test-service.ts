@@ -316,8 +316,7 @@ export class FunctionalTestService {
       // Generate unique codice assistito
       const codiceAssistito = `ASS_TEST_${Date.now()}_${Math.random().toString(36).substring(7)}`
       
-      // For testing, generate a unique integer ID for lead_id that doesn't conflict
-      const testLeadId = Date.now() % 1000000; // Use timestamp modulo for uniqueness
+      // Use the actual leadId from the real lead (string format)
       
       const assistitoResult = await this.db.prepare(`
         INSERT INTO assistiti (
@@ -326,7 +325,7 @@ export class FunctionalTestService {
           numero_contratto, valore_contratto, data_conversione, stato
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        testLeadId,
+        leadId,
         codiceAssistito,
         (leadFromDb as any).nomeRichiedente || 'Test',
         (leadFromDb as any).cognomeRichiedente || 'User',
@@ -368,8 +367,8 @@ export class FunctionalTestService {
       return {
         success: true,
         phase: 'LEAD_CONVERSION',
-        message: `Lead ${leadId} convertito in assistito ${assistitoId} (${codiceAssistito}) [Test mode - lead_id: ${testLeadId}]`,
-        data: { leadId, assistitoId, codiceAssistito, testLeadId },
+        message: `Lead ${leadId} convertito in assistito ${assistitoId} (${codiceAssistito})`,
+        data: { leadId, assistitoId, codiceAssistito },
         timestamp: new Date().toISOString()
       }
 
