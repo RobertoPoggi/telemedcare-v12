@@ -176,7 +176,8 @@ export class EmailService {
     templateId: string, 
     to: string, 
     variables: Record<string, string>,
-    attachments?: Array<{ filename: string; content: string | Buffer; contentType: string }>
+    attachments?: Array<{ filename: string; content: string | Buffer; contentType: string }>,
+    env?: any
   ): Promise<EmailResult> {
     try {
       const template = EMAIL_TEMPLATES[templateId.toUpperCase()]
@@ -201,8 +202,8 @@ export class EmailService {
         attachments
       }
 
-      // Invia email
-      return await this.sendEmail(emailData)
+      // Invia email con environment context
+      return await this.sendEmail(emailData, env)
 
     } catch (error) {
       console.error('❌ Errore invio email template:', error)
@@ -418,7 +419,7 @@ export class EmailService {
   /**
    * Invia email effettiva (integrazione con servizi esterni)
    */
-  private async sendEmail(emailData: EmailData): Promise<EmailResult> {
+  private async sendEmail(emailData: EmailData, env?: any): Promise<EmailResult> {
     try {
       console.log('📧 Invio email reale:', {
         to: emailData.to,
@@ -428,7 +429,7 @@ export class EmailService {
 
       // INVIO REALE con SendGrid
       try {
-        const result = await this.sendWithSendGrid(emailData)
+        const result = await this.sendWithSendGrid(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via SendGrid:', result.messageId)
           return result
@@ -439,7 +440,7 @@ export class EmailService {
 
       // Fallback con Resend
       try {
-        const result = await this.sendWithResend(emailData)
+        const result = await this.sendWithResend(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via Resend:', result.messageId)
           return result
@@ -468,8 +469,13 @@ export class EmailService {
   /**
    * Invio con SendGrid API
    */
-  private async sendWithSendGrid(emailData: EmailData): Promise<EmailResult> {
-    const apiKey = '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'
+  private async sendWithSendGrid(emailData: EmailData, env?: any): Promise<EmailResult> {
+    // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
+    const apiKey = env?.SENDGRID_API_KEY || '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'
+    
+    if (!apiKey || apiKey.startsWith('SG.eRuQRryZRjiir_B6HkDmEg')) {
+      console.warn('⚠️ Using fallback SendGrid API key - Configure SENDGRID_API_KEY in production!')
+    }
     
     const payload = {
       personalizations: [{
@@ -520,8 +526,13 @@ export class EmailService {
   /**
    * Invio con Resend API
    */
-  private async sendWithResend(emailData: EmailData): Promise<EmailResult> {
-    const apiKey = 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2'
+  private async sendWithResend(emailData: EmailData, env?: any): Promise<EmailResult> {
+    // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
+    const apiKey = env?.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2'
+    
+    if (!apiKey || apiKey.startsWith('re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2')) {
+      console.warn('⚠️ Using fallback Resend API key - Configure RESEND_API_KEY in production!')
+    }
     
     const payload = {
       from: 'TeleMedCare <noreply@telemedcare.it>',

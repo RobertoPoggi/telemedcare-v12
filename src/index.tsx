@@ -29,8 +29,9 @@ type Bindings = {
   DB: D1Database
   KV?: KVNamespace
   R2?: R2Bucket
-  // Email service bindings (da configurare in produzione)
-  EMAIL_API_KEY?: string
+  // 🔐 EMAIL SERVICE API KEYS (Security Enhanced)
+  SENDGRID_API_KEY?: string
+  RESEND_API_KEY?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
   // Enterprise API Keys
@@ -220,7 +221,7 @@ async function generaProformaDaContratto(contractId: string, db: any) {
 }
 
 // Invia email contratto - VERSIONE REALE con EmailService
-async function inviaEmailContratto(contract: any) {
+async function inviaEmailContratto(contract: any, env?: any) {
   try {
     console.log(`📧 INVIO REALE contratto ${contract.codice_contratto} a ${contract.email}`)
     
@@ -236,11 +237,13 @@ async function inviaEmailContratto(contract: any) {
       CODICE_CLIENTE: contract.codice_contratto || contract.id || 'N/A'
     }
     
-    // Invia email reale con template
+    // Invia email reale con template e environment context
     const result = await emailService.sendTemplateEmail(
       'INVIO_CONTRATTO',
       contract.email,
-      variables
+      variables,
+      undefined, // attachments
+      env        // 🔐 Pass environment for secure API keys
     )
     
     console.log(`✅ Email contratto risultato:`, result)
@@ -253,7 +256,7 @@ async function inviaEmailContratto(contract: any) {
 }
 
 // Invia email proforma - VERSIONE REALE con EmailService
-async function inviaEmailProforma(proforma: any) {
+async function inviaEmailProforma(proforma: any, env?: any) {
   try {
     console.log(`📧 INVIO REALE proforma ${proforma.numero_proforma} a ${proforma.email}`)
     
@@ -270,11 +273,13 @@ async function inviaEmailProforma(proforma: any) {
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
     
-    // Invia email reale con template
+    // Invia email reale con template e environment context
     const result = await emailService.sendTemplateEmail(
       'INVIO_PROFORMA',
       proforma.email,
-      variables
+      variables,
+      undefined, // attachments
+      env        // 🔐 Pass environment for secure API keys
     )
     
     console.log(`✅ Email proforma risultato:`, result)
@@ -287,7 +292,7 @@ async function inviaEmailProforma(proforma: any) {
 }
 
 // Invia email benvenuto e form configurazione - VERSIONE REALE
-async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any) {
+async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, env?: any) {
   try {
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
     if (!lead) return { success: false, error: 'Lead non trovato' }
@@ -308,11 +313,13 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any) {
       SERVIZI_INCLUSI: lead.pacchetto === 'AVANZATO' ? 'Monitoring H24, Consulenze Specialistiche, Centrale Operativa' : 'Monitoring Base, Supporto Standard'
     }
     
-    // Invia email reale con template
+    // Invia email reale con template e environment context
     const result = await emailService.sendTemplateEmail(
       'BENVENUTO',
       lead.emailRichiedente,
-      variables
+      variables,
+      undefined, // attachments
+      env        // 🔐 Pass environment for secure API keys
     )
     
     console.log(`✅ Email benvenuto risultato:`, result)
@@ -3509,7 +3516,7 @@ app.get('/admin/devices', (c) => {
  * @param db - Database D1
  * @param inviaEmailBenvenutoSubito - Modalità test per email benvenuto immediato
  */
-async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Database, inviaEmailBenvenutoSubito: boolean = false) {
+async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Database, inviaEmailBenvenutoSubito: boolean = false, env?: any) {
   const results = {
     brochureInviata: false,
     manualeInviato: false,
@@ -3637,7 +3644,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
     // 4. INVIO EMAIL BENVENUTO IMMEDIATO PER TUTTI I LEAD
     console.log('🎉 [WORKFLOW] Invio email di benvenuto per nuovo lead')
     try {
-      const emailBenvenutoResult = await inviaEmailBenvenutoEFormConfigurazione(leadId, db)
+      const emailBenvenutoResult = await inviaEmailBenvenutoEFormConfigurazione(leadId, db, env)
       results['emailBenvenutoInviata'] = emailBenvenutoResult.success
       console.log('✅ [WORKFLOW] Email benvenuto inviata:', emailBenvenutoResult)
     } catch (error) {
@@ -3832,7 +3839,7 @@ app.post('/api/lead', async (c) => {
     }
     
     // Elaborazione workflow CORRETTO: Solo proforma, email benvenuto dopo pagamento
-    const workflowResults = await elaboraWorkflowEmail(normalizedLead, leadId, c.env.DB, false)
+    const workflowResults = await elaboraWorkflowEmail(normalizedLead, leadId, c.env.DB, false, c.env)
     
     console.log('📧 Workflow email completato:', workflowResults)
 
@@ -4268,7 +4275,7 @@ app.post('/api/contracts/send', async (c) => {
     }
     
     // Invia email con template email_invio_contratto
-    const emailResult = await inviaEmailContratto(contract)
+    const emailResult = await inviaEmailContratto(contract, c.env)
     
     if (emailResult.success) {
       // Aggiorna status contratto

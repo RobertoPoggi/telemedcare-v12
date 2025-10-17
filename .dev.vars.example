@@ -1,0 +1,31 @@
+# =============================================================================
+# CLOUDFLARE WORKERS DEVELOPMENT VARIABLES
+# =============================================================================
+# 
+# 🔐 SECURITY: Rename this file to .dev.vars for local Wrangler development
+# 📝 IMPORTANT: .dev.vars is in .gitignore and will NOT be committed to GitHub
+# 🚀 PRODUCTION: Configure these in Cloudflare Pages Environment Variables
+#
+# This format is specifically for Cloudflare Workers/Pages with Wrangler
+#
+
+# Email Service API Keys
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+RESEND_API_KEY=re_your-resend-api-key-here
+
+# Email Configuration
+EMAIL_FROM=noreply@telemedcare.it
+EMAIL_TO_INFO=info@telemedcare.it
+
+# Enterprise Integrations
+IRBEMA_API_KEY=your-irbema-api-key
+AON_API_KEY=your-aon-api-key
+MONDADORI_API_KEY=your-mondadori-api-key
+ENDERED_API_KEY=your-endered-api-key
+
+# AI/ML Services
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Security
+JWT_SECRET=your-super-secret-jwt-key-here
+ENCRYPTION_KEY=your-encryption-key-here
