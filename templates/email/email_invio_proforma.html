@@ -1,83 +1,179 @@
-<!doctype html>
-<html lang="it">
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pro-forma TeleMedCare</title>
-  <style>
-    /* Basic mobile-friendly reset for email clients that support style blocks */
-    body { margin:0; padding:0; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background-color:#f4f4f4; }
-    img { border:0; height:auto; line-height:100%; outline:none; text-decoration:none; display:block; }
-    a { color:#0275d8; text-decoration:none; }
-    @media only screen and (max-width:620px) {
-      .container { width:100% !important; }
-      .content { padding:16px !important; }
-    }
-  </style>
-</head>
-<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif; color:#333333;">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
+<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
 
-  <!-- Visually hidden preheader text -->
-  <div style="display:none; max-height:0; max-width:0; overflow:hidden; font-size:1px; line-height:1px; color:#f4f4f4; opacity:0;">
-    Pro-forma TeleMedCare per {{NOME_CLIENTE}} — Documento riepilogativo del servizio.
-  </div>
+      .template-section {
+        margin-bottom: 60px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 40px;
+      }
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
-    <tr>
-      <td align="center" style="padding:24px 12px;">
-        <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="width:600px; max-width:600px; background-color:#ffffff; border-radius:8px; overflow:hidden;">
-          <!-- Header -->
-          <tr>
-            <td style="padding:20px 24px; background-color:#0b63a5; color:#ffffff; text-align:left;">
-              <h1 style="margin:0; font-size:20px; font-weight:600; font-family:Arial, Helvetica, sans-serif;">TeleMedCare</h1>
-              <p style="margin:6px 0 0; font-size:13px; opacity:0.95;">La tecnologia che Le salva salute e vita</p>
-            </td>
-          </tr>
+      .template-title {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        margin: 0 -20px 30px -20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 600;
+      }
 
-          <!-- Body -->
-          <tr>
-            <td class="content" style="padding:24px; background-color:#ffffff;">
-              <p style="margin:0 0 16px; font-size:15px;">Gentile {{NOME_CLIENTE}},</p>
+      .email-container {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
 
-              <p style="margin:0 0 18px; font-size:15px; line-height:1.5;">
-                È con grande piacere che Le inviamo la <strong>Pro-forma TeleMedCare</strong>, una soluzione innovativa che rappresenta un vero cambiamento di paradigma nell'assistenza socio-sanitaria.
-              </p>
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+      }
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:18px 0; background-color:#f8fbff; border:1px solid #e6f0fb; border-radius:6px;">
-                <tr>
-                  <td style="padding:16px;">
-                    <p style="margin:0 0 8px; font-size:14px;">
-                      <strong>📝 Pro-forma {{PIANO_SERVIZIO}}</strong>
-                    </p>
-                    <p style="margin:0 0 6px; font-size:14px;"><strong>Numero Pro-forma:</strong> {{NUMERO_PROFORMA}}</p>
-                    <p style="margin:0 0 6px; font-size:16px; font-weight:600; color:#0b63a5;">{{PREZZO_PIANO}}</p>
-                    <p style="margin:10px 0 0; font-size:13px; color:#666666;"><em>Investimento annuale per la Sua sicurezza e tranquillità</em></p>
-                  </td>
-                </tr>
-              </table>
+      .email-content {
+        padding: 30px 25px;
+      }
 
-              <h3 style="margin:18px 0 8px; font-size:16px;">⭐ La Nostra Mission Sociale</h3>
-              <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
-                <strong>Medica GB</strong> nasce dal desiderio di apportare innovazione in ambito socio-sanitario, modificando il paradigma tradizionale: <em>non più le persone che si recano nei luoghi di cura, ma la tecnologia che arriva direttamente dove c'è necessità di assistenza.</em>
-              </p>
+      .contact-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 20px 0;
+      }
 
-              <p style="margin:22px 0 0; font-size:14px;">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
-              <p style="margin:6px 0 0; font-size:12px; color:#888888;"><em>"La tecnologia che Le salva salute e vita"</em></p>
-            </td>
-          </tr>
+      .highlight-box {
+        background: #ecfdf5;
+        border: 2px solid #22c55e;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
 
-          <!-- Footer -->
-          <tr>
-            <td style="padding:14px 24px; background-color:#fafafa; text-align:center; font-size:12px; color:#888888;">
-              Medica GB · TeleMedCare<br>
-              Per assistenza: <a href="mailto:support@telemedcare.it" style="color:#0b63a5;">support@telemedcare.it</a>
-            </td>
-          </tr>
+      .warning-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
 
-        </table>
-      </td>
-    </tr>
-  </table>
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+      }
 
-</body>
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+      }
+
+      .comparison-table th {
+        background: #3b82f6;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+      }
+
+      .comparison-table tr:nth-child(even) {
+        background: #f8faff;
+      }
+
+      .footer-standard {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
+<body>
+
+
+<div class="email-container">
+<div class="email-header">
+<h3 style="margin: 0; font-size: 24px">Medica GB S.r.l.</h3>
+<p style="margin: 10px 0 0 0">Startup Innovativa a Vocazione Sociale</p>
+<div style="font-size: 14px; opacity: 0.9">"La tecnologia che Le salva salute e vita"</div>
+</div>
+<div class="email-content">
+<h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
+<p>
+            Ã con grande piacere che Le inviamo la <strong>Pro-forma TeleMedCare</strong>, una soluzione
+            innovativa che rappresenta un vero cambiamento di paradigma nell'assistenza socio-sanitaria.
+          </p>
+<div class="highlight-box">
+<h4 style="color: #16a34a; margin-top: 0">ð Pro-forma {{PIANO_SERVIZIO}}</h4>
+<p><strong>Numero Pro-forma:</strong> {{NUMERO_PROFORMA}}</p>
+<p style="font-size: 20px; font-weight: bold; color: #16a34a">{{PREZZO_PIANO}}</p>
+<p style="margin: 0"><em>Investimento annuale per la Sua sicurezza e tranquillitÃ </em></p>
+</div>
+<div style="
+              background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+              padding: 20px;
+              margin: 20px 0;
+              border-radius: 8px;
+              border: 1px solid #22c55e;
+            ">
+<h4 style="color: #16a34a; margin-top: 0">ð La Nostra Mission Sociale</h4>
+<p>
+<strong>Medica GB</strong> nasce dal desiderio di apportare innovazione in ambito socio-sanitario,
+              modificando il paradigma tradizionale:
+              <em>non piÃ¹ le persone che si recano nei luoghi di cura, ma la tecnologia che arriva direttamente dove c'Ã¨
+                necessitÃ  di assistenza.</em>
+</p>
+</div>
+<div class="contact-box">
+<h4 style="color: #475569; margin-top: 0">ð Contatti</h4>
+<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4e272028210e232b2a272d2f292c60273a">[email&#160;protected]</a></p>
+<p><strong>Telefono commerciale:</strong> 335 7301206</p>
+<p>
+<strong>Telefono tecnico:</strong> 331 64 32 390<br/>
+</p>
+</div>
+<p>
+<strong>Cordiali saluti,</strong><br/>Il Team TeleMedCare<br/><em>"La tecnologia che Le salva salute e vita"</em>
+</p>
+</div>
+<div class="footer-standard">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1a73747c755a777f7e73797b7d7834736e">[email&#160;protected]</a> | www.medicagb.it</p>
+</div>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
 </html>

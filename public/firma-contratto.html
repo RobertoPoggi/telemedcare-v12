@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firma Contratto - TeleMedCare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #signature-canvas {
+            border: 2px solid #0b63a5;
+            border-radius: 8px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        .signed {
+            border-color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-12 px-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold text-blue-600 mb-2">📋 Firma Contratto TeleMedCare</h1>
+                    <p class="text-gray-600">Completa la firma elettronica per attivare il servizio</p>
+                </div>
+            </div>
+
+            <!-- Contract Display -->
+            <div id="contract-section" class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Il Tuo Contratto</h2>
+                <div id="contract-content" class="border border-gray-300 rounded p-4 mb-4 max-h-96 overflow-y-auto bg-gray-50">
+                    <p class="text-center text-gray-500">Caricamento contratto...</p>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="accept-terms" class="w-5 h-5 text-blue-600">
+                    <label for="accept-terms" class="ml-3 text-gray-700">
+                        Dichiaro di aver letto e accettato integralmente i termini e le condizioni del contratto
+                    </label>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div id="signature-section" class="bg-white rounded-lg shadow-lg p-8 mb-6" style="display: none;">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">✍️ Apponi la Tua Firma</h2>
+                
+                <div class="mb-6">
+                    <canvas id="signature-canvas" width="600" height="200" class="w-full"></canvas>
+                    <div class="flex gap-4 mt-4">
+                        <button onclick="clearSignature()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                            🗑️ Cancella
+                        </button>
+                        <button onclick="requestOTP()" id="request-otp-btn" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">
+                            📱 Richiedi Codice OTP
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OTP Section -->
+                <div id="otp-section" style="display: none;" class="mt-6 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 class="text-xl font-bold text-blue-800 mb-4">🔐 Inserisci Codice di Verifica</h3>
+                    <p class="text-gray-700 mb-4">
+                        Ti abbiamo inviato un codice di 6 cifre via email. Inseriscilo qui sotto per confermare la firma.
+                    </p>
+                    <div class="flex gap-4 items-center">
+                        <input 
+                            type="text" 
+                            id="otp-input" 
+                            maxlength="6" 
+                            placeholder="000000"
+                            class="w-40 px-4 py-3 text-2xl font-mono text-center border-2 border-blue-300 rounded focus:border-blue-500 focus:outline-none"
+                        >
+                        <button onclick="validateOTPAndSign()" class="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold">
+                            ✅ Conferma Firma
+                        </button>
+                    </div>
+                    <p id="otp-timer" class="text-sm text-gray-600 mt-3"></p>
+                </div>
+            </div>
+
+            <!-- Success Message -->
+            <div id="success-section" style="display: none;" class="bg-white rounded-lg shadow-lg p-8 text-center">
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-3xl font-bold text-green-600 mb-4">Contratto Firmato con Successo!</h2>
+                <p class="text-gray-700 mb-6">
+                    Il tuo contratto è stato firmato e registrato. Riceverai a breve la fattura proforma via email.
+                </p>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                    <p class="text-green-800 font-semibold">📧 Prossimi Passi:</p>
+                    <ul class="text-left text-green-700 mt-3 space-y-2">
+                        <li>✅ Riceverai la fattura proforma via email</li>
+                        <li>💳 Effettua il pagamento tramite bonifico o carta</li>
+                        <li>🎉 Dopo il pagamento riceverai l'email di benvenuto</li>
+                        <li>📝 Compila il form di configurazione</li>
+                        <li>📱 Riceverai il dispositivo entro 10 giorni</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-8 text-center">
+                    <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-700 font-semibold">Elaborazione in corso...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let contractId = null;
+        let canvas = null;
+        let ctx = null;
+        let isDrawing = false;
+        let signatureData = [];
+        let otpGenerated = null;
+        let otpExpiresAt = null;
+
+        // Initialize on page load
+        window.onload = function() {
+            // Extract contract ID from URL
+            const urlParts = window.location.pathname.split('/');
+            contractId = urlParts[urlParts.length - 1];
+            
+            if (!contractId || contractId === 'firma-contratto.html') {
+                alert('Errore: ID contratto non valido');
+                return;
+            }
+
+            // Initialize canvas
+            canvas = document.getElementById('signature-canvas');
+            ctx = canvas.getContext('2d');
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+
+            // Load contract
+            loadContract();
+        };
+
+        async function loadContract() {
+            try {
+                const response = await fetch(`/api/contracts/${contractId}`);
+                const data = await response.json();
+                
+                if (data.success && data.contract) {
+                    document.getElementById('contract-content').innerHTML = data.contract.contenuto_html || 
+                        '<p>Contratto non disponibile</p>';
+                } else {
+                    document.getElementById('contract-content').innerHTML = 
+                        '<p class="text-red-600">Errore caricamento contratto</p>';
+                }
+            } catch (error) {
+                console.error('Errore:', error);
+                document.getElementById('contract-content').innerHTML = 
+                    '<p class="text-red-600">Errore di connessione</p>';
+            }
+        }
+
+        document.getElementById('accept-terms').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                document.getElementById('signature-section').style.display = 'block';
+            } else {
+                document.getElementById('signature-section').style.display = 'none';
+            }
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            signatureData.push({x: e.clientX - rect.left, y: e.clientY - rect.top, type: 'start'});
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            signatureData.push({x, y, type: 'draw'});
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                signatureData.push({type: 'end'});
+            }
+            isDrawing = false;
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            signatureData = [];
+        }
+
+        async function requestOTP() {
+            if (signatureData.length === 0) {
+                alert('⚠️ Per favore, apponi prima la tua firma nel riquadro');
+                return;
+            }
+
+            const btn = document.getElementById('request-otp-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Invio OTP...';
+
+            try {
+                const response = await fetch('/api/signatures/request-otp', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({contractId})
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('otp-section').style.display = 'block';
+                    startOTPTimer();
+                    alert('✅ Codice OTP inviato via email!');
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Impossibile inviare OTP'));
+                }
+            } catch (error) {
+                alert('❌ Errore di connessione');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📱 Richiedi Codice OTP';
+            }
+        }
+
+        function startOTPTimer() {
+            const expiryTime = Date.now() + 10 * 60 * 1000; // 10 minutes
+            const timer = setInterval(() => {
+                const remaining = Math.floor((expiryTime - Date.now()) / 1000);
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('otp-timer').textContent = '⚠️ Codice scaduto. Richiedi un nuovo codice.';
+                } else {
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    document.getElementById('otp-timer').textContent = 
+                        `⏱️ Codice valido per: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        async function validateOTPAndSign() {
+            const otp = document.getElementById('otp-input').value;
+            
+            if (otp.length !== 6) {
+                alert('⚠️ Inserisci un codice di 6 cifre');
+                return;
+            }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // Get signature as base64
+                const signatureBase64 = canvas.toDataURL('image/png');
+
+                const response = await fetch('/api/signatures/sign', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        contractId,
+                        otp,
+                        signatureData: signatureBase64,
+                        signatureMetadata: {
+                            timestamp: new Date().toISOString(),
+                            userAgent: navigator.userAgent,
+                            points: signatureData.length
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Hide all sections
+                    document.getElementById('contract-section').style.display = 'none';
+                    document.getElementById('signature-section').style.display = 'none';
+                    // Show success
+                    document.getElementById('success-section').style.display = 'block';
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Firma non valida'));
+                }
+            } catch (error) {
+                alert('❌ Errore di connessione');
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

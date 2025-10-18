@@ -18,33 +18,18 @@
 
   // Environment configurations per deployment
   "env": {
-    "test": {
-      "name": "telemedcare-test",
+    "preview": {
+      "name": "telemedcare-preview",
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "telemedcare_test_01",
-          "database_id": "test-database-01-placeholder"
+          "database_name": "telemedcare-leads",
+          "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
         }
       ],
       "vars": {
-        "ENVIRONMENT": "test",
+        "ENVIRONMENT": "preview",
         "DEBUG_MODE": "true"
-      }
-    },
-    
-    "staging": {
-      "name": "telemedcare-staging", 
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "telemedcare_staging",
-          "database_id": "staging-database-placeholder"
-        }
-      ],
-      "vars": {
-        "ENVIRONMENT": "staging",
-        "DEBUG_MODE": "false"
       }
     },
     
@@ -53,8 +38,8 @@
       "d1_databases": [
         {
           "binding": "DB", 
-          "database_name": "telemedcare_database",
-          "database_id": "production-database-placeholder"
+          "database_name": "telemedcare-leads",
+          "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
         }
       ],
       "vars": {

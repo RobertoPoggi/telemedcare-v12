@@ -473,9 +473,7 @@ export class EmailService {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
     const apiKey = env?.SENDGRID_API_KEY || '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'
     
-    if (!apiKey || apiKey.startsWith('SG.eRuQRryZRjiir_B6HkDmEg')) {
-      console.warn('⚠️ Using fallback SendGrid API key - Configure SENDGRID_API_KEY in production!')
-    }
+    console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
     const payload = {
       personalizations: [{
@@ -530,9 +528,7 @@ export class EmailService {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
     const apiKey = env?.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2'
     
-    if (!apiKey || apiKey.startsWith('re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2')) {
-      console.warn('⚠️ Using fallback Resend API key - Configure RESEND_API_KEY in production!')
-    }
+    console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
     const payload = {
       from: 'TeleMedCare <noreply@telemedcare.it>',

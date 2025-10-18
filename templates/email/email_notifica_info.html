@@ -1,124 +1,365 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuovo Lead TeleMedCare</title>
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-            margin: -30px -30px 20px -30px;
-            text-align: center;
-        }
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border-left: 4px solid #3b82f6;
-        }
-        .section h4 {
-            margin: 0 0 10px 0;
-            color: #1e40af;
-            font-weight: 600;
-        }
-        .field {
-            margin-bottom: 8px;
-        }
-        .label {
-            font-weight: 500;
-            color: #374151;
-        }
-        .value {
-            margin-left: 10px;
-            color: #1f2937;
-        }
-        .urgent {
-            background: #fef2f2;
-            border: 2px solid #f87171;
-            border-radius: 6px;
-            padding: 15px;
-            color: #991b1b;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 20px;
-        }
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
+<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
+
+      .template-section {
+        margin-bottom: 60px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 40px;
+      }
+
+      .template-title {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        margin: 0 -20px 30px -20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .email-container {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+      }
+
+      .email-content {
+        padding: 30px 25px;
+      }
+
+      .contact-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .highlight-box {
+        background: #ecfdf5;
+        border: 2px solid #22c55e;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+      }
+
+      .comparison-table th {
+        background: #3b82f6;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+      }
+
+      .comparison-table tr:nth-child(even) {
+        background: #f8faff;
+      }
+
+      .footer-standard {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
     </style>
-</head>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>🔒 Nuovo Lead TeleMedCare</h2>
-            <p>Sistema di Notifica Automatica</p>
-            <p><strong>Richiesta ricevuta:</strong> {{DATA_RICHIESTA}} alle {{ORA_RICHIESTA}}</p>
-        </div>
 
-        <div class="section">
-            <h4>👤 Dati Richiedente</h4>
-            <div class="field">
-                <span class="label">Nome:</span>
-                <span class="value">{{NOME_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Cognome:</span>
-                <span class="value">{{COGNOME_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Email:</span>
-                <span class="value">{{EMAIL_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Telefono:</span>
-                <span class="value">{{TELEFONO_RICHIEDENTE}}</span>
-            </div>
-        </div>
 
-        <div class="section">
-            <h4>🏥 Dati Assistito</h4>
-            <div class="field">
-                <span class="label">Cognome:</span>
-                <span class="value">{{COGNOME_ASSISTITO}}</span>
+<div class="email-container">
+<div class="email-header" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%)">
+<h3 style="margin: 0; font-size: 24px">ð Nuovo Lead TeleMedCare</h3>
+<p style="margin: 10px 0 0 0">Sistema di Notifica Automatica</p>
+<div style="
+              background-color: rgba(255, 255, 255, 0.2);
+              padding: 12px 20px;
+              margin-top: 15px;
+              border-radius: 6px;
+              font-size: 14px;
+            ">
+<strong>Richiesta ricevuta:</strong> {{DATA_RICHIESTA}} alle {{ORA_RICHIESTA}}
+          </div>
+</div>
+<div class="email-content">
+<div style="margin-bottom: 30px">
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¤ Dati Richiedente</h4>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Nome
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{NOME_RICHIEDENTE}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Cognome
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{COGNOME_RICHIEDENTE}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Email
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{EMAIL_RICHIEDENTE}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Telefono
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{TELEFONO_RICHIEDENTE}}</div>
+</div>
+</div>
+</div>
+<div style="margin-bottom: 30px">
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¥ Dati Assistito</h4>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Nome
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{NOME_ASSISTITO}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Cognome
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{COGNOME_ASSISTITO}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                  grid-column: 1 / -1;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Condizioni di Salute
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{CONDIZIONI_SALUTE}}</div>
+</div>
+</div>
+</div>
+<div style="margin-bottom: 30px">
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¯ Servizio Richiesto</h4>
+<div style="
+                background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+                border: 2px solid #52b788;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 15px 0;
+              ">
+<div style="font-size: 16px; font-weight: 700; color: #1a472a; margin-bottom: 10px">
+                Piano {{PIANO_SERVIZIO}}
+              </div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
+<div style="
+                    background-color: #f8f9fa;
+                    padding: 12px 15px;
+                    border-left: 4px solid #52b788;
+                    border-radius: 4px;
+                  ">
+<div style="
+                      font-size: 13px;
+                      color: #666;
+                      font-weight: 500;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5px;
+                      margin-bottom: 4px;
+                    ">
+                    Pacchetto
+                  </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{PIANO_SERVIZIO}}</div>
+</div>
+<div style="
+                    background-color: #f8f9fa;
+                    padding: 12px 15px;
+                    border-left: 4px solid #52b788;
+                    border-radius: 4px;
+                  ">
+<div style="
+                      font-size: 13px;
+                      color: #666;
+                      font-weight: 500;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5px;
+                      margin-bottom: 4px;
+                    ">
+                    Prezzo
+                  </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{PREZZO_PIANO}}</div>
+</div>
+</div>
+</div>
+</div>
+<div style="
+              background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+              border: 2px solid #ffc107;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 20px 0;
+              text-align: center;
+            ">
+<h4 style="color: #856404; margin-bottom: 10px">â¡ Azione Richiesta</h4>
+<p style="color: #664d03; margin: 0">
+              Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
+            </p>
+</div>
+<div class="contact-box">
+<h4 style="color: #475569; margin-top: 0">ð Contatti</h4>
+<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="127b7c747d527f77767b717375703c7b66">[email&#160;protected]</a></p>
+<p><strong>Telefono commerciale:</strong> 335 7301206</p>
+<p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
+</div>
+</div>
+<div style="background-color: #f8f9fa; padding: 20px; font-size: 13px; color: #666; border-top: 1px solid #e0e0e0">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px">
+<div>
+<strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br/>
+              ð§ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689a4acada0aaa8aeabe7a0bd">[email&#160;protected]</a> | ð www.medicagb.it
             </div>
-            <div class="field">
-                <span class="label">Condizioni di Salute:</span>
-                <span class="value">{{CONDIZIONI_SALUTE}}</span>
-            </div>
-        </div>
-
-        <div class="section">
-            <h4>🎯 Servizio Richiesto</h4>
-            <div class="field">
-                <span class="label">Piano:</span>
-                <span class="value">{{PIANO_SERVIZIO}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Pacchetto:</span>
-                <span class="value">{{PIANO_SERVIZIO}}</span>
-            </div>
-        </div>
-
-        <div class="urgent">
-            ⚡ Azione Richiesta: Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
-        </div>
-    </div>
-</body>
+<div style="text-align: right">
+<small>Generato automaticamente da TeleMedCare {{VERSIONE_SISTEMA}}<br/>il {{DATA_RICHIESTA}} alle
+                {{ORA_RICHIESTA}}</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
 </html>

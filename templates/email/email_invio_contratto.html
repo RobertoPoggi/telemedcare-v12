@@ -1,99 +1,202 @@
-<!doctype html>
-<html lang="it">
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TeleMedCare - Invio contratto</title>
-  <style>
-    /* Inline-friendly basic styles for email clients */
-    body { margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, Helvetica, sans-serif; color:#333333; }
-    .wrapper { width:100%; table-layout:fixed; background-color:#f4f6f8; padding:20px 0; }
-    .main { background:#ffffff; margin:0 auto; width:100%; max-width:600px; border-radius:6px; overflow:hidden; }
-    .content { padding:24px; }
-    h1,h2,h3 { margin:0 0 12px 0; color:#0b63a5; }
-    p { margin:0 0 12px 0; line-height:1.4; color:#333; }
-    .muted { color:#666666; font-size:14px; }
-    .card { background:#f8fbff; border:1px solid #e6f0fa; padding:14px; border-radius:6px; margin:12px 0; }
-    .list { margin:12px 0 12px 18px; padding:0; }
-    .list li { margin-bottom:8px; }
-    .steps { margin:0; padding-left:18px; }
-    .footer { font-size:13px; color:#777777; padding:16px 24px; text-align:center; }
-    .highlight { font-weight:600; color:#111; }
-    .meta { background:#f1f5f8; padding:10px 12px; border-radius:4px; margin-top:10px; font-size:15px; }
-    .btn { display:inline-block; background:#0b63a5; color:#ffffff; text-decoration:none; padding:10px 16px; border-radius:4px; font-weight:600; }
-    @media only screen and (max-width:520px) {
-      .content { padding:16px; }
-    }
-  </style>
-</head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
+<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
+
+      .template-section {
+        margin-bottom: 60px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 40px;
+      }
+
+      .template-title {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        margin: 0 -20px 30px -20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .email-container {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+      }
+
+      .email-content {
+        padding: 30px 25px;
+      }
+
+      .contact-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .highlight-box {
+        background: #ecfdf5;
+        border: 2px solid #22c55e;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+      }
+
+      .comparison-table th {
+        background: #3b82f6;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+      }
+
+      .comparison-table tr:nth-child(even) {
+        background: #f8faff;
+      }
+
+      .footer-standard {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
 <body>
-  <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
-    <tr>
-      <td align="center">
-        <table class="main" cellpadding="0" cellspacing="0" role="presentation">
-          <tr>
-            <td style="background:#0b63a5; padding:18px 24px;">
-              <h1 style="color:#ffffff; font-size:20px; margin:0;">TeleMedCare</h1>
-            </td>
-          </tr>
-          <tr>
-            <td class="content">
-              <p>Gentile <span class="highlight">{{NOME_CLIENTE}}</span>,</p>
 
-              <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova il <strong>contratto per il servizio {{PIANO_SERVIZIO}}</strong> e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi.</p>
 
-              <div class="card" role="article" aria-label="Dettagli piano">
-                <h2 style="font-size:16px; margin-bottom:8px;">Il Suo piano TeleMedCare: <span style="color:#0b63a5;">{{PIANO_SERVIZIO}}</span></h2>
-                <div class="meta">
-                  <div><strong>Piano:</strong> {{PIANO_SERVIZIO}}</div>
-                  <div><strong>Investimento:</strong> {{PREZZO_PIANO}}</div>
-                  <div><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</div>
-                </div>
-              </div>
-
-              <h3>Perché ha fatto la scelta giusta</h3>
-              <ul class="list" style="margin-left:18px;">
-                <li><strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale che cambia il paradigma della cura tradizionale.</li>
-                <li><strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve, senza doversi spostare.</li>
-                <li><strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalità all'avanguardia.</li>
-              </ul>
-
-              <h3>Prossimi passi per l'attivazione</h3>
-              <ol class="steps">
-                <li>Legga attentamente il contratto allegato.</li>
-                <li>Firmi in ogni pagina richiesta e nell'ultima pagina.</li>
-                <li>Ci invii il contratto firmato via email o WhatsApp.</li>
-                <li>Riceverà il dispositivo entro 10 giorni lavorativi.</li>
-              </ol>
-
-              <h3>Vantaggi economici e fiscali</h3>
-              <ul class="list">
-                <li><strong>Detrazione Fiscale 19%:</strong> Il servizio è detraibile come spesa sanitaria nel 730.</li>
-                <li><strong>Possibili Rimborsi INPS:</strong> Per ISEE sotto €6.000 + Legge 104.</li>
-              </ul>
-
-              <p class="muted">Siamo qui per accompagnarLa in ogni step di questo percorso. Non esiti a contattarci per qualsiasi chiarimento o domanda. La Sua sicurezza e tranquillità sono la nostra priorità.</p>
-
-              <p style="margin-top:18px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
-
-              <p style="margin-top:18px;">
-                <a href="mailto:info@telemedcare.it" class="btn">Contattaci via Email</a>
-                &nbsp;&nbsp;
-                <a href="https://wa.me/393316432390" class="btn" style="background:#25D366;">Invia via WhatsApp</a>
-              </p>
-
-            </td>
-          </tr>
-
-          <tr>
-            <td class="footer">
-              <div>TeleMedCare &middot; Assistenza Domiciliare e Monitoraggio</div>
-              <div style="margin-top:6px;">Questo messaggio contiene allegati: contratto e brochure.</div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
+<div class="email-container">
+<div class="email-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #22c55e 100%)">
+<h3 style="margin: 0; font-size: 24px">Medica GB S.r.l.</h3>
+<p style="margin: 10px 0 0 0">Startup Innovativa a Vocazione Sociale</p>
+<div style="font-size: 14px; opacity: 0.8">"La tecnologia che Le salva salute e vita"</div>
+</div>
+<div class="email-content">
+<h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
+<p>
+            Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillitÃ . Come
+            promesso, Le inviamo in allegato il <strong>contratto per il servizio {{PIANO_SERVIZIO}}</strong> e la
+            <strong>brochure aziendale</strong> con tutti i dettagli sui nostri servizi innovativi.
+          </p>
+<div class="info-box">
+<h4 style="color: #3b82f6; margin-top: 0">ð Il Suo piano TeleMedCare {{PIANO_SERVIZIO}}</h4>
+<ul>
+<li><strong>Piano:</strong> {{PIANO_SERVIZIO}}</li>
+<li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+<li><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</li>
+</ul>
+</div>
+<div style="margin: 20px 0">
+<h4 style="color: #1f2937">â­ PerchÃ© ha fatto la scelta giusta</h4>
+<ul>
+<li>
+<strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale che
+                cambia il paradigma della cura tradizionale
+              </li>
+<li>
+<strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve, senza
+                doversi spostare
+              </li>
+<li>
+<strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalitÃ 
+                all'avanguardia
+              </li>
+</ul>
+</div>
+<div class="highlight-box">
+<h4 style="color: #16a34a; margin-top: 0">ð Prossimi passi per l'attivazione</h4>
+<ol>
+<li>Legga attentamente il contratto allegato</li>
+<li>Firmi in ogni pagina richiesta e nell'ultima pagina</li>
+<li>Ci invii il contratto firmato via email o WhatsApp</li>
+<li>RiceverÃ  il dispositivo entro 10 giorni lavorativi</li>
+</ol>
+</div>
+<div class="warning-box">
+<h4 style="color: #d97706; margin-top: 0">ð° Vantaggi Economici e Fiscali</h4>
+<ul>
+<li><strong>â Detrazione Fiscale 19%:</strong> Il servizio Ã¨ detraibile come spesa sanitaria nel 730</li>
+<li><strong>â Possibili Rimborsi INPS:</strong> Per ISEE sotto â¬6.000 + Legge 104</li>
+</ul>
+</div>
+<div class="contact-box">
+<h4 style="color: #475569; margin-top: 0">ð Contatti</h4>
+<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689a4acada0aaa8aeabe7a0bd">[email&#160;protected]</a></p>
+<p><strong>Telefono commerciale:</strong> 335 7301206</p>
+<p>
+<strong>Telefono tecnico:</strong> 331 64 32 390<br/>
+</p>
+</div>
+<p>
+            Siamo qui per accompagnarLa in ogni step di questo percorso. Non esiti a contattarci per qualsiasi
+            chiarimento o domanda. La Sua sicurezza e tranquillitÃ  sono la nostra prioritÃ .
+          </p>
+<p><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br/>Il Team TeleMedCare</p>
+</div>
+<div class="footer-standard">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="30595e565f705d555459535157521e5944">[email&#160;protected]</a> | www.medicagb.it</p>
+</div>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
 </html>

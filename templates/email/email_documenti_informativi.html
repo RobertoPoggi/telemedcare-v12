@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="it">
-<head>
+<html lang="it" data-theme="light" style=""><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documenti Informativi TeleMedCare</title>
+    <title>Email Documenti Informativi - TeleMedCare</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <style>
       body {
         max-width: 880px;
@@ -28,132 +29,146 @@
       .email-header {
         background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         color: white;
-        padding: 30px;
+        padding: 30px 25px;
         text-align: center;
       }
 
       .email-content {
-        padding: 30px;
+        padding: 30px 25px;
       }
 
-      .info-section {
+      .contact-box {
         background: #f8fafc;
-        border-left: 4px solid #3b82f6;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
         padding: 20px;
         margin: 20px 0;
-        border-radius: 0 8px 8px 0;
       }
 
-      .document-list {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
+      .highlight-box {
+        background: #ecfdf5;
+        border: 2px solid #22c55e;
         border-radius: 8px;
         padding: 20px;
         margin: 20px 0;
       }
 
-      .footer {
-        background: #f8fafc;
-        color: #6b7280;
-        text-align: center;
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
         padding: 20px;
+        margin: 20px 0;
+      }
+
+      .footer-standard {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
         font-size: 14px;
       }
 
-      .highlight {
-        background: #dbeafe;
-        color: #1e40af;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 600;
+      .doc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
       }
 
-      @media (max-width: 768px) {
-        body {
-          padding: 16px;
-        }
+      .doc-card {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
       }
     </style>
-</head>
-<body>
+  </head>
+  <body style="">
+    <h1>TEMPLATE 1: EMAIL DOCUMENTI INFORMATIVI</h1>
+
     <div class="email-container">
-        <div class="email-header">
-            <h1 style="margin: 0; font-size: 28px;">📋 Documenti Informativi</h1>
-            <p style="margin: 10px 0 0; font-size: 16px; opacity: 0.9;">TeleMedCare - La sua salute, sempre connessa</p>
+      <div class="email-header">
+        <h3 style="margin: 0; font-size: 24px">TeleMedCare</h3>
+        <p style="margin: 10px 0 0 0">La tecnologia che Le salva salute e vita</p>
+        <div style="font-size: 14px; opacity: 0.9">
+          <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale
+        </div>
+      </div>
+
+      <div class="email-content">
+        <h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
+
+        <p>
+          Grazie per l'interesse mostrato verso i nostri servizi <strong>TeleMedCare {{PACCHETTO}}</strong>. Come
+          richiesto, abbiamo preparato per Lei la documentazione informativa completa.
+        </p>
+
+        <p>
+          Il nostro servizio è pensato per <strong>{{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</strong> e rappresenta una
+          soluzione innovativa per la gestione della salute a distanza.
+        </p>
+
+        <div class="info-box">
+          <h4 style="color: #3b82f6; margin-top: 0">Riepilogo della Sua richiesta</h4>
+          <ul>
+            <li><strong>Codice pratica:</strong> {{LEAD_ID}}</li>
+            <li><strong>Data richiesta:</strong> {{DATA_RICHIESTA}}</li>
+            <li><strong>Pacchetto:</strong> {{PACCHETTO}}</li>
+            <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
+          </ul>
         </div>
 
-        <div class="email-content">
-            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+        <h4 style="color: #1f2937; margin: 40px 0 25px 0">Documentazione Allegata</h4>
 
-            <p>La ringraziamo per l'interesse mostrato nei confronti dei nostri servizi TeleMedCare. Come da Lei richiesto, Le inviamo tutta la documentazione informativa relativa al piano <span class="highlight">{{PACCHETTO}}</span> per l'assistito {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}.</p>
+        <div class="doc-grid">
+          <div class="doc-card">
+            <h5>Brochure TeleMedCare</h5>
+            <ul>
+              <li>Panoramica completa dei servizi</li>
+              <li>Vantaggi della telemedicina</li>
+              <li>Confronto tra i pacchetti</li>
+            </ul>
+          </div>
 
-            <div class="info-section">
-                <h3 style="margin-top: 0; color: #1e40af;">📝 Riepilogo Richiesta</h3>
-                <ul>
-                    <li><strong>Data Richiesta:</strong> {{DATA_RICHIESTA}}</li>
-                    <li><strong>Piano Selezionato:</strong> {{PACCHETTO}}</li>
-                    <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
-                    <li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
-                    <li><strong>ID Richiesta:</strong> {{LEAD_ID}}</li>
-                </ul>
-            </div>
-
-            <div class="document-list">
-                <h3 style="margin-top: 0; color: #d68910;">📦 Documentazione Allegata</h3>
-                <ul>
-                    <li>🔹 <strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi</li>
-                    <li>🔹 <strong>Scheda Tecnica SiDLY Care Pro</strong> - Specifiche del dispositivo medico</li>
-                    <li>🔹 <strong>Informativa Prezzi e Piani</strong> - Dettagli economici e opzioni disponibili</li>
-                    {{#if MANUALE_RICHIESTO}}
-                    <li>🔹 <strong>Manuale Utente Completo</strong> - Guida all'utilizzo del dispositivo</li>
-                    {{/if}}
-                    <li>🔹 <strong>Informativa Privacy e Consensi</strong> - Trattamento dati e GDPR</li>
-                </ul>
-            </div>
-
-            <div class="info-section">
-                <h3 style="margin-top: 0; color: #1e40af;">🎯 Perché Scegliere TeleMedCare?</h3>
-                <ul>
-                    <li><strong>Innovazione Sociale:</strong> Cambiamo il paradigma della cura tradizionale</li>
-                    <li><strong>Tecnologia Certificata:</strong> Dispositivo medico Classe IIa certificato CE</li>
-                    <li><strong>Assistenza H24:</strong> Monitoraggio continuo e supporto sempre attivo</li>
-                    <li><strong>Detraibilità Fiscale:</strong> Spesa sanitaria detraibile al 19% nel 730</li>
-                </ul>
-            </div>
-
-            <p><strong>🔔 Prossimi Passi:</strong></p>
-            <ol>
-                <li>Esamini attentamente la documentazione allegata</li>
-                <li>Non esiti a contattarci per chiarimenti o domande</li>
-                <li>Quando sarà pronto/a, Le invieremo il contratto personalizzato</li>
-                <li>Attiveremo il servizio entro 10 giorni lavorativi dalla firma</li>
-            </ol>
-
-            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 25px 0;">
-                <p style="margin: 0; font-weight: 600; color: #1e40af;">💬 Siamo sempre disponibili!</p>
-                <p style="margin: 5px 0 0; font-size: 14px;">Il nostro team è a Sua completa disposizione per qualsiasi chiarimento. La Sua tranquillità è la nostra priorità.</p>
-            </div>
-
-            <p>Cordiali saluti,</p>
-            <p><strong>Il Team TeleMedCare - Medica GB S.r.l.</strong><br>
-            <em>"La tecnologia che Le salva salute e vita"</em></p>
-
-            <hr style="margin: 30px 0; border: none; height: 1px; background-color: #e5e7eb;">
-
-            <p style="font-size: 14px; color: #6b7280;">
-                📞 <strong>Contatti:</strong><br>
-                Email: info@telemedcare.it | Telefono: +39 331 643 2390<br>
-                WhatsApp: +39 331 643 2390 | Sito: www.telemedcare.it
-            </p>
+          {{#if MANUALE_RICHIESTO}}
+          <div class="doc-card">
+            <h5>Manuale Utente</h5>
+            <ul>
+              <li>Guida all'installazione</li>
+              <li>Utilizzo del dispositivo</li>
+              <li>Contatti tecnici</li>
+            </ul>
+          </div>
+          {{/if}}
         </div>
 
-        <div class="footer">
-            <p><strong>TeleMedCare</strong> - Medica GB S.r.l.</p>
-            <p>Corso Giuseppe Garibaldi, 34 - 20121 Milano | P.IVA: 12435130963</p>
-            <p style="font-size: 12px; margin-top: 10px;">
-                Ricevuta questa email per errore? <a href="mailto:privacy@telemedcare.it" style="color: #3b82f6;">Contattaci</a>
-            </p>
+        <div class="highlight-box">
+          <h4 style="color: #16a34a; margin-top: 0">Pacchetto {{PACCHETTO}} Selezionato</h4>
+          <p><strong>Investimento:</strong> {{PREZZO_PIANO}}</p>
+          <p>
+            Il pacchetto {{PACCHETTO}} è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto medico
+            completo e personalizzato.
+          </p>
         </div>
+
+        <div class="contact-box">
+          <h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
+          <p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dab3b4bcb59ab7bfbeb3b9bbbdb8f4b3ae">[email&#160;protected]</a></p>
+          <p><strong>Telefono commerciale:</strong> 335 7301206</p>
+          <p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
+        </div>
+
+        <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
+
+        <p><strong>Cordiali saluti,</strong><br>Il Team TeleMedCare</p>
+      </div>
+
+      <div class="footer-standard">
+        <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+        <p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+        <p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b3daddd5dcf3ded6d7dad0d2d4d19ddac7">[email&#160;protected]</a> | www.medicagb.it</p>
+      </div>
     </div>
-</body>
-</html>
+  
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body></html>

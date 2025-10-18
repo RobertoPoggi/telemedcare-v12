@@ -31,3 +31,12 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+# Test documents and backups
+documents/contratti/*.docx
+documents/contratti/*.pdf
+documents/contratti/*.backup
+documents/proforma/*.docx
+documents/proforma/*.pdf
+documents/proforma/*.backup
+*.tar.gz

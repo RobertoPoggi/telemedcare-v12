@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
+<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
+
+      .template-section {
+        margin-bottom: 60px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 40px;
+      }
+
+      .template-title {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        margin: 0 -20px 30px -20px;
+        border-radius: 8px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .email-container {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+      }
+
+      .email-content {
+        padding: 30px 25px;
+      }
+
+      .contact-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .highlight-box {
+        background: #ecfdf5;
+        border: 2px solid #22c55e;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+      }
+
+      .comparison-table th {
+        background: #3b82f6;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+      }
+
+      .comparison-table tr:nth-child(even) {
+        background: #f8faff;
+      }
+
+      .footer-standard {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
+    </style>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
+<body>
+
+
+<div class="email-container">
+<div class="email-header" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #22c55e 100%)">
+<h3 style="margin: 0; font-size: 24px">Medica GB S.r.l.</h3>
+<p style="margin: 10px 0 0 0">Startup Innovativa a Vocazione Sociale</p>
+<div style="font-size: 14px; opacity: 0.8">"La tecnologia che Le salva salute e vita"</div>
+</div>
+<div class="email-content">
+<h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
+<p>
+            Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come
+            promesso, Le inviamo in allegato il <strong>contratto per il servizio {{PIANO_SERVIZIO}}</strong> e la
+            <strong>brochure aziendale</strong> con tutti i dettagli sui nostri servizi innovativi.
+          </p>
+<div class="info-box">
+<h4 style="color: #3b82f6; margin-top: 0">📋 Il Suo piano TeleMedCare {{PIANO_SERVIZIO}}</h4>
+<ul>
+<li><strong>Piano:</strong> {{PIANO_SERVIZIO}}</li>
+<li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+<li><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</li>
+</ul>
+</div>
+<div style="margin: 20px 0">
+<h4 style="color: #1f2937">⭐ Perché ha fatto la scelta giusta</h4>
+<ul>
+<li>
+<strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale che
+                cambia il paradigma della cura tradizionale
+              </li>
+<li>
+<strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve, senza
+                doversi spostare
+              </li>
+<li>
+<strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalità
+                all'avanguardia
+              </li>
+</ul>
+</div>
+<div class="highlight-box">
+<h4 style="color: #16a34a; margin-top: 0">📝 Prossimi passi per l'attivazione</h4>
+<ol>
+<li>Legga attentamente il contratto allegato</li>
+<li>Firmi in ogni pagina richiesta e nell'ultima pagina</li>
+<li>Ci invii il contratto firmato via email o WhatsApp</li>
+<li>Riceverà il dispositivo entro 10 giorni lavorativi</li>
+</ol>
+</div>
+<div class="warning-box">
+<h4 style="color: #d97706; margin-top: 0">💰 Vantaggi Economici e Fiscali</h4>
+<ul>
+<li><strong>✅ Detrazione Fiscale 19%:</strong> Il servizio è detraibile come spesa sanitaria nel 730</li>
+<li><strong>✅ Possibili Rimborsi INPS:</strong> Per ISEE sotto €6.000 + Legge 104</li>
+</ul>
+</div>
+<div class="contact-box">
+<h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
+<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689a4acada0aaa8aeabe7a0bd">[email&#160;protected]</a></p>
+<p><strong>Telefono commerciale:</strong> 335 7301206</p>
+<p>
+<strong>Telefono tecnico:</strong> 331 64 32 390<br/>
+</p>
+</div>
+<p>
+            Siamo qui per accompagnarLa in ogni step di questo percorso. Non esiti a contattarci per qualsiasi
+            chiarimento o domanda. La Sua sicurezza e tranquillità sono la nostra priorità.
+          </p>
+<p><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br/>Il Team TeleMedCare</p>
+</div>
+<div class="footer-standard">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="30595e565f705d555459535157521e5944">[email&#160;protected]</a> | www.medicagb.it</p>
+</div>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>

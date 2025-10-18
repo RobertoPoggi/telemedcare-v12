@@ -25,6 +25,13 @@ import DeviceManager from './modules/device-manager'
 import EmailService from './modules/email-service'
 import TemplateManager from './modules/template-manager'
 
+// Import NEW Workflow Orchestrator Modules (CRITICAL FIX)
+import * as WorkflowOrchestrator from './modules/complete-workflow-orchestrator'
+import * as WorkflowEmailManager from './modules/workflow-email-manager'
+import * as SignatureManager from './modules/signature-manager'
+import * as PaymentManager from './modules/payment-manager'
+import * as ClientConfigurationManager from './modules/client-configuration-manager'
+
 type Bindings = {
   DB: D1Database
   KV?: KVNamespace
@@ -373,85 +380,13 @@ async function inviaEmailLandingPagePersonalizzata(email: string, nome: string, 
   }
 }
 
-// Invia email notifica info@telemedcare.it per nuovo lead
-async function inviaEmailNotificaInfo(leadData: any) {
-  try {
-    console.log(`📧 Invio notifica nuovo lead a info@telemedcare.it`)
-    console.log(`Template: email_notifica_info`)
-    console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.emailRichiedente}`)
-    
-    // In produzione, usare EmailService reale
-    return { 
-      success: true, 
-      messageId: `msg_${Date.now()}`,
-      template: 'email_notifica_info'
-    }
-  } catch (error) {
-    return { success: false, error: error.message }
-  }
-}
+// ============================================
+// OLD PLACEHOLDER FUNCTIONS - DEPRECATED
+// Now using complete-workflow-orchestrator.ts instead
+// ============================================
 
-// Invia documenti informativi (brochure/manuale)
-async function inviaEmailDocumentiInformativi(leadData: any) {
-  try {
-    console.log(`📧 Invio documenti informativi a ${leadData.emailRichiedente}`)
-    console.log(`Template: email_documenti_informativi`)
-    console.log(`Richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
-    
-    return { 
-      success: true, 
-      messageId: `msg_${Date.now()}`,
-      template: 'email_documenti_informativi'
-    }
-  } catch (error) {
-    return { success: false, error: error.message }
-  }
-}
-
-// Genera e invia contratto automaticamente
-async function generaEInviaContratto(leadId: string, tipoServizio: string, db: any) {
-  try {
-    // 1. Genera contratto
-    const contractResult = await fetch('/api/contracts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        leadId: leadId,
-        tipoContratto: tipoServizio.toUpperCase()
-      })
-    })
-    
-    if (!contractResult.ok) {
-      throw new Error('Errore generazione contratto')
-    }
-    
-    const contractData = await contractResult.json()
-    
-    // 2. Invia contratto via email
-    const sendResult = await fetch('/api/contracts/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contractId: contractData.contract.id
-      })
-    })
-    
-    if (!sendResult.ok) {
-      throw new Error('Errore invio contratto')
-    }
-    
-    return {
-      success: true,
-      contractId: contractData.contract.id,
-      codiceContratto: contractData.contract.codice,
-      message: 'Contratto generato e inviato automaticamente'
-    }
-    
-  } catch (error) {
-    console.error('❌ Errore generazione/invio contratto automatico:', error)
-    return { success: false, error: error.message }
-  }
-}
+// Note: inviaEmailNotificaInfo, inviaEmailDocumentiInformativi, and generaEInviaContratto
+// are now replaced by WorkflowOrchestrator.processNewLead() which handles all these steps correctly
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -666,7 +601,7 @@ app.get('/', (c) => {
         <h2 class="text-5xl md:text-6xl font-bold mb-6">La tecnologia che ti salva salute e vita</h2>
         <p class="text-xl md:text-2xl mb-8 max-w-4xl mx-auto">
           Servizi innovativi di TeleAssistenza e TeleMonitoraggio con dispositivo medico certificato SiDLY. Assistenza
-          H24 direttamente dove c' necessit.
+          H24 direttamente dove c'è necessità.
         </p>
         <div class="flex flex-col md:flex-row gap-4 justify-center">
           <button onclick="document.getElementById('form-richiesta').scrollIntoView({behavior: 'smooth'})" class="btn-primary">
@@ -693,7 +628,7 @@ app.get('/', (c) => {
           <h3 class="text-2xl font-semibold text-blue-600 mb-4">Startup Innovativa a Vocazione Sociale</h3>
           <p class="text-lg text-gray-700">
             Eroghiamo servizi di TeleAssistenza, TeleMonitoraggio, Riabilitazione, Diagnostica e Assistenza Sanitaria
-            direttamente dove c' necessit, cambiando il paradigma tradizionale.
+            direttamente dove c'è necessità, cambiando il paradigma tradizionale.
           </p>
         </div>
       </div>
@@ -3820,36 +3755,55 @@ app.post('/api/lead', async (c) => {
 
       console.log('✅ Lead salvato nel database con nuovo schema')
       
-      // Invio automatico email notifica a info@telemedcare.it
-      await inviaEmailNotificaInfo(normalizedLead)
+      // ============================================
+      // 🔥 NEW WORKFLOW ORCHESTRATOR INTEGRATION
+      // ============================================
+      console.log('🚀 [WORKFLOW] Avvio orchestratore workflow completo')
       
-      // Se richiede solo documenti, invio email documenti informativi
-      if (!normalizedLead.vuoleContratto && (normalizedLead.vuoleBrochure || normalizedLead.vuoleManuale)) {
-        await inviaEmailDocumentiInformativi(normalizedLead)
+      // Crea contesto workflow
+      const workflowContext: WorkflowOrchestrator.WorkflowContext = {
+        db: c.env.DB,
+        env: c.env,
+        leadData: {
+          id: normalizedLead.id,
+          nomeRichiedente: normalizedLead.nomeRichiedente,
+          cognomeRichiedente: normalizedLead.cognomeRichiedente,
+          emailRichiedente: normalizedLead.emailRichiedente,
+          telefonoRichiedente: normalizedLead.telefonoRichiedente,
+          nomeAssistito: normalizedLead.nomeAssistito,
+          cognomeAssistito: normalizedLead.cognomeAssistito,
+          etaAssistito: normalizedLead.etaAssistito,
+          pacchetto: normalizedLead.pacchetto,
+          vuoleContratto: normalizedLead.vuoleContratto,
+          vuoleBrochure: normalizedLead.vuoleBrochure,
+          vuoleManuale: normalizedLead.vuoleManuale,
+          fonte: normalizedLead.fonte
+        }
       }
       
-      // Se richiede contratto, generalo e invialo automaticamente
-      if (normalizedLead.vuoleContratto) {
-        const contractResult = await generaEInviaContratto(normalizedLead.id, normalizedLead.pacchetto || 'BASE', c.env.DB)
-        console.log('📄 Contratto generato automaticamente:', contractResult)
-      }
+      // Esegui STEP 1: Processamento nuovo lead
+      const workflowResults = await WorkflowOrchestrator.processNewLead(workflowContext)
+      
+      console.log('📧 [WORKFLOW] Orchestratore completato:', workflowResults)
+      
+      return c.json({
+        success: true,
+        leadId: leadId,
+        message: 'Lead ricevuto e processato con successo',
+        timestamp: timestamp,
+        workflow: workflowResults
+      })
       
     } else {
       console.log('⚠️ Database non configurato - modalità development')
+      
+      return c.json({
+        success: true,
+        leadId: leadId,
+        message: 'Lead ricevuto (database non configurato)',
+        timestamp: timestamp
+      })
     }
-    
-    // Elaborazione workflow CORRETTO: Solo proforma, email benvenuto dopo pagamento
-    const workflowResults = await elaboraWorkflowEmail(normalizedLead, leadId, c.env.DB, false, c.env)
-    
-    console.log('📧 Workflow email completato:', workflowResults)
-
-    return c.json({
-      success: true,
-      leadId: leadId,
-      message: 'Lead ricevuto e processato con successo',
-      timestamp: timestamp,
-      workflow: workflowResults
-    })
 
   } catch (error) {
     console.error('❌ TeleMedCare V11.0-Cloudflare: Errore elaborazione lead:', error)
@@ -4253,6 +4207,53 @@ app.post('/api/contracts', async (c) => {
   }
 })
 
+// POST /api/documents/generate - Genera documenti (contratto + proforma) da template DOCX
+app.post('/api/documents/generate', async (c) => {
+  try {
+    const { leadId } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log(`📄 Richiesta generazione documenti per lead ${leadId}`)
+    
+    // Importa document-manager dinamicamente
+    const { generateDocumentsForLead } = await import('./modules/document-manager')
+    
+    // Genera documenti (contratto + proforma PDF)
+    const result = await generateDocumentsForLead(c.env.DB, leadId)
+    
+    if (!result.success) {
+      return c.json({
+        success: false,
+        errors: result.errors
+      }, 400)
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Documenti generati con successo',
+      data: {
+        contractId: result.contractId,
+        contractPdfUrl: result.contractPdfUrl,
+        proformaId: result.proformaId,
+        proformaPdfUrl: result.proformaPdfUrl,
+        tipoServizio: result.tipoServizio,
+        prezzoBase: result.prezzoBase,
+        prezzoIvaInclusa: result.prezzoIvaInclusa
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore generazione documenti:', error)
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Errore sconosciuto' 
+    }, 500)
+  }
+})
+
 // POST /api/contracts/send - Invia contratto via email
 app.post('/api/contracts/send', async (c) => {
   try {
@@ -4333,33 +4334,53 @@ app.post('/api/contracts/sign', async (c) => {
       return c.json({ success: false, error: 'Contratto non valido o già firmato' }, 404)
     }
     
-    // Salva firma elettronica
-    await c.env.DB.prepare(`
-      INSERT INTO signatures (
-        contract_id, firma_digitale, tipo_firma, ip_address, user_agent, 
-        timestamp_firma, hash_documento, valida
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      contractId, firmaDigitale, 'ELECTRONIC', ipAddress, userAgent,
-      new Date().toISOString(), `hash_${contractId}_${Date.now()}`, true
-    ).run()
+    // Recupera lead data
+    const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(contract.leadId).first()
+    if (!leadData) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
     
-    // Aggiorna contratto
-    await c.env.DB.prepare('UPDATE contracts SET status = ? WHERE id = ?').bind('SIGNED', contractId).run()
+    // ============================================
+    // 🔥 NEW WORKFLOW ORCHESTRATOR - STEP 2: Firma Contratto
+    // ============================================
+    const workflowContext: WorkflowOrchestrator.WorkflowContext & { contractId: string; signatureData: string } = {
+      db: c.env.DB,
+      env: c.env,
+      leadData: {
+        id: leadData.id,
+        nomeRichiedente: leadData.nomeRichiedente,
+        cognomeRichiedente: leadData.cognomeRichiedente,
+        emailRichiedente: leadData.email,
+        telefonoRichiedente: leadData.telefono,
+        nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
+        cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
+        pacchetto: leadData.tipoServizio || 'BASE',
+        vuoleContratto: true,
+        vuoleBrochure: leadData.vuoleBrochure === 'Si',
+        vuoleManuale: leadData.vuoleManuale === 'Si',
+        fonte: leadData.fonte || 'LANDING_PAGE'
+      },
+      contractId,
+      signatureData: firmaDigitale
+    }
     
-    // Aggiorna lead
-    await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?').bind('CONTRACT_SIGNED', contract.leadId).run()
+    // Esegui STEP 2: Processamento firma contratto
+    const result = await WorkflowOrchestrator.processContractSignature(workflowContext)
     
-    // Genera automaticamente proforma
-    const proformaResult = await generaProformaDaContratto(contractId, c.env.DB)
-    
-    return c.json({
-      success: true,
-      message: 'Contratto firmato con successo',
-      signature_id: `SIG_${Date.now()}`,
-      proforma_generata: proformaResult.success,
-      proforma_id: proformaResult.proformaId
-    })
+    if (result.success) {
+      return c.json({
+        success: true,
+        message: result.message,
+        data: result.data
+      })
+    } else {
+      return c.json({
+        success: false,
+        error: result.message,
+        errors: result.errors
+      }, 400)
+    }
     
   } catch (error) {
     console.error('❌ Errore firma contratto:', error)
@@ -4454,34 +4475,74 @@ app.post('/api/payments', async (c) => {
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
     }
     
-    const paymentId = `PAY_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    // Recupera lead data
+    const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(proforma.leadId).first()
+    if (!leadData) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
     
-    // Registra pagamento
-    await c.env.DB.prepare(`
-      INSERT INTO payments (
-        id, proforma_id, contract_id, leadId, importo, metodo_pagamento,
-        transaction_id, stripe_payment_intent_id, status, data_pagamento, data_conferma
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      paymentId, proformaId, proforma.contract_id, proforma.leadId, importo,
-      metodoPagamento, transactionId, stripePaymentIntentId, 'COMPLETED',
-      new Date().toISOString(), new Date().toISOString()
-    ).run()
+    console.log(`💳 [ENDPOINT] Payment request data:`, JSON.stringify({
+      proformaId,
+      importo,
+      metodoPagamento,
+      transactionId,
+      proforma_contract_id: proforma.contract_id,
+      leadId: leadData.id
+    }))
     
-    // Aggiorna proforma
-    await c.env.DB.prepare('UPDATE proforma SET status = ? WHERE id = ?').bind('PAID', proformaId).run()
+    // ============================================
+    // 🔥 NEW WORKFLOW ORCHESTRATOR - STEP 3: Pagamento
+    // ============================================
+    const workflowContext: WorkflowOrchestrator.WorkflowContext & { 
+      proformaId: string; 
+      contractId: string; 
+      paymentData: any 
+    } = {
+      db: c.env.DB,
+      env: c.env,
+      leadData: {
+        id: leadData.id,
+        nomeRichiedente: leadData.nomeRichiedente,
+        cognomeRichiedente: leadData.cognomeRichiedente,
+        emailRichiedente: leadData.email,
+        telefonoRichiedente: leadData.telefono,
+        nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
+        cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
+        pacchetto: leadData.tipoServizio || 'BASE',
+        vuoleContratto: true,
+        vuoleBrochure: leadData.vuoleBrochure === 'Si',
+        vuoleManuale: leadData.vuoleManuale === 'Si',
+        fonte: leadData.fonte || 'LANDING_PAGE'
+      },
+      proformaId,
+      contractId: proforma.contract_id,
+      paymentData: {
+        amount: importo,
+        paymentMethod: metodoPagamento,
+        transactionId,
+        stripePaymentIntentId
+      }
+    }
     
-    // Aggiorna lead
-    await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?').bind('CONVERTED', proforma.leadId).run()
+    // Esegui STEP 3: Processamento pagamento
+    const result = await WorkflowOrchestrator.processPayment(workflowContext)
     
-    // Invia automaticamente email benvenuto e form configurazione
-    await inviaEmailBenvenutoEFormConfigurazione(proforma.leadId, c.env.DB)
-    
-    return c.json({
-      success: true,
-      payment_id: paymentId,
-      message: 'Pagamento registrato. Email benvenuto e form configurazione inviati automaticamente.'
-    })
+    if (result.success) {
+      return c.json({
+        success: true,
+        message: result.message,
+        data: result.data
+      })
+    } else {
+      // Return debug info if available
+      return c.json({
+        success: false,
+        error: result.message,
+        errors: result.errors,
+        debug: (result as any).debug  // Include debug info from payment manager
+      }, 400)
+    }
     
   } catch (error) {
     console.error('❌ Errore registrazione pagamento:', error)
@@ -4499,60 +4560,141 @@ app.post('/api/configurations', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    // Trova contratto del lead
-    const contract = await c.env.DB.prepare('SELECT id FROM contracts WHERE leadId = ? AND status = ?').bind(leadId, 'SIGNED').first()
-    if (!contract) {
-      return c.json({ success: false, error: 'Contratto firmato non trovato per il lead' }, 404)
+    // Recupera lead data
+    const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+    if (!leadData) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
     
-    // Assegna dispositivo disponibile
-    const device = await c.env.DB.prepare('SELECT id FROM devices WHERE status = ? LIMIT 1').bind('INVENTORY').first()
-    if (!device) {
-      return c.json({ success: false, error: 'Nessun dispositivo disponibile' }, 404)
+    // Genera codice cliente (dovrebbe essere già stato generato in STEP 3, 
+    // ma lo generiamo qui per sicurezza)
+    const timestamp = Date.now()
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+    const codiceCliente = `CLI-${timestamp}-${random}`
+    
+    // ============================================
+    // 🔥 NEW WORKFLOW ORCHESTRATOR - STEP 4: Configurazione
+    // ============================================
+    const workflowContext: WorkflowOrchestrator.WorkflowContext & { configData: any } = {
+      db: c.env.DB,
+      env: c.env,
+      leadData: {
+        id: leadData.id,
+        nomeRichiedente: leadData.nomeRichiedente,
+        cognomeRichiedente: leadData.cognomeRichiedente,
+        emailRichiedente: leadData.email,
+        telefonoRichiedente: leadData.telefono,
+        nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
+        cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
+        pacchetto: leadData.tipoServizio || 'BASE',
+        vuoleContratto: true,
+        vuoleBrochure: leadData.vuoleBrochure === 'Si',
+        vuoleManuale: leadData.vuoleManuale === 'Si',
+        fonte: leadData.fonte || 'LANDING_PAGE'
+      },
+      configData: {
+        leadId,
+        codiceCliente,  // ← Add codiceCliente to config data
+        contattiEmergenza,
+        datiMedici,
+        preferenzeUtilizzo,
+        // Populate required fields for ConfigurationData interface
+        nomeCompletoAssistito: `${leadData.nomeAssistito || leadData.nomeRichiedente} ${leadData.cognomeAssistito || leadData.cognomeRichiedente}`,
+        dataNascitaAssistito: leadData.dataNascitaAssistito || '',
+        indirizzoCompletoAssistito: leadData.indirizzoAssistito || '',
+        cittaAssistito: leadData.cittaAssistito || '',
+        capAssistito: leadData.capAssistito || '',
+        provinciaAssistito: leadData.provinciaAssistito || '',
+        compilazioneTimestamp: new Date().toISOString()
+      }
     }
     
-    // Salva configurazione
-    await c.env.DB.prepare(`
-      INSERT INTO configurations (
-        leadId, device_id, contract_id,
-        contatto_emergenza_1_nome, contatto_emergenza_1_telefono, contatto_emergenza_1_relazione,
-        contatto_emergenza_2_nome, contatto_emergenza_2_telefono, contatto_emergenza_2_relazione,
-        medico_curante_nome, medico_curante_telefono, centro_medico_riferimento,
-        allergie, patologie_croniche, farmaci_assunti,
-        modalita_utilizzo, orari_attivazione, status, data_completamento
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      leadId, device.id, contract.id,
-      contattiEmergenza.contatto1.nome, contattiEmergenza.contatto1.telefono, contattiEmergenza.contatto1.relazione,
-      contattiEmergenza.contatto2?.nome, contattiEmergenza.contatto2?.telefono, contattiEmergenza.contatto2?.relazione,
-      datiMedici.medicoCurante, datiMedici.telefonoMedico, datiMedici.centroMedico,
-      datiMedici.allergie, datiMedici.patologie, datiMedici.farmaci,
-      preferenzeUtilizzo.modalita, JSON.stringify(preferenzeUtilizzo.orari), 'COMPLETED',
-      new Date().toISOString()
-    ).run()
+    // Esegui STEP 4: Processamento configurazione
+    const result = await WorkflowOrchestrator.processConfiguration(workflowContext)
     
-    // Aggiorna dispositivo come assegnato
-    await c.env.DB.prepare(`
-      UPDATE devices SET 
-        status = 'ASSIGNED', 
-        leadId = ?, 
-        contract_id = ?, 
-        data_assegnazione = ?,
-        configurato = true
-      WHERE id = ?
-    `).bind(leadId, contract.id, new Date().toISOString(), device.id).run()
-    
-    // Invia email conferma attivazione
-    await inviaEmailConfermaAttivazione(leadId, device.id, c.env.DB)
-    
-    return c.json({
-      success: true,
-      message: 'Configurazione completata e dispositivo assegnato',
-      device_id: device.id
-    })
+    if (result.success) {
+      return c.json({
+        success: true,
+        message: result.message,
+        data: result.data
+      })
+    } else {
+      return c.json({
+        success: false,
+        error: result.message,
+        errors: result.errors
+      }, 400)
+    }
     
   } catch (error) {
     console.error('❌ Errore salvataggio configurazione:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST /api/devices/associate - Associa dispositivo e conferma attivazione (STEP 5 - FINALE)
+app.post('/api/devices/associate', async (c) => {
+  try {
+    const { leadId, deviceId, deviceImei, configurationId } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera lead data
+    const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+    if (!leadData) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // ============================================
+    // 🔥 NEW WORKFLOW ORCHESTRATOR - STEP 5: Associazione Dispositivo (FINALE)
+    // ============================================
+    const workflowContext: WorkflowOrchestrator.WorkflowContext & { deviceData: any } = {
+      db: c.env.DB,
+      env: c.env,
+      leadData: {
+        id: leadData.id,
+        nomeRichiedente: leadData.nomeRichiedente,
+        cognomeRichiedente: leadData.cognomeRichiedente,
+        emailRichiedente: leadData.email,
+        telefonoRichiedente: leadData.telefono,
+        nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
+        cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
+        pacchetto: leadData.tipoServizio || 'BASE',
+        vuoleContratto: true,
+        vuoleBrochure: leadData.vuoleBrochure === 'Si',
+        vuoleManuale: leadData.vuoleManuale === 'Si',
+        fonte: leadData.fonte || 'LANDING_PAGE'
+      },
+      deviceData: {
+        deviceId,
+        deviceImei,
+        configurationId
+      }
+    }
+    
+    // Esegui STEP 5: Processamento associazione dispositivo
+    const result = await WorkflowOrchestrator.processDeviceAssociation(workflowContext)
+    
+    if (result.success) {
+      return c.json({
+        success: true,
+        message: result.message,
+        data: result.data
+      })
+    } else {
+      return c.json({
+        success: false,
+        error: result.message,
+        errors: result.errors
+      }, 400)
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore associazione dispositivo:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
@@ -4622,7 +4764,7 @@ app.get('/api/contratti/:id/view', async (c) => {
   const id = c.req.param('id')
   
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       // Mock response per development
       return c.html(`
         <!DOCTYPE html>
@@ -4683,7 +4825,7 @@ app.get('/api/contratti/:id/download', async (c) => {
   const id = c.req.param('id')
   
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       // Mock PDF response per development
       const pdfContent = `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /MediaBox [0 0 612 792] /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 55 >>\nstream\nBT\n/F1 12 Tf\n100 700 Td\n(Contratto TeleMedCare TMC-2024-${id.padStart(3, '0')}) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000281 00000 n \ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n386\n%%EOF`
       
@@ -4722,7 +4864,7 @@ app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
   
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({
         id: parseInt(id),
         name: `Lead Mock ${id}`,
@@ -4751,7 +4893,7 @@ app.put('/api/leads/:id', async (c) => {
   try {
     const data = await c.req.json()
     
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
     }
     
@@ -4779,7 +4921,7 @@ app.post('/api/leads/:id/convert', async (c) => {
   const id = c.req.param('id')
   
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({ success: true, message: 'Lead convertito (mock)' })
     }
     
@@ -4824,7 +4966,7 @@ app.post('/api/leads/:id/convert', async (c) => {
 // POINT 10 FIX - API per statistiche Data Dashboard
 app.get('/api/data/stats', async (c) => {
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({
         success: true,
         totalLeads: 127,
@@ -4860,7 +5002,7 @@ app.get('/api/data/stats', async (c) => {
 // POINT 10 FIX - API per assistiti Data Dashboard
 app.get('/api/assistiti', async (c) => {
   try {
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       const mockAssistiti = [
         {
           id: 1,
@@ -4926,7 +5068,7 @@ app.get('/api/logs', async (c) => {
   try {
     const level = c.req.query('level') || 'all'
     
-    if (!c.env?.DB || true) { // Force mock data per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       const mockLogs = [
         {
           id: 1,
@@ -4996,7 +5138,7 @@ app.post('/api/test/functional/run', async (c) => {
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Log test result
-    if (!c.env?.DB || true) { // Force mock per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       console.log(`✅ [TEST] Test funzionale completato: ${leadId} → ${assistitoId}`)
       
       return c.json({
@@ -5277,7 +5419,7 @@ app.post('/api/test/stress/create-assistito', async (c) => {
       throw new Error('Random failure simulation')
     }
     
-    if (!c.env?.DB || true) { // Force mock per ora
+    if (!c.env?.DB) { // Fallback se DB non disponibile
       console.log(`✅ [STRESS] Assistito creato: ${assistitoCode} (${index}/${total})`)
       
       return c.json({
