@@ -3728,11 +3728,13 @@ app.post('/api/lead', async (c) => {
       // Mappa i dati al nuovo schema
       await c.env.DB.prepare(`
         INSERT INTO leads (
-          id, nomeRichiedente, cognomeRichiedente, email, telefono,
-          nomeAssistito, cognomeAssistito, etaAssistito, fonte, tipoServizio,
-          vuoleBrochure, vuoleManuale, vuoleContratto,
-          consensoPrivacy, consensoMarketing, status, note
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+          nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
+          pacchetto, condizioniSalute, preferenzaContatto,
+          vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
+          cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
+          note, gdprConsent, timestamp, fonte, versione, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
@@ -3741,16 +3743,26 @@ app.post('/api/lead', async (c) => {
         normalizedLead.telefonoRichiedente,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
-        normalizedLead.etaAssistito ? parseInt(normalizedLead.etaAssistito) : null,
-        'LANDING_PAGE',
-        normalizedLead.pacchetto || 'BASE',
-        normalizedLead.vuoleBrochure ? 'Si' : 'No',
-        normalizedLead.vuoleManuale ? 'Si' : 'No', 
-        normalizedLead.vuoleContratto ? 'Si' : 'No',
-        normalizedLead.gdprConsent,
-        false, // consensoMarketing default
-        'NEW',
-        normalizedLead.note
+        normalizedLead.dataNascitaAssistito,
+        normalizedLead.etaAssistito,
+        normalizedLead.parentelaAssistito,
+        normalizedLead.pacchetto,
+        normalizedLead.condizioniSalute,
+        normalizedLead.preferenzaContatto,
+        normalizedLead.vuoleContratto ? 1 : 0,
+        normalizedLead.intestazioneContratto,
+        normalizedLead.cfRichiedente,
+        normalizedLead.indirizzoRichiedente,
+        normalizedLead.cfAssistito,
+        normalizedLead.indirizzoAssistito,
+        normalizedLead.vuoleBrochure ? 1 : 0,
+        normalizedLead.vuoleManuale ? 1 : 0,
+        normalizedLead.note,
+        normalizedLead.gdprConsent ? 1 : 0,
+        normalizedLead.timestamp,
+        normalizedLead.fonte,
+        normalizedLead.versione,
+        normalizedLead.status
       ).run()
 
       console.log('✅ Lead salvato nel database con nuovo schema')
