@@ -125,7 +125,7 @@
 
 <div class="email-container">
 <div class="email-header" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%)">
-<h3 style="margin: 0; font-size: 24px">ð Nuovo Lead TeleMedCare</h3>
+<h3 style="margin: 0; font-size: 24px">🆕 Nuovo Lead TeleMedCare</h3>
 <p style="margin: 10px 0 0 0">Sistema di Notifica Automatica</p>
 <div style="
               background-color: rgba(255, 255, 255, 0.2);
@@ -139,7 +139,7 @@
 </div>
 <div class="email-content">
 <div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¤ Dati Richiedente</h4>
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">👤 Dati Richiedente</h4>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
 <div style="
                   background-color: #f8f9fa;
@@ -216,7 +216,7 @@
 </div>
 </div>
 <div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¥ Dati Assistito</h4>
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">👥 Dati Assistito</h4>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
 <div style="
                   background-color: #f8f9fa;
@@ -276,7 +276,7 @@
 </div>
 </div>
 <div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">ð¯ Servizio Richiesto</h4>
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">📋 Servizio Richiesto</h4>
 <div style="
                 background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
                 border: 2px solid #52b788;
@@ -327,6 +327,65 @@
 </div>
 </div>
 </div>
+<div style="margin-bottom: 30px">
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">📄 Documenti e Servizi Richiesti</h4>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px">
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Contratto
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_CONTRATTO}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Brochure
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_BROCHURE}}</div>
+</div>
+<div style="
+                  background-color: #f8f9fa;
+                  padding: 12px 15px;
+                  border-left: 4px solid #52b788;
+                  border-radius: 4px;
+                ">
+<div style="
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                  ">
+                  Manuale
+                </div>
+<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_MANUALE}}</div>
+</div>
+</div>
+</div>
 <div style="
               background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
               border: 2px solid #ffc107;
@@ -335,15 +394,16 @@
               margin: 20px 0;
               text-align: center;
             ">
-<h4 style="color: #856404; margin-bottom: 10px">â¡ Azione Richiesta</h4>
-<p style="color: #664d03; margin: 0">
-              Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
+<h4 style="color: #856404; margin-bottom: 10px">⚠️ Urgenza Richiesta</h4>
+<p style="color: #664d03; margin: 0; font-weight: 600; font-size: 16px">
+              {{URGENZA}}
             </p>
 </div>
 <div class="contact-box">
-<h4 style="color: #475569; margin-top: 0">ð Contatti</h4>
-<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="127b7c747d527f77767b717375703c7b66">[email&#160;protected]</a></p>
+<h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
+<p><strong>E-MAIL COMMERCIALE:</strong> commerciale@telemedcare.it</p>
 <p><strong>Telefono commerciale:</strong> 335 7301206</p>
+<p><strong>E-MAIL TECNICO:</strong> tecnico@telemedcare.it</p>
 <p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
 </div>
 </div>
@@ -351,7 +411,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px">
 <div>
 <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br/>
-              ð§ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689a4acada0aaa8aeabe7a0bd">[email&#160;protected]</a> | ð www.medicagb.it
+              info@telemedcare.it | www.medicagb.it | www.telemedcare.it
             </div>
 <div style="text-align: right">
 <small>Generato automaticamente da TeleMedCare {{VERSIONE_SISTEMA}}<br/>il {{DATA_RICHIESTA}} alle

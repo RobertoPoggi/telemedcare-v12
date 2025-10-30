@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fattura Proforma - TeleMedCare</title>
+<style>
+body { 
+  font-family: Arial, Helvetica, sans-serif; 
+  line-height: 1.5; 
+  max-width: 800px; 
+  margin: 0 auto; 
+  padding: 40px; 
+  color: #000;
+  background: #fff;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid #1e40af;
+}
+.company-info {
+  flex: 1;
+}
+.company-info h1 {
+  color: #1e40af;
+  margin: 0 0 10px 0;
+  font-size: 24px;
+}
+.invoice-info {
+  text-align: right;
+  flex: 1;
+}
+.invoice-info h2 {
+  color: #1e40af;
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+.client-section {
+  background: #f8f9fa;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 4px solid #1e40af;
+}
+.client-section h3 {
+  margin: 0 0 10px 0;
+  color: #1e40af;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 30px 0;
+}
+thead {
+  background: #1e40af;
+  color: white;
+}
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+th {
+  font-weight: 600;
+}
+.text-right {
+  text-align: right;
+}
+.text-center {
+  text-align: center;
+}
+.totals-section {
+  margin: 30px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border: 2px solid #1e40af;
+}
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 16px;
+}
+.total-row.grand-total {
+  border-top: 2px solid #1e40af;
+  padding-top: 15px;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 20px;
+  color: #1e40af;
+}
+.payment-info {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  padding: 20px;
+  margin: 30px 0;
+  border-radius: 8px;
+}
+.payment-info h3 {
+  margin: 0 0 15px 0;
+  color: #856404;
+}
+.bank-details {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-left: 4px solid #ffc107;
+}
+.footer {
+  margin-top: 50px;
+  padding-top: 20px;
+  border-top: 2px solid #dee2e6;
+  text-align: center;
+  font-size: 12px;
+  color: #6c757d;
+}
+.highlight {
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company-info">
+    <h1>Medica GB S.r.l.</h1>
+    <p style="margin: 5px 0;"><strong>Sede Legale:</strong> Corso Giuseppe Garibaldi, 34</p>
+    <p style="margin: 5px 0;">20121 Milano (MI)</p>
+    <p style="margin: 5px 0;"><strong>Sede Operativa:</strong> Via delle Eriche 53, 16148 Genova (GE)</p>
+    <p style="margin: 5px 0;"><strong>P.IVA:</strong> 12435130963</p>
+    <p style="margin: 5px 0;"><strong>REA:</strong> MI-2661409</p>
+    <p style="margin: 5px 0;"><strong>Email:</strong> info@medicagb.it</p>
+    <p style="margin: 5px 0;"><strong>PEC:</strong> medicagbsrl@pecimprese.it</p>
+  </div>
+  <div class="invoice-info">
+    <h2>FATTURA PROFORMA</h2>
+    <p style="margin: 10px 0;"><strong>N°:</strong> {{NUMERO_PROFORMA}}</p>
+    <p style="margin: 10px 0;"><strong>Data:</strong> {{DATA_EMISSIONE}}</p>
+    <p style="margin: 10px 0;"><strong>Valida fino al:</strong> {{DATA_SCADENZA}}</p>
+  </div>
+</div>
+
+<div class="client-section">
+  <h3>DESTINATARIO</h3>
+  <p style="margin: 5px 0;"><strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong></p>
+  <p style="margin: 5px 0;">{{INDIRIZZO_CLIENTE}}</p>
+  <p style="margin: 5px 0;">{{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}})</p>
+  <p style="margin: 5px 0;"><strong>Codice Fiscale:</strong> {{CF_CLIENTE}}</p>
+  <p style="margin: 5px 0;"><strong>Email:</strong> {{EMAIL_CLIENTE}}</p>
+  <p style="margin: 5px 0;"><strong>Telefono:</strong> {{TELEFONO_CLIENTE}}</p>
+</div>
+
+<div class="highlight">
+  <p style="margin: 0; font-weight: bold; color: #0c5460;">Questa è una FATTURA PROFORMA valida per 30 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 50%;">Descrizione</th>
+      <th class="text-center" style="width: 15%;">Quantità</th>
+      <th class="text-right" style="width: 20%;">Prezzo Unitario</th>
+      <th class="text-right" style="width: 15%;">Totale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Servizio TeleAssistenza {{TIPO_SERVIZIO}}</strong><br/>
+        <small>Durata: 12 mesi</small><br/>
+        <small>Include: Dispositivo SiDLY CARE PRO, Configurazione, Piattaforma Web/APP, SIM dati{{SERVIZI_AGGIUNTIVI}}</small>
+      </td>
+      <td class="text-center">1</td>
+      <td class="text-right">€ {{PREZZO_BASE}}</td>
+      <td class="text-right">€ {{PREZZO_BASE}}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="totals-section">
+  <div class="total-row">
+    <span>Imponibile:</span>
+    <span>€ {{PREZZO_BASE}}</span>
+  </div>
+  <div class="total-row">
+    <span>IVA (22%):</span>
+    <span>€ {{IMPORTO_IVA}}</span>
+  </div>
+  <div class="total-row grand-total">
+    <span>TOTALE DA PAGARE:</span>
+    <span>€ {{PREZZO_TOTALE}}</span>
+  </div>
+</div>
+
+<div class="payment-info">
+  <h3>MODALITÀ DI PAGAMENTO</h3>
+  <p style="margin: 10px 0;">Il pagamento può essere effettuato tramite:</p>
+  
+  <div class="bank-details">
+    <p style="margin: 5px 0; font-weight: bold;">1. BONIFICO BANCARIO</p>
+    <p style="margin: 5px 0;"><strong>Beneficiario:</strong> Medica GB S.r.l.</p>
+    <p style="margin: 5px 0;"><strong>IBAN:</strong> IT97L0503401727000000003519</p>
+    <p style="margin: 5px 0;"><strong>Banca:</strong> Banca Popolare di Milano</p>
+    <p style="margin: 5px 0;"><strong>Causale:</strong> Proforma {{NUMERO_PROFORMA}} - TeleMedCare {{TIPO_SERVIZIO}}</p>
+  </div>
+
+  <div class="bank-details">
+    <p style="margin: 5px 0; font-weight: bold;">2. CARTA DI CREDITO/DEBITO</p>
+    <p style="margin: 5px 0;">Pagamento sicuro online tramite il link fornito nell'email di conferma</p>
+  </div>
+
+  <p style="margin: 15px 0 5px 0; font-weight: bold; color: #856404;">⚠️ IMPORTANTE:</p>
+  <ul style="margin: 5px 0; padding-left: 20px;">
+    <li>Il pagamento deve essere effettuato entro la data di scadenza indicata</li>
+    <li>La fattura fiscale definitiva verrà emessa al ricevimento del pagamento</li>
+    <li>Il servizio verrà attivato entro 2 giorni lavorativi dal pagamento</li>
+  </ul>
+</div>
+
+<div style="background: #e7f3ff; border-left: 4px solid #1e40af; padding: 15px; margin: 20px 0;">
+  <p style="margin: 0; font-weight: bold;">✓ Cosa succede dopo il pagamento?</p>
+  <ol style="margin: 10px 0; padding-left: 20px;">
+    <li>Riceverai la fattura fiscale definitiva via email</li>
+    <li>Ti invieremo il dispositivo SiDLY CARE PRO entro 10 giorni lavorativi</li>
+    <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+    <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+  </ol>
+</div>
+
+<div class="footer">
+  <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+  <p>www.medicagb.it | www.telemedcare.it</p>
+  <p>Tel: +39 02 1234567 | Email: info@medicagb.it</p>
+  <p style="margin-top: 15px; font-size: 11px;">
+    Documento generato automaticamente dal sistema TeleMedCare V11.0<br/>
+    Per informazioni o assistenza: info@medicagb.it
+  </p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentazione TeleMedCare</title>
+    <style>
+      body {
+        font-family: 'Arial', 'Helvetica', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+
+      .email-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 30px 25px;
+        text-align: center;
+      }
+
+      .email-content {
+        padding: 30px 25px;
+      }
+
+      .download-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+
+      .download-link {
+        display: block;
+        background: #2563eb;
+        color: white !important;
+        text-decoration: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        text-align: center;
+        margin: 10px 0;
+        font-weight: 600;
+        transition: background 0.3s;
+      }
+
+      .download-link:hover {
+        background: #1d4ed8;
+      }
+
+      .info-text {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .contact-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 25px 0;
+      }
+
+      .footer {
+        background: #1f2937;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .footer a {
+        color: #60a5fa;
+        text-decoration: none;
+      }
+
+      h3 {
+        color: #1e40af;
+        margin-top: 0;
+      }
+
+      h4 {
+        color: #1f2937;
+        margin-bottom: 10px;
+      }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+      <div class="email-header">
+        <h2 style="margin: 0; font-size: 26px">🏥 TeleMedCare</h2>
+        <p style="margin: 10px 0 0 0; font-size: 16px">La tecnologia che salva salute e vita</p>
+        <p style="font-size: 13px; opacity: 0.9; margin: 5px 0 0 0">
+          <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale
+        </p>
+      </div>
+
+      <div class="email-content">
+        <h3>Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},</h3>
+
+        <p>
+          Grazie per l'interesse mostrato verso i nostri servizi <strong>TeleMedCare</strong>. 
+          Abbiamo preparato per Lei la documentazione informativa richiesta.
+        </p>
+
+        <div class="download-box">
+          {{DOWNLOAD_SECTION_TITLE}}
+          
+          {{DOWNLOAD_LINKS}}
+          
+          <p style="font-size: 14px; color: #92400e; margin-top: 20px; font-style: italic;">
+            <strong>💡 Suggerimento:</strong> Salva i documenti sul tuo dispositivo per consultarli in qualsiasi momento.
+          </p>
+        </div>
+
+        <div class="contact-box">
+          <h4 style="color: #1e40af; margin-top: 0;">📞 Hai domande? Contattaci!</h4>
+          <p style="margin: 8px 0;">
+            <strong>📧 Email:</strong> <a href="mailto:info@medicagb.it" style="color: #2563eb;">info@medicagb.it</a>
+          </p>
+          <p style="margin: 8px 0;">
+            <strong>📱 Telefono commerciale:</strong> <a href="tel:+393357301206" style="color: #2563eb;">335 7301206</a>
+          </p>
+          <p style="margin: 8px 0;">
+            <strong>🔧 Telefono tecnico:</strong> <a href="tel:+393316432390" style="color: #2563eb;">331 64 32 390</a>
+          </p>
+          <p style="margin: 8px 0;">
+            <strong>🌐 Sito web:</strong> <a href="https://www.medicagb.it" style="color: #2563eb;">www.medicagb.it</a>
+          </p>
+        </div>
+
+        <p style="margin-top: 30px;">
+          Dopo aver consultato la documentazione, saremo lieti di rispondere a qualsiasi Sua domanda 
+          e di accompagnarLa nel percorso verso una maggiore sicurezza e tranquillità per la Sua salute.
+        </p>
+
+        <p style="margin-top: 25px;">
+          <strong>Cordiali saluti,</strong><br>
+          <span style="color: #2563eb;">Il Team TeleMedCare</span>
+        </p>
+      </div>
+
+      <div class="footer">
+        <p style="margin: 5px 0;"><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+        <p style="margin: 5px 0; font-size: 13px;">
+          📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148
+        </p>
+        <p style="margin: 5px 0; font-size: 13px;">
+          P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a> | 
+          <a href="https://www.medicagb.it">www.medicagb.it</a>
+        </p>
+      </div>
+    </div>
+</body>
+</html>
