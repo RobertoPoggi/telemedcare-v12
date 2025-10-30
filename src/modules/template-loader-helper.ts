@@ -65,7 +65,7 @@ export async function loadEmailTemplate(
       .prepare(`
         SELECT html_content, active
         FROM document_templates
-        WHERE name = ? AND active = 1
+        WHERE id = ? AND active = 1
         LIMIT 1
       `)
       .bind(templateName)
@@ -84,7 +84,7 @@ export async function loadEmailTemplate(
       UPDATE document_templates 
       SET usage_count = usage_count + 1,
           last_used = CURRENT_TIMESTAMP
-      WHERE name = ?
+      WHERE id = ?
     `)
       .bind(templateName)
       .run()
