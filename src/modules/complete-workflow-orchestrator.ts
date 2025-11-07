@@ -510,17 +510,41 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   let filePath: string | null = null
   
   try {
+    // CRITICO: Determina chi è l'intestatario del contratto in base alla scelta del lead
+    const intestazioneContratto = ctx.leadData.intestazioneContratto || 'richiedente'
+    const usaAssistitoComeIntestatario = intestazioneContratto === 'assistito'
+    
+    console.log(`📋 [GENERATOR] Intestazione contratto: ${intestazioneContratto}`)
+    console.log(`📋 [GENERATOR] ${usaAssistitoComeIntestatario ? 'Contratto intestato all\'ASSISTITO' : 'Contratto intestato al RICHIEDENTE'}`)
+    
     const contractData: ContractData = {
       codiceContratto: contractCode,
       tipoContratto: tipoServizio,
-      nomeIntestatario: ctx.leadData.nomeRichiedente,
-      cognomeIntestatario: ctx.leadData.cognomeRichiedente,
-      cfIntestatario: ctx.leadData.cfRichiedente || 'DA FORNIRE',
-      indirizzoIntestatario: ctx.leadData.indirizzoRichiedente || 'DA FORNIRE',
-      nomeAssistito: ctx.leadData.nomeAssistito,
-      cognomeAssistito: ctx.leadData.cognomeAssistito,
+      // DATI INTESTATARIO (chi paga e firma il contratto) - BASATO SU SCELTA LEAD
+      nomeIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.nomeAssistito || ctx.leadData.nomeRichiedente) : ctx.leadData.nomeRichiedente,
+      cognomeIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.cognomeAssistito || ctx.leadData.cognomeRichiedente) : ctx.leadData.cognomeRichiedente,
+      cfIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.cfAssistito || 'DA FORNIRE') : (ctx.leadData.cfRichiedente || 'DA FORNIRE'),
+      indirizzoIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.indirizzoAssistito || 'DA FORNIRE') : (ctx.leadData.indirizzoRichiedente || 'DA FORNIRE'),
+      capIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.capAssistito : ctx.leadData.capRichiedente,
+      cittaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.cittaAssistito : ctx.leadData.cittaRichiedente,
+      provinciaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.provinciaAssistito : ctx.leadData.provinciaRichiedente,
+      luogoNascitaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.luogoNascitaAssistito : ctx.leadData.luogoNascitaRichiedente,
+      dataNascitaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.dataNascitaAssistito : ctx.leadData.dataNascitaRichiedente,
+      telefonoIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.telefonoAssistito || ctx.leadData.telefonoRichiedente) : ctx.leadData.telefonoRichiedente,
+      emailIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.emailAssistito || ctx.leadData.emailRichiedente) : ctx.leadData.emailRichiedente,
+      // DATI ASSISTITO (chi riceve il servizio - sempre presenti)
+      nomeAssistito: ctx.leadData.nomeAssistito || ctx.leadData.nomeRichiedente,
+      cognomeAssistito: ctx.leadData.cognomeAssistito || ctx.leadData.cognomeRichiedente,
+      luogoNascitaAssistito: ctx.leadData.luogoNascitaAssistito,
       dataNascitaAssistito: ctx.leadData.dataNascitaAssistito,
       cfAssistito: ctx.leadData.cfAssistito,
+      indirizzoAssistito: ctx.leadData.indirizzoAssistito,
+      capAssistito: ctx.leadData.capAssistito,
+      cittaAssistito: ctx.leadData.cittaAssistito,
+      provinciaAssistito: ctx.leadData.provinciaAssistito,
+      telefonoAssistito: ctx.leadData.telefonoAssistito,
+      emailAssistito: ctx.leadData.emailAssistito,
+      // DATI CONTRATTO
       dataContratto: new Date().toLocaleDateString('it-IT'),
       prezzo: prezzoBase
     }

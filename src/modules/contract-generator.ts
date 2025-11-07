@@ -15,6 +15,7 @@ import { SERVICE_PRICES, IVA_RATES, calculatePriceWithVAT } from '../config/pric
 export interface ContractData {
   codiceContratto: string
   tipoContratto: 'BASE' | 'ADVANCED'
+  // DATI INTESTATARIO (chi paga e firma il contratto)
   nomeIntestatario: string
   cognomeIntestatario: string
   cfIntestatario: string
@@ -22,8 +23,11 @@ export interface ContractData {
   capIntestatario?: string
   cittaIntestatario?: string
   provinciaIntestatario?: string
+  luogoNascitaIntestatario?: string
+  dataNascitaIntestatario?: string
   telefonoIntestatario?: string
   emailIntestatario?: string
+  // DATI ASSISTITO (chi riceve il servizio - può essere diverso dall'intestatario)
   nomeAssistito?: string
   cognomeAssistito?: string
   luogoNascitaAssistito?: string
@@ -35,6 +39,7 @@ export interface ContractData {
   provinciaAssistito?: string
   telefonoAssistito?: string
   emailAssistito?: string
+  // DATI CONTRATTO
   dataContratto: string
   dataInizioServizio?: string
   dataScadenza?: string
@@ -110,29 +115,29 @@ export async function generateContractPDF(contractData: ContractData): Promise<B
     yPos = addTextWithWrap(doc, 'e', margin, yPos, contentWidth, 10)
     yPos += 5
 
-    // IL CLIENTE (dati assistito)
-    const nomeAssistito = contractData.nomeAssistito || contractData.nomeIntestatario
-    const cognomeAssistito = contractData.cognomeAssistito || contractData.cognomeIntestatario
-    const luogoNascita = contractData.luogoNascitaAssistito || ''
-    const dataNascita = contractData.dataNascitaAssistito || ''
-    const indirizzoCompleto = [
-      contractData.indirizzoAssistito || contractData.indirizzoIntestatario,
-      contractData.capAssistito || contractData.capIntestatario,
-      contractData.cittaAssistito || contractData.cittaIntestatario,
-      contractData.provinciaAssistito ? `(${contractData.provinciaAssistito})` : (contractData.provinciaIntestatario ? `(${contractData.provinciaIntestatario})` : '')
+    // IL CLIENTE (RICHIEDENTE/INTESTATARIO - chi paga e firma il contratto)
+    const nomeCliente = contractData.nomeIntestatario
+    const cognomeCliente = contractData.cognomeIntestatario
+    const luogoNascitaCliente = contractData.luogoNascitaIntestatario || ''
+    const dataNascitaCliente = contractData.dataNascitaIntestatario || ''
+    const indirizzoCompletoCliente = [
+      contractData.indirizzoIntestatario,
+      contractData.capIntestatario,
+      contractData.cittaIntestatario,
+      contractData.provinciaIntestatario ? `(${contractData.provinciaIntestatario})` : ''
     ].filter(Boolean).join(' ')
-    const cfAssistito = contractData.cfAssistito || contractData.cfIntestatario
-    const telefonoAssistito = contractData.telefonoAssistito || contractData.telefonoIntestatario || ''
-    const emailAssistito = contractData.emailAssistito || contractData.emailIntestatario || ''
+    const cfCliente = contractData.cfIntestatario || 'DA FORNIRE'
+    const telefonoCliente = contractData.telefonoIntestatario || 'DA FORNIRE'
+    const emailCliente = contractData.emailIntestatario || 'DA FORNIRE'
 
-    let clienteText = `Sig./Sig.ra ${nomeAssistito} ${cognomeAssistito}`
-    if (luogoNascita || dataNascita) {
+    let clienteText = `Sig./Sig.ra ${nomeCliente} ${cognomeCliente}`
+    if (luogoNascitaCliente || dataNascitaCliente) {
       clienteText += ` nato/a`
-      if (luogoNascita) clienteText += ` a ${luogoNascita}`
-      if (dataNascita) clienteText += ` il ${dataNascita}`
+      if (luogoNascitaCliente) clienteText += ` a ${luogoNascitaCliente}`
+      if (dataNascitaCliente) clienteText += ` il ${dataNascitaCliente}`
       clienteText += ','
     }
-    clienteText += ` residente e domiciliato/a in ${indirizzoCompleto} e con codice fiscale ${cfAssistito}.`
+    clienteText += ` residente e domiciliato/a in ${indirizzoCompletoCliente} e con codice fiscale ${cfCliente}.`
 
     yPos = addTextWithWrap(doc, clienteText, margin, yPos, contentWidth, 10)
     yPos += 5
@@ -141,7 +146,7 @@ export async function generateContractPDF(contractData: ContractData): Promise<B
     doc.setFont('helvetica', 'bold')
     yPos = addTextWithWrap(doc, 'Riferimenti:', margin, yPos, contentWidth, 10)
     doc.setFont('helvetica', 'normal')
-    yPos = addTextWithWrap(doc, `telefono ${telefonoAssistito} – e-mail ${emailAssistito}`, margin, yPos, contentWidth, 10)
+    yPos = addTextWithWrap(doc, `telefono ${telefonoCliente} – e-mail ${emailCliente}`, margin, yPos, contentWidth, 10)
     yPos += 5
 
     doc.setFont('helvetica', 'italic')

@@ -1079,27 +1079,75 @@ app.get('/', (c) => {
                   </label>
                 </div>
 
-                <!-- Campi Dinamici per Richiedente -->
+                <!-- Campi Dinamici per Richiedente (COMPLETI per Stripe e DocuSign) -->
                 <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Luogo di Nascita Richiedente</label>
+                      <input type="text" name="luogoNascitaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Milano, Roma">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Data di Nascita Richiedente</label>
+                      <input type="date" name="dataNascitaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                  </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente *</label>
                     <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
                   </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
-                    <textarea name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente (Via e numero civico) *</label>
+                    <input type="text" name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Via Roma 123">
+                  </div>
+                  <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">CAP Richiedente *</label>
+                      <input type="text" name="capRichiedente" maxlength="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="20100">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Città Richiedente *</label>
+                      <input type="text" name="cittaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milano">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
+                      <input type="text" name="provinciaRichiedente" maxlength="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="MI">
+                    </div>
                   </div>
                 </div>
 
-                <!-- Campi Dinamici per Assistito -->
+                <!-- Campi Dinamici per Assistito (COMPLETI per Stripe e DocuSign) -->
                 <div id="campi_assistito" style="display: none;" class="space-y-4 mt-4">
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito *</label>
                     <input type="text" name="cfAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale dell'Assistito">
                   </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Assistito</label>
-                    <textarea name="indirizzoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo dell'Assistito"></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Assistito (Via e numero civico) *</label>
+                    <input type="text" name="indirizzoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Via Roma 123">
+                  </div>
+                  <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">CAP Assistito *</label>
+                      <input type="text" name="capAssistito" maxlength="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="20100">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Città Assistito *</label>
+                      <input type="text" name="cittaAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milano">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
+                      <input type="text" name="provinciaAssistito" maxlength="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="MI">
+                    </div>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Telefono Assistito</label>
+                      <input type="tel" name="telefonoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+39 333 1234567">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Email Assistito</label>
+                      <input type="email" name="emailAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@example.com">
+                    </div>
                   </div>
                 </div>
               </div>

@@ -18,23 +18,43 @@ import { D1Database } from '@cloudflare/workers-types'
 
 export interface LeadData {
   id: string
+  // DATI RICHIEDENTE (intestatario contratto)
   nomeRichiedente: string
   cognomeRichiedente: string
   emailRichiedente: string
   telefonoRichiedente?: string
+  cfRichiedente?: string
+  indirizzoRichiedente?: string
+  capRichiedente?: string
+  cittaRichiedente?: string
+  provinciaRichiedente?: string
+  luogoNascitaRichiedente?: string
+  dataNascitaRichiedente?: string
+  // DATI ASSISTITO (chi riceve il servizio)
   nomeAssistito?: string
   cognomeAssistito?: string
-  etaAssistito?: number
+  etaAssistito?: number | string
+  cfAssistito?: string
+  indirizzoAssistito?: string
+  capAssistito?: string
+  cittaAssistito?: string
+  provinciaAssistito?: string
+  dataNascitaAssistito?: string
+  luogoNascitaAssistito?: string
+  telefonoAssistito?: string
+  emailAssistito?: string
+  // SERVIZIO RICHIESTO
   pacchetto: string // 'BASE' o 'AVANZATO'
   vuoleBrochure: boolean
   vuoleManuale: boolean
   vuoleContratto: boolean
-  cfRichiedente?: string
-  indirizzoRichiedente?: string
-  cfAssistito?: string
-  indirizzoAssistito?: string
-  dataNascitaAssistito?: string
-  luogoNascitaAssistito?: string
+  intestazioneContratto?: string // 'richiedente' o 'assistito' - chi è l'intestatario del contratto
+  // ALTRI DATI
+  fonte?: string
+  condizioniSalute?: string
+  preferenzaContatto?: string
+  urgenzaRisposta?: string
+  giorniRisposta?: number
   note?: string
 }
 
@@ -70,15 +90,22 @@ export async function inviaEmailNotificaInfo(
     // Carica template email_notifica_info
     const template = await loadEmailTemplate('email_notifica_info', db)
     
-    // Prepara i dati per il template
+    // Prepara i dati per il template - TUTTI I CAMPI RICHIESTI
     const now = new Date()
     const templateData = {
+      // DATI RICHIEDENTE
       NOME_RICHIEDENTE: leadData.nomeRichiedente,
       COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
       EMAIL_RICHIEDENTE: leadData.emailRichiedente,
       TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || 'Non fornito',
       CF_RICHIEDENTE: leadData.cfRichiedente || 'Non fornito',
       INDIRIZZO_RICHIEDENTE: leadData.indirizzoRichiedente || 'Non fornito',
+      CAP_RICHIEDENTE: leadData.capRichiedente || 'Non fornito',
+      CITTA_RICHIEDENTE: leadData.cittaRichiedente || 'Non fornita',
+      PROVINCIA_RICHIEDENTE: leadData.provinciaRichiedente || 'Non fornita',
+      LUOGO_NASCITA_RICHIEDENTE: leadData.luogoNascitaRichiedente || 'Non fornito',
+      DATA_NASCITA_RICHIEDENTE: leadData.dataNascitaRichiedente || 'Non fornita',
+      // DATI ASSISTITO
       NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
       COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
       ETA_ASSISTITO: leadData.etaAssistito?.toString() || 'Non fornita',
@@ -86,10 +113,27 @@ export async function inviaEmailNotificaInfo(
       LUOGO_NASCITA_ASSISTITO: leadData.luogoNascitaAssistito || 'Non fornito',
       CF_ASSISTITO: leadData.cfAssistito || 'Non fornito',
       INDIRIZZO_ASSISTITO: leadData.indirizzoAssistito || 'Non fornito',
-      CONDIZIONI_SALUTE: leadData.note || 'Non specificate',
-      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
+      CAP_ASSISTITO: leadData.capAssistito || 'Non fornito',
+      CITTA_ASSISTITO: leadData.cittaAssistito || 'Non fornita',
+      PROVINCIA_ASSISTITO: leadData.provinciaAssistito || 'Non fornita',
+      TELEFONO_ASSISTITO: leadData.telefonoAssistito || 'Non fornito',
+      EMAIL_ASSISTITO: leadData.emailAssistito || 'Non fornita',
+      // SERVIZIO E RICHIESTE
       PIANO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
+      TIPO_SERVIZIO: leadData.pacchetto,
       PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
+      VUOLE_CONTRATTO: leadData.vuoleContratto ? 'SÌ' : 'NO',
+      INTESTAZIONE_CONTRATTO: leadData.intestazioneContratto || 'Non specificata',
+      VUOLE_BROCHURE: leadData.vuoleBrochure ? 'SÌ' : 'NO',
+      VUOLE_MANUALE: leadData.vuoleManuale ? 'SÌ' : 'NO',
+      // CONDIZIONI E NOTE (CRITICI!)
+      CONDIZIONI_SALUTE: leadData.condizioniSalute || 'Non specificate',
+      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
+      PREFERENZA_CONTATTO: leadData.preferenzaContatto || 'Non specificata',
+      URGENZA_RISPOSTA: leadData.urgenzaRisposta || 'Non specificata',
+      GIORNI_RISPOSTA: leadData.giorniRisposta?.toString() || 'Non specificati',
+      // DATI SISTEMA
+      FONTE: leadData.fonte || 'LANDING_PAGE',
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
@@ -241,6 +285,7 @@ export async function inviaEmailContratto(
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
+      TIPO_SERVIZIO: contractData.tipoServizio, // BASE o ADVANCED (come nel template)
       PIANO_SERVIZIO: contractData.tipoServizio === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
       PREZZO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}`,
       CODICE_CLIENTE: leadData.id,
