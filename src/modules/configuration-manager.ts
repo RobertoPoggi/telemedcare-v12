@@ -111,7 +111,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
       port: 587,
       secure: false,
       auth: {
-        user: 'noreply@telemedcare.it',
+        user: 'info@telemedcare.it',
         pass: '${SMTP_PASSWORD}' // Da sostituire con variabile ambiente
       }
     },
@@ -125,7 +125,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
   {
     category: 'EMAIL',
     key: 'EMAIL_FROM_DEFAULT',
-    value: 'TeleMedCare <noreply@telemedcare.it>',
+    value: 'TeleMedCare <info@telemedcare.it>',
     description: 'Email mittente di default',
     isActive: true,
     isSecret: false,
@@ -783,7 +783,7 @@ export class ConfigurationUtils {
 
     return {
       smtp: smtpResult.success ? smtpResult.data : null,
-      from: fromResult.success ? fromResult.data : 'noreply@telemedcare.it'
+      from: fromResult.success ? fromResult.data : 'info@telemedcare.it'
     }
   }
 }

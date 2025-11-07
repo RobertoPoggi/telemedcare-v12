@@ -568,7 +568,7 @@ export class EmailService {
       }],
       from: {
         name: 'TeleMedCare',
-        email: 'noreply@telemedcare.it'
+        email: 'info@telemedcare.it'
       },
       content: [
         {
@@ -625,7 +625,7 @@ export class EmailService {
     }
     
     const payload = {
-      from: 'TeleMedCare <noreply@telemedcare.it>',
+      from: 'TeleMedCare <info@telemedcare.it>',
       to: [emailData.to],
       subject: emailData.subject,
       html: emailData.html,

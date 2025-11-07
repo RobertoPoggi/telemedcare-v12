@@ -146,7 +146,7 @@ export async function inviaEmailNotificaInfo(
     // Invia email a info@telemedcare.it
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
       html: emailHtml,
       text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.emailRichiedente}`
@@ -224,7 +224,7 @@ export async function inviaEmailDocumentiInformativi(
     // Invia email con allegati
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined
@@ -335,7 +335,7 @@ export async function inviaEmailContratto(
     // Invia email con allegati
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`,
       html: emailHtml,
       attachments: attachments
@@ -417,7 +417,7 @@ export async function inviaEmailProforma(
     // Invia email con allegato
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
       html: emailHtml,
       attachments: attachments
@@ -481,7 +481,7 @@ export async function inviaEmailBenvenuto(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.emailRichiedente,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `🎉 Benvenuto/a in TeleMedCare, ${clientData.nomeRichiedente}!`,
       html: emailHtml
     })
@@ -546,7 +546,7 @@ export async function inviaEmailConfigurazione(
     // Invia email a info@
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `📋 Nuova Configurazione Cliente: ${clientData.nomeRichiedente} ${clientData.cognomeRichiedente}`,
       html: emailHtml
     })
@@ -616,7 +616,7 @@ export async function inviaEmailConfermaAttivazione(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.emailRichiedente,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `✅ TeleMedCare - Servizio Attivato!`,
       html: emailHtml
     })
