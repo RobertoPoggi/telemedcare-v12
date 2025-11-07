@@ -3,6 +3,7 @@
 # ═══════════════════════════════════════════════════════════════
 # TEST 360° COMPLETO - TeleMedCare V11.0
 # Tutte le combinazioni possibili di servizio e documenti
+# VERSIONE CON EMAIL REALE: rpoggi55@gmail.com
 # ═══════════════════════════════════════════════════════════════
 
 API_URL="http://localhost:3000/api/lead"
@@ -12,7 +13,23 @@ REPORT_FILE="test_360_report_${TIMESTAMP}.txt"
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║     TEST 360° COMPLETO - TeleMedCare V11.0 Workflow          ║"
 echo "║     Data: $(date '+%Y-%m-%d %H:%M:%S')                              ║"
+echo "║                                                                ║"
+echo "║     📧 EMAIL: rpoggi55@gmail.com (REALE per verifica)        ║"
+echo "║     📦 22 TEST → 22 EMAIL da verificare                       ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
+echo ""
+echo "⚠️  IMPORTANTE PER ROBERTO:"
+echo "   - Riceverai 22 email a rpoggi55@gmail.com"
+echo "   - Ogni email ha nel SUBJECT il numero test (es: TEST #1)"
+echo "   - Verifica per ogni email:"
+echo "     ✓ LEAD_ID valorizzato (non {{LEAD_ID}})"
+echo "     ✓ Giorni risposta corretto da urgenza"
+echo "     ✓ Numero allegati PDF corretto (0-3)"
+echo "     ✓ Servizio BASE/AVANZATO corretto"
+echo "     ✓ Prezzo corretto (€585,60 / €1.024,80)"
+echo "     ✓ Tutti i 40+ campi presenti nell'email a info@"
+echo ""
+echo "⏱️  Tempo stimato: ~2 minuti (5 sec pausa tra test)"
 echo ""
 
 # Inizializza report
@@ -70,12 +87,12 @@ run_test() {
     echo "    - Manuale: $MANUALE"
     echo ""
     
-    # Prepara payload JSON
+    # Prepara payload JSON - USA EMAIL REALE DI ROBERTO per verifica
     local PAYLOAD=$(cat <<EOF
 {
-  "nome": "Test",
-  "cognomeRichiedente": "Utente $TEST_NUM",
-  "email": "test${TEST_NUM}@test.com",
+  "nome": "Roberto",
+  "cognomeRichiedente": "Poggi",
+  "email": "rpoggi55@gmail.com",
   "telefono": "+39 348 1234567",
   "eta": "65",
   "servizio": "$SERVIZIO",
@@ -84,9 +101,9 @@ run_test() {
   "vuoleBrochure": $BROCHURE,
   "vuoleManuale": $MANUALE,
   "nomeAssistito": "Assistito Test $TEST_NUM",
-  "cognomeAssistito": "Cognome $TEST_NUM",
-  "condizioniSalute": "Test condizioni scenario $TEST_NUM",
-  "note": "Test automatico 360° - Scenario $TEST_NUM",
+  "cognomeAssistito": "Scenario $TEST_NUM",
+  "condizioniSalute": "Test 360° - Scenario $TEST_NUM - $DESC",
+  "note": "🧪 TEST #$TEST_NUM - $DESC | Docs: C=$CONTRATTO B=$BROCHURE M=$MANUALE",
   "gdprConsent": true
 }
 EOF
@@ -121,8 +138,9 @@ EOF
         echo "RESULT: ❌ FAILED" >> "$REPORT_FILE"
     fi
     
-    # Pausa tra test
-    sleep 2
+    # Pausa più lunga tra test per evitare rate limiting email
+    echo "  ⏳ Attesa 5 secondi prima del prossimo test..."
+    sleep 5
 }
 
 # ═══════════════════════════════════════════════════════════════
