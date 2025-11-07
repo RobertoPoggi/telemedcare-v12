@@ -1291,26 +1291,84 @@ app.get('/', (c) => {
                 </div>
 
                 <!-- Campi Dinamici per Richiedente -->
-                <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
-                  <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
-                    <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
+                <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 class="text-md font-semibold text-blue-800 mb-3">Dati Intestatario Contratto - Richiedente</h4>
+                  
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente *</label>
+                      <input type="text" name="cfRichiedente" id="cf_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: RSSMRA80A01H501U" maxlength="16">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Telefono Intestatario *</label>
+                      <input type="tel" name="telefonoIntestatarioRichiedente" id="telefono_intestatario_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+39 XXX XXXXXXX">
+                    </div>
                   </div>
+                  
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
-                    <textarea name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Email Intestatario *</label>
+                    <input type="email" name="emailIntestatarioRichiedente" id="email_intestatario_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@esempio.it">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Completo *</label>
+                    <input type="text" name="indirizzoRichiedente" id="indirizzo_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Via, Numero Civico">
+                  </div>
+                  
+                  <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">CAP *</label>
+                      <input type="text" name="capRichiedente" id="cap_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="00000" maxlength="5" pattern="[0-9]{5}">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Città *</label>
+                      <input type="text" name="cittaRichiedente" id="citta_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: Roma">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
+                      <input type="text" name="provinciaRichiedente" id="provincia_richiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: RM" maxlength="2">
+                    </div>
                   </div>
                 </div>
 
                 <!-- Campi Dinamici per Assistito -->
-                <div id="campi_assistito" style="display: none;" class="space-y-4 mt-4">
-                  <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito</label>
-                    <input type="text" name="cfAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale dell'Assistito">
+                <div id="campi_assistito" style="display: none;" class="space-y-4 mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 class="text-md font-semibold text-green-800 mb-3">Dati Intestatario Contratto - Assistito</h4>
+                  
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito *</label>
+                      <input type="text" name="cfAssistito" id="cf_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: RSSMRA80A01H501U" maxlength="16">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Telefono Intestatario *</label>
+                      <input type="tel" name="telefonoIntestatarioAssistito" id="telefono_intestatario_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+39 XXX XXXXXXX">
+                    </div>
                   </div>
+                  
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Assistito</label>
-                    <textarea name="indirizzoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo dell'Assistito"></textarea>
+                    <label class="block text-gray-700 font-semibold mb-2">Email Intestatario *</label>
+                    <input type="email" name="emailIntestatarioAssistito" id="email_intestatario_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@esempio.it">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Completo *</label>
+                    <input type="text" name="indirizzoAssistito" id="indirizzo_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Via, Numero Civico">
+                  </div>
+                  
+                  <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">CAP *</label>
+                      <input type="text" name="capAssistito" id="cap_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="00000" maxlength="5" pattern="[0-9]{5}">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Città *</label>
+                      <input type="text" name="cittaAssistito" id="citta_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: Milano">
+                    </div>
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
+                      <input type="text" name="provinciaAssistito" id="provincia_assistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es: MI" maxlength="2">
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1722,6 +1780,7 @@ app.get('/', (c) => {
 
       // Validazione form completa
       function validateForm(formData) {
+        // Campi sempre obbligatori
         const required = ['nomeRichiedente', 'cognomeRichiedente', 'emailRichiedente', 'telefonoRichiedente', 'nomeAssistito', 'cognomeAssistito'];
         
         for (let field of required) {
@@ -1732,13 +1791,115 @@ app.get('/', (c) => {
           }
         }
 
-        // Validazione email
+        // Validazione email richiedente
         const email = formData.get('emailRichiedente');
         const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
         if (!emailRegex.test(email)) {
           console.error('❌ TeleMedCare V11.0-Cloudflare: Email non valida:', email);
-          alert('Inserisci un indirizzo email valido');
+          alert('Inserisci un indirizzo email valido per il richiedente');
           return false;
+        }
+
+        // ✅ VALIDAZIONE CONDIZIONALE: Se "Voglio il contratto" è selezionato
+        const vuoleContratto = formData.has('vuoleContratto');
+        console.log('🔍 Validazione condizionale: vuoleContratto =', vuoleContratto);
+        
+        if (vuoleContratto) {
+          // 1. SERVIZIO DI INTERESSE è obbligatorio
+          const pacchetto = formData.get('pacchetto');
+          if (!pacchetto || pacchetto.trim() === '') {
+            console.error('❌ Campo "Servizio di Interesse" obbligatorio quando si richiede il contratto');
+            alert('Quando richiedi il contratto, devi selezionare il "Servizio di Interesse"');
+            return false;
+          }
+          
+          // 2. INTESTAZIONE CONTRATTO è obbligatoria
+          const intestazione = formData.get('intestazioneContratto');
+          if (!intestazione || intestazione.trim() === '') {
+            console.error('❌ Campo "Intestazione Contratto" obbligatorio');
+            alert('Quando richiedi il contratto, devi specificare a chi deve essere intestato (Richiedente o Assistito)');
+            return false;
+          }
+          
+          console.log('🔍 Intestazione contratto selezionata:', intestazione);
+          
+          // 3. CAMPI INTESTATARIO in base alla selezione (richiedente o assistito)
+          if (intestazione === 'richiedente') {
+            const campiRichiedente = [
+              { name: 'cfRichiedente', label: 'Codice Fiscale Richiedente' },
+              { name: 'telefonoIntestatarioRichiedente', label: 'Telefono Intestatario (Richiedente)' },
+              { name: 'emailIntestatarioRichiedente', label: 'Email Intestatario (Richiedente)' },
+              { name: 'indirizzoRichiedente', label: 'Indirizzo Richiedente' },
+              { name: 'capRichiedente', label: 'CAP Richiedente' },
+              { name: 'cittaRichiedente', label: 'Città Richiedente' },
+              { name: 'provinciaRichiedente', label: 'Provincia Richiedente' }
+            ];
+            
+            for (let campo of campiRichiedente) {
+              const valore = formData.get(campo.name);
+              if (!valore || valore.trim() === '') {
+                console.error(\`❌ Campo "\${campo.label}" obbligatorio per intestazione richiedente\`);
+                alert(\`Il campo "\${campo.label}" è obbligatorio quando il contratto è intestato al Richiedente\`);
+                return false;
+              }
+            }
+            
+            // Validazione email intestatario richiedente
+            const emailIntestatario = formData.get('emailIntestatarioRichiedente');
+            if (!emailRegex.test(emailIntestatario)) {
+              console.error('❌ Email intestatario richiedente non valida:', emailIntestatario);
+              alert('Inserisci un indirizzo email valido per l\\'intestatario (Richiedente)');
+              return false;
+            }
+            
+            // Validazione CAP richiedente
+            const capRichiedente = formData.get('capRichiedente');
+            if (!/^[0-9]{5}$/.test(capRichiedente)) {
+              console.error('❌ CAP richiedente non valido:', capRichiedente);
+              alert('Il CAP deve essere composto da 5 cifre');
+              return false;
+            }
+            
+            console.log('✅ Validazione campi intestatario RICHIEDENTE completata');
+            
+          } else if (intestazione === 'assistito') {
+            const campiAssistito = [
+              { name: 'cfAssistito', label: 'Codice Fiscale Assistito' },
+              { name: 'telefonoIntestatarioAssistito', label: 'Telefono Intestatario (Assistito)' },
+              { name: 'emailIntestatarioAssistito', label: 'Email Intestatario (Assistito)' },
+              { name: 'indirizzoAssistito', label: 'Indirizzo Assistito' },
+              { name: 'capAssistito', label: 'CAP Assistito' },
+              { name: 'cittaAssistito', label: 'Città Assistito' },
+              { name: 'provinciaAssistito', label: 'Provincia Assistito' }
+            ];
+            
+            for (let campo of campiAssistito) {
+              const valore = formData.get(campo.name);
+              if (!valore || valore.trim() === '') {
+                console.error(\`❌ Campo "\${campo.label}" obbligatorio per intestazione assistito\`);
+                alert(\`Il campo "\${campo.label}" è obbligatorio quando il contratto è intestato all'Assistito\`);
+                return false;
+              }
+            }
+            
+            // Validazione email intestatario assistito
+            const emailIntestatario = formData.get('emailIntestatarioAssistito');
+            if (!emailRegex.test(emailIntestatario)) {
+              console.error('❌ Email intestatario assistito non valida:', emailIntestatario);
+              alert('Inserisci un indirizzo email valido per l\\'intestatario (Assistito)');
+              return false;
+            }
+            
+            // Validazione CAP assistito
+            const capAssistito = formData.get('capAssistito');
+            if (!/^[0-9]{5}$/.test(capAssistito)) {
+              console.error('❌ CAP assistito non valido:', capAssistito);
+              alert('Il CAP deve essere composto da 5 cifre');
+              return false;
+            }
+            
+            console.log('✅ Validazione campi intestatario ASSISTITO completata');
+          }
         }
 
         // Validazione GDPR
@@ -1748,7 +1909,7 @@ app.get('/', (c) => {
           return false;
         }
 
-        console.log('✅ TeleMedCare V11.0-Cloudflare: Validazione form completata');
+        console.log('✅ TeleMedCare V11.0-Cloudflare: Validazione form completata con successo');
         return true;
       }
 
