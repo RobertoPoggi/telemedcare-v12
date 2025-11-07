@@ -4408,18 +4408,44 @@ app.post('/api/contracts/sign', async (c) => {
       env: c.env,
       leadData: {
         id: leadData.id,
+        // DATI RICHIEDENTE (intestatario contratto)
         nomeRichiedente: leadData.nomeRichiedente,
         cognomeRichiedente: leadData.cognomeRichiedente,
         emailRichiedente: leadData.email,
         telefonoRichiedente: leadData.telefono,
+        cfRichiedente: leadData.cfRichiedente,
+        indirizzoRichiedente: leadData.indirizzoRichiedente,
+        capRichiedente: leadData.capRichiedente,
+        cittaRichiedente: leadData.cittaRichiedente,
+        provinciaRichiedente: leadData.provinciaRichiedente,
+        luogoNascitaRichiedente: leadData.luogoNascitaRichiedente,
+        dataNascitaRichiedente: leadData.dataNascitaRichiedente,
+        // DATI ASSISTITO (chi riceve il servizio)
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
-        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : undefined,
+        cfAssistito: leadData.cfAssistito,
+        indirizzoAssistito: leadData.indirizzoAssistito,
+        capAssistito: leadData.capAssistito,
+        cittaAssistito: leadData.cittaAssistito,
+        provinciaAssistito: leadData.provinciaAssistito,
+        dataNascitaAssistito: leadData.dataNascitaAssistito,
+        luogoNascitaAssistito: leadData.luogoNascitaAssistito,
+        telefonoAssistito: leadData.telefonoAssistito,
+        emailAssistito: leadData.emailAssistito,
+        // SERVIZIO RICHIESTO
         pacchetto: leadData.tipoServizio || 'BASE',
         vuoleContratto: true,
         vuoleBrochure: leadData.vuoleBrochure === 'Si',
         vuoleManuale: leadData.vuoleManuale === 'Si',
-        fonte: leadData.fonte || 'LANDING_PAGE'
+        intestazioneContratto: leadData.intestazioneContratto,
+        // ALTRI DATI
+        fonte: leadData.fonte || 'LANDING_PAGE',
+        condizioniSalute: leadData.condizioniSalute,
+        preferenzaContatto: leadData.preferenzaContatto,
+        urgenzaRisposta: leadData.urgenzaRisposta,
+        giorniRisposta: leadData.giorniRisposta,
+        note: leadData.note
       },
       contractId,
       signatureData: firmaDigitale

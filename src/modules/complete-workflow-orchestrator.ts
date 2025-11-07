@@ -685,20 +685,20 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      proformaId,
-      ctx.contractId,
-      ctx.leadData.id,
-      numeroProforma,
+      proformaId || `PRF${Date.now()}`,
+      ctx.contractId || '',
+      ctx.leadData.id || '',
+      numeroProforma || `PRF-${Date.now()}`,
       dataEmissione.toISOString().split('T')[0], // Data formato YYYY-MM-DD
       dataScadenza.toISOString().split('T')[0],
       ctx.leadData.nomeRichiedente || 'Cliente',
       ctx.leadData.cognomeRichiedente || '',
       ctx.leadData.emailRichiedente || 'email@example.com',
-      tipoServizio,
-      prezzoBase,
+      tipoServizio || 'BASE',
+      prezzoBase || 0,
       12,
-      prezzoIvaInclusa,
-      filePath,
+      prezzoIvaInclusa || 0,
+      filePath || `/documents/proforma/${numeroProforma}.pdf`,
       pdfBuffer ? pdfBuffer.toString('base64') : null,
       'SENT',
       'email_invio_proforma',
