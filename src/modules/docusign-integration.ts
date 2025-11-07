@@ -45,19 +45,35 @@ export class DocuSignClient {
   private config: DocuSignConfig
   private accessToken: string | null = null
   private tokenExpiresAt: number = 0
+  private useOAuth: boolean = false
 
-  constructor(config: DocuSignConfig) {
+  constructor(config: DocuSignConfig, useOAuth: boolean = false) {
     this.config = config
+    this.useOAuth = useOAuth
   }
 
   /**
-   * Ottiene Access Token via JWT (JSON Web Token)
+   * Imposta access token manualmente (per OAuth flow)
+   */
+  setAccessToken(token: string, expiresIn: number): void {
+    this.accessToken = token
+    this.tokenExpiresAt = Date.now() + (expiresIn * 1000) - 60000 // 1 min buffer
+    console.log('✅ [DocuSign] Access token configurato (scade tra', Math.floor(expiresIn / 60), 'minuti)')
+  }
+
+  /**
+   * Ottiene Access Token via JWT (JSON Web Token) o OAuth
    * https://developers.docusign.com/platform/auth/jwt/
    */
   async getAccessToken(): Promise<string> {
     // Se token ancora valido, riusa
     if (this.accessToken && Date.now() < this.tokenExpiresAt) {
       return this.accessToken
+    }
+
+    // Se OAuth, token deve essere impostato manualmente
+    if (this.useOAuth) {
+      throw new Error('OAuth mode: Access token must be set manually using setAccessToken()')
     }
 
     try {
@@ -365,8 +381,10 @@ export class DocuSignClient {
 
 /**
  * Factory per creare client DocuSign da environment variables
+ * @param env - Environment variables
+ * @param useOAuth - Se true, usa OAuth invece di JWT (default: true)
  */
-export function createDocuSignClient(env: any): DocuSignClient {
+export function createDocuSignClient(env: any, useOAuth: boolean = true): DocuSignClient {
   const config: DocuSignConfig = {
     integrationKey: env.DOCUSIGN_INTEGRATION_KEY || '',
     secretKey: env.DOCUSIGN_SECRET_KEY,
@@ -382,7 +400,7 @@ export function createDocuSignClient(env: any): DocuSignClient {
     throw new Error('DocuSign configuration incomplete. Check environment variables.')
   }
 
-  return new DocuSignClient(config)
+  return new DocuSignClient(config, useOAuth)
 }
 
 export default DocuSignClient
