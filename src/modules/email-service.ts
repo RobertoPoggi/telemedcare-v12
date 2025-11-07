@@ -612,7 +612,7 @@ export class EmailService {
    */
   private async sendWithResend(emailData: EmailData, env?: any): Promise<EmailResult> {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
-    const apiKey = env?.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2'
+    const apiKey = env?.RESEND_API_KEY || 're_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt'
     
     console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
