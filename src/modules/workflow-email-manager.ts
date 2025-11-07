@@ -362,18 +362,31 @@ export async function inviaEmailContratto(
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
-    // Genera HTML dinamico per la lista allegati
-    const allegatiLista: string[] = ['📄 Contratto TeleMedCare (da firmare digitalmente)']
+    // Genera HTML dinamico per la lista allegati e testo introduttivo
+    const allegatiLista: string[] = ['📄 <strong>Contratto TeleMedCare</strong> (da firmare digitalmente)']
+    const hasBrochure = leadData.vuoleBrochure && documentUrls.brochure
+    const hasManuale = leadData.vuoleManuale && documentUrls.manuale
     
-    if (leadData.vuoleBrochure && documentUrls.brochure) {
-      allegatiLista.push('📘 Brochure TeleMedCare - Panoramica completa dei servizi')
+    if (hasBrochure) {
+      allegatiLista.push('📘 <strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi')
     }
     
-    if (leadData.vuoleManuale && documentUrls.manuale) {
-      allegatiLista.push('📖 Manuale Utente SiDLY Care Pro - Guida completa')
+    if (hasManuale) {
+      allegatiLista.push('📖 <strong>Manuale Utente SiDLY Care Pro</strong> - Guida completa all\'uso del dispositivo')
     }
     
-    const allegatiHtml = 'Questo messaggio contiene allegati: ' + allegatiLista.join(', ')
+    // Testo dinamico per il corpo email (frasi complete)
+    let testoDocumentiAggiuntivi = ''
+    if (hasBrochure && hasManuale) {
+      testoDocumentiAggiuntivi = ' insieme alla brochure aziendale e al manuale utente'
+    } else if (hasBrochure) {
+      testoDocumentiAggiuntivi = ' insieme alla brochure aziendale'
+    } else if (hasManuale) {
+      testoDocumentiAggiuntivi = ' insieme al manuale utente'
+    }
+    
+    // Lista HTML formattata per il riquadro
+    const allegatiHtml = allegatiLista.map(item => `• ${item}`).join('<br>')
     
     // Prepara i dati per il template
     const templateData = {
@@ -386,6 +399,7 @@ export async function inviaEmailContratto(
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${env.PUBLIC_URL || 'https://telemedcare.it'}/firma-contratto?contractId=${contractData.contractId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT'),
+      TESTO_DOCUMENTI_AGGIUNTIVI: testoDocumentiAggiuntivi,
       ALLEGATI_LISTA: allegatiHtml
     }
 
