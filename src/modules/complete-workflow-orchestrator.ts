@@ -125,8 +125,31 @@ export async function processNewLead(
         result.message = 'Errore generazione contratto'
       }
     } else {
-      result.message = 'Nessuna richiesta specifica (né documenti né contratto)'
-      result.success = true
+      // Percorso C: Nessuna selezione → Invia brochure automaticamente
+      console.log(`📧 [ORCHESTRATOR] Nessuna selezione, invio brochure automatica`)
+      
+      // Forza vuoleBrochure a true per inviare la brochure
+      ctx.leadData.vuoleBrochure = true
+      
+      // Ottieni URLs documenti (solo brochure)
+      const documentUrls = await getDocumentUrls(ctx.leadData)
+      
+      // Invia email con brochure
+      const documentiResult = await WorkflowEmailManager.inviaEmailDocumentiInformativi(
+        ctx.leadData,
+        ctx.env,
+        documentUrls,
+        ctx.db
+      )
+      
+      if (documentiResult.success) {
+        result.success = true
+        result.message = 'Lead processato: brochure inviata automaticamente (default)'
+        result.data = { emailsSent: documentiResult.emailsSent }
+      } else {
+        result.errors.push(...documentiResult.errors)
+        result.message = 'Errore invio brochure automatica'
+      }
     }
 
     // Aggiorna status lead
