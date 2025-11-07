@@ -1,0 +1,209 @@
+═══════════════════════════════════════════════════════════════
+TEST 360° COMPLETO - TeleMedCare V11.0
+Data: 2025-11-07 20:25:34
+═══════════════════════════════════════════════════════════════
+
+MATRICE TEST:
+- Servizi: BASE, AVANZATO
+- Documenti: 8 combinazioni possibili
+  1. Nessun documento
+  2. Solo Contratto
+  3. Solo Brochure
+  4. Solo Manuale
+  5. Contratto + Brochure
+  6. Contratto + Manuale
+  7. Brochure + Manuale
+  8. Contratto + Brochure + Manuale (COMPLETO)
+- Urgenze: Immediata, Alta, Media, Bassa
+
+TOTALE TEST: 16 scenari (2 servizi × 8 combinazioni documenti)
+
+═══════════════════════════════════════════════════════════════
+
+
+TEST 1: BASE - Nessun documento
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=false, Brochure=false, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202534665Z_181U62","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:25:34.665Z","workflow":{"success":true,"step":"process_new_lead","message":"Nessuna richiesta specifica (né documenti né contratto)","errors":[]}}
+---
+RESULT: ✅ PASSED
+
+TEST 2: BASE - Solo Contratto
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=true, Brochure=false, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202539830Z_4JV9O2","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:25:39.830Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547139900","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 3: BASE - Solo Brochure
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=false, Brochure=true, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202544961Z_P5316B","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:25:44.961Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 4: BASE - Solo Manuale
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=false, Brochure=false, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202550395Z_AJEQJX","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:25:50.395Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 5: BASE - Contratto + Brochure
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=true, Brochure=true, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202555729Z_Z06O8Z","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:25:55.729Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547155811","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 6: BASE - Contratto + Manuale
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=true, Brochure=false, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202601296Z_37JVWB","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:01.296Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547161376","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 7: BASE - Brochure + Manuale
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=false, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202606705Z_5CTUY0","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:06.705Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 8: BASE - COMPLETO (tutti documenti)
+Servizio: BASE | Urgenza: Alta
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202612440Z_T72F35","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:12.440Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547172509","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 9: AVANZATO - Nessun documento
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=false, Brochure=false, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202618254Z_7VIHNM","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:18.254Z","workflow":{"success":true,"step":"process_new_lead","message":"Nessuna richiesta specifica (né documenti né contratto)","errors":[]}}
+---
+RESULT: ✅ PASSED
+
+TEST 10: AVANZATO - Solo Contratto
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=true, Brochure=false, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202623351Z_O7MBHC","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:23.351Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547183437","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 11: AVANZATO - Solo Brochure
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=false, Brochure=true, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202628507Z_NNRGUS","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:28.507Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 12: AVANZATO - Solo Manuale
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=false, Brochure=false, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202634001Z_3S7M64","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:34.001Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 13: AVANZATO - Contratto + Brochure
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=true, Brochure=true, Manuale=false
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202639362Z_AMTAKB","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:39.362Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547199436","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 14: AVANZATO - Contratto + Manuale
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=true, Brochure=false, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202644855Z_GYVC0F","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:44.855Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547204935","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 15: AVANZATO - Brochure + Manuale
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=false, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202650679Z_ESCW87","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:50.679Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: documenti informativi inviati","errors":[],"data":{"emailsSent":["email_documenti_informativi -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 16: AVANZATO - COMPLETO (tutti documenti)
+Servizio: AVANZATO | Urgenza: Alta
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202657389Z_U86PFY","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:26:57.389Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547217618","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 17: Urgenza IMMEDIATA (1 giorno)
+Servizio: BASE | Urgenza: Immediata
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202704023Z_XWN8LS","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:04.023Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547224279","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 18: AVANZATO - Urgenza IMMEDIATA
+Servizio: AVANZATO | Urgenza: Immediata
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202710669Z_A271K1","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:10.669Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547230886","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 19: Urgenza MEDIA (7 giorni)
+Servizio: BASE | Urgenza: Media
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202717398Z_YM82I7","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:17.398Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547237645","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 20: AVANZATO - Urgenza MEDIA
+Servizio: AVANZATO | Urgenza: Media
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202724147Z_9Z9QZT","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:24.147Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547244420","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 21: Urgenza BASSA (quando possibile)
+Servizio: BASE | Urgenza: Bassa
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202730936Z_E4OCMG","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:30.936Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547251135","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+TEST 22: AVANZATO - Urgenza BASSA
+Servizio: AVANZATO | Urgenza: Bassa
+Documenti: Contratto=true, Brochure=true, Manuale=true
+HTTP Status: 200
+Response: {"success":true,"leadId":"LEAD_2025-11-07T202737547Z_V7VFB9","message":"Lead ricevuto e processato con successo","timestamp":"2025-11-07T20:27:37.547Z","workflow":{"success":true,"step":"process_new_lead","message":"Lead processato: contratto generato e inviato","errors":[],"data":{"contractId":"CTR1762547257757","emailsSent":["email_invio_contratto -> rpoggi55@gmail.com"]}}}
+---
+RESULT: ✅ PASSED
+
+═══════════════════════════════════════════════════════════════
+SUMMARY FINALE
+═══════════════════════════════════════════════════════════════
+Test Totali: 22
+Test Passati: 22
+Test Falliti: 0
+Percentuale Successo: 100%
+Risultato: SUCCESS
+
+═══════════════════════════════════════════════════════════════
