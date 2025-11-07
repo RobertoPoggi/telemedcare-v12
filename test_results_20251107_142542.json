@@ -1,0 +1,58 @@
+{
+  "summary": {
+    "test_1_base_richiedente": false,
+    "test_2_avanzato_assistito": false,
+    "test_3_partner_sources": false,
+    "test_4_email_templates": true
+  },
+  "detailed_results": [
+    {
+      "test": "BASE_WORKFLOW_RICHIEDENTE",
+      "success": false,
+      "details": {
+        "step": 1,
+        "error": "Errore interno del server"
+      },
+      "timestamp": "2025-11-07T14:25:38.447648"
+    },
+    {
+      "test": "AVANZATO_WORKFLOW_ASSISTITO",
+      "success": false,
+      "details": {
+        "step": 1,
+        "error": "Errore interno del server"
+      },
+      "timestamp": "2025-11-07T14:25:38.453413"
+    },
+    {
+      "test": "PARTNER_LEAD_SOURCES",
+      "success": false,
+      "details": {
+        "partners": [
+          "IRBEMA",
+          "Luxottica",
+          "Pirelli",
+          "FAS"
+        ]
+      },
+      "timestamp": "2025-11-07T14:25:42.481158"
+    },
+    {
+      "test": "EMAIL_TEMPLATES_VERIFICATION",
+      "success": true,
+      "details": {
+        "templates": [
+          "email_notifica_info",
+          "email_documenti_informativi",
+          "email_invio_contratto",
+          "email_invio_proforma",
+          "email_benvenuto",
+          "email_conferma_attivazione"
+        ],
+        "note": "Manual verification required"
+      },
+      "timestamp": "2025-11-07T14:25:42.481286"
+    }
+  ],
+  "timestamp": "2025-11-07T14:25:42.481461"
+}

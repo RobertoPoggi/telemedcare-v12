@@ -133,6 +133,7 @@ export async function inviaEmailNotificaInfo(
       URGENZA_RISPOSTA: leadData.urgenzaRisposta || 'Non specificata',
       GIORNI_RISPOSTA: leadData.giorniRisposta?.toString() || 'Non specificati',
       // DATI SISTEMA
+      LEAD_ID: leadData.id,  // 🆔 FIX: Lead ID per template
       FONTE: leadData.fonte || 'LANDING_PAGE',
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
@@ -165,6 +166,74 @@ export async function inviaEmailNotificaInfo(
   } catch (error) {
     result.errors.push(`Eccezione invio email notifica: ${error.message}`)
     console.error(`❌ [WORKFLOW] Eccezione STEP 1:`, error)
+  }
+
+  return result
+}
+
+/**
+ * STEP 1B: Invia email di conferma immediata al richiedente dopo form submission
+ */
+export async function inviaEmailConfermaRichiedente(
+  leadData: LeadData,
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult> {
+  const result: WorkflowEmailResult = {
+    success: false,
+    step: 'conferma_richiedente',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    console.log(`📧 [WORKFLOW] STEP 1B: Invio conferma ricezione a ${leadData.emailRichiedente}`)
+
+    const emailService = new EmailService(env)
+    
+    // Carica template email_benvenuto_lead
+    const template = await loadEmailTemplate('email_benvenuto_lead', db)
+    
+    // Prepara i dati per il template
+    const templateData = {
+      NOME_RICHIEDENTE: leadData.nomeRichiedente,
+      COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
+      EMAIL_RICHIEDENTE: leadData.emailRichiedente,
+      TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || 'Non fornito',
+      NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
+      COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+      ETA_ASSISTITO: leadData.etaAssistito?.toString() || 'Non fornita',
+      PIANO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
+      TIPO_SERVIZIO: leadData.pacchetto,
+      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
+      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
+      DATA_RICHIESTA: new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })
+    }
+
+    // Renderizza template
+    const emailHtml = renderTemplate(template, templateData)
+
+    // Invia email al richiedente
+    const sendResult = await emailService.sendEmail({
+      to: leadData.emailRichiedente,
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
+      subject: `Richiesta ricevuta - TeleMedCare ${leadData.pacchetto}`,
+      html: emailHtml
+    })
+
+    if (sendResult.success) {
+      result.success = true
+      result.emailsSent.push(`email_benvenuto_lead -> ${leadData.emailRichiedente}`)
+      result.messageIds = [sendResult.messageId]
+      console.log(`✅ [WORKFLOW] Email conferma richiedente inviata: ${sendResult.messageId}`)
+    } else {
+      result.errors.push(`Errore invio email conferma: ${sendResult.error}`)
+      console.error(`❌ [WORKFLOW] Errore email conferma richiedente:`, sendResult.error)
+    }
+
+  } catch (error) {
+    result.errors.push(`Eccezione invio email conferma: ${error.message}`)
+    console.error(`❌ [WORKFLOW] Eccezione STEP 1B:`, error)
   }
 
   return result
@@ -316,21 +385,26 @@ export async function inviaEmailContratto(
       })
     }
     
-    // Brochure (se richiesta)
+    // 📎 Brochure (se richiesta) - RIPRISTINO LOGICA 12:22 FUNZIONANTE
+    // EmailService.prepareAttachments() gestisce fetch con porta 8787
     if (leadData.vuoleBrochure && documentUrls.brochure) {
       attachments.push({
         filename: 'Brochure_TeleMedCare.pdf',
-        path: documentUrls.brochure
+        path: documentUrls.brochure,  // ← PATH, EmailService fa fetch!
+        contentType: 'application/pdf'
       })
     }
     
-    // Manuale (se richiesto)
+    // 📎 Manuale (se richiesto) - RIPRISTINO LOGICA 12:22 FUNZIONANTE
     if (leadData.vuoleManuale && documentUrls.manuale) {
       attachments.push({
         filename: 'Manuale_Utente_SiDLY.pdf',
-        path: documentUrls.manuale
+        path: documentUrls.manuale,  // ← PATH, EmailService fa fetch!
+        contentType: 'application/pdf'
       })
     }
+    
+    console.log(`📎 [WORKFLOW] Totale allegati preparati: ${attachments.length}`)
 
     // Invia email con allegati
     const sendResult = await emailService.sendEmail({
@@ -641,6 +715,7 @@ export async function inviaEmailConfermaAttivazione(
 
 export default {
   inviaEmailNotificaInfo,
+  inviaEmailConfermaRichiedente,
   inviaEmailDocumentiInformativi,
   inviaEmailContratto,
   inviaEmailProforma,

@@ -19,7 +19,7 @@ async function loadPDFAsBase64(filePath: string): Promise<string | null> {
   try {
     const url = filePath.startsWith('http') 
       ? filePath 
-      : `http://localhost:8787${filePath}`
+      : `http://localhost:3000${filePath}`  // ← Porta 3000, /documents/* escluso da Worker
     
     console.log(`📄 [FILE-LOADER] Caricamento file: ${url}`)
     
@@ -561,7 +561,7 @@ export class EmailService {
       console.log(`✅ ${preparedAttachments.length} allegati pronti per invio`)
     }
     
-    const payload = {
+    const payload: any = {
       personalizations: [{
         to: [{ email: emailData.to }],
         subject: emailData.subject
@@ -575,8 +575,13 @@ export class EmailService {
           type: 'text/html',
           value: emailData.html
         }
-      ],
-      attachments: preparedAttachments
+      ]
+    }
+    
+    // 📎 SENDGRID FIX: Only add attachments array if there are actual attachments
+    // SendGrid returns 400 error if attachments array is empty
+    if (preparedAttachments.length > 0) {
+      payload.attachments = preparedAttachments
     }
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -624,13 +629,17 @@ export class EmailService {
       console.log(`✅ ${preparedAttachments.length} allegati pronti per invio`)
     }
     
-    const payload = {
+    const payload: any = {
       from: 'TeleMedCare <info@telemedcare.it>',
       to: [emailData.to],
       subject: emailData.subject,
       html: emailData.html,
-      text: emailData.text,
-      attachments: preparedAttachments
+      text: emailData.text
+    }
+    
+    // 📎 RESEND FIX: Only add attachments array if there are actual attachments
+    if (preparedAttachments.length > 0) {
+      payload.attachments = preparedAttachments
     }
 
     const response = await fetch('https://api.resend.com/emails', {

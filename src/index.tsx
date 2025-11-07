@@ -3709,7 +3709,7 @@ app.post('/api/lead', async (c) => {
     const email = leadData.email || leadData.emailRichiedente || ''
     const telefono = leadData.telefono || leadData.telefonoRichiedente || ''
     const eta = leadData.eta || leadData.etaRichiedente || null
-    const servizio = leadData.servizio || leadData.tipoServizio || 'BASIC'
+    const servizio = leadData.servizio || leadData.tipoServizio || leadData.pacchetto || ''
     const azienda = leadData.azienda || leadData.aziendaRichiedente || null
 
     // Validazione dati obbligatori
@@ -3724,35 +3724,81 @@ app.post('/api/lead', async (c) => {
     const leadId = generateLeadId()
     const timestamp = new Date().toISOString()
 
+    // Normalizza pacchetto a BASE o AVANZATO
+    let normalizedPacchetto = 'BASE'  // Default
+    console.log(`🔍 [DEBUG] servizio raw: "${servizio}"`)
+    if (servizio) {
+      const srv = String(servizio).toLowerCase().trim()
+      console.log(`🔍 [DEBUG] servizio normalized: "${srv}"`)
+      if (srv.includes('avanzat') || srv === 'avanzato' || srv === 'advanced') {
+        normalizedPacchetto = 'AVANZATO'
+      } else if (srv.includes('base') || srv === 'base' || srv === 'basic') {
+        normalizedPacchetto = 'BASE'
+      }
+    }
+    console.log(`✅ [DEBUG] Pacchetto finale: ${normalizedPacchetto}`)
+
+    // Normalizza urgenza
+    let urgenza = String(leadData.urgenzaRisposta || leadData.priority || '').trim()
+    // Mappa i valori del form ai valori corretti
+    if (urgenza === 'Urgente') urgenza = 'urgente'
+    else if (urgenza === 'Alta') urgenza = 'alta'
+    else if (urgenza === 'Media') urgenza = 'media'
+
+    // 📅 DERIVA giorni risposta da urgenza (FIX Roberto 17:45)
+    let giorniCalcolati = ''
+    const urgenzaLower = urgenza.toLowerCase()
+    if (urgenzaLower.includes('immediat') || urgenzaLower === 'urgente') {
+      giorniCalcolati = '1 giorno'
+    } else if (urgenzaLower === 'alta') {
+      giorniCalcolati = '3 giorni'
+    } else if (urgenzaLower === 'media') {
+      giorniCalcolati = '7 giorni'
+    } else if (urgenzaLower === 'bassa') {
+      giorniCalcolati = 'quando possibile'
+    }
+
     // Normalizza e pulisce i dati
     const normalizedLead = {
       id: leadId,
-      // Dati Richiedente (supporta entrambi i formati)
+      // Dati Richiedente COMPLETI
       nomeRichiedente: String(nome).trim(),
       cognomeRichiedente: String(leadData.cognomeRichiedente || '').trim(),
       emailRichiedente: String(email).toLowerCase().trim(),
       telefonoRichiedente: String(telefono).replace(/[^\d+]/g, ''),
+      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
+      capRichiedente: String(leadData.capRichiedente || '').trim(),
+      cittaRichiedente: String(leadData.cittaRichiedente || '').trim(),
+      provinciaRichiedente: String(leadData.provinciaRichiedente || '').trim(),
+      dataNascitaRichiedente: String(leadData.dataNascitaRichiedente || '').trim(),
+      luogoNascitaRichiedente: String(leadData.luogoNascitaRichiedente || '').trim(),
 
-      // Dati Assistito (supporta entrambi i formati)
+      // Dati Assistito COMPLETI
       nomeAssistito: String(leadData.nomeAssistito || nome).trim(),
       cognomeAssistito: String(leadData.cognomeAssistito || '').trim(),
+      emailAssistito: String(leadData.emailAssistito || '').trim(),
+      telefonoAssistito: String(leadData.telefonoAssistito || '').trim(),
       dataNascitaAssistito: String(leadData.dataNascitaAssistito || '').trim(),
       etaAssistito: String(eta || leadData.etaAssistito || '').trim(),
+      cfAssistito: String(leadData.cfAssistito || '').trim(),
+      indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
+      capAssistito: String(leadData.capAssistito || '').trim(),
+      cittaAssistito: String(leadData.cittaAssistito || '').trim(),
+      provinciaAssistito: String(leadData.provinciaAssistito || '').trim(),
+      luogoNascitaAssistito: String(leadData.luogoNascitaAssistito || '').trim(),
       parentelaAssistito: String(leadData.parentelaAssistito || '').trim(),
 
-      // Servizio e Condizioni (supporta entrambi i formati)
-      pacchetto: String(servizio),
+      // Servizio e Condizioni CORRETTI
+      pacchetto: normalizedPacchetto,
       condizioniSalute: String(leadData.condizioniSalute || '').trim(),
-      priority: String(leadData.priority || '').trim(),
+      urgenzaRisposta: urgenza,
+      giorniRisposta: giorniCalcolati,  // 📅 USA VALORE CALCOLATO
       preferenzaContatto: String(leadData.preferenzaContatto || '').trim(),
 
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
-      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
-      cfAssistito: String(leadData.cfAssistito || '').trim(),
-      indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
       vuoleBrochure: leadData.vuoleBrochure === 'on' || leadData.vuoleBrochure === 'Si' || leadData.vuoleBrochure === true,
       vuoleManuale: leadData.vuoleManuale === 'on' || leadData.vuoleManuale === 'Si' || leadData.vuoleManuale === true,
 
@@ -3773,36 +3819,52 @@ app.post('/api/lead', async (c) => {
 
     // Salva nel database D1 con nuovo schema
     if (c.env.DB) {
-      // Mappa i dati al nuovo schema
+      // Mappa i dati al nuovo schema COMPLETO
       await c.env.DB.prepare(`
         INSERT INTO leads (
           id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
-          nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
-          pacchetto, condizioniSalute, preferenzaContatto,
-          vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
-          cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
+          cfRichiedente, indirizzoRichiedente, capRichiedente, cittaRichiedente, provinciaRichiedente,
+          dataNascitaRichiedente, luogoNascitaRichiedente,
+          nomeAssistito, cognomeAssistito, emailAssistito, telefonoAssistito,
+          dataNascitaAssistito, etaAssistito, cfAssistito, indirizzoAssistito,
+          capAssistito, cittaAssistito, provinciaAssistito, luogoNascitaAssistito, parentelaAssistito,
+          pacchetto, condizioniSalute, urgenzaRisposta, giorniRisposta, preferenzaContatto,
+          vuoleContratto, intestazioneContratto, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
         normalizedLead.cognomeRichiedente,
         normalizedLead.emailRichiedente,
         normalizedLead.telefonoRichiedente,
+        normalizedLead.cfRichiedente,
+        normalizedLead.indirizzoRichiedente,
+        normalizedLead.capRichiedente,
+        normalizedLead.cittaRichiedente,
+        normalizedLead.provinciaRichiedente,
+        normalizedLead.dataNascitaRichiedente,
+        normalizedLead.luogoNascitaRichiedente,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
+        normalizedLead.emailAssistito,
+        normalizedLead.telefonoAssistito,
         normalizedLead.dataNascitaAssistito,
         normalizedLead.etaAssistito,
+        normalizedLead.cfAssistito,
+        normalizedLead.indirizzoAssistito,
+        normalizedLead.capAssistito,
+        normalizedLead.cittaAssistito,
+        normalizedLead.provinciaAssistito,
+        normalizedLead.luogoNascitaAssistito,
         normalizedLead.parentelaAssistito,
         normalizedLead.pacchetto,
         normalizedLead.condizioniSalute,
+        normalizedLead.urgenzaRisposta,
+        normalizedLead.giorniRisposta,
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
-        normalizedLead.cfRichiedente,
-        normalizedLead.indirizzoRichiedente,
-        normalizedLead.cfAssistito,
-        normalizedLead.indirizzoAssistito,
         normalizedLead.vuoleBrochure ? 1 : 0,
         normalizedLead.vuoleManuale ? 1 : 0,
         normalizedLead.note,
@@ -3820,23 +3882,52 @@ app.post('/api/lead', async (c) => {
       // ============================================
       console.log('🚀 [WORKFLOW] Avvio orchestratore workflow completo')
       
-      // Crea contesto workflow
+      // Crea contesto workflow COMPLETO con tutti i campi
+      const requestOrigin = new URL(c.req.url).origin  // es: https://3000-sandbox.novita.ai
       const workflowContext: WorkflowOrchestrator.WorkflowContext = {
         db: c.env.DB,
         env: c.env,
+        requestUrl: requestOrigin,  // 🔧 FIX: Passa URL corrente per fetch documenti
         leadData: {
           id: normalizedLead.id,
+          // DATI RICHIEDENTE COMPLETI
           nomeRichiedente: normalizedLead.nomeRichiedente,
           cognomeRichiedente: normalizedLead.cognomeRichiedente,
           emailRichiedente: normalizedLead.emailRichiedente,
           telefonoRichiedente: normalizedLead.telefonoRichiedente,
+          cfRichiedente: normalizedLead.cfRichiedente,
+          indirizzoRichiedente: normalizedLead.indirizzoRichiedente,
+          capRichiedente: normalizedLead.capRichiedente,
+          cittaRichiedente: normalizedLead.cittaRichiedente,
+          provinciaRichiedente: normalizedLead.provinciaRichiedente,
+          dataNascitaRichiedente: normalizedLead.dataNascitaRichiedente,
+          luogoNascitaRichiedente: normalizedLead.luogoNascitaRichiedente,
+          // DATI ASSISTITO COMPLETI
           nomeAssistito: normalizedLead.nomeAssistito,
           cognomeAssistito: normalizedLead.cognomeAssistito,
+          emailAssistito: normalizedLead.emailAssistito,
+          telefonoAssistito: normalizedLead.telefonoAssistito,
           etaAssistito: normalizedLead.etaAssistito,
+          cfAssistito: normalizedLead.cfAssistito,
+          indirizzoAssistito: normalizedLead.indirizzoAssistito,
+          capAssistito: normalizedLead.capAssistito,
+          cittaAssistito: normalizedLead.cittaAssistito,
+          provinciaAssistito: normalizedLead.provinciaAssistito,
+          dataNascitaAssistito: normalizedLead.dataNascitaAssistito,
+          luogoNascitaAssistito: normalizedLead.luogoNascitaAssistito,
+          // SERVIZIO E CONDIZIONI
           pacchetto: normalizedLead.pacchetto,
+          condizioniSalute: normalizedLead.condizioniSalute,
+          urgenzaRisposta: normalizedLead.urgenzaRisposta,
+          giorniRisposta: normalizedLead.giorniRisposta,
+          preferenzaContatto: normalizedLead.preferenzaContatto,
+          // RICHIESTE
           vuoleContratto: normalizedLead.vuoleContratto,
+          intestazioneContratto: normalizedLead.intestazioneContratto,
           vuoleBrochure: normalizedLead.vuoleBrochure,
           vuoleManuale: normalizedLead.vuoleManuale,
+          // ALTRI
+          note: normalizedLead.note,
           fonte: normalizedLead.fonte
         }
       }

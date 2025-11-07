@@ -22,6 +22,7 @@ export interface WorkflowContext {
   db: D1Database
   env: any
   leadData: LeadData
+  requestUrl?: string  // URL della richiesta corrente per fetch documenti in dev
 }
 
 export interface WorkflowStepResult {
@@ -96,8 +97,8 @@ export async function processNewLead(
       const contractResult = await generateContractForLead(ctx)
 
       if (contractResult.success) {
-        // Ottieni URLs documenti
-        const documentUrls = await getDocumentUrls(ctx.leadData)
+        // Ottieni URLs documenti (passa ctx completo per requestUrl)
+        const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
 
         // Invia email con contratto + documenti
         const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
@@ -477,16 +478,21 @@ export async function processDeviceAssociation(
 
 // ==================== HELPER FUNCTIONS ====================
 
-async function getDocumentUrls(leadData: LeadData): Promise<{ brochure?: string; manuale?: string }> {
+async function getDocumentUrls(leadData: LeadData, ctx: WorkflowContext): Promise<{ brochure?: string; manuale?: string }> {
   const urls: { brochure?: string; manuale?: string } = {}
   
+  // 🔧 RIPRISTINO LOGICA 12:22 FUNZIONANTE
+  // Restituisce PATH relativo, EmailService.loadPDFAsBase64() gestisce fetch con porta 8787
+  
   if (leadData.vuoleBrochure) {
-    urls.brochure = '/documents/brochures/brochure_telemedcare.pdf'
+    urls.brochure = '/documents/brochures/brochure_telemedcare.pdf'  // ← PATH relativo!
   }
   
   if (leadData.vuoleManuale) {
-    urls.manuale = '/documents/manuals/manuale_sidly.pdf'
+    urls.manuale = '/documents/manuals/manuale_sidly.pdf'  // ← PATH relativo!
   }
+  
+  console.log(`📎 [HELPER] Document paths:`, urls)
   
   return urls
 }

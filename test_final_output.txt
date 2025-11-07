@@ -1,0 +1,11 @@
+
+====================================================================================================
+🚀 [1m[96m🧪 TELEMEDCARE V11.0 - TEST COMPLETO PER ROBERTO 🧪[0m
+====================================================================================================
+
+[1mStarting comprehensive tests at: 2025-11-07 15:00:36[0m
+Base URL: http://localhost:3000
+
+[94mℹ️  Checking if server is running...[0m
+[91m❌ Server is NOT running at http://localhost:3000[0m
+[91m❌ Please start the server with: npm run dev[0m
