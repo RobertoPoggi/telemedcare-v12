@@ -509,7 +509,7 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
     
     await ctx.db.prepare(`
       INSERT INTO contracts (
-        id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+        id, lead_id, codice_contratto, tipo_contratto, template_utilizzato,
         contenuto_html, prezzo_mensile, durata_mesi, prezzo_totale, status,
         email_template_used, created_at, updated_at
       )
@@ -572,7 +572,7 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
   try {
     await ctx.db.prepare(`
       INSERT INTO proforma (
-        id, contract_id, leadId, numero_proforma, data_emissione, data_scadenza,
+        id, contract_id, lead_id, numero_proforma, data_emissione, data_scadenza,
         cliente_nome, cliente_cognome, cliente_email,
         tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
         status, email_template_used, created_at, updated_at
