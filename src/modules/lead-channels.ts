@@ -174,6 +174,86 @@ class ChannelManager {
         autoTag: 'CORPORATE'
       }
     })
+    
+    // Luxottica API Channel
+    this.channels.set('LUXOTTICA_API', {
+      id: 'LUXOTTICA_API',
+      nome: 'Luxottica B2B Integration',
+      tipo: 'API',
+      attivo: true,
+      configurazione: {
+        endpoint: 'https://api.luxottica.com/healthcare/leads',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'luxottica_api_key',
+          'X-Partner-ID': 'TELEMEDCARE'
+        }
+      },
+      rateLimiting: {
+        requestsPerMinute: 60,
+        maxBurst: 10
+      },
+      retry: {
+        maxRetries: 3,
+        backoffMs: 2000,
+        exponential: true
+      }
+    })
+    
+    // Pirelli Welfare Channel
+    this.channels.set('PIRELLI_WELFARE', {
+      id: 'PIRELLI_WELFARE',
+      nome: 'Pirelli Welfare Program',
+      tipo: 'API',
+      attivo: true,
+      configurazione: {
+        endpoint: 'https://welfare.pirelli.com/api/v1/health/partners',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer pirelli_welfare_token',
+          'X-Program': 'TELEASSISTENZA'
+        }
+      },
+      rateLimiting: {
+        requestsPerMinute: 30,
+        maxBurst: 5
+      },
+      retry: {
+        maxRetries: 2,
+        backoffMs: 3000,
+        exponential: true
+      }
+    })
+    
+    // FAS (Fondo Assistenza Sanitaria) Channel
+    this.channels.set('FAS_FONDO', {
+      id: 'FAS_FONDO',
+      nome: 'FAS - Fondo Assistenza Sanitaria',
+      tipo: 'API',
+      attivo: true,
+      configurazione: {
+        endpoint: 'https://api.fondofas.it/v2/prestazioni/teleassistenza',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'fas_api_key',
+          'X-Partner-Code': 'TELEMEDCARE_2025'
+        },
+        requiresVoucherValidation: true,
+        voucherEndpoint: 'https://api.fondofas.it/v2/voucher/validate'
+      },
+      rateLimiting: {
+        requestsPerMinute: 50,
+        maxBurst: 8
+      },
+      retry: {
+        maxRetries: 3,
+        backoffMs: 1500,
+        exponential: true
+      }
+    })
   }
   
   getChannel(channelId: string): ChannelConfig | null {
