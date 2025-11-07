@@ -362,6 +362,19 @@ export async function inviaEmailContratto(
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
+    // Genera HTML dinamico per la lista allegati
+    const allegatiLista: string[] = ['📄 Contratto TeleMedCare (da firmare digitalmente)']
+    
+    if (leadData.vuoleBrochure && documentUrls.brochure) {
+      allegatiLista.push('📘 Brochure TeleMedCare - Panoramica completa dei servizi')
+    }
+    
+    if (leadData.vuoleManuale && documentUrls.manuale) {
+      allegatiLista.push('📖 Manuale Utente SiDLY Care Pro - Guida completa')
+    }
+    
+    const allegatiHtml = 'Questo messaggio contiene allegati: ' + allegatiLista.join(', ')
+    
     // Prepara i dati per il template
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
@@ -372,7 +385,8 @@ export async function inviaEmailContratto(
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${env.PUBLIC_URL || 'https://telemedcare.it'}/firma-contratto?contractId=${contractData.contractId}`,
-      DATA_INVIO: new Date().toLocaleDateString('it-IT')
+      DATA_INVIO: new Date().toLocaleDateString('it-IT'),
+      ALLEGATI_LISTA: allegatiHtml
     }
 
     // Renderizza template

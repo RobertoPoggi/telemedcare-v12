@@ -1,4 +1,6 @@
-<!doctype html>
+UPDATE document_templates 
+SET 
+  html_content = '<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
@@ -55,13 +57,13 @@
               <ul class="list" style="margin-left:18px;">
                 <li><strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale che cambia il paradigma della cura tradizionale.</li>
                 <li><strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve, senza doversi spostare.</li>
-                <li><strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalità all'avanguardia.</li>
+                <li><strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalità all''avanguardia.</li>
               </ul>
 
-              <h3>Prossimi passi per l'attivazione</h3>
+              <h3>Prossimi passi per l''attivazione</h3>
               <ol class="steps">
                 <li>Legga attentamente il contratto allegato.</li>
-                <li>Firmi in ogni pagina richiesta e nell'ultima pagina.</li>
+                <li>Firmi in ogni pagina richiesta e nell''ultima pagina.</li>
                 <li>Ci invii il contratto firmato via email o WhatsApp.</li>
                 <li>Riceverà il dispositivo entro 10 giorni lavorativi.</li>
               </ol>
@@ -96,4 +98,6 @@
     </tr>
   </table>
 </body>
-</html>
+</html>',
+  updated_at = datetime('now')
+WHERE id = 'email_invio_contratto';
