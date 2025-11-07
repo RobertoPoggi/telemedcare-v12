@@ -68,7 +68,6 @@ SET
                     <li>📡 <strong>Connessione H24</strong> - Sempre collegati con la Centrale Operativa attiva 24/7</li>
                     <li>⚡ <strong>Risposta Rapida</strong> - Intervento immediato in caso di emergenza o necessità</li>
                     <li>💰 <strong>Detraibile Fiscalmente</strong> - Spesa sanitaria detraibile al 19% nella dichiarazione</li>
-                    <li>👨‍⚕️ <strong>Supporto Medico</strong> - Team di professionisti sanitari sempre disponibili</li>
                     <li>🔒 <strong>Privacy Garantita</strong> - Dati protetti secondo normativa GDPR</li>
                 </ul>
             </div>
