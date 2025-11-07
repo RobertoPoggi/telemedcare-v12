@@ -8,7 +8,78 @@
  * - Integrazione con servizi email (SendGrid, Mailgun, Resend)
  * - Logging e monitoraggio consegne
  * - Zero-cost fallback con template embedded
+ * - Caricamento file PDF via HTTP per allegati (Cloudflare Workers compatible)
  */
+
+// =====================================================================
+// FILE LOADER per allegati PDF (inline per compatibilità bundle)
+// =====================================================================
+
+async function loadPDFAsBase64(filePath: string): Promise<string | null> {
+  try {
+    const url = filePath.startsWith('http') 
+      ? filePath 
+      : `http://localhost:8787${filePath}`
+    
+    console.log(`📄 [FILE-LOADER] Caricamento file: ${url}`)
+    
+    const response = await fetch(url)
+    if (!response.ok) {
+      console.error(`❌ [FILE-LOADER] File non trovato: ${url} (${response.status})`)
+      return null
+    }
+    
+    const arrayBuffer = await response.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
+    
+    // Converti in base64
+    const base64 = btoa(
+      uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
+    )
+    
+    console.log(`✅ [FILE-LOADER] File caricato: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
+    
+    return base64
+  } catch (error) {
+    console.error(`❌ [FILE-LOADER] Errore caricamento file ${filePath}:`, error)
+    return null
+  }
+}
+
+async function prepareAttachments(
+  attachments: Array<{ filename: string; path?: string; content?: string; contentType?: string }>
+): Promise<Array<{ filename: string; content: string; contentType: string }>> {
+  
+  const prepared = []
+  
+  for (const att of attachments) {
+    if (att.content) {
+      prepared.push({
+        filename: att.filename,
+        content: att.content,
+        contentType: att.contentType || 'application/pdf'
+      })
+      continue
+    }
+    
+    if (att.path) {
+      const content = await loadPDFAsBase64(att.path)
+      if (content) {
+        prepared.push({
+          filename: att.filename,
+          content: content,
+          contentType: att.contentType || 'application/pdf'
+        })
+      } else {
+        console.warn(`⚠️ [FILE-LOADER] Allegato saltato (non caricato): ${att.filename}`)
+      }
+    }
+  }
+  
+  console.log(`📎 [FILE-LOADER] Allegati preparati: ${prepared.length}/${attachments.length}`)
+  
+  return prepared
+}
 
 export interface EmailTemplate {
   id: string
@@ -26,7 +97,8 @@ export interface EmailData {
   text?: string
   attachments?: Array<{
     filename: string
-    content: string | Buffer
+    content?: string | Buffer
+    path?: string
     contentType: string
   }>
 }
@@ -475,6 +547,20 @@ export class EmailService {
     
     console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
+    // 📄 PREPARE ATTACHMENTS: Load PDF files via HTTP if needed
+    let preparedAttachments: Array<{ filename: string; content: string; type: string; disposition: string }> = []
+    if (emailData.attachments && emailData.attachments.length > 0) {
+      console.log(`📎 Preparazione ${emailData.attachments.length} allegati...`)
+      const loadedAttachments = await prepareAttachments(emailData.attachments)
+      preparedAttachments = loadedAttachments.map(att => ({
+        filename: att.filename,
+        content: att.content,
+        type: att.contentType,
+        disposition: 'attachment'
+      }))
+      console.log(`✅ ${preparedAttachments.length} allegati pronti per invio`)
+    }
+    
     const payload = {
       personalizations: [{
         to: [{ email: emailData.to }],
@@ -490,12 +576,7 @@ export class EmailService {
           value: emailData.html
         }
       ],
-      attachments: emailData.attachments?.map(att => ({
-        filename: att.filename,
-        content: typeof att.content === 'string' ? att.content : Buffer.from(att.content).toString('base64'),
-        type: att.contentType,
-        disposition: 'attachment'
-      }))
+      attachments: preparedAttachments
     }
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -530,17 +611,26 @@ export class EmailService {
     
     console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
+    // 📄 PREPARE ATTACHMENTS: Load PDF files via HTTP if needed
+    let preparedAttachments: Array<{ filename: string; content: string; content_type: string }> = []
+    if (emailData.attachments && emailData.attachments.length > 0) {
+      console.log(`📎 Preparazione ${emailData.attachments.length} allegati...`)
+      const loadedAttachments = await prepareAttachments(emailData.attachments)
+      preparedAttachments = loadedAttachments.map(att => ({
+        filename: att.filename,
+        content: att.content,
+        content_type: att.contentType
+      }))
+      console.log(`✅ ${preparedAttachments.length} allegati pronti per invio`)
+    }
+    
     const payload = {
       from: 'TeleMedCare <noreply@telemedcare.it>',
       to: [emailData.to],
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
-      attachments: emailData.attachments?.map(att => ({
-        filename: att.filename,
-        content: att.content,
-        content_type: att.contentType
-      }))
+      attachments: preparedAttachments
     }
 
     const response = await fetch('https://api.resend.com/emails', {

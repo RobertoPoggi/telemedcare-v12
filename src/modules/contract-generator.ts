@@ -1,446 +1,379 @@
 /**
- * CONTRACT-GENERATOR.TS - Generatore Contratti PDF
- * TeleMedCare V11.0
+ * CONTRACT GENERATOR per TeleMedCare V11.0
+ * Genera contratti PDF Base e Advanced usando jsPDF (compatibile con Cloudflare Workers)
  * 
- * Genera contratti PDF da template HTML
- * Compila campi variabili
- * Salva e invia via email
+ * IMPORTANTE: Questo generatore replica ESATTAMENTE il contenuto dei template DOCX:
+ * - Template_Contratto_Base.docx
+ * - Template_Contratto_Avanzato.docx
+ * 
+ * Tutti i testi, clausole e struttura provengono dai documenti originali di Roberto.
  */
 
-import { TemplateEngine } from './email-service'
+import { jsPDF } from 'jspdf'
+import { SERVICE_PRICES, IVA_RATES, calculatePriceWithVAT } from '../config/pricing-config'
 
 export interface ContractData {
-  leadId: string
-  nomeRichiedente: string
-  cognomeRichiedente: string
-  email: string
-  telefono: string
-  tipoServizio: 'BASE' | 'AVANZATO'
-  
-  // Dati assistito (se diversi)
+  codiceContratto: string
+  tipoContratto: 'BASE' | 'ADVANCED'
+  nomeIntestatario: string
+  cognomeIntestatario: string
+  cfIntestatario: string
+  indirizzoIntestatario: string
+  capIntestatario?: string
+  cittaIntestatario?: string
+  provinciaIntestatario?: string
+  telefonoIntestatario?: string
+  emailIntestatario?: string
   nomeAssistito?: string
   cognomeAssistito?: string
-  etaAssistito?: number
-  
-  // Dati contrattuali
-  prezzoMensile: number
-  durataContratto: number // mesi
-  prezzoTotale: number
-  
-  // Generated
-  codiceContratto?: string
-  dataContratto?: string
+  luogoNascitaAssistito?: string
+  dataNascitaAssistito?: string
+  cfAssistito?: string
+  indirizzoAssistito?: string
+  capAssistito?: string
+  cittaAssistito?: string
+  provinciaAssistito?: string
+  telefonoAssistito?: string
+  emailAssistito?: string
+  dataContratto: string
+  dataInizioServizio?: string
+  dataScadenza?: string
+  prezzo: number
 }
 
-export interface ContractGenerated {
-  contractId: string
-  pdfUrl?: string
-  pdfBase64?: string
-  codiceContratto: string
-  createdAt: string
+/**
+ * Helper per aggiungere testo con auto-wrapping e gestione pagine
+ */
+function addTextWithWrap(doc: jsPDF, text: string, x: number, y: number, maxWidth: number, fontSize: number = 10): number {
+  doc.setFontSize(fontSize)
+  const lines = doc.splitTextToSize(text, maxWidth)
+  doc.text(lines, x, y)
+  return y + (lines.length * (fontSize * 0.4))
 }
 
-export class ContractGenerator {
-  
-  /**
-   * Genera contratto completo
-   */
-  static async generateContract(
-    data: ContractData,
-    db: any
-  ): Promise<{ success: boolean; contract?: ContractGenerated; error?: string }> {
-    
-    try {
-      console.log('📄 [CONTRACT] Generazione contratto per:', data.leadId)
-      
-      // 1. Genera codice contratto unico
-      const codiceContratto = this.generateContractCode()
-      const contractId = `CONTR_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-      
-      // 2. Prepara dati completi
-      const contractData: ContractData = {
-        ...data,
-        codiceContratto,
-        dataContratto: new Date().toLocaleDateString('it-IT')
-      }
-      
-      // 3. Genera HTML contratto
-      const contractHtml = this.generateContractHTML(contractData)
-      
-      // 4. Per ora salviamo HTML (poi convertiremo in PDF)
-      // In produzione: usare Puppeteer/Chromium per HTML→PDF
-      const pdfBase64 = Buffer.from(contractHtml).toString('base64')
-      
-      // 5. Salva in database
-      await db.prepare(`
-        INSERT INTO contracts (
-          id, leadId, codice_contratto, tipo_contratto,
-          template_utilizzato, contenuto_html,
-          prezzo_mensile, durata_mesi, prezzo_totale,
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', datetime('now'), datetime('now'))
-      `).bind(
-        contractId,
-        data.leadId,
-        codiceContratto,
-        data.tipoServizio,
-        `Template_Contratto_${data.tipoServizio}_TeleMedCare`,
-        contractHtml,
-        data.prezzoMensile,
-        data.durataContratto,
-        data.prezzoTotale
-      ).run()
-      
-      console.log('✅ [CONTRACT] Contratto generato:', contractId)
-      
-      return {
-        success: true,
-        contract: {
-          contractId,
-          codiceContratto,
-          pdfBase64,
-          createdAt: new Date().toISOString()
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ [CONTRACT] Errore generazione contratto:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Errore sconosciuto'
-      }
-    }
+/**
+ * Helper per controllare se serve nuova pagina
+ */
+function checkPageBreak(doc: jsPDF, currentY: number, requiredSpace: number = 30): number {
+  const pageHeight = doc.internal.pageSize.getHeight()
+  if (currentY + requiredSpace > pageHeight - 20) {
+    doc.addPage()
+    return 20 // margin top
   }
-  
-  /**
-   * Genera HTML del contratto
-   */
-  private static generateContractHTML(data: ContractData): string {
-    const template = data.tipoServizio === 'AVANZATO' 
-      ? this.getContractTemplateAvanzato()
-      : this.getContractTemplateBase()
-    
-    const variables = {
-      CODICE_CONTRATTO: data.codiceContratto || '',
-      DATA_CONTRATTO: data.dataContratto || new Date().toLocaleDateString('it-IT'),
-      NOME_RICHIEDENTE: data.nomeRichiedente,
-      COGNOME_RICHIEDENTE: data.cognomeRichiedente,
-      EMAIL: data.email,
-      TELEFONO: data.telefono,
-      NOME_ASSISTITO: data.nomeAssistito || data.nomeRichiedente,
-      COGNOME_ASSISTITO: data.cognomeAssistito || data.cognomeRichiedente,
-      ETA_ASSISTITO: data.etaAssistito?.toString() || 'Non specificata',
-      TIPO_SERVIZIO: data.tipoServizio === 'AVANZATO' ? 'TeleMedCare Avanzato' : 'TeleMedCare Base',
-      PREZZO_MENSILE: `€${data.prezzoMensile.toFixed(2)}`,
-      DURATA_MESI: data.durataContratto.toString(),
-      PREZZO_TOTALE: `€${data.prezzoTotale.toFixed(2)}`,
-      ANNO: new Date().getFullYear().toString()
-    }
-    
-    return TemplateEngine.render(template, variables)
-  }
-  
-  /**
-   * Template HTML contratto BASE
-   */
-  private static getContractTemplateBase(): string {
-    return `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <title>Contratto TeleMedCare Base - {{CODICE_CONTRATTO}}</title>
-  <style>
-    @page { size: A4; margin: 2cm; }
-    body {
-      font-family: 'Arial', sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      text-align: center;
-      border-bottom: 3px solid #0b63a5;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      color: #0b63a5;
-      margin: 0;
-      font-size: 24px;
-    }
-    .contract-info {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 5px;
-      margin: 20px 0;
-    }
-    .section {
-      margin: 25px 0;
-    }
-    .section h2 {
-      color: #0b63a5;
-      font-size: 18px;
-      border-bottom: 2px solid #e9ecef;
-      padding-bottom: 10px;
-    }
-    .price-box {
-      background: #e7f3ff;
-      border: 2px solid #0b63a5;
-      padding: 20px;
-      border-radius: 8px;
-      margin: 20px 0;
-      text-align: center;
-    }
-    .price-box h3 {
-      margin: 0 0 10px 0;
-      color: #0b63a5;
-    }
-    .price-box .amount {
-      font-size: 32px;
-      font-weight: bold;
-      color: #0b63a5;
-    }
-    .signature-section {
-      margin-top: 50px;
-      padding-top: 30px;
-      border-top: 2px solid #dee2e6;
-    }
-    .signature-box {
-      display: inline-block;
-      width: 45%;
-      text-align: center;
-      padding: 20px;
-      margin: 10px 2%;
-    }
-    .signature-line {
-      border-top: 2px solid #000;
-      margin-top: 60px;
-      padding-top: 10px;
-    }
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #dee2e6;
-      font-size: 12px;
-      color: #6c757d;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>📋 CONTRATTO DI SERVIZIO TELEMEDCARE BASE</h1>
-    <p><strong>Codice Contratto:</strong> {{CODICE_CONTRATTO}}</p>
-    <p><strong>Data:</strong> {{DATA_CONTRATTO}}</p>
-  </div>
-
-  <div class="contract-info">
-    <h3>PARTI CONTRAENTI</h3>
-    <p><strong>IL FORNITORE:</strong> Medica GB S.r.l. - Via Example 123, 00100 Roma - P.IVA 12345678901</p>
-    <p><strong>IL CLIENTE:</strong> {{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</p>
-    <p><strong>Email:</strong> {{EMAIL}} | <strong>Telefono:</strong> {{TELEFONO}}</p>
-    <p><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} ({{ETA_ASSISTITO}} anni)</p>
-  </div>
-
-  <div class="section">
-    <h2>ART. 1 - OGGETTO DEL CONTRATTO</h2>
-    <p>Il presente contratto ha per oggetto la fornitura del servizio <strong>{{TIPO_SERVIZIO}}</strong>, 
-    che include:</p>
-    <ul>
-      <li>Dispositivo medico SiDLY Care Pro V11.0 in comodato d'uso</li>
-      <li>Servizio di telemonitoraggio parametri vitali</li>
-      <li>Supporto tecnico telefonico (ore ufficio)</li>
-      <li>Manutenzione ordinaria e straordinaria del dispositivo</li>
-      <li>Aggiornamenti software inclusi</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>ART. 2 - DURATA E CORRISPETTIVO</h2>
-    <div class="price-box">
-      <h3>Piano Tariffario</h3>
-      <p>Canone Mensile: <span style="font-size: 20px; font-weight: bold;">{{PREZZO_MENSILE}}</span></p>
-      <p>Durata Contratto: <strong>{{DURATA_MESI}} mesi</strong></p>
-      <hr style="margin: 15px 0; border: 1px solid #0b63a5;">
-      <p>Importo Totale:</p>
-      <div class="amount">{{PREZZO_TOTALE}}</div>
-      <p style="font-size: 12px; margin-top: 10px;">IVA inclusa se dovuta</p>
-    </div>
-    <p>Il pagamento dovrà essere effettuato anticipatamente tramite bonifico bancario o carta di credito.</p>
-  </div>
-
-  <div class="section">
-    <h2>ART. 3 - OBBLIGHI DEL FORNITORE</h2>
-    <p>Medica GB S.r.l. si impegna a:</p>
-    <ul>
-      <li>Fornire il dispositivo medico entro 10 giorni lavorativi dalla conferma del pagamento</li>
-      <li>Garantire il corretto funzionamento del servizio di telemonitoraggio</li>
-      <li>Fornire supporto tecnico durante l'orario lavorativo (9:00-18:00, Lun-Ven)</li>
-      <li>Sostituire il dispositivo in caso di malfunzionamento senza costi aggiuntivi</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>ART. 4 - OBBLIGHI DEL CLIENTE</h2>
-    <p>Il Cliente si impegna a:</p>
-    <ul>
-      <li>Utilizzare il dispositivo secondo le istruzioni fornite</li>
-      <li>Custodire con diligenza il dispositivo ricevuto in comodato d'uso</li>
-      <li>Comunicare tempestivamente eventuali malfunzionamenti</li>
-      <li>Restituire il dispositivo al termine del contratto o in caso di risoluzione anticipata</li>
-      <li>Effettuare i pagamenti alle scadenze concordate</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>ART. 5 - RECESSO</h2>
-    <p>Il Cliente ha diritto di recedere dal contratto entro 14 giorni dalla ricezione del dispositivo, 
-    senza dover fornire motivazioni. Il recesso deve essere comunicato via email certificata.</p>
-    <p>In caso di recesso anticipato dopo i 14 giorni, il Cliente è tenuto a corrispondere 
-    i canoni maturati fino alla data di restituzione del dispositivo.</p>
-  </div>
-
-  <div class="section">
-    <h2>ART. 6 - PRIVACY E TRATTAMENTO DATI</h2>
-    <p>Il trattamento dei dati personali e sanitari avviene in conformità al GDPR (Regolamento UE 2016/679). 
-    I dati raccolti saranno utilizzati esclusivamente per l'erogazione del servizio e non saranno 
-    ceduti a terzi senza consenso esplicito.</p>
-  </div>
-
-  <div class="signature-section">
-    <h2 style="text-align: center;">SOTTOSCRIZIONE DEL CONTRATTO</h2>
-    <p style="text-align: center;">Le parti, letto e compreso il presente contratto, 
-    lo sottoscrivono per accettazione.</p>
-    
-    <div class="signature-box">
-      <p><strong>IL FORNITORE</strong></p>
-      <p>Medica GB S.r.l.</p>
-      <div class="signature-line">
-        Firma Legale Rappresentante
-      </div>
-    </div>
-    
-    <div class="signature-box">
-      <p><strong>IL CLIENTE</strong></p>
-      <p>{{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</p>
-      <div class="signature-line">
-        Firma per Accettazione
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <p>Contratto TeleMedCare Base - Codice: {{CODICE_CONTRATTO}}</p>
-    <p>Medica GB S.r.l. - P.IVA 12345678901 - www.telemedcare.it - info@telemedcare.it</p>
-    <p>Documento generato elettronicamente - {{ANNO}}</p>
-  </div>
-</body>
-</html>`
-  }
-  
-  /**
-   * Template HTML contratto AVANZATO
-   */
-  private static getContractTemplateAvanzato(): string {
-    // Simile al Base ma con servizi aggiuntivi
-    const baseTemplate = this.getContractTemplateBase()
-    return baseTemplate
-      .replace('TELEMEDCARE BASE', 'TELEMEDCARE AVANZATO')
-      .replace(
-        '<li>Supporto tecnico telefonico (ore ufficio)</li>',
-        `<li>Supporto tecnico H24/7 con priorità alta</li>
-         <li>Consulenza specialistica mensile inclusa</li>
-         <li>Centrale operativa di monitoraggio attiva H24</li>
-         <li>Report mensili personalizzati</li>`
-      )
-  }
-  
-  /**
-   * Genera codice contratto univoco
-   */
-  private static generateContractCode(): string {
-    const year = new Date().getFullYear()
-    const month = String(new Date().getMonth() + 1).padStart(2, '0')
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase()
-    return `TMC-${year}${month}-${random}`
-  }
-  
-  /**
-   * Invia contratto via email
-   */
-  static async sendContractEmail(
-    contractId: string,
-    db: any,
-    env?: any
-  ): Promise<{ success: boolean; error?: string }> {
-    
-    try {
-      // Recupera contratto
-      const contract = await db.prepare(`
-        SELECT c.*, l.email, l.nomeRichiedente, l.tipoServizio
-        FROM contracts c
-        JOIN leads l ON c.leadId = l.id
-        WHERE c.id = ?
-      `).bind(contractId).first()
-      
-      if (!contract) {
-        throw new Error('Contratto non trovato')
-      }
-      
-      console.log('📧 [CONTRACT] Invio contratto via email:', contract.email)
-      
-      // Importa EmailService dinamicamente
-      const EmailService = (await import('./email-service')).default
-      const emailService = EmailService.getInstance()
-      
-      // Prepara variabili
-      const variables = {
-        NOME_CLIENTE: contract.nomeRichiedente || 'Cliente',
-        PIANO_SERVIZIO: contract.tipoServizio === 'AVANZATO' ? 'TeleMedCare Avanzato' : 'TeleMedCare Base',
-        PREZZO_PIANO: `€${contract.prezzo_totale || 0}`,
-        CODICE_CLIENTE: contract.leadId,
-        LINK_FIRMA: `https://app.telemedcare.it/firma/${contractId}`
-      }
-      
-      // Invia email (per ora senza allegato PDF)
-      const result = await emailService.sendTemplateEmail(
-        'INVIO_CONTRATTO',
-        contract.email,
-        variables,
-        undefined,
-        env
-      )
-      
-      if (result.success) {
-        // Aggiorna status contratto
-        await db.prepare(`
-          UPDATE contracts 
-          SET status = 'SENT', data_invio = datetime('now'), updated_at = datetime('now')
-          WHERE id = ?
-        `).bind(contractId).run()
-        
-        // Aggiorna status lead
-        await db.prepare(`
-          UPDATE leads 
-          SET status = 'contract_sent', updated_at = datetime('now')
-          WHERE id = ?
-        `).bind(contract.leadId).run()
-        
-        console.log('✅ [CONTRACT] Email contratto inviata')
-      }
-      
-      return result
-      
-    } catch (error) {
-      console.error('❌ [CONTRACT] Errore invio email:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Errore invio'
-      }
-    }
-  }
+  return currentY
 }
 
-export default ContractGenerator
+export async function generateContractPDF(contractData: ContractData): Promise<Buffer> {
+  try {
+    // 📄 Crea documento PDF A4 (ESATTAMENTE come template DOCX)
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    })
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const margin = 20
+    const contentWidth = pageWidth - (margin * 2)
+    let yPos = margin
+
+    // Colore nero per tutto il documento (come DOCX)
+    const colorBlack = '#000000'
+    doc.setTextColor(colorBlack)
+
+    // ======================
+    // TITOLO: SCRITTURA PRIVATA (centrato, bold)
+    // ======================
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('SCRITTURA PRIVATA', pageWidth / 2, yPos, { align: 'center' })
+    yPos += 10
+
+    // ======================
+    // PARTI CONTRAENTI
+    // ======================
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    
+    yPos = addTextWithWrap(doc, 'Con la presente scrittura privata da valere a tutti gli effetti e conseguenze di legge tra:', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    // MEDICA GB
+    yPos = addTextWithWrap(doc, 'Medica GB S.r.l., con sede in Corso Giuseppe Garibaldi, 34 – 20121 Milano e con Partita IVA e registro imprese 12435130963, in persona dell\'Amministratore Stefania Rocca', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    doc.setFont('helvetica', 'italic')
+    yPos = addTextWithWrap(doc, '(breviter Medica GB)', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    doc.setFont('helvetica', 'normal')
+    yPos = addTextWithWrap(doc, 'e', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    // IL CLIENTE (dati assistito)
+    const nomeAssistito = contractData.nomeAssistito || contractData.nomeIntestatario
+    const cognomeAssistito = contractData.cognomeAssistito || contractData.cognomeIntestatario
+    const luogoNascita = contractData.luogoNascitaAssistito || ''
+    const dataNascita = contractData.dataNascitaAssistito || ''
+    const indirizzoCompleto = [
+      contractData.indirizzoAssistito || contractData.indirizzoIntestatario,
+      contractData.capAssistito || contractData.capIntestatario,
+      contractData.cittaAssistito || contractData.cittaIntestatario,
+      contractData.provinciaAssistito ? `(${contractData.provinciaAssistito})` : (contractData.provinciaIntestatario ? `(${contractData.provinciaIntestatario})` : '')
+    ].filter(Boolean).join(' ')
+    const cfAssistito = contractData.cfAssistito || contractData.cfIntestatario
+    const telefonoAssistito = contractData.telefonoAssistito || contractData.telefonoIntestatario || ''
+    const emailAssistito = contractData.emailAssistito || contractData.emailIntestatario || ''
+
+    let clienteText = `Sig./Sig.ra ${nomeAssistito} ${cognomeAssistito}`
+    if (luogoNascita || dataNascita) {
+      clienteText += ` nato/a`
+      if (luogoNascita) clienteText += ` a ${luogoNascita}`
+      if (dataNascita) clienteText += ` il ${dataNascita}`
+      clienteText += ','
+    }
+    clienteText += ` residente e domiciliato/a in ${indirizzoCompleto} e con codice fiscale ${cfAssistito}.`
+
+    yPos = addTextWithWrap(doc, clienteText, margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    // Riferimenti
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Riferimenti:', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos = addTextWithWrap(doc, `telefono ${telefonoAssistito} – e-mail ${emailAssistito}`, margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    doc.setFont('helvetica', 'italic')
+    yPos = addTextWithWrap(doc, '(breviter Il Cliente)', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    // ======================
+    // PREMESSO CHE
+    // ======================
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'premesso che', margin, yPos, contentWidth, 10)
+    yPos += 3
+
+    doc.setFont('helvetica', 'normal')
+    yPos = addTextWithWrap(doc, '• Medica GB eroga servizi di assistenza domiciliare con tecnologie innovative, servizi di diagnostica a domicilio, esami strumentali, telemedicina, teleassistenza, telemonitoraggio e riabilitazione a domicilio.', margin, yPos, contentWidth, 10)
+    yPos += 2
+    yPos = addTextWithWrap(doc, '• Medica GB si avvale della consulenza di Medici, Terapisti, Infermieri e Operatori Socio Sanitari per erogare i servizi sopra descritti;', margin, yPos, contentWidth, 10)
+    yPos += 2
+    yPos = addTextWithWrap(doc, '• Tanto premesso,', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'si conviene e stabilisce quanto segue', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // Check page break
+    yPos = checkPageBreak(doc, yPos)
+
+    // ======================
+    // PREMESSA
+    // ======================
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Premessa', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'La premessa che precede costituisce parte integrante del presente Contratto.', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // ======================
+    // OGGETTO DEL CONTRATTO
+    // ======================
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Oggetto del Contratto', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    const tipoServizio = contractData.tipoContratto === 'BASE' ? 'Servizio di TeleAssistenza base' : 'Servizio di TeleAssistenza Avanzata'
+    yPos = addTextWithWrap(doc, `L'oggetto del presente Contratto è l'erogazione del "${tipoServizio}" mediante l'utilizzo del Dispositivo SiDLY CARE PRO.`, margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    yPos = addTextWithWrap(doc, 'Le funzioni del Dispositivo SiDLY CARE PRO sono le seguenti:', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    // Funzioni del dispositivo (IDENTICHE per BASE e ADVANCED come da DOCX)
+    const funzioni = [
+      {
+        title: 'Comunicazione vocale bidirezionale:',
+        text: 'è possibile configurare sulla Piattaforma SiDLY Care i contatti dei familiari; dopo l\'invio dell\'allarme i familiari (configurati in Piattaforma) ricevono una chiamata dal dispositivo e possono parlare con l\'assistito; in qualsiasi momento i familiari possono contattare l\'assistito tramite il dispositivo.'
+      },
+      {
+        title: 'Rilevatore automatico di caduta:',
+        text: 'effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms ai familiari. Nell\'sms arriverà sia il link da cliccare per individuare la posizione dell\'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.'
+      },
+      {
+        title: 'Posizione GPS e GPS-assistito:',
+        text: 'consente di localizzare l\'assistito quando viene inviato l\'allarme. È inoltre possibile impostare una cosiddetta area sicura per l\'assistito (geo-fencing).'
+      },
+      {
+        title: 'Misurazioni della frequenza cardiaca e della saturazione di ossigeno:',
+        text: contractData.tipoContratto === 'ADVANCED' 
+          ? 'è possibile impostare una notifica che arrivi ai familiari/Centrale Operativa tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).'
+          : 'è possibile impostare una notifica che arrivi ai familiari tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).'
+      },
+      {
+        title: 'Pulsante SOS:',
+        text: 'premendo il pulsante SOS per circa 3 secondi è possibile effettuare una chiamata vocale e inviare una notifica di emergenza (geolocalizzata) ai familiari.'
+      },
+      {
+        title: 'Assistenza vocale:',
+        text: 'informa l\'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione dispositivo, messa in carica del dispositivo, segnalazione di batteria scarica, ecc.'
+      },
+      {
+        title: 'Promemoria per l\'assunzione dei farmaci:',
+        text: 'un messaggio ricorda l\'orario in cui assumere i farmaci (aderenza terapeutica).'
+      }
+    ]
+
+    for (const funzione of funzioni) {
+      yPos = checkPageBreak(doc, yPos)
+      doc.setFont('helvetica', 'bold')
+      yPos = addTextWithWrap(doc, funzione.title, margin, yPos, contentWidth, 10)
+      doc.setFont('helvetica', 'normal')
+      yPos = addTextWithWrap(doc, funzione.text, margin, yPos, contentWidth, 10)
+      yPos += 5
+    }
+
+    // ======================
+    // DURATA DEL SERVIZIO
+    // ======================
+    yPos = checkPageBreak(doc, yPos)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Durata del Servizio', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    const dataInizio = contractData.dataInizioServizio || 'data di attivazione'
+    const dataScadenza = contractData.dataScadenza || '12 mesi dalla data di attivazione'
+    yPos = addTextWithWrap(doc, `Il Servizio di ${tipoServizio} ha una durata di 12 mesi a partire da ${dataInizio} fino al ${dataScadenza}.`, margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, 'Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // ======================
+    // TARIFFA DEL SERVIZIO
+    // ======================
+    yPos = checkPageBreak(doc, yPos)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Tariffa del Servizio', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    const prezzoBase = contractData.tipoContratto === 'BASE' 
+      ? SERVICE_PRICES.BASE.FIRST_YEAR 
+      : SERVICE_PRICES.ADVANCED.FIRST_YEAR
+    
+    const prezzoRinnovo = contractData.tipoContratto === 'BASE'
+      ? SERVICE_PRICES.BASE.RENEWAL
+      : SERVICE_PRICES.ADVANCED.RENEWAL
+
+    yPos = addTextWithWrap(doc, `La tariffa annuale per il primo anno di attivazione del "${tipoServizio}" è pari a Euro ${prezzoBase.toFixed(2)} + IVA 22% e include:`, margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, '- Dispositivo SiDLY CARE PRO (hardware)', margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, '- Configurazione del Dispositivo e del Processo di Comunicazione con uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi', margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, '- SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    const tipoServizioRinnovo = contractData.tipoContratto === 'BASE' ? 'Servizio di Continuità di TeleAssistenza base' : 'Servizio di Continuità di TeleAssistenza avanzata'
+    yPos = addTextWithWrap(doc, `Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "${tipoServizioRinnovo}" sarà pari a Euro ${prezzoRinnovo.toFixed(2)} + IVA 22% con inclusi:`, margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, '- Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi', margin, yPos, contentWidth, 10)
+    yPos += 3
+    yPos = addTextWithWrap(doc, '- SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // ======================
+    // METODO DI PAGAMENTO
+    // ======================
+    yPos = checkPageBreak(doc, yPos)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Metodo di pagamento', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    yPos = addTextWithWrap(doc, 'Medica GB emetterà fattura anticipata di 12 mesi all\'attivazione del Servizio e il Cliente procederà al pagamento a ricevimento della fattura stessa tramite bonifico bancario', margin, yPos, contentWidth, 10)
+    yPos += 5
+
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, `Intestato a: Medica GB S.r.l.`, margin, yPos, contentWidth, 10)
+    yPos = addTextWithWrap(doc, `Causale: ${tipoServizio} annuo con Dispositivo SiDLY CARE PRO`, margin, yPos, contentWidth, 10)
+    yPos = addTextWithWrap(doc, 'Banca Popolare di Milano - Iban: IT97L0503401727000000003519', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // ======================
+    // RISERVATEZZA ED ESCLUSIVA
+    // ======================
+    yPos = checkPageBreak(doc, yPos)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Riservatezza ed esclusiva', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    yPos = addTextWithWrap(doc, 'Il Cliente e Medica GB si impegnano reciprocamente a non divulgare o, comunque, non utilizzare, se non per motivi attinenti all\'esercizio del presente contratto, tutte le informazioni di cui venissero a conoscenza nello svolgimento del Servizio.', margin, yPos, contentWidth, 10)
+    yPos += 5
+    yPos = addTextWithWrap(doc, 'Il Cliente si impegna a contattare Medica GB per tutte le modifiche e proroghe del presente contratto.', margin, yPos, contentWidth, 10)
+    yPos += 7
+
+    // ======================
+    // FORO COMPETENTE
+    // ======================
+    yPos = checkPageBreak(doc, yPos)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Foro competente', margin, yPos, contentWidth, 10)
+    doc.setFont('helvetica', 'normal')
+    yPos += 2
+
+    yPos = addTextWithWrap(doc, 'Ogni eventuale contestazione o controversia che dovesse insorgere tra le parti in relazione all\'interpretazione, alla validità ed esecuzione del presente contratto, sarà definita alla cognizione esclusiva del Foro di Milano.', margin, yPos, contentWidth, 10)
+    yPos += 10
+
+    // ======================
+    // FIRMA
+    // ======================
+    yPos = checkPageBreak(doc, yPos, 40)
+    doc.setFont('helvetica', 'normal')
+    yPos = addTextWithWrap(doc, `Milano, lì ${contractData.dataContratto}`, margin, yPos, contentWidth, 10)
+    yPos += 10
+
+    const leftX = margin
+    const rightX = pageWidth - margin - 80
+
+    doc.text('Medica GB S.r.l.', leftX, yPos)
+    doc.text('Il Cliente', rightX, yPos)
+    yPos += 20
+
+    // ======================
+    // FOOTER MEDICA GB (come da DOCX)
+    // ======================
+    const pageHeight = doc.internal.pageSize.getHeight()
+    let footerY = pageHeight - 30
+
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'Medica GB S.r.l.', margin, footerY, contentWidth, 8)
+    doc.setFont('helvetica', 'normal')
+    yPos = addTextWithWrap(doc, 'Corso Giuseppe Garibaldi, 34 – 20121 Milano', margin, footerY + 3, contentWidth, 8)
+    yPos = addTextWithWrap(doc, 'PEC: medicagbsrl@pecimprese.it', margin, footerY + 6, contentWidth, 8)
+    yPos = addTextWithWrap(doc, 'E.mail: info@medicagb.it', margin, footerY + 9, contentWidth, 8)
+    yPos = addTextWithWrap(doc, 'Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409', margin, footerY + 12, contentWidth, 8)
+    yPos = addTextWithWrap(doc, 'www.medicagb.it', margin, footerY + 15, contentWidth, 8)
+    yPos = addTextWithWrap(doc, 'www.telemedcare.it', margin, footerY + 18, contentWidth, 8)
+
+    // 💾 Converti in Buffer
+    const pdfArrayBuffer = doc.output('arraybuffer')
+    const pdfBuffer = Buffer.from(pdfArrayBuffer)
+
+    console.log(`✅ [CONTRACT-GEN] PDF generato (da template DOCX): ${pdfBuffer.length} bytes, tipo: ${contractData.tipoContratto}`)
+    
+    return pdfBuffer
+
+  } catch (error) {
+    console.error(`❌ [CONTRACT-GEN] Errore generazione PDF:`, error)
+    throw error
+  }
+}

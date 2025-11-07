@@ -213,6 +213,7 @@ export async function inviaEmailContratto(
     contractId: string
     contractCode: string
     contractPdfUrl: string
+    contractPdfBuffer?: Buffer  // 📎 PDF buffer for attachment
     tipoServizio: string
     prezzoBase: number
     prezzoIvaInclusa: number
@@ -254,11 +255,21 @@ export async function inviaEmailContratto(
     // Prepara allegati: Contratto + Brochure + Manuale
     const attachments = []
     
-    // Contratto (OBBLIGATORIO)
-    attachments.push({
-      filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
-      path: contractData.contractPdfUrl
-    })
+    // Contratto (OBBLIGATORIO) - usa buffer PDF se disponibile, altrimenti path
+    if (contractData.contractPdfBuffer) {
+      console.log(`📎 [WORKFLOW] Allegando contratto da buffer PDF (${contractData.contractPdfBuffer.length} bytes)`)
+      attachments.push({
+        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
+        content: contractData.contractPdfBuffer.toString('base64'),
+        contentType: 'application/pdf'
+      })
+    } else {
+      console.warn(`⚠️ [WORKFLOW] Buffer PDF non disponibile, uso path: ${contractData.contractPdfUrl}`)
+      attachments.push({
+        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
+        path: contractData.contractPdfUrl
+      })
+    }
     
     // Brochure (se richiesta)
     if (leadData.vuoleBrochure && documentUrls.brochure) {
