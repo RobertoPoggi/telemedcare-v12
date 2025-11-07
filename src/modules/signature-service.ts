@@ -299,40 +299,51 @@ export class ElectronicSignatureService {
 // =====================================================================
 
 export class DocuSignService {
-  private static readonly DOCUSIGN_BASE_URL = 'https://demo.docusign.net/restapi'
-  private static readonly INTEGRATION_KEY = 'your_integration_key' // Da configurare
-  private static readonly SECRET_KEY = 'your_secret_key' // Da configurare
-
   /**
-   * Crea envelope DocuSign
+   * Crea envelope DocuSign con API reale
    */
-  static async createDocuSignEnvelope(request: Omit<SignatureRequest, 'id' | 'status' | 'createdAt' | 'expiresAt'>): Promise<SignatureResult> {
+  static async createDocuSignEnvelope(
+    request: Omit<SignatureRequest, 'id' | 'status' | 'createdAt' | 'expiresAt'>,
+    env: any,
+    documentPdfBase64: string
+  ): Promise<SignatureResult> {
     try {
-      const envelopeId = `ENV_DOCUSIGN_${Date.now()}_${Math.random().toString(36).substring(2)}`
-      
-      console.log('📋 Creazione envelope DocuSign:', {
+      console.log('📋 [DocuSign] Creazione envelope:', {
         customer: request.customerName,
         document: request.documentType
       })
 
-      // Simula creazione envelope DocuSign
-      // In produzione: usare DocuSign SDK
-      const mockEnvelope = {
-        envelopeId: envelopeId,
-        status: 'sent',
-        recipientsUri: `${this.DOCUSIGN_BASE_URL}/envelopes/${envelopeId}/recipients`,
-        documentsUri: `${this.DOCUSIGN_BASE_URL}/envelopes/${envelopeId}/documents`
+      // Import dinamico della nuova integrazione
+      const { createDocuSignClient } = await import('./docusign-integration')
+      
+      // Crea client DocuSign
+      const client = createDocuSignClient(env)
+
+      // Prepara richiesta envelope
+      const envelopeRequest = {
+        documentName: `${request.documentType}_${request.customerName}.pdf`,
+        documentPdfBase64: documentPdfBase64,
+        recipientEmail: request.customerEmail,
+        recipientName: request.customerName,
+        subject: `TeleMedCare - Firma ${request.documentType}`,
+        emailBody: `Gentile ${request.customerName}, trova allegato il documento da firmare elettronicamente tramite DocuSign.`,
+        callbackUrl: `${env.PUBLIC_URL || 'https://telemedcare.it'}/api/docusign/webhook`
       }
+
+      // Crea envelope
+      const envelope = await client.createEnvelope(envelopeRequest)
+
+      console.log('✅ [DocuSign] Envelope creato:', envelope.envelopeId)
 
       return {
         success: true,
-        signatureId: envelopeId,
-        envelopeUrl: `https://demo.docusign.net/signing/${envelopeId}`,
+        signatureId: envelope.envelopeId,
+        envelopeUrl: envelope.recipientUri || `https://demo.docusign.net/signing/${envelope.envelopeId}`,
         timestamp: new Date().toISOString()
       }
 
     } catch (error) {
-      console.error('❌ Errore DocuSign:', error)
+      console.error('❌ [DocuSign] Errore:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Errore DocuSign',
