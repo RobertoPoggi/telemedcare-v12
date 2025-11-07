@@ -478,11 +478,11 @@ async function getDocumentUrls(leadData: LeadData): Promise<{ brochure?: string;
   const urls: { brochure?: string; manuale?: string } = {}
   
   if (leadData.vuoleBrochure) {
-    urls.brochure = '/public/documents/Brochure_TeleMedCare.pdf'
+    urls.brochure = '/documents/brochures/brochure_telemedcare.pdf'
   }
   
   if (leadData.vuoleManuale) {
-    urls.manuale = '/public/documents/Manuale_SiDLY.pdf'
+    urls.manuale = '/documents/manuals/manuale_sidly.pdf'
   }
   
   return urls
