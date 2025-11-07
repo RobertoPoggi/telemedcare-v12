@@ -264,12 +264,24 @@ export async function inviaEmailDocumentiInformativi(
     // Carica template email_documenti_informativi
     const template = await loadEmailTemplate('email_documenti_informativi', db)
     
+    // Genera HTML dinamico per i documenti allegati
+    let brochureHtml = ''
+    let manualeHtml = ''
+    
+    if (leadData.vuoleBrochure && documentUrls.brochure) {
+      brochureHtml = '<div class="document-item"><strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi e del dispositivo SiDLY Care Pro</div>'
+    }
+    
+    if (leadData.vuoleManuale && documentUrls.manuale) {
+      manualeHtml = '<div class="document-item"><strong>Manuale Utente SiDLY Care Pro</strong> - Guida completa all\'installazione e utilizzo del dispositivo</div>'
+    }
+    
     // Prepara i dati per il template
     const templateData = {
-      NOME_CLIENTE: leadData.nomeRichiedente,
-      COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      TIPO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'Base' : 'Avanzato',
-      DATA_RICHIESTA: new Date().toLocaleDateString('it-IT')
+      NOME_CLIENTE: leadData.nomeRichiedente || '',
+      COGNOME_CLIENTE: leadData.cognomeRichiedente || '',
+      BROCHURE_HTML: brochureHtml,
+      MANUALE_HTML: manualeHtml
     }
 
     // Renderizza template
