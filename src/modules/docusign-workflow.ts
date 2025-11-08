@@ -6,6 +6,7 @@
  */
 
 import { createDocuSignClient, DocuSignEnvelopeRequest } from './docusign-integration'
+import { createDocuSignTokenManager } from './docusign-token-manager'
 
 export interface ContractSignatureRequest {
   leadId: string
@@ -45,8 +46,18 @@ export async function sendContractForSignature(
     // 1. Converti PDF Buffer in Base64
     const pdfBase64 = request.contractPdfBuffer.toString('base64')
 
-    // 2. Crea client DocuSign
-    const docusignClient = createDocuSignClient(env)
+    // 2. Crea client DocuSign e verifica/ottieni token
+    const docusignClient = createDocuSignClient(env, true) // true = OAuth mode
+    const tokenManager = createDocuSignTokenManager(db)
+    
+    // 2.1: Ottieni token valido dal database
+    const validToken = await tokenManager.getValidToken()
+    if (!validToken) {
+      throw new Error('No valid DocuSign token available. Please authorize the application first.')
+    }
+    
+    // 2.2: Configura token nel client
+    docusignClient.setAccessToken(validToken, 28800) // 8 ore
 
     // 3. Prepara richiesta envelope
     const envelopeRequest: DocuSignEnvelopeRequest = {

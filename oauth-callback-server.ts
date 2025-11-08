@@ -17,7 +17,7 @@ const config = {
   secretKey: '1e51f26a-d618-497a-96a7-c2db567dba5f',
   accountId: '031092ba-f573-40b9-ae21-0a3478de03d3',
   userId: '0b6a7a10-8b3e-49a2-af3a-87495efe7784',
-  redirectUri: 'http://localhost:3001/api/docusign/callback',
+  redirectUri: 'https://3001-is9eg9jt4pg5xa9c7p8v0-c81df28e.sandbox.novita.ai/api/docusign/callback',
   baseUrl: 'https://demo.docusign.net/restapi'
 }
 
