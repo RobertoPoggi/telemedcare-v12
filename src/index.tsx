@@ -7425,19 +7425,3 @@ app.get('/', (c) => {
 })
 
 export default app
-API:', result.error);
-                }
-                
-            } catch (error) {
-                console.error('❌ Errore invio:', error);
-                document.getElementById('loadingMessage').classList.add('hidden');
-                document.getElementById('errorMessage').classList.remove('hidden');
-            }
-        });
-    </script>
-</body>
-</html>
-  `)
-})
-
-export default app
