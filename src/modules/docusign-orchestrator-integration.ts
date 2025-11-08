@@ -41,9 +41,9 @@ export async function sendContractWithDocuSign(
     contractId: options.contractId,
     contractCode: options.contractCode,
     contractPdfBuffer: options.contractPdfBuffer,
-    customerName: `${options.leadData.nome} ${options.leadData.cognome}`,
-    customerEmail: options.leadData.email,
-    customerPhone: options.leadData.telefono,
+    customerName: `${options.leadData.nomeRichiedente || options.leadData.nome} ${options.leadData.cognomeRichiedente || options.leadData.cognome}`,
+    customerEmail: options.leadData.emailRichiedente || options.leadData.email,
+    customerPhone: options.leadData.telefonoRichiedente || options.leadData.telefono,
     serviceType: options.leadData.pacchetto || 'Standard',
     price: 0  // TODO: Calcolare dal pricing config
   }

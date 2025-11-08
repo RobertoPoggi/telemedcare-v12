@@ -32,6 +32,9 @@ import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 
+// Import Admin API Module
+import adminApi from './modules/admin-api'
+
 type Bindings = {
   DB: D1Database
   KV?: KVNamespace
@@ -392,6 +395,12 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
+
+// Mount Admin API routes
+app.route('/api/admin', adminApi)
+
+// Mount Admin Dashboard page
+app.route('/admin-dashboard', adminDashboardRoute)
 
 // Serve static files (commentato per debug locale - funziona solo in produzione Cloudflare)
 // app.use('/static/*', serveStatic({ root: './public' }))
@@ -7401,6 +7410,22 @@ app.get('/', (c) => {
                 } else {
                     document.getElementById('errorMessage').classList.remove('hidden');
                     console.error('❌ Errore API:', result.error);
+                }
+                
+            } catch (error) {
+                console.error('❌ Errore invio:', error);
+                document.getElementById('loadingMessage').classList.add('hidden');
+                document.getElementById('errorMessage').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+  `)
+})
+
+export default app
+API:', result.error);
                 }
                 
             } catch (error) {

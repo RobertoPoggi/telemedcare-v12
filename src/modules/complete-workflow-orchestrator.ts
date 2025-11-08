@@ -108,7 +108,7 @@ export async function processNewLead(
           const docusignResult = await sendContractWithDocuSign({
             useDocuSign: true,
             leadData: ctx.leadData,
-            contractPdfBuffer: contractResult.data.pdfBuffer,
+            contractPdfBuffer: contractResult.data.contractPdfBuffer,
             contractId: contractResult.data.contractId,
             contractCode: contractResult.data.contractCode
           }, ctx.env, ctx.db)
