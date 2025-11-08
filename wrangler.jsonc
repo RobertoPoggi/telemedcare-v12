@@ -7,11 +7,6 @@
     "nodejs_compat"
   ],
   
-  // Build command for Cloudflare Pages
-  "build": {
-    "command": "npm run build"
-  },
-  
   // Environment: Development (local)
   "d1_databases": [
     {
