@@ -18,7 +18,9 @@
 
   // Variables for local development
   "vars": {
-    "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt"
+    "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt",
+    "EMAIL_FROM": "noreply@telemedcare.it",
+    "EMAIL_TO_INFO": "info@telemedcare.it"
   },
 
   // Environment configurations per deployment
@@ -51,7 +53,9 @@
       "vars": {
         "ENVIRONMENT": "production",
         "DEBUG_MODE": "false",
-        "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt"
+        "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt",
+        "EMAIL_FROM": "noreply@telemedcare.it",
+        "EMAIL_TO_INFO": "info@telemedcare.it"
       }
     }
   }
