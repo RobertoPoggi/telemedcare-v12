@@ -17,6 +17,7 @@ import DocumentRepository from './document-repository'
 import { generateContractPDF, ContractData } from './contract-generator'
 import { generateProformaPDF, ProformaData } from './proforma-generator'
 import { SERVICE_PRICES, IVA_RATES, calculatePriceWithVAT, SalesChannel, getFinalPrice } from '../config/pricing-config'
+import { sendContractWithDocuSign, isDocuSignAvailable } from './docusign-orchestrator-integration'
 
 export interface WorkflowContext {
   db: D1Database
@@ -97,28 +98,82 @@ export async function processNewLead(
       const contractResult = await generateContractForLead(ctx)
 
       if (contractResult.success) {
-        // Ottieni URLs documenti (passa ctx completo per requestUrl)
-        const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
-
-        // Invia email con contratto + documenti
-        const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
-          ctx.leadData,
-          contractResult.data,
-          ctx.env,
-          documentUrls,
-          ctx.db
-        )
-
-        if (contrattoResult.success) {
-          result.success = true
-          result.message = 'Lead processato: contratto generato e inviato'
-          result.data = {
+        // ✨ NUOVO: Verifica disponibilità DocuSign
+        const docuSignAvailable = await isDocuSignAvailable(ctx.env, ctx.db)
+        
+        if (docuSignAvailable) {
+          // 🎯 OPZIONE A: Invia tramite DocuSign (firma elettronica)
+          console.log('📝 [ORCHESTRATOR] Invio contratto tramite DocuSign')
+          
+          const docusignResult = await sendContractWithDocuSign({
+            useDocuSign: true,
+            leadData: ctx.leadData,
+            contractPdfBuffer: contractResult.data.pdfBuffer,
             contractId: contractResult.data.contractId,
-            emailsSent: contrattoResult.emailsSent
+            contractCode: contractResult.data.contractCode
+          }, ctx.env, ctx.db)
+          
+          if (docusignResult.success) {
+            result.success = true
+            result.message = 'Lead processato: contratto inviato per firma DocuSign'
+            result.data = {
+              contractId: contractResult.data.contractId,
+              docusignEnvelopeId: docusignResult.envelopeId,
+              signingUrl: docusignResult.signingUrl,
+              method: 'docusign'
+            }
+            
+            console.log('✅ [ORCHESTRATOR] Contratto inviato via DocuSign:', docusignResult.envelopeId)
+          } else {
+            // Fallback: DocuSign fallito, usa email classica
+            console.warn('⚠️  [ORCHESTRATOR] DocuSign fallito, fallback a email classica')
+            result.errors.push(`DocuSign error: ${docusignResult.error}`)
+            
+            // Procedi con email classica
+            const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
+            const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
+              ctx.leadData,
+              contractResult.data,
+              ctx.env,
+              documentUrls,
+              ctx.db
+            )
+            
+            result.success = contrattoResult.success
+            result.message = contrattoResult.success 
+              ? 'Contratto inviato via email (DocuSign fallback)'
+              : 'Errore invio contratto'
+            result.data = {
+              contractId: contractResult.data.contractId,
+              emailsSent: contrattoResult.emailsSent,
+              method: 'email_fallback'
+            }
           }
         } else {
-          result.errors.push(...contrattoResult.errors)
-          result.message = 'Errore invio contratto'
+          // 📧 OPZIONE B: Email classica (DocuSign non disponibile)
+          console.log('📧 [ORCHESTRATOR] DocuSign non disponibile, uso email classica')
+          
+          const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
+          const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
+            ctx.leadData,
+            contractResult.data,
+            ctx.env,
+            documentUrls,
+            ctx.db
+          )
+
+          if (contrattoResult.success) {
+            result.success = true
+            result.message = 'Lead processato: contratto generato e inviato via email'
+            result.data = {
+              contractId: contractResult.data.contractId,
+              emailsSent: contrattoResult.emailsSent,
+              method: 'email'
+            }
+          } else {
+            result.errors.push(...contrattoResult.errors)
+            result.message = 'Errore invio contratto'
+          }
         }
       } else {
         result.errors.push(contractResult.message)
