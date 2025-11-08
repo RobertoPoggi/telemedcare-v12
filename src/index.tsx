@@ -35,6 +35,13 @@ import * as ClientConfigurationManager from './modules/client-configuration-mana
 // Import Admin API Module
 import adminApi from './modules/admin-api'
 
+// Import admin dashboard HTML
+import adminDashboardHTML from '../public/admin-dashboard.html?raw'
+
+// Create admin dashboard route
+const adminDashboardRoute = new Hono()
+adminDashboardRoute.get('/', (c) => c.html(adminDashboardHTML))
+
 type Bindings = {
   DB: D1Database
   KV?: KVNamespace
