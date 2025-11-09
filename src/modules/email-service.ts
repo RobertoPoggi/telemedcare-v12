@@ -19,7 +19,7 @@ async function loadPDFAsBase64(filePath: string): Promise<string | null> {
   try {
     const url = filePath.startsWith('http') 
       ? filePath 
-      : `http://localhost:3000${filePath}`  // ← Porta 3000, /documents/* escluso da Worker
+      : `http://127.0.0.1:4000${filePath}`  // ← Porta 3008, /documents/* serviti da public/
     
     console.log(`📄 [FILE-LOADER] Caricamento file: ${url}`)
     
