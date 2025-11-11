@@ -331,11 +331,29 @@ export class EmailService {
    */
   private async loadTemplate(templatePath: string): Promise<string> {
     try {
-      // Per il momento, usa sempre template embedded per zero-dependency
-      console.log(`📧 Uso template embedded per: ${templatePath}`)
+      // Try to load from file system first (development/production with files)
+      if (typeof process !== 'undefined' && process.versions?.node) {
+        try {
+          const fs = await import('fs/promises')
+          const path = await import('path')
+          
+          // Construct full path: /public/templates/email/xxx.html
+          const fullPath = path.join(process.cwd(), 'public', templatePath)
+          console.log(`📧 Loading template from file: ${fullPath}`)
+          
+          const content = await fs.readFile(fullPath, 'utf-8')
+          console.log(`✅ Template loaded from file (${content.length} chars)`)
+          return content
+        } catch (fsError) {
+          console.warn(`⚠️ File template not found, using embedded fallback`)
+        }
+      }
+      
+      // Fallback to embedded template
+      console.log(`📧 Using embedded template for: ${templatePath}`)
       return this.getEmbeddedTemplate(templatePath)
     } catch (error) {
-      console.error(`❌ Errore caricamento template ${templatePath}:`, error)
+      console.error(`❌ Error loading template ${templatePath}:`, error)
       throw error
     }
   }
