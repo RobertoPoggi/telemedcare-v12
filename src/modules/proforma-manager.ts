@@ -110,7 +110,7 @@ export class ProformaManager {
 
     // Genera ID e numero proforma
     const proformaId = this.generateId();
-    const numeroProforma = this.generateProformaNumber();
+    const numeroProforma = await this.generateProformaNumber();
     
     // Calcola prezzi basati sul pacchetto
     const prezzario = this.getPricing(request.pacchetto_tipo);
@@ -573,11 +573,35 @@ export class ProformaManager {
     return `prf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private generateProformaNumber(): string {
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
-    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
-    return `PRF${year}${month}${random}`;
+  private async generateProformaNumber(): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = `PFM_${currentYear}/`;
+    
+    try {
+      // Query per ottenere l'ultimo codice proforma dell'anno corrente dalla tabella proformas
+      const result = await this.db.prepare(
+        `SELECT proforma_code FROM proformas 
+         WHERE proforma_code LIKE ? 
+         ORDER BY id DESC LIMIT 1`
+      ).bind(`${yearPrefix}%`).first() as any;
+      
+      if (!result || !result.proforma_code) {
+        return `${yearPrefix}0001`;  // Prima proforma dell'anno
+      }
+      
+      // Estrae il numero dal formato PFM_YYYY/XXXX
+      const match = result.proforma_code.match(/PFM_\d{4}\/(\d+)/);
+      if (match) {
+        const lastNumber = parseInt(match[1]);
+        const nextNumber = lastNumber + 1;
+        return `${yearPrefix}${String(nextNumber).padStart(4, '0')}`;
+      }
+      
+      return `${yearPrefix}0001`;  // Fallback
+    } catch (error) {
+      console.error('Error generating proforma number:', error);
+      return `PFM_${currentYear}/${String(Date.now()).slice(-4)}`;
+    }
   }
 
   private generateContractNumber(): string {

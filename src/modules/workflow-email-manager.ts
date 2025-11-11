@@ -378,11 +378,11 @@ export async function inviaEmailContratto(
     // Testo dinamico per il corpo email (frasi complete)
     let testoDocumentiAggiuntivi = ''
     if (hasBrochure && hasManuale) {
-      testoDocumentiAggiuntivi = ' insieme alla brochure aziendale e al manuale utente'
+      testoDocumentiAggiuntivi = ', il manuale d\'uso del dispositivo e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi'
     } else if (hasBrochure) {
-      testoDocumentiAggiuntivi = ' insieme alla brochure aziendale'
+      testoDocumentiAggiuntivi = ' e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi'
     } else if (hasManuale) {
-      testoDocumentiAggiuntivi = ' insieme al manuale utente'
+      testoDocumentiAggiuntivi = ' e il manuale d\'uso del dispositivo'
     }
     
     // Lista HTML formattata per il riquadro

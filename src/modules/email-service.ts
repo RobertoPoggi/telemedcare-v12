@@ -15,13 +15,81 @@
 // FILE LOADER per allegati PDF (inline per compatibilità bundle)
 // =====================================================================
 
+// Rileva automaticamente la porta del server in esecuzione
+async function detectServerPort(): Promise<number> {
+  // Prova le porte comuni in ordine
+  const commonPorts = [3001, 4005, 8080, 3000, 8787]
+  
+  for (const port of commonPorts) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/`, { 
+        method: 'HEAD',
+        signal: AbortSignal.timeout(500) // timeout veloce
+      })
+      if (response.ok || response.status === 404) {
+        console.log(`🔍 [PORT-DETECT] Server rilevato su porta ${port}`)
+        return port
+      }
+    } catch (error) {
+      // Porta non disponibile, prova la prossima
+      continue
+    }
+  }
+  
+  // Default a 3001 se nessuna porta risponde
+  console.warn(`⚠️ [PORT-DETECT] Nessun server rilevato, uso porta default 3001`)
+  return 3001
+}
+
+// Cache della porta rilevata per evitare rilevamenti multipli
+let cachedServerPort: number | null = null
+
+async function getServerPort(): Promise<number> {
+  if (cachedServerPort === null) {
+    cachedServerPort = await detectServerPort()
+  }
+  return cachedServerPort
+}
+
 async function loadPDFAsBase64(filePath: string): Promise<string | null> {
   try {
+    // Prova prima con filesystem locale (sviluppo)
+    if (typeof process !== 'undefined' && process?.versions?.node) {
+      try {
+        const fs = await import('fs')
+        const path = await import('path')
+        
+        // Prova diverse posizioni
+        const possiblePaths = [
+          path.join(process.cwd(), 'documents', filePath.replace('/documents/', '')),
+          path.join(process.cwd(), 'public', filePath.replace('/', '')),
+          path.join(process.cwd(), 'dist', filePath.replace('/', ''))
+        ]
+        
+        for (const fsPath of possiblePaths) {
+          if (fs.existsSync(fsPath)) {
+            console.log(`📄 [FILE-LOADER] Caricamento da filesystem: ${fsPath}`)
+            const buffer = fs.readFileSync(fsPath)
+            const base64 = buffer.toString('base64')
+            console.log(`✅ [FILE-LOADER] File caricato: ${(buffer.length / 1024).toFixed(2)} KB`)
+            return base64
+          }
+        }
+        
+        console.warn(`⚠️ [FILE-LOADER] File non trovato in filesystem, tento HTTP`)
+      } catch (fsError) {
+        console.warn(`⚠️ [FILE-LOADER] Errore filesystem, tento HTTP:`, fsError)
+      }
+    }
+    
+    // Fallback a HTTP (Cloudflare Workers o se filesystem non disponibile)
+    // Rileva automaticamente la porta del server
+    const serverPort = await getServerPort()
     const url = filePath.startsWith('http') 
       ? filePath 
-      : `http://localhost:3000${filePath}`  // ← Porta 3000, /documents/* escluso da Worker
+      : `http://127.0.0.1:${serverPort}${filePath}`
     
-    console.log(`📄 [FILE-LOADER] Caricamento file: ${url}`)
+    console.log(`📄 [FILE-LOADER] Caricamento via HTTP (porta ${serverPort}): ${url}`)
     
     const response = await fetch(url)
     if (!response.ok) {
@@ -37,7 +105,7 @@ async function loadPDFAsBase64(filePath: string): Promise<string | null> {
       uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
     )
     
-    console.log(`✅ [FILE-LOADER] File caricato: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
+    console.log(`✅ [FILE-LOADER] File caricato via HTTP: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
     
     return base64
   } catch (error) {
@@ -242,7 +310,24 @@ export class EmailService {
   }
 
   /**
-   * Invia email utilizzando template
+   * Mappa ID template API -> ID template database
+   */
+  private mapTemplateId(templateId: string): string {
+    const mapping: Record<string, string> = {
+      'INVIO_CONTRATTO': 'email_invio_contratto',
+      'INVIO_PROFORMA': 'email_invio_proforma',
+      'BENVENUTO': 'email_benvenuto',
+      'CONFIGURAZIONE': 'email_configurazione',
+      'CONFERMA': 'email_conferma_attivazione',
+      'FOLLOWUP_CALL': 'email_followup_call',
+      'NOTIFICA_INFO': 'email_notifica_info',
+      'DOCUMENTI_INFORMATIVI': 'email_documenti_informativi'
+    };
+    return mapping[templateId.toUpperCase()] || templateId.toLowerCase();
+  }
+
+  /**
+   * Invia email utilizzando template DINAMICI dal database
    */
   async sendTemplateEmail(
     templateId: string, 
@@ -252,17 +337,57 @@ export class EmailService {
     env?: any
   ): Promise<EmailResult> {
     try {
-      const template = EMAIL_TEMPLATES[templateId.toUpperCase()]
-      if (!template) {
-        throw new Error(`Template ${templateId} non trovato`)
+      // **CARICA TEMPLATE DAL DATABASE** (document_templates table)
+      let htmlContent: string;
+      let subject: string;
+      
+      if (env && env.DB) {
+        try {
+          // Map templateId to database template id
+          const dbTemplateId = this.mapTemplateId(templateId);
+          
+          const template = await env.DB.prepare(`
+            SELECT html_content, subject FROM document_templates 
+            WHERE id = ? AND active = 1
+          `).bind(dbTemplateId).first();
+          
+          if (template) {
+            console.log(`✅ Template caricato dal database: ${dbTemplateId}`);
+            htmlContent = template.html_content;
+            subject = template.subject;
+          } else {
+            console.warn(`⚠️ Template ${dbTemplateId} non trovato in DB, uso fallback`);
+            // Fallback to hardcoded template
+            const fallbackTemplate = EMAIL_TEMPLATES[templateId.toUpperCase()];
+            if (!fallbackTemplate) {
+              throw new Error(`Template ${templateId} non trovato né in DB né in fallback`);
+            }
+            htmlContent = await this.loadTemplate(fallbackTemplate.htmlPath);
+            subject = fallbackTemplate.subject;
+          }
+        } catch (dbError) {
+          console.error(`❌ Errore caricamento template da DB:`, dbError);
+          // Fallback to hardcoded template
+          const fallbackTemplate = EMAIL_TEMPLATES[templateId.toUpperCase()];
+          if (!fallbackTemplate) {
+            throw new Error(`Template ${templateId} non trovato`);
+          }
+          htmlContent = await this.loadTemplate(fallbackTemplate.htmlPath);
+          subject = fallbackTemplate.subject;
+        }
+      } else {
+        // No DB available, use hardcoded templates
+        const fallbackTemplate = EMAIL_TEMPLATES[templateId.toUpperCase()];
+        if (!fallbackTemplate) {
+          throw new Error(`Template ${templateId} non trovato`);
+        }
+        htmlContent = await this.loadTemplate(fallbackTemplate.htmlPath);
+        subject = fallbackTemplate.subject;
       }
-
-      // Carica template HTML 
-      const htmlContent = await this.loadTemplate(template.htmlPath)
       
       // Render template con variabili
       const renderedHtml = TemplateEngine.render(htmlContent, variables)
-      const renderedSubject = TemplateEngine.renderSubject(template.subject, variables)
+      const renderedSubject = TemplateEngine.renderSubject(subject, variables)
       const textContent = TemplateEngine.htmlToText(renderedHtml)
 
       // Prepara dati email
