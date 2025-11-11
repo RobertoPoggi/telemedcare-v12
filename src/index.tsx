@@ -41,6 +41,9 @@ import adminDashboardRoute from './modules/admin-dashboard-page'
 // Import Configuration Form API
 import configFormApi from './modules/config-form-api'
 
+// Import Assistiti Management API
+import assistitiApi from './modules/assistiti-api'
+
 type Bindings = {
   DB: D1Database
   KV?: KVNamespace
@@ -407,6 +410,7 @@ app.route('/api/admin', adminApi)
 
 // Mount Configuration Form API routes
 app.route('/api', configFormApi)
+app.route('/api/assistiti', assistitiApi)
 
 // Mount Admin Dashboard page
 app.route('/admin-dashboard', adminDashboardRoute)

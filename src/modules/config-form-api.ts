@@ -398,18 +398,79 @@ configFormApi.post('/config-form/submit', async (c) => {
     
     console.log(`✅ Configurazione salvata: ${configId}`);
     
-    // Update lead status to CONFIGURED
+    // CONVERT LEAD TO ASSISTITO
+    const lead: any = await db.prepare(`
+      SELECT * FROM leads WHERE id = ?
+    `).bind(formData.lead_id).first();
+    
+    const assistitoId = `ASS_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    await db.prepare(`
+      INSERT INTO assistiti (
+        id, lead_id, configuration_id, nome, cognome, data_nascita, eta,
+        telefono, email, indirizzo_completo, peso, altezza,
+        piano_servizio, data_attivazione, stato_servizio,
+        contatto1_nome, contatto1_cognome, contatto1_telefono, contatto1_email,
+        contatto2_nome, contatto2_cognome, contatto2_telefono, contatto2_email,
+        contatto3_nome, contatto3_cognome, contatto3_telefono, contatto3_email,
+        patologie, farmaci_nome, farmaci_dosaggio, farmaci_orario, note_mediche,
+        richiedente_nome, richiedente_cognome, richiedente_email, richiedente_telefono,
+        created_at, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')
+      )
+    `).bind(
+      assistitoId, formData.lead_id, configId,
+      formData.nome, formData.cognome, formData.data_nascita, formData.eta,
+      formData.telefono, formData.email || '', formData.indirizzo,
+      formData.peso || '', formData.altezza || '',
+      formData.piano_servizio || lead?.pacchetto, new Date().toISOString().split('T')[0], 'ATTIVO',
+      formData.contatto1_nome || '', formData.contatto1_cognome || '', formData.contatto1_telefono || '', formData.contatto1_email || '',
+      formData.contatto2_nome || '', formData.contatto2_cognome || '', formData.contatto2_telefono || '', formData.contatto2_email || '',
+      formData.contatto3_nome || '', formData.contatto3_cognome || '', formData.contatto3_telefono || '', formData.contatto3_email || '',
+      formData.patologie || '', formData.farmaci_nome || '', formData.farmaci_dosaggio || '', formData.farmaci_orario || '', formData.note || '',
+      lead?.nomeRichiedente || '', lead?.cognomeRichiedente || '', lead?.emailRichiedente || '', lead?.telefonoRichiedente || ''
+    ).run();
+    
+    console.log(`🎉 Assistito creato: ${assistitoId}`);
+    
+    // Update lead status to CONVERTITO
     await db.prepare(`
       UPDATE leads SET 
-        status = 'CONFIGURED',
+        status = 'CONVERTITO',
         updated_at = datetime('now')
       WHERE id = ?
     `).bind(formData.lead_id).run();
     
+    // Send confirmation email
+    try {
+      const EmailService = (await import('./email-service')).default;
+      const emailService = EmailService.getInstance();
+      
+      await emailService.sendTemplateEmail(
+        'EMAIL_CONFERMA',
+        lead?.emailRichiedente || formData.email,
+        {
+          NOME_CLIENTE: `${lead?.nomeRichiedente || formData.nome} ${lead?.cognomeRichiedente || formData.cognome}`,
+          NOME_ASSISTITO: `${formData.nome} ${formData.cognome}`,
+          PIANO_SERVIZIO: formData.piano_servizio || lead?.pacchetto || 'BASE',
+          DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
+          CODICE_ASSISTITO: assistitoId
+        },
+        [],
+        c.env
+      );
+      
+      console.log(`📧 Email conferma attivazione inviata a: ${lead?.emailRichiedente}`);
+    } catch (emailError) {
+      console.error('⚠️ Errore invio email conferma (non bloccante):', emailError);
+    }
+    
     return c.json({
       success: true,
-      message: 'Configurazione salvata con successo',
-      configId: configId
+      message: 'Configurazione salvata con successo. Lead convertito in Assistito!',
+      configId: configId,
+      assistitoId: assistitoId
     });
     
   } catch (error) {

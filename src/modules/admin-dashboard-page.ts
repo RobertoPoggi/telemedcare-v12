@@ -145,11 +145,14 @@ adminDashboardRoute.get('/', (c) => {
                     <button class="tab" data-tab="proformas" onclick="switchTab('proformas')">
                         💰 Proforma
                     </button>
+                    <button class="tab" data-tab="configurations" onclick="switchTab('configurations')">
+                        ⚙️ Configurazioni
+                    </button>
                     <button class="tab" data-tab="devices" onclick="switchTab('devices')">
                         📱 Dispositivi
                     </button>
-                    <button class="tab" data-tab="configurations" onclick="switchTab('configurations')">
-                        ⚙️ Configurazioni
+                    <button class="tab" data-tab="assistiti" onclick="switchTab('assistiti')">
+                        👨‍⚕️ Assistiti
                     </button>
                 </nav>
             </div>
@@ -208,6 +211,19 @@ adminDashboardRoute.get('/', (c) => {
                     </div>
                 </div>
 
+                <!-- Configurations Tab -->
+                <div id="tab-configurations" class="tab-content hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Gestione Configurazioni</h2>
+                        <button onclick="showCreateConfigurationModal()" class="btn-success">
+                            ➕ Nuova Configurazione
+                        </button>
+                    </div>
+                    <div id="configurations-list" class="overflow-x-auto">
+                        <!-- Configurations table will be loaded here -->
+                    </div>
+                </div>
+
                 <!-- Devices Tab -->
                 <div id="tab-devices" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-4">
@@ -230,16 +246,24 @@ adminDashboardRoute.get('/', (c) => {
                     </div>
                 </div>
 
-                <!-- Configurations Tab -->
-                <div id="tab-configurations" class="tab-content hidden">
+                <!-- Assistiti Tab (NEW) -->
+                <div id="tab-assistiti" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold">Gestione Configurazioni</h2>
-                        <button onclick="showCreateConfigurationModal()" class="btn-success">
-                            ➕ Nuova Configurazione
-                        </button>
+                        <h2 class="text-xl font-semibold">Gestione Assistiti</h2>
+                        <div class="flex space-x-2">
+                            <select id="filter-assistiti-status" onchange="loadAssistiti()" class="border rounded px-3 py-2">
+                                <option value="">Tutti gli stati</option>
+                                <option value="ATTIVO">Attivo</option>
+                                <option value="SOSPESO">Sospeso</option>
+                                <option value="CESSATO">Cessato</option>
+                            </select>
+                            <button onclick="showCreateAssistitoModal()" class="btn-success">
+                                ➕ Nuovo Assistito
+                            </button>
+                        </div>
                     </div>
-                    <div id="configurations-list" class="overflow-x-auto">
-                        <!-- Configurations table will be loaded here -->
+                    <div id="assistiti-list" class="overflow-x-auto">
+                        <!-- Assistiti table will be loaded here -->
                     </div>
                 </div>
             </div>
@@ -538,8 +562,9 @@ adminDashboardRoute.get('/', (c) => {
                 case 'leads': loadLeads(); break;
                 case 'contracts': loadContracts(); break;
                 case 'proformas': loadProformas(); break;
-                case 'devices': loadDevices(); break;
                 case 'configurations': loadConfigurations(); break;
+                case 'devices': loadDevices(); break;
+                case 'assistiti': loadAssistiti(); break;
             }
         }
         
@@ -564,8 +589,9 @@ adminDashboardRoute.get('/', (c) => {
                 case 'leads': loadLeads(); break;
                 case 'contracts': loadContracts(); break;
                 case 'proformas': loadProformas(); break;
-                case 'devices': loadDevices(); break;
                 case 'configurations': loadConfigurations(); break;
+                case 'devices': loadDevices(); break;
+                case 'assistiti': loadAssistiti(); break;
             }
         }
         
@@ -1378,7 +1404,7 @@ adminDashboardRoute.get('/', (c) => {
         
         async function loadConfigurations() {
             try {
-                const res = await fetch('/api/config-form/configurations');
+                const res = await fetch('/api/configurations');
                 const data = await res.json();
                 
                 if (!data.success) throw new Error(data.error);
@@ -1475,7 +1501,7 @@ adminDashboardRoute.get('/', (c) => {
         
         async function viewConfiguration(configId) {
             try {
-                const res = await fetch(\`/api/config-form/configurations/\${configId}\`);
+                const res = await fetch(\`/api/configurations/\${configId}\`);
                 const data = await res.json();
                 
                 if (!data.success) throw new Error(data.error);
@@ -1567,7 +1593,7 @@ adminDashboardRoute.get('/', (c) => {
         
         async function editConfiguration(configId) {
             try {
-                const res = await fetch(\`/api/config-form/configurations/\${configId}\`);
+                const res = await fetch(\`/api/configurations/\${configId}\`);
                 const data = await res.json();
                 
                 if (!data.success) throw new Error(data.error);
@@ -1645,7 +1671,7 @@ adminDashboardRoute.get('/', (c) => {
             };
             
             try {
-                const res = await fetch(\`/api/config-form/configurations/\${configId}\`, {
+                const res = await fetch(\`/api/configurations/\${configId}\`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatedData)
@@ -1670,7 +1696,7 @@ adminDashboardRoute.get('/', (c) => {
             }
             
             try {
-                const res = await fetch(\`/api/config-form/configurations/\${configId}\`, {
+                const res = await fetch(\`/api/configurations/\${configId}\`, {
                     method: 'DELETE'
                 });
                 
@@ -1688,12 +1714,12 @@ adminDashboardRoute.get('/', (c) => {
         
         function printConfiguration(configId) {
             // Open PDF in new tab
-            window.open(\`/api/config-form/configurations/\${configId}/pdf\`, '_blank');
+            window.open(\`/api/configurations/\${configId}/pdf\`, '_blank');
         }
         
         async function exportConfiguration(configId) {
             try {
-                const res = await fetch(\`/api/config-form/configurations/\${configId}\`);
+                const res = await fetch(\`/api/configurations/\${configId}\`);
                 const data = await res.json();
                 
                 if (!data.success) throw new Error(data.error);
