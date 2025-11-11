@@ -1502,7 +1502,7 @@ adminApi.post('/debug/regenerate-pdfs', async (c: AppContext) => {
         const pdfBuffer = await generateProformaPDF({
           numero_proforma: proforma.numero_proforma,
           data_emissione: proforma.data_emissione || new Date().toISOString().split('T')[0],
-          data_scadenza: proforma.data_scadenza || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+          data_scadenza: proforma.data_scadenza || new Date().toISOString().split('T')[0],
           nomeRichiedente: proforma.nomeRichiedente || '',
           cognomeRichiedente: proforma.cognomeRichiedente || '',
           emailRichiedente: proforma.emailRichiedente || '',

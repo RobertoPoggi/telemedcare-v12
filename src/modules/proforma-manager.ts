@@ -118,10 +118,9 @@ export class ProformaManager {
     const prezzoMensile = prezzario.mensile;
     const prezzoTotale = (prezzoMensile * durataEffettiva) - (request.sconto_applicato || 0);
 
-    // Calcola scadenza (30 giorni dalla creazione)
+    // Pagamento a vista: scadenza coincide con data emissione
     const dataEmissione = new Date();
-    const dataScadenza = new Date();
-    dataScadenza.setDate(dataScadenza.getDate() + 30);
+    const dataScadenza = new Date(dataEmissione);
 
     // Prepara i dati della proforma
     const proformaData: Partial<ProformaData> = {
