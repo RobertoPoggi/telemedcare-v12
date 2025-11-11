@@ -259,6 +259,133 @@ configFormApi.post('/generate-token/:leadId', async (c) => {
 });
 
 /**
+ * POST /api/config-form/submit
+ * Save configuration form data to database
+ */
+configFormApi.post('/config-form/submit', async (c) => {
+  const db = c.env.DB;
+  
+  try {
+    const formData = await c.req.json();
+    
+    console.log('📝 Ricevuti dati configurazione per lead:', formData.lead_id);
+    
+    // Save to database (create configurations table if needed)
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS configurations (
+        id TEXT PRIMARY KEY,
+        lead_id TEXT NOT NULL,
+        piano_servizio TEXT,
+        nome TEXT,
+        cognome TEXT,
+        data_nascita TEXT,
+        eta TEXT,
+        peso TEXT,
+        altezza TEXT,
+        telefono TEXT,
+        email TEXT,
+        indirizzo TEXT,
+        contatto1_nome TEXT,
+        contatto1_cognome TEXT,
+        contatto1_telefono TEXT,
+        contatto1_email TEXT,
+        contatto2_nome TEXT,
+        contatto2_cognome TEXT,
+        contatto2_telefono TEXT,
+        contatto2_email TEXT,
+        contatto3_nome TEXT,
+        contatto3_cognome TEXT,
+        contatto3_telefono TEXT,
+        contatto3_email TEXT,
+        patologie TEXT,
+        farmaci_nome TEXT,
+        farmaci_dosaggio TEXT,
+        farmaci_orario TEXT,
+        note TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        FOREIGN KEY (lead_id) REFERENCES leads(id)
+      )
+    `).run();
+    
+    const configId = `CONFIG_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    await db.prepare(`
+      INSERT INTO configurations (
+        id, lead_id, piano_servizio,
+        nome, cognome, data_nascita, eta, peso, altezza, telefono, email, indirizzo,
+        contatto1_nome, contatto1_cognome, contatto1_telefono, contatto1_email,
+        contatto2_nome, contatto2_cognome, contatto2_telefono, contatto2_email,
+        contatto3_nome, contatto3_cognome, contatto3_telefono, contatto3_email,
+        patologie, farmaci_nome, farmaci_dosaggio, farmaci_orario, note,
+        created_at, updated_at
+      ) VALUES (
+        ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        datetime('now'), datetime('now')
+      )
+    `).bind(
+      configId,
+      formData.lead_id,
+      formData.piano_servizio,
+      formData.nome,
+      formData.cognome,
+      formData.data_nascita,
+      formData.eta,
+      formData.peso,
+      formData.altezza,
+      formData.telefono,
+      formData.email,
+      formData.indirizzo,
+      formData.contatto1_nome,
+      formData.contatto1_cognome,
+      formData.contatto1_telefono,
+      formData.contatto1_email,
+      formData.contatto2_nome,
+      formData.contatto2_cognome,
+      formData.contatto2_telefono,
+      formData.contatto2_email,
+      formData.contatto3_nome,
+      formData.contatto3_cognome,
+      formData.contatto3_telefono,
+      formData.contatto3_email,
+      formData.patologie,
+      formData.farmaci_nome,
+      formData.farmaci_dosaggio,
+      formData.farmaci_orario,
+      formData.note
+    ).run();
+    
+    console.log(`✅ Configurazione salvata: ${configId}`);
+    
+    // Update lead status to CONFIGURED
+    await db.prepare(`
+      UPDATE leads SET 
+        status = 'CONFIGURED',
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(formData.lead_id).run();
+    
+    return c.json({
+      success: true,
+      message: 'Configurazione salvata con successo',
+      configId: configId
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore salvataggio configurazione:', error);
+    return c.json({
+      success: false,
+      error: 'Errore durante il salvataggio della configurazione'
+    }, 500);
+  }
+});
+
+/**
  * Generate the complete form HTML with pre-filled data
  */
 async function generateFormHtml(preFillData: any, lead: any): Promise<string> {
@@ -270,7 +397,6 @@ async function generateFormHtml(preFillData: any, lead: any): Promise<string> {
     <title>Configurazione SiDLY CARE - Dati Cliente</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         @media print {
             body { -webkit-print-color-adjust: exact; }
@@ -574,11 +700,6 @@ async function generateFormHtml(preFillData: any, lead: any): Promise<string> {
     </div>
 
     <script>
-        // Initialize EmailJS
-        (function() {
-            emailjs.init("2RdQ32Zss7a_KSLjn"); // Your EmailJS user ID
-        })();
-
         // Auto-calculate age
         document.getElementById('data_nascita').addEventListener('change', function() {
             const birthDate = new Date(this.value);
@@ -633,37 +754,54 @@ async function generateFormHtml(preFillData: any, lead: any): Promise<string> {
                     }
                 }
                 
-                // Format data for email
-                const emailData = {
+                // Format data for database
+                const configData = {
                     lead_id: data.lead_id,
                     piano_servizio: data.piano_servizio,
                     nome: data.nome,
                     cognome: data.cognome,
                     data_nascita: data.data_nascita,
                     eta: data.eta,
-                    peso: data.peso || 'Non specificato',
-                    altezza: data.altezza || 'Non specificato',
+                    peso: data.peso || '',
+                    altezza: data.altezza || '',
                     telefono: data.telefono,
-                    email: data.email || 'Non specificato',
+                    email: data.email || '',
                     indirizzo: data.indirizzo,
-                    contatto1: \`\${data.contatto1_nome || ''} \${data.contatto1_cognome || ''} - Tel: \${data.contatto1_telefono || ''} - Email: \${data.contatto1_email || 'N/A'}\`,
-                    contatto2: \`\${data.contatto2_nome || ''} \${data.contatto2_cognome || ''} - Tel: \${data.contatto2_telefono || ''} - Email: \${data.contatto2_email || 'N/A'}\`,
-                    contatto3: \`\${data.contatto3_nome || ''} \${data.contatto3_cognome || ''} - Tel: \${data.contatto3_telefono || ''} - Email: \${data.contatto3_email || 'N/A'}\`,
-                    patologie: data.patologie ? data.patologie.join(', ') : 'Nessuna',
-                    farmaci_nome: data.farmaco_nome ? data.farmaco_nome.join(', ') : 'Nessuno',
+                    contatto1_nome: data.contatto1_nome || '',
+                    contatto1_cognome: data.contatto1_cognome || '',
+                    contatto1_telefono: data.contatto1_telefono || '',
+                    contatto1_email: data.contatto1_email || '',
+                    contatto2_nome: data.contatto2_nome || '',
+                    contatto2_cognome: data.contatto2_cognome || '',
+                    contatto2_telefono: data.contatto2_telefono || '',
+                    contatto2_email: data.contatto2_email || '',
+                    contatto3_nome: data.contatto3_nome || '',
+                    contatto3_cognome: data.contatto3_cognome || '',
+                    contatto3_telefono: data.contatto3_telefono || '',
+                    contatto3_email: data.contatto3_email || '',
+                    patologie: data.patologie ? data.patologie.join(', ') : '',
+                    farmaci_nome: data.farmaco_nome ? data.farmaco_nome.join(', ') : '',
                     farmaci_dosaggio: data.farmaco_dosaggio ? data.farmaco_dosaggio.join(', ') : '',
                     farmaci_orario: data.farmaco_orario ? data.farmaco_orario.join(', ') : '',
-                    note: data.note || 'Nessuna nota aggiuntiva'
+                    note: data.note || ''
                 };
                 
-                // Send via EmailJS
-                const response = await emailjs.send(
-                    'service_uypbq0i',      // Your service ID
-                    'template_hgwejgr',     // Your template ID
-                    emailData
-                );
+                // Send to our API endpoint
+                const response = await fetch('/api/config-form/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                });
                 
-                console.log('Email sent successfully:', response);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Errore durante il salvataggio');
+                }
+                
+                console.log('Configurazione salvata con successo:', result);
                 
                 // Show success message
                 document.getElementById('successMessage').classList.remove('hidden');
