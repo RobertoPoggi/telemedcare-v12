@@ -549,25 +549,162 @@ export class EmailService {
 </html>`
 
       case 'email_conferma_attivazione':
-        return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Servizio Attivato</title></head>
-<body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
-<div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#10b981;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">✅ TeleMedCare</h1></div>
-<div style="padding:24px;">
-<h1>Servizio Attivato!</h1>
-<p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
-<p>Il Suo servizio <strong>{{PIANO_SERVIZIO}}</strong> è stato attivato con successo!</p>
-<div style="background:#f0fdf4;border:1px solid #dcfce7;padding:16px;border-radius:6px;margin:16px 0;">
-<h3 style="margin:0 0 8px;color:#10b981;">✅ Configurazione Completata</h3>
-<strong>Dispositivo:</strong> {{DISPOSITIVO}}<br>
-<strong>Serial Number:</strong> {{SERIAL_NUMBER}}<br>
-<strong>Data Attivazione:</strong> {{DATA_ATTIVAZIONE}}<br>
-<strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
-</div>
-<p>Il Suo dispositivo è ora operativo e monitorato H24.</p>
-<p style="margin-top:20px;"><strong>La Sua sicurezza è la nostra priorità!</strong><br>Il Team TeleMedCare</p>
-</div></div></body></html>`
+        return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Conferma Attivazione TeleMedCare</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #333333;
+      -webkit-text-size-adjust: 100%;
+    }
+    table {
+      border-collapse: collapse;
+    }
+    .container {
+      width: 100%;
+      padding: 20px 16px;
+    }
+    .card {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(16,24,40,0.08);
+    }
+    .card-inner {
+      padding: 24px;
+    }
+    h1, h2, h3 {
+      margin: 0 0 12px 0;
+      color: #0b2545;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    p {
+      margin: 0 0 12px 0;
+      line-height: 1.45;
+    }
+    .muted {
+      color: #667085;
+      font-size: 14px;
+    }
+    .section {
+      margin-bottom: 18px;
+    }
+    .device-info {
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .device-info b {
+      color: #0b2545;
+    }
+    ul {
+      padding-left: 18px;
+      margin: 8px 0 12px 0;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .footer {
+      padding: 18px 24px;
+      background: #f8fafc;
+      font-size: 13px;
+      color: #667085;
+      border-top: 1px solid #eef2f7;
+    }
+    .signature {
+      margin-top: 12px;
+      font-weight: 600;
+      color: #0b2545;
+    }
+    @media (max-width: 620px) {
+      .card-inner { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <table class="container" width="100%" role="presentation">
+    <tr>
+      <td align="center">
+        <table class="card" width="100%" role="presentation">
+          <tr>
+            <td class="card-inner">
+              <h1>Gentile {{NOME_CLIENTE}},</h1>
+              <p class="muted">🎉 Il Suo servizio è ora <strong>ATTIVO</strong>!</p>
+
+              <div class="section">
+                <p>Il dispositivo <strong>SiDLY</strong> è configurato e funzionante. È ora protetto/a H24!</p>
+                <p><strong>Data Attivazione:</strong> {{DATA_ATTIVAZIONE}}</p>
+              </div>
+
+              <div class="section">
+                <h2>📋 Informazioni Dispositivo</h2>
+                <div class="device-info">
+                  <p><strong>Dispositivo:</strong> SiDLY - Classe IIa Certificato</p>
+                  <p><strong>Codice Dispositivo:</strong> {{CODICE_DISPOSITIVO}}</p>
+                  <p><strong>Piano Attivo:</strong> {{PIANO_SERVIZIO}}</p>
+                  <p><strong>Scadenza Servizio:</strong> {{DATA_SCADENZA}}</p>
+                </div>
+              </div>
+
+              <div class="section">
+                <h2>⚠️ Informazioni Importanti</h2>
+                <ul>
+                  <li><strong>Indossi sempre il dispositivo:</strong> Solo così può proteggerLa efficacemente</li>
+                  <li><strong>Ricarica quotidiana:</strong> Metta in carica ogni sera per 2-3 ore oppure metta in carica ogni giorno quando non è da solo/a in casa</li>
+                  <li><strong>Aggiornamenti automatici:</strong> Il dispositivo si aggiorna da solo</li>
+                </ul>
+              </div>
+
+              <div class="section">
+                <h2>🔔 Come Funziona il Pulsante SOS</h2>
+                <ol>
+                  <li><strong>Emergenza:</strong> Prema e tenga premuto il pulsante rosso per 3 secondi</li>
+                  <li><strong>Invio Automatico:</strong> Viene inviato allarme con la Sua posizione GPS</li>
+                  <li><strong>Contatti Immediati:</strong> Vengono avvisati familiari e la Centrale Operativa</li>
+                  <li><strong>Comunicazione:</strong> Può parlare direttamente attraverso il dispositivo</li>
+                </ol>
+              </div>
+
+              <div class="section">
+                <h2>💚 Stia Tranquillo/a</h2>
+                <p><strong>È ora protetto/a H24 con la tecnologia SiDLY!</strong></p>
+                <p class="muted"><em>La Sua sicurezza è la nostra missione.</em></p>
+
+                <p class="signature">Il Team TeleMedCare</p>
+                <p class="muted">Il Team TeleMedCare è sempre a Sua disposizione per qualsiasi necessità o domanda.</p>
+              </div>
+
+            </td>
+          </tr>
+          <tr>
+            <td class="footer" align="center">
+              TeleMedCare · Assistenza 24/7 · <span style="color:#0b2545;font-weight:600">support@telemedcare.it</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 
       case 'email_followup_call':
         return `<!DOCTYPE html>

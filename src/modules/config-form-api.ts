@@ -448,14 +448,16 @@ configFormApi.post('/config-form/submit', async (c) => {
       const emailService = EmailService.getInstance();
       
       await emailService.sendTemplateEmail(
-        'EMAIL_CONFERMA',
+        'CONFERMA',
         lead?.emailRichiedente || formData.email,
         {
           NOME_CLIENTE: `${lead?.nomeRichiedente || formData.nome} ${lead?.cognomeRichiedente || formData.cognome}`,
           NOME_ASSISTITO: `${formData.nome} ${formData.cognome}`,
           PIANO_SERVIZIO: formData.piano_servizio || lead?.pacchetto || 'BASE',
           DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
-          CODICE_ASSISTITO: assistitoId
+          CODICE_CLIENTE: assistitoId,
+          CODICE_DISPOSITIVO: 'SiDLY-' + assistitoId.substring(4, 14),
+          DATA_SCADENZA: new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString('it-IT')
         },
         [],
         c.env
