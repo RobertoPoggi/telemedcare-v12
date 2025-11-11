@@ -16,30 +16,69 @@
 // =====================================================================
 
 async function loadPDFAsBase64(filePath: string): Promise<string | null> {
+  // Metodo 1: Prova filesystem (solo development con Node.js)
   try {
-    const url = filePath.startsWith('http') 
-      ? filePath 
-      : `http://127.0.0.1:4000${filePath}`  // ← Porta 3008, /documents/* serviti da public/
+    // Verifica se siamo in ambiente Node.js
+    if (typeof process !== 'undefined' && process.versions?.node) {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      
+      // Determina il percorso corretto del file
+      let fullPath: string
+      if (filePath.startsWith('/')) {
+        // Percorso assoluto da public/
+        fullPath = path.join(process.cwd(), 'public', filePath)
+      } else {
+        fullPath = filePath
+      }
+      
+      console.log(`📄 [FILE-LOADER] Tentativo lettura filesystem: ${fullPath}`)
+      
+      const fileBuffer = await fs.readFile(fullPath)
+      const base64 = fileBuffer.toString('base64')
+      
+      console.log(`✅ [FILE-LOADER] File caricato da filesystem: ${(fileBuffer.length / 1024).toFixed(2)} KB`)
+      return base64
+    }
+  } catch (fsError) {
+    console.log(`⚠️ [FILE-LOADER] Filesystem non disponibile, provo HTTP...`)
+  }
+  
+  // Metodo 2: Fetch HTTP (fallback per Cloudflare Workers o errori filesystem)
+  try {
+    // Prova diverse porte comuni per dev server
+    const ports = [8080, 3000, 4000, 8787]
     
-    console.log(`📄 [FILE-LOADER] Caricamento file: ${url}`)
-    
-    const response = await fetch(url)
-    if (!response.ok) {
-      console.error(`❌ [FILE-LOADER] File non trovato: ${url} (${response.status})`)
-      return null
+    for (const port of ports) {
+      try {
+        const url = filePath.startsWith('http') 
+          ? filePath 
+          : `http://127.0.0.1:${port}${filePath}`
+        
+        console.log(`📄 [FILE-LOADER] Tentativo HTTP: ${url}`)
+        
+        const response = await fetch(url)
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer()
+          const uint8Array = new Uint8Array(arrayBuffer)
+          
+          // Converti in base64
+          const base64 = btoa(
+            uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
+          )
+          
+          console.log(`✅ [FILE-LOADER] File caricato via HTTP (porta ${port}): ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
+          return base64
+        }
+      } catch (portError) {
+        // Continua con la prossima porta
+        continue
+      }
     }
     
-    const arrayBuffer = await response.arrayBuffer()
-    const uint8Array = new Uint8Array(arrayBuffer)
+    console.error(`❌ [FILE-LOADER] File non trovato su nessuna porta: ${filePath}`)
+    return null
     
-    // Converti in base64
-    const base64 = btoa(
-      uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), '')
-    )
-    
-    console.log(`✅ [FILE-LOADER] File caricato: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
-    
-    return base64
   } catch (error) {
     console.error(`❌ [FILE-LOADER] Errore caricamento file ${filePath}:`, error)
     return null

@@ -459,7 +459,7 @@ adminApi.post('/contracts/:id/confirm-signature', async (c: AppContext) => {
         const lastProforma = await db.prepare(`
           SELECT numero_proforma FROM proforma 
           WHERE numero_proforma LIKE ? 
-          ORDER BY id DESC LIMIT 1
+          ORDER BY numero_proforma DESC LIMIT 1
         `).bind(`${yearPrefix}%`).first() as any;
         
         let proformaCode = `${yearPrefix}0001`;
