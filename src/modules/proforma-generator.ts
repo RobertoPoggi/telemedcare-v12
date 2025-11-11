@@ -116,70 +116,70 @@ export async function generateProformaPDF(input: ProformaData | ProformaDataDB):
     // ======================
     // TITOLO
     // ======================
-    doc.setFontSize(14)
+    doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
     doc.text('PRO FORMA MEDICA GB SRL', pageWidth / 2, yPos, { align: 'center' })
-    yPos += 10
+    yPos += 7
 
     // ======================
     // DATA
     // ======================
-    doc.setFontSize(10)
+    doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    yPos = addTextWithWrap(doc, `Milano, ${proformaData.dataRichiesta}`, margin, yPos, contentWidth, 10)
-    yPos += 5
+    yPos = addTextWithWrap(doc, `Milano, ${proformaData.dataRichiesta}`, margin, yPos, contentWidth, 9)
+    yPos += 3
 
     // ======================
     // ANAGRAFICA PAZIENTE
     // ======================
     doc.setFont('helvetica', 'bold')
-    yPos = addTextWithWrap(doc, 'ANAGRAFICA PAZIENTE', margin, yPos, contentWidth, 11)
-    yPos += 4
+    yPos = addTextWithWrap(doc, 'ANAGRAFICA PAZIENTE', margin, yPos, contentWidth, 10)
+    yPos += 2
 
     doc.setFont('helvetica', 'normal')
-    yPos = addTextWithWrap(doc, `NOME: ${proformaData.nomeAssistito}`, margin, yPos, contentWidth, 10)
-    yPos += 3
-    yPos = addTextWithWrap(doc, `COGNOME: ${proformaData.cognomeAssistito}`, margin, yPos, contentWidth, 10)
-    yPos += 3
-    yPos = addTextWithWrap(doc, `C.F.: ${proformaData.codiceFiscale}`, margin, yPos, contentWidth, 10)
-    yPos += 3
-    yPos = addTextWithWrap(doc, `RESIDENTE IN: ${proformaData.indirizzoCompleto}`, margin, yPos, contentWidth, 10)
-    yPos += 3
+    yPos = addTextWithWrap(doc, `NOME: ${proformaData.nomeAssistito}`, margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, `COGNOME: ${proformaData.cognomeAssistito}`, margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, `C.F.: ${proformaData.codiceFiscale}`, margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, `RESIDENTE IN: ${proformaData.indirizzoCompleto}`, margin, yPos, contentWidth, 9)
+    yPos += 2
     
     const cittaCompleta = [
       proformaData.cap,
       proformaData.citta,
       proformaData.provincia ? `(${proformaData.provincia})` : ''
     ].filter(Boolean).join(' ')
-    yPos = addTextWithWrap(doc, `CITTA': ${cittaCompleta}`, margin, yPos, contentWidth, 10)
-    yPos += 5
+    yPos = addTextWithWrap(doc, `CITTA': ${cittaCompleta}`, margin, yPos, contentWidth, 9)
+    yPos += 3
 
     // ======================
     // NOTE
     // ======================
     doc.setFont('helvetica', 'bold')
-    yPos = addTextWithWrap(doc, 'NOTE', margin, yPos, contentWidth, 11)
+    yPos = addTextWithWrap(doc, 'NOTE', margin, yPos, contentWidth, 10)
     doc.setFont('helvetica', 'normal')
+    yPos += 2
+    yPos = addTextWithWrap(doc, `E.MAIL X INVIO FATTURAZIONE: ${proformaData.emailRichiedente}`, margin, yPos, contentWidth, 9)
     yPos += 3
-    yPos = addTextWithWrap(doc, `E.MAIL X INVIO FATTURAZIONE: ${proformaData.emailRichiedente}`, margin, yPos, contentWidth, 10)
-    yPos += 5
 
     // ======================
     // TIPOLOGIA PRESTAZIONE EROGATA
     // ======================
     doc.setFont('helvetica', 'bold')
-    yPos = addTextWithWrap(doc, 'TIPOLOGIA PRESTAZIONE EROGATA', margin, yPos, contentWidth, 11)
-    yPos += 4
+    yPos = addTextWithWrap(doc, 'TIPOLOGIA PRESTAZIONE EROGATA', margin, yPos, contentWidth, 10)
+    yPos += 2
 
     doc.setFont('helvetica', 'normal')
-    yPos = addTextWithWrap(doc, `DATA ATTIVAZIONE: ${proformaData.dataAttivazione}`, margin, yPos, contentWidth, 10)
-    yPos += 3
+    yPos = addTextWithWrap(doc, `DATA ATTIVAZIONE: ${proformaData.dataAttivazione}`, margin, yPos, contentWidth, 9)
+    yPos += 2
     
     const tipoPrestazioneText = proformaData.tipoPrestazione === 'BASE' 
       ? 'Servizio di TeleAssistenza base'
       : 'Servizio di TeleAssistenza Avanzata'
-    yPos = addTextWithWrap(doc, `TIPO DI PRESTAZIONE: ${tipoPrestazioneText}`, margin, yPos, contentWidth, 10)
-    yPos += 5
+    yPos = addTextWithWrap(doc, `TIPO DI PRESTAZIONE: ${tipoPrestazioneText}`, margin, yPos, contentWidth, 9)
+    yPos += 3
 
     // ======================
     // DESCRIZIONE DISPOSITIVO (testo completo da DOCX)
@@ -189,76 +189,71 @@ export async function generateProformaPDF(input: ProformaData | ProformaDataDB):
 
     const descrizioneDispositivo = `SiDLY Care PRO numero seriale: ${proformaData.serialNumber} Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${comunicazioneTipo} le persone individuate come care givers. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA (codice CDN Z12040199) e, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM SiDLY per SiDLY Care PRO, per comunicazione e trasmissione dati. Tel: ${proformaData.telefonoSidly || 'N/A'} Piattaforma/APP SiDLY per SiDLY Care PRO (Dispositivo medicale in classe I)`
 
-    yPos = addTextWithWrap(doc, descrizioneDispositivo, margin, yPos, contentWidth, 9)
-    yPos += 5
+    yPos = addTextWithWrap(doc, descrizioneDispositivo, margin, yPos, contentWidth, 8)
+    yPos += 3
 
     // ======================
     // TOTALE (fix Euro symbol)
     // ======================
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
+    doc.setFontSize(10)
     const iva = Math.round(proformaData.prezzoPacchetto * IVA_RATES.STANDARD * 100) / 100
     const totaleConIva = proformaData.prezzoPacchetto + iva
     // Use 'EUR' instead of '€' to avoid rendering issues
-    yPos = addTextWithWrap(doc, `TOTALE DA FATTURARE: EUR ${proformaData.prezzoPacchetto.toFixed(2)} + IVA 22% = EUR ${totaleConIva.toFixed(2)}`, margin, yPos, contentWidth, 11)
-    yPos += 6
+    yPos = addTextWithWrap(doc, `TOTALE DA FATTURARE: EUR ${proformaData.prezzoPacchetto.toFixed(2)} + IVA 22% = EUR ${totaleConIva.toFixed(2)}`, margin, yPos, contentWidth, 10)
+    yPos += 4
 
     // ======================
-    // PAGAMENTO CON BONIFICO (compact spacing)
+    // PAGAMENTO CON BONIFICO (ultra-compact)
     // ======================
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    yPos = addTextWithWrap(doc, 'PAGAMENTO CON BONIFICO', margin, yPos, contentWidth, 11)
-    yPos += 4
+    doc.setFontSize(10)
+    yPos = addTextWithWrap(doc, 'PAGAMENTO CON BONIFICO', margin, yPos, contentWidth, 10)
+    yPos += 2
 
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    yPos = addTextWithWrap(doc, 'Medica GB S.r.l.', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, 'Corso Giuseppe Garibaldi, 34', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, '20121 Milano', margin, yPos, contentWidth, 10)
+    doc.setFontSize(9)
+    yPos = addTextWithWrap(doc, 'Medica GB S.r.l.', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'Corso Giuseppe Garibaldi, 34', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, '20121 Milano', margin, yPos, contentWidth, 9)
+    yPos += 3
+
+    yPos = addTextWithWrap(doc, 'BANCA BPM S.P.A.', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'FILIALE MILANO-GARIBALDI', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'C/C 03519', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'ABI 05034', margin, yPos, contentWidth, 9)
+    yPos += 2
+    yPos = addTextWithWrap(doc, 'CAB 01727', margin, yPos, contentWidth, 9)
+    yPos += 2
+    doc.setFont('helvetica', 'bold')
+    yPos = addTextWithWrap(doc, 'IBAN: IT97L0503401727000000003519', margin, yPos, contentWidth, 9)
     yPos += 4
 
-    yPos = addTextWithWrap(doc, 'BANCA BPM S.P.A.', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, 'FILIALE MILANO-GARIBALDI', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, 'C/C 03519', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, 'ABI 05034', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    yPos = addTextWithWrap(doc, 'CAB 01727', margin, yPos, contentWidth, 10)
-    yPos += 2.5
-    doc.setFont('helvetica', 'bold')
-    yPos = addTextWithWrap(doc, 'IBAN: IT97L0503401727000000003519', margin, yPos, contentWidth, 10)
-    yPos += 6
-
     // ======================
-    // NOTA LEGALE (with spacing check)
+    // NOTA LEGALE (NO PAGE BREAK - fit in one page)
     // ======================
     const pageHeight = doc.internal.pageSize.getHeight()
-    const footerY = pageHeight - 50 // Footer starts here (increased from 30 to 50 for more space)
+    const footerY = pageHeight - 40 // Footer starts higher to avoid overlap
     
-    // Ensure legal text doesn't overlap footer
-    // Legal text + company name needs ~18mm, so only add page if less than 20mm available
-    if (yPos > footerY - 20) {
-      // Add new page if not enough space
-      doc.addPage()
-      yPos = margin
-    }
+    // NO PAGE BREAK - always keep on same page
+    // If needed, text will be smaller/compact
     
     doc.setFont('helvetica', 'italic')
-    doc.setFontSize(9)
-    yPos = addTextWithWrap(doc, 'Il presente documento non costituisce fattura che verrà emessa all\'atto del pagamento ai sensi dell\'art.6 DPR 26.10.1972 n. 633.', margin, yPos, contentWidth, 9)
-    yPos += 10
+    doc.setFontSize(8)
+    yPos = addTextWithWrap(doc, 'Il presente documento non costituisce fattura che verrà emessa all\'atto del pagamento ai sensi dell\'art.6 DPR 26.10.1972 n. 633.', margin, yPos, contentWidth, 8)
+    yPos += 4
 
     // ======================
     // FIRMA MEDICA GB
     // ======================
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    yPos = addTextWithWrap(doc, 'Medica GB S.r.l.', margin, yPos, contentWidth, 10)
+    doc.setFontSize(9)
+    yPos = addTextWithWrap(doc, 'Medica GB S.r.l.', margin, yPos, contentWidth, 9)
 
     // ======================
     // FOOTER (fixed position at bottom)
