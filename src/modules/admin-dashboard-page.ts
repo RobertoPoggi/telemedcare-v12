@@ -551,6 +551,63 @@ adminDashboardRoute.get('/', (c) => {
         </div>
     </div>
 
+    <!-- Modal Create Device -->
+    <div id="modal-create-device" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">📱 Nuovo Dispositivo</h3>
+                <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-800 mb-2">
+                        <strong>💡 Consiglio:</strong> Usa la funzione OCR per caricare automaticamente i dati dall'etichetta CE del dispositivo!
+                    </p>
+                    <button onclick="openOCRUpload()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        📸 Scansiona Etichetta CE (OCR)
+                    </button>
+                </div>
+                <div class="border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-4">Oppure inserisci manualmente i dati del dispositivo:</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Codice Dispositivo *</label>
+                            <input type="text" id="new-device-code" class="w-full border rounded px-3 py-2" placeholder="es. SIDLY-2025-001" required>
+                            <p class="text-xs text-gray-500 mt-1">Identificativo univoco del dispositivo</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Numero Seriale *</label>
+                            <input type="text" id="new-device-serial" class="w-full border rounded px-3 py-2" placeholder="es. SN123456789" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">IMEI</label>
+                            <input type="text" id="new-device-imei" class="w-full border rounded px-3 py-2" placeholder="es. 123456789012345">
+                            <p class="text-xs text-gray-500 mt-1">Codice identificativo del dispositivo mobile (15 cifre)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo Dispositivo</label>
+                            <select id="new-device-type" class="w-full border rounded px-3 py-2">
+                                <option value="SIDLY">SiDLY</option>
+                                <option value="SIDLY_PRO">SiDLY PRO</option>
+                                <option value="ALTRO">Altro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Modello</label>
+                            <input type="text" id="new-device-model" class="w-full border rounded px-3 py-2" value="SIDLY-001" placeholder="es. SIDLY-001">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Admin *</label>
+                            <input type="email" id="new-device-admin-email" class="w-full border rounded px-3 py-2" placeholder="admin@telemedcare.it" required>
+                            <p class="text-xs text-gray-500 mt-1">Per tracciamento operazioni</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button onclick="closeModal('modal-create-device')" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Annulla</button>
+                    <button onclick="createDevice()" class="btn-success">💾 Crea Dispositivo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api/admin';
         
@@ -1237,8 +1294,62 @@ adminDashboardRoute.get('/', (c) => {
         }
         
         function showCreateDeviceModal() {
-            showNotification('Per caricare dispositivi, usa la funzione OCR da etichetta CE', 'info');
-            // TODO: Modal con form oppure redirect a pagina OCR
+            // Reset form
+            document.getElementById('new-device-code').value = '';
+            document.getElementById('new-device-serial').value = '';
+            document.getElementById('new-device-imei').value = '';
+            document.getElementById('new-device-type').value = 'SIDLY';
+            document.getElementById('new-device-model').value = 'SIDLY-001';
+            document.getElementById('new-device-admin-email').value = '';
+            
+            // Show modal
+            document.getElementById('modal-create-device').classList.remove('hidden');
+        }
+        
+        async function createDevice() {
+            const deviceCode = document.getElementById('new-device-code').value.trim();
+            const serialNumber = document.getElementById('new-device-serial').value.trim();
+            const imei = document.getElementById('new-device-imei').value.trim();
+            const deviceType = document.getElementById('new-device-type').value;
+            const model = document.getElementById('new-device-model').value.trim();
+            const adminEmail = document.getElementById('new-device-admin-email').value.trim();
+            
+            if (!deviceCode || !serialNumber || !adminEmail) {
+                showNotification('Compila tutti i campi obbligatori (*)' , 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(\`\${API_BASE}/devices\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_code: deviceCode,
+                        serial_number: serialNumber,
+                        imei: imei || null,
+                        device_type: deviceType,
+                        model: model,
+                        admin_email: adminEmail
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                showNotification('Dispositivo creato con successo!', 'success');
+                closeModal('modal-create-device');
+                loadDevices(); // Refresh list
+            } catch (error) {
+                showNotification('Errore creazione dispositivo: ' + error.message, 'error');
+            }
+        }
+        
+        function openOCRUpload() {
+            // Apri una nuova finestra per l'upload OCR
+            showNotification('Funzione OCR in arrivo! Per ora inserisci manualmente i dati.', 'info');
+            // TODO: Implementare pagina upload OCR oppure modale con upload immagine
+            // window.open('/admin/ocr-upload', '_blank');
         }
         
         async function exportDevices() {
