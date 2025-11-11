@@ -1115,6 +1115,71 @@ adminApi.get('/devices', async (c: AppContext) => {
 });
 
 /**
+ * GET /api/admin/devices/:id
+ * Ottieni dettagli dispositivo singolo
+ */
+adminApi.get('/devices/:id', async (c: AppContext) => {
+  const db = c.env.DB;
+  const deviceId = c.req.param('id');
+  
+  try {
+    const device = await db.prepare(`
+      SELECT 
+        d.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.emailRichiedente
+      FROM devices d
+      LEFT JOIN leads l ON d.lead_id = l.id
+      WHERE d.id = ?
+    `).bind(deviceId).first();
+    
+    if (!device) {
+      return c.json({ success: false, error: 'Dispositivo non trovato' }, 404);
+    }
+    
+    return c.json({ success: true, device });
+  } catch (error: any) {
+    console.error('Error fetching device:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * DELETE /api/admin/devices/:id
+ * Elimina dispositivo
+ */
+adminApi.delete('/devices/:id', async (c: AppContext) => {
+  const db = c.env.DB;
+  const deviceId = c.req.param('id');
+  
+  try {
+    // Verifica che non sia associato
+    const device: any = await db.prepare(`
+      SELECT status FROM devices WHERE id = ?
+    `).bind(deviceId).first();
+    
+    if (!device) {
+      return c.json({ success: false, error: 'Dispositivo non trovato' }, 404);
+    }
+    
+    if (device.status === 'ASSOCIATED') {
+      return c.json({ 
+        success: false, 
+        error: 'Impossibile eliminare un dispositivo associato. Dissocia prima il dispositivo.' 
+      }, 400);
+    }
+    
+    await db.prepare(`DELETE FROM devices WHERE id = ?`).bind(deviceId).run();
+    
+    return c.json({ success: true, message: 'Dispositivo eliminato con successo' });
+  } catch (error: any) {
+    console.error('Error deleting device:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
  * POST /api/admin/devices
  * Crea nuovo dispositivo
  */

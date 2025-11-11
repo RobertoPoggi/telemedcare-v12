@@ -215,9 +215,14 @@ adminDashboardRoute.get('/', (c) => {
                 <div id="tab-configurations" class="tab-content hidden">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold">Gestione Configurazioni</h2>
-                        <button onclick="showCreateConfigurationModal()" class="btn-success">
-                            ➕ Nuova Configurazione
-                        </button>
+                        <div class="flex space-x-2">
+                            <button onclick="exportAllConfigurations()" class="btn-secondary">
+                                📊 Esporta Tutte
+                            </button>
+                            <button onclick="showCreateConfigurationModal()" class="btn-success">
+                                ➕ Nuova Configurazione
+                            </button>
+                        </div>
                     </div>
                     <div id="configurations-list" class="overflow-x-auto">
                         <!-- Configurations table will be loaded here -->
@@ -231,11 +236,14 @@ adminDashboardRoute.get('/', (c) => {
                         <div class="flex space-x-2">
                             <select id="filter-devices-status" onchange="loadDevices()" class="border rounded px-3 py-2">
                                 <option value="">Tutti gli stati</option>
-                                <option value="AVAILABLE">Disponibili</option>
+                                <option value="AVAILABLE">Disponibile</option>
                                 <option value="TO_CONFIGURE">Da Configurare</option>
-                                <option value="ASSOCIATED">Associati</option>
+                                <option value="ASSOCIATED">Associato</option>
                                 <option value="MAINTENANCE">In Manutenzione</option>
                             </select>
+                            <button onclick="exportDevices()" class="btn-secondary">
+                                📊 Esporta
+                            </button>
                             <button onclick="showCreateDeviceModal()" class="btn-primary">
                                 ➕ Nuovo Dispositivo
                             </button>
@@ -1079,17 +1087,35 @@ adminDashboardRoute.get('/', (c) => {
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${device.serial_number || '-'}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${device.model || device.device_type}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge \${getDeviceStatusClass(device.status)}">\${device.status}</span>
+                                        <span class="status-badge \${getDeviceStatusClass(device.status)}">\${translateStatus(device.status, 'device')}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         \${device.nomeRichiedente ? \`\${device.nomeRichiedente} \${device.cognomeRichiedente}\` : '-'}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        \${device.status === 'AVAILABLE' || device.status === 'TO_CONFIGURE' ? \`
-                                            <button onclick="showAssociateDeviceModal(\${device.id})" class="text-blue-600 hover:text-blue-900 font-medium">
-                                                🔗 Associa
+                                        <div class="flex items-center space-x-1">
+                                            <button onclick="viewDevice(\${device.id})" class="action-icon text-blue-600 hover:text-blue-900" title="Visualizza">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
                                             </button>
-                                        \` : ''}
+                                            <button onclick="editDevice(\${device.id})" class="action-icon text-amber-600 hover:text-amber-900" title="Modifica">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick="printDevice(\${device.id})" class="action-icon text-green-600 hover:text-green-900" title="Stampa">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick="deleteDevice(\${device.id}, '\${device.device_code}')" class="action-icon text-red-600 hover:text-red-900" title="Elimina">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             \`).join('')}
@@ -1101,6 +1127,209 @@ adminDashboardRoute.get('/', (c) => {
             } catch (error) {
                 console.error('Error loading devices:', error);
                 showNotification('Errore caricamento dispositivi', 'error');
+            }
+        }
+        
+        async function viewDevice(deviceId) {
+            try {
+                const res = await fetch(\`\${API_BASE}/devices/\${deviceId}\`);
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                const device = data.device;
+                const html = \`
+                    <div class="space-y-4">
+                        <div class="border-b pb-3">
+                            <h4 class="font-semibold mb-2 text-blue-700">📱 Informazioni Dispositivo</h4>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div><strong>Codice:</strong> \${device.device_code || '-'}</div>
+                                <div><strong>Serial Number:</strong> \${device.serial_number || '-'}</div>
+                                <div><strong>IMEI:</strong> \${device.imei || '-'}</div>
+                                <div><strong>Modello:</strong> \${device.model || device.device_type || '-'}</div>
+                                <div><strong>Stato:</strong> <span class="status-badge \${getDeviceStatusClass(device.status)}">\${translateStatus(device.status, 'device')}</span></div>
+                                <div><strong>Tipo:</strong> \${device.device_type || '-'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-b pb-3">
+                            <h4 class="font-semibold mb-2 text-green-700">🔧 Informazioni Tecniche</h4>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div><strong>Firmware:</strong> \${device.firmware_version || '-'}</div>
+                                <div><strong>Hardware:</strong> \${device.hardware_version || '-'}</div>
+                                <div><strong>Produttore:</strong> \${device.manufacturer || '-'}</div>
+                                <div><strong>Data Produzione:</strong> \${device.manufacturing_date || '-'}</div>
+                                <div><strong>UDI Primario:</strong> \${device.udi_primary || '-'}</div>
+                                <div><strong>UDI Secondario:</strong> \${device.udi_secondary || '-'}</div>
+                            </div>
+                        </div>
+                        
+                        \${device.lead_id ? \`
+                        <div class="border-b pb-3">
+                            <h4 class="font-semibold mb-2 text-purple-700">👤 Associazione</h4>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div><strong>Lead ID:</strong> \${device.lead_id}</div>
+                                <div><strong>Associato il:</strong> \${formatDate(device.associated_at) || '-'}</div>
+                                <div><strong>Associato da:</strong> \${device.associated_by || '-'}</div>
+                            </div>
+                        </div>
+                        \` : ''}
+                        
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">📝 Note</h4>
+                            <p class="text-sm text-gray-600">\${device.admin_notes || device.device_notes || 'Nessuna nota'}</p>
+                        </div>
+                        
+                        <div class="text-xs text-gray-400 border-t pt-2">
+                            <div>Creato: \${formatDate(device.created_at)}</div>
+                            <div>Aggiornato: \${formatDate(device.updated_at)}</div>
+                        </div>
+                    </div>
+                \`;
+                
+                alert('VISUALIZZA DISPOSITIVO (sostituire con modal):\\n\\n' + device.device_code + ' - ' + device.serial_number);
+            } catch (error) {
+                showNotification('Errore visualizzazione dispositivo: ' + error.message, 'error');
+            }
+        }
+        
+        async function editDevice(deviceId) {
+            showNotification('Funzione modifica dispositivo in sviluppo', 'info');
+            // TODO: Modal di modifica con form
+        }
+        
+        async function deleteDevice(deviceId, deviceCode) {
+            if (!confirm(\`Sei sicuro di voler eliminare il dispositivo \${deviceCode}?\\n\\nQuesta azione è irreversibile!\`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(\`\${API_BASE}/devices/\${deviceId}\`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                showNotification(\`Dispositivo \${deviceCode} eliminato con successo\`, 'success');
+                loadDevices();
+                loadStats();
+            } catch (error) {
+                showNotification('Errore eliminazione dispositivo: ' + error.message, 'error');
+            }
+        }
+        
+        function showCreateDeviceModal() {
+            showNotification('Per caricare dispositivi, usa la funzione OCR da etichetta CE', 'info');
+            // TODO: Modal con form oppure redirect a pagina OCR
+        }
+        
+        async function exportDevices() {
+            try {
+                const status = document.getElementById('filter-devices-status').value;
+                const url = status ? \`\${API_BASE}/devices?status=\${status}\` : \`\${API_BASE}/devices\`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                const jsonStr = JSON.stringify(data.devices, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url2 = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url2;
+                a.download = \`dispositivi_\${new Date().toISOString().split('T')[0]}.json\`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url2);
+                
+                showNotification('Export dispositivi completato', 'success');
+            } catch (error) {
+                showNotification('Errore export: ' + error.message, 'error');
+            }
+        }
+        
+        async function printDevice(deviceId) {
+            try {
+                const res = await fetch(\`\${API_BASE}/devices/\${deviceId}\`);
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                const device = data.device;
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(\`
+                    <html>
+                    <head>
+                        <title>Scheda Dispositivo - \${device.device_code}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            h1 { color: #333; border-bottom: 2px solid #4A90E2; padding-bottom: 10px; }
+                            .section { margin: 20px 0; }
+                            .section h2 { color: #4A90E2; font-size: 18px; margin-bottom: 10px; }
+                            .info-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+                            .label { font-weight: bold; }
+                            @media print { button { display: none; } }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>📱 Scheda Dispositivo</h1>
+                        
+                        <div class="section">
+                            <h2>Informazioni Generali</h2>
+                            <div class="info-grid">
+                                <div class="label">Codice:</div><div>\${device.device_code || '-'}</div>
+                                <div class="label">Serial Number:</div><div>\${device.serial_number || '-'}</div>
+                                <div class="label">IMEI:</div><div>\${device.imei || '-'}</div>
+                                <div class="label">Modello:</div><div>\${device.model || device.device_type || '-'}</div>
+                                <div class="label">Stato:</div><div>\${translateStatus(device.status, 'device')}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <h2>Specifiche Tecniche</h2>
+                            <div class="info-grid">
+                                <div class="label">Firmware:</div><div>\${device.firmware_version || '-'}</div>
+                                <div class="label">Hardware:</div><div>\${device.hardware_version || '-'}</div>
+                                <div class="label">Produttore:</div><div>\${device.manufacturer || '-'}</div>
+                                <div class="label">Data Produzione:</div><div>\${device.manufacturing_date || '-'}</div>
+                                <div class="label">UDI Primario:</div><div>\${device.udi_primary || '-'}</div>
+                                <div class="label">UDI Secondario:</div><div>\${device.udi_secondary || '-'}</div>
+                            </div>
+                        </div>
+                        
+                        \${device.lead_id ? \`
+                        <div class="section">
+                            <h2>Associazione</h2>
+                            <div class="info-grid">
+                                <div class="label">Lead ID:</div><div>\${device.lead_id}</div>
+                                <div class="label">Associato il:</div><div>\${formatDate(device.associated_at) || '-'}</div>
+                            </div>
+                        </div>
+                        \` : ''}
+                        
+                        <div class="section">
+                            <h2>Note</h2>
+                            <p>\${device.admin_notes || device.device_notes || 'Nessuna nota'}</p>
+                        </div>
+                        
+                        <div style="margin-top: 30px; font-size: 12px; color: #666;">
+                            Stampato il: \${new Date().toLocaleString('it-IT')}
+                        </div>
+                        
+                        <button onclick="window.print()" style="margin-top: 20px; padding: 10px 20px; background: #4A90E2; color: white; border: none; cursor: pointer;">
+                            🖨️ Stampa
+                        </button>
+                    </body>
+                    </html>
+                \`);
+                printWindow.document.close();
+            } catch (error) {
+                showNotification('Errore stampa: ' + error.message, 'error');
             }
         }
         
@@ -1744,6 +1973,30 @@ adminDashboardRoute.get('/', (c) => {
             }
         }
         
+        async function exportAllConfigurations() {
+            try {
+                const res = await fetch('/api/configurations');
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                const jsonStr = JSON.stringify(data.configurations, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = \`configurazioni_export_\${new Date().toISOString().split('T')[0]}.json\`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification(\`Esportate \${data.configurations.length} configurazioni\`, 'success');
+            } catch (error) {
+                showNotification('Errore esportazione: ' + error.message, 'error');
+            }
+        }
+        
         function showCreateConfigurationModal() {
             alert('Funzione creazione manuale configurazione non ancora implementata.\\nUsa il form di configurazione inviato via email.');
         }
@@ -1883,6 +2136,34 @@ adminDashboardRoute.get('/', (c) => {
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
             return \`\${day}/\${month}/\${year}, \${hours}:\${minutes}\`;
+        }
+        
+        function translateStatus(status, type = 'device') {
+            const translations = {
+                device: {
+                    'AVAILABLE': 'Disponibile',
+                    'TO_CONFIGURE': 'Da Configurare',
+                    'ASSOCIATED': 'Associato',
+                    'MAINTENANCE': 'In Manutenzione',
+                    'RETIRED': 'Dismesso'
+                },
+                lead: {
+                    'nuovo': 'Nuovo',
+                    'CONTRACT_SENT': 'Contratto Inviato',
+                    'CONTRACT_SIGNED': 'Contratto Firmato',
+                    'PAYMENT_PENDING': 'Pagamento Attesa',
+                    'ACTIVE': 'Attivo',
+                    'CONFIGURED': 'Configurato',
+                    'CONVERTITO': 'Convertito',
+                    'DOCUMENTI_INVIATI': 'Documenti Inviati'
+                },
+                assistito: {
+                    'ATTIVO': 'Attivo',
+                    'SOSPESO': 'Sospeso',
+                    'CESSATO': 'Cessato'
+                }
+            };
+            return translations[type]?.[status] || status;
         }
         
         function showNotification(message, type = 'info') {
