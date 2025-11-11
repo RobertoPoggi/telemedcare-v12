@@ -1748,6 +1748,132 @@ adminDashboardRoute.get('/', (c) => {
             alert('Funzione creazione manuale configurazione non ancora implementata.\\nUsa il form di configurazione inviato via email.');
         }
         
+        // ========================================
+        // ASSISTITI MANAGEMENT FUNCTIONS
+        // ========================================
+        
+        async function loadAssistiti() {
+            const status = document.getElementById('filter-assistiti-status')?.value || '';
+            const url = status ? \`/api/assistiti?status=\${status}\` : '/api/assistiti';
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (!data.success) throw new Error(data.error);
+                
+                const assistiti = data.assistiti || [];
+                
+                if (assistiti.length === 0) {
+                    document.getElementById('assistiti-list').innerHTML = '<div class="text-center py-12 text-gray-500"><div class="text-6xl mb-4">👨‍⚕️</div><p class="text-lg">Nessun assistito presente</p></div>';
+                    return;
+                }
+                
+                const html = \`
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Assistito</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Piano</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dispositivo</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Attivazione</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            \${assistiti.map(ass => \`
+                                <tr>
+                                    <td class="px-3 py-2">
+                                        <div class="text-sm font-medium text-gray-900">\${ass.nome} \${ass.cognome}</div>
+                                        <div class="text-xs text-gray-500">ID: \${ass.id}</div>
+                                    </td>
+                                    <td class="px-3 py-2"><span class="px-2 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">\${ass.piano_servizio || 'N/A'}</span></td>
+                                    <td class="px-3 py-2 text-xs">
+                                        \${ass.dispositivo_imei ? \`<div>IMEI: \${ass.dispositivo_imei}</div><div class="text-gray-500">\${ass.dispositivo_seriale || ''}</div>\` : '<span class="text-gray-400">Non assegnato</span>'}
+                                    </td>
+                                    <td class="px-3 py-2"><span class="px-2 text-xs rounded-full \${ass.stato_servizio === 'ATTIVO' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">\${ass.stato_servizio}</span></td>
+                                    <td class="px-3 py-2 text-xs">\${formatDate(ass.data_attivazione)}</td>
+                                    <td class="px-2 py-2">
+                                        <div class="flex items-center space-x-1">
+                                            <button onclick="viewAssistito('\${ass.id}')" class="action-icon text-blue-600" data-tooltip="Visualizza">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            </button>
+                                            \${!ass.dispositivo_id ? \`<button onclick="showAssignDeviceModal('\${ass.id}')" class="action-icon text-green-600" data-tooltip="Assegna Dispositivo"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></button>\` : ''}
+                                            <button onclick="deleteAssistito('\${ass.id}', '\${ass.nome} \${ass.cognome}')" class="action-icon text-red-600" data-tooltip="Elimina">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            \`).join('')}
+                        </tbody>
+                    </table>
+                \`;
+                
+                document.getElementById('assistiti-list').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading assistiti:', error);
+                showNotification('Errore caricamento assistiti', 'error');
+            }
+        }
+        
+        async function viewAssistito(assistitoId) {
+            try {
+                const res = await fetch(\`/api/assistiti/\${assistitoId}\`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                const a = data.assistito;
+                alert(\`ASSISTITO: \${a.nome} \${a.cognome}\\nPiano: \${a.piano_servizio}\\nStato: \${a.stato_servizio}\\nDispositivo: \${a.dispositivo_imei || 'Non assegnato'}\\nAttivazione: \${a.data_attivazione}\`);
+            } catch (error) {
+                showNotification('Errore: ' + error.message, 'error');
+            }
+        }
+        
+        async function showAssignDeviceModal(assistitoId) {
+            try {
+                const res = await fetch('/api/admin/devices?status=AVAILABLE');
+                const data = await res.json();
+                if (!data.success || !data.devices || data.devices.length === 0) {
+                    alert('Nessun dispositivo disponibile. Carica prima i dispositivi.');
+                    return;
+                }
+                const deviceId = prompt(\`Dispositivi disponibili:\\n\${data.devices.map((d, i) => \`\${i+1}. \${d.serial_number} (IMEI: \${d.imei})\`).join('\\n')}\\n\\nInserisci numero dispositivo:\`);
+                if (!deviceId) return;
+                const device = data.devices[parseInt(deviceId) - 1];
+                if (!device) { alert('Dispositivo non valido'); return; }
+                
+                const assignRes = await fetch(\`/api/assistiti/\${assistitoId}/assign-device\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: device.id })
+                });
+                const assignData = await assignRes.json();
+                if (!assignData.success) throw new Error(assignData.error);
+                showNotification('Dispositivo assegnato con successo!', 'success');
+                loadAssistiti();
+            } catch (error) {
+                showNotification('Errore: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteAssistito(id, name) {
+            if (!confirm(\`Eliminare assistito \${name}?\`)) return;
+            try {
+                const res = await fetch(\`/api/assistiti/\${id}\`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                showNotification('Assistito eliminato', 'success');
+                loadAssistiti();
+            } catch (error) {
+                showNotification('Errore: ' + error.message, 'error');
+            }
+        }
+        
+        function showCreateAssistitoModal() {
+            alert('Assistiti vengono creati automaticamente dalla compilazione del form configurazione.');
+        }
+        
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const date = new Date(dateStr);

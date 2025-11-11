@@ -154,4 +154,159 @@ assistitiApi.delete('/:id', async (c) => {
   }
 });
 
+/**
+ * POST /api/assistiti/:id/assign-device - Assign device to assistito
+ */
+assistitiApi.post('/:id/assign-device', async (c) => {
+  const db = c.env.DB;
+  const assistitoId = c.req.param('id');
+  
+  try {
+    const { device_id } = await c.req.json();
+    
+    if (!device_id) {
+      return c.json({ success: false, error: 'device_id richiesto' }, 400);
+    }
+    
+    // Get device info
+    const device: any = await db.prepare(`
+      SELECT * FROM devices WHERE id = ?
+    `).bind(device_id).first();
+    
+    if (!device) {
+      return c.json({ success: false, error: 'Dispositivo non trovato' }, 404);
+    }
+    
+    if (device.status !== 'AVAILABLE') {
+      return c.json({ success: false, error: 'Dispositivo non disponibile' }, 400);
+    }
+    
+    // Update assistito with device info
+    await db.prepare(`
+      UPDATE assistiti SET
+        dispositivo_id = ?,
+        dispositivo_imei = ?,
+        dispositivo_seriale = ?,
+        data_assegnazione_dispositivo = datetime('now'),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      device.id,
+      device.imei,
+      device.serial_number,
+      assistitoId
+    ).run();
+    
+    // Update device status to ASSOCIATED
+    await db.prepare(`
+      UPDATE devices SET
+        status = 'ASSOCIATED',
+        lead_id = (SELECT lead_id FROM assistiti WHERE id = ?),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(assistitoId, device_id).run();
+    
+    console.log(`📱 Dispositivo ${device.serial_number} assegnato ad assistito ${assistitoId}`);
+    
+    return c.json({
+      success: true,
+      message: 'Dispositivo assegnato con successo',
+      device: {
+        id: device.id,
+        serial_number: device.serial_number,
+        imei: device.imei
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Errore assegnazione dispositivo:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST /api/devices/upload-from-label - Upload device from CE label photo (OCR)
+ */
+assistitiApi.post('/devices/upload-from-label', async (c) => {
+  const db = c.env.DB;
+  
+  try {
+    const { image_url, extracted_data } = await c.req.json();
+    
+    if (!extracted_data || !extracted_data.IMEINumber) {
+      return c.json({ 
+        success: false, 
+        error: 'Dati estratti mancanti. Esegui OCR prima.' 
+      }, 400);
+    }
+    
+    // Check if device already exists
+    const existing = await db.prepare(`
+      SELECT id FROM devices WHERE imei = ? OR serial_number = ?
+    `).bind(extracted_data.IMEINumber, extracted_data.serialNumber).first();
+    
+    if (existing) {
+      return c.json({
+        success: false,
+        error: 'Dispositivo già presente nel database',
+        device_id: existing.id
+      }, 409);
+    }
+    
+    // Insert device with OCR-extracted data
+    const udiPrimary = typeof extracted_data.UDIcodes === 'object' 
+      ? extracted_data.UDIcodes.primary || '' 
+      : (Array.isArray(extracted_data.UDIcodes) ? extracted_data.UDIcodes[0] : '');
+    
+    const udiSecondary = typeof extracted_data.UDIcodes === 'object'
+      ? extracted_data.UDIcodes.secondary || ''
+      : (Array.isArray(extracted_data.UDIcodes) ? extracted_data.UDIcodes[1] : '');
+    
+    const deviceCode = extracted_data.serialNumber || `CODE_${Date.now()}`;
+    
+    const result = await db.prepare(`
+      INSERT INTO devices (
+        device_code, model, serial_number, imei, 
+        manufacturer, manufacturer_address, manufacturing_date, 
+        firmware_version, udi_primary, udi_secondary,
+        device_type, status, device_notes,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(
+      deviceCode,
+      extracted_data.deviceModelName || 'SiDLY CARE PRO',
+      extracted_data.serialNumber,
+      extracted_data.IMEINumber,
+      extracted_data.manufacturerDetails?.name || 'SiDLY Sp z o.o',
+      extracted_data.manufacturerDetails?.address || '',
+      extracted_data.manufacturingDate || '',
+      extracted_data.versionNumber || '',
+      udiPrimary,
+      udiSecondary,
+      'SIDLY', // default device_type
+      'AVAILABLE',
+      `Caricato da OCR etichetta CE - ${new Date().toISOString()}`
+    ).run();
+    
+    const deviceId = result.meta.last_row_id;
+    
+    console.log(`✅ Dispositivo caricato da etichetta CE: ID ${deviceId} - IMEI: ${extracted_data.IMEINumber}`);
+    
+    return c.json({
+      success: true,
+      message: 'Dispositivo caricato con successo',
+      device: {
+        id: deviceId,
+        device_code: deviceCode,
+        model: extracted_data.deviceModelName,
+        imei: extracted_data.IMEINumber,
+        serial_number: extracted_data.serialNumber,
+        status: 'AVAILABLE'
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Errore caricamento dispositivo:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 export default assistitiApi;
