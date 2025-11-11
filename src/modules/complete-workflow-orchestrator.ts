@@ -19,6 +19,41 @@ import { generateProformaPDF, ProformaData } from './proforma-generator'
 import { SERVICE_PRICES, IVA_RATES, calculatePriceWithVAT, SalesChannel, getFinalPrice } from '../config/pricing-config'
 import { sendContractWithDocuSign, isDocuSignAvailable } from './docusign-orchestrator-integration'
 
+/**
+ * Genera un codice contratto sequenziale con anno (CTR_2025/0001, CTR_2025/0002, etc.)
+ */
+async function generateSimpleContractCode(db: D1Database): Promise<string> {
+  try {
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = `CTR_${currentYear}/`;
+    
+    // Query per ottenere l'ultimo codice contratto dell'anno corrente
+    const result = await db.prepare(
+      `SELECT codice_contratto FROM contracts 
+       WHERE codice_contratto LIKE ? 
+       ORDER BY id DESC LIMIT 1`
+    ).bind(`${yearPrefix}%`).first() as any;
+    
+    if (!result || !result.codice_contratto) {
+      return `${yearPrefix}0001`;  // Primo contratto dell'anno
+    }
+    
+    // Estrae il numero dal formato CTR_YYYY/XXXX
+    const match = result.codice_contratto.match(/CTR_\d{4}\/(\d+)/);
+    if (match) {
+      const lastNumber = parseInt(match[1]);
+      const nextNumber = lastNumber + 1;
+      return `${yearPrefix}${String(nextNumber).padStart(4, '0')}`;  // CTR_2025/0007, CTR_2025/0008, etc.
+    }
+    
+    return `${yearPrefix}0001`;  // Fallback
+  } catch (error) {
+    console.error('Error generating contract code:', error);
+    // Fallback in caso di errore
+    return `CTR_${new Date().getFullYear()}/${String(Date.now()).slice(-4)}`;
+  }
+}
+
 export interface WorkflowContext {
   db: D1Database
   env: any
@@ -209,7 +244,7 @@ export async function processNewLead(
 
     // Aggiorna status lead
     await updateLeadStatus(ctx.db, ctx.leadData.id, 
-      ctx.leadData.vuoleContratto ? 'CONTRACT_SENT' : 'DOCUMENTS_SENT'
+      ctx.leadData.vuoleContratto ? 'CONTRACT_SENT' : 'DOCUMENTI_INVIATI'
     )
 
     console.log(`✅ [ORCHESTRATOR] STEP 1 completato: ${result.message}`)
@@ -587,7 +622,7 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   const prezzoIvaInclusa = pricing.finalPrice
   
   const contractId = `CTR${Date.now()}`
-  const contractCode = `CTR-${ctx.leadData.id}-${Date.now()}`
+  const contractCode = await generateSimpleContractCode(ctx.db)
   
   // 📄 GENERA IL PDF DEL CONTRATTO
   let pdfBuffer: Buffer | null = null

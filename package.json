@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev dist --d1=telemedcare-leads --local --ip 0.0.0.0 --port 3000",
+    "dev:restart": "./scripts/dev-restart.sh",
     "dev:vite": "vite",
     "build": "vite build",
     "preview": "wrangler pages dev dist",
@@ -34,6 +35,8 @@
     "db:console:test": "wrangler d1 execute telemedcare_test_01",
     "db:console:staging": "wrangler d1 execute telemedcare_staging",
     "db:console:prod": "wrangler d1 execute telemedcare_database",
+    "db:backup": "./scripts/db-backup.sh",
+    "db:restore": "./scripts/db-restore.sh",
     "docs:init": "curl -X POST http://localhost:3000/api/docs/initialize",
     "docs:generate": "curl -X POST http://localhost:3000/api/docs/generate"
   },

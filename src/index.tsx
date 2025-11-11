@@ -35,12 +35,14 @@ import * as ClientConfigurationManager from './modules/client-configuration-mana
 // Import Admin API Module
 import adminApi from './modules/admin-api'
 
-// Import admin dashboard HTML
-import adminDashboardHTML from '../public/admin-dashboard.html?raw'
+// Import admin dashboard route from TypeScript module
+import adminDashboardRoute from './modules/admin-dashboard-page'
 
-// Create admin dashboard route
-const adminDashboardRoute = new Hono()
-adminDashboardRoute.get('/', (c) => c.html(adminDashboardHTML))
+// Import Configuration Form API
+import configFormApi from './modules/config-form-api'
+
+// Import Assistiti Management API
+import assistitiApi from './modules/assistiti-api'
 
 type Bindings = {
   DB: D1Database
@@ -405,6 +407,10 @@ app.use('/api/*', cors())
 
 // Mount Admin API routes
 app.route('/api/admin', adminApi)
+
+// Mount Configuration Form API routes
+app.route('/api', configFormApi)
+app.route('/api/assistiti', assistitiApi)
 
 // Mount Admin Dashboard page
 app.route('/admin-dashboard', adminDashboardRoute)
@@ -4956,6 +4962,13 @@ app.post('/api/leads/external', async (c) => {
 app.get('/api/contratti/:id/view', async (c) => {
   const id = c.req.param('id')
   
+  // Redirect to PDF download instead of showing HTML summary
+  return c.redirect(`/api/contratti/${id}/download`)
+})
+
+app.get('/api/contratti/:id/view-html', async (c) => {
+  const id = c.req.param('id')
+  
   try {
     if (!c.env?.DB) { // Fallback se DB non disponibile
       // Mock response per development
@@ -4977,8 +4990,8 @@ app.get('/api/contratti/:id/view', async (c) => {
     }
     
     const contratto = await c.env.DB.prepare(`
-      SELECT c.*, l.name as cliente_nome, l.email as cliente_email
-      FROM contratti c 
+      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.emailRichiedente
+      FROM contracts c 
       LEFT JOIN leads l ON c.lead_id = l.id 
       WHERE c.id = ?
     `).bind(id).first()
@@ -4991,19 +5004,68 @@ app.get('/api/contratti/:id/view', async (c) => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Contratto ${contratto.codice}</title>
-        <style>body { font-family: Arial; padding: 20px; }</style>
+        <title>Contratto ${contratto.codice_contratto}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+          .info-box { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .info-row { display: flex; margin: 10px 0; }
+          .info-label { font-weight: bold; min-width: 150px; color: #374151; }
+          .info-value { color: #1f2937; }
+          .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+          .status-signed { background: #d1fae5; color: #065f46; }
+          .status-sent { background: #fef3c7; color: #92400e; }
+        </style>
       </head>
       <body>
-        <h1>Contratto TeleMedCare</h1>
-        <p><strong>Codice:</strong> ${contratto.codice}</p>
-        <p><strong>Cliente:</strong> ${contratto.cliente_nome}</p>
-        <p><strong>Email:</strong> ${contratto.cliente_email}</p>
-        <p><strong>Tipo:</strong> ${contratto.tipo}</p>
-        <p><strong>Data Firma:</strong> ${new Date(contratto.data_firma).toLocaleDateString('it-IT')}</p>
-        <h2>Dettagli Servizio</h2>
-        <p>${contratto.dettagli || 'Servizio di telemedicina per assistenza sanitaria domiciliare.'}</p>
-        <p><strong>Status:</strong> ${contratto.status}</p>
+        <h1>📄 Contratto TeleMedCare</h1>
+        
+        <div class="info-box">
+          <div class="info-row">
+            <div class="info-label">Codice Contratto:</div>
+            <div class="info-value"><strong>${contratto.codice_contratto}</strong></div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Intestatario:</div>
+            <div class="info-value">${contratto.intestatario || contratto.nomeRichiedente + ' ' + contratto.cognomeRichiedente}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Email:</div>
+            <div class="info-value">${contratto.emailRichiedente}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Piano Servizio:</div>
+            <div class="info-value">${contratto.piano_servizio}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Prezzo:</div>
+            <div class="info-value">€ ${contratto.prezzo ? contratto.prezzo.toFixed(2) : 'N/A'}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Status:</div>
+            <div class="info-value">
+              <span class="status ${contratto.status === 'SIGNED_MANUAL' || contratto.status === 'SIGNED_DOCUSIGN' ? 'status-signed' : 'status-sent'}">
+                ${contratto.status === 'SIGNED_MANUAL' ? '✅ Firmato' : contratto.status === 'SENT' ? '📤 Inviato' : contratto.status}
+              </span>
+            </div>
+          </div>
+          ${contratto.signature_date ? `
+          <div class="info-row">
+            <div class="info-label">Data Firma:</div>
+            <div class="info-value">${new Date(contratto.signature_date).toLocaleDateString('it-IT')}</div>
+          </div>
+          ` : ''}
+          <div class="info-row">
+            <div class="info-label">Data Creazione:</div>
+            <div class="info-value">${new Date(contratto.created_at).toLocaleDateString('it-IT')}</div>
+          </div>
+        </div>
+        
+        <h2>📋 Dettagli Servizio</h2>
+        <div class="info-box">
+          <p>Servizio di telemedicina ${contratto.piano_servizio} per assistenza sanitaria domiciliare.</p>
+          <p>Include dispositivo SiDLY Care Pro e monitoraggio continuo 24/7.</p>
+        </div>
       </body>
       </html>
     `)
@@ -5030,25 +5092,108 @@ app.get('/api/contratti/:id/download', async (c) => {
       })
     }
     
-    const contratto = await c.env.DB.prepare('SELECT * FROM contratti WHERE id = ?').bind(id).first()
+    const contratto = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first() as any
     
     if (!contratto) {
       return c.json({ error: 'Contratto non trovato' }, 404)
     }
     
-    // Qui si integrerebbe il generatore PDF reale
-    // Per ora ritorniamo un mock PDF
-    const pdfContent = `Mock PDF per contratto ${contratto.codice}`
+    // Leggi PDF dal database (salvato come Base64)
+    if (!contratto.content) {
+      return c.json({ error: 'PDF del contratto non disponibile' }, 404)
+    }
     
-    return new Response(pdfContent, {
+    // Decodifica il PDF da Base64
+    const pdfBuffer = Buffer.from(contratto.content, 'base64')
+    
+    return new Response(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf', 
-        'Content-Disposition': `attachment; filename="contratto-${contratto.codice}.pdf"`
+        'Content-Disposition': `inline; filename="contratto-${contratto.codice_contratto}.pdf"`
       }
     })
   } catch (error) {
     console.error('❌ Errore download contratto:', error)
     return c.json({ error: 'Errore download contratto' }, 500)
+  }
+})
+
+// ==========================================
+// PROFORMA PDF ENDPOINTS
+// ==========================================
+
+app.get('/api/proforma/:id/view', async (c) => {
+  const id = c.req.param('id')
+  return c.redirect(`/api/proforma/${id}/download`)
+})
+
+app.get('/api/proforma/:id/download', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ error: 'Database non disponibile' }, 500)
+    }
+    
+    const proforma = await c.env.DB.prepare('SELECT * FROM proforma WHERE id = ?').bind(id).first() as any
+    
+    if (!proforma) {
+      return c.json({ error: 'Proforma non trovata' }, 404)
+    }
+    
+    // Leggi PDF dal database (salvato come Base64)
+    if (!proforma.content) {
+      return c.json({ error: 'PDF della proforma non disponibile' }, 404)
+    }
+    
+    // Decodifica il PDF da Base64
+    const pdfBuffer = Buffer.from(proforma.content, 'base64')
+    
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf', 
+        'Content-Disposition': `inline; filename="proforma-${proforma.numero_proforma}.pdf"`
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore download proforma:', error)
+    return c.json({ error: 'Errore download proforma' }, 500)
+  }
+})
+
+// Serve documenti statici (brochure, manuali) per allegati email
+app.get('/documents/*', async (c) => {
+  try {
+    // In sviluppo locale, prova a caricare dal filesystem se disponibile
+    if (typeof process !== 'undefined' && process?.versions?.node) {
+      const fs = await import('fs')
+      const path = await import('path')
+      
+      const requestPath = c.req.path.replace('/documents/', '')
+      const possiblePaths = [
+        path.join(process.cwd(), 'documents', requestPath),
+        path.join(process.cwd(), 'public', 'documents', requestPath),
+        path.join(process.cwd(), 'dist', 'documents', requestPath)
+      ]
+      
+      for (const fsPath of possiblePaths) {
+        if (fs.existsSync(fsPath)) {
+          const buffer = fs.readFileSync(fsPath)
+          return new Response(buffer, {
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `inline; filename="${path.basename(fsPath)}"`
+            }
+          })
+        }
+      }
+    }
+    
+    // In Cloudflare Workers, i file sono serviti automaticamente da public/
+    return c.text('File non trovato', 404)
+  } catch (error) {
+    console.error('Errore servizio documenti:', error)
+    return c.text('Errore caricamento documento', 500)
   }
 })
 

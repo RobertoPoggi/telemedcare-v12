@@ -84,7 +84,7 @@ export interface WorkflowState {
 export type WorkflowPhase =
   | 'LEAD_CREATED'
   | 'INFO_NOTIFIED'
-  | 'DOCUMENTS_SENT'
+  | 'DOCUMENTI_INVIATI'
   | 'CONTRACT_GENERATED'
   | 'CONTRACT_SENT'
   | 'CONTRACT_SIGNED'
@@ -199,7 +199,7 @@ export class OperationalWorkflowManager {
         }
         return state
       
-      case 'DOCUMENTS_SENT':
+      case 'DOCUMENTI_INVIATI':
         if (config.vuoleContratto) {
           return await this.executeGenerateContract(state, config)
         }
@@ -295,11 +295,11 @@ export class OperationalWorkflowManager {
 
       await this.logEmail(state.leadId, null, null, 'email_documenti_informativi', config.email, 'SENT')
 
-      state.currentPhase = 'DOCUMENTS_SENT'
-      state.completedPhases.push('DOCUMENTS_SENT')
+      state.currentPhase = 'DOCUMENTI_INVIATI'
+      state.completedPhases.push('DOCUMENTI_INVIATI')
       state.updatedAt = new Date().toISOString()
 
-      await this.updateLeadStatus(state.leadId, 'DOCUMENTS_SENT')
+      await this.updateLeadStatus(state.leadId, 'DOCUMENTI_INVIATI')
 
       return state
     } catch (error) {
@@ -508,9 +508,9 @@ export class OperationalWorkflowManager {
       currentPhase = 'INFO_NOTIFIED'
       completedPhases.push('INFO_NOTIFIED')
     }
-    if (lead.status === 'DOCUMENTS_SENT') {
-      currentPhase = 'DOCUMENTS_SENT'
-      completedPhases.push('DOCUMENTS_SENT')
+    if (lead.status === 'DOCUMENTI_INVIATI') {
+      currentPhase = 'DOCUMENTI_INVIATI'
+      completedPhases.push('DOCUMENTI_INVIATI')
     }
     if (contract) {
       currentPhase = 'CONTRACT_GENERATED'
