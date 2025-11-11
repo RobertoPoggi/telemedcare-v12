@@ -479,10 +479,9 @@ adminApi.post('/contracts/:id/confirm-signature', async (c: AppContext) => {
         const prezzoMensile = 0; // Non applicabile per pagamento una tantum
         const durataMesi = 1; // Pagamento unico
         
-        // Date
+        // Date - Pagamento a vista (scadenza = emissione)
         const dataEmissione = new Date().toISOString().split('T')[0];
-        const dataScadenza = new Date();
-        dataScadenza.setDate(dataScadenza.getDate() + 30);
+        const dataScadenza = new Date(); // Stessa data per pagamento a vista
         const dueDate = dataScadenza.toISOString().split('T')[0];
         
         // Inserisci proforma nel database (tabella proforma senza S)
