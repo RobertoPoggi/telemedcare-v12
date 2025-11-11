@@ -51,12 +51,14 @@ export interface ProformaDataDB {
 
 /**
  * Helper per aggiungere testo con auto-wrapping
+ * FIXED LINE HEIGHT: 3.5mm uniform for all text regardless of font size
  */
 function addTextWithWrap(doc: jsPDF, text: string, x: number, y: number, maxWidth: number, fontSize: number = 10): number {
   doc.setFontSize(fontSize)
   const lines = doc.splitTextToSize(text, maxWidth)
   doc.text(lines, x, y)
-  return y + (lines.length * (fontSize * 0.4))
+  // Uniform line height of 3.5mm for all text (was fontSize * 0.4)
+  return y + (lines.length * 3.5)
 }
 
 /**
