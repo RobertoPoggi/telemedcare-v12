@@ -237,7 +237,7 @@ configFormApi.get('/config-form/:leadId/:token', async (c) => {
         eta: lead.etaAssistito || (lead.dataNascitaAssistito ? calculateAge(lead.dataNascitaAssistito) : ''),
         telefono: '', // Assistito phone not in DB
         email: '', // Assistito email not in DB
-        indirizzo: lead.indirizzoAssistito || lead.indirizzoRichiedente || '', // Fallback to richiedente address if assistito not available
+        indirizzo: lead.indirizzoAssistito || '', // No fallback - assistito address should remain empty if not provided
         // First caregiver (Contatto Primario): richiedente data
         contatto1_nome: lead.nomeRichiedente || '',
         contatto1_cognome: lead.cognomeRichiedente || '',

@@ -411,36 +411,142 @@ export class EmailService {
 </div></div></body></html>`
 
       case 'email_benvenuto':
-        return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Benvenuto in TeleMedCare</title></head>
-<body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
-<div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#0b6cf6;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">🎉 TeleMedCare</h1></div>
-<div style="padding:24px;">
-<h1>Benvenuto/a {{NOME_CLIENTE}}!</h1>
-<p style="font-size:18px;">🎉 Congratulazioni per la Sua scelta!</p>
-<p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
-<div style="background:#f7f9fc;border:1px solid #eef2f7;padding:16px;border-radius:6px;margin:16px 0;">
-<h3 style="margin:0 0 8px;color:#0b6cf6;">📋 Il Suo Servizio</h3>
-<strong>Piano:</strong> {{PIANO_SERVIZIO}}<br>
-<strong>Costo:</strong> {{COSTO_SERVIZIO}}<br>
-<strong>Data Attivazione:</strong> {{DATA_ATTIVAZIONE}}<br>
-<strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
-</div>
-<div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:16px;border-radius:6px;margin:16px 0;text-align:center;">
-<p style="margin:0 0 10px 0;font-weight:600;color:#065f46;">📋 Compili ora il modulo di configurazione!</p>
-<p style="margin:0 0 12px 0;font-size:14px;color:#047857;">Per attivare il Suo servizio, completi le informazioni necessarie alla configurazione del dispositivo.</p>
-<a href="{{LINK_CONFIGURAZIONE}}" style="display:inline-block;background:#10b981;color:#ffffff;padding:10px 16px;border-radius:6px;font-weight:600;text-decoration:none;margin-top:8px;">Compila Configurazione</a>
-</div>
-<h3 style="color:#0b6cf6;">🚀 Prossimi Passi:</h3>
-<ol style="margin-left:18px;">
-<li><strong>Compila Configurazione:</strong> Utilizzi il link qui sopra per fornire i dati necessari.</li>
-<li><strong>Consegna:</strong> Dispositivo entro 10 giorni</li>
-<li><strong>Training:</strong> Tutorial gratuito</li>
-<li><strong>Attivazione:</strong> Test completo con la Centrale</li>
-</ol>
-<p style="margin-top:20px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
-</div></div></body></html>`
+        return `<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Benvenuto/a in TeleMedCare</title>
+  <style>
+    /* Client-safe, inline-friendly base styles. Keep simple for email clients. */
+    body { margin:0; padding:0; background-color:#f4f6f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#222222; }
+    a { color:#1a73e8; text-decoration:none; }
+    .email-wrapper { width:100%; background-color:#f4f6f8; padding:20px 0; }
+    .email-container { width:100%; max-width:600px; margin:0 auto; background:#ffffff; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    .email-header { padding:20px 24px; background:#0b6cf6; color:#ffffff; }
+    .logo { font-weight:700; font-size:18px; letter-spacing:0.2px; }
+    .preheader { display:none !important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; }
+    .content { padding:24px; }
+    h1 { margin:0 0 12px 0; font-size:20px; color:#111827; }
+    p { margin:0 0 12px 0; line-height:1.45; color:#333333; }
+    .lead { font-size:16px; color:#111827; margin-bottom:12px; }
+    .summary { background:#f7f9fc; border:1px solid #eef2f7; padding:14px; border-radius:6px; margin-bottom:16px; }
+    .summary-table { width:100%; border-collapse:collapse; }
+    .summary-table td { padding:6px 0; vertical-align:top; color:#333333; font-size:14px; }
+    .summary-label { color:#6b7280; width:36%; font-weight:600; padding-right:8px; }
+    .services { margin:12px 0 18px 0; }
+    .steps { margin:0; padding-left:18px; color:#333333; }
+    .step { margin:8px 0; }
+    .button { display:inline-block; background:#0b6cf6; color:#ffffff; padding:10px 16px; border-radius:6px; font-weight:600; text-decoration:none; margin-top:8px; }
+    .footer { padding:18px 24px; font-size:13px; color:#6b7280; text-align:center; border-top:1px solid #eef2f7; }
+    @media screen and (max-width:420px) {
+      .email-container { margin:0 12px; }
+      .summary-label { display:block; width:100%; padding-bottom:4px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Preheader (appears in inbox preview) -->
+  <div class="preheader">Congratulazioni! Benvenuto/a nella famiglia TeleMedCare. Tutte le informazioni sul tuo servizio qui sotto.</div>
+
+  <table class="email-wrapper" role="presentation" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td align="center">
+        <table class="email-container" role="presentation" cellpadding="0" cellspacing="0">
+          <!-- Header -->
+          <tr>
+            <td class="email-header" align="left">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <!-- Logo placeholder -->
+                <div style="display:inline-block; width:44px; height:44px; border-radius:6px; background:#ffffff; color:#0b6cf6; text-align:center; line-height:44px; font-weight:700;">
+                  T
+                </div>
+                <div>
+                  <div class="logo">TeleMedCare</div>
+                  <div style="font-size:12px; opacity:0.9;">La tua sicurezza, la nostra priorità</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td class="content">
+              <h1>Benvenuto/a {{NOME_CLIENTE}}!</h1>
+
+              <p class="lead">🎉 Congratulazioni per la Sua scelta!</p>
+
+              <p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
+
+              <p style="font-weight:600; margin-top:12px;">La Sua sicurezza è la nostra priorità!</p>
+
+              <!-- Summary -->
+              <div class="summary" role="article" aria-label="Riepilogo del servizio">
+                <table class="summary-table" role="presentation">
+                  <tr>
+                    <td class="summary-label">Piano:</td>
+                    <td>{{PIANO_SERVIZIO}}</td>
+                  </tr>
+                  <tr>
+                    <td class="summary-label">Costo:</td>
+                    <td>{{COSTO_SERVIZIO}}</td>
+                  </tr>
+                  <tr>
+                    <td class="summary-label">Data Attivazione:</td>
+                    <td>{{DATA_ATTIVAZIONE}}</td>
+                  </tr>
+                  <tr>
+                    <td class="summary-label">Codice Cliente:</td>
+                    <td>{{CODICE_CLIENTE}}</td>
+                  </tr>
+                </table>
+
+                <div style="margin-top:12px;">
+                  <strong>Servizi inclusi nel Suo piano:</strong>
+                  <div class="services">
+                    {{SERVIZI_INCLUSI}}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Configuration Form CTA -->
+              <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:16px; border-radius:6px; margin:16px 0; text-align:center;">
+                <p style="margin:0 0 10px 0; font-weight:600; color:#065f46;">📋 Compili ora il modulo di configurazione!</p>
+                <p style="margin:0 0 12px 0; font-size:14px; color:#047857;">Per attivare il Suo servizio, completi le informazioni necessarie alla configurazione del dispositivo.</p>
+                <a href="{{LINK_CONFIGURAZIONE}}" class="button" style="background:#10b981;">Compila Configurazione</a>
+              </div>
+
+              <!-- Next steps -->
+              <div>
+                <strong>🚀 I prossimi passi:</strong>
+                <ol class="steps" style="margin-top:8px;">
+                  <li class="step"><strong>Compila Configurazione:</strong> Utilizzi il link qui sopra per fornire i dati necessari.</li>
+                  <li class="step"><strong>Consegna Dispositivo:</strong> Riceverà il dispositivo SiDLY entro 10 giorni lavorativi.</li>
+                  <li class="step"><strong>Training:</strong> Sessione di formazione gratuita per imparare ad usare il dispositivo tramite Tutorial.</li>
+                  <li class="step"><strong>Attivazione esclusivamente per Servizio Avanzato:</strong> Verrà contattato dalla Centrale Operativa per il test completo di funzionamento.</li>
+                </ol>
+              </div>
+
+              <p style="margin-top:16px;">Siamo lieti di averLa con noi e non vediamo l'ora di offrirLe la tranquillità e la sicurezza che merita.</p>
+
+              <p style="margin-top:8px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="footer">
+              <div>TeleMedCare · Assistenza clienti: <a href="mailto:support@telemedcare.it">support@telemedcare.it</a> · Tel: +39 02 1234 5678</div>
+              <div style="margin-top:6px;">Ricevuta questa email per errore? Contattaci e provvederemo a rimuovere i suoi dati.</div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 
       case 'email_conferma_attivazione':
         return `<!DOCTYPE html>
