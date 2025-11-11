@@ -67,6 +67,20 @@ adminApi.get('/dashboard/stats', async (c: AppContext) => {
       proformasStats = { total: 0, in_attesa: 0, pagate_bonifico: 0, pagate_stripe: 0, totale_importi: 0 };
     }
     
+    // Stats configurazioni
+    let configurationsStats;
+    try {
+      configurationsStats = await db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(DISTINCT lead_id) as complete
+        FROM configurations
+      `).first();
+    } catch (error) {
+      console.warn('Configurations table not found:', error);
+      configurationsStats = { total: 0, complete: 0 };
+    }
+    
     // Stats dispositivi (handle missing table gracefully)
     let devicesStats;
     try {
@@ -84,13 +98,31 @@ adminApi.get('/dashboard/stats', async (c: AppContext) => {
       devicesStats = { total: 0, disponibili: 0, da_configurare: 0, associati: 0, in_manutenzione: 0 };
     }
     
+    // Stats assistiti
+    let assistitiStats;
+    try {
+      assistitiStats = await db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN stato_servizio = 'ATTIVO' THEN 1 ELSE 0 END) as attivi,
+          SUM(CASE WHEN stato_servizio = 'SOSPESO' THEN 1 ELSE 0 END) as sospesi,
+          SUM(CASE WHEN stato_servizio = 'CESSATO' THEN 1 ELSE 0 END) as cessati
+        FROM assistiti
+      `).first();
+    } catch (error) {
+      console.warn('Assistiti table not found:', error);
+      assistitiStats = { total: 0, attivi: 0, sospesi: 0, cessati: 0 };
+    }
+    
     return c.json({
       success: true,
       stats: {
         leads: leadsStats,
         contracts: contractsStats,
         proformas: proformasStats,
-        devices: devicesStats
+        configurations: configurationsStats,
+        devices: devicesStats,
+        assistiti: assistitiStats
       }
     });
   } catch (error: any) {

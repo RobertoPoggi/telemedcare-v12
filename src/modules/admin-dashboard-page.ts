@@ -128,7 +128,7 @@ adminDashboardRoute.get('/', (c) => {
 
     <!-- Stats Cards -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <!-- Stats will be loaded here -->
         </div>
 
@@ -638,10 +638,26 @@ adminDashboardRoute.get('/', (c) => {
                     </div>
                     
                     <div class="card">
+                        <div class="text-sm font-medium text-gray-500 mb-2">Configurazioni</div>
+                        <div class="text-3xl font-bold text-gray-900">\${stats.configurations?.total || 0}</div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            \${stats.configurations?.complete || 0} completate
+                        </div>
+                    </div>
+                    
+                    <div class="card">
                         <div class="text-sm font-medium text-gray-500 mb-2">Dispositivi</div>
                         <div class="text-3xl font-bold text-gray-900">\${stats.devices.total || 0}</div>
                         <div class="mt-2 text-sm text-gray-600">
                             \${stats.devices.disponibili || 0} disponibili
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="text-sm font-medium text-gray-500 mb-2">Assistiti</div>
+                        <div class="text-3xl font-bold text-gray-900">\${stats.assistiti?.total || 0}</div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            \${stats.assistiti?.attivi || 0} attivi
                         </div>
                     </div>
                 \`;
@@ -1087,7 +1103,7 @@ adminDashboardRoute.get('/', (c) => {
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${device.serial_number || '-'}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">\${device.model || device.device_type}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge \${getDeviceStatusClass(device.status)}">\${translateStatus(device.status, 'device')}</span>
+                                        <span class="status-badge \${getDeviceStatusClass(device.status)}">\${formatDeviceStatus(device.status)}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         \${device.nomeRichiedente ? \`\${device.nomeRichiedente} \${device.cognomeRichiedente}\` : '-'}
@@ -1147,7 +1163,7 @@ adminDashboardRoute.get('/', (c) => {
                                 <div><strong>Serial Number:</strong> \${device.serial_number || '-'}</div>
                                 <div><strong>IMEI:</strong> \${device.imei || '-'}</div>
                                 <div><strong>Modello:</strong> \${device.model || device.device_type || '-'}</div>
-                                <div><strong>Stato:</strong> <span class="status-badge \${getDeviceStatusClass(device.status)}">\${translateStatus(device.status, 'device')}</span></div>
+                                <div><strong>Stato:</strong> <span class="status-badge \${getDeviceStatusClass(device.status)}">\${formatDeviceStatus(device.status)}</span></div>
                                 <div><strong>Tipo:</strong> \${device.device_type || '-'}</div>
                             </div>
                         </div>
@@ -1286,7 +1302,7 @@ adminDashboardRoute.get('/', (c) => {
                                 <div class="label">Serial Number:</div><div>\${device.serial_number || '-'}</div>
                                 <div class="label">IMEI:</div><div>\${device.imei || '-'}</div>
                                 <div class="label">Modello:</div><div>\${device.model || device.device_type || '-'}</div>
-                                <div class="label">Stato:</div><div>\${translateStatus(device.status, 'device')}</div>
+                                <div class="label">Stato:</div><div>\${formatDeviceStatus(device.status)}</div>
                             </div>
                         </div>
                         
@@ -1593,7 +1609,9 @@ adminDashboardRoute.get('/', (c) => {
                 'DOCUMENTS_SENT': 'Documenti Inviati',
                 'PAID': 'Pagato',
                 'PAID_BANK_TRANSFER': 'Pagato (Bonifico)',
-                'PAID_STRIPE': 'Pagato (Stripe)'
+                'PAID_STRIPE': 'Pagato (Stripe)',
+                'CONFIGURED': 'Configurato',
+                'CONVERTITO': 'Convertito'
             };
             return translations[status] || status;
         }
@@ -1625,6 +1643,25 @@ adminDashboardRoute.get('/', (c) => {
                 'MAINTENANCE': 'bg-orange-100 text-orange-800'
             };
             return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function formatDeviceStatus(status) {
+            const translations = {
+                'AVAILABLE': 'Disponibile',
+                'TO_CONFIGURE': 'Da Configurare',
+                'ASSOCIATED': 'Associato',
+                'MAINTENANCE': 'Manutenzione'
+            };
+            return translations[status] || status;
+        }
+        
+        function formatAssistitoStatus(status) {
+            const translations = {
+                'ATTIVO': 'Attivo',
+                'SOSPESO': 'Sospeso',
+                'CESSATO': 'Cessato'
+            };
+            return translations[status] || status;
         }
         
         // ========================================
@@ -2045,7 +2082,7 @@ adminDashboardRoute.get('/', (c) => {
                                     <td class="px-3 py-2 text-xs">
                                         \${ass.dispositivo_imei ? \`<div>IMEI: \${ass.dispositivo_imei}</div><div class="text-gray-500">\${ass.dispositivo_seriale || ''}</div>\` : '<span class="text-gray-400">Non assegnato</span>'}
                                     </td>
-                                    <td class="px-3 py-2"><span class="px-2 text-xs rounded-full \${ass.stato_servizio === 'ATTIVO' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">\${ass.stato_servizio}</span></td>
+                                    <td class="px-3 py-2"><span class="px-2 text-xs rounded-full \${ass.stato_servizio === 'ATTIVO' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">\${formatAssistitoStatus(ass.stato_servizio)}</span></td>
                                     <td class="px-3 py-2 text-xs">\${formatDate(ass.data_attivazione)}</td>
                                     <td class="px-2 py-2">
                                         <div class="flex items-center space-x-1">
