@@ -152,7 +152,10 @@ adminApi.get('/leads', async (c: AppContext) => {
         pacchetto,
         status,
         timestamp,
-        urgenzaRisposta
+        urgenzaRisposta,
+        vuoleContratto,
+        vuoleBrochure,
+        vuoleManuale
       FROM leads
     `;
     

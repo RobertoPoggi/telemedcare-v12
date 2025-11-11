@@ -28,10 +28,11 @@ async function generateSimpleContractCode(db: D1Database): Promise<string> {
     const yearPrefix = `CTR_${currentYear}/`;
     
     // Query per ottenere l'ultimo codice contratto dell'anno corrente
+    // IMPORTANTE: Ordina per codice_contratto per evitare duplicati
     const result = await db.prepare(
       `SELECT codice_contratto FROM contracts 
        WHERE codice_contratto LIKE ? 
-       ORDER BY id DESC LIMIT 1`
+       ORDER BY codice_contratto DESC LIMIT 1`
     ).bind(`${yearPrefix}%`).first() as any;
     
     if (!result || !result.codice_contratto) {
@@ -707,10 +708,10 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
       new Date().toISOString()
     ).run()
     
-    console.log(`✅ [HELPER] Contratto ${contractId} salvato nel database con PDF`)
+    console.log(`✅ [HELPER] Contratto ${contractId} salvato nel database con codice ${contractCode}`)
   } catch (dbError) {
-    console.error(`❌ [HELPER] Errore salvataggio contratto nel database:`, dbError)
-    console.warn(`⚠️ [HELPER] Contratto non salvato nel DB, ma workflow continua`)
+    console.error(`❌ [HELPER] ERRORE CRITICO salvataggio contratto:`, dbError)
+    throw new Error(`Impossibile salvare contratto nel database: ${dbError.message}`)
   }
   
   return {
