@@ -241,7 +241,8 @@ export async function generateProformaPDF(input: ProformaData | ProformaDataDB):
     const footerY = pageHeight - 50 // Footer starts here (increased from 30 to 50 for more space)
     
     // Ensure legal text doesn't overlap footer
-    if (yPos > footerY - 30) {
+    // Legal text + company name needs ~18mm, so only add page if less than 20mm available
+    if (yPos > footerY - 20) {
       // Add new page if not enough space
       doc.addPage()
       yPos = margin

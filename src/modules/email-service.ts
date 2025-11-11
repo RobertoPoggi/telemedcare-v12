@@ -175,7 +175,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     name: 'Benvenuto Cliente',
     subject: '🎉 Benvenuto/a in TeleMedCare, {{NOME_CLIENTE}}!',
     htmlPath: '/templates/email/email_benvenuto.html',
-    variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'COSTO_SERVIZIO', 'DATA_ATTIVAZIONE', 'CODICE_CLIENTE', 'SERVIZI_INCLUSI'],
+    variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'COSTO_SERVIZIO', 'DATA_ATTIVAZIONE', 'CODICE_CLIENTE', 'SERVIZI_INCLUSI', 'LINK_CONFIGURAZIONE'],
     category: 'workflow'
   },
   CONFIGURAZIONE: {
@@ -409,10 +409,15 @@ export class EmailService {
 <strong>Data Attivazione:</strong> {{DATA_ATTIVAZIONE}}<br>
 <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
 </div>
+<div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:16px;border-radius:6px;margin:16px 0;text-align:center;">
+<p style="margin:0 0 10px 0;font-weight:600;color:#065f46;">📋 Compili ora il modulo di configurazione!</p>
+<p style="margin:0 0 12px 0;font-size:14px;color:#047857;">Per attivare il Suo servizio, completi le informazioni necessarie alla configurazione del dispositivo.</p>
+<a href="{{LINK_CONFIGURAZIONE}}" style="display:inline-block;background:#10b981;color:#ffffff;padding:10px 16px;border-radius:6px;font-weight:600;text-decoration:none;margin-top:8px;">Compila Configurazione</a>
+</div>
 <h3 style="color:#0b6cf6;">🚀 Prossimi Passi:</h3>
 <ol style="margin-left:18px;">
+<li><strong>Compila Configurazione:</strong> Utilizzi il link qui sopra per fornire i dati necessari.</li>
 <li><strong>Consegna:</strong> Dispositivo entro 10 giorni</li>
-<li><strong>Configurazione:</strong> Email per setup personalizzato</li>
 <li><strong>Training:</strong> Tutorial gratuito</li>
 <li><strong>Attivazione:</strong> Test completo con la Centrale</li>
 </ol>
