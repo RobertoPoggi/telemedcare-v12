@@ -943,6 +943,83 @@ adminApi.post('/proformas/:id/confirm-payment', async (c: AppContext) => {
 });
 
 /**
+ * POST /api/admin/proformas/:id/resend-welcome-email
+ * Re-invia email di benvenuto con link configurazione
+ */
+adminApi.post('/proformas/:id/resend-welcome-email', async (c: AppContext) => {
+  const db = c.env.DB;
+  const proformaId = c.req.param('id');
+  
+  try {
+    // Recupera dati proforma e lead
+    const proforma: any = await db.prepare(`
+      SELECT lead_id, numero_proforma as proforma_code, prezzo_totale FROM proforma WHERE id = ?
+    `).bind(proformaId).first();
+    
+    if (!proforma) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404);
+    }
+    
+    const lead: any = await db.prepare(`
+      SELECT * FROM leads WHERE id = ?
+    `).bind(proforma.lead_id).first();
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404);
+    }
+    
+    // Importa funzioni token
+    const { generateToken } = await import('./config-form-api');
+    const emailService = (await import('./email-service')).default.getInstance();
+    
+    // Genera token per form configurazione
+    const configToken = generateToken(lead.id);
+    const baseUrl = new URL(c.req.url).origin;
+    const configFormUrl = `${baseUrl}/api/config-form/${lead.id}/${configToken}`;
+    
+    console.log(`📧 Re-invio email benvenuto a: ${lead.emailRichiedente}`);
+    console.log(`🔗 Form configurazione URL: ${configFormUrl}`);
+    
+    // Invia email di benvenuto
+    const emailResult = await emailService.sendTemplateEmail(
+      'BENVENUTO',
+      lead.emailRichiedente,
+      {
+        NOME_CLIENTE: `${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+        PIANO_SERVIZIO: lead.pacchetto || 'BASE',
+        COSTO_SERVIZIO: proforma.prezzo_totale ? `EUR ${proforma.prezzo_totale}` : 'N/A',
+        DATA_ATTIVAZIONE: new Date().toISOString().split('T')[0],
+        CODICE_CLIENTE: lead.id,
+        SERVIZI_INCLUSI: lead.pacchetto === 'AVANZATO' 
+          ? 'Dispositivo SiDLY Care PRO + Monitoraggio H24 + Centrale Operativa'
+          : 'Dispositivo SiDLY Care PRO + Monitoraggio base',
+        LINK_CONFIGURAZIONE: configFormUrl
+      },
+      [],
+      c.env
+    );
+    
+    if (!emailResult.success) {
+      return c.json({ 
+        success: false, 
+        error: `Errore invio email: ${emailResult.error}` 
+      }, 500);
+    }
+    
+    console.log(`✅ Email benvenuto re-inviata con successo`);
+    
+    return c.json({
+      success: true,
+      message: 'Email di benvenuto re-inviata con successo',
+      config_form_url: configFormUrl
+    });
+  } catch (error: any) {
+    console.error('❌ Errore re-invio email benvenuto:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
  * DELETE /api/admin/proformas/:id
  * Elimina una proforma
  */

@@ -167,14 +167,50 @@ configFormApi.get('/config-form/:leadId/:token', async (c) => {
       `, 404);
     }
     
+    // Check if configuration already exists for this lead
+    const existingConfig: any = await db.prepare(`
+      SELECT * FROM configurations WHERE lead_id = ?
+    `).bind(leadId).first();
+    
     // Determine who the contract holder is
     const isAssistitoHolder = lead.intestazioneContratto === 'assistito';
     
     // Prepare pre-fill data based on contract holder
     let preFillData: any = {};
     
-    if (isAssistitoHolder) {
-      // CASE 1: Contract holder is assistito
+    // If configuration exists, use it to pre-fill (for re-sending email case)
+    if (existingConfig) {
+      console.log(`📝 Configurazione esistente trovata per lead ${leadId} - Pre-compilazione con dati salvati`);
+      preFillData = {
+        nome: existingConfig.nome || '',
+        cognome: existingConfig.cognome || '',
+        data_nascita: existingConfig.data_nascita || '',
+        eta: existingConfig.eta || '',
+        peso: existingConfig.peso || '',
+        altezza: existingConfig.altezza || '',
+        telefono: existingConfig.telefono || '',
+        email: existingConfig.email || '',
+        indirizzo: existingConfig.indirizzo || '',
+        contatto1_nome: existingConfig.contatto1_nome || '',
+        contatto1_cognome: existingConfig.contatto1_cognome || '',
+        contatto1_telefono: existingConfig.contatto1_telefono || '',
+        contatto1_email: existingConfig.contatto1_email || '',
+        contatto2_nome: existingConfig.contatto2_nome || '',
+        contatto2_cognome: existingConfig.contatto2_cognome || '',
+        contatto2_telefono: existingConfig.contatto2_telefono || '',
+        contatto2_email: existingConfig.contatto2_email || '',
+        contatto3_nome: existingConfig.contatto3_nome || '',
+        contatto3_cognome: existingConfig.contatto3_cognome || '',
+        contatto3_telefono: existingConfig.contatto3_telefono || '',
+        contatto3_email: existingConfig.contatto3_email || '',
+        patologie: existingConfig.patologie || '',
+        farmaci_nome: existingConfig.farmaci_nome || '',
+        farmaci_dosaggio: existingConfig.farmaci_dosaggio || '',
+        farmaci_orario: existingConfig.farmaci_orario || '',
+        note: existingConfig.note || ''
+      };
+    } else if (isAssistitoHolder) {
+      // CASE 1: Contract holder is assistito - No existing config
       // Pre-fill assistito section only
       preFillData = {
         nome: lead.nomeAssistito || '',
@@ -191,7 +227,7 @@ configFormApi.get('/config-form/:leadId/:token', async (c) => {
         contatto1_email: ''
       };
     } else {
-      // CASE 2: Contract holder is richiedente (different person paying for assistito)
+      // CASE 2: Contract holder is richiedente - No existing config
       // Pre-fill assistito section + first caregiver with richiedente data
       preFillData = {
         // Assistito data in main section
@@ -836,6 +872,563 @@ async function generateFormHtml(preFillData: any, lead: any): Promise<string> {
 </body>
 </html>`;
 }
+
+// ========================================
+// CONFIGURATION MANAGEMENT API ENDPOINTS
+// ========================================
+
+/**
+ * GET all configurations with optional filtering
+ */
+configFormApi.get('/configurations', async (c) => {
+  const db = c.env.DB;
+  
+  try {
+    const { status, leadId } = c.req.query();
+    
+    let query = `
+      SELECT 
+        c.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.emailRichiedente,
+        l.status as lead_status
+      FROM configurations c
+      LEFT JOIN leads l ON c.lead_id = l.id
+      WHERE 1=1
+    `;
+    
+    const params: any[] = [];
+    
+    if (leadId) {
+      query += ` AND c.lead_id = ?`;
+      params.push(leadId);
+    }
+    
+    query += ` ORDER BY c.created_at DESC`;
+    
+    const { results } = await db.prepare(query).bind(...params).all();
+    
+    return c.json({ 
+      success: true, 
+      configurations: results,
+      count: results.length
+    });
+  } catch (error: any) {
+    console.error('❌ Errore recupero configurazioni:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * GET single configuration by ID
+ */
+configFormApi.get('/configurations/:id', async (c) => {
+  const db = c.env.DB;
+  const configId = c.req.param('id');
+  
+  try {
+    const config = await db.prepare(`
+      SELECT 
+        c.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.emailRichiedente,
+        l.telefonoRichiedente,
+        l.pacchetto,
+        l.status as lead_status
+      FROM configurations c
+      LEFT JOIN leads l ON c.lead_id = l.id
+      WHERE c.id = ?
+    `).bind(configId).first();
+    
+    if (!config) {
+      return c.json({ success: false, error: 'Configurazione non trovata' }, 404);
+    }
+    
+    return c.json({ success: true, configuration: config });
+  } catch (error: any) {
+    console.error('❌ Errore recupero configurazione:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * PUT update configuration
+ */
+configFormApi.put('/configurations/:id', async (c) => {
+  const db = c.env.DB;
+  const configId = c.req.param('id');
+  
+  try {
+    const data = await c.req.json();
+    
+    await db.prepare(`
+      UPDATE configurations SET
+        piano_servizio = ?,
+        nome = ?,
+        cognome = ?,
+        data_nascita = ?,
+        eta = ?,
+        peso = ?,
+        altezza = ?,
+        telefono = ?,
+        email = ?,
+        indirizzo = ?,
+        contatto1_nome = ?,
+        contatto1_cognome = ?,
+        contatto1_telefono = ?,
+        contatto1_email = ?,
+        contatto2_nome = ?,
+        contatto2_cognome = ?,
+        contatto2_telefono = ?,
+        contatto2_email = ?,
+        contatto3_nome = ?,
+        contatto3_cognome = ?,
+        contatto3_telefono = ?,
+        contatto3_email = ?,
+        patologie = ?,
+        farmaci_nome = ?,
+        farmaci_dosaggio = ?,
+        farmaci_orario = ?,
+        note = ?,
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      data.piano_servizio,
+      data.nome,
+      data.cognome,
+      data.data_nascita,
+      data.eta,
+      data.peso || '',
+      data.altezza || '',
+      data.telefono,
+      data.email || '',
+      data.indirizzo,
+      data.contatto1_nome || '',
+      data.contatto1_cognome || '',
+      data.contatto1_telefono || '',
+      data.contatto1_email || '',
+      data.contatto2_nome || '',
+      data.contatto2_cognome || '',
+      data.contatto2_telefono || '',
+      data.contatto2_email || '',
+      data.contatto3_nome || '',
+      data.contatto3_cognome || '',
+      data.contatto3_telefono || '',
+      data.contatto3_email || '',
+      data.patologie || '',
+      data.farmaci_nome || '',
+      data.farmaci_dosaggio || '',
+      data.farmaci_orario || '',
+      data.note || '',
+      configId
+    ).run();
+    
+    console.log(`✅ Configurazione aggiornata: ${configId}`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Configurazione aggiornata con successo',
+      configId 
+    });
+  } catch (error: any) {
+    console.error('❌ Errore aggiornamento configurazione:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * DELETE configuration
+ */
+configFormApi.delete('/configurations/:id', async (c) => {
+  const db = c.env.DB;
+  const configId = c.req.param('id');
+  
+  try {
+    await db.prepare(`DELETE FROM configurations WHERE id = ?`).bind(configId).run();
+    
+    console.log(`🗑️ Configurazione eliminata: ${configId}`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Configurazione eliminata con successo' 
+    });
+  } catch (error: any) {
+    console.error('❌ Errore eliminazione configurazione:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * POST create new configuration manually
+ */
+configFormApi.post('/configurations/create', async (c) => {
+  const db = c.env.DB;
+  
+  try {
+    const data = await c.req.json();
+    
+    // Validate required lead_id
+    if (!data.lead_id) {
+      return c.json({ success: false, error: 'lead_id è richiesto' }, 400);
+    }
+    
+    // Check if configuration already exists for this lead
+    const existing = await db.prepare(`
+      SELECT id FROM configurations WHERE lead_id = ?
+    `).bind(data.lead_id).first();
+    
+    if (existing) {
+      return c.json({ 
+        success: false, 
+        error: 'Esiste già una configurazione per questo lead' 
+      }, 400);
+    }
+    
+    const configId = `CONFIG_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    await db.prepare(`
+      INSERT INTO configurations (
+        id, lead_id, piano_servizio,
+        nome, cognome, data_nascita, eta, peso, altezza, telefono, email, indirizzo,
+        contatto1_nome, contatto1_cognome, contatto1_telefono, contatto1_email,
+        contatto2_nome, contatto2_cognome, contatto2_telefono, contatto2_email,
+        contatto3_nome, contatto3_cognome, contatto3_telefono, contatto3_email,
+        patologie, farmaci_nome, farmaci_dosaggio, farmaci_orario, note,
+        created_at, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now')
+      )
+    `).bind(
+      configId,
+      data.lead_id,
+      data.piano_servizio || '',
+      data.nome || '',
+      data.cognome || '',
+      data.data_nascita || '',
+      data.eta || '',
+      data.peso || '',
+      data.altezza || '',
+      data.telefono || '',
+      data.email || '',
+      data.indirizzo || '',
+      data.contatto1_nome || '',
+      data.contatto1_cognome || '',
+      data.contatto1_telefono || '',
+      data.contatto1_email || '',
+      data.contatto2_nome || '',
+      data.contatto2_cognome || '',
+      data.contatto2_telefono || '',
+      data.contatto2_email || '',
+      data.contatto3_nome || '',
+      data.contatto3_cognome || '',
+      data.contatto3_telefono || '',
+      data.contatto3_email || '',
+      data.patologie || '',
+      data.farmaci_nome || '',
+      data.farmaci_dosaggio || '',
+      data.farmaci_orario || '',
+      data.note || ''
+    ).run();
+    
+    // Update lead status to CONFIGURED
+    await db.prepare(`
+      UPDATE leads SET status = 'CONFIGURED', updated_at = datetime('now') WHERE id = ?
+    `).bind(data.lead_id).run();
+    
+    console.log(`✅ Nuova configurazione creata: ${configId}`);
+    
+    return c.json({ 
+      success: true, 
+      message: 'Configurazione creata con successo',
+      configId 
+    });
+  } catch (error: any) {
+    console.error('❌ Errore creazione configurazione:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+/**
+ * GET configuration PDF for printing
+ */
+configFormApi.get('/configurations/:id/pdf', async (c) => {
+  const db = c.env.DB;
+  const configId = c.req.param('id');
+  
+  try {
+    const config: any = await db.prepare(`
+      SELECT 
+        c.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.emailRichiedente,
+        l.telefonoRichiedente,
+        l.pacchetto
+      FROM configurations c
+      LEFT JOIN leads l ON c.lead_id = l.id
+      WHERE c.id = ?
+    `).bind(configId).first();
+    
+    if (!config) {
+      return c.json({ success: false, error: 'Configurazione non trovata' }, 404);
+    }
+    
+    // Generate PDF-friendly HTML
+    const pdfHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurazione SiDLY CARE - ${config.nome} ${config.cognome}</title>
+    <style>
+        @page { margin: 2cm; }
+        body { 
+            font-family: Arial, sans-serif; 
+            font-size: 11pt; 
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #3B82F6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 { margin: 0; color: #1E40AF; }
+        .header p { margin: 5px 0; color: #6B7280; }
+        .section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            background: #EFF6FF;
+            padding: 8px 12px;
+            border-left: 4px solid #3B82F6;
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 10px;
+        }
+        .field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .field {
+            margin-bottom: 8px;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #4B5563;
+            font-size: 10pt;
+        }
+        .field-value {
+            color: #1F2937;
+            padding: 5px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .contact-box {
+            background: #F9FAFB;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 2px solid #E5E7EB;
+            text-align: center;
+            font-size: 9pt;
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Configurazione SiDLY CARE</h1>
+        <p>Piano: <strong>${config.piano_servizio || config.pacchetto}</strong></p>
+        <p>Data configurazione: ${new Date(config.created_at).toLocaleDateString('it-IT')}</p>
+        <p>ID Configurazione: ${config.id}</p>
+    </div>
+
+    <!-- Dati Assistito -->
+    <div class="section">
+        <div class="section-title">👤 Dati Assistito</div>
+        <div class="field-grid">
+            <div class="field">
+                <div class="field-label">Nome</div>
+                <div class="field-value">${config.nome || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Cognome</div>
+                <div class="field-value">${config.cognome || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Data di Nascita</div>
+                <div class="field-value">${config.data_nascita || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Età</div>
+                <div class="field-value">${config.eta || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Peso (kg)</div>
+                <div class="field-value">${config.peso || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Altezza (cm)</div>
+                <div class="field-value">${config.altezza || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Telefono</div>
+                <div class="field-value">${config.telefono || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Email</div>
+                <div class="field-value">${config.email || '-'}</div>
+            </div>
+        </div>
+        <div class="field">
+            <div class="field-label">Indirizzo</div>
+            <div class="field-value">${config.indirizzo || '-'}</div>
+        </div>
+    </div>
+
+    <!-- Contatti di Emergenza -->
+    <div class="section">
+        <div class="section-title">📞 Contatti di Emergenza</div>
+        
+        ${config.contatto1_nome || config.contatto1_cognome ? `
+        <div class="contact-box">
+            <strong>Contatto 1 (Principale)</strong>
+            <div class="field-grid">
+                <div class="field">
+                    <span class="field-label">Nome:</span> ${config.contatto1_nome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Cognome:</span> ${config.contatto1_cognome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Telefono:</span> ${config.contatto1_telefono || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Email:</span> ${config.contatto1_email || '-'}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${config.contatto2_nome || config.contatto2_cognome ? `
+        <div class="contact-box">
+            <strong>Contatto 2 (Secondario)</strong>
+            <div class="field-grid">
+                <div class="field">
+                    <span class="field-label">Nome:</span> ${config.contatto2_nome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Cognome:</span> ${config.contatto2_cognome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Telefono:</span> ${config.contatto2_telefono || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Email:</span> ${config.contatto2_email || '-'}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${config.contatto3_nome || config.contatto3_cognome ? `
+        <div class="contact-box">
+            <strong>Contatto 3 (Terziario)</strong>
+            <div class="field-grid">
+                <div class="field">
+                    <span class="field-label">Nome:</span> ${config.contatto3_nome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Cognome:</span> ${config.contatto3_cognome || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Telefono:</span> ${config.contatto3_telefono || '-'}
+                </div>
+                <div class="field">
+                    <span class="field-label">Email:</span> ${config.contatto3_email || '-'}
+                </div>
+            </div>
+        </div>
+        ` : ''}
+    </div>
+
+    <!-- Informazioni Mediche -->
+    <div class="section">
+        <div class="section-title">⚕️ Informazioni Mediche</div>
+        <div class="field">
+            <div class="field-label">Patologie</div>
+            <div class="field-value">${config.patologie || 'Nessuna patologia indicata'}</div>
+        </div>
+        ${config.farmaci_nome ? `
+        <div class="field">
+            <div class="field-label">Farmaci</div>
+            <div class="field-value">${config.farmaci_nome}</div>
+        </div>
+        <div class="field-grid">
+            <div class="field">
+                <div class="field-label">Dosaggio</div>
+                <div class="field-value">${config.farmaci_dosaggio || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Orario Assunzione</div>
+                <div class="field-value">${config.farmaci_orario || '-'}</div>
+            </div>
+        </div>
+        ` : ''}
+    </div>
+
+    <!-- Note -->
+    ${config.note ? `
+    <div class="section">
+        <div class="section-title">📝 Note Aggiuntive</div>
+        <div class="field-value">${config.note}</div>
+    </div>
+    ` : ''}
+
+    <!-- Richiedente -->
+    ${config.nomeRichiedente ? `
+    <div class="section">
+        <div class="section-title">👨‍💼 Dati Richiedente</div>
+        <div class="field-grid">
+            <div class="field">
+                <div class="field-label">Nome e Cognome</div>
+                <div class="field-value">${config.nomeRichiedente} ${config.cognomeRichiedente}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Email</div>
+                <div class="field-value">${config.emailRichiedente || '-'}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">Telefono</div>
+                <div class="field-value">${config.telefonoRichiedente || '-'}</div>
+            </div>
+        </div>
+    </div>
+    ` : ''}
+
+    <div class="footer">
+        <p>Documento generato il ${new Date().toLocaleString('it-IT')}</p>
+        <p>TeleMedCare V11.0 - Sistema di Telemedicina Avanzato</p>
+        <p>Medica GB Srl - Via Repubblica, Marcianise (CE)</p>
+    </div>
+</body>
+</html>
+    `;
+    
+    return c.html(pdfHtml);
+  } catch (error: any) {
+    console.error('❌ Errore generazione PDF:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
 
 export default configFormApi;
 export { generateToken, verifyToken };
