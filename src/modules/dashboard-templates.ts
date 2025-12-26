@@ -2289,32 +2289,32 @@ export const workflow_manager = `<!DOCTYPE html>
                 Stati Workflow TeleMedCare
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('leads')" class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-user-plus text-3xl text-blue-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">1. Lead</h4>
                     <p class="text-xs text-gray-600 mt-1">Acquisizione contatto</p>
                 </div>
-                <div class="border-2 border-green-200 bg-green-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('contratti')" class="border-2 border-green-200 bg-green-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-file-contract text-3xl text-green-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">2. Contratto</h4>
                     <p class="text-xs text-gray-600 mt-1">Generazione PDF</p>
                 </div>
-                <div class="border-2 border-purple-200 bg-purple-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('firme')" class="border-2 border-purple-200 bg-purple-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-signature text-3xl text-purple-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">3. Firma</h4>
                     <p class="text-xs text-gray-600 mt-1">Firma elettronica</p>
                 </div>
-                <div class="border-2 border-yellow-200 bg-yellow-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('proforma')" class="border-2 border-yellow-200 bg-yellow-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-file-invoice text-3xl text-yellow-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">4. Proforma</h4>
                     <p class="text-xs text-gray-600 mt-1">Generazione fattura</p>
                 </div>
-                <div class="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('pagamenti')" class="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-credit-card text-3xl text-orange-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">5. Pagamento</h4>
                     <p class="text-xs text-gray-600 mt-1">Conferma bonifico</p>
                 </div>
-                <div class="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg text-center">
+                <div onclick="openArchive('attivi')" class="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-check-circle text-3xl text-indigo-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">6. Attivazione</h4>
                     <p class="text-xs text-gray-600 mt-1">Servizio attivo</p>
@@ -2576,10 +2576,23 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">
-                            <button onclick="viewWorkflowDetails('\${lead.id}')" 
-                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded">
-                                <i class="fas fa-eye"></i> Dettagli
-                            </button>
+                            <div class="flex space-x-1">
+                                <button onclick="quickAction('\${lead.id}', 'view')" 
+                                    class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded" 
+                                    title="Visualizza Dettagli">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="quickAction('\${lead.id}', 'contract')" 
+                                    class="px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs rounded" 
+                                    title="Registra Firma Contratto">
+                                    <i class="fas fa-signature"></i>
+                                </button>
+                                <button onclick="quickAction('\${lead.id}', 'payment')" 
+                                    class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded" 
+                                    title="Registra Pagamento">
+                                    <i class="fas fa-euro-sign"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 \`;
@@ -2629,6 +2642,167 @@ export const workflow_manager = `<!DOCTYPE html>
 
         function viewWorkflowDetails(leadId) {
             alert(\`Dettagli workflow per Lead: \${leadId}\n\nFunzionalità in sviluppo...\`);
+        }
+
+        // Open Archive - Click sui box workflow per aprire archivi completi
+        async function openArchive(type) {
+            try {
+                let url = '';
+                let title = '';
+                
+                switch(type) {
+                    case 'leads':
+                        url = '/api/leads?limit=1000';
+                        title = '📋 ARCHIVIO COMPLETO LEADS';
+                        break;
+                    case 'contratti':
+                        url = '/api/contratti?limit=1000';
+                        title = '📄 ARCHIVIO COMPLETO CONTRATTI';
+                        break;
+                    case 'firme':
+                        url = '/api/signatures?limit=1000';
+                        title = '✍️ ARCHIVIO FIRME ELETTRONICHE';
+                        break;
+                    case 'proforma':
+                        url = '/api/proforma?limit=1000';
+                        title = '📋 ARCHIVIO PROFORMA/FATTURE';
+                        break;
+                    case 'pagamenti':
+                        url = '/api/payments?limit=1000';
+                        title = '💰 ARCHIVIO PAGAMENTI';
+                        break;
+                    case 'attivi':
+                        url = '/api/leads?status=ACTIVE&limit=1000';
+                        title = '✅ SERVIZI ATTIVI';
+                        break;
+                    default:
+                        alert('⚠️ Archivio non riconosciuto');
+                        return;
+                }
+                
+                // Mostra loading
+                const loadingMsg = alert(\`⏳ Caricamento \${title}...\\n\\nAttendi...\`);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // Estrai l'array corretto in base al tipo
+                let items = [];
+                if (type === 'leads') items = data.leads || [];
+                else if (type === 'contratti') items = data.contratti || [];
+                else if (type === 'firme') items = data.signatures || [];
+                else if (type === 'proforma') items = data.proforma || [];
+                else if (type === 'pagamenti') items = data.payments || [];
+                else if (type === 'attivi') items = data.leads || [];
+                
+                // Crea messaggio riepilogo
+                let message = \`\${title}\\n\\nTotale: \${items.length} record\\n\\n\`;
+                
+                if (items.length === 0) {
+                    message += 'Nessun record trovato.';
+                } else if (items.length <= 10) {
+                    // Mostra tutti i record se <= 10
+                    items.forEach((item, idx) => {
+                        if (type === 'leads') {
+                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''} - \${item.email || 'N/A'}\\n\`;
+                        } else if (type === 'contratti') {
+                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                        } else if (type === 'firme') {
+                            message += \`\${idx+1}. Firma \${item.id} - Contratto: \${item.contract_id}\\n\`;
+                        } else if (type === 'proforma') {
+                            message += \`\${idx+1}. Proforma \${item.numero || item.id} - €\${item.importo || '0'}\\n\`;
+                        } else if (type === 'pagamenti') {
+                            message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
+                        } else {
+                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''} - ATTIVO\\n\`;
+                        }
+                    });
+                } else {
+                    // Mostra solo primi 10 + conteggio
+                    message += 'Primi 10 record:\\n\\n';
+                    items.slice(0, 10).forEach((item, idx) => {
+                        if (type === 'leads' || type === 'attivi') {
+                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''}\\n\`;
+                        } else if (type === 'contratti') {
+                            message += \`\${idx+1}. \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                        } else {
+                            message += \`\${idx+1}. ID: \${item.id}\\n\`;
+                        }
+                    });
+                    message += \`\\n... e altri \${items.length - 10} record.\\n\`;
+                    message += \`\\n💡 Per visualizzare tutti i dati, vai alla dashboard specifica o usa l'API.\`;
+                }
+                
+                alert(message);
+                
+            } catch (error) {
+                console.error('Errore apertura archivio:', error);
+                alert('❌ Errore nel caricamento dell\\'archivio.\\n\\n' + error.message);
+            }
+        }
+
+        // Quick Actions per ogni riga della tabella
+        function quickAction(leadId, action) {
+            const lead = allLeads.find(l => l.id === leadId);
+            if (!lead) {
+                alert('❌ Lead non trovato');
+                return;
+            }
+            
+            switch(action) {
+                case 'view':
+                    // Mostra dettagli completi del lead
+                    const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                    const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
+                    alert(\`👤 LEAD: \${lead.nome || ''} \${lead.cognome || ''}
+                    
+📧 Email: \${lead.email || 'N/A'}
+📞 Telefono: \${lead.telefono || 'N/A'}
+🏥 Servizio: \${lead.servizio || 'eCura PRO'}
+📋 Piano: \${piano} (\${prezzo}/anno)
+📅 Creato: \${new Date(lead.created_at).toLocaleDateString('it-IT')}
+📍 Stato: \${getWorkflowStatus(lead).text}
+🔄 Step: \${getWorkflowStep(lead).text}
+                    
+📝 Note: \${lead.note || 'Nessuna nota'}\`);
+                    break;
+                    
+                case 'contract':
+                    // Pre-compila modale firma contratto
+                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${lead.nome || ''} \${lead.cognome || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                        document.getElementById('signContractId').value = lead.id;
+                        document.getElementById('signDigital').value = \`\${lead.nome || ''} \${lead.cognome || ''}\`;
+                        openSignModal();
+                    }
+                    break;
+                    
+                case 'payment':
+                    // Pre-compila modale pagamento
+                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${lead.nome || ''} \${lead.cognome || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                        // Cerca proforma associata al lead
+                        fetch(\`/api/proforma?lead_id=\${lead.id}\`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.proforma && data.proforma.length > 0) {
+                                    const proforma = data.proforma[0];
+                                    document.getElementById('paymentProformaId').value = proforma.id;
+                                    document.getElementById('paymentAmount').value = proforma.importo;
+                                    openPaymentModal();
+                                } else {
+                                    alert('⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Errore caricamento proforma:', err);
+                                alert('❌ Errore nel caricamento della proforma.\\n\\nInserisci manualmente i dati.');
+                                openPaymentModal();
+                            });
+                    }
+                    break;
+                    
+                default:
+                    alert('⚠️ Azione non riconosciuta');
+            }
         }
 
         // Modal functions
