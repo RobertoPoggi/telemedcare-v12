@@ -4428,6 +4428,106 @@ app.post('/api/leads/cleanup-family-duplicates', async (c) => {
   }
 })
 
+// 🔧 SETUP ASSISTITI E CONTRATTI
+app.post('/api/assistiti/setup-complete', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🔧 Setup assistiti e contratti...')
+
+    const assistiti_ids = [
+      'LEAD-CONTRATTO-003',
+      'LEAD-CONTRATTO-001',
+      'LEAD-CONTRATTO-002',
+      'LEAD-ASSISTITO-001',
+      'LEAD-ASSISTITO-002',
+      'LEAD-ASSISTITO-003',
+      'LEAD-EXCEL-065'
+    ]
+
+    // 1. Aggiorna status a CONVERTED
+    const updateStatus = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET status = 'CONVERTED', updated_at = ?
+      WHERE id IN (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      new Date().toISOString(),
+      ...assistiti_ids
+    ).run()
+
+    console.log(`✅ Lead convertiti: ${updateStatus.meta.changes}`)
+
+    // 2. Crea contratti (solo se non esistono già)
+    const contratti = [
+      { id: 'CONTRACT-KING-001', leadId: 'LEAD-CONTRATTO-003', codice: 'CTR-KING-2025', tipo: 'AVANZATO', prezzo_mensile: 70.00, prezzo_totale: 840.00, status: 'SIGNED', data_firma: '2025-05-08', scadenza: '2026-05-08' },
+      { id: 'CONTRACT-PIZZUTTO-001', leadId: 'LEAD-CONTRATTO-001', codice: 'CTR-PIZZUTTO-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'SIGNED', data_firma: '2025-05-12', scadenza: '2026-05-12' },
+      { id: 'CONTRACT-PENNACCHIO-001', leadId: 'LEAD-CONTRATTO-002', codice: 'CTR-PENNACCHIO-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'SIGNED', data_firma: '2025-05-12', scadenza: '2026-05-12' },
+      { id: 'CONTRACT-BALZAROTTI-001', leadId: 'LEAD-ASSISTITO-001', codice: 'CTR-BALZAROTTI-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'SIGNED', data_firma: '2025-01-01', scadenza: '2026-01-01' },
+      { id: 'CONTRACT-CAPONE-001', leadId: 'LEAD-ASSISTITO-002', codice: 'CTR-CAPONE-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'SIGNED', data_firma: '2025-01-01', scadenza: '2026-01-01' },
+      { id: 'CONTRACT-COZZI-001', leadId: 'LEAD-ASSISTITO-003', codice: 'CTR-COZZI-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'SIGNED', data_firma: '2025-01-01', scadenza: '2026-01-01' },
+      { id: 'CONTRACT-CALVI-001', leadId: 'LEAD-EXCEL-065', codice: 'CTR-CALVI-2025', tipo: 'BASE', prezzo_mensile: 40.00, prezzo_totale: 480.00, status: 'DRAFT', data_firma: null, scadenza: null }
+    ]
+
+    let contractsCreated = 0
+    for (const ctr of contratti) {
+      try {
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+            contenuto_html, prezzo_mensile, durata_mesi, prezzo_totale,
+            status, data_invio, data_scadenza, email_sent, pdf_generated,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          ctr.id,
+          ctr.leadId,
+          ctr.codice,
+          ctr.tipo,
+          `Template_Contratto_${ctr.tipo}_TeleMedCare`,
+          `<html><body>Contratto ${ctr.codice}</body></html>`,
+          ctr.prezzo_mensile,
+          12,
+          ctr.prezzo_totale,
+          ctr.status,
+          ctr.data_firma,
+          ctr.scadenza,
+          ctr.status === 'SIGNED' ? 1 : 0,
+          0,
+          ctr.data_firma || new Date().toISOString(),
+          ctr.data_firma || new Date().toISOString()
+        ).run()
+        contractsCreated++
+      } catch (err: any) {
+        // Ignora se esiste già
+        if (!err.message.includes('UNIQUE')) {
+          throw err
+        }
+      }
+    }
+
+    console.log(`✅ Contratti creati: ${contractsCreated}`)
+
+    return c.json({
+      success: true,
+      leadConverted: updateStatus.meta.changes,
+      contractsCreated,
+      message: 'Setup assistiti completato'
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore setup assistiti:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore setup assistiti'
+    }, 500)
+  }
+})
+
 // POINT 10 - API endpoint per contratti (correzione azioni Data Dashboard)
 app.get('/api/contratti', async (c) => {
   try {
