@@ -4374,6 +4374,60 @@ app.post('/api/leads/import-bulk', async (c) => {
   }
 })
 
+// 🗑️ CLEANUP DUPLICATI FAMILIARI
+app.post('/api/leads/cleanup-family-duplicates', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🗑️ Pulizia duplicati familiari...')
+
+    // 1. Elimina 3 lead duplicati (figlie)
+    const deleteResult = await c.env.DB.prepare(`
+      DELETE FROM leads WHERE id IN (
+        'LEAD-EXCEL-018',
+        'LEAD-EXCEL-031',
+        'LEAD-EXCEL-028'
+      )
+    `).run()
+
+    console.log(`✅ Eliminati ${deleteResult.meta.changes} lead duplicati`)
+
+    // 2. Aggiorna Eileen King con email di Elena
+    const updateResult = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET email = 'elenasaglia@hotmail.com',
+          note = 'Lead creato da contratto PDF | TeleAssistenza Avanzato SIDLY | Data contratto: 08.05.2025 | Assistita: Elena Saglia (figlia) | Email contatto: elenasaglia@hotmail.com | Servizio: eCura PRO | Piano: AVANZATO | Dispositivo: SiDLY CARE PRO',
+          updated_at = ?
+      WHERE id = 'LEAD-CONTRATTO-003'
+    `).bind(new Date().toISOString()).run()
+
+    console.log(`✅ Aggiornato lead Eileen King`)
+
+    // 3. Verifica totale lead
+    const countResult = await c.env.DB.prepare('SELECT COUNT(*) as total FROM leads').first()
+    
+    return c.json({
+      success: true,
+      deleted: deleteResult.meta.changes,
+      updated: updateResult.meta.changes,
+      totalLeads: countResult?.total || 0,
+      message: 'Pulizia duplicati completata con successo'
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore pulizia duplicati:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore pulizia duplicati'
+    }, 500)
+  }
+})
+
 // POINT 10 - API endpoint per contratti (correzione azioni Data Dashboard)
 app.get('/api/contratti', async (c) => {
   try {
