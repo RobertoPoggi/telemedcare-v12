@@ -746,7 +746,6 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici con tutti i lead
                 updateServicesChart(allLeads);
                 updatePlansChart(allLeads);
-                updateChannelsChart(allLeads);
 
                 // Aggiorna timestamp
                 document.getElementById('lastUpdate').textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
