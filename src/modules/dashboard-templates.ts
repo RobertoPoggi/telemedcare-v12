@@ -2083,7 +2083,6 @@ export const data_dashboard = `<!DOCTYPE html>
                     data.PRO.revenue += parseFloat(contract.importo_annuo);
                 }
             });
-            });
 
             return data;
         }
