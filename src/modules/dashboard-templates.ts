@@ -660,10 +660,10 @@ export const dashboard = `<!DOCTYPE html>
                 } else {
                     tbody.innerHTML = leads.map(lead => {
                         const servizio = lead.tipoServizio || 'N/A';
-                        const piano = '' || 'N/A';
-                        const dispositivo = getDispositivoForService(servizio);
-                        const prezzo = getPrezzoForService(servizio, piano);
-                        const statusClass = lead.contratto_inviato ? 'status-sent' : 'status-pending';
+                        const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                        const dispositivo = 'SiDLY CARE PRO';
+                        const prezzo = piano === 'AVANZATO' ? '€840/anno' : '€480/anno';
+                        const statusClass = lead.vuoleBrochure === 'Si' ? 'status-sent' : 'status-pending'; const statusText = lead.vuoleBrochure === 'Si' ? 'Inviata brochure' : 'Da contattare';
                         const statusText = lead.contratto_inviato ? 'Inviato' : 'In attesa';
                         const date = new Date(lead.created_at).toLocaleString('it-IT', {
                             day: '2-digit',
