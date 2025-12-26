@@ -13,27 +13,25 @@
   },
   
   // Environment: Development (local)
-  // D1 database temporarily disabled for deployment
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "telemedcare-leads",
-  //     "database_id": "local-database-for-development"
-  //   }
-  // ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "telemedcare-leads",
+      "database_id": "ef89ed07-bf97-47f1-8f4c-c5049b102e57"
+    }
+  ],
 
   // Environment configurations per deployment
   "env": {
     "preview": {
       "name": "telemedcare-preview",
-      // D1 database temporarily disabled
-      // "d1_databases": [
-      //   {
-      //     "binding": "DB",
-      //     "database_name": "telemedcare-leads",
-      //     "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
-      //   }
-      // ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "telemedcare-leads",
+          "database_id": "ef89ed07-bf97-47f1-8f4c-c5049b102e57"
+        }
+      ],
       "vars": {
         "ENVIRONMENT": "preview",
         "DEBUG_MODE": "true"
@@ -42,14 +40,13 @@
     
     "production": {
       "name": "telemedcare-production",
-      // D1 database temporarily disabled
-      // "d1_databases": [
-      //   {
-      //     "binding": "DB", 
-      //     "database_name": "telemedcare-leads",
-      //     "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
-      //   }
-      // ],
+      "d1_databases": [
+        {
+          "binding": "DB", 
+          "database_name": "telemedcare-leads",
+          "database_id": "ef89ed07-bf97-47f1-8f4c-c5049b102e57"
+        }
+      ],
       "vars": {
         "ENVIRONMENT": "production",
         "DEBUG_MODE": "false"
