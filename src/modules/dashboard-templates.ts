@@ -659,8 +659,8 @@ export const dashboard = `<!DOCTYPE html>
                     \`;
                 } else {
                     tbody.innerHTML = leads.map(lead => {
-                        const servizio = lead.servizio || 'N/A';
-                        const piano = lead.pacchetto || 'N/A';
+                        const servizio = lead.tipoServizio || 'N/A';
+                        const piano = '' || 'N/A';
                         const dispositivo = getDispositivoForService(servizio);
                         const prezzo = getPrezzoForService(servizio, piano);
                         const statusClass = lead.contratto_inviato ? 'status-sent' : 'status-pending';
@@ -676,11 +676,11 @@ export const dashboard = `<!DOCTYPE html>
                         return \`
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-3 text-sm">
-                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${lead.leadId || lead.id}</code>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${lead.id}</code>
                                 </td>
                                 <td class="py-3 text-sm">
                                     <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
-                                    <div class="text-xs text-gray-500">\${lead.emailRichiedente || ''}</div>
+                                    <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                                 </td>
                                 <td class="py-3 text-sm font-medium text-purple-600">\${servizio}</td>
                                 <td class="py-3 text-sm">\${piano}</td>
@@ -744,7 +744,7 @@ export const dashboard = `<!DOCTYPE html>
         function updateServicesChart(leads) {
             const serviceCounts = {};
             leads.forEach(lead => {
-                const service = lead.servizio || 'N/A';
+                const service = lead.tipoServizio || 'N/A';
                 serviceCounts[service] = (serviceCounts[service] || 0) + 1;
             });
 
@@ -777,7 +777,7 @@ export const dashboard = `<!DOCTYPE html>
         function updatePlansChart(leads) {
             const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
             leads.forEach(lead => {
-                const plan = lead.pacchetto || 'BASE';
+                const plan = '' || 'BASE';
                 if (planCounts[plan] !== undefined) {
                     planCounts[plan]++;
                 }
@@ -1127,29 +1127,29 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = leads.map(lead => {
-                const prezzo = getPrezzoForService(lead.servizio, lead.pacchetto);
+                const prezzo = getPrezzoForService(lead.tipoServizio, '');
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.leadId || lead.id || '').substring(0, 20)}</code>
+                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
                         </td>
                         <td class="py-3 text-xs text-gray-600">
-                            <div>\${lead.emailRichiedente || ''}</div>
+                            <div>\${lead.email || ''}</div>
                             <div>\${lead.telefono || ''}</div>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                \${lead.servizio || 'N/A'}
+                                \${lead.tipoServizio || 'N/A'}
                             </span>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
-                                \${lead.pacchetto || 'N/A'}
+                                \${'' || 'N/A'}
                             </span>
                         </td>
                         <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
@@ -1170,8 +1170,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             const pianoFilter = document.getElementById('filterPiano').value;
 
             const filtered = allLeads.filter(lead => {
-                const matchServizio = !servizioFilter || lead.servizio === servizioFilter;
-                const matchPiano = !pianoFilter || lead.pacchetto === pianoFilter;
+                const matchServizio = !servizioFilter || lead.tipoServizio === servizioFilter;
+                const matchPiano = !pianoFilter || '' === pianoFilter;
                 return matchServizio && matchPiano;
             });
 
@@ -1484,8 +1484,8 @@ export const data_dashboard = `<!DOCTYPE html>
             };
 
             leads.forEach(lead => {
-                const servizio = lead.servizio;
-                const piano = lead.pacchetto || 'BASE';
+                const servizio = lead.tipoServizio;
+                const piano = '' || 'BASE';
                 
                 if (data[servizio]) {
                     data[servizio].leads++;
@@ -1889,21 +1889,21 @@ export const workflow_manager = `<!DOCTYPE html>
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.leadId || lead.id || '').substring(0, 25)}</code>
+                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
-                            <div class="text-xs text-gray-500">\${lead.emailRichiedente || ''}</div>
+                            <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="flex items-center text-gray-700">
                                 <i class="fas fa-phone text-xs mr-1 text-gray-400"></i>
-                                <span class="text-xs">\${lead.telefonoRichiedente || '-'}</span>
+                                <span class="text-xs">\${lead.telefono || '-'}</span>
                             </div>
                         </td>
                         <td class="py-3 text-sm">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                \${lead.servizio || 'N/A'} \${lead.pacchetto || ''}
+                                \${lead.tipoServizio || 'N/A'} \${'' || ''}
                             </span>
                         </td>
                         <td class="py-3">
@@ -1919,7 +1919,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">
-                            <button onclick="viewWorkflowDetails('\${lead.leadId || lead.id}')" 
+                            <button onclick="viewWorkflowDetails('\${lead.id}')" 
                                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded">
                                 <i class="fas fa-eye"></i> Dettagli
                             </button>
