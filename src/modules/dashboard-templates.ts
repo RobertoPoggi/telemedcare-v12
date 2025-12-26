@@ -673,9 +673,14 @@ export const dashboard = `<!DOCTYPE html>
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
+                // Carica CONTRATTI reali per conteggio accurato
+                const contractsResponse = await fetch('/api/contratti?limit=100');
+                const contractsData = await contractsResponse.json();
+                const contracts = contractsData.contratti || [];
+                
                 // Calcola statistiche reali
                 const totalLeads = allLeads.length;
-                const contratti = allLeads.filter(l => l.status === 'CONTRACT_SIGNED' || l.status === 'CONVERTED').length;
+                const contratti = contracts.length; // Conta contratti reali, non lead convertiti
                 const topService = 'eCura PRO';
                 
                 // Aggiorna KPI
@@ -748,11 +753,17 @@ export const dashboard = `<!DOCTYPE html>
 
             } catch (error) {
                 console.error('Errore caricamento dashboard:', error);
+                // Mostra dettagli errore per debugging
+                const errorMsg = error.message || 'Errore sconosciuto';
                 document.getElementById('leadsTable').innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
-                            <p>Errore nel caricamento dei dati</p>
+                            <p class="font-bold">Errore nel caricamento dei dati</p>
+                            <p class="text-xs mt-2">\${errorMsg}</p>
+                            <button onclick="loadDashboardData()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                <i class="fas fa-redo mr-2"></i>Riprova
+                            </button>
                         </td>
                     </tr>
                 \`;
@@ -1111,7 +1122,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contatti</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo Anno</th>
@@ -1283,7 +1294,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <div class="font-medium">\${lead.nome || ''} \${lead.cognome || ''}</div>
                             <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                         </td>
-                        <td class="py-3 text-xs text-gray-600">\${lead.telefono || '-'}</td>
+                        <td class="py-3 text-sm">
+                            <div class="text-xs text-gray-600">
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || '-'}
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${lead.telefono || '-'}
+                            </div>
+                        </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
                                 eCura PRO
@@ -1991,61 +2009,81 @@ export const data_dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        let allContracts = [];
         loadDataDashboard();
 
         async function loadDataDashboard() {
             try {
                 // Carica lead per calcolare statistiche reali
                 const leadsResponse = await fetch('/api/leads?limit=200');
+                if (!leadsResponse.ok) throw new Error('Errore caricamento leads');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
                 
-                // Calcola statistiche REALI secondo DATI_CORRETTI_FINALI.md
-                const totalLeads = leads.length; // Dovrebbe essere 126
-                const totalContracts = 8; // 7 firmati + 1 inviato (8 contratti PDF reali)
-                const totalRevenue = 4200; // Anno 1: 6×480 + 2×840 = 2880 + 1680 = 4560 (usando solo firmati = 3720, ma scriviamo 4200 con le proforma)
-                const conversionRate = ((7 / totalLeads) * 100).toFixed(2) + '%'; // 7 assistiti/126 = 5.56%
-                const averageOrderValue = Math.round(totalRevenue / totalContracts); // 4200/8 = 525
+                // Carica contratti REALI
+                const contractsResponse = await fetch('/api/contratti?limit=100');
+                if (!contractsResponse.ok) throw new Error('Errore caricamento contratti');
+                const contractsData = await contractsResponse.json();
+                const contracts = contractsData.contratti || [];
+                allContracts = contracts; // Salva per uso nelle funzioni CRUD
+                
+                // Calcola statistiche REALI dai contratti
+                const totalLeads = leads.length;
+                const totalContracts = contracts.length;
+                
+                // Calcola revenue dai contratti reali
+                let totalRevenue = 0;
+                contracts.forEach(c => {
+                    if (c.importo_annuo) totalRevenue += parseFloat(c.importo_annuo);
+                });
+                
+                // Conta contratti firmati
+                const signedContracts = contracts.filter(c => c.status === 'SIGNED').length;
+                const conversionRate = totalLeads > 0 ? ((signedContracts / totalLeads) * 100).toFixed(2) + '%' : '0%';
+                const averageOrderValue = totalContracts > 0 ? Math.round(totalRevenue / totalContracts) : 0;
 
                 // Aggiorna KPI con dati reali
                 document.getElementById('kpiLeads').textContent = totalLeads;
                 document.getElementById('kpiContracts').textContent = totalContracts;
-                document.getElementById('kpiRevenue').textContent = '\u20AC' + totalRevenue;
+                document.getElementById('kpiRevenue').textContent = '\u20AC' + totalRevenue.toFixed(0);
                 document.getElementById('kpiConversion').textContent = conversionRate;
                 document.getElementById('kpiAov').textContent = '\u20AC' + averageOrderValue;
 
                 // Analizza per servizio (TUTTI sono eCura PRO)
-                const serviceData = analyzeByService(leads);
+                const serviceData = analyzeByService(leads, contracts);
                 updateServiceMetrics(serviceData);
 
-                // Carica contratti
-                const contractsResponse = await fetch('/api/contratti?limit=20');
-                const contractsData = await contractsResponse.json();
-                const contracts = contractsData.contratti || [];
-                allContracts = contracts; // Salva per uso nelle funzioni CRUD
+                // Renderizza tabella contratti
                 renderContractsTable(contracts, leads);
 
             } catch (error) {
                 console.error('Errore caricamento data dashboard:', error);
+                alert('⚠️ Errore caricamento Data Dashboard:\\n\\n' + error.message + '\\n\\nRicarica la pagina.');
             }
         }
 
-        function analyzeByService(leads) {
+        function analyzeByService(leads, contracts) {
             // Tutti i 126 lead sono eCura PRO
             const data = {
                 FAMILY: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 },
-                PRO: { leads: leads.length, base: 0, avanzato: 0, contracts: 4, revenue: 1920 },
+                PRO: { leads: leads.length, base: 0, avanzato: 0, contracts: contracts.length, revenue: 0 },
                 PREMIUM: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 }
             };
 
-            // Conta BASE vs AVANZATO per eCura PRO
-            leads.forEach(lead => {
-                const isAvanzato = lead.note && lead.note.includes('Piano: AVANZATO');
+            // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali
+            contracts.forEach(contract => {
+                const isAvanzato = contract.piano === 'AVANZATO' || (contract.note && contract.note.includes('AVANZATO'));
                 if (isAvanzato) {
                     data.PRO.avanzato++;
                 } else {
                     data.PRO.base++;
                 }
+                
+                // Somma revenue
+                if (contract.importo_annuo) {
+                    data.PRO.revenue += parseFloat(contract.importo_annuo);
+                }
+            });
             });
 
             return data;
