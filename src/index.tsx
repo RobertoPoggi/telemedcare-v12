@@ -4528,6 +4528,62 @@ app.post('/api/assistiti/setup-complete', async (c) => {
   }
 })
 
+// 🗑️ RIMUOVI 3 ASSISTITI DIRETTI PER AVERE 126 LEAD
+app.post('/api/leads/remove-assistiti-diretti', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🗑️ Rimozione 3 assistiti diretti...')
+
+    // 1. Elimina contratti
+    const deleteContracts = await c.env.DB.prepare(`
+      DELETE FROM contracts WHERE id IN (
+        'CONTRACT-BALZAROTTI-001',
+        'CONTRACT-CAPONE-001',
+        'CONTRACT-COZZI-001'
+      )
+    `).run()
+
+    console.log(`✅ Contratti eliminati: ${deleteContracts.meta.changes}`)
+
+    // 2. Elimina lead
+    const deleteLeads = await c.env.DB.prepare(`
+      DELETE FROM leads WHERE id IN (
+        'LEAD-ASSISTITO-001',
+        'LEAD-ASSISTITO-002',
+        'LEAD-ASSISTITO-003'
+      )
+    `).run()
+
+    console.log(`✅ Lead eliminati: ${deleteLeads.meta.changes}`)
+
+    // 3. Verifica totali
+    const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as total FROM leads').first()
+    const totalContracts = await c.env.DB.prepare('SELECT COUNT(*) as total FROM contracts').first()
+
+    return c.json({
+      success: true,
+      contractsDeleted: deleteContracts.meta.changes,
+      leadsDeleted: deleteLeads.meta.changes,
+      totalLeads: totalLeads?.total || 0,
+      totalContracts: totalContracts?.total || 0,
+      message: 'Assistiti diretti rimossi - ora abbiamo 126 lead'
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore rimozione assistiti:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore rimozione assistiti'
+    }, 500)
+  }
+})
+
 // POINT 10 - API endpoint per contratti (correzione azioni Data Dashboard)
 app.get('/api/contratti', async (c) => {
   try {
