@@ -4279,6 +4279,101 @@ app.get('/api/leads', async (c) => {
   }
 })
 
+// 🚀 BULK IMPORT ENDPOINT - Import 126 lead da Excel
+app.post('/api/leads/import-bulk', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    const body = await c.req.json()
+    const { leads } = body
+
+    if (!leads || !Array.isArray(leads)) {
+      return c.json({
+        success: false,
+        error: 'Payload invalido: array "leads" richiesto'
+      }, 400)
+    }
+
+    console.log(`🚀 Import bulk: ${leads.length} lead...`)
+
+    let importedCount = 0
+    let errorCount = 0
+    const errors: any[] = []
+
+    // Import in batch da 20
+    for (let i = 0; i < leads.length; i += 20) {
+      const batch = leads.slice(i, i + 20)
+      
+      for (const lead of batch) {
+        try {
+          const {
+            id,
+            nomeRichiedente,
+            cognomeRichiedente,
+            email,
+            telefono,
+            fonte,
+            tipoServizio,
+            status,
+            note,
+            created_at
+          } = lead
+
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              fonte, tipoServizio, status, note,
+              created_at, updated_at, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            id,
+            nomeRichiedente || '',
+            cognomeRichiedente || '',
+            email || '',
+            telefono || '',
+            fonte || 'EXCEL_IMPORT',
+            tipoServizio || 'eCura PRO',
+            status || 'NEW',
+            note || '',
+            created_at || new Date().toISOString(),
+            created_at || new Date().toISOString(),
+            created_at || new Date().toISOString()
+          ).run()
+
+          importedCount++
+        } catch (err: any) {
+          errorCount++
+          errors.push({
+            lead: lead.id,
+            error: err.message
+          })
+        }
+      }
+    }
+
+    console.log(`✅ Import completato: ${importedCount} successi, ${errorCount} errori`)
+
+    return c.json({
+      success: true,
+      imported: importedCount,
+      errors: errorCount,
+      errorDetails: errors
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore import bulk:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore import bulk'
+    }, 500)
+  }
+})
+
 // POINT 10 - API endpoint per contratti (correzione azioni Data Dashboard)
 app.get('/api/contratti', async (c) => {
   try {
