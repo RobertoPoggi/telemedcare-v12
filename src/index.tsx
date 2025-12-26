@@ -7273,7 +7273,13 @@ function sostituisciPlaceholder(template: string, data: any): string {
 }
 
 // HOMEPAGE - Dashboard Principale con accesso a tutte le sezioni
+// FIX: Redirect permanente per bypassare cache Cloudflare
 app.get('/', (c) => {
+  return c.redirect('/home', 302)
+})
+
+// Homepage reale servita su /home
+app.get('/home', (c) => {
   // No-cache header per evitare problemi di cache
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   c.header('Pragma', 'no-cache')
