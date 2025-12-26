@@ -7274,6 +7274,10 @@ function sostituisciPlaceholder(template: string, data: any): string {
 
 // HOMEPAGE - Dashboard Principale con accesso a tutte le sezioni
 app.get('/', (c) => {
+  // No-cache header per evitare problemi di cache
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  c.header('Pragma', 'no-cache')
+  c.header('Expires', '0')
   return c.html(home)
 })
 
