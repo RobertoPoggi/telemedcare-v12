@@ -2,5 +2,14 @@ name = "telemedcare-v12"
 main = "dist/_worker.js"
 compatibility_date = "2025-10-06"
 
+# Environment Variables (non-sensitive)
+[vars]
+EMAIL_FROM = "info@telemedcare.it"
+EMAIL_TO_INFO = "info@telemedcare.it"
+
 [env.production]
 name = "telemedcare-v12"
+
+[env.production.vars]
+EMAIL_FROM = "info@telemedcare.it"
+EMAIL_TO_INFO = "info@telemedcare.it"
