@@ -5043,6 +5043,206 @@ app.post('/api/payments', async (c) => {
   }
 })
 
+// ========================================
+// CRUD COMPLETO - PROFORMA
+// ========================================
+
+// GET /api/proforma - LIST tutte le proforma
+app.get('/api/proforma', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({
+        success: true,
+        proforma: []
+      })
+    }
+    
+    const proforma = await c.env.DB.prepare(`
+      SELECT 
+        p.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.email as cliente_email
+      FROM proforma p
+      LEFT JOIN contracts c ON p.contract_id = c.id
+      LEFT JOIN leads l ON c.leadId = l.id
+      ORDER BY p.created_at DESC
+      LIMIT 100
+    `).all()
+    
+    return c.json({
+      success: true,
+      count: proforma.results.length,
+      proforma: proforma.results.map(p => ({
+        ...p,
+        cliente_nome: `${p.nomeRichiedente} ${p.cognomeRichiedente}`
+      }))
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero proforma:', error)
+    return c.json({ success: false, error: 'Errore recupero proforma' }, 500)
+  }
+})
+
+// GET /api/proforma/:id - READ singola proforma
+app.get('/api/proforma/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ 
+        success: true, 
+        proforma: {
+          id: id,
+          numero_proforma: 'PRO-MOCK-' + id,
+          importo: 480,
+          status: 'SENT'
+        }
+      })
+    }
+    
+    const proforma = await c.env.DB.prepare(`
+      SELECT 
+        p.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.email as cliente_email,
+        l.telefono as cliente_telefono
+      FROM proforma p
+      LEFT JOIN contracts c ON p.contract_id = c.id
+      LEFT JOIN leads l ON c.leadId = l.id
+      WHERE p.id = ?
+    `).bind(id).first()
+    
+    if (!proforma) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    return c.json({ success: true, proforma })
+  } catch (error) {
+    console.error('❌ Errore recupero proforma:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero proforma',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// PUT /api/proforma/:id - UPDATE proforma
+app.put('/api/proforma/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    const data = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Proforma aggiornata (mock)' })
+    }
+    
+    // Verifica che la proforma esista
+    const existing = await c.env.DB.prepare('SELECT * FROM proforma WHERE id = ?').bind(id).first()
+    
+    if (!existing) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    // Build dynamic UPDATE query
+    const updates: string[] = []
+    const binds: any[] = []
+    
+    const fieldMap: Record<string, string> = {
+      'status': 'status',
+      'importo': 'importo',
+      'note': 'note',
+      'data_invio': 'data_invio',
+      'data_scadenza': 'data_scadenza'
+    }
+    
+    for (const [key, dbColumn] of Object.entries(fieldMap)) {
+      if (data[key] !== undefined) {
+        updates.push(`${dbColumn} = ?`)
+        binds.push(data[key])
+      }
+    }
+    
+    if (updates.length === 0) {
+      return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+    }
+    
+    // Add updated_at
+    updates.push('updated_at = ?')
+    binds.push(new Date().toISOString())
+    binds.push(id)
+    
+    const query = `UPDATE proforma SET ${updates.join(', ')} WHERE id = ?`
+    await c.env.DB.prepare(query).bind(...binds).run()
+    
+    console.log('✅ Proforma aggiornata:', id)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Proforma aggiornata con successo',
+      id: id
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento proforma:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore aggiornamento proforma',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// DELETE /api/proforma/:id - DELETE proforma
+app.delete('/api/proforma/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Proforma eliminata (mock)' })
+    }
+    
+    // Verifica che la proforma esista
+    const proforma = await c.env.DB.prepare('SELECT * FROM proforma WHERE id = ?').bind(id).first() as any
+    
+    if (!proforma) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    // Verifica se è pagata
+    if (proforma.status === 'PAID') {
+      return c.json({ 
+        success: false, 
+        error: 'Impossibile eliminare una proforma pagata',
+        isPaid: true
+      }, 400)
+    }
+    
+    // Elimina la proforma
+    await c.env.DB.prepare('DELETE FROM proforma WHERE id = ?').bind(id).run()
+    
+    // Elimina eventuali pagamenti associati
+    await c.env.DB.prepare('DELETE FROM payments WHERE proforma_id = ?').bind(id).run()
+    
+    console.log('✅ Proforma eliminata:', id)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Proforma eliminata con successo',
+      id: id
+    })
+  } catch (error) {
+    console.error('❌ Errore eliminazione proforma:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore eliminazione proforma',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/configurations - Salva configurazione dispositivo
 app.post('/api/configurations', async (c) => {
   try {
@@ -5446,6 +5646,168 @@ app.get('/api/contratti/:id/download', async (c) => {
   }
 })
 
+// ========================================
+// CRUD COMPLETO - CONTRATTI
+// ========================================
+
+// GET /api/contratti/:id - READ singolo contratto
+app.get('/api/contratti/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ 
+        success: true, 
+        contratto: {
+          id: id,
+          codice_contratto: 'TMC-MOCK-' + id,
+          tipo_contratto: 'BASE',
+          status: 'SENT'
+        }
+      })
+    }
+    
+    const contratto = await c.env.DB.prepare(`
+      SELECT 
+        c.*,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.email as cliente_email,
+        l.telefono as cliente_telefono
+      FROM contracts c
+      LEFT JOIN leads l ON c.leadId = l.id
+      WHERE c.id = ?
+    `).bind(id).first()
+    
+    if (!contratto) {
+      return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    }
+    
+    return c.json({ success: true, contratto })
+  } catch (error) {
+    console.error('❌ Errore recupero contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// PUT /api/contratti/:id - UPDATE contratto
+app.put('/api/contratti/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    const data = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Contratto aggiornato (mock)' })
+    }
+    
+    // Verifica che il contratto esista
+    const existing = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first()
+    
+    if (!existing) {
+      return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    }
+    
+    // Build dynamic UPDATE query
+    const updates: string[] = []
+    const binds: any[] = []
+    
+    const fieldMap: Record<string, string> = {
+      'status': 'status',
+      'tipo_contratto': 'tipo_contratto',
+      'prezzo_totale': 'prezzo_totale',
+      'note': 'note',
+      'data_invio': 'data_invio'
+    }
+    
+    for (const [key, dbColumn] of Object.entries(fieldMap)) {
+      if (data[key] !== undefined) {
+        updates.push(`${dbColumn} = ?`)
+        binds.push(data[key])
+      }
+    }
+    
+    if (updates.length === 0) {
+      return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+    }
+    
+    // Add updated_at
+    updates.push('updated_at = ?')
+    binds.push(new Date().toISOString())
+    binds.push(id)
+    
+    const query = `UPDATE contracts SET ${updates.join(', ')} WHERE id = ?`
+    await c.env.DB.prepare(query).bind(...binds).run()
+    
+    console.log('✅ Contratto aggiornato:', id)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Contratto aggiornato con successo',
+      id: id
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore aggiornamento contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// DELETE /api/contratti/:id - DELETE contratto
+app.delete('/api/contratti/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Contratto eliminato (mock)' })
+    }
+    
+    // Verifica che il contratto esista
+    const contratto = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first() as any
+    
+    if (!contratto) {
+      return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    }
+    
+    // Verifica se è firmato
+    if (contratto.status === 'SIGNED') {
+      return c.json({ 
+        success: false, 
+        error: 'Impossibile eliminare un contratto firmato',
+        isSigned: true
+      }, 400)
+    }
+    
+    // Elimina il contratto
+    await c.env.DB.prepare('DELETE FROM contracts WHERE id = ?').bind(id).run()
+    
+    // Elimina eventuali firme associate
+    await c.env.DB.prepare('DELETE FROM signatures WHERE contract_id = ?').bind(id).run()
+    
+    console.log('✅ Contratto eliminato:', id)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Contratto eliminato con successo',
+      id: id
+    })
+  } catch (error) {
+    console.error('❌ Errore eliminazione contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore eliminazione contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POINT 10 - API per gestione singoli lead (correzione azioni Data Dashboard)
 app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
@@ -5579,6 +5941,130 @@ app.post('/api/leads/:id/convert', async (c) => {
   } catch (error) {
     console.error('❌ Errore conversione lead:', error)
     return c.json({ error: 'Errore conversione lead' }, 500)
+  }
+})
+
+// ========================================
+// CRUD COMPLETO - LEADS
+// ========================================
+
+// POST /api/leads - CREATE nuovo lead
+app.post('/api/leads', async (c) => {
+  try {
+    const data = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Lead creato (mock)', id: 'LEAD-MOCK-' + Date.now() })
+    }
+    
+    // Validazione campi obbligatori
+    if (!data.nomeRichiedente || !data.cognomeRichiedente || !data.email) {
+      return c.json({ 
+        success: false, 
+        error: 'Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email' 
+      }, 400)
+    }
+    
+    // Genera ID univoco
+    const leadId = `LEAD-MANUAL-${Date.now()}`
+    const timestamp = new Date().toISOString()
+    
+    // Inserisci nuovo lead
+    await c.env.DB.prepare(`
+      INSERT INTO leads (
+        id, nomeRichiedente, cognomeRichiedente, email, telefono,
+        nomeAssistito, cognomeAssistito, tipoServizio, 
+        vuoleBrochure, vuoleContratto, vuoleManuale,
+        note, canale, fonte, status, created_at, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      leadId,
+      data.nomeRichiedente,
+      data.cognomeRichiedente,
+      data.email,
+      data.telefono || '',
+      data.nomeAssistito || data.nomeRichiedente,
+      data.cognomeAssistito || data.cognomeRichiedente,
+      data.tipoServizio || 'eCura PRO',
+      data.vuoleBrochure || 'No',
+      data.vuoleContratto || 'No',
+      data.vuoleManuale || 'No',
+      data.note || 'Lead inserito manualmente via dashboard',
+      data.canale || 'Dashboard Manuale',
+      data.fonte || 'MANUAL_ENTRY',
+      'NEW',
+      timestamp,
+      timestamp
+    ).run()
+    
+    console.log('✅ Lead creato:', leadId)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Lead creato con successo',
+      id: leadId,
+      lead: {
+        id: leadId,
+        nomeRichiedente: data.nomeRichiedente,
+        cognomeRichiedente: data.cognomeRichiedente,
+        email: data.email
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore creazione lead:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore creazione lead', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, 500)
+  }
+})
+
+// DELETE /api/leads/:id - DELETE lead
+app.delete('/api/leads/:id', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: true, message: 'Lead eliminato (mock)' })
+    }
+    
+    // Verifica che il lead esista
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Verifica se il lead ha contratti associati
+    const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+      .bind(id).first() as any
+    
+    if (contratti && contratti.count > 0) {
+      return c.json({ 
+        success: false, 
+        error: 'Impossibile eliminare: lead ha contratti associati',
+        hasContracts: true
+      }, 400)
+    }
+    
+    // Elimina il lead
+    await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(id).run()
+    
+    console.log('✅ Lead eliminato:', id)
+    
+    return c.json({ 
+      success: true, 
+      message: 'Lead eliminato con successo',
+      id: id
+    })
+  } catch (error) {
+    console.error('❌ Errore eliminazione lead:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore eliminazione lead', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, 500)
   }
 })
 
