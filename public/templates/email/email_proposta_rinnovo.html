@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposta Rinnovo Contratto - TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 650px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .header {
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 35px 30px;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #e8f4fd 0%, #d4e9f9 100%);
+            border-left: 4px solid #4a90e2;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .highlight-box h3 {
+            color: #2c5282;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+        .expiry-warning {
+            background-color: #fff4e6;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .expiry-date {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d97706;
+            margin: 10px 0;
+        }
+        .price-box {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .price-amount {
+            font-size: 42px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .price-detail {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+        }
+        .comparison-table th {
+            background-color: #f1f5f9;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .comparison-table .old-price {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+        .btn-primary {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .btn-secondary {
+            display: inline-block;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+            text-decoration: none;
+            padding: 14px 35px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 15px;
+            margin: 10px 5px;
+        }
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .benefits-list li {
+            padding: 12px 0;
+            padding-left: 35px;
+            position: relative;
+        }
+        .benefits-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .footer {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer-contact {
+            margin: 15px 0;
+        }
+        .footer-contact a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .urgency-badge {
+            display: inline-block;
+            background-color: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Proposta di Rinnovo Contratto</h1>
+            <p>Il tuo servizio TeleMedCare sta per scadere</p>
+        </div>
+        
+        <div class="content">
+            <p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+            
+            <p>Siamo lieti di informarLa che il Suo contratto per il servizio <strong>{{PIANO_SERVIZIO}}</strong> si sta avvicinando alla scadenza.</p>
+            
+            <div class="expiry-warning">
+                <p style="margin: 0; font-size: 16px; color: #92400e;">⏰ <strong>Il tuo contratto scade il:</strong></p>
+                <div class="expiry-date">{{DATA_SCADENZA_CONTRATTO}}</div>
+                <span class="urgency-badge">⚠️ RINNOVA ENTRO {{GIORNI_RIMANENTI}} GIORNI</span>
+            </div>
+            
+            <div class="highlight-box">
+                <h3>📋 Riepilogo Servizio Attuale</h3>
+                <table class="comparison-table">
+                    <tr>
+                        <th>Dettaglio</th>
+                        <th>Info</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Piano Attivo:</strong></td>
+                        <td>{{PIANO_SERVIZIO}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dispositivo:</strong></td>
+                        <td>{{DISPOSITIVO}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Attivazione:</strong></td>
+                        <td>{{DATA_INIZIO_CONTRATTO}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Scadenza:</strong></td>
+                        <td><strong style="color: #d97706;">{{DATA_SCADENZA_CONTRATTO}}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="price-box">
+                <h3 style="margin: 0 0 10px 0;">💰 Offerta Rinnovo Annuale</h3>
+                <div class="price-amount">€ {{PREZZO_RINNOVO}}</div>
+                <div class="price-detail">
+                    <span class="old-price">€ {{PREZZO_PRIMO_ANNO}}</span>
+                    &nbsp;&nbsp;Risparmio: <strong>€ {{RISPARMIO_ANNUO}}</strong>
+                </div>
+                <p style="margin: 15px 0 0 0; font-size: 14px;">Tariffa scontata per clienti fedeli - Pagamento annuale</p>
+            </div>
+            
+            <h3 style="color: #2c5282;">✨ Vantaggi del Rinnovo</h3>
+            <ul class="benefits-list">
+                <li><strong>Continuità del Servizio</strong> - Nessuna interruzione della tua sicurezza</li>
+                <li><strong>Prezzo Scontato</strong> - Tariffa ridotta per clienti fedeli (risparmi {{PERCENTUALE_RISPARMIO}}%)</li>
+                <li><strong>Assistenza Prioritaria</strong> - Supporto tecnico H24 con priorità</li>
+                <li><strong>Aggiornamenti Gratuiti</strong> - Nuove funzionalità del dispositivo incluse</li>
+                <li><strong>Centrale Operativa H24</strong> - Monitoraggio continuo 365 giorni/anno</li>
+                <li><strong>Garanzia Estesa</strong> - Dispositivo sempre protetto e funzionante</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="{{URL_RINNOVO}}" class="btn-primary">
+                    ✅ Rinnova Ora il Tuo Contratto
+                </a>
+                <br>
+                <a href="{{URL_CONTATTI}}" class="btn-secondary">
+                    💬 Ho Domande
+                </a>
+                <a href="{{URL_MODIFICA_PIANO}}" class="btn-secondary">
+                    🔄 Cambia Piano
+                </a>
+            </div>
+            
+            <div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <p style="margin: 0; font-size: 14px; color: #92400e;">
+                    <strong>⏰ ATTENZIONE:</strong> Se non effettuerà il rinnovo entro la data di scadenza, 
+                    il servizio verrà automaticamente sospeso e il dispositivo smetterà di funzionare.
+                    Per riattivarlo sarà necessario un nuovo contratto con costi di riattivazione aggiuntivi.
+                </p>
+            </div>
+            
+            <h3 style="color: #2c5282;">❓ Hai Dubbi?</h3>
+            <p>Il nostro team è a tua completa disposizione per qualsiasi chiarimento:</p>
+            <ul>
+                <li>📧 Email: <a href="mailto:{{EMAIL_SUPPORTO}}">{{EMAIL_SUPPORTO}}</a></li>
+                <li>📞 Telefono: <strong>{{TELEFONO_SUPPORTO}}</strong></li>
+                <li>🕐 Orari: Lunedì-Venerdì 9:00-18:00</li>
+            </ul>
+            
+            <p style="margin-top: 30px;">Cordiali saluti,<br>
+            <strong>Il Team TeleMedCare</strong><br>
+            <em>La tua salute, sempre connessa</em></p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>TeleMedCare V11.0</strong></p>
+            <div class="footer-contact">
+                <p>Medica GB S.r.l.<br>
+                Via della Salute, 123 - 20100 Milano (MI)<br>
+                Tel: +39 02 1234567 | Email: <a href="mailto:info@medicagb.it">info@medicagb.it</a><br>
+                P.IVA: 12345678901 | Certificazione ISO 27001</p>
+            </div>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 15px;">
+                Stai ricevendo questa email perché il tuo contratto sta per scadere.<br>
+                Se non desideri ricevere promemoria di rinnovo, <a href="{{URL_DISISCR IVI}}" style="color: #60a5fa;">clicca qui</a>.
+            </p>
+            <p style="font-size: 12px; margin-top: 15px;">© 2025 Medica GB S.r.l. - Tutti i diritti riservati</p>
+        </div>
+    </div>
+</body>
+</html>

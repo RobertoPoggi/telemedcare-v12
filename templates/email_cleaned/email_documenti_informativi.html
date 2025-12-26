@@ -2,7 +2,7 @@
 <html lang="it" data-theme="light" style=""><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Documenti Informativi - TeleMedCare</title>
+    <title>Email Documenti Informativi - eCura</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <style>
@@ -88,7 +88,7 @@
 
     <div class="email-container">
       <div class="email-header">
-        <h3 style="margin: 0; font-size: 24px">TeleMedCare</h3>
+        <h3 style="margin: 0; font-size: 24px">eCura</h3>
         <p style="margin: 10px 0 0 0">La tecnologia che Le salva salute e vita</p>
         <div style="font-size: 14px; opacity: 0.9">
           <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale
@@ -96,25 +96,24 @@
       </div>
 
       <div class="email-content">
-        <h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
+        <h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},</h3>
 
         <p>
-          Grazie per l'interesse mostrato verso i nostri servizi <strong>TeleMedCare {{PACCHETTO}}</strong>. Come
+          Grazie per l'interesse mostrato verso i nostri servizi <strong>eCura {{TIPO_SERVIZIO}}</strong>. Come
           richiesto, abbiamo preparato per Lei la documentazione informativa completa.
         </p>
 
         <p>
-          Il nostro servizio � pensato per <strong>{{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</strong> e rappresenta una
-          soluzione innovativa per la gestione della salute a distanza.
+          Il nostro servizio rappresenta una soluzione innovativa per la gestione della salute a distanza, 
+          con monitoraggio continuo e assistenza medica qualificata.
         </p>
 
         <div class="info-box">
           <h4 style="color: #3b82f6; margin-top: 0">Riepilogo della Sua richiesta</h4>
           <ul>
-            <li><strong>Codice pratica:</strong> {{LEAD_ID}}</li>
             <li><strong>Data richiesta:</strong> {{DATA_RICHIESTA}}</li>
-            <li><strong>Pacchetto:</strong> {{PACCHETTO}}</li>
-            <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
+            <li><strong>Pacchetto:</strong> eCura {{TIPO_SERVIZIO}}</li>
+            <li><strong>Prezzo:</strong> {{PREZZO_PIANO}}</li>
           </ul>
         </div>
 
@@ -122,51 +121,56 @@
 
         <div class="doc-grid">
           <div class="doc-card">
-            <h5>Brochure TeleMedCare</h5>
-            <ul>
+            <h5>📄 Brochure eCura</h5>
+            <p style="margin: 10px 0; color: #666; font-size: 14px;">
+              Documento informativo completo allegato a questa email
+            </p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
               <li>Panoramica completa dei servizi</li>
               <li>Vantaggi della telemedicina</li>
               <li>Confronto tra i pacchetti</li>
+              <li>Tecnologia e sicurezza</li>
             </ul>
           </div>
 
-          {{#if MANUALE_RICHIESTO}}
           <div class="doc-card">
-            <h5>Manuale Utente</h5>
-            <ul>
-              <li>Guida all'installazione</li>
-              <li>Utilizzo del dispositivo</li>
-              <li>Contatti tecnici</li>
+            <h5>📞 Contatti e Supporto</h5>
+            <p style="margin: 10px 0; color: #666; font-size: 14px;">
+              Il nostro team è a Sua disposizione
+            </p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li><strong>Email:</strong> info@ecura.it</li>
+              <li><strong>Tel. Commerciale:</strong> 335 7301206</li>
+              <li><strong>Tel. Tecnico:</strong> 331 6432390</li>
             </ul>
           </div>
-          {{/if}}
         </div>
 
         <div class="highlight-box">
-          <h4 style="color: #16a34a; margin-top: 0">Pacchetto {{PACCHETTO}} Selezionato</h4>
+          <h4 style="color: #16a34a; margin-top: 0">Pacchetto {{TIPO_SERVIZIO}} Selezionato</h4>
           <p><strong>Investimento:</strong> {{PREZZO_PIANO}}</p>
           <p>
-            Il pacchetto {{PACCHETTO}} � perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto medico
-            completo e personalizzato.
+            Il pacchetto {{TIPO_SERVIZIO}} offre un supporto medico completo e personalizzato, 
+            con tecnologia all'avanguardia per la vostra tranquillità.
           </p>
         </div>
 
         <div class="contact-box">
           <h4 style="color: #475569; margin-top: 0"> Contatti</h4>
-          <p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dab3b4bcb59ab7bfbeb3b9bbbdb8f4b3ae">[email&#160;protected]</a></p>
+          <p><strong>E-MAIL:</strong> <a href="mailto:info@ecura.it">info@ecura.it</a></p>
           <p><strong>Telefono commerciale:</strong> 335 7301206</p>
           <p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
         </div>
 
         <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillit�.</p>
 
-        <p><strong>Cordiali saluti,</strong><br>Il Team TeleMedCare</p>
+        <p><strong>Cordiali saluti,</strong><br>Il Team eCura</p>
       </div>
 
       <div class="footer-standard">
         <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
         <p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
-        <p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b3daddd5dcf3ded6d7dad0d2d4d19ddac7">[email&#160;protected]</a> | www.medicagb.it</p>
+        <p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a> | www.medicagb.it</p>
       </div>
     </div>
   

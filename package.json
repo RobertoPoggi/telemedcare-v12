@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev dist --d1=telemedcare-leads --local --ip 0.0.0.0 --port 3000",
-    "dev:restart": "./scripts/dev-restart.sh",
     "dev:vite": "vite",
     "build": "vite build",
     "preview": "wrangler pages dev dist",
@@ -35,21 +34,19 @@
     "db:console:test": "wrangler d1 execute telemedcare_test_01",
     "db:console:staging": "wrangler d1 execute telemedcare_staging",
     "db:console:prod": "wrangler d1 execute telemedcare_database",
-    "db:backup": "./scripts/db-backup.sh",
-    "db:restore": "./scripts/db-restore.sh",
     "docs:init": "curl -X POST http://localhost:3000/api/docs/initialize",
     "docs:generate": "curl -X POST http://localhost:3000/api/docs/generate"
   },
   "dependencies": {
-    "hono": "^4.9.9",
-    "jspdf": "^3.0.3",
-    "pdfkit": "^0.17.2"
+    "adm-zip": "^0.5.16",
+    "docx": "^9.5.1",
+    "hono": "^4.9.9"
   },
   "devDependencies": {
+    "@cloudflare/puppeteer": "^1.0.4",
     "@hono/vite-build": "^1.2.0",
     "@hono/vite-dev-server": "^0.18.2",
-    "jsonwebtoken": "^9.0.2",
     "vite": "^6.3.5",
-    "wrangler": "^4.46.0"
+    "wrangler": "^4.4.0"
   }
 }

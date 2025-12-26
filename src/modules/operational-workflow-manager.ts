@@ -42,6 +42,7 @@ export interface OperationalWorkflowConfig {
   
   // Richieste
   tipoServizio: 'BASE' | 'AVANZATO'
+  servizio?: 'FAMILY' | 'PRO' | 'PREMIUM' // Tipo servizio eCura
   vuoleBrochure?: boolean
   vuoleManuale?: boolean
   vuoleContratto?: boolean
@@ -84,7 +85,7 @@ export interface WorkflowState {
 export type WorkflowPhase =
   | 'LEAD_CREATED'
   | 'INFO_NOTIFIED'
-  | 'DOCUMENTI_INVIATI'
+  | 'DOCUMENTS_SENT'
   | 'CONTRACT_GENERATED'
   | 'CONTRACT_SENT'
   | 'CONTRACT_SIGNED'
@@ -199,7 +200,7 @@ export class OperationalWorkflowManager {
         }
         return state
       
-      case 'DOCUMENTI_INVIATI':
+      case 'DOCUMENTS_SENT':
         if (config.vuoleContratto) {
           return await this.executeGenerateContract(state, config)
         }
@@ -295,11 +296,11 @@ export class OperationalWorkflowManager {
 
       await this.logEmail(state.leadId, null, null, 'email_documenti_informativi', config.email, 'SENT')
 
-      state.currentPhase = 'DOCUMENTI_INVIATI'
-      state.completedPhases.push('DOCUMENTI_INVIATI')
+      state.currentPhase = 'DOCUMENTS_SENT'
+      state.completedPhases.push('DOCUMENTS_SENT')
       state.updatedAt = new Date().toISOString()
 
-      await this.updateLeadStatus(state.leadId, 'DOCUMENTI_INVIATI')
+      await this.updateLeadStatus(state.leadId, 'DOCUMENTS_SENT')
 
       return state
     } catch (error) {
@@ -508,9 +509,9 @@ export class OperationalWorkflowManager {
       currentPhase = 'INFO_NOTIFIED'
       completedPhases.push('INFO_NOTIFIED')
     }
-    if (lead.status === 'DOCUMENTI_INVIATI') {
-      currentPhase = 'DOCUMENTI_INVIATI'
-      completedPhases.push('DOCUMENTI_INVIATI')
+    if (lead.status === 'DOCUMENTS_SENT') {
+      currentPhase = 'DOCUMENTS_SENT'
+      completedPhases.push('DOCUMENTS_SENT')
     }
     if (contract) {
       currentPhase = 'CONTRACT_GENERATED'

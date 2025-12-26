@@ -1,0 +1,24 @@
+Manuale Utente - SiDLY Care Pro V11.0
+=====================================
+
+Guida all'Utilizzo del Dispositivo di Telemedicina
+
+1. INSTALLAZIONE
+   - Collegare il dispositivo alla corrente
+   - Accendere premendo il pulsante Power
+   - Attendere il LED verde
+
+2. CONFIGURAZIONE
+   - Seguire le istruzioni vocali
+   - Inserire il codice cliente fornito via email
+
+3. UTILIZZO QUOTIDIANO
+   - Misurazioni automatiche ogni 12 ore
+   - Pressione pulsante SOS per emergenze
+   - LED blu = Trasmissione dati in corso
+
+4. ASSISTENZA TECNICA
+   Telefono: 331 64 32 390
+   Email: supporto@telemedcare.it
+
+MEDICA GB S.r.l. - TeleMedCare V11.0

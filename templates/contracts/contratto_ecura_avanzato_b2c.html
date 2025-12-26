@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto eCura Avanzato - Medica GB</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            line-height: 1.6;
+            color: #333;
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 20px;
+        }
+        .logo { 
+            color: #3b82f6; 
+            font-size: 28px; 
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .company-info {
+            font-size: 14px;
+            color: #666;
+        }
+        .contract-title { 
+            font-size: 22px; 
+            margin: 25px 0; 
+            text-align: center;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        .parties { 
+            margin: 25px 0;
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .section { 
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+        .article { 
+            margin: 15px 0; 
+        }
+        .price-box { 
+            border: 2px solid #3b82f6; 
+            padding: 20px; 
+            margin: 25px 0; 
+            background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .benefit-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .signature-area { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 60px;
+            page-break-inside: avoid;
+        }
+        .signature-box { 
+            width: 45%; 
+            text-align: center;
+            border-top: 2px solid #333;
+            padding-top: 10px;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        strong {
+            color: #1e40af;
+        }
+        .info-field {
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+            margin-left: 10px;
+            display: inline-block;
+            min-width: 200px;
+        }
+        @media print { 
+            body { margin: 10px; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🏥 eCura - Medica GB S.r.l.</div>
+        <div class="company-info">
+            <strong>Startup Innovativa a Vocazione Sociale</strong><br>
+            P.IVA: 12435130963 | Reg. Imprese Milano<br>
+            Sede Legale: Corso Garibaldi 34, 20121 Milano
+        </div>
+    </div>
+
+    <h1 class="contract-title">CONTRATTO DI TELEASSISTENZA AVANZATA eCura</h1>
+    <p style="text-align: center; color: #666; font-style: italic;">Piano più scelto dai nostri clienti</p>
+
+    <div class="parties">
+        <h3 style="color: #3b82f6; margin-top: 0;">📋 PARTI CONTRAENTI</h3>
+        
+        <p><strong>FORNITORE DEL SERVIZIO:</strong><br>
+        <strong>Medica GB S.r.l.</strong><br>
+        Sede Legale: Corso Garibaldi 34, 20121 Milano<br>
+        P.IVA: 12435130963<br>
+        Email: <a href="mailto:info@ecura.it">info@ecura.it</a><br>
+        PEC: medicagb@pec.medicagb.it</p>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ccc;">
+
+        <p><strong>RICHIEDENTE (Cliente):</strong><br>
+        Nome e Cognome: <span class="info-field">{{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</span><br>
+        Codice Fiscale: <span class="info-field">{{CODICE_FISCALE_RICHIEDENTE}}</span><br>
+        Indirizzo Completo: <span class="info-field">{{INDIRIZZO_RICHIEDENTE}}</span><br>
+        Email: <span class="info-field">{{EMAIL_RICHIEDENTE}}</span><br>
+        Telefono: <span class="info-field">{{TELEFONO_RICHIEDENTE}}</span></p>
+
+        <p><strong>PERSONA ASSISTITA (se diversa dal richiedente):</strong><br>
+        Nome e Cognome: <span class="info-field">{{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</span><br>
+        Data di Nascita: <span class="info-field">{{DATA_NASCITA_ASSISTITO}}</span><br>
+        Luogo di Nascita: <span class="info-field">{{LUOGO_NASCITA_ASSISTITO}}</span><br>
+        Codice Fiscale: <span class="info-field">{{CODICE_FISCALE_ASSISTITO}}</span><br>
+        Indirizzo: <span class="info-field">{{INDIRIZZO_ASSISTITO}}</span></p>
+    </div>
+
+    <div class="price-box">
+        <h3 style="margin-top: 0; color: #3b82f6;">💎 PIANO eCura {{TIPO_SERVIZIO}} - AVANZATO</h3>
+        <p style="font-size: 18px;"><strong>✅ Primo Anno:</strong> €840,00 + IVA 22% = <strong>€1.024,80</strong></p>
+        <p style="font-size: 18px;"><strong>🔄 Rinnovo Annuale:</strong> €600,00 + IVA 22% = <strong>€732,00</strong></p>
+        <p style="margin-top: 15px;"><em>💰 Dispositivo medico certificato incluso (Classe IIa)</em></p>
+        <p><em>👨‍⚕️ Centrale Operativa H24/7 con operatori sanitari qualificati</em></p>
+    </div>
+
+    <div class="benefit-box">
+        <h4 style="margin-top: 0; color: #92400e;">🎁 VANTAGGI FISCALI</h4>
+        <p><strong>Detrazione 730/Unico:</strong> Risparmio fiscale del 19% della spesa sostenuta<br>
+        <strong>Risparmio Annuale Stimato:</strong> Fino a <strong>€194,71</strong> di detrazione fiscale<br>
+        <em>Medica GB fornirà tutta la documentazione necessaria per il 730</em></p>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">📌 ARTICOLO 1 - OGGETTO DEL CONTRATTO</h3>
+        <div class="article">
+            <p>Il presente contratto ha per oggetto la fornitura del servizio di <strong>TeleAssistenza Avanzata eCura</strong> attraverso il dispositivo medico certificato <strong>{{NOME_DISPOSITIVO}}</strong> (Classe IIa secondo MDR 2017/745) con supporto continuo della <strong>Centrale Operativa H24/7</strong>.</p>
+            <p>Il servizio è progettato per garantire la sicurezza e il benessere della persona assistita attraverso tecnologie avanzate di monitoraggio e intervento professionale immediato.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">🔧 ARTICOLO 2 - SERVIZI INCLUSI NEL PIANO AVANZATO</h3>
+        <div class="article">
+            <p><strong>2.1 Dispositivo Medico Certificato e Funzioni Base:</strong></p>
+            <ul>
+                <li>✅ <strong>Dispositivo {{NOME_DISPOSITIVO}}</strong> (Classe IIa MDR 2017/745)</li>
+                <li>🚨 <strong>Rilevamento Automatico Cadute</strong> con algoritmi avanzati di machine learning</li>
+                <li>📍 <strong>GPS e Geolocalizzazione</strong> precisa in tempo reale</li>
+                <li>❤️ <strong>Monitoraggio Parametri Vitali</strong>: frequenza cardiaca, saturazione ossigeno</li>
+                <li>📞 <strong>Comunicazione Bidirezionale</strong> vocale ad alta qualità</li>
+                <li>🆘 <strong>Pulsante SOS</strong> con invio automatico geolocalizzazione</li>
+                <li>💊 <strong>Promemoria Farmaci</strong> programmabili e personalizzabili</li>
+                <li>👨‍👩‍👧‍👦 <strong>Supporto Familiare</strong> con notifiche push su App dedicata</li>
+            </ul>
+
+            <p><strong>2.2 Servizi Professionali Avanzati (Piano Avanzato):</strong></p>
+            <ul>
+                <li>🏥 <strong>Centrale Operativa H24/7:</strong> Assistenza professionale continua, 365 giorni l'anno</li>
+                <li>👨‍⚕️ <strong>Operatori Sanitari Qualificati:</strong> Infermieri e personale sanitario specializzato</li>
+                <li>⚡ <strong>Intervento Immediato:</strong> Attivazione servizi di emergenza 118 in caso di necessità</li>
+                <li>📊 <strong>Monitoraggio Avanzato Personalizzato:</strong> Parametri vitali con soglie personalizzate</li>
+                <li>🩺 <strong>Assistenza Medica Specializzata:</strong> Consulenze telefoniche con medici</li>
+                <li>🚑 <strong>Coordinamento Emergenze:</strong> Gestione completa situazioni critiche</li>
+                <li>📈 <strong>Report Sanitari Periodici:</strong> Analisi dettagliata andamento parametri vitali</li>
+                <li>📲 <strong>Supporto Famiglia 24/7:</strong> Comunicazione costante con parenti/caregiver</li>
+                <li>🔔 <strong>Notifiche Proattive:</strong> Alert automatici per anomalie o situazioni potenzialmente critiche</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">⏱️ ARTICOLO 3 - DURATA E MODALITÀ DI PAGAMENTO</h3>
+        <div class="article">
+            <p><strong>3.1 Durata Contratto:</strong><br>
+            Il contratto ha durata <strong>annuale</strong> (12 mesi) a partire dalla data di attivazione del servizio. Il contratto si rinnova tacitamente di anno in anno salvo disdetta scritta con preavviso di 30 giorni.</p>
+            
+            <p><strong>3.2 Pagamento Primo Anno:</strong><br>
+            <strong>€1.024,80</strong> (IVA 22% inclusa) da versare alla firma del presente contratto. Include dispositivo medico, attivazione, configurazione personalizzata e 12 mesi di servizio completo.</p>
+            
+            <p><strong>3.3 Rinnovo Successivo:</strong><br>
+            <strong>€732,00</strong> (IVA 22% inclusa) da versare annualmente per i rinnovi successivi. Servizio continuativo senza interruzioni.</p>
+            
+            <p><strong>3.4 Modalità di Pagamento Accettate:</strong></p>
+            <ul>
+                <li>💳 Carta di credito/debito (Visa, Mastercard, American Express)</li>
+                <li>🏦 Bonifico bancario (coordinate fornite via email)</li>
+                <li>🔄 RID/SEPA Direct Debit (addebito automatico su c/c)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">🚀 ARTICOLO 4 - ATTIVAZIONE E CONFIGURAZIONE</h3>
+        <div class="article">
+            <p><strong>4.1 Consegna Dispositivo:</strong><br>
+            Entro <strong>5 giorni lavorativi</strong> dalla conferma del pagamento e dalla firma digitale del presente contratto. Spedizione tracciata gratuita in tutta Italia.</p>
+            
+            <p><strong>4.2 Configurazione Personalizzata:</strong><br>
+            Supporto tecnico dedicato per l'impostazione di parametri personalizzati basati sulle condizioni di salute specifiche della persona assistita (soglie cardiache, promemoria farmaci, contatti emergenza).</p>
+            
+            <p><strong>4.3 Training e Formazione Gratuita:</strong><br>
+            Sessione formativa (telefonica o videocall) per spiegare utilizzo ottimale del dispositivo, funzioni principali, pulsante SOS, e gestione App familiare. Materiale didattico digitale incluso.</p>
+            
+            <p><strong>4.4 Test Funzionamento con Centrale Operativa:</strong><br>
+            Verifica operatività completa con chiamata di test alla Centrale Operativa per confermare ricezione segnali SOS, geolocalizzazione e comunicazione vocale.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">💰 ARTICOLO 5 - BENEFICI FISCALI E DETRAZIONI</h3>
+        <div class="article">
+            <p><strong>5.1 Detrazione Fiscale 730/Unico:</strong><br>
+            Il servizio di teleassistenza con dispositivo medico certificato è <strong>detraibile come spesa sanitaria</strong> nella dichiarazione dei redditi (19% della spesa sostenuta), secondo Art. 15, comma 1, lett. c) del TUIR (DPR 917/86).</p>
+            
+            <p><strong>5.2 Documentazione Fiscale Fornita:</strong><br>
+            Medica GB fornirà annualmente <strong>certificazione fiscale dettagliata</strong> con tutti i dati necessari per la compilazione del Modello 730 o Unico (importo spesa, natura sanitaria, dati fiscali azienda).</p>
+            
+            <p><strong>5.3 Risparmio Fiscale Stimato (Piano Avanzato):</strong></p>
+            <ul>
+                <li>Primo Anno: 19% di €1.024,80 = <strong>€194,71 di detrazione</strong></li>
+                <li>Rinnovi Annuali: 19% di €732,00 = <strong>€139,08 di detrazione/anno</strong></li>
+            </ul>
+            <p><em>*Risparmio effettivo dipende dalla situazione fiscale individuale</em></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">🛡️ ARTICOLO 6 - GARANZIE E ASSISTENZA TECNICA</h3>
+        <div class="article">
+            <p><strong>6.1 Garanzia Dispositivo:</strong><br>
+            <strong>24 mesi</strong> dalla data di consegna per difetti di fabbricazione o malfunzionamenti hardware, secondo normativa europea sui dispositivi medici.</p>
+            
+            <p><strong>6.2 Assistenza Tecnica Gratuita H24:</strong><br>
+            Supporto tecnico telefonico gratuito <strong>24 ore su 24, 7 giorni su 7</strong> per malfunzionamenti, problemi di configurazione, o supporto utilizzo.</p>
+            
+            <p><strong>6.3 Sostituzione Dispositivo:</strong><br>
+            In caso di guasto o malfunzionamento accertato, fornitura <strong>dispositivo sostitutivo gratuito</strong> entro 48 ore (in comodato d'uso durante riparazione).</p>
+            
+            <p><strong>6.4 Aggiornamenti Software:</strong><br>
+            Software e firmware sempre aggiornati <strong>gratuitamente</strong> per garantire sicurezza, nuove funzioni e miglioramenti prestazionali.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">↩️ ARTICOLO 7 - RECESSO E RISOLUZIONE CONTRATTO</h3>
+        <div class="article">
+            <p><strong>7.1 Diritto di Recesso (Codice del Consumo):</strong><br>
+            Il cliente può esercitare il diritto di recesso entro <strong>14 giorni</strong> dalla consegna del dispositivo, senza necessità di motivazione e senza penali. Il dispositivo deve essere restituito integro e funzionante.</p>
+            
+            <p><strong>7.2 Rimborso in Caso di Recesso:</strong><br>
+            Rimborso completo dell'importo pagato entro 14 giorni dalla ricezione del dispositivo restituito, dedotte eventuali spese di spedizione per il reso.</p>
+            
+            <p><strong>7.3 Risoluzione per Inadempimento:</strong><br>
+            In caso di mancato pagamento oltre <strong>30 giorni</strong> dalla scadenza, Medica GB può risolvere il contratto con sospensione del servizio e richiesta restituzione dispositivo.</p>
+            
+            <p><strong>7.4 Restituzione Dispositivo Obbligatoria:</strong><br>
+            In caso di recesso, risoluzione o cessazione del contratto, il dispositivo medico (di proprietà di Medica GB) deve essere restituito entro 7 giorni.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">🔒 ARTICOLO 8 - PRIVACY E TRATTAMENTO DATI PERSONALI</h3>
+        <div class="article">
+            <p><strong>8.1 Normativa Applicabile:</strong><br>
+            Il trattamento dei dati personali e sanitari avviene nel <strong>pieno rispetto del GDPR</strong> (Regolamento UE 2016/679) e del Codice Privacy italiano (D.Lgs. 196/2003 e s.m.i.).</p>
+            
+            <p><strong>8.2 Finalità del Trattamento:</strong><br>
+            I dati vengono raccolti e utilizzati <strong>esclusivamente</strong> per:</p>
+            <ul>
+                <li>Erogazione del servizio di teleassistenza</li>
+                <li>Monitoraggio parametri vitali e gestione emergenze sanitarie</li>
+                <li>Comunicazioni con la Centrale Operativa e servizi di emergenza</li>
+                <li>Adempimenti contrattuali, fiscali e amministrativi</li>
+            </ul>
+            
+            <p><strong>8.3 Sicurezza Dati:</strong><br>
+            Medica GB garantisce misure di sicurezza tecniche e organizzative adeguate per proteggere i dati da accessi non autorizzati, perdita o distruzione. Dati sanitari criptati e server in UE conformi ISO 27001.</p>
+            
+            <p><strong>8.4 Diritti dell'Interessato:</strong><br>
+            Il cliente e la persona assistita possono esercitare i diritti previsti dal GDPR (accesso, rettifica, cancellazione, limitazione, portabilità) contattando: <a href="mailto:privacy@medicagb.it">privacy@medicagb.it</a></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">⚖️ ARTICOLO 9 - FORO COMPETENTE E LEGGE APPLICABILE</h3>
+        <div class="article">
+            <p><strong>9.1 Legge Applicabile:</strong><br>
+            Il presente contratto è regolato dalla <strong>legge italiana</strong>.</p>
+            
+            <p><strong>9.2 Foro Competente:</strong><br>
+            Per qualsiasi controversia derivante dal presente contratto è competente esclusivamente il <strong>Foro di Milano</strong>, salvo diversa competenza inderogabile prevista per legge (es. Foro del consumatore per contratti B2C).</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">📝 ARTICOLO 10 - DISPOSIZIONI FINALI</h3>
+        <div class="article">
+            <p><strong>10.1 Modifiche Contrattuali:</strong><br>
+            Eventuali modifiche al presente contratto devono essere concordate per iscritto tra le parti.</p>
+            
+            <p><strong>10.2 Comunicazioni:</strong><br>
+            Tutte le comunicazioni relative al contratto verranno inviate all'indirizzo email indicato: <strong>{{EMAIL_RICHIEDENTE}}</strong></p>
+            
+            <p><strong>10.3 Validità del Contratto:</strong><br>
+            Il presente contratto, firmato digitalmente da entrambe le parti, ha <strong>piena validità legale</strong> secondo normativa europea eIDAS (Reg. UE 910/2014).</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">✅ CODICE CONTRATTO: {{CODICE_CONTRATTO}}</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Data Generazione: {{DATA_CONTRATTO}}</p>
+    </div>
+
+    <div class="signature-area">
+        <div class="signature-box">
+            <p><strong>IL CLIENTE / RICHIEDENTE</strong></p>
+            <br>
+            <p><strong>{{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</strong></p>
+            <br>
+            <p style="font-style: italic; color: #666;">Firma Digitale</p>
+            <p>Data: {{DATA_CONTRATTO}}</p>
+        </div>
+        <div class="signature-box">
+            <p><strong>MEDICA GB S.R.L.</strong></p>
+            <br>
+            <p>Legale Rappresentante</p>
+            <br>
+            <p style="font-style: italic; color: #666;">Firma Digitale Automatica</p>
+            <p>Milano, {{DATA_CONTRATTO}}</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background: #f9fafb; border-top: 2px solid #e5e7eb; font-size: 13px; color: #666;">
+        <p style="text-align: center; margin-bottom: 15px;"><strong style="color: #3b82f6; font-size: 16px;">Contatti Medica GB S.r.l. - eCura</strong></p>
+        <p style="text-align: center; margin: 5px 0;">
+            📧 Email: <a href="mailto:info@ecura.it" style="color: #3b82f6;">info@ecura.it</a> | 
+            📞 Telefono: <strong>02 8715 6826</strong> | 
+            📱 Assistenza H24: <strong>335 730 1206</strong>
+        </p>
+        <p style="text-align: center; margin: 5px 0;">
+            🏢 Milano: Corso Garibaldi 34, 20121 | 
+            🏢 Genova: Via delle Eriche 53, 16148
+        </p>
+        <p style="text-align: center; margin: 5px 0;">
+            🌐 Web: <a href="https://www.ecura.it" style="color: #3b82f6;">www.ecura.it</a> | 
+            📧 PEC: <a href="mailto:medicagb@pec.medicagb.it" style="color: #3b82f6;">medicagb@pec.medicagb.it</a>
+        </p>
+        <p style="text-align: center; margin-top: 15px; font-size: 11px; font-style: italic;">
+            Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale | P.IVA 12435130963 | Reg. Imprese Milano<br>
+            Capitale Sociale €10.000 i.v. | Certificazione ISO 27001 per la sicurezza dei dati sanitari
+        </p>
+    </div>
+</body>
+</html>

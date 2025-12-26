@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Leads - TeleMedCare V11.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-users text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Dashboard Leads Modulare</h1>
+                        <p class="text-green-100">Aggregazione dati dai 6 moduli Leads specializzati</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Statistiche Lead -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Lead Totali</p>
+                        <p class="text-3xl font-bold text-blue-600" id="totalLeads">-</p>
+                        <p class="text-xs text-green-600 mt-1">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            <span id="leadsGrowth">+0%</span> vs mese scorso
+                        </p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Tasso Conversione</p>
+                        <p class="text-3xl font-bold text-green-600" id="conversionRate">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Lead → Contratto</p>
+                    </div>
+                    <i class="fas fa-percentage text-3xl text-green-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Lead Oggi</p>
+                        <p class="text-3xl font-bold text-purple-600" id="leadsToday">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 24h</p>
+                    </div>
+                    <i class="fas fa-calendar-day text-3xl text-purple-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Valore Totale</p>
+                        <p class="text-3xl font-bold text-orange-600" id="totalValue">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Contratti attivi</p>
+                    </div>
+                    <i class="fas fa-euro-sign text-3xl text-orange-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafici Distribuzione -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Servizi -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie text-blue-500 mr-2"></i>
+                    Per Servizio
+                </h3>
+                <div id="servicesBreakdown" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Piani -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-layer-group text-green-500 mr-2"></i>
+                    Per Piano
+                </h3>
+                <div id="plansBreakdown" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Canali -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-bullhorn text-purple-500 mr-2"></i>
+                    Per Canale
+                </h3>
+                <div id="channelsBreakdown">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Website</span>
+                            <span class="font-bold" id="channelWeb">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Email</span>
+                            <span class="font-bold" id="channelEmail">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Telefono</span>
+                            <span class="font-bold" id="channelPhone">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Partner</span>
+                            <span class="font-bold" id="channelPartner">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabella Lead Dettagliata -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                    Tutti i Lead
+                </h3>
+                <div class="flex space-x-2">
+                    <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti i Servizi</option>
+                        <option value="FAMILY">FAMILY</option>
+                        <option value="PRO">PRO</option>
+                        <option value="PREMIUM">PREMIUM</option>
+                    </select>
+                    <select id="filterPiano" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti i Piani</option>
+                        <option value="BASE">BASE</option>
+                        <option value="AVANZATO">AVANZATO</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contatti</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo Anno</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Brochure</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTableBody">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento lead...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLeads = [];
+
+        // Carica dati
+        loadLeadsData();
+
+        async function loadLeadsData() {
+            try {
+                // Carica statistiche
+                const statsResponse = await fetch('/api/data/stats');
+                const stats = await statsResponse.json();
+
+                document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
+                document.getElementById('conversionRate').textContent = stats.conversionRate || '0%';
+                document.getElementById('leadsToday').textContent = stats.leadsToday || '0';
+                document.getElementById('totalValue').textContent = stats.totalValue ? `€${stats.totalValue}` : '€0';
+                document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
+
+                // Carica lead
+                const leadsResponse = await fetch('/api/leads?limit=100');
+                const leadsData = await leadsResponse.json();
+                allLeads = leadsData.leads || [];
+
+                // Aggiorna grafici
+                updateServicesBreakdown(allLeads);
+                updatePlansBreakdown(allLeads);
+                updateChannelsBreakdown(allLeads);
+
+                // Popola tabella
+                renderLeadsTable(allLeads);
+
+            } catch (error) {
+                console.error('Errore caricamento leads:', error);
+                document.getElementById('leadsTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                            <p>Errore nel caricamento dei lead</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateServicesBreakdown(leads) {
+            const counts = { 'FAMILY': 0, 'PRO': 0, 'PREMIUM': 0 };
+            leads.forEach(l => {
+                if (counts[l.servizio] !== undefined) counts[l.servizio]++;
+            });
+
+            const total = leads.length || 1;
+            const colors = { 'FAMILY': 'bg-blue-500', 'PRO': 'bg-purple-500', 'PREMIUM': 'bg-green-500' };
+
+            const html = Object.entries(counts).map(([service, count]) => {
+                const percentage = Math.round((count / total) * 100);
+                return `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium">${service}</span>
+                            <span class="text-sm font-bold">${count} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="${colors[service]} h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('servicesBreakdown').innerHTML = html;
+        }
+
+        function updatePlansBreakdown(leads) {
+            const counts = { 'BASE': 0, 'AVANZATO': 0 };
+            leads.forEach(l => {
+                const plan = l.pacchetto || 'BASE';
+                if (counts[plan] !== undefined) counts[plan]++;
+            });
+
+            const total = leads.length || 1;
+            const colors = { 'BASE': 'bg-blue-500', 'AVANZATO': 'bg-purple-500' };
+
+            const html = Object.entries(counts).map(([plan, count]) => {
+                const percentage = Math.round((count / total) * 100);
+                return `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium">${plan}</span>
+                            <span class="text-sm font-bold">${count} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="${colors[plan]} h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('plansBreakdown').innerHTML = html;
+        }
+
+        function updateChannelsBreakdown(leads) {
+            // Simulazione - in produzione questi dati verrebbero dal DB
+            document.getElementById('channelWeb').textContent = Math.round(leads.length * 0.6);
+            document.getElementById('channelEmail').textContent = Math.round(leads.length * 0.2);
+            document.getElementById('channelPhone').textContent = Math.round(leads.length * 0.15);
+            document.getElementById('channelPartner').textContent = Math.round(leads.length * 0.05);
+        }
+
+        function renderLeadsTable(leads) {
+            const tbody = document.getElementById('leadsTableBody');
+            
+            if (leads.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = leads.map(lead => {
+                const prezzo = getPrezzoForService(lead.servizio, lead.pacchetto);
+                const date = new Date(lead.created_at).toLocaleDateString('it-IT');
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">${(lead.leadId || lead.id || '').substring(0, 20)}</code>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <div class="font-medium">${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}</div>
+                        </td>
+                        <td class="py-3 text-xs text-gray-600">
+                            <div>${lead.emailRichiedente || ''}</div>
+                            <div>${lead.telefono || ''}</div>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                ${lead.servizio || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                                ${lead.pacchetto || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-sm font-bold text-green-600">€${prezzo}</td>
+                        <td class="py-3">
+                            <i class="fas fa-${lead.vuoleContratto ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
+                        </td>
+                        <td class="py-3">
+                            <i class="fas fa-${lead.vuoleBrochure ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const servizioFilter = document.getElementById('filterServizio').value;
+            const pianoFilter = document.getElementById('filterPiano').value;
+
+            const filtered = allLeads.filter(lead => {
+                const matchServizio = !servizioFilter || lead.servizio === servizioFilter;
+                const matchPiano = !pianoFilter || lead.pacchetto === pianoFilter;
+                return matchServizio && matchPiano;
+            });
+
+            renderLeadsTable(filtered);
+        }
+
+        function getPrezzoForService(servizio, piano) {
+            const prezzi = {
+                'FAMILY': { 'BASE': '390.00', 'AVANZATO': '690.00' },
+                'PRO': { 'BASE': '480.00', 'AVANZATO': '840.00' },
+                'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
+            };
+            return prezzi[servizio]?.[piano] || '0.00';
+        }
+    </script>
+</body>
+</html>

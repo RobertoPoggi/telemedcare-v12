@@ -1,0 +1,59 @@
+# =============================================
+# CONSUMER WORKER - Lead Processing from Queue
+# =============================================
+# Processa lead dalla Cloudflare Queue ed esegue workflow completo
+
+name = "ecura-consumer"
+main = "src/consumer-worker.ts"
+compatibility_date = "2024-01-01"
+
+# Workers environment
+workers_dev = true
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
+
+# =============================================
+# CLOUDFLARE QUEUE CONSUMER
+# =============================================
+[[queues.consumers]]
+queue = "ecura-leads-queue"
+max_batch_size = 10          # Processa fino a 10 lead alla volta
+max_batch_timeout = 30       # Max 30 secondi per batch
+max_retries = 3              # Retry automatico 3 volte
+dead_letter_queue = "ecura-leads-dlq"  # Dead Letter Queue per errori persistenti
+
+# =============================================
+# D1 DATABASE BINDING
+# =============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "ecura-db"
+database_id = "${D1_DATABASE_ID}"
+
+# =============================================
+# ENVIRONMENT VARIABLES
+# =============================================
+[vars]
+RESEND_API_KEY = "${RESEND_API_KEY}"
+HUBSPOT_API_KEY = "${HUBSPOT_API_KEY}"
+DOCUSIGN_INTEGRATION_KEY = "${DOCUSIGN_INTEGRATION_KEY}"
+DOCUSIGN_USER_ID = "${DOCUSIGN_USER_ID}"
+DOCUSIGN_ACCOUNT_ID = "${DOCUSIGN_ACCOUNT_ID}"
+STRIPE_SECRET_KEY = "${STRIPE_SECRET_KEY}"
+
+[env.production]
+name = "ecura-consumer-prod"
+
+[env.staging]
+name = "ecura-consumer-staging"
+
+# =============================================
+# LIMITS & PERFORMANCE
+# =============================================
+[limits]
+cpu_ms = 30000  # 30 secondi CPU time (workflow completo può richiedere tempo)
+
+# =============================================
+# LOGGING
+# =============================================
+[observability]
+enabled = true

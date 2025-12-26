@@ -1,212 +1,142 @@
 <!DOCTYPE html>
-<html lang="it" data-theme="light">
+<html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
-<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<style>
-      body {
-        max-width: 880px;
-        margin: 0 auto;
-        padding: 32px 80px;
-        position: relative;
-        box-sizing: border-box;
-        font-family: 'Inter', Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        background-color: #ffffff;
-      }
-
-      .template-section {
-        margin-bottom: 60px;
-        border-bottom: 2px solid #e0e0e0;
-        padding-bottom: 40px;
-      }
-
-      .template-title {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white;
-        padding: 20px;
-        margin: 0 -20px 30px -20px;
-        border-radius: 8px;
-        font-size: 20px;
-        font-weight: 600;
-      }
-
-      .email-container {
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-        margin: 20px 0;
-      }
-
-      .email-header {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white;
-        padding: 30px 25px;
-        text-align: center;
-      }
-
-      .email-content {
-        padding: 30px 25px;
-      }
-
-      .contact-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .highlight-box {
-        background: #ecfdf5;
-        border: 2px solid #22c55e;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .warning-box {
-        background: #fef3c7;
-        border: 2px solid #f59e0b;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .info-box {
-        background: #f0f9ff;
-        border-left: 4px solid #3b82f6;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .comparison-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        background: white;
-        border: 1px solid #e0e0e0;
-      }
-
-      .comparison-table th {
-        background: #3b82f6;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        font-weight: bold;
-      }
-
-      .comparison-table td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e5e7eb;
-        vertical-align: top;
-      }
-
-      .comparison-table tr:nth-child(even) {
-        background: #f8faff;
-      }
-
-      .footer-standard {
-        background: #1f2937;
-        color: white;
-        padding: 20px;
-        text-align: center;
-        font-size: 14px;
-      }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promemoria Servizio TeleMedCare - Medica GB</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8faff; }
+        .email-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fde047 100%); color: #92400e; padding: 30px; text-align: center; }
+        .logo { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+        .content { padding: 30px; }
+        .reminder-box { background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+        .renewal-info { background: #f0f9ff; padding: 20px; margin: 20px 0; border-radius: 6px; border-left: 4px solid #3b82f6; }
+        .payment-options { background: #f1f5f9; padding: 20px; margin: 20px 0; border-radius: 6px; }
+        .benefits-reminder { background: #ecfdf5; padding: 20px; margin: 20px 0; border-radius: 6px; border: 1px solid #22c55e; }
+        .footer { background: #1f2937; color: white; padding: 20px; text-align: center; font-size: 14px; }
+        .button { background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px 0; }
+        .urgent { color: #dc2626; font-weight: bold; }
     </style>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
+</head>
 <body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">🔔 PROMEMORIA</div>
+            <div style="font-size: 18px;">TeleMedCare - Medica GB S.r.l.</div>
+            <div style="font-size: 14px; opacity: 0.9;">{{TIPO_PROMEMORIA}}</div>
+        </div>
 
+        <div class="content">
+            <h2 style="color: #1e40af; margin-top: 0;">Ciao {{NOME_CLIENTE}}!</h2>
 
-<div class="email-container">
-<div class="email-header" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fde047 100%); color: #92400e">
-<h3 style="margin: 0; font-size: 24px">🔔 PROMEMORIA</h3>
-<p style="margin: 10px 0 0 0">TeleMedCare - Medica GB S.r.l.</p>
-<div style="font-size: 14px; opacity: 0.9">{{TIPO_PROMEMORIA}}</div>
-</div>
-<div class="email-content">
-<h3 style="color: #1e40af; margin-top: 0">Gentile {{NOME_CLIENTE}},</h3>
-<div class="warning-box">
-<h4 style="color: #d97706; margin-top: 0">📅 {{TIPO_PROMEMORIA}}</h4>
-<p style="font-size: 18px"><strong>{{MESSAGGIO_PRINCIPALE}}</strong></p>
-<p>Data: <strong>{{DATA_SCADENZA}}</strong></p>
-<p>Giorni rimanenti: <span style="color: #dc2626; font-weight: bold">{{GIORNI_RIMANENTI}}</span></p>
-</div>
-<div class="info-box">
-<h4 style="color: #3b82f6; margin-top: 0">📋 Dettagli Rinnovo</h4>
-<ul>
-<li><strong>Piano Attuale:</strong> {{PIANO_SERVIZIO}}</li>
-<li><strong>Scadenza:</strong> {{DATA_SCADENZA}}</li>
-<li><strong>Costo Rinnovo:</strong> {{COSTO_RINNOVO}}</li>
-<li><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</li>
-</ul>
-<p><strong>💡 Vantaggi del Rinnovo:</strong></p>
-<p>
-              ✅ Prezzo scontato rispetto al primo anno<br/>
-              ✅ Nessuna interruzione del servizio<br/>
-              ✅ Mantiene tutte le configurazioni personali<br/>
-              ✅ Continua a beneficiare delle detrazioni fiscali
-            </p>
-</div>
-<div style="
-              text-align: center;
-              padding: 20px;
-              background: #f8faff;
-              border-radius: 6px;
-              border: 2px solid #3b82f6;
-              margin: 20px 0;
-            ">
-<strong style="font-size: 18px; color: #3b82f6">🏦 Bonifico Bancario</strong><br/>
-<div style="margin-top: 10px">
-<strong>IBAN:</strong> {{IBAN_AZIENDALE}}<br/>
-<strong>Causale:</strong> Rinnovo {{CODICE_CLIENTE}}<br/>
-<strong>Beneficiario:</strong> Medica GB S.r.l.
+            <div class="reminder-box">
+                <h3 style="color: #d97706; margin-top: 0;">📅 {{TIPO_PROMEMORIA}}</h3>
+                <p style="font-size: 18px;"><strong>{{MESSAGGIO_PRINCIPALE}}</strong></p>
+                <p>Data: <strong>{{DATA_SCADENZA}}</strong></p>
+                <p>Giorni rimanenti: <span class="{{CLASSE_URGENZA}}">{{GIORNI_RIMANENTI}}</span></p>
             </div>
-</div>
-<div class="highlight-box">
-<h4 style="color: #16a34a; margin-top: 0">💰 Non Dimentichi i Benefici Fiscali!</h4>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
-<div>
-<strong>📋 Detrazione 730:</strong><br/>
-                19% detraibile come spesa sanitaria<br/>
-<em>Risparmio: {{RISPARMIO_FISCALE}}</em>
-</div>
-<div>
-<strong>🏛️ Possibili Rimborsi INPS:</strong><br/>
-                Per ISEE &lt; €6.000 + Legge 104<br/>
-<em>La aiutiamo con la pratica!</em>
-</div>
-</div>
-</div>
-<div style="background: #fee2e2; padding: 20px; border-radius: 6px; border: 1px solid #fca5a5; margin: 20px 0">
-<h4 style="color: #dc2626; margin-top: 0">⚠️ Importante</h4>
-<p>Senza il rinnovo, il servizio verrà sospeso alla data di scadenza.</p>
-<p>
-<strong>Non rischi di rimanere scoperto/a!</strong> Rinnovi in tempo per mantenere la Sua protezione H24.
+
+            <div class="renewal-info">
+                <h3 style="color: #3b82f6; margin-top: 0;">📋 Dettagli Rinnovo</h3>
+                <ul>
+                    <li><strong>Piano Attuale:</strong> {{PIANO_SERVIZIO}}</li>
+                    <li><strong>Scadenza:</strong> {{DATA_SCADENZA}}</li>
+                    <li><strong>Costo Rinnovo:</strong> {{COSTO_RINNOVO}}</li>
+                    <li><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</li>
+                </ul>
+
+                <p><strong>💡 Vantaggi del Rinnovo:</strong></p>
+                <div style="margin-left: 20px;">
+                    <p>✅ Prezzo scontato rispetto al primo anno<br>
+                    ✅ Nessuna interruzione del servizio<br>
+                    ✅ Mantieni tutte le configurazioni personali<br>
+                    ✅ Continui a beneficiare delle detrazioni fiscali</p>
+                </div>
+            </div>
+
+            <div class="payment-options">
+                <h3 style="color: #475569; margin-top: 0;">💳 Modalità di Pagamento</h3>
+                <div style="text-align: center; padding: 20px; background: #f8faff; border-radius: 6px; border: 2px solid #3b82f6;">
+                    <strong style="font-size: 18px; color: #3b82f6;">🏦 Bonifico Bancario</strong><br>
+                    <div style="margin-top: 10px;">
+                        <strong>IBAN:</strong> {{IBAN_AZIENDALE}}<br>
+                        <strong>Causale:</strong> Rinnovo {{CODICE_CLIENTE}}<br>
+                        <strong>Beneficiario:</strong> Medica GB S.r.l.
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="mailto:info@medicagb.it?subject=Rinnovo%20Servizio%20{{CODICE_CLIENTE}}" class="button">📧 Rinnova Ora</a>
+                <a href="tel:+393357301206" class="button">📞 Chiama per Rinnovare</a>
+            </div>
+
+            <div class="benefits-reminder">
+                <h3 style="color: #16a34a; margin-top: 0;">💰 Non Dimenticare i Benefici Fiscali!</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <strong>📋 Detrazione 730:</strong><br>
+                        19% detraibile come spesa sanitaria<br>
+                        <em>Risparmio: {{RISPARMIO_FISCALE}}</em>
+                    </div>
+                    <div>
+                        <strong>🏛️ Possibili Rimborsi INPS:</strong><br>
+                        Per ISEE < €6.000 + Legge 104<br>
+                        <em>Ti aiutiamo con la pratica!</em>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #fee2e2; padding: 20px; border-radius: 6px; border: 1px solid #fca5a5; margin: 20px 0;">
+                <h3 style="color: #dc2626; margin-top: 0;">⚠️ Importante</h3>
+                <p>Senza il rinnovo, il servizio verrà sospeso alla data di scadenza.</p>
+                <p><strong>Non rischiare di rimanere scoperto/a!</strong> Rinnova in tempo per mantenere la tua protezione H24.</p>
+            </div>
+
+            <div style="background: #f0f9ff; padding: 20px; border-radius: 6px; border: 1px solid #bfdbfe; margin: 20px 0;">
+                <h3 style="color: #1e40af; margin-top: 0;">📞 Hai Domande?</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <strong>👩‍💼 Stefania Rocca</strong><br>
+                        📧 stefania.rocca@medicagb.it<br>
+                        📞 335 730 1206
+                    </div>
+                    <div>
+                        <strong>👨‍💼 Roberto Poggi</strong><br>
+                        📧 roberto.poggi@medicagb.it<br>
+                        📞 331 643 2390
+                    </div>
+                </div>
+                <p style="margin-top: 15px; text-align: center;"><strong>📧 Email: info@medicagb.it</strong></p>
+            </div>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                Grazie per la fiducia che continui a riporre in TeleMedCare. Siamo qui per proteggerti sempre!
             </p>
-</div>
-<div class="contact-box">
-<h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
-<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="325b5c545d725f57565b515355501c5b46">[email&#160;protected]</a></p>
-<p><strong>Telefono commerciale:</strong> 335 7301206</p>
-<p>
-<strong>Telefono tecnico:</strong> 331 64 32 390<br/>
-</p>
-</div>
-<p>Grazie per la fiducia che continua a riporre in TeleMedCare. Siamo qui per proteggerLa sempre!</p>
-<p><strong>A presto,</strong><br/>Il Team TeleMedCare</p>
-</div>
-<div class="footer-standard">
-<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
-<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
-<p>P.IVA: 12435130963 | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0c65626a634c616968656f6d6b6e226578">[email&#160;protected]</a> | www.medicagb.it</p>
-</div>
-</div>
-</div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                <strong>A presto,</strong><br>
+                Il Team Medica GB
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+            <p>🏢 Milano: Corso Garibaldi 34, 20121 | 🏢 Genova: Via delle Eriche 53, 16148</p>
+            <p>P.IVA: 12435130963 | 📧 info@medicagb.it | 📬 PEC: medicagbsrl@pecimprese.it | 🌐 www.medicagb.it</p>
+        </div>
+    </div>
+</body>
 </html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDsk%2FnbCNnECXpQH6EMWQAaG4WKmJvL1lMCjBGmkvGiqd8lrOI2EaFEkH6UvZuIVjcv70R7eP4dmKyGZvaavVCBcIZiTzo8hzZO9%2Bevhc8ta3lWlztsGgpgXXhugyg77Cg%2BtJZeynir4eNlS7SaARoCWupQ8ltgMnqROepQitCBt0WTOYTtmLVvp1VWEJtIoS3TXnZhvjhzFsln4n09S0ruE8Qy7ETGHonBEMxhNlA6L9iBROLU3kb3yLU6lap7AFZAFk3I2gVApDGD%2BgUCEv10OwvtYHsf2G3s6SEYWZgSD%2FjR0HWHucy%2FVLL35XFaSotNHMaX43FG%2BEXgoBkTQsFp0SVVM4pfTWmxM%2Fr%2FMl1XfDiBInbSYMe8X3FZ2s5negtxUTkFVHv96OEydFcVW8fPun5Te6f6jyMUsnwtf3AFrzl1sB9r2Wxo49mIiGy18HGidi0wn53KBWp6lMNOJyGogL8dOeSW8WwDsNL2p%2BKkvnYJaJbeyfSnQaYsEVbjMqrw%3D%3D";
+        window.__genspark_locale = "it-IT";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDsk/nbCNnECXpQH6EMWQAaG4WKmJvL1lMCjBGmkvGiqd8lrOI2EaFEkH6UvZuIVjcv70R7eP4dmKyGZvaavVCBcIZiTzo8hzZO9+evhc8ta3lWlztsGgpgXXhugyg77Cg+tJZeynir4eNlS7SaARoCWupQ8ltgMnqROepQitCBt0WTOYTtmLVvp1VWEJtIoS3TXnZhvjhzFsln4n09S0ruE8Qy7ETGHonBEMxhNlA6L9iBROLU3kb3yLU6lap7AFZAFk3I2gVApDGD+gUCEv10OwvtYHsf2G3s6SEYWZgSD/jR0HWHucy/VLL35XFaSotNHMaX43FG+EXgoBkTQsFp0SVVM4pfTWmxM/r/Ml1XfDiBInbSYMe8X3FZ2s5negtxUTkFVHv96OEydFcVW8fPun5Te6f6jyMUsnwtf3AFrzl1sB9r2Wxo49mIiGy18HGidi0wn53KBWp6lMNOJyGogL8dOeSW8WwDsNL2p+KkvnYJaJbeyfSnQaYsEVbjMqrw==";
+    </script>
+    
+        <script id="html_badge_script2" src="https://www.genspark.ai/html_badge.js"></script>
+        
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
