@@ -1770,6 +1770,9 @@ export const data_dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="flex space-x-4">
+                    <button onclick="openNewContractModal()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-plus mr-2"></i>Nuovo Contratto
+                    </button>
                     <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
                         <i class="fas fa-home mr-2"></i>Home
                     </a>
@@ -2231,7 +2234,155 @@ export const data_dashboard = `<!DOCTYPE html>
                 alert('❌ PDF non trovato per: ' + nomeCliente + '\\n\\nPDF disponibili:\\n' + pdfsDisponibili.join('\\n'));
             }
         }
+
+        // ============================================
+        // CREATE CONTRATTO
+        // ============================================
+        
+        function openNewContractModal() {
+            document.getElementById('newContractForm').reset();
+            document.getElementById('newContractModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            // Carica lista lead per dropdown
+            loadLeadsForContract();
+        }
+        
+        function closeNewContractModal() {
+            document.getElementById('newContractModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        async function loadLeadsForContract() {
+            try {
+                const response = await fetch('/api/leads?limit=200');
+                const data = await response.json();
+                const leads = data.leads || [];
+                
+                const select = document.getElementById('newContractLeadId');
+                select.innerHTML = '<option value="">Seleziona lead...</option>';
+                
+                leads.forEach(lead => {
+                    const option = document.createElement('option');
+                    option.value = lead.id;
+                    option.textContent = \`\${lead.nome || ''} \${lead.cognome || ''} - \${lead.email || ''}\`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Errore caricamento leads:', error);
+            }
+        }
+        
+        async function saveNewContract() {
+            const leadId = document.getElementById('newContractLeadId').value;
+            const piano = document.getElementById('newContractPiano').value;
+            const note = document.getElementById('newContractNote').value;
+            
+            if (!leadId) {
+                alert('⚠️ Seleziona un lead');
+                return;
+            }
+            
+            if (!piano) {
+                alert('⚠️ Seleziona un piano');
+                return;
+            }
+            
+            // Calcola importo in base al piano
+            const importo = piano === 'AVANZATO' ? 840 : 480;
+            
+            const contractData = {
+                lead_id: leadId,
+                piano: piano,
+                importo_annuo: importo,
+                status: 'DRAFT',
+                note: note || 'Piano: ' + piano
+            };
+            
+            try {
+                const response = await fetch('/api/contratti', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(contractData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Contratto creato con successo!\\n\\nCodice: \${result.contract.codice_contratto || result.contract.id}\\nImporto: €\${importo}/anno\\nPiano: \${piano}\`);
+                    closeNewContractModal();
+                    loadData(); // Ricarica la pagina
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
     </script>
+
+    <!-- MODAL: NEW CONTRACT -->
+    <div id="newContractModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-xl font-bold">➕ Nuovo Contratto</h3>
+                <button onclick="closeNewContractModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <form id="newContractForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lead *</label>
+                            <select id="newContractLeadId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Caricamento...</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Seleziona il lead per cui creare il contratto</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Piano *</label>
+                            <select id="newContractPiano" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Seleziona piano...</option>
+                                <option value="BASE">BASE - €480/anno (€240 rinnovo)</option>
+                                <option value="AVANZATO">AVANZATO - €840/anno (€600 rinnovo)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-bold text-sm text-blue-800 mb-2">📋 Dettagli Piano</h4>
+                            <div class="text-xs text-gray-700 space-y-1">
+                                <p><strong>Servizio:</strong> eCura PRO</p>
+                                <p><strong>Dispositivo:</strong> SiDLY CARE PRO (Classe IIa)</p>
+                                <p><strong>Funzioni:</strong> Telemedicina avanzata + SOS</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                            <textarea id="newContractNote" rows="3" placeholder="Note aggiuntive sul contratto..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <p class="text-xs text-gray-700">
+                                <i class="fas fa-info-circle text-yellow-600 mr-1"></i>
+                                Il contratto sarà creato con status <strong>DRAFT</strong>. 
+                                Dopo la creazione potrai inviarlo al cliente via email dalla Dashboard Leads.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" onclick="closeNewContractModal()" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                            Annulla
+                        </button>
+                        <button type="button" onclick="saveNewContract()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            ➕ Crea Contratto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 `
