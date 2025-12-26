@@ -634,14 +634,23 @@ export const dashboard = `<!DOCTYPE html>
 
     <script>
         let refreshInterval;
+        let isLoading = false;
 
         // Carica dati iniziali
         loadDashboardData();
 
-        // Auto-refresh ogni 30 secondi
-        refreshInterval = setInterval(loadDashboardData, 30000);
+        // Auto-refresh ogni 30 secondi (solo se non sta già caricando)
+        refreshInterval = setInterval(() => {
+            if (!isLoading) {
+                loadDashboardData();
+            }
+        }, 30000);
 
         async function loadDashboardData() {
+            // Previeni chiamate sovrapposte
+            if (isLoading) return;
+            
+            isLoading = true;
             try {
                 // Carica TUTTI i lead per statistiche accurate
                 const allLeadsResponse = await fetch('/api/leads?limit=200');
@@ -731,6 +740,8 @@ export const dashboard = `<!DOCTYPE html>
                         </td>
                     </tr>
                 \`;
+            } finally {
+                isLoading = false;
             }
         }
 
@@ -1102,7 +1113,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
                 document.getElementById('conversionRate').textContent = stats.conversionRate || '0%';
                 document.getElementById('leadsToday').textContent = stats.leadsToday || '0';
-                document.getElementById('totalValue').textContent = stats.totalValue ? \`€\${stats.totalValue}\` : '€0';
+                document.getElementById('totalValue').textContent = stats.totalValue ? ('\u20AC' + stats.totalValue) : '\u20AC0';
                 document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
 
                 // Carica lead
@@ -1122,7 +1133,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('totalLeads').textContent = totalLeads;
                 document.getElementById('conversionRate').textContent = conversionRate;
                 document.getElementById('leadsToday').textContent = leadsToday;
-                document.getElementById('totalValue').textContent = `€${totalValue}`;
+                document.getElementById('totalValue').textContent = '\\u20AC' + totalValue;
                 document.getElementById('leadsGrowth').textContent = '+0%'; // TODO
 
                 // Aggiorna grafici
@@ -1615,9 +1626,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 // Aggiorna KPI con dati reali
                 document.getElementById('kpiLeads').textContent = totalLeads;
                 document.getElementById('kpiContracts').textContent = totalContracts;
-                document.getElementById('kpiRevenue').textContent = `€${totalRevenue}`;
+                document.getElementById('kpiRevenue').textContent = '\u20AC' + totalRevenue;
                 document.getElementById('kpiConversion').textContent = conversionRate;
-                document.getElementById('kpiAov').textContent = `€${averageOrderValue}`;
+                document.getElementById('kpiAov').textContent = '\u20AC' + averageOrderValue;
 
                 // Analizza per servizio (TUTTI sono eCura PRO)
                 const serviceData = analyzeByService(leads);
@@ -1659,21 +1670,21 @@ export const data_dashboard = `<!DOCTYPE html>
             // FAMILY
             document.getElementById('familyLeads').textContent = data.FAMILY.leads;
             document.getElementById('familyContracts').textContent = data.FAMILY.contracts;
-            document.getElementById('familyRevenue').textContent = \`€\${data.FAMILY.revenue}\`;
+            document.getElementById('familyRevenue').textContent = '\u20AC' + data.FAMILY.revenue;
             document.getElementById('familyBase').textContent = data.FAMILY.base;
             document.getElementById('familyAvanzato').textContent = data.FAMILY.avanzato;
 
             // PRO (TUTTI i 126 lead)
             document.getElementById('proLeads').textContent = data.PRO.leads;
             document.getElementById('proContracts').textContent = data.PRO.contracts;
-            document.getElementById('proRevenue').textContent = \`€\${data.PRO.revenue}\`;
+            document.getElementById('proRevenue').textContent = '\u20AC' + data.PRO.revenue;
             document.getElementById('proBase').textContent = data.PRO.base;
             document.getElementById('proAvanzato').textContent = data.PRO.avanzato;
 
             // PREMIUM
             document.getElementById('premiumLeads').textContent = data.PREMIUM.leads;
             document.getElementById('premiumContracts').textContent = data.PREMIUM.contracts;
-            document.getElementById('premiumRevenue').textContent = \`€\${data.PREMIUM.revenue}\`;
+            document.getElementById('premiumRevenue').textContent = '\u20AC' + data.PREMIUM.revenue;
             document.getElementById('premiumBase').textContent = data.PREMIUM.base;
             document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
         }
