@@ -5808,6 +5808,217 @@ app.delete('/api/contratti/:id', async (c) => {
   }
 })
 
+// ========================================
+// INVIO MANUALE - LEAD ACTIONS
+// ========================================
+
+// POST /api/leads/:id/send-contract - Genera e invia contratto da lead (forzato)
+app.post('/api/leads/:id/send-contract', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    const { tipoContratto = 'BASE' } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Genera codice contratto
+    const timestamp = Date.now()
+    const contractCode = `CTR-MANUAL-${timestamp}`
+    const contractId = `contract-${timestamp}`
+    
+    // Determina prezzo
+    const prezzo = tipoContratto === 'AVANZATO' ? 840 : 480
+    
+    // Crea contratto
+    await c.env.DB.prepare(`
+      INSERT INTO contracts (
+        id, codice_contratto, leadId, tipo_contratto, 
+        prezzo_totale, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
+    `).bind(
+      contractId,
+      contractCode,
+      leadId,
+      tipoContratto,
+      prezzo,
+      new Date().toISOString()
+    ).run()
+    
+    console.log('✅ Contratto creato:', contractCode)
+    
+    // Prepara dati per email
+    const contractData = {
+      id: contractId,
+      codice_contratto: contractCode,
+      leadId: leadId,
+      nomeRichiedente: lead.nomeRichiedente,
+      cognomeRichiedente: lead.cognomeRichiedente,
+      email: lead.email,
+      telefono: lead.telefono,
+      contractType: tipoContratto
+    }
+    
+    // Invia email con template
+    const emailResult = await inviaEmailContratto(contractData, c.env)
+    
+    if (emailResult.success) {
+      // Aggiorna status contratto
+      await c.env.DB.prepare(`
+        UPDATE contracts SET 
+          status = 'SENT',
+          data_invio = ?,
+          email_sent = true,
+          email_template_used = 'email_invio_contratto'
+        WHERE id = ?
+      `).bind(new Date().toISOString(), contractId).run()
+      
+      // Aggiorna status lead
+      await c.env.DB.prepare(`
+        UPDATE leads SET 
+          status = 'CONTRACT_SENT',
+          vuoleContratto = 'Si',
+          updated_at = ?
+        WHERE id = ?
+      `).bind(new Date().toISOString(), leadId).run()
+      
+      // Log email
+      await c.env.DB.prepare(`
+        INSERT INTO email_logs (
+          leadId, contract_id, recipient_email, template_used, 
+          subject, status, provider_used, sent_at
+        ) VALUES (?, ?, ?, ?, ?, 'SENT', 'RESEND', ?)
+      `).bind(
+        leadId,
+        contractId,
+        lead.email,
+        'email_invio_contratto',
+        `TeleMedCare - Contratto ${contractCode}`,
+        new Date().toISOString()
+      ).run()
+      
+      console.log('✅ Contratto inviato manualmente:', contractCode)
+      
+      return c.json({
+        success: true,
+        message: `Contratto ${contractCode} generato e inviato a ${lead.email}`,
+        contractId: contractId,
+        contractCode: contractCode
+      })
+    } else {
+      // Elimina contratto se email fallisce
+      await c.env.DB.prepare('DELETE FROM contracts WHERE id = ?').bind(contractId).run()
+      
+      return c.json({
+        success: false,
+        error: 'Errore invio email: ' + emailResult.error
+      }, 500)
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore invio manuale contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore invio contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/leads/:id/send-brochure - Invia brochure a lead (forzato)
+app.post('/api/leads/:id/send-brochure', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Invia email con brochure usando EmailService
+    const EmailService = (await import('./modules/email-service')).default
+    const emailService = EmailService.getInstance()
+    
+    const variables = {
+      NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
+      PIANO_SERVIZIO: 'eCura PRO',
+      DISPOSITIVO: 'SiDLY CARE PRO'
+    }
+    
+    // Invia email con template INVIO_BROCHURE
+    const result = await emailService.sendTemplateEmail(
+      'INVIO_BROCHURE',
+      lead.email,
+      variables,
+      undefined,
+      c.env
+    )
+    
+    if (result.success) {
+      // Aggiorna lead
+      await c.env.DB.prepare(`
+        UPDATE leads SET 
+          vuoleBrochure = 'Si',
+          status = CASE 
+            WHEN status = 'NEW' THEN 'BROCHURE_SENT'
+            ELSE status
+          END,
+          updated_at = ?
+        WHERE id = ?
+      `).bind(new Date().toISOString(), leadId).run()
+      
+      // Log email
+      await c.env.DB.prepare(`
+        INSERT INTO email_logs (
+          leadId, recipient_email, template_used, 
+          subject, status, provider_used, sent_at
+        ) VALUES (?, ?, ?, ?, 'SENT', 'RESEND', ?)
+      `).bind(
+        leadId,
+        lead.email,
+        'email_invio_brochure',
+        'TeleMedCare - Brochure Informativa',
+        new Date().toISOString()
+      ).run()
+      
+      console.log('✅ Brochure inviata manualmente al lead:', leadId)
+      
+      return c.json({
+        success: true,
+        message: `Brochure inviata a ${lead.email}`,
+        emailStatus: result
+      })
+    } else {
+      return c.json({
+        success: false,
+        error: 'Errore invio email: ' + result.error
+      }, 500)
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore invio manuale brochure:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore invio brochure',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POINT 10 - API per gestione singoli lead (correzione azioni Data Dashboard)
 app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')

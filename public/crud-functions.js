@@ -254,6 +254,63 @@ async function deleteProforma(proformaId) {
 }
 
 // ========================================
+// INVIO MANUALE DOCUMENTI
+// ========================================
+
+async function sendContractToLead(leadId, tipoContratto = 'BASE') {
+    if (!confirm(`Generare e inviare contratto ${tipoContratto} al lead?`)) {
+        return null;
+    }
+    
+    try {
+        const response = await fetch(`/api/leads/${leadId}/send-contract`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipoContratto })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Contratto inviato con successo!\n\nCodice: ${result.contractCode}\nEmail: ${result.email}\n\nTemplate usato: email_invio_contratto`);
+            return result;
+        } else {
+            alert('❌ Errore: ' + result.error);
+            return null;
+        }
+    } catch (error) {
+        alert('❌ Errore di comunicazione: ' + error.message);
+        return null;
+    }
+}
+
+async function sendBrochureToLead(leadId) {
+    if (!confirm('Inviare brochure al lead?')) {
+        return null;
+    }
+    
+    try {
+        const response = await fetch(`/api/leads/${leadId}/send-brochure`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Brochure inviata con successo!\n\nEmail: ${result.email}\n\nTemplate usato: email_invio_brochure`);
+            return result;
+        } else {
+            alert('❌ Errore: ' + result.error);
+            return null;
+        }
+    } catch (error) {
+        alert('❌ Errore di comunicazione: ' + error.message);
+        return null;
+    }
+}
+
+// ========================================
 // MODAL HELPERS
 // ========================================
 

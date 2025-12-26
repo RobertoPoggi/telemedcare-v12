@@ -1071,11 +1071,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Brochure</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-gray-400">
+                            <td colspan="10" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento lead...</p>
                             </td>
@@ -1213,7 +1214,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             if (leads.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
+                        <td colspan="10" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
                     </tr>
                 \`;
                 return;
@@ -1253,6 +1254,22 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
+                        <td class="py-3">
+                            <div class="flex space-x-1">
+                                <button 
+                                    onclick="sendContract('\${lead.id}', '\${piano}')" 
+                                    class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                                    title="Invia Contratto \${piano}">
+                                    <i class="fas fa-file-contract"></i>
+                                </button>
+                                <button 
+                                    onclick="sendBrochure('\${lead.id}')" 
+                                    class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                                    title="Invia Brochure">
+                                    <i class="fas fa-book"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 \`;
             }).join('');
@@ -1278,6 +1295,56 @@ export const leads_dashboard = `<!DOCTYPE html>
                 'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
             };
             return prezzi[servizio]?.[piano] || '0.00';
+        }
+
+        // Funzioni per invio manuale documenti
+        async function sendContract(leadId, piano) {
+            if (!confirm(\`Generare e inviare contratto \${piano} al lead?\`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipoContratto: piano })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Contratto inviato con successo!\\n\\nCodice: \${result.contractCode}\\nTemplate: email_invio_contratto\`);
+                    loadLeadsData(); // Ricarica i dati
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function sendBrochure(leadId) {
+            if (!confirm('Inviare brochure al lead?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/send-brochure\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure\`);
+                    loadLeadsData(); // Ricarica i dati
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
         }
     </script>
 </body>
