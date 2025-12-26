@@ -3,7 +3,7 @@ import { Hono } from 'hono'
 const app = new Hono()
 
 app.get('/', (c) => {
-  return c.text('TeleMedCare V11.0 - Debug Mode')
+  return c.text('TeleMedCare V12.0 - Debug Mode')
 })
 
 app.get('/test', (c) => {

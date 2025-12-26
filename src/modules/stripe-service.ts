@@ -1,6 +1,6 @@
 /**
  * STRIPE-SERVICE.TS - Stripe Payment Integration
- * eCura V11.0 - Payment Processing
+ * eCura V12.0 - Payment Processing
  * 
  * Gestisce pagamenti tramite Stripe:
  * - Payment Links per proforma

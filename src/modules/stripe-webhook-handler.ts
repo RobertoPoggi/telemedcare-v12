@@ -1,6 +1,6 @@
 /**
  * STRIPE-WEBHOOK-HANDLER.TS
- * eCura V11.0 - Gestione Webhook Stripe per Pagamenti
+ * eCura V12.0 - Gestione Webhook Stripe per Pagamenti
  * 
  * WORKFLOW PASSO 4:
  * 1. Webhook Stripe: payment_intent.succeeded

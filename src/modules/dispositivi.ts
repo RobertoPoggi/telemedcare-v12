@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * DISPOSITIVI.TS - Gestione Inventario SiDLY Care Pro
@@ -33,7 +33,7 @@ export interface DispositivoSiDLY {
   macAddress?: string;           // MAC address WiFi/Bluetooth
   
   // ===== DATI PRODOTTO =====
-  modello: string;               // "SiDLY Care Pro V11.0"
+  modello: string;               // "SiDLY Care Pro V12.0"
   codiceArticolo: string;        // Codice catalogo (SKU)
   versione: string;              // Versione hardware (es. "11.0")
   revisioneHW: string;           // Revisione PCB (es. "Rev. C")
@@ -1114,15 +1114,15 @@ export class TeleMedCareDispositivi {
   private inizializzaConfigurazioneDefault(): ConfigurazioneStock {
     return {
       scorteMinime: {
-        'SiDLY Care Pro V11.0': 50,
+        'SiDLY Care Pro V12.0': 50,
         'SiDLY Care Basic V9.2': 20
       },
       scorteMassime: {
-        'SiDLY Care Pro V11.0': 500,
+        'SiDLY Care Pro V12.0': 500,
         'SiDLY Care Basic V9.2': 200
       },
       livelloRiordino: {
-        'SiDLY Care Pro V11.0': 100,
+        'SiDLY Care Pro V12.0': 100,
         'SiDLY Care Basic V9.2': 50
       },
       fornitori: [
@@ -1178,7 +1178,7 @@ export class TeleMedCareDispositivi {
         id: `DEV_DEMO_${i}`,
         imei,
         serialNumber: `SIDLY${Date.now().toString().slice(-8)}${i}`,
-        modello: 'SiDLY Care Pro V11.0',
+        modello: 'SiDLY Care Pro V12.0',
         codiceArticolo: 'SIDLY-CARE-PRO-2024',
         versione: '11.0',
         revisioneHW: 'Rev. C',
@@ -1308,7 +1308,7 @@ export async function registraDispositivoRapido(
   const dispositivo = {
     imei,
     serialNumber,
-    modello: 'SiDLY Care Pro V11.0',
+    modello: 'SiDLY Care Pro V12.0',
     codiceArticolo: 'SIDLY-CARE-PRO-2024',
     versione: '11.0',
     revisioneHW: 'Rev. C',

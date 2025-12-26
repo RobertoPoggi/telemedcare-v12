@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 Modular Enterprise System
+ * TeleMedCare V12.0 Modular Enterprise System
  * Data Management Service - Gestione visualizzazione leads, assistiti, logs
  */
 

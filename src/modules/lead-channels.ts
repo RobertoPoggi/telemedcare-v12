@@ -1,6 +1,6 @@
 /**
  * LEAD_CHANNELS.TS - Multi-Source Integration
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Plugin architecture per canali acquisizione multi-fonte
@@ -269,7 +269,7 @@ export async function inviaLeadIRBEMA(db: D1Database, leadData: Partial<Lead>): 
         tipo: leadData.pacchetto,
         urgenza: leadData.priority
       },
-      fonte: 'TeleMedCare_V11.0',
+      fonte: 'TeleMedCare_V12.0',
       timestamp: new Date().toISOString()
     }
     

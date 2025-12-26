@@ -1,6 +1,6 @@
 /**
  * CONTRACT-GENERATOR.TS - Generatore Contratti PDF eCura
- * TeleMedCare V11.0 → eCura Rebranding
+ * TeleMedCare V12.0 → eCura Rebranding
  * 
  * Genera contratti PDF da template HTML B2C
  * Compila campi variabili per privati/anziani
@@ -532,7 +532,7 @@ export class ContractGenerator {
     <p>Il presente contratto ha per oggetto la fornitura del servizio <strong>{{TIPO_SERVIZIO}}</strong>, 
     che include:</p>
     <ul>
-      <li>Dispositivo medico SiDLY Care Pro V11.0 in comodato d'uso</li>
+      <li>Dispositivo medico SiDLY Care Pro V12.0 in comodato d'uso</li>
       <li>Servizio di telemonitoraggio parametri vitali</li>
       <li>Supporto tecnico telefonico (ore ufficio)</li>
       <li>Manutenzione ordinaria e straordinaria del dispositivo</li>
@@ -1014,7 +1014,7 @@ ${420 + textContent.length}
 (Ricevera un'email con il link per la firma elettronica.) Tj
 0 -30 Td
 /F1 9 Tf
-(Documento generato automaticamente da eCura - TeleMedCare V11.0) Tj
+(Documento generato automaticamente da eCura - TeleMedCare V12.0) Tj
 0 -15 Td
 (Per informazioni: info@telemedcare.it | Tel: 800 123 456) Tj
 0 -15 Td

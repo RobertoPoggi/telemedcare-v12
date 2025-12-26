@@ -1,6 +1,6 @@
 /**
  * PROFORMA-GENERATOR.TS - Generatore Proforma/Fattura PDF
- * eCura V11.0 - Invoice Generation
+ * eCura V12.0 - Invoice Generation
  * 
  * Genera proforma (fattura proforma) dopo firma contratto
  * Include link pagamento Stripe

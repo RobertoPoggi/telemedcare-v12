@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 / eCura - Brochure Manager
+ * TeleMedCare V12.0 / eCura - Brochure Manager
  * Gestisce la mappatura Servizio → Brochure e il caricamento dinamico dei PDF
  * 
  * MAPPATURA SERVIZI:

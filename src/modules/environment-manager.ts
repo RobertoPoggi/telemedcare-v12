@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Environment Manager
+ * TeleMedCare V12.0 - Environment Manager
  * Sistema completo gestione ambienti, deployment e clonazione
  */
 

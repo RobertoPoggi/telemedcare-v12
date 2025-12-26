@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Client Configuration Manager
+ * TeleMedCare V12.0 - Client Configuration Manager
  * Gestisce le configurazioni compilate dai clienti dopo il pagamento
  */
 

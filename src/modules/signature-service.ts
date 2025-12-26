@@ -1,6 +1,6 @@
 /**
  * SIGNATURE_SERVICE.TS - Sistema Firme Digitali Zero-Cost
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Firma manuale con upload documento firmato
@@ -432,7 +432,7 @@ export class SignatureService {
         customerPhone: customerData.phone,
         signatureMethod,
         metadata: {
-          userAgent: 'TeleMedCare V11.0',
+          userAgent: 'TeleMedCare V12.0',
           timestamp: new Date().toISOString()
         }
       }

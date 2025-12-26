@@ -18,7 +18,7 @@ app.get('/', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 - Sistema Completo Multi-Environment</title>
+    <title>TeleMedCare V12.0 - Sistema Completo Multi-Environment</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <style>
@@ -36,7 +36,7 @@ app.get('/', (c) => {
                     <div class="mx-auto w-24 h-24 bg-white bg-opacity-20 backdrop-blur rounded-full flex items-center justify-center mb-8">
                         <i class="fas fa-heartbeat text-4xl text-white"></i>
                     </div>
-                    <h1 class="text-5xl font-bold mb-4">TeleMedCare V11.0</h1>
+                    <h1 class="text-5xl font-bold mb-4">TeleMedCare V12.0</h1>
                     <p class="text-xl mb-2 text-blue-100">Sistema Modulare Multi-Environment per Telemedicina</p>
                     <p class="text-lg mb-8 text-blue-200">Gestione completa Lead, Assistiti, Analytics e Deployment Automatizzato</p>
                     
@@ -73,7 +73,7 @@ app.get('/', (c) => {
                             <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-heartbeat text-white text-sm"></i>
                             </div>
-                            <span class="font-bold text-gray-900">TeleMedCare V11.0</span>
+                            <span class="font-bold text-gray-900">TeleMedCare V12.0</span>
                         </div>
                         
                         <!-- OPERATIONAL MENU -->
@@ -175,7 +175,7 @@ app.get('/', (c) => {
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Dashboard Operativa</h1>
-                        <p class="text-gray-600">Accesso rapido a tutte le funzionalità TeleMedCare V11.0</p>
+                        <p class="text-gray-600">Accesso rapido a tutte le funzionalità TeleMedCare V12.0</p>
                     </div>
                     <div class="text-right text-sm text-gray-500">
                         <div>Ultimo accesso: <span class="font-medium">Oggi</span></div>
@@ -798,7 +798,7 @@ app.get('/landing', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page - TeleMedCare V11.0</title>
+    <title>Landing Page - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <style>
@@ -813,7 +813,7 @@ app.get('/landing', (c) => {
                     <div class="w-32 h-32 bg-white bg-opacity-20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-heartbeat text-6xl text-white"></i>
                     </div>
-                    <h1 class="text-6xl font-bold mb-6">TeleMedCare V11.0</h1>
+                    <h1 class="text-6xl font-bold mb-6">TeleMedCare V12.0</h1>
                     <p class="text-2xl mb-4 text-blue-100">Il Futuro della Telemedicina è Qui</p>
                     <p class="text-xl mb-12 text-blue-200">Sistema modulare completo per gestione lead medicali, assistiti e deployment multi-ambiente</p>
                 </div>
@@ -877,7 +877,7 @@ app.get('/leads/dashboard', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Lead - TeleMedCare V11.0</title>
+    <title>Dashboard Lead - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -1099,7 +1099,7 @@ app.get('/assistiti/dashboard', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Assistiti - TeleMedCare V11.0</title>
+    <title>Dashboard Assistiti - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -1219,7 +1219,7 @@ app.get('/contracts/dashboard', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Contratti - TeleMedCare V11.0</title>
+    <title>Dashboard Contratti - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -1385,7 +1385,7 @@ app.get('/database/explorer', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Explorer - TeleMedCare V11.0</title>
+    <title>Database Explorer - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -1560,7 +1560,7 @@ app.get('/analytics/dashboard', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics Dashboard - TeleMedCare V11.0</title>
+    <title>Analytics Dashboard - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1815,7 +1815,7 @@ app.get('/environments/monitor', (c) => {
 app.get('/api/health', (c) => {
   return c.json({
     success: true,
-    system: 'TeleMedCare V11.0 Multi-Environment',
+    system: 'TeleMedCare V12.0 Multi-Environment',
     status: 'healthy',
     timestamp: new Date().toISOString(),
     encoding: 'UTF-8',
@@ -1833,7 +1833,7 @@ app.get('/api/health', (c) => {
 app.get('/api/version', (c) => {
   return c.json({
     success: true,
-    version: 'V11.0-Multi-Environment-Encoding-Fixed',
+    version: 'V12.0-Multi-Environment-Encoding-Fixed',
     name: 'TeleMedCare Sistema Modulare',
     build: new Date().toISOString(),
     encoding_status: 'CORRETTI - Tutti i problemi di encoding risolti',
@@ -1852,7 +1852,7 @@ app.get('/api/version', (c) => {
 app.get('/api/menu', (c) => {
   return c.json({
     success: true,
-    description: 'Menu completo TeleMedCare V11.0 - Encoding UTF-8',
+    description: 'Menu completo TeleMedCare V12.0 - Encoding UTF-8',
     sections: {
       dashboard_core: [
         { path: '/', label: 'Dashboard Principale', status: 'active' },
@@ -1899,8 +1899,8 @@ app.get('/api/menu', (c) => {
 app.get('/api/docs', (c) => {
   return c.json({
     success: true,
-    title: 'TeleMedCare V11.0 - API Documentation',
-    version: 'V11.0-Multi-Environment',
+    title: 'TeleMedCare V12.0 - API Documentation',
+    version: 'V12.0-Multi-Environment',
     description: 'Documentazione completa API REST per TeleMedCare sistema multi-ambiente',
     base_url: 'https://webapp.pages.dev',
     endpoints: {
@@ -1953,7 +1953,7 @@ app.get('/api/docs', (c) => {
 app.get('/api/docs/categories', (c) => {
   return c.json({
     success: true,
-    title: 'API Categories - TeleMedCare V11.0',
+    title: 'API Categories - TeleMedCare V12.0',
     categories: [
       {
         name: 'System APIs',
@@ -2077,7 +2077,7 @@ app.get('/test/suite', async (c) => {
   
   return c.json({
     success: true,
-    test_suite: 'TeleMedCare V11.0 Complete Test Suite',
+    test_suite: 'TeleMedCare V12.0 Complete Test Suite',
     execution_time_ms: executionTime,
     total_tests: allTests.length,
     passed_tests: passedTests,
@@ -2085,7 +2085,7 @@ app.get('/test/suite', async (c) => {
     overall_status: passedTests === allTests.length - 1 ? 'MOSTLY PASSED' : 'PASSED', // -1 per il test simulato
     tests: allTests,
     system_info: {
-      version: 'V11.0-Multi-Environment-Encoding-Fixed',
+      version: 'V12.0-Multi-Environment-Encoding-Fixed',
       environment: 'Development/Testing',
       encoding: 'UTF-8',
       menu_status: 'Fully Functional',
@@ -2114,7 +2114,7 @@ app.get('/test', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Suite - TeleMedCare V11.0</title>
+    <title>Test Suite - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -2126,7 +2126,7 @@ app.get('/test', (c) => {
                     <div class="mx-auto w-20 h-20 bg-gradient-to-r from-green-400 to-blue-600 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-vial text-3xl text-white"></i>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">🧪 Test Suite TeleMedCare V11.0</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">🧪 Test Suite TeleMedCare V12.0</h1>
                     <p class="text-gray-600">Pannello completo per eseguire tutti i test del sistema</p>
                 </div>
                 
@@ -2593,7 +2593,7 @@ app.get('/admin-environments.html', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Ambienti - TeleMedCare V11.0</title>
+    <title>Gestione Ambienti - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -2694,7 +2694,7 @@ app.get('/admin-docs.html', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentazione - TeleMedCare V11.0</title>
+    <title>Documentazione - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -3017,7 +3017,7 @@ app.get('/templates/view', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizza Template - TeleMedCare V11.0</title>
+    <title>Visualizza Template - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -3141,7 +3141,7 @@ app.get('/templates/manage', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestisci Template - TeleMedCare V11.0</title>
+    <title>Gestisci Template - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>

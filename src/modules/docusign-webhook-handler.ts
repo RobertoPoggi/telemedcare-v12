@@ -1,6 +1,6 @@
 /**
  * DOCUSIGN-WEBHOOK-HANDLER.TS - DocuSign Webhook Handler
- * eCura V11.0 - Digital Signature Events
+ * eCura V12.0 - Digital Signature Events
  * 
  * Gestisce gli eventi webhook da DocuSign:
  * - Firma completata → genera e invia proforma

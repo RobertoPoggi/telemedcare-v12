@@ -1,6 +1,6 @@
 /**
  * CONTRACT_SERVICE.TS - Sistema Pre-compilazione Contratti
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Pre-compilazione contratti Base e Avanzato con dati cliente

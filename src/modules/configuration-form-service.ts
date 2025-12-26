@@ -1,6 +1,6 @@
 /**
  * CONFIGURATION_FORM_SERVICE.TS - Sistema Form Dinamici e Pre-compilazione
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Mapping form landing page esistente (www.telemedcare.it) → ContractService

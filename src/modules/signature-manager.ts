@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Signature Manager
+ * TeleMedCare V12.0 - Signature Manager
  * Gestisce le firme elettroniche dei contratti
  */
 

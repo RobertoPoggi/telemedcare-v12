@@ -1,6 +1,6 @@
 /**
  * LEAD_CONVERSION.TS - Workflow Automatizzato Lead→Assistiti
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - State machine workflow 10-step con rollback automatico
@@ -560,7 +560,7 @@ async function invioDocumentiStep(db: D1Database, assistitoId: string): Promise<
       const DocumentRepository = await import('./document-repository')
       
       const requestResult = await DocumentRepository.default.processDocumentRequest({
-        deviceModel: 'SiDLY Care Pro V11.0',
+        deviceModel: 'SiDLY Care Pro V12.0',
         documentTypes: documentiRichiesti as any,
         language: 'it',
         customerInfo: {

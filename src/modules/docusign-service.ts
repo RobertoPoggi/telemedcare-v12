@@ -1,6 +1,6 @@
 /**
  * DOCUSIGN-SERVICE.TS - Integrazione DocuSign API
- * eCura V11.0 - Digital Signature Integration
+ * eCura V12.0 - Digital Signature Integration
  * 
  * Gestisce l'invio di documenti per firma digitale tramite DocuSign
  * Supporta firma embedded e firma via email

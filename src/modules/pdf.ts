@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * PDF.TS - Generazione Contratti e Proforma Personalizzati
@@ -61,7 +61,7 @@ export interface DocumentoPersonalizzato {
   prodotto: {
     nome: string;               // "SiDLY Care Pro"
     codice: string;             // "SIDLY-CARE-PRO-2024"
-    versione: string;           // "V11.0"
+    versione: string;           // "V12.0"
     prezzo: number;             // €299.00
     valuta: string;             // "EUR"
     iva: number;                // 22% (default IT)
@@ -885,9 +885,9 @@ export class TeleMedCarePDF {
     // Aggiunge metadati per audit trail
     const metadati = {
       title: `${documento.tipo.toUpperCase()} - ${documento.lead.cognome}`,
-      author: 'TeleMedCare V11.0',
+      author: 'TeleMedCare V12.0',
       subject: `Documento ${documento.tipo} per ${documento.prodotto.nome}`,
-      creator: `TeleMedCare PDF Engine V11.0`,
+      creator: `TeleMedCare PDF Engine V12.0`,
       producer: `Partner: ${documento.partner.codice}`,
       creationDate: documento.dataCreazione.toISOString(),
       keywords: `telemedcare,${documento.tipo},${documento.partner.codice},${documento.prodotto.codice}`
@@ -1225,7 +1225,7 @@ export class TeleMedCarePDF {
             <div class="footer-section">
               <div class="flex justify-between items-center">
                 <div class="small">
-                  TeleMedCare V11.0 - Documento generato il {{data_oggi}}
+                  TeleMedCare V12.0 - Documento generato il {{data_oggi}}
                 </div>
                 <div class="small">
                   Pagina 1 di 1
@@ -1709,7 +1709,7 @@ export async function generaContrattoRapido(
     prodotto: {
       nome: 'SiDLY Care Pro',
       codice: 'SIDLY-CARE-PRO-2024',
-      versione: 'V11.0',
+      versione: 'V12.0',
       prezzo: prezzoPersonalizzato || 299,
       valuta: 'EUR',
       iva: 22

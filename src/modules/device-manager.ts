@@ -1,6 +1,6 @@
 /**
  * DEVICE_MANAGER.TS - Sistema Gestione Dispositivi Medici
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Equivalente di dispositivi.gs - Gestisce:
  * - Associazione dispositivi medici a clienti

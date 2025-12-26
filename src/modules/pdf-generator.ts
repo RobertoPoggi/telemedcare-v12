@@ -1,5 +1,5 @@
 /**
- * PDF Generator Module - TeleMedCare V11.0
+ * PDF Generator Module - TeleMedCare V12.0
  * Converte HTML in PDF usando Cloudflare Browser Rendering
  */
 

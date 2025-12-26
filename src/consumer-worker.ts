@@ -1,6 +1,6 @@
 /**
  * CONSUMER-WORKER.TS
- * eCura V11.0 - Lead Processing Consumer
+ * eCura V12.0 - Lead Processing Consumer
  * 
  * Processa lead dalla Cloudflare Queue ed esegue workflow completo:
  * 1. Genera contratto

@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * UTILS.TS - Utilità di Sistema e Validazione
@@ -364,7 +364,7 @@ export class IMEIValidator {
       // SiDLY Technologies (Demo per dispositivi TeleMedCare)
       '35900000': { manufacturer: 'SiDLY Technologies', model: 'SiDLY Care Pro V10' },
       '35900001': { manufacturer: 'SiDLY Technologies', model: 'SiDLY Care Pro V10.3' },
-      '35900002': { manufacturer: 'SiDLY Technologies', model: 'SiDLY Care Pro V11.0' },
+      '35900002': { manufacturer: 'SiDLY Technologies', model: 'SiDLY Care Pro V12.0' },
       
       // Huawei
       '86000000': { manufacturer: 'Huawei', model: 'Generic Device' }
@@ -634,7 +634,7 @@ export class CELabelParser {
         
         // Imposta valori default se mancanti
         if (!result.model && hasDeviceInfo) {
-          result.model = 'SiDLY Care Pro V11.0';
+          result.model = 'SiDLY Care Pro V12.0';
           result.version = '11.0';
         }
         if (!result.manufacturer && hasDeviceInfo) {

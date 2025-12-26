@@ -1,0 +1,6 @@
+name = "telemedcare-v12"
+main = "dist/_worker.js"
+compatibility_date = "2025-10-06"
+
+[env.production]
+name = "telemedcare-v12"

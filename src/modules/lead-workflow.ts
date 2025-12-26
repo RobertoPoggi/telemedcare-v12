@@ -1,6 +1,6 @@
 /**
  * LEAD_WORKFLOW.TS - Sistema Workflow Automatico Lead
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Workflow automatico post-acquisizione lead

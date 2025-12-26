@@ -1,5 +1,5 @@
 /**
- * Contract Manager - TeleMedCare V11.0
+ * Contract Manager - TeleMedCare V12.0
  * Gestione completa dei contratti: generazione, firma digitale, tracking
  */
 

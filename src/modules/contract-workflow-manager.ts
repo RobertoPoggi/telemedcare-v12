@@ -1,5 +1,5 @@
 /**
- * eCura V11.0 - Contract Workflow Manager
+ * eCura V12.0 - Contract Workflow Manager
  * Gestisce il workflow completo di generazione e invio contratto
  * 
  * WORKFLOW:

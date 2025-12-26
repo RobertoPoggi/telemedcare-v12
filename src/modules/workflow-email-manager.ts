@@ -1,5 +1,5 @@
 /**
- * eCura V11.0 - Workflow Email Manager
+ * eCura V12.0 - Workflow Email Manager
  * Gestisce il flusso completo delle email secondo il processo corretto:
  * 
  * FLUSSO CORRETTO:
@@ -112,7 +112,7 @@ export async function inviaEmailNotificaInfo(
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      VERSIONE_SISTEMA: 'TeleMedCare V11.0',
+      VERSIONE_SISTEMA: 'TeleMedCare V12.0',
       
       // Nuovi placeholder per richieste del lead
       VUOLE_CONTRATTO_TEXT: vuoleContratto ? '✅ SI' : '❌ NO',
@@ -677,7 +677,7 @@ export async function inviaEmailConfermaAttivazione(
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
       CODICE_CLIENTE: clientData.codiceCliente,
       PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      MODELLO_DISPOSITIVO: deviceData.modello || 'SiDLY Care Pro V11.0',
+      MODELLO_DISPOSITIVO: deviceData.modello || 'SiDLY Care Pro V12.0',
       IMEI_DISPOSITIVO: deviceData.imei,
       NUMERO_SIM: deviceData.numeroSim || 'Da configurare',
       DATA_ATTIVAZIONE: new Date(deviceData.dataAssociazione).toLocaleDateString('it-IT'),

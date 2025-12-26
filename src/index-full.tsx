@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
-// Import TeleMedCare V11.0 Modular Enterprise System
+// Import TeleMedCare V12.0 Modular Enterprise System
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
 import * as LeadChannels from './modules/lead-channels'
@@ -35,12 +35,12 @@ type Bindings = {
   ENCRYPTION_KEY?: string
 }
 
-// Configurazione TeleMedCare V11.0 Modular Enterprise
+// Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
   EMAIL_FROM: 'noreply@medicagb.it',
   EMAIL_TO_INFO: 'info@medicagb.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
-  SYSTEM_VERSION: 'V11.0-Modular-Enterprise',
+  SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
   // Prezzi servizi
   PREZZI: {
@@ -112,7 +112,7 @@ app.get('/admin/devices', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Registrazione Dispositivi</title>
+        <title>TeleMedCare V12.0 - Registrazione Dispositivi</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -138,7 +138,7 @@ app.get('/admin/devices', (c) => {
                         <div class="flex items-center space-x-4">
                             <i class="fas fa-microchip text-3xl text-blue-600"></i>
                             <div>
-                                <h1 class="text-2xl font-bold text-gray-800">TeleMedCare V11.0</h1>
+                                <h1 class="text-2xl font-bold text-gray-800">TeleMedCare V12.0</h1>
                                 <p class="text-sm text-gray-600">Sistema Registrazione Dispositivi Enterprise</p>
                             </div>
                         </div>
@@ -199,7 +199,7 @@ app.get('/admin/devices', (c) => {
                                         <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="SiDLY Care Pro">SiDLY Care Pro</option>
                                             <option value="SiDLY Care Pro V10">SiDLY Care Pro V10</option>
-                                            <option value="SiDLY Care Pro V11">SiDLY Care Pro V11</option>
+                                            <option value="SiDLY Care Pro V12">SiDLY Care Pro V12</option>
                                         </select>
                                     </div>
                                 </div>
@@ -329,7 +329,7 @@ app.get('/admin/devices', (c) => {
             
             // Inizializzazione
             document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 TeleMedCare V11.0 - Device Registration System');
+                console.log('🚀 TeleMedCare V12.0 - Device Registration System');
                 loadStatistics();
                 setupFileUpload();
                 setupManualForm();
@@ -582,7 +582,7 @@ app.get('/admin/devices', (c) => {
 
             // Genera IMEI mock realistico per demo
             function generateMockIMEI() {
-                const tac = '35900002'; // SiDLY Technologies V11.0
+                const tac = '35900002'; // SiDLY Technologies V12.0
                 const snr = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
                 const imei14 = tac + snr;
                 
@@ -615,7 +615,7 @@ app.get('/', (c) => {
 <html lang="it" data-theme="light" style=""><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 Modular Enterprise - La tecnologia che ti salva salute e vita</title>
+    <title>TeleMedCare V12.0 Modular Enterprise - La tecnologia che ti salva salute e vita</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
@@ -798,7 +798,7 @@ app.get('/', (c) => {
     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2">
       <div class="container mx-auto px-4 text-center">
         <span class="text-sm font-semibold">
-          🚀 TeleMedCare V11.0 Modular Enterprise System • 
+          🚀 TeleMedCare V12.0 Modular Enterprise System • 
           AI-Powered Lead Management • 
           Multi-Partner Integration • 
           Advanced Analytics
@@ -1362,7 +1362,7 @@ app.get('/', (c) => {
                 <i class="fas fa-check-circle text-2xl mr-3"></i>
                 <strong class="text-lg">✓ Successo!</strong>
               </div>
-              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V11.0. Riceverai conferma via email con i documenti richiesti!</span>
+              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V12.0. Riceverai conferma via email con i documenti richiesti!</span>
             </div>
             <div id="error_message" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-md animate-fade-in">
               <div class="flex items-center">
@@ -1376,7 +1376,7 @@ app.get('/', (c) => {
                 <i class="fas fa-spinner fa-spin text-2xl mr-3"></i>
                 <strong class="text-lg">⏳ Invio in corso...</strong>
               </div>
-              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V11.0, attendi un momento.</span>
+              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V12.0, attendi un momento.</span>
             </div>
           </div>
         </div>
@@ -1444,19 +1444,19 @@ app.get('/', (c) => {
     </section>
 
     <script type="text/javascript">
-      // TeleMedCare V11.0 - Integrazione Cloudflare Pages + Hono DEFINITIVA
+      // TeleMedCare V12.0 - Integrazione Cloudflare Pages + Hono DEFINITIVA
       // MODIFICA: Sostituito Google Apps Script con endpoint Hono /api/lead
 
-      // Configurazione sistema V11.0 DEFINITIVA
+      // Configurazione sistema V12.0 DEFINITIVA
       const TELEMEDCARE_CONFIG = {
         API_URL: '/api/forms/process-telemedcare-lead', // Endpoint con automazione completa
-        VERSION: 'V11.0-Modular-Enterprise',
-        SOURCE: 'Landing Page TeleMedCare V11.0 Modular Enterprise'
+        VERSION: 'V12.0-Modular-Enterprise',
+        SOURCE: 'Landing Page TeleMedCare V12.0 Modular Enterprise'
       };
 
       // Calcolo automatico dell'età - SISTEMA PERFETTO MANTENUTO
       function calcolaEta() {
-        console.log('🔢 TeleMedCare V11.0-Cloudflare: Calcolo età avviato');
+        console.log('🔢 TeleMedCare V12.0-Cloudflare: Calcolo età avviato');
         
         const dataInput = document.getElementById('data_nascita_assistito');
         const etaInput = document.getElementById('eta_assistito');
@@ -1464,12 +1464,12 @@ app.get('/', (c) => {
         if (dataInput && dataInput.value) {
           try {
             const dateValue = dataInput.value;
-            console.log('📅 TeleMedCare V11.0-Cloudflare: Data inserita:', dateValue);
+            console.log('📅 TeleMedCare V12.0-Cloudflare: Data inserita:', dateValue);
             
             // Parsing corretto della data
             const parts = dateValue.split('-');
             if (parts.length !== 3) {
-              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Formato data non valido');
+              console.warn('⚠️ TeleMedCare V12.0-Cloudflare: Formato data non valido');
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1480,7 +1480,7 @@ app.get('/', (c) => {
 
             // Verifica anno ragionevole (1900-2024)
             if (year < 1900 || year > 2024) {
-              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Anno non valido:', year);
+              console.warn('⚠️ TeleMedCare V12.0-Cloudflare: Anno non valido:', year);
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1490,7 +1490,7 @@ app.get('/', (c) => {
 
             // Verifica che la data non sia futura
             if (birthDate > today) {
-              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Data futura non consentita');
+              console.warn('⚠️ TeleMedCare V12.0-Cloudflare: Data futura non consentita');
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1505,7 +1505,7 @@ app.get('/', (c) => {
 
             // Controllo età ragionevole
             if (age < 0 || age > 150) {
-              console.warn('⚠️ TeleMedCare V11.0-Cloudflare: Età non ragionevole:', age);
+              console.warn('⚠️ TeleMedCare V12.0-Cloudflare: Età non ragionevole:', age);
               if (etaInput) etaInput.value = '';
               return;
             }
@@ -1514,9 +1514,9 @@ app.get('/', (c) => {
               etaInput.value = age + ' anni';
             }
 
-            console.log('✅ TeleMedCare V11.0-Cloudflare: Età calcolata correttamente: ' + age + ' anni');
+            console.log('✅ TeleMedCare V12.0-Cloudflare: Età calcolata correttamente: ' + age + ' anni');
           } catch (error) {
-            console.error('❌ TeleMedCare V11.0-Cloudflare: Errore calcolo età:', error);
+            console.error('❌ TeleMedCare V12.0-Cloudflare: Errore calcolo età:', error);
             if (etaInput) etaInput.value = 'Errore calcolo';
           }
         } else {
@@ -1601,7 +1601,7 @@ app.get('/', (c) => {
 
       // Toggle intestazione contratto - SISTEMA PERFETTO MANTENUTO
       function toggleIntestazioneContratto() {
-        console.log('🔄 TeleMedCare V11.0-Cloudflare: Toggle intestazione contratto');
+        console.log('🔄 TeleMedCare V12.0-Cloudflare: Toggle intestazione contratto');
         
         const checkbox = document.getElementById('vuole_contratto');
         const section = document.getElementById('intestazione_contratto_section');
@@ -1609,7 +1609,7 @@ app.get('/', (c) => {
         if (checkbox && section) {
           if (checkbox.checked) {
             section.classList.remove('hidden');
-            console.log('✅ TeleMedCare V11.0-Cloudflare: Sezione contratto mostrata');
+            console.log('✅ TeleMedCare V12.0-Cloudflare: Sezione contratto mostrata');
           } else {
             section.classList.add('hidden');
             
@@ -1624,14 +1624,14 @@ app.get('/', (c) => {
             const radioButtons = document.querySelectorAll('input[name="intestazioneContratto"]');
             radioButtons.forEach(radio => radio.checked = false);
             
-            console.log('👁️ TeleMedCare V11.0-Cloudflare: Sezione contratto nascosta');
+            console.log('👁️ TeleMedCare V12.0-Cloudflare: Sezione contratto nascosta');
           }
         }
       }
 
       // Toggle campi dinamici CF/Indirizzo - SISTEMA PERFETTO MANTENUTO
       function toggleCampiDinamici() {
-        console.log('🔄 TeleMedCare V11.0-Cloudflare: Toggle campi dinamici CF/Indirizzo');
+        console.log('🔄 TeleMedCare V12.0-Cloudflare: Toggle campi dinamici CF/Indirizzo');
         
         const richiedenteRadio = document.querySelector('input[name="intestazioneContratto"][value="richiedente"]');
         const assistitoRadio = document.querySelector('input[name="intestazioneContratto"][value="assistito"]');
@@ -1645,10 +1645,10 @@ app.get('/', (c) => {
         // Mostra il campo appropriato
         if (richiedenteRadio && richiedenteRadio.checked && campiRichiedente) {
           campiRichiedente.style.display = 'block';
-          console.log('👤 TeleMedCare V11.0-Cloudflare: Mostrati campi richiedente');
+          console.log('👤 TeleMedCare V12.0-Cloudflare: Mostrati campi richiedente');
         } else if (assistitoRadio && assistitoRadio.checked && campiAssistito) {
           campiAssistito.style.display = 'block';
-          console.log('🏥 TeleMedCare V11.0-Cloudflare: Mostrati campi assistito');
+          console.log('🏥 TeleMedCare V12.0-Cloudflare: Mostrati campi assistito');
         }
       }
 
@@ -1672,7 +1672,7 @@ app.get('/', (c) => {
             case 'success':
               if (successMsg) successMsg.classList.remove('hidden');
               container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              console.log('✅ TeleMedCare V11.0-Cloudflare: Messaggio successo mostrato');
+              console.log('✅ TeleMedCare V12.0-Cloudflare: Messaggio successo mostrato');
               setTimeout(() => {
                 if (container) container.classList.add('hidden');
               }, 10000);
@@ -1681,7 +1681,7 @@ app.get('/', (c) => {
             case 'error':
               if (errorMsg) errorMsg.classList.remove('hidden');
               container.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              console.log('❌ TeleMedCare V11.0-Cloudflare: Messaggio errore mostrato');
+              console.log('❌ TeleMedCare V12.0-Cloudflare: Messaggio errore mostrato');
               setTimeout(() => {
                 if (container) container.classList.add('hidden');
               }, 12000);
@@ -1689,13 +1689,13 @@ app.get('/', (c) => {
               
             case 'loading':
               if (loadingMsg) loadingMsg.classList.remove('hidden');
-              console.log('⏳ TeleMedCare V11.0-Cloudflare: Messaggio loading mostrato');
+              console.log('⏳ TeleMedCare V12.0-Cloudflare: Messaggio loading mostrato');
               break;
           }
         }
       }
 
-      // Preparazione dati per Hono API V11.0 - MAPPATURA COMPLETA
+      // Preparazione dati per Hono API V12.0 - MAPPATURA COMPLETA
       function prepareLeadData(formData) {
         const leadData = {};
 
@@ -1704,19 +1704,19 @@ app.get('/', (c) => {
           leadData[key] = value || '';
         }
 
-        // Gestione checkbox con mappatura corretta V11.0
+        // Gestione checkbox con mappatura corretta V12.0
         leadData.vuoleContratto = formData.has('vuoleContratto') ? 'Si' : 'No';
         leadData.vuoleBrochure = formData.has('vuoleBrochure') ? 'Si' : 'No';
         leadData.vuoleManuale = formData.has('vuoleManuale') ? 'Si' : 'No';
         leadData.gdprConsent = formData.has('gdprConsent') ? 'on' : '';
 
-        // Metadati sistema V11.0
+        // Metadati sistema V12.0
         leadData.timestamp = new Date().toISOString();
         leadData.source = TELEMEDCARE_CONFIG.SOURCE;
         leadData.sistemaVersione = TELEMEDCARE_CONFIG.VERSION;
         leadData.requestType = 'POST';
 
-        console.log('📦 TeleMedCare V11.0-Cloudflare: Dati preparati per invio:', leadData);
+        console.log('📦 TeleMedCare V12.0-Cloudflare: Dati preparati per invio:', leadData);
         return leadData;
       }
 
@@ -1726,7 +1726,7 @@ app.get('/', (c) => {
         
         for (let field of required) {
           if (!formData.get(field) || formData.get(field).trim() === '') {
-            console.error('❌ TeleMedCare V11.0-Cloudflare: Campo obbligatorio mancante: ' + field);
+            console.error('❌ TeleMedCare V12.0-Cloudflare: Campo obbligatorio mancante: ' + field);
             alert('Il campo "' + field + '" è obbligatorio');
             return false;
           }
@@ -1736,29 +1736,29 @@ app.get('/', (c) => {
         const email = formData.get('emailRichiedente');
         const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
         if (!emailRegex.test(email)) {
-          console.error('❌ TeleMedCare V11.0-Cloudflare: Email non valida:', email);
+          console.error('❌ TeleMedCare V12.0-Cloudflare: Email non valida:', email);
           alert('Inserisci un indirizzo email valido');
           return false;
         }
 
         // Validazione GDPR
         if (!formData.has('gdprConsent')) {
-          console.error('❌ TeleMedCare V11.0-Cloudflare: Consenso GDPR obbligatorio');
+          console.error('❌ TeleMedCare V12.0-Cloudflare: Consenso GDPR obbligatorio');
           alert('È necessario accettare il trattamento dei dati personali');
           return false;
         }
 
-        console.log('✅ TeleMedCare V11.0-Cloudflare: Validazione form completata');
+        console.log('✅ TeleMedCare V12.0-Cloudflare: Validazione form completata');
         return true;
       }
 
-      // Invio al Hono API V11.0 - SISTEMA ROBUSTO
+      // Invio al Hono API V12.0 - SISTEMA ROBUSTO
       async function submitToHonoAPI(leadData) {
-        console.log('🚀 TeleMedCare V11.0: Invio a sistema automazione completa iniziato');
-        console.log('🔗 TeleMedCare V11.0: URL endpoint automazione:', TELEMEDCARE_CONFIG.API_URL);
+        console.log('🚀 TeleMedCare V12.0: Invio a sistema automazione completa iniziato');
+        console.log('🔗 TeleMedCare V12.0: URL endpoint automazione:', TELEMEDCARE_CONFIG.API_URL);
 
         try {
-          console.log('📤 TeleMedCare V11.0: Invio POST con JSON per automazione completa');
+          console.log('📤 TeleMedCare V12.0: Invio POST con JSON per automazione completa');
 
           const response = await fetch(TELEMEDCARE_CONFIG.API_URL, {
             method: 'POST',
@@ -1770,7 +1770,7 @@ app.get('/', (c) => {
 
           if (response.ok) {
             const result = await response.json();
-            console.log('✅ TeleMedCare V11.0: Risposta ricevuta:', result);
+            console.log('✅ TeleMedCare V12.0: Risposta ricevuta:', result);
             
             // Gestisce la risposta del nuovo endpoint automazione
             if (result.success) {
@@ -1784,12 +1784,12 @@ app.get('/', (c) => {
               return { status: 'error', message: result.message || 'Errore elaborazione lead' };
             }
           } else {
-            console.error('❌ TeleMedCare V11.0: Errore HTTP:', response.status);
+            console.error('❌ TeleMedCare V12.0: Errore HTTP:', response.status);
             return { status: 'error', message: 'Errore del server durante l\\'invio' };
           }
 
         } catch (error) {
-          console.error('❌ TeleMedCare V11.0-Cloudflare: Errore invio:', error);
+          console.error('❌ TeleMedCare V12.0-Cloudflare: Errore invio:', error);
           return { status: 'error', message: 'Errore di rete durante l\\'invio' };
         }
       }
@@ -1797,7 +1797,7 @@ app.get('/', (c) => {
       // Gestione form submission
       async function handleFormSubmission(event) {
         event.preventDefault();
-        console.log('📝 TeleMedCare V11.0-Cloudflare: Form submission avviato');
+        console.log('📝 TeleMedCare V12.0-Cloudflare: Form submission avviato');
 
         // Mostra loading
         showMessage('loading');
@@ -1815,12 +1815,12 @@ app.get('/', (c) => {
           // Preparazione dati
           const leadData = prepareLeadData(formData);
 
-          // Invio a Hono API V11.0
+          // Invio a Hono API V12.0
           const result = await submitToHonoAPI(leadData);
 
           // Gestione risposta
           if (result.status === 'success') {
-            console.log('✅ TeleMedCare V11.0: Lead elaborato e automazione schedulata');
+            console.log('✅ TeleMedCare V12.0: Lead elaborato e automazione schedulata');
             console.log('🤖 Automazione:', result.data && result.data.automationScheduled ? 'ATTIVA' : 'NON ATTIVA');
             showMessage('success');
             form.reset();
@@ -1834,19 +1834,19 @@ app.get('/', (c) => {
             if (contractSection) contractSection.classList.add('hidden');
             
           } else {
-            console.error('❌ TeleMedCare V11.0: Errore dal server:', result.message);
+            console.error('❌ TeleMedCare V12.0: Errore dal server:', result.message);
             showMessage('error');
           }
 
         } catch (error) {
-          console.error('❌ TeleMedCare V11.0: Errore generale automazione:', error);
+          console.error('❌ TeleMedCare V12.0: Errore generale automazione:', error);
           showMessage('error');
         }
       }
 
       // Validazione campi in tempo reale
       function setupFieldValidation() {
-        console.log('🛠️ TeleMedCare V11.0-Cloudflare: Setup validazione campi');
+        console.log('🛠️ TeleMedCare V12.0-Cloudflare: Setup validazione campi');
         
         // Email validation
         const emailField = document.querySelector('input[name="emailRichiedente"]');
@@ -1892,7 +1892,7 @@ app.get('/', (c) => {
 
       // Smooth scrolling per navigazione
       function setupSmoothScrolling() {
-        console.log('🎢 TeleMedCare V11.0-Cloudflare: Setup smooth scrolling');
+        console.log('🎢 TeleMedCare V12.0-Cloudflare: Setup smooth scrolling');
         
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
           anchor.addEventListener('click', function(e) {
@@ -1910,18 +1910,18 @@ app.get('/', (c) => {
         });
       }
 
-      // Inizializzazione sistema V11.0 - COMPLETO
+      // Inizializzazione sistema V12.0 - COMPLETO
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 TeleMedCare V11.0-Cloudflare: Inizializzazione sistema avviata');
-        console.log('📊 TeleMedCare V11.0-Cloudflare: Versione sistema:', TELEMEDCARE_CONFIG.VERSION);
-        console.log('🔗 TeleMedCare V11.0-Cloudflare: Endpoint API:', TELEMEDCARE_CONFIG.API_URL);
+        console.log('🚀 TeleMedCare V12.0-Cloudflare: Inizializzazione sistema avviata');
+        console.log('📊 TeleMedCare V12.0-Cloudflare: Versione sistema:', TELEMEDCARE_CONFIG.VERSION);
+        console.log('🔗 TeleMedCare V12.0-Cloudflare: Endpoint API:', TELEMEDCARE_CONFIG.API_URL);
 
         try {
           // Setup form submission
           const form = document.getElementById('leadForm');
           if (form) {
             form.addEventListener('submit', handleFormSubmission);
-            console.log('✅ TeleMedCare V11.0-Cloudflare: Form handler collegato');
+            console.log('✅ TeleMedCare V12.0-Cloudflare: Form handler collegato');
           }
 
           // Setup field validation
@@ -1946,21 +1946,21 @@ app.get('/', (c) => {
             meseInput.addEventListener('change', validaEAggiornaSiData);
             annoInput.addEventListener('change', validaEAggiornaSiData);
             
-            console.log('📅 TeleMedCare V11.0: Campi data user-friendly configurati con auto-navigazione');
+            console.log('📅 TeleMedCare V12.0: Campi data user-friendly configurati con auto-navigazione');
           }
           
           // Mantieni il listener per il campo hidden (compatibilità)
           const dataInput = document.getElementById('data_nascita_assistito');
           if (dataInput) {
             dataInput.addEventListener('change', calcolaEta);
-            console.log('📅 TeleMedCare V11.0: Listener calcolo età mantenuto per compatibilità');
+            console.log('📅 TeleMedCare V12.0: Listener calcolo età mantenuto per compatibilità');
           }
 
           // Setup checkbox listeners
           const vuoleContrattoCheckbox = document.getElementById('vuole_contratto');
           if (vuoleContrattoCheckbox) {
             vuoleContrattoCheckbox.addEventListener('change', toggleIntestazioneContratto);
-            console.log('📋 TeleMedCare V11.0-Cloudflare: Listener contratto collegato');
+            console.log('📋 TeleMedCare V12.0-Cloudflare: Listener contratto collegato');
           }
 
           // Setup radio listeners per intestazione contratto
@@ -1969,10 +1969,10 @@ app.get('/', (c) => {
             radio.addEventListener('change', toggleCampiDinamici);
           });
 
-          console.log('🎯 TeleMedCare V11.0-Cloudflare: Inizializzazione completata con successo');
+          console.log('🎯 TeleMedCare V12.0-Cloudflare: Inizializzazione completata con successo');
 
         } catch (error) {
-          console.error('❌ TeleMedCare V11.0-Cloudflare: Errore durante inizializzazione:', error);
+          console.error('❌ TeleMedCare V12.0-Cloudflare: Errore durante inizializzazione:', error);
         }
       });
 
@@ -1984,7 +1984,7 @@ app.get('/', (c) => {
         toggleCampiDinamici: toggleCampiDinamici
       };
 
-      console.log('🏁 TeleMedCare V11.0-Cloudflare: Sistema completamente caricato e operativo');
+      console.log('🏁 TeleMedCare V12.0-Cloudflare: Sistema completamente caricato e operativo');
     </script>
 
     <!-- Schema.org Structured Data per SEO -->
@@ -2041,7 +2041,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
       try {
         // Utilizza il DocumentRepository esistente
         const requestResult = await DocumentRepository.processDocumentRequest({
-          deviceModel: 'SiDLY Care Pro V11.0',
+          deviceModel: 'SiDLY Care Pro V12.0',
           documentTypes: documentiRichiesti,
           language: 'it',
           customerInfo: {
@@ -2123,7 +2123,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
 // API endpoint per ricevere i lead dal form
 app.post('/api/lead', async (c) => {
   try {
-    console.log('📨 TeleMedCare V11.0-Cloudflare: Nuovo lead ricevuto')
+    console.log('📨 TeleMedCare V12.0-Cloudflare: Nuovo lead ricevuto')
     
     // Inizializza database se disponibile
     if (c.env.DB) {
@@ -2197,8 +2197,8 @@ app.post('/api/lead', async (c) => {
 
       // Metadata Sistema
       timestamp: timestamp,
-      fonte: String(leadData.fonte || 'Landing Page V11.0-Cloudflare'),
-      versione: String(leadData.versione || 'V11.0-Cloudflare'),
+      fonte: String(leadData.fonte || 'Landing Page V12.0-Cloudflare'),
+      versione: String(leadData.versione || 'V12.0-Cloudflare'),
       status: 'nuovo'
     }
 
@@ -2249,10 +2249,10 @@ app.post('/api/lead', async (c) => {
         normalizedLead.status
       ).run()
 
-      console.log('💾 TeleMedCare V11.0-Cloudflare: Lead salvato nel database D1')
+      console.log('💾 TeleMedCare V12.0-Cloudflare: Lead salvato nel database D1')
     } else {
       // Modalità development senza D1 - logga i dati
-      console.log('💾 TeleMedCare V11.0-Cloudflare: Lead processato (DB non configurato)')
+      console.log('💾 TeleMedCare V12.0-Cloudflare: Lead processato (DB non configurato)')
       console.log('📝 Lead Data:', JSON.stringify(normalizedLead, null, 2))
     }
     
@@ -2270,7 +2270,7 @@ app.post('/api/lead', async (c) => {
     })
 
   } catch (error) {
-    console.error('❌ TeleMedCare V11.0-Cloudflare: Errore elaborazione lead:', error)
+    console.error('❌ TeleMedCare V12.0-Cloudflare: Errore elaborazione lead:', error)
     return c.json({
       success: false,
       error: 'Errore interno del server'
@@ -2303,13 +2303,13 @@ app.get('/api/leads', async (c) => {
 // API endpoint di status (legacy compatibility)
 app.get('/api/status', (c) => {
   return c.json({
-    system: 'TeleMedCare V11.0 Modular Enterprise',
+    system: 'TeleMedCare V12.0 Modular Enterprise',
     status: 'active',
     timestamp: new Date().toISOString(),
-    version: 'V11.0-Modular-Enterprise',
+    version: 'V12.0-Modular-Enterprise',
     enterprise: true,
     modules: ['lead-config', 'lead-core', 'lead-channels', 'lead-conversion', 'lead-scoring', 'lead-reports', 'dispositivi', 'pdf', 'utils', 'logging'],
-    compatibility: 'V11.0-Cloudflare'
+    compatibility: 'V12.0-Cloudflare'
   })
 })
 
@@ -2707,7 +2707,7 @@ async function inviaEmailContratto(leadData: any, leadId: string): Promise<boole
 
 
 // ===============================
-// TELEMEDC ARE V11.0 MONITORING & ADMIN ENDPOINTS
+// TELEMEDC ARE V12.0 MONITORING & ADMIN ENDPOINTS
 // ===============================
 
 // Endpoint di monitoraggio completo del sistema
@@ -2715,7 +2715,7 @@ app.get('/api/admin/monitor', async (c) => {
   try {
     const monitoring = {
       system: {
-        version: 'TeleMedCare V11.0 Modular Enterprise',
+        version: 'TeleMedCare V12.0 Modular Enterprise',
         timestamp: new Date().toISOString(),
         status: 'OPERATIONAL'
       },
@@ -2805,7 +2805,7 @@ app.post('/api/admin/init-database', async (c) => {
         priority TEXT,
         preferitoContatto TEXT,
         vuoleContratto TEXT DEFAULT 'No',
-        sistemaVersione TEXT DEFAULT 'V11.0',
+        sistemaVersione TEXT DEFAULT 'V12.0',
         status TEXT DEFAULT 'NEW',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -2884,7 +2884,7 @@ app.get('/admin/monitor', async (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Monitoraggio Sistema</title>
+        <title>TeleMedCare V12.0 - Monitoraggio Sistema</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     </head>
@@ -2894,7 +2894,7 @@ app.get('/admin/monitor', async (c) => {
                 <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
                     <h1 class="text-3xl font-bold text-gray-800 mb-2">
                         <i class="fas fa-chart-line text-blue-600 mr-3"></i>
-                        TeleMedCare V11.0 - Monitor Sistema
+                        TeleMedCare V12.0 - Monitor Sistema
                     </h1>
                     <p class="text-gray-600">Dashboard di monitoraggio in tempo reale</p>
                 </div>
@@ -3074,7 +3074,7 @@ app.get('/admin/monitor', async (c) => {
 });
 
 // ===============================
-// TELEMEDC ARE V11.0 MODULARE ENTERPRISE API ENDPOINTS
+// TELEMEDC ARE V12.0 MODULARE ENTERPRISE API ENDPOINTS
 // ===============================
 
 // ========== LEAD CONFIG MODULE ==========
@@ -3372,7 +3372,7 @@ app.post('/api/enterprise/devices/scan-label', async (c) => {
       
       try {
         supplementaryData = await DocumentRepository.getSupplementaryInfoFromManual(
-          labelData.model || 'SiDLY Care Pro V11.0',
+          labelData.model || 'SiDLY Care Pro V12.0',
           missingInfo as any
         )
         
@@ -3424,7 +3424,7 @@ app.post('/api/enterprise/devices/scan-label', async (c) => {
       imei: finalIMEI,
       serialNumber: labelData.serial_number || finalIMEI, // Usa serial da etichetta se disponibile
       modello: labelData.model || 'SiDLY Care Pro',
-      codiceArticolo: 'SIDLY-CARE-PRO-V11',
+      codiceArticolo: 'SIDLY-CARE-PRO-V12',
       versione: labelData.version || '11.0',
       revisioneHW: 'Rev. A',
       
@@ -3490,7 +3490,7 @@ app.post('/api/enterprise/devices/scan-label', async (c) => {
       success: true, 
       deviceId,
       imei: finalIMEI,
-      model: labelData.model || 'SiDLY Care Pro V11.0',
+      model: labelData.model || 'SiDLY Care Pro V12.0',
       manufacturer: labelData.manufacturer,
       message: 'Dispositivo registrato con successo da etichetta',
       labelData: {
@@ -3679,7 +3679,7 @@ app.get('/api/enterprise/security/alerts', async (c) => {
 app.get('/api/enterprise/system/health', async (c) => {
   try {
     const health = {
-      system: 'TeleMedCare V11.0 Modular Enterprise',
+      system: 'TeleMedCare V12.0 Modular Enterprise',
       status: 'active',
       modules: {
         leadConfig: true,
@@ -3702,7 +3702,7 @@ app.get('/api/enterprise/system/health', async (c) => {
       },
       ai: !!c.env.OPENAI_API_KEY,
       timestamp: new Date().toISOString(),
-      version: 'V11.0-Modular-Enterprise'
+      version: 'V12.0-Modular-Enterprise'
     }
 
     await Logging.log('INFO', 'SystemHealth', 'Health check eseguito', health, c.env.DB)
@@ -3716,7 +3716,7 @@ app.get('/api/enterprise/system/health', async (c) => {
 // Inizializzazione database D1 Enterprise
 async function initializeDatabase(db: D1Database) {
   try {
-    console.log('🔧 TeleMedCare V11.0 MODULARE: Inizializzazione database enterprise...')
+    console.log('🔧 TeleMedCare V12.0 MODULARE: Inizializzazione database enterprise...')
     
     // Per compatibilità, creiamo almeno la tabella leads di base
     // Il sistema completo dovrebbe usare le migrazioni in migrations/0001_initial_schema.sql
@@ -3776,14 +3776,14 @@ async function initializeDatabase(db: D1Database) {
     // Inserimento configurazione di default
     await db.prepare(`
       INSERT OR IGNORE INTO enterprise_config (key, value, category) VALUES 
-      ('system_version', 'V11.0-Modular-Enterprise', 'system'),
+      ('system_version', 'V12.0-Modular-Enterprise', 'system'),
       ('max_partners', '500', 'limits'),
       ('ai_scoring_enabled', 'true', 'features'),
       ('duplicate_detection_threshold', '0.95', 'ai'),
       ('cache_ttl_seconds', '3600', 'performance')
     `).run()
     
-    console.log('✅ TeleMedCare V11.0 MODULARE: Database enterprise inizializzato correttamente')
+    console.log('✅ TeleMedCare V12.0 MODULARE: Database enterprise inizializzato correttamente')
     console.log('📋 NOTA: Per il sistema completo, eseguire le migrazioni: npx wrangler d1 migrations apply webapp-production --local')
     
     // Inizializza repository documenti
@@ -5251,7 +5251,7 @@ app.get('/email-test', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Test Email Templates</title>
+        <title>TeleMedCare V12.0 - Test Email Templates</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -5270,7 +5270,7 @@ app.get('/email-test', (c) => {
             <div class="container mx-auto px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold">TeleMedCare V11.0</h1>
+                        <h1 class="text-2xl font-bold">TeleMedCare V12.0</h1>
                         <p class="text-blue-100">Sistema Test Email Templates</p>
                     </div>
                     <div class="flex space-x-4">
@@ -5653,7 +5653,7 @@ app.get('/contract-test', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Test Contratti PDF</title>
+        <title>TeleMedCare V12.0 - Test Contratti PDF</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
@@ -5671,7 +5671,7 @@ app.get('/contract-test', (c) => {
             <div class="container mx-auto px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold">TeleMedCare V11.0</h1>
+                        <h1 class="text-2xl font-bold">TeleMedCare V12.0</h1>
                         <p class="text-blue-100">Sistema Test Contratti PDF</p>
                     </div>
                     <div class="flex space-x-4">
@@ -6053,7 +6053,7 @@ app.get('/contract-test', (c) => {
 
 // ========== DASHBOARD MANAGEMENT ==========
 
-// Dashboard principale TeleMedCare V11.0
+// Dashboard principale TeleMedCare V12.0
 app.get('/dashboard', (c) => {
   return c.html(`
     <!DOCTYPE html>
@@ -6061,7 +6061,7 @@ app.get('/dashboard', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Dashboard Enterprise</title>
+        <title>TeleMedCare V12.0 - Dashboard Enterprise</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -6081,7 +6081,7 @@ app.get('/dashboard', (c) => {
             <div class="container mx-auto px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold">TeleMedCare V11.0</h1>
+                        <h1 class="text-2xl font-bold">TeleMedCare V12.0</h1>
                         <p class="text-blue-100">Dashboard Enterprise • Sistema Modular</p>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -6578,7 +6578,7 @@ app.post('/api/devices/:deviceId/assign/:leadId', async (c) => {
 })
 
 // ====================================
-// TeleMedCare V11.0 - DATA MANAGEMENT APIs
+// TeleMedCare V12.0 - DATA MANAGEMENT APIs
 // ====================================
 
 // Import Data Management Service
@@ -6592,7 +6592,7 @@ app.get('/admin/data-dashboard', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Dashboard Dati</title>
+        <title>TeleMedCare V12.0 - Dashboard Dati</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -6614,7 +6614,7 @@ app.get('/admin/data-dashboard', (c) => {
                         <div class="flex items-center space-x-4">
                             <i class="fas fa-chart-bar text-3xl text-white"></i>
                             <div>
-                                <h1 class="text-2xl font-bold text-white">TeleMedCare V11.0</h1>
+                                <h1 class="text-2xl font-bold text-white">TeleMedCare V12.0</h1>
                                 <p class="text-blue-100">Dashboard Gestione Dati Enterprise</p>
                             </div>
                         </div>
@@ -7591,7 +7591,7 @@ app.get('/admin/testing-dashboard', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Testing Dashboard</title>
+        <title>TeleMedCare V12.0 - Testing Dashboard</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -7610,7 +7610,7 @@ app.get('/admin/testing-dashboard', (c) => {
                         <div class="flex items-center space-x-4">
                             <i class="fas fa-vial text-3xl text-white"></i>
                             <div>
-                                <h1 class="text-2xl font-bold text-white">TeleMedCare V11.0</h1>
+                                <h1 class="text-2xl font-bold text-white">TeleMedCare V12.0</h1>
                                 <p class="text-red-100">Testing Dashboard - Sistema Test Automatico</p>
                             </div>
                         </div>
@@ -8071,7 +8071,7 @@ app.get('/admin/environments', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 - Gestione Ambienti</title>
+    <title>TeleMedCare V12.0 - Gestione Ambienti</title>
     <script>
         // Redirect to static page
         window.location.href = '/admin-environments.html';
@@ -8095,7 +8095,7 @@ app.get('/admin/docs', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 - Documentazione</title>
+    <title>TeleMedCare V12.0 - Documentazione</title>
     <script>
         // Redirect to static page
         window.location.href = '/admin-docs.html';
@@ -8117,7 +8117,7 @@ app.get('/admin/project-specs', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Specifiche Progetto</title>
+        <title>TeleMedCare V12.0 - Specifiche Progetto</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -8135,7 +8135,7 @@ app.get('/admin/project-specs', (c) => {
                         <div class="flex items-center space-x-4">
                             <i class="fas fa-cogs text-3xl text-white"></i>
                             <div>
-                                <h1 class="text-2xl font-bold text-white">TeleMedCare V11.0</h1>
+                                <h1 class="text-2xl font-bold text-white">TeleMedCare V12.0</h1>
                                 <p class="text-blue-100">Gestione Specifiche Progetto</p>
                             </div>
                         </div>
@@ -8702,8 +8702,8 @@ app.get('/api/project/specs', async (c) => {
     // Specifiche hardcoded per ambiente Cloudflare
     const specifications = {
       "project_info": {
-        "name": "TeleMedCare V11.0 Modular Enterprise System",
-        "version": "V11.0",
+        "name": "TeleMedCare V12.0 Modular Enterprise System",
+        "version": "V12.0",
         "client": "Medica GB S.r.l.",
         "created": "2024-10-06",
         "last_updated": new Date().toISOString(),

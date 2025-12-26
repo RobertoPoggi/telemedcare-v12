@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * LEAD_SCORING.TS - Sistema AI Predittivo e Machine Learning

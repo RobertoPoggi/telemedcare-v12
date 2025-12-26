@@ -1,6 +1,6 @@
 /**
  * EMAIL_DOCUMENT_SENDER.TS - Sistema Invio Email con Documenti Allegati
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Invio email con contratti allegati (BASE/AVANZATO)

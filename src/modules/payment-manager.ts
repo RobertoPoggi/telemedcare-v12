@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Payment Manager
+ * TeleMedCare V12.0 - Payment Manager
  * Gestisce pagamenti: bonifici e Stripe
  */
 

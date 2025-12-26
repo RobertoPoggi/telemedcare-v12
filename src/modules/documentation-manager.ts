@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Documentation Management System
+ * TeleMedCare V12.0 - Documentation Management System
  * Sistema completo documentazione visibile ed editabile
  */
 
@@ -303,7 +303,7 @@ export class DocumentationManager {
     // Carica documenti esistenti dal filesystem e li migra nel database
     try {
       // Migra README.md principale
-      await this.migrateFileToSection('README.md', 'user', 'Guida Utente TeleMedCare V11.0')
+      await this.migrateFileToSection('README.md', 'user', 'Guida Utente TeleMedCare V12.0')
       
       // Migra PROJECT_SPECIFICATIONS.json
       await this.migrateFileToSection('PROJECT_SPECIFICATIONS.json', 'technical', 'Specifiche di Progetto')
@@ -340,9 +340,9 @@ export class DocumentationManager {
   private async createBaseDocumentationSections(): Promise<void> {
     const baseSections: Array<{title: string, category: DocumentSection['category'], content: string, tags: string[]}> = [
       {
-        title: 'TeleMedCare V11.0 - Panoramica Sistema',
+        title: 'TeleMedCare V12.0 - Panoramica Sistema',
         category: 'user',
-        content: `# TeleMedCare V11.0 Modular Enterprise System
+        content: `# TeleMedCare V12.0 Modular Enterprise System
 
 ## Panoramica
 Sistema completo per la gestione automatizzata di lead medicali, conversione assistiti e workflow sanitari.
@@ -358,7 +358,7 @@ Sistema completo per la gestione automatizzata di lead medicali, conversione ass
 - **Test**: Ambienti versionati (telemedcare_test_0n)
 - **Staging**: Pre-produzione  
 - **Production**: Live (telemedcare_database)`,
-        tags: ['overview', 'telemedcare', 'v11.0']
+        tags: ['overview', 'telemedcare', 'v12.0']
       },
       {
         title: 'Gestione Ambienti e Deployment',
@@ -395,7 +395,7 @@ npm run clone:environment
       {
         title: 'API Endpoints Reference',
         category: 'api',
-        content: `# API Reference TeleMedCare V11.0
+        content: `# API Reference TeleMedCare V12.0
 
 ## Environment Management
 - \`POST /api/environment/create\` - Crea ambiente
@@ -420,7 +420,7 @@ npm run clone:environment
       {
         title: 'Struttura Database',
         category: 'technical',
-        content: `# Database Schema TeleMedCare V11.0
+        content: `# Database Schema TeleMedCare V12.0
 
 ## Tabelle Principali
 

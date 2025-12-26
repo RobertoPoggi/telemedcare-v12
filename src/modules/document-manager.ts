@@ -1,6 +1,6 @@
 /**
  * DOCUMENT_MANAGER.TS - Sistema Gestione Documenti Contratti e Proforma
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Generazione contratti (BASE/AVANZATO) da template DOCX

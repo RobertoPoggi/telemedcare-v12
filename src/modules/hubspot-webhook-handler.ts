@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 / eCura - HubSpot Webhook Handler
+ * TeleMedCare V12.0 / eCura - HubSpot Webhook Handler
  * Gestisce i webhook da HubSpot CRM (Irbema) per i lead provenienti da www.ecura.it
  * 
  * FLUSSO:
@@ -236,7 +236,7 @@ export async function handleHubSpotWebhook(
     })
 
     // 4. Salvataggio nel database
-    const db: D1Database = env.DB || env.telemedcare_v11_db
+    const db: D1Database = env.DB || env.telemedcare_v12_db
     const saved = await saveLeadToDB(leadData, db)
     
     if (!saved) {

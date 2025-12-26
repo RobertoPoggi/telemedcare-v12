@@ -1,6 +1,6 @@
 /**
  * LEAD_CORE.TS - Engine CRUD Ottimizzato
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Engine CRUD lead con performance enterprise
@@ -44,7 +44,7 @@ export interface Lead {
   vuoleBrochure: boolean
   vuoleManuale: boolean
   
-  // Campi aggiuntivi V11.0
+  // Campi aggiuntivi V12.0
   dataNascita?: string
   luogoNascita?: string
   sesso?: string
@@ -482,7 +482,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       
       timestamp: now,
       fonte: leadData.fonte || 'web',
-      versione: 'V11.0-Cloudflare',
+      versione: 'V12.0-Cloudflare',
       status: 'nuovo',
       partnerId: leadData.partnerId || '',
       
@@ -509,7 +509,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       lead.pacchetto, lead.servizio || 'PRO', lead.condizioniSalute, lead.priority, lead.preferenzaContatto,
       lead.vuoleContratto ? 'Si' : 'No', lead.intestazioneContratto, lead.cfRichiedente, lead.indirizzoRichiedente,
       lead.cfAssistito, lead.indirizzoAssistito, lead.vuoleBrochure ? 'Si' : 'No', lead.vuoleManuale ? 'Si' : 'No',
-      lead.note, lead.gdprConsent ? 'on' : 'off', lead.fonte || 'web', 'V11.0-Cloudflare', lead.status,
+      lead.note, lead.gdprConsent ? 'on' : 'off', lead.fonte || 'web', 'V12.0-Cloudflare', lead.status,
       lead.createdAt, lead.updatedAt
     ).run()
     

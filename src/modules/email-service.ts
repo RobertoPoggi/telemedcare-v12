@@ -1,6 +1,6 @@
 /**
  * EMAIL_SERVICE.TS - Servizio Email con Template Engine
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Template engine con sostituzioni variabili {{VARIABLE}}
@@ -413,7 +413,7 @@ export class EmailService {
 <li><strong>Inviare documentazione</strong> personalizzata</li>
 <li><strong>Programmare demo</strong> se richiesta</li>
 </ol>
-<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema TeleMedCare V11.0</p>
+<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema TeleMedCare V12.0</p>
 </div></div></body></html>`
 
       case 'email_documenti_informativi':
@@ -441,7 +441,7 @@ export class EmailService {
 <li><strong>Includere case studies</strong> pertinenti</li>
 <li><strong>Programmare follow-up</strong> a 3-5 giorni</li>
 </ol>
-<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema TeleMedCare V11.0</p>
+<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema TeleMedCare V12.0</p>
 </div></div></body></html>`
 
       default:

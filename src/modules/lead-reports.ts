@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * LEAD_REPORTS.TS - Business Intelligence e Dashboard Analytics
@@ -1345,7 +1345,7 @@ export class TeleMedCareReports {
     </head>
     <body>
       <div class="header">
-        <h1>TeleMedCare V11.0 - Business Report</h1>
+        <h1>TeleMedCare V12.0 - Business Report</h1>
         <p>Periodo: ${kpi.periodoAnalisi.dataInizio.toLocaleDateString()} - ${kpi.periodoAnalisi.dataFine.toLocaleDateString()}</p>
       </div>
       
@@ -1380,7 +1380,7 @@ export class TeleMedCareReports {
       </table>
       
       <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #666;">
-        Generato il ${new Date().toLocaleString()} - TeleMedCare V11.0 Enterprise
+        Generato il ${new Date().toLocaleString()} - TeleMedCare V12.0 Enterprise
       </div>
     </body>
     </html>

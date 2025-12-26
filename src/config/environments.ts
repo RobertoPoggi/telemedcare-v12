@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V11.0 - Environment Configuration System
+ * TeleMedCare V12.0 - Environment Configuration System
  * Gestione completa ambienti: test, staging, produzione
  */
 

@@ -17,7 +17,7 @@ app.get('/', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 Multi-Environment</title>
+    <title>TeleMedCare V12.0 Multi-Environment</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -32,7 +32,7 @@ app.get('/', (c) => {
                         </div>
                         <div>
                             <h1 class="text-xl font-bold text-gray-900">TeleMedCare</h1>
-                            <p class="text-xs text-gray-500">V11.0 Multi-Environment</p>
+                            <p class="text-xs text-gray-500">V12.0 Multi-Environment</p>
                         </div>
                     </div>
                     <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -123,7 +123,7 @@ app.get('/', (c) => {
             <div class="bg-white rounded-lg shadow border p-6">
                 <h2 class="text-lg font-medium text-gray-900 mb-4">
                     <i class="fas fa-rocket mr-2 text-blue-600"></i>
-                    Menu Completo TeleMedCare V11.0
+                    Menu Completo TeleMedCare V12.0
                 </h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -225,7 +225,7 @@ app.get('/admin/docs', (c) => {
 app.get('/api/health', async (c) => {
   return c.json({
     success: true,
-    system: 'TeleMedCare V11.0',
+    system: 'TeleMedCare V12.0',
     status: 'healthy',
     timestamp: new Date().toISOString(),
     environment: 'multi-environment',
@@ -236,7 +236,7 @@ app.get('/api/health', async (c) => {
 app.get('/api/version', (c) => {
   return c.json({
     success: true,
-    version: 'V11.0-Multi-Environment',
+    version: 'V12.0-Multi-Environment',
     name: 'TeleMedCare Sistema Modulare',
     build: new Date().toISOString(),
     database_naming: {

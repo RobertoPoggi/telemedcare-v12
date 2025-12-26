@@ -1,6 +1,6 @@
 /**
  * LEAD_CONFIG.TS - Configurazione Dinamica Partner
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Configurazione dinamica partner e convenzioni
@@ -75,7 +75,7 @@ export interface ConfigurazioneSistema {
 // =====================================================================
 
 export const CONFIG_BASE: ConfigurazioneSistema = {
-  versione: 'V11.0-Cloudflare',
+  versione: 'V12.0-Cloudflare',
   debug: true,
   partner: [
     {
@@ -341,7 +341,7 @@ export function validaConfigurazione(config: ConfigurazioneSistema): { valida: b
   const errori: string[] = []
   
   // Validazione base
-  if (!config.versione || !config.versione.includes('V11.0')) {
+  if (!config.versione || !config.versione.includes('V12.0')) {
     errori.push('Versione sistema non valida')
   }
   

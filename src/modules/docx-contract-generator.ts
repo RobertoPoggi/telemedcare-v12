@@ -1,5 +1,5 @@
 /**
- * DOCX Contract Generator - TeleMedCare V11.0
+ * DOCX Contract Generator - TeleMedCare V12.0
  * Genera contratti PDF partendo dal template DOCX professionale
  * con tutti i placeholder compilati
  */

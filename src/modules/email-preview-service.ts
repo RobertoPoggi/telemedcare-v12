@@ -1,6 +1,6 @@
 /**
  * EMAIL_PREVIEW_SERVICE.TS - Sistema Preview e Test Email
- * TeleMedCare V11.0 - Verifica Template e Contenuti Email
+ * TeleMedCare V12.0 - Verifica Template e Contenuti Email
  * 
  * Permette di:
  * - Renderizzare email templates con dati reali
@@ -344,7 +344,7 @@ class EmailPreviewService {
         </div>
         
         <div class="footer">
-            <p>TeleMedCare V11.0 - Sistema di Automazione Email<br>
+            <p>TeleMedCare V12.0 - Sistema di Automazione Email<br>
             Medica GB S.r.l. | info@medicagb.it</p>
         </div>
     </div>

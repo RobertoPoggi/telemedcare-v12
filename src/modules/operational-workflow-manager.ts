@@ -1,6 +1,6 @@
 /**
  * OPERATIONAL-WORKFLOW-MANAGER.TS - Sistema Workflow Operativo Completo
- * TeleMedCare V11.0 - Flusso Operativo Automatizzato
+ * TeleMedCare V12.0 - Flusso Operativo Automatizzato
  * 
  * FLUSSO COMPLETO GESTITO:
  * 1. Landing Page → Lead creato

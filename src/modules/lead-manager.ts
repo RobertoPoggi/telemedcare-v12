@@ -1,6 +1,6 @@
 /**
  * LEAD_MANAGER.TS - Sistema Gestione Lead TeleMedCare
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Acquisizione lead da landing page e form contatti

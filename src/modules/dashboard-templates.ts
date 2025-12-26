@@ -6,7 +6,7 @@ export const home = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 - Dashboard Principale</title>
+    <title>TeleMedCare V12.0 - Dashboard Principale</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -40,7 +40,7 @@ export const home = `<!DOCTYPE html>
                         <i class="fas fa-heartbeat text-4xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold">TeleMedCare V11.0</h1>
+                        <h1 class="text-3xl font-bold">TeleMedCare V12.0</h1>
                         <p class="text-blue-100">Sistema Modulare Multi-Dashboard</p>
                     </div>
                 </div>
@@ -65,7 +65,7 @@ export const home = `<!DOCTYPE html>
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-blue-100 text-sm mb-1">Sistema</p>
-                        <p class="text-3xl font-bold" id="systemVersion">V11.0</p>
+                        <p class="text-3xl font-bold" id="systemVersion">V12.0</p>
                         <p class="text-xs text-blue-100 mt-1">Modular Enterprise</p>
                     </div>
                     <i class="fas fa-server text-4xl text-blue-200"></i>
@@ -385,7 +385,7 @@ export const home = `<!DOCTYPE html>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between border-b border-gray-700 pb-2">
                             <span class="text-gray-400">Versione:</span>
-                            <span class="font-mono text-green-400">V11.0 Modular Enterprise</span>
+                            <span class="font-mono text-green-400">V12.0 Modular Enterprise</span>
                         </div>
                         <div class="flex justify-between border-b border-gray-700 pb-2">
                             <span class="text-gray-400">Ambiente:</span>
@@ -452,7 +452,7 @@ export const dashboard = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Operativa - TeleMedCare V11.0</title>
+    <title>Dashboard Operativa - TeleMedCare V12.0</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -493,7 +493,7 @@ export const dashboard = `<!DOCTYPE html>
                     <i class="fas fa-chart-line text-3xl"></i>
                     <div>
                         <h1 class="text-2xl font-bold">Dashboard Operativa</h1>
-                        <p class="text-purple-100">Centro di controllo staff - TeleMedCare V11.0</p>
+                        <p class="text-purple-100">Centro di controllo staff - TeleMedCare V12.0</p>
                     </div>
                 </div>
                 <div class="flex space-x-4">
@@ -818,7 +818,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Leads - TeleMedCare V11.0</title>
+    <title>Dashboard Leads - TeleMedCare V12.0</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1196,7 +1196,7 @@ export const data_dashboard = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Dashboard - TeleMedCare V11.0</title>
+    <title>Data Dashboard - TeleMedCare V12.0</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1595,7 +1595,7 @@ export const workflow_manager = `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workflow Manager - TeleMedCare V11.0</title>
+    <title>Workflow Manager - TeleMedCare V12.0</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

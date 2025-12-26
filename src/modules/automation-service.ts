@@ -1,6 +1,6 @@
 /**
  * AUTOMATION_SERVICE.TS - Sistema Automazione Completa Lead
- * TeleMedCare V11.0-Cloudflare - Sistema Completamente Automatizzato
+ * TeleMedCare V12.0-Cloudflare - Sistema Completamente Automatizzato
  * 
  * Gestisce automazione completa SENZA operatori umani:
  * - Email automatiche informative

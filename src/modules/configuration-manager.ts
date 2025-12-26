@@ -1,6 +1,6 @@
 /**
  * CONFIGURATION_MANAGER.TS - Sistema Gestione Configurazioni
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Configurazioni sistema TeleMedCare (form_configurazione.gs equivalent)
@@ -60,7 +60,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
   {
     category: 'SYSTEM',
     key: 'APP_NAME',
-    value: 'TeleMedCare V11.0',
+    value: 'TeleMedCare V12.0',
     description: 'Nome applicazione',
     isActive: true,
     isSecret: false,

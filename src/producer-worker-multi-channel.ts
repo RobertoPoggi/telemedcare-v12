@@ -1,6 +1,6 @@
 /**
  * PRODUCER-WORKER-MULTI-CHANNEL.TS
- * eCura V11.0 - Multi-Channel Lead Ingestion
+ * eCura V12.0 - Multi-Channel Lead Ingestion
  * 
  * Riceve lead da QUALSIASI canale e li mette in Cloudflare Queue
  * 

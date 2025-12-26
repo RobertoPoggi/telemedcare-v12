@@ -1,6 +1,6 @@
 /**
  * DDT-GENERATOR.TS - Generatore DDT (Documento di Trasporto)
- * eCura V11.0 - Document Delivery Note Generator
+ * eCura V12.0 - Document Delivery Note Generator
  * 
  * Genera DDT dopo pagamento completato per spedizione dispositivo SiDLY
  * 
@@ -433,7 +433,7 @@ export async function createDDTFromOrder(
   // Determina dispositivo in base al servizio
   const dispositivoMap: Record<string, string> = {
     'FAMILY': 'Senium - Braccialetto Salvavita',
-    'PRO': 'SiDLY Care PRO V11.0 - Dispositivo Medico Certificato',
+    'PRO': 'SiDLY Care PRO V12.0 - Dispositivo Medico Certificato',
     'PREMIUM': 'SiDLY Vital Care - Monitoraggio Avanzato'
   }
   

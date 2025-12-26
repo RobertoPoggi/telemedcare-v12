@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
-// Import TeleMedCare V11.0 Modular Enterprise System
+// Import TeleMedCare V12.0 Modular Enterprise System
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
 import * as LeadChannels from './modules/lead-channels'
@@ -15,7 +15,7 @@ import * as Utils from './modules/utils'
 import * as Logging from './modules/logging'
 import DocumentRepository from './modules/document-repository'
 
-// Import TeleMedCare V11.0 Complete Workflow Modules
+// Import TeleMedCare V12.0 Complete Workflow Modules
 import SignatureService from './modules/signature-service'
 import PaymentService from './modules/payment-service'
 import ConfigurationManager from './modules/configuration-manager'
@@ -57,12 +57,12 @@ type Bindings = {
   ENCRYPTION_KEY?: string
 }
 
-// Configurazione TeleMedCare V11.0 Modular Enterprise
+// Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
   EMAIL_FROM: 'noreply@medicagb.it',
   EMAIL_TO_INFO: 'info@medicagb.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
-  SYSTEM_VERSION: 'V11.0-Modular-Enterprise',
+  SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
   // Prezzi servizi
   PREZZI: {
@@ -408,7 +408,7 @@ app.get('/form-lead', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 Modular Enterprise - Sistema di Telemedicina Avanzato</title>
+    <title>TeleMedCare V12.0 Modular Enterprise - Sistema di Telemedicina Avanzato</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -591,7 +591,7 @@ app.get('/form-lead', (c) => {
     <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2">
       <div class="container mx-auto px-4 text-center">
         <span class="text-sm font-semibold">
-           TeleMedCare V11.0 Modular Enterprise System  
+           TeleMedCare V12.0 Modular Enterprise System  
           AI-Powered Lead Management  
           Multi-Partner Integration  
           Advanced Analytics
@@ -1155,7 +1155,7 @@ app.get('/form-lead', (c) => {
                 <i class="fas fa-check-circle text-2xl mr-3"></i>
                 <strong class="text-lg">✅ Successo!</strong>
               </div>
-              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V11.0. Riceverai conferma via email con i documenti richiesti!</span>
+              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V12.0. Riceverai conferma via email con i documenti richiesti!</span>
             </div>
             <div id="error_message" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-md animate-fade-in">
               <div class="flex items-center">
@@ -1169,7 +1169,7 @@ app.get('/form-lead', (c) => {
                 <i class="fas fa-spinner fa-spin text-2xl mr-3"></i>
                 <strong class="text-lg">🔄 Invio in corso...</strong>
               </div>
-              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V11.0, attendi un momento.</span>
+              <span class="block mt-1">Stiamo elaborando la tua richiesta con il sistema TeleMedCare V12.0, attendi un momento.</span>
             </div>
           </div>
         </div>
@@ -1235,7 +1235,7 @@ app.get('/form-lead', (c) => {
     <!-- Access Staff -->
     <div class="py-8 bg-blue-600 text-white text-center">
       <a href="/home" class="text-white hover:text-blue-200 inline-block px-6 py-3 bg-blue-700 rounded-lg hover:bg-blue-800 transition-all">
-        <i class="fas fa-cog mr-2"></i>Area Staff - Accesso Sistema TeleMedCare V11.0
+        <i class="fas fa-cog mr-2"></i>Area Staff - Accesso Sistema TeleMedCare V12.0
       </a>
     </div>
     
@@ -1362,7 +1362,7 @@ app.get('/template-system', async (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Template Contratti - TeleMedCare V11.0</title>
+    <title>Gestione Template Contratti - TeleMedCare V12.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -2032,7 +2032,7 @@ app.get('/home', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Home Page Principale</title>
+        <title>TeleMedCare V12.0 - Home Page Principale</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -2060,7 +2060,7 @@ app.get('/home', (c) => {
                 <div class="text-center">
                     <h1 class="text-4xl font-bold mb-2">
                         <i class="fas fa-user-shield mr-3"></i>
-                        TeleMedCare V11.0 - Area Staff
+                        TeleMedCare V12.0 - Area Staff
                     </h1>
                     <p class="text-xl opacity-90">🏠 HOME PAGE - Centro Controllo Staff - Accesso Sistema Gestionale</p>
                     <div class="mt-4 bg-blue-800 bg-opacity-50 rounded-lg p-3 inline-block">
@@ -2316,11 +2316,11 @@ app.get('/home', (c) => {
             <div class="container mx-auto px-6 text-center">
                 <p class="text-lg">
                     <i class="fas fa-shield-alt mr-2 text-blue-400"></i>
-                    TeleMedCare V11.0 Enterprise - Sistema Completo di TeleAssistenza
+                    TeleMedCare V12.0 Enterprise - Sistema Completo di TeleAssistenza
                 </p>
                 <p class="text-gray-400 mt-2">
                     Ambiente: <span class="text-green-400 font-semibold">Development</span> | 
-                    Versione: <span class="text-blue-400 font-semibold">V11.0-Modular-Enterprise</span> |
+                    Versione: <span class="text-blue-400 font-semibold">V12.0-Modular-Enterprise</span> |
                     Status: <span class="text-green-400 font-semibold">🟢 Online</span>
                 </p>
             </div>
@@ -2365,7 +2365,7 @@ app.get('/admin/devices', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Registrazione Dispositivi</title>
+        <title>TeleMedCare V12.0 - Registrazione Dispositivi</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -2417,7 +2417,7 @@ app.get('/admin/devices', (c) => {
                         <div class="flex items-center space-x-4">
                             <i class="fas fa-microchip text-3xl text-blue-600"></i>
                             <div>
-                                <h1 class="text-2xl font-bold text-gray-800">TeleMedCare V11.0</h1>
+                                <h1 class="text-2xl font-bold text-gray-800">TeleMedCare V12.0</h1>
                                 <p class="text-sm text-gray-600">Sistema Registrazione Dispositivi Enterprise</p>
                             </div>
                         </div>
@@ -2511,7 +2511,7 @@ app.get('/admin/devices', (c) => {
                                         <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="SiDLY Care Pro">SiDLY Care Pro</option>
                                             <option value="SiDLY Care Pro V10">SiDLY Care Pro V10</option>
-                                            <option value="SiDLY Care Pro V11">SiDLY Care Pro V11</option>
+                                            <option value="SiDLY Care Pro V12">SiDLY Care Pro V12</option>
                                         </select>
                                     </div>
                                 </div>
@@ -2796,7 +2796,7 @@ app.get('/admin/devices', (c) => {
             
             // Inizializzazione
             document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 TeleMedCare V11.0 - Device Registration System');
+                console.log('🚀 TeleMedCare V12.0 - Device Registration System');
                 loadStatistics();
                 setupFileUpload();
                 setupManualForm();
@@ -3240,7 +3240,7 @@ app.get('/admin/devices', (c) => {
 
             // Genera IMEI mock realistico per demo
             function generateMockIMEI() {
-                const tac = '35900002'; // SiDLY Technologies V11.0
+                const tac = '35900002'; // SiDLY Technologies V12.0
                 const snr = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
                 const imei14 = tac + snr;
                 
@@ -3423,7 +3423,7 @@ app.get('/admin/devices', (c) => {
             <div class="container mx-auto px-4">
                 <div class="flex justify-between items-center">
                     <div class="text-sm">
-                        <p>&copy; 2024 TeleMedCare V11.0 - Medica GB S.r.l. Tutti i diritti riservati.</p>
+                        <p>&copy; 2024 TeleMedCare V12.0 - Medica GB S.r.l. Tutti i diritti riservati.</p>
                     </div>
                     <div class="text-xs">
                         <a href="/dashboard" class="text-gray-400 hover:text-white transition-colors" title="Accesso Staff">
@@ -3477,7 +3477,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
       try {
         // Utilizza il DocumentRepository esistente
         const requestResult = await DocumentRepository.processDocumentRequest({
-          deviceModel: 'SiDLY Care Pro V11.0',
+          deviceModel: 'SiDLY Care Pro V12.0',
           documentTypes: documentiRichiesti,
           language: 'it',
           customerInfo: {
@@ -3639,7 +3639,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
 // API endpoint per ricevere i lead dal form
 app.post('/api/lead', async (c) => {
   try {
-    console.log('📨 TeleMedCare V11.0-Cloudflare: Nuovo lead ricevuto')
+    console.log('📨 TeleMedCare V12.0-Cloudflare: Nuovo lead ricevuto')
     
     // Database già inizializzato dalle migrazioni
     
@@ -3719,8 +3719,8 @@ app.post('/api/lead', async (c) => {
 
       // Metadata Sistema
       timestamp: timestamp,
-      fonte: String(leadData.fonte || leadData.source || 'Landing Page V11.0-Cloudflare'),
-      versione: String(leadData.versione || 'V11.0-Cloudflare'),
+      fonte: String(leadData.fonte || leadData.source || 'Landing Page V12.0-Cloudflare'),
+      versione: String(leadData.versione || 'V12.0-Cloudflare'),
       status: 'nuovo'
     }
 
@@ -3824,7 +3824,7 @@ app.post('/api/lead', async (c) => {
     }
 
   } catch (error) {
-    console.error('❌ TeleMedCare V11.0-Cloudflare: Errore elaborazione lead:', error)
+    console.error('❌ TeleMedCare V12.0-Cloudflare: Errore elaborazione lead:', error)
     return c.json({
       success: false,
       error: 'Errore interno del server'
@@ -4049,7 +4049,7 @@ app.post('/api/admin/reset-and-regenerate', async (c) => {
       `).bind(
         `DM-202410${String(i).padStart(2, '0')}`,
         `86012345678901${String(i).padStart(2, '0')}`,
-        `SiDLY Care Pro V11.0 #${i}`,
+        `SiDLY Care Pro V12.0 #${i}`,
         deviceStatuses[i - 1]
       ).run();
     }
@@ -5890,7 +5890,7 @@ app.post('/api/test/complete-workflow', async (c) => {
         const deviceData = {
           device_id: `SiDLY${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`,
           imei: `86012345678${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`,
-          model: 'SiDLY Care Pro V11',
+          model: 'SiDLY Care Pro V12',
           status: 'ASSIGNED'
         }
         
@@ -6348,7 +6348,7 @@ app.post('/api/contract/preview/:contractType', async (c) => {
         
         <div style="margin: 30px 0; text-align: center;">
           <p>Generato il: ${new Date().toLocaleDateString('it-IT')}</p>
-          <p><strong>TeleMedCare V11.0 Enterprise</strong></p>
+          <p><strong>TeleMedCare V12.0 Enterprise</strong></p>
         </div>
       </div>
     `
@@ -6519,7 +6519,7 @@ app.get('/admin/docs', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>TeleMedCare V11.0 - Centro Documentazione</title>
+        <title>TeleMedCare V12.0 - Centro Documentazione</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -6561,7 +6561,7 @@ app.get('/admin/docs', (c) => {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">
                         <i class="fas fa-laptop-medical text-blue-600 mr-2"></i>
-                        Documentazione TeleMedCare V11.0
+                        Documentazione TeleMedCare V12.0
                     </h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -6827,9 +6827,9 @@ app.get('/admin/docs', (c) => {
             // Document Actions
             function viewDocument(docId) {
                 const urls = {
-                    'user-manual': '/docs/telemedcare-user-manual-v11.pdf',
-                    'deployment-manual': '/docs/telemedcare-deployment-v11.pdf',
-                    'system-architecture': '/docs/telemedcare-architecture-v11.pdf'
+                    'user-manual': '/docs/telemedcare-user-manual-v12.pdf',
+                    'deployment-manual': '/docs/telemedcare-deployment-v12.pdf',
+                    'system-architecture': '/docs/telemedcare-architecture-v12.pdf'
                 };
                 
                 if (urls[docId]) {
@@ -6872,13 +6872,13 @@ app.get('/admin/docs', (c) => {
 // API endpoint di status (legacy compatibility)
 app.get('/api/status', (c) => {
   return c.json({
-    system: 'TeleMedCare V11.0 Modular Enterprise',
+    system: 'TeleMedCare V12.0 Modular Enterprise',
     status: 'active',
     timestamp: new Date().toISOString(),
-    version: 'V11.0-Modular-Enterprise',
+    version: 'V12.0-Modular-Enterprise',
     enterprise: true,
     modules: ['lead-config', 'lead-core', 'lead-channels', 'lead-conversion', 'lead-scoring', 'lead-reports', 'dispositivi', 'pdf', 'utils', 'logging'],
-    compatibility: 'V11.0-Cloudflare'
+    compatibility: 'V12.0-Cloudflare'
   })
 })
 
@@ -6912,7 +6912,7 @@ app.get('/api/system/status', async (c) => {
     }
 
     return c.json({
-      system: 'TeleMedCare V11.0',
+      system: 'TeleMedCare V12.0',
       status: 'ONLINE',
       timestamp: new Date().toISOString(),
       health: {
@@ -6946,7 +6946,7 @@ app.get('/api/system/status', async (c) => {
     });
   } catch (error) {
     return c.json({
-      system: 'TeleMedCare V11.0',
+      system: 'TeleMedCare V12.0',
       status: 'ERROR',
       timestamp: new Date().toISOString(),
       error: error instanceof Error ? error.message : 'Sistema non disponibile'
@@ -7188,7 +7188,7 @@ app.get('/api/data/dashboard', async (c) => {
       success: true,
       data: dashboardData,
       timestamp: new Date().toISOString(),
-      version: 'V11.0-Consistent'
+      version: 'V12.0-Consistent'
     })
   } catch (error) {
     return c.json({ success: false, error: 'Errore recupero dashboard', details: error.message }, 500)
@@ -7326,7 +7326,7 @@ app.get('/api/devices/registry', async (c) => {
       devices = [
         {
           id: 'DEV001',
-          nome: 'SiDLY Care Pro V11.0 #001',
+          nome: 'SiDLY Care Pro V12.0 #001',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110001',
           stato: 'attivo',
@@ -7339,7 +7339,7 @@ app.get('/api/devices/registry', async (c) => {
         },
         {
           id: 'DEV002',
-          nome: 'SiDLY Care Pro V11.0 #002',
+          nome: 'SiDLY Care Pro V12.0 #002',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110002',
           stato: 'manutenzione',
@@ -7352,7 +7352,7 @@ app.get('/api/devices/registry', async (c) => {
         },
         {
           id: 'DEV003',
-          nome: 'SiDLY Care Pro V11.0 #003',
+          nome: 'SiDLY Care Pro V12.0 #003',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110003',
           stato: 'attivo',
@@ -7596,7 +7596,7 @@ app.get('/landing', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 - Telemedicina Avanzata</title>
+    <title>TeleMedCare V12.0 - Telemedicina Avanzata</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -7610,7 +7610,7 @@ app.get('/landing', (c) => {
                         <i class="fas fa-heartbeat text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">TeleMedCare V11.0</h1>
+                        <h1 class="text-2xl font-bold text-gray-900">TeleMedCare V12.0</h1>
                         <p class="text-sm text-gray-600">Telemedicina Professionale</p>
                     </div>
                 </div>
@@ -7820,7 +7820,7 @@ app.get('/landing', (c) => {
     <!-- Footer -->
     <footer class="bg-gray-900 text-white py-8">
         <div class="max-w-4xl mx-auto px-4 text-center">
-            <p>&copy; 2024 TeleMedCare V11.0 - Medica GB S.r.l. - P.IVA 12345678901</p>
+            <p>&copy; 2024 TeleMedCare V12.0 - Medica GB S.r.l. - P.IVA 12345678901</p>
             <p class="text-gray-400 mt-2">Certificazioni: ISO 27001 | ISO 13485 | GDPR Compliant</p>
         </div>
     </footer>

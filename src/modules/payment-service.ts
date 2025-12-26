@@ -1,6 +1,6 @@
 /**
  * PAYMENT_SERVICE.TS - Sistema Pagamenti Multi-Method
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Pagamento Stripe per proforma e contratti
@@ -510,7 +510,7 @@ export class PaymentService {
         paymentMethod,
         invoiceData,
         metadata: {
-          userAgent: 'TeleMedCare V11.0',
+          userAgent: 'TeleMedCare V12.0',
           timestamp: new Date().toISOString(),
           source: 'dashboard'
         }

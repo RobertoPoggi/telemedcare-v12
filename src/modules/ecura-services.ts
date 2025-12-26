@@ -1,5 +1,5 @@
 /**
- * eCura Services Configuration - TeleMedCare V11.0
+ * eCura Services Configuration - TeleMedCare V12.0
  * Definizioni complete per i 3 servizi eCura con dispositivi e piani
  */
 

@@ -1,5 +1,5 @@
 /**
- * Template Manager - TeleMedCare V11.0
+ * Template Manager - TeleMedCare V12.0
  * Gestione templates per contratti, proforma e documenti
  */
 

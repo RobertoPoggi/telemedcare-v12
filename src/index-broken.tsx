@@ -21,7 +21,7 @@ const CONFIG = {
   EMAIL_FROM: 'noreply@medicagb.it',
   EMAIL_TO_INFO: 'info@medicagb.it', 
   COMPANY_NAME: 'Medica GB S.r.l.',
-  SYSTEM_VERSION: 'V11.0-Modular-Enterprise'
+  SYSTEM_VERSION: 'V12.0-Modular-Enterprise'
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -40,7 +40,7 @@ app.get('/', (c) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TeleMedCare V11.0 Multi-Environment</title>
+    <title>TeleMedCare V12.0 Multi-Environment</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 </head>
@@ -56,7 +56,7 @@ app.get('/', (c) => {
                         </div>
                         <div>
                             <h1 class="text-xl font-bold text-gray-900">TeleMedCare</h1>
-                            <p class="text-xs text-gray-500">V11.0 Multi-Environment</p>
+                            <p class="text-xs text-gray-500">V12.0 Multi-Environment</p>
                         </div>
                     </div>
                     <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -330,7 +330,7 @@ app.get('/api/health', async (c) => {
     const timestamp = new Date().toISOString()
     return c.json({
       success: true,
-      system: 'TeleMedCare V11.0',
+      system: 'TeleMedCare V12.0',
       status: 'healthy',
       timestamp,
       environment: 'development'

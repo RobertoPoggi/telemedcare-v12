@@ -1,6 +1,6 @@
 /**
  * CONTRACT_PREVIEW_SERVICE.TS - Sistema Preview e Test Contratti
- * TeleMedCare V11.0 - Verifica Generazione Contratti PDF
+ * TeleMedCare V12.0 - Verifica Generazione Contratti PDF
  * 
  * Permette di:
  * - Generare contratti PDF con dati reali
@@ -261,7 +261,7 @@ class ContractPreviewService {
     enriched.dataGenerazione = new Date().toLocaleDateString('it-IT')
     enriched.oraGenerazione = new Date().toLocaleTimeString('it-IT')
     enriched.annoCorrente = new Date().getFullYear()
-    enriched.versioneSistema = 'V11.0'
+    enriched.versioneSistema = 'V12.0'
     
     // Calcola prezzi se necessario
     if (template.contractType !== 'PROFORMA') {

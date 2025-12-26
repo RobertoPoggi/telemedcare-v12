@@ -1,5 +1,5 @@
 /**
- * TELEMEDCARE V11.0 MODULARE
+ * TELEMEDCARE V12.0 MODULARE
  * =================================
  * 
  * DOCUMENT-REPOSITORY.TS - Repository Documentale Dispositivi Medicali
@@ -31,7 +31,7 @@
 
 export interface DeviceDocument {
   id: string;
-  deviceModel: string;                // "SiDLY Care Pro V11.0"
+  deviceModel: string;                // "SiDLY Care Pro V12.0"
   deviceManufacturer: string;         // "SiDLY Technologies"
   documentType: DocumentType;
   
@@ -143,7 +143,7 @@ export class DocumentRepository {
   
   // Database dispositivi supportati e loro documentazione
   private static deviceCatalog = {
-    'SiDLY Care Pro V11.0': {
+    'SiDLY Care Pro V12.0': {
       manufacturer: 'SiDLY Technologies',
       usefulLifeYears: 3,
       certifications: ['CE 0197', 'ISO 13485:2016'],
@@ -536,7 +536,7 @@ export class DocumentRepository {
     
     const demoDocuments = [
       {
-        deviceModel: 'SiDLY Care Pro V11.0',
+        deviceModel: 'SiDLY Care Pro V12.0',
         deviceManufacturer: 'SiDLY Technologies',
         documentType: 'brochure' as DocumentType,
         fileName: 'brochure_telemedcare.pdf',
@@ -550,7 +550,7 @@ export class DocumentRepository {
         complianceStatus: 'valid' as const
       },
       {
-        deviceModel: 'SiDLY Care Pro V11.0', 
+        deviceModel: 'SiDLY Care Pro V12.0', 
         deviceManufacturer: 'SiDLY Technologies',
         documentType: 'user_manual' as DocumentType,
         fileName: 'manuale_sidly.pdf',

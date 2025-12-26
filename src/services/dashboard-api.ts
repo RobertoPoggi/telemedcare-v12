@@ -1,6 +1,6 @@
 /**
  * DASHBOARD-API.TS
- * eCura V11.0 - Dashboard API Endpoints
+ * eCura V12.0 - Dashboard API Endpoints
  * 
  * Fornisce API per dashboard amministrativa con:
  * - KPI real-time

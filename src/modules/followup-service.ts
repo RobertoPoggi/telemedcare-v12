@@ -1,6 +1,6 @@
 /**
  * FOLLOWUP_SERVICE.TS - Sistema Follow-up Call Scheduling and Tracking
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V12.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Schedulazione automatica chiamate follow-up basate su preferenze lead
