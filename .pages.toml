@@ -1,7 +1,7 @@
 # Cloudflare Pages Configuration
 [build]
-command = "vite build"
-output_directory = "dist"
+command = "npm run build"
+directory = "dist"
 
 [build.environment]
 NODE_VERSION = "22"
