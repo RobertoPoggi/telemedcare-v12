@@ -497,16 +497,16 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
         nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
-        pacchetto, condizioniSalute, priority, preferitoContatto,
+        pacchetto, servizio, condizioniSalute, priority, preferitoContatto,
         vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
         cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
         note, gdprConsent, sourceUrl, sistemaVersione, status,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       lead.id, lead.nomeRichiedente, lead.cognomeRichiedente, lead.emailRichiedente, lead.telefonoRichiedente,
       lead.nomeAssistito, lead.cognomeAssistito, lead.dataNascitaAssistito, lead.etaAssistito, lead.parentelaAssistito,
-      lead.pacchetto, lead.condizioniSalute, lead.priority, lead.preferenzaContatto,
+      lead.pacchetto, lead.servizio || 'PRO', lead.condizioniSalute, lead.priority, lead.preferenzaContatto,
       lead.vuoleContratto ? 'Si' : 'No', lead.intestazioneContratto, lead.cfRichiedente, lead.indirizzoRichiedente,
       lead.cfAssistito, lead.indirizzoAssistito, lead.vuoleBrochure ? 'Si' : 'No', lead.vuoleManuale ? 'Si' : 'No',
       lead.note, lead.gdprConsent ? 'on' : 'off', lead.fonte || 'web', 'V11.0-Cloudflare', lead.status,

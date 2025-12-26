@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto Servizio Base - eCura</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; }
+        .company-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .section { margin-bottom: 25px; }
+        .price-box { background: #e7f3ff; border: 2px solid #3b82f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .highlight { background: #fff4e6; padding: 10px; border-left: 4px solid #ff9800; margin: 15px 0; }
+        .signature-area { margin-top: 50px; display: flex; justify-content: space-between; }
+        .signature-box { border-top: 2px solid #000; width: 200px; text-align: center; padding-top: 10px; margin-top: 60px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="color: #3b82f6; margin: 0;">CONTRATTO DI SERVIZIO eCura BASE</h1>
+        <h2 style="margin: 10px 0 0 0;">Medica GB S.r.l.</h2>
+        <p style="margin: 5px 0;">Startup Innovativa a Vocazione Sociale</p>
+        <p style="font-size: 14px; color: #666;">Contratto N° {{CODICE_CONTRATTO}}</p>
+    </div>
+
+    <div class="company-info">
+        <strong>Medica GB S.r.l.</strong><br>
+        Sede: Milano - Corso Garibaldi 34, 20121 | Genova - Via delle Eriche 53, 16148<br>
+        P.IVA: 12435130963<br>
+        Email: <a href="mailto:info@ecura.it">info@ecura.it</a> | <a href="mailto:info@medicagb.it">info@medicagb.it</a><br>
+        Tel. Commerciale: 335 7301206 | Tel. Tecnico: 331 6432390
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">DATI CLIENTE</h3>
+        <p><strong>Nome e Cognome:</strong> {{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</p>
+        <p><strong>Email:</strong> {{EMAIL_RICHIEDENTE}}</p>
+        <p><strong>Telefono:</strong> {{TELEFONO_RICHIEDENTE}}</p>
+        <p><strong>Codice Fiscale:</strong> {{CF_RICHIEDENTE}}</p>
+        <p><strong>Indirizzo:</strong> {{INDIRIZZO_RICHIEDENTE}}</p>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">DATI ASSISTITO</h3>
+        <p><strong>Nome e Cognome:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</p>
+        <p><strong>Età:</strong> {{ETA_ASSISTITO}} anni</p>
+        <p><strong>Note:</strong> {{NOTE_ASSISTITO}}</p>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">OGGETTO DEL CONTRATTO</h3>
+        <p>Il presente contratto disciplina l'erogazione del servizio <strong>eCura {{SERVIZIO}} Piano Base</strong> 
+        basato sul dispositivo medicale certificato <strong>{{DISPOSITIVO}}</strong> (Classe IIa) per il monitoraggio remoto 
+        e la teleassistenza della persona assistita.</p>
+    </div>
+
+    <div class="price-box">
+        <h3 style="color: #3b82f6; margin-top: 0;">💰 CONDIZIONI ECONOMICHE</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>Setup iniziale e attivazione servizio</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">€ {{PREZZO_BASE}}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">IVA 22%</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">€ {{IVA}}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; background: #d1ecf1;"><strong>TOTALE PRIMO ANNO</strong></td>
+                <td style="padding: 10px; background: #d1ecf1; text-align: right;"><strong>€ {{TOTALE_PRIMO_ANNO}}</strong></td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; padding-top: 20px;">Rinnovo annuale (dal secondo anno)</td>
+                <td style="padding: 10px; padding-top: 20px; text-align: right;">€ {{PREZZO_RINNOVO}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="highlight">
+        <strong>✨ Detrazione Fiscale 19%</strong><br>
+        Il servizio eCura è detraibile come spesa sanitaria nella dichiarazione dei redditi (modello 730).
+        <br><strong>Risparmio annuale stimato: €{{DETRAZIONE_FISCALE}}</strong>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">SERVIZI INCLUSI NEL PIANO BASE</h3>
+        <ul>
+            <li>Dispositivo medicale {{DISPOSITIVO}} in comodato d'uso</li>
+            <li>Monitoraggio parametri vitali</li>
+            <li>Supporto tecnico (orario lavorativo)</li>
+            <li>Manutenzione preventiva dispositivo</li>
+            <li>Aggiornamenti software inclusi</li>
+            <li>Formazione utilizzo dispositivo</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">DURATA E RINNOVO</h3>
+        <p>Il contratto ha durata di <strong>12 mesi</strong> dalla data di attivazione del servizio, 
+        con rinnovo tacito per ulteriori 12 mesi salvo disdetta comunicata con 
+        preavviso di 30 giorni tramite PEC o raccomandata A/R.</p>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">ATTIVAZIONE E CONSEGNA</h3>
+        <ul>
+            <li>Consegna dispositivo entro <strong>10 giorni lavorativi</strong> dal pagamento</li>
+            <li>Configurazione e test funzionamento inclusi</li>
+            <li>Formazione gratuita per l'utilizzo</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">DIRITTO DI RECESSO</h3>
+        <p>Il Cliente ha diritto di recedere dal presente contratto entro <strong>14 giorni</strong> 
+        dalla ricezione del dispositivo, senza dover fornire motivazioni. 
+        Il dispositivo deve essere restituito integro e nella confezione originale.</p>
+    </div>
+
+    <div class="section">
+        <h3 style="color: #3b82f6;">PRIVACY E TRATTAMENTO DATI</h3>
+        <p>Medica GB S.r.l. garantisce il rispetto del GDPR (Reg. UE 2016/679) 
+        per il trattamento dei dati personali e sanitari. Tutti i dati sono criptati e 
+        conservati su server certificati.</p>
+    </div>
+
+    <div class="signature-area">
+        <div>
+            <strong>IL CLIENTE</strong><br>
+            {{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}
+            <div class="signature-box">Firma</div>
+        </div>
+        <div>
+            <strong>MEDICA GB S.R.L.</strong><br>
+            Legale Rappresentante
+            <div class="signature-box">Firma e Timbro</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
+        <p><strong>Data Contratto:</strong> {{DATA_CONTRATTO}} | <strong>Luogo:</strong> Milano</p>
+        <p><em>Contratto generato automaticamente dal sistema eCura - {{DATA_GENERAZIONE}}</em></p>
+        <p>Per assistenza: info@ecura.it | Tel. 335 7301206</p>
+    </div>
+</body>
+</html>

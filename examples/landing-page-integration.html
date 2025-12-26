@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eCura - Esempio Integrazione Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  
+  <div class="container mx-auto px-4 py-12">
+    
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-gray-800 mb-4">
+        🏥 eCura - TeleAssistenza Anziani
+      </h1>
+      <p class="text-xl text-gray-600">
+        Richiedi informazioni sui nostri servizi
+      </p>
+    </div>
+    
+    <!-- Form Card -->
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+      
+      <form id="leadForm" class="space-y-6">
+        
+        <!-- Nome e Cognome -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nome *
+            </label>
+            <input 
+              type="text" 
+              id="nome" 
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Mario"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Cognome
+            </label>
+            <input 
+              type="text" 
+              id="cognome"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Rossi"
+            />
+          </div>
+        </div>
+        
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Email *
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="mario.rossi@example.com"
+          />
+        </div>
+        
+        <!-- Telefono -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Telefono
+          </label>
+          <input 
+            type="tel" 
+            id="telefono"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="335 123 4567"
+          />
+        </div>
+        
+        <!-- Servizio -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Servizio di interesse *
+          </label>
+          <select 
+            id="servizio" 
+            required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Seleziona...</option>
+            <option value="FAMILY">FAMILY - Assistenza Familiare</option>
+            <option value="PRO">PRO - Teleassistenza Avanzata</option>
+            <option value="PREMIUM">PREMIUM - Servizio Completo</option>
+          </select>
+        </div>
+        
+        <!-- Pacchetto -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Pacchetto
+          </label>
+          <select 
+            id="pacchetto"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="BASE">BASE</option>
+            <option value="AVANZATO">AVANZATO</option>
+          </select>
+        </div>
+        
+        <!-- Età -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Età dell'assistito (opzionale)
+          </label>
+          <input 
+            type="number" 
+            id="eta"
+            min="0"
+            max="120"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="75"
+          />
+        </div>
+        
+        <!-- Checkbox -->
+        <div class="space-y-3">
+          <label class="flex items-center">
+            <input 
+              type="checkbox" 
+              id="vuoleContratto" 
+              checked
+              class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="ml-3 text-sm text-gray-700">
+              Voglio ricevere il contratto per firma elettronica
+            </span>
+          </label>
+          
+          <label class="flex items-center">
+            <input 
+              type="checkbox" 
+              id="vuoleBrochure" 
+              checked
+              class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="ml-3 text-sm text-gray-700">
+              Voglio ricevere la brochure informativa
+            </span>
+          </label>
+        </div>
+        
+        <!-- Note aggiuntive -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Note aggiuntive
+          </label>
+          <textarea 
+            id="message"
+            rows="3"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Eventuali richieste particolari..."
+          ></textarea>
+        </div>
+        
+        <!-- Privacy -->
+        <div>
+          <label class="flex items-start">
+            <input 
+              type="checkbox" 
+              id="privacy" 
+              required
+              class="w-5 h-5 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span class="ml-3 text-xs text-gray-600">
+              Accetto il trattamento dei dati personali secondo la 
+              <a href="#" class="text-blue-600 underline">Privacy Policy</a> 
+              e autorizzo l'invio di comunicazioni commerciali.
+            </span>
+          </label>
+        </div>
+        
+        <!-- Submit Button -->
+        <button 
+          type="submit"
+          id="submitBtn"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
+        >
+          📩 Invia Richiesta
+        </button>
+        
+      </form>
+      
+      <!-- Success Message (nascosto di default) -->
+      <div id="successMessage" class="hidden mt-6 p-6 bg-green-50 border-2 border-green-500 rounded-lg">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-lg font-semibold text-green-800">
+              ✅ Richiesta inviata con successo!
+            </h3>
+            <p class="mt-2 text-sm text-green-700">
+              Riceverai a breve un'email con il contratto DocuSign e la brochure informativa.
+            </p>
+            <p class="mt-1 text-xs text-green-600">
+              <strong>ID Richiesta:</strong> <span id="leadId"></span>
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Error Message (nascosto di default) -->
+      <div id="errorMessage" class="hidden mt-6 p-6 bg-red-50 border-2 border-red-500 rounded-lg">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-lg font-semibold text-red-800">
+              ❌ Errore durante l'invio
+            </h3>
+            <p class="mt-2 text-sm text-red-700" id="errorText">
+              Si è verificato un errore. Riprova tra qualche istante.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </div>
+  
+  <script>
+    // ============================================
+    // CONFIGURAZIONE
+    // ============================================
+    
+    // 🔧 IMPORTANTE: Sostituisci con il tuo URL Producer Worker
+    const PRODUCER_URL = 'https://ecura-producer.YOUR_SUBDOMAIN.workers.dev';
+    
+    // UTM Parameters (opzionali)
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmSource = urlParams.get('utm_source') || 'ecura_landing_page';
+    const utmMedium = urlParams.get('utm_medium') || 'organic';
+    const utmCampaign = urlParams.get('utm_campaign') || 'homepage';
+    
+    // ============================================
+    // FORM SUBMISSION
+    // ============================================
+    
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const successMsg = document.getElementById('successMessage');
+      const errorMsg = document.getElementById('errorMessage');
+      
+      // Reset messages
+      successMsg.classList.add('hidden');
+      errorMsg.classList.add('hidden');
+      
+      // Disable button
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Invio in corso...';
+      
+      try {
+        
+        // Prepare lead data
+        const leadData = {
+          nome: document.getElementById('nome').value,
+          cognome: document.getElementById('cognome').value,
+          email: document.getElementById('email').value,
+          telefono: document.getElementById('telefono').value,
+          servizio: document.getElementById('servizio').value,
+          pacchetto: document.getElementById('pacchetto').value,
+          vuoleContratto: document.getElementById('vuoleContratto').checked,
+          vuoleBrochure: document.getElementById('vuoleBrochure').checked,
+          eta: document.getElementById('eta').value ? parseInt(document.getElementById('eta').value) : null,
+          message: document.getElementById('message').value,
+          
+          // Metadata
+          source: 'ecura_landing_page',
+          utm_source: utmSource,
+          utm_medium: utmMedium,
+          utm_campaign: utmCampaign,
+          referrer: document.referrer,
+          
+          metadata: {
+            user_agent: navigator.userAgent,
+            language: navigator.language,
+            screen_resolution: `${screen.width}x${screen.height}`,
+            page_url: window.location.href
+          }
+        };
+        
+        console.log('📤 Invio lead:', leadData);
+        
+        // Send to Producer Worker
+        const response = await fetch(`${PRODUCER_URL}/api/lead`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(leadData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          
+          // ✅ SUCCESS
+          console.log('✅ Lead inviato:', result);
+          
+          document.getElementById('leadId').textContent = result.leadId;
+          successMsg.classList.remove('hidden');
+          
+          // Reset form
+          document.getElementById('leadForm').reset();
+          
+          // Optional: Send to Google Analytics
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'lead_submission', {
+              'event_category': 'Lead',
+              'event_label': leadData.servizio,
+              'value': 1
+            });
+          }
+          
+          // Optional: Send to Facebook Pixel
+          if (typeof fbq !== 'undefined') {
+            fbq('track', 'Lead', {
+              content_name: leadData.servizio,
+              content_category: leadData.pacchetto
+            });
+          }
+          
+        } else {
+          
+          // ❌ ERROR
+          throw new Error(result.error || 'Errore server');
+        }
+        
+      } catch (error) {
+        
+        console.error('❌ Errore:', error);
+        
+        document.getElementById('errorText').textContent = error.message;
+        errorMsg.classList.remove('hidden');
+        
+      } finally {
+        
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '📩 Invia Richiesta';
+      }
+    });
+  </script>
+  
+</body>
+</html>

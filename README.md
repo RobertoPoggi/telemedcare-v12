@@ -1,298 +1,209 @@
-# TeleMedCare V11.0 - Sistema Admin Dashboard con Workflow Automation
+# TeleMedCare V11.0 - Sistema Modulare Enterprise
 
 ## 🏥 Panoramica
-Sistema enterprise per la gestione della telemedicina con **Admin Dashboard** per conferma manuale di firme e pagamenti, integrando workflow automatizzati.
+Sistema enterprise modulare per la gestione della telemedicina con architettura separata tra frontend pubblico e dashboard amministrative.
 
-## 🚀 **DEPLOY RAPIDO - 2 MINUTI**
+## 📂 **ARCHITETTURA MODULARE**
 
-### Quick Start per Produzione:
-📋 **LEGGI**: `QUICKSTART.md` - Guida in 2 minuti per andare in produzione
-📖 **DETTAGLI**: `MIGRATION_INSTRUCTIONS.md` - Istruzioni complete per migrazioni
-📊 **STATUS**: `DEPLOYMENT_STATUS.md` - Status completo deployment
+### **🚀 Landing Page + API Core (`src/index.tsx`)**
+- **Bundle:** 336KB
+- **Funzioni:** Landing page + lead capture + email automation
+- **Target:** Utenti pubblici e acquisizione lead
+- **API:** Endpoints essenziali per workflow base
 
-### URLs Produzione:
-- 🌐 **Admin Dashboard**: https://telemedcare-v11.pages.dev/admin-dashboard
-- 🌐 **API Admin**: https://telemedcare-v11.pages.dev/api/admin/dashboard/stats
-- 🌐 **Form Lead Pubblico**: https://telemedcare-v11.pages.dev/
+### **📊 Dashboard Enterprise Complete (`src/dashboard.tsx`)** 
+- **Bundle:** 595KB  
+- **Funzioni:** 40+ dashboard amministrative complete
+- **Target:** Staff interno e amministrazione
+- **API:** Sistema completo enterprise con tutte le funzionalità
 
-## 📂 **ARCHITETTURA SISTEMA**
+## 🌐 **URLs e Funzionalità**
 
-### **🚀 Frontend Pubblico**
-- **Landing Page** con form acquisizione lead
-- **Form Lead**: Acquisizione dati paziente con validazione
-- **Email Automation**: Notifiche automatiche a info@telemedcare.it
-- **Workflow**: Gestione automatizzata status lead
+### **Sistema Landing Page (Attuale - `index.tsx`)**
+- **🏠 Homepage:** `/` - Landing page completa con form
+- **📧 API Lead:** `/api/lead` - Acquisizione lead
+- **📊 API Dashboard:** `/api/data/dashboard` - Dati base
+- **🔧 Build Size:** 336KB
 
-### **📊 Admin Dashboard**
-- **1-Click Confirmations**: Firma manuale contratti + pagamenti bonifico
-- **Gestione Leads**: Visualizzazione e filtri per status
-- **Gestione Contratti**: Conferma firma manuale (olografo)
-- **Gestione Proforma**: Conferma pagamenti bonifico bancario
-- **Gestione Devices**: Inventario SIDLY con associazione e configurazione
-- **Statistiche Real-time**: Dashboard KPI aggiornate
+### **Sistema Dashboard Enterprise (`dashboard.tsx`)**
+Quando attivo, include tutte le dashboard:
 
-### **🤖 Workflow Automation**
-```
-Lead → Contratto (1-click conferma) → Proforma (auto-generata) → 
-Pagamento (1-click conferma) → Welcome Email (auto) → 
-Form Configurazione → Device Association → ATTIVO
-```
+#### **📊 Dashboard Amministrative**
+- **📈 Dashboard Operativa:** `/dashboard`
+- **📊 Data Analytics:** `/admin/data-dashboard`  
+- **📱 Magazzino Dispositivi:** `/admin/devices`
+- **🧪 Testing Dashboard:** `/admin/testing-dashboard`
+- **📚 Admin Docs:** `/admin/docs`
 
-## 🌐 **URLs e Endpoints**
+#### **🧪 Testing e Management**
+- **📧 Email Test:** `/email-test`
+- **📄 Contract Test:** `/contract-test`
+- **🔧 Environment Management:** `/admin/environments`
 
-### **Pubblico**
-- **🏠 Homepage:** `/` - Landing page con form lead
-- **📧 API Lead:** `/api/lead` - Submit nuovo lead
+#### **🔧 API Enterprise Complete**
+- **📊 KPI Reports:** `/api/enterprise/reports/kpi`
+- **📱 Device Inventory:** `/api/enterprise/devices/inventory`
+- **🔒 Security Alerts:** `/api/enterprise/security/alerts`
+- **📧 Email Templates:** `/api/email/templates`
+- **💰 Payment Methods:** `/api/payments/methods`
+- **📄 Contract Templates:** `/api/contracts/templates`
 
-### **Admin Dashboard**
-- **📊 Dashboard:** `/admin-dashboard` - Dashboard amministrativa completa
-- **🔐 Login:** Form di autenticazione amministratore
+## ⚙️ **Come Utilizzare le Due Versioni**
 
-### **Admin API Endpoints**
+### **🔄 Switch to Dashboard Enterprise**
+Per testare tutte le dashboard e funzionalità:
 
-#### **Dashboard Stats**
-```
-GET /api/admin/dashboard/stats
-→ Statistiche real-time (leads, contratti, pagamenti, devices)
-```
+```bash
+# 1. Backup landing page
+cd /home/user/webapp/src
+cp index.tsx index-landing-backup.tsx
 
-#### **Gestione Leads**
-```
-GET /api/admin/leads?status=NEW&limit=50
-GET /api/admin/leads/:id
-```
+# 2. Attiva dashboard enterprise
+cp dashboard.tsx index.tsx
 
-#### **Gestione Contratti**
-```
-GET /api/admin/contracts?signature_status=PENDING
-POST /api/admin/contracts/:id/confirm-signature
-  Body: { "admin_email": "...", "notes": "..." }
-```
+# 3. Build e restart
+cd /home/user/webapp
+npm run build
+pm2 restart telemedcare
 
-#### **Gestione Proforma**
-```
-GET /api/admin/proformas?status=PENDING
-POST /api/admin/proformas/:id/confirm-payment
-  Body: { "admin_email": "...", "payment_reference": "...", "notes": "..." }
+# Ora hai accesso a tutte le 40+ dashboard!
 ```
 
-#### **Gestione Devices**
+### **🔄 Restore Landing Page**
+Per tornare alla landing page:
+
+```bash
+# 1. Ripristina landing page
+cd /home/user/webapp/src
+cp index-landing-backup.tsx index.tsx
+
+# 2. Build e restart  
+cd /home/user/webapp
+npm run build
+pm2 restart telemedcare
 ```
-GET /api/admin/devices?status=AVAILABLE
-POST /api/admin/devices/:id/associate
-POST /api/admin/devices/:id/configure
-GET /api/admin/devices/:id/history
+
+### **📋 Script di Switch Automatico**
+
+```bash
+# Switch to Dashboard
+alias switch-to-dashboard='cd /home/user/webapp/src && cp index.tsx index-landing-backup.tsx && cp dashboard.tsx index.tsx && cd .. && npm run build && pm2 restart telemedcare'
+
+# Switch to Landing  
+alias switch-to-landing='cd /home/user/webapp/src && cp index-landing-backup.tsx index.tsx && cd .. && npm run build && pm2 restart telemedcare'
 ```
-
-## ⚙️ **Setup Iniziale Database**
-
-### **Prerequisiti**
-1. Database D1 Cloudflare creato: `telemedcare-leads`
-2. ID Database: `e6fd921d-06df-4b65-98f9-fce81ef78825`
-3. Configurazione `wrangler.jsonc` aggiornata
-
-### **Applica Migrazioni Database (PRIMA VOLTA)**
-
-**Dashboard Cloudflare D1:**
-👉 https://dash.cloudflare.com/73e144e1ddc4f4af162d17c313e00c06/workers-and-pages/d1
-
-**Procedura (2-3 minuti):**
-1. Vai su Dashboard → **telemedcare-leads** → Tab **Console**
-2. Applica i 4 batch files (copia-incolla nella Console SQL):
-   - ✅ `migrations/BATCH_01_core_schema.sql`
-   - ✅ `migrations/BATCH_02_templates.sql`
-   - ✅ `migrations/BATCH_03_partners_proforma.sql`
-   - ✅ `migrations/BATCH_04_admin_features.sql`
-
-**📋 Istruzioni Complete:** Vedi `MIGRATION_INSTRUCTIONS.md`
-
-### **Deploy Automatico**
-
-Ogni push su `main` branch triggera automaticamente:
-1. GitHub Actions workflow
-2. Build applicazione
-3. Deploy su Cloudflare Pages
-4. Applicazione LIVE in 2-3 minuti
-
-**Monitoraggio Deploy:**
-👉 https://github.com/RobertoPoggi/telemedcare-v11/actions
 
 ## 🚀 Funzionalità Principali
 
-### 📧 **Sistema Email Automation**
-- **Provider**: Resend API
-- **Email automatiche**: Notifiche, benvenuto, documenti
-- **Template professionali**: HTML responsive con branding TelemedCare
-- **Workflow automatizzato**: Trigger su eventi (firma, pagamento, etc.)
+### 📧 **Sistema Email Multi-Provider**
+- **RESEND** e **SENDGRID** con failover automatico
+- **🔐 API Keys sicure** via environment variables  
+- Template email professionali
+- Workflow automatizzato completo
 
 ### 📊 **Database D1 Cloudflare**
-- Schema completo con 15+ tabelle relazionali
-- **Leads**: Acquisizione e tracking
-- **Contracts**: Gestione firme manuali
-- **Proformas**: Gestione pagamenti bonifico
-- **Devices**: Inventario SIDLY con tracking
-- **DocuSign**: Token e envelope tracking
-- **Email Templates**: Sistema template dinamico
+- Schema completo con 8 tabelle relazionali
+- Gestione leads, contratti, pagamenti, dispositivi
+- Logging email e tracking firme elettroniche
 
-### 📱 **Gestione Dispositivi SIDLY**
-- **Inventory Management**: Codice dispositivo + seriale
-- **Stati Disponibili**:
-  - `AVAILABLE` - Disponibile in magazzino
-  - `TO_CONFIGURE` - Da configurare
-  - `ASSOCIATED` - Associato a paziente
-  - `CONFIGURED` - Configurato e pronto
-  - `IN_USE` - In uso dal paziente
-  - `RETURNED` - Restituito
-  - `MAINTENANCE` - In manutenzione
-- **Device History**: Tracking completo modifiche
-- **Dashboard dedicata**: Visualizzazione e gestione
+### 📱 **Gestione Dispositivi SiDLY Care Pro**
+- Inventory management completo
+- Scanner IMEI automatico
+- Stati: INVENTORY → ASSIGNED → SHIPPED → DELIVERED → ACTIVE
+- Dashboard dedicata con analytics
 
-### 💰 **Gestione Pagamenti**
-- **Bonifico Bancario**: Conferma manuale da admin dashboard
-- **Tracking Pagamenti**: Reference code + data + note
-- **Proforma Generation**: Automatica dopo firma contratto
-- **Status Tracking**: PENDING → PAID_BANK_TRANSFER
+### 💰 **Sistema Pagamenti Enterprise**
+- Stripe + Bonifico bancario
+- Tracking pagamenti real-time  
+- Fatturazione automatica
+- Dashboard finanziaria
 
-## 📁 Struttura Progetto
+## 📁 Struttura File
 
 ```
 webapp/
 ├── src/
-│   ├── index.tsx                  # 🌟 MAIN APPLICATION
-│   └── modules/
-│       ├── admin-api.ts           # Admin API endpoints
-│       ├── email-service.ts       # Email automation
-│       ├── docusign-service.ts    # DocuSign integration
-│       └── [altri moduli...]
-├── public/
-│   └── admin-dashboard.html       # Admin dashboard UI (36KB)
+│   ├── index.tsx              # 🌟 LANDING PAGE + API CORE (336KB)
+│   ├── dashboard.tsx          # 🌟 DASHBOARD ENTERPRISE (595KB)  
+│   ├── index-landing-only.tsx # Backup landing page
+│   ├── index-full.tsx         # Sistema completo (reference)
+│   └── modules/               # 25+ moduli enterprise
+│       ├── email-service.ts   # Multi-provider email
+│       ├── device-manager.ts  # Gestione dispositivi  
+│       ├── contract-service.ts # Sistema contratti
+│       ├── payment-service.ts # Gateway pagamenti
+│       └── [20+ altri moduli...]
 ├── migrations/
-│   ├── BATCH_01_core_schema.sql   # 📋 Schema base
-│   ├── BATCH_02_templates.sql     # 📧 Email templates
-│   ├── BATCH_03_partners_proforma.sql  # 💼 Partner e proforma
-│   ├── BATCH_04_admin_features.sql     # 🔧 Admin features
-│   └── ALL_MIGRATIONS_CONSOLIDATED.sql # Alternativa: tutto in uno
-├── .github/
-│   └── workflows/
-│       └── deploy.yml             # CI/CD automatico
-├── wrangler.jsonc                 # ⚙️ Cloudflare config
-├── QUICKSTART.md                  # ⚡ Guida rapida 2 minuti
-├── MIGRATION_INSTRUCTIONS.md      # 📖 Istruzioni migrazioni
-├── DEPLOYMENT_STATUS.md           # 📊 Status deployment
-└── README.md                      # 📋 Questo file
+│   └── 0001_complete_telemedcare_schema.sql
+├── STRUCTURE.md              # 📚 Guida architettura modulare
+├── SECURITY.md               # 🔐 Documentazione sicurezza
+├── SETUP-NEW-SANDBOX.md      # 🚀 Guida migrazione sandbox
+└── README.md                 # 📋 Questo file
 ```
 
-## 🔐 Configurazione Environment
+## 🔐 Configurazione Sicurezza
 
-### **Variables (in wrangler.jsonc)**
-```jsonc
-{
-  "vars": {
-    "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt",
-    "EMAIL_FROM": "noreply@telemedcare.it",
-    "EMAIL_TO_INFO": "info@telemedcare.it"
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "telemedcare-leads",
-      "database_id": "e6fd921d-06df-4b65-98f9-fce81ef78825"
-    }
-  ]
-}
+### **Environment Variables (OBBLIGATORIO)**
+```bash
+# Multi-Provider Email
+SENDGRID_API_KEY=SG.your-real-sendgrid-key
+RESEND_API_KEY=re_your-real-resend-key
+
+# Enterprise APIs  
+IRBEMA_API_KEY=your-irbema-key
+STRIPE_SECRET_KEY=sk_live_your-stripe-key
+
+# Security
+JWT_SECRET=your-jwt-secret
+ENCRYPTION_KEY=your-encryption-key
 ```
 
-### **Cloudflare Configuration**
-- **Account ID**: 73e144e1ddc4f4af162d17c313e00c06
-- **Project Name**: telemedcare-v11
-- **Database**: telemedcare-leads (D1)
-- **GitHub Actions**: Auto-deploy on push to main
+**📖 Documentazione:** [SECURITY.md](./SECURITY.md)
 
-## 🎯 **Workflow Automation**
+## 🎯 **Raccomandazioni d'Uso**
 
-### **1. Lead Acquisition**
-```
-Utente compila form → Lead creato (status: NEW) → 
-Email notifica a info@telemedcare.it
-```
+### **Per Sviluppo Landing Page:**
+Usa `src/index.tsx` (attuale) - Leggero e veloce per testing form e lead capture.
 
-### **2. Contract Management**
-```
-Lead (CONTRACT_SENT) → Cliente firma contratto olografo → 
-Admin conferma firma (1-click) → Contract (SIGNED_MANUAL) → 
-Lead (CONTRACT_SIGNED)
-```
+### **Per Testing Dashboard Complete:**
+Switch a `src/dashboard.tsx` - Accesso a tutte le 40+ funzionalità amministrative.
 
-### **3. Proforma & Payment**
-```
-Contratto firmato → Sistema genera proforma automatica →
-Lead (PROFORMA_SENT) → Cliente paga bonifico → 
-Admin conferma pagamento (1-click) → Proforma (PAID_BANK_TRANSFER) →
-Lead (PAYMENT_CONFIRMED)
-```
+### **Per Produzione Enterprise:**
+Deploy entrambi su domini separati:
+- `telemedcare.it` → Landing page (pubblico)
+- `admin.telemedcare.it` → Dashboard (interno)
 
-### **4. Device Configuration**
-```
-Pagamento confermato → Email benvenuto + link form → 
-Cliente compila configurazione → Lead (CONFIGURATION_RECEIVED) →
-Admin configura SIDLY → Admin associa device → 
-Lead (DEVICE_ASSOCIATED) → Lead (ACTIVE)
-```
+## 📊 Performance
 
-## 📊 Performance & Scalability
+- **Landing Page:** 336KB bundle, <100ms response  
+- **Dashboard Enterprise:** 595KB bundle, sistema completo
+- **Database:** Auto-scaling D1 globale
+- **Email:** 100,000+ email/mese per provider
+- **Uptime:** 99.9% SLA Cloudflare
 
-- **Frontend**: Cloudflare Pages (CDN globale)
-- **Database**: D1 auto-scaling SQLite (Cloudflare)
-- **Email**: Resend API (50k email/mese free tier)
-- **Build Time**: ~4 secondi
-- **Deploy Time**: ~2-3 minuti (GitHub Actions)
-- **Uptime**: 99.9% SLA Cloudflare
-
-## 🚀 Deployment & CI/CD
+## 🚀 Deployment
 
 ### **GitHub Repository**
 🔗 https://github.com/RobertoPoggi/telemedcare-v11
 
-### **Automatic Deployment**
-- **Trigger**: Push to `main` branch
-- **CI/CD**: GitHub Actions
-- **Build**: Automatic (Vite + TypeScript)
-- **Deploy**: Cloudflare Pages
-- **Time**: 2-3 minuti per deployment completo
+### **Sandbox ad Alte Prestazioni**
+Pronto per migrazione con:
+- Build 2-3x più veloce
+- Hot reload istantaneo  
+- CPU e memoria potenziati
 
-### **Manual Deploy (Optional)**
+### **Cloudflare Pages**
 ```bash
 npm run build
 npx wrangler pages deploy dist --project-name telemedcare-v11
 ```
 
-### **Database Migrations**
-First time only (via Cloudflare Dashboard):
-```bash
-# Apply 4 batch files in Console SQL:
-BATCH_01_core_schema.sql
-BATCH_02_templates.sql
-BATCH_03_partners_proforma.sql
-BATCH_04_admin_features.sql
-```
+## 📞 Supporto
 
-## 📞 Supporto & Links
-
-### **Production URLs**
-- 🌐 **Admin Dashboard**: https://telemedcare-v11.pages.dev/admin-dashboard
-- 🌐 **Lead Form**: https://telemedcare-v11.pages.dev/
-- 🌐 **Admin API**: https://telemedcare-v11.pages.dev/api/admin/
-
-### **Development & Monitoring**
-- 📊 **GitHub Actions**: https://github.com/RobertoPoggi/telemedcare-v11/actions
-- ⚙️ **Cloudflare D1**: https://dash.cloudflare.com/73e144e1ddc4f4af162d17c313e00c06/workers-and-pages/d1
-- 🚀 **Cloudflare Pages**: https://dash.cloudflare.com/73e144e1ddc4f4af162d17c313e00c06/pages
-
-### **Contact**
 **Medica GB S.r.l.**  
 📧 info@telemedcare.it  
-🌐 TeleMedCare V11.0 - Admin Dashboard System
+🌐 TeleMedCare V11.0 Modular Enterprise  
 
 ---
-**✨ Sistema Admin Dashboard con Workflow Automation**  
-*Ultimo aggiornamento: 2025-11-08*
+**Sistema Modulare - Landing + Dashboard Separate**  
+*Aggiornato: $(date '+%Y-%m-%d %H:%M')*

@@ -28,26 +28,18 @@ import TemplateManager from './modules/template-manager'
 // Import NEW Workflow Orchestrator Modules (CRITICAL FIX)
 import * as WorkflowOrchestrator from './modules/complete-workflow-orchestrator'
 import * as WorkflowEmailManager from './modules/workflow-email-manager'
+
+// Import Dashboard Templates
+import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
-
-// Import Admin API Module
-import adminApi from './modules/admin-api'
-
-// Import admin dashboard route from TypeScript module
-import adminDashboardRoute from './modules/admin-dashboard-page'
-
-// Import Configuration Form API
-import configFormApi from './modules/config-form-api'
-
-// Import Assistiti Management API
-import assistitiApi from './modules/assistiti-api'
 
 type Bindings = {
   DB: D1Database
   KV?: KVNamespace
   R2?: R2Bucket
+  BROWSER?: any // Cloudflare Browser Rendering for PDF generation
   // 🔐 EMAIL SERVICE API KEYS (Security Enhanced)
   SENDGRID_API_KEY?: string
   RESEND_API_KEY?: string
@@ -405,21 +397,11 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Enable CORS for API routes
 app.use('/api/*', cors())
 
-// Mount Admin API routes
-app.route('/api/admin', adminApi)
-
-// Mount Configuration Form API routes
-app.route('/api', configFormApi)
-app.route('/api/assistiti', assistitiApi)
-
-// Mount Admin Dashboard page
-app.route('/admin-dashboard', adminDashboardRoute)
-
 // Serve static files (commentato per debug locale - funziona solo in produzione Cloudflare)
 // app.use('/static/*', serveStatic({ root: './public' }))
 
-// ========== LANDING PAGE (/) - PAGINA ACQUISIZIONE LEADS CORRETTA ==========
-app.get('/', (c) => {
+// ========== FORM ACQUISIZIONE LEAD (VECCHIA HOMEPAGE) - Ora su /form-lead ==========
+app.get('/form-lead', (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="it" data-theme="light">
@@ -1101,75 +1083,27 @@ app.get('/', (c) => {
                   </label>
                 </div>
 
-                <!-- Campi Dinamici per Richiedente (COMPLETI per Stripe e DocuSign) -->
+                <!-- Campi Dinamici per Richiedente -->
                 <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
-                  <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Luogo di Nascita Richiedente</label>
-                      <input type="text" name="luogoNascitaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Milano, Roma">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Data di Nascita Richiedente</label>
-                      <input type="date" name="dataNascitaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                  </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente *</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
                     <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
                   </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente (Via e numero civico) *</label>
-                    <input type="text" name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Via Roma 123">
-                  </div>
-                  <div class="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">CAP Richiedente *</label>
-                      <input type="text" name="capRichiedente" maxlength="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="20100">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Città Richiedente *</label>
-                      <input type="text" name="cittaRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milano">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
-                      <input type="text" name="provinciaRichiedente" maxlength="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="MI">
-                    </div>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
+                    <textarea name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
                   </div>
                 </div>
 
-                <!-- Campi Dinamici per Assistito (COMPLETI per Stripe e DocuSign) -->
+                <!-- Campi Dinamici per Assistito -->
                 <div id="campi_assistito" style="display: none;" class="space-y-4 mt-4">
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito *</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Assistito</label>
                     <input type="text" name="cfAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale dell'Assistito">
                   </div>
                   <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Assistito (Via e numero civico) *</label>
-                    <input type="text" name="indirizzoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Es. Via Roma 123">
-                  </div>
-                  <div class="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">CAP Assistito *</label>
-                      <input type="text" name="capAssistito" maxlength="5" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="20100">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Città Assistito *</label>
-                      <input type="text" name="cittaAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Milano">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Provincia *</label>
-                      <input type="text" name="provinciaAssistito" maxlength="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="MI">
-                    </div>
-                  </div>
-                  <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Telefono Assistito</label>
-                      <input type="tel" name="telefonoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+39 333 1234567">
-                    </div>
-                    <div>
-                      <label class="block text-gray-700 font-semibold mb-2">Email Assistito</label>
-                      <input type="email" name="emailAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@example.com">
-                    </div>
+                    <label class="block text-gray-700 font-semibold mb-2">Indirizzo Assistito</label>
+                    <textarea name="indirizzoAssistito" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo dell'Assistito"></textarea>
                   </div>
                 </div>
               </div>
@@ -3731,7 +3665,7 @@ app.post('/api/lead', async (c) => {
     const email = leadData.email || leadData.emailRichiedente || ''
     const telefono = leadData.telefono || leadData.telefonoRichiedente || ''
     const eta = leadData.eta || leadData.etaRichiedente || null
-    const servizio = leadData.servizio || leadData.tipoServizio || leadData.pacchetto || ''
+    const servizio = leadData.servizio || leadData.tipoServizio || 'BASIC'
     const azienda = leadData.azienda || leadData.aziendaRichiedente || null
 
     // Validazione dati obbligatori
@@ -3746,81 +3680,36 @@ app.post('/api/lead', async (c) => {
     const leadId = generateLeadId()
     const timestamp = new Date().toISOString()
 
-    // Normalizza pacchetto a BASE o AVANZATO
-    let normalizedPacchetto = 'BASE'  // Default
-    console.log(`🔍 [DEBUG] servizio raw: "${servizio}"`)
-    if (servizio) {
-      const srv = String(servizio).toLowerCase().trim()
-      console.log(`🔍 [DEBUG] servizio normalized: "${srv}"`)
-      if (srv.includes('avanzat') || srv === 'avanzato' || srv === 'advanced') {
-        normalizedPacchetto = 'AVANZATO'
-      } else if (srv.includes('base') || srv === 'base' || srv === 'basic') {
-        normalizedPacchetto = 'BASE'
-      }
-    }
-    console.log(`✅ [DEBUG] Pacchetto finale: ${normalizedPacchetto}`)
-
-    // Normalizza urgenza
-    let urgenza = String(leadData.urgenzaRisposta || leadData.priority || '').trim()
-    // Mappa i valori del form ai valori corretti
-    if (urgenza === 'Urgente') urgenza = 'urgente'
-    else if (urgenza === 'Alta') urgenza = 'alta'
-    else if (urgenza === 'Media') urgenza = 'media'
-
-    // 📅 DERIVA giorni risposta da urgenza (FIX Roberto 17:45)
-    let giorniCalcolati = ''
-    const urgenzaLower = urgenza.toLowerCase()
-    if (urgenzaLower.includes('immediat') || urgenzaLower === 'urgente') {
-      giorniCalcolati = '1 giorno'
-    } else if (urgenzaLower === 'alta') {
-      giorniCalcolati = '3 giorni'
-    } else if (urgenzaLower === 'media') {
-      giorniCalcolati = '7 giorni'
-    } else if (urgenzaLower === 'bassa') {
-      giorniCalcolati = 'quando possibile'
-    }
-
     // Normalizza e pulisce i dati
     const normalizedLead = {
       id: leadId,
-      // Dati Richiedente COMPLETI
+      // Dati Richiedente (supporta entrambi i formati)
       nomeRichiedente: String(nome).trim(),
       cognomeRichiedente: String(leadData.cognomeRichiedente || '').trim(),
       emailRichiedente: String(email).toLowerCase().trim(),
       telefonoRichiedente: String(telefono).replace(/[^\d+]/g, ''),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
-      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
-      capRichiedente: String(leadData.capRichiedente || '').trim(),
-      cittaRichiedente: String(leadData.cittaRichiedente || '').trim(),
-      provinciaRichiedente: String(leadData.provinciaRichiedente || '').trim(),
-      dataNascitaRichiedente: String(leadData.dataNascitaRichiedente || '').trim(),
-      luogoNascitaRichiedente: String(leadData.luogoNascitaRichiedente || '').trim(),
 
-      // Dati Assistito COMPLETI
+      // Dati Assistito (supporta entrambi i formati)
       nomeAssistito: String(leadData.nomeAssistito || nome).trim(),
       cognomeAssistito: String(leadData.cognomeAssistito || '').trim(),
-      emailAssistito: String(leadData.emailAssistito || '').trim(),
-      telefonoAssistito: String(leadData.telefonoAssistito || '').trim(),
       dataNascitaAssistito: String(leadData.dataNascitaAssistito || '').trim(),
       etaAssistito: String(eta || leadData.etaAssistito || '').trim(),
-      cfAssistito: String(leadData.cfAssistito || '').trim(),
-      indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
-      capAssistito: String(leadData.capAssistito || '').trim(),
-      cittaAssistito: String(leadData.cittaAssistito || '').trim(),
-      provinciaAssistito: String(leadData.provinciaAssistito || '').trim(),
-      luogoNascitaAssistito: String(leadData.luogoNascitaAssistito || '').trim(),
       parentelaAssistito: String(leadData.parentelaAssistito || '').trim(),
 
-      // Servizio e Condizioni CORRETTI
-      pacchetto: normalizedPacchetto,
+      // Servizio e Condizioni (supporta entrambi i formati)
+      servizio: String(servizio), // FAMILY, PRO, o PREMIUM
+      pacchetto: String(leadData.pacchetto || 'BASE'), // BASE o AVANZATO
       condizioniSalute: String(leadData.condizioniSalute || '').trim(),
-      urgenzaRisposta: urgenza,
-      giorniRisposta: giorniCalcolati,  // 📅 USA VALORE CALCOLATO
+      priority: String(leadData.priority || '').trim(),
       preferenzaContatto: String(leadData.preferenzaContatto || '').trim(),
 
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
+      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
+      cfAssistito: String(leadData.cfAssistito || '').trim(),
+      indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
       vuoleBrochure: leadData.vuoleBrochure === 'on' || leadData.vuoleBrochure === 'Si' || leadData.vuoleBrochure === true,
       vuoleManuale: leadData.vuoleManuale === 'on' || leadData.vuoleManuale === 'Si' || leadData.vuoleManuale === true,
 
@@ -3841,52 +3730,36 @@ app.post('/api/lead', async (c) => {
 
     // Salva nel database D1 con nuovo schema
     if (c.env.DB) {
-      // Mappa i dati al nuovo schema COMPLETO
+      // Mappa i dati al nuovo schema
       await c.env.DB.prepare(`
         INSERT INTO leads (
           id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
-          cfRichiedente, indirizzoRichiedente, capRichiedente, cittaRichiedente, provinciaRichiedente,
-          dataNascitaRichiedente, luogoNascitaRichiedente,
-          nomeAssistito, cognomeAssistito, emailAssistito, telefonoAssistito,
-          dataNascitaAssistito, etaAssistito, cfAssistito, indirizzoAssistito,
-          capAssistito, cittaAssistito, provinciaAssistito, luogoNascitaAssistito, parentelaAssistito,
-          pacchetto, condizioniSalute, urgenzaRisposta, giorniRisposta, preferenzaContatto,
-          vuoleContratto, intestazioneContratto, vuoleBrochure, vuoleManuale,
+          nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
+          pacchetto, condizioniSalute, preferenzaContatto,
+          vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
+          cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
         normalizedLead.cognomeRichiedente,
         normalizedLead.emailRichiedente,
         normalizedLead.telefonoRichiedente,
-        normalizedLead.cfRichiedente,
-        normalizedLead.indirizzoRichiedente,
-        normalizedLead.capRichiedente,
-        normalizedLead.cittaRichiedente,
-        normalizedLead.provinciaRichiedente,
-        normalizedLead.dataNascitaRichiedente,
-        normalizedLead.luogoNascitaRichiedente,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
-        normalizedLead.emailAssistito,
-        normalizedLead.telefonoAssistito,
         normalizedLead.dataNascitaAssistito,
         normalizedLead.etaAssistito,
-        normalizedLead.cfAssistito,
-        normalizedLead.indirizzoAssistito,
-        normalizedLead.capAssistito,
-        normalizedLead.cittaAssistito,
-        normalizedLead.provinciaAssistito,
-        normalizedLead.luogoNascitaAssistito,
         normalizedLead.parentelaAssistito,
         normalizedLead.pacchetto,
         normalizedLead.condizioniSalute,
-        normalizedLead.urgenzaRisposta,
-        normalizedLead.giorniRisposta,
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
+        normalizedLead.cfRichiedente,
+        normalizedLead.indirizzoRichiedente,
+        normalizedLead.cfAssistito,
+        normalizedLead.indirizzoAssistito,
         normalizedLead.vuoleBrochure ? 1 : 0,
         normalizedLead.vuoleManuale ? 1 : 0,
         normalizedLead.note,
@@ -3904,52 +3777,24 @@ app.post('/api/lead', async (c) => {
       // ============================================
       console.log('🚀 [WORKFLOW] Avvio orchestratore workflow completo')
       
-      // Crea contesto workflow COMPLETO con tutti i campi
-      const requestOrigin = new URL(c.req.url).origin  // es: https://3000-sandbox.novita.ai
+      // Crea contesto workflow
       const workflowContext: WorkflowOrchestrator.WorkflowContext = {
         db: c.env.DB,
         env: c.env,
-        requestUrl: requestOrigin,  // 🔧 FIX: Passa URL corrente per fetch documenti
         leadData: {
           id: normalizedLead.id,
-          // DATI RICHIEDENTE COMPLETI
           nomeRichiedente: normalizedLead.nomeRichiedente,
           cognomeRichiedente: normalizedLead.cognomeRichiedente,
           emailRichiedente: normalizedLead.emailRichiedente,
           telefonoRichiedente: normalizedLead.telefonoRichiedente,
-          cfRichiedente: normalizedLead.cfRichiedente,
-          indirizzoRichiedente: normalizedLead.indirizzoRichiedente,
-          capRichiedente: normalizedLead.capRichiedente,
-          cittaRichiedente: normalizedLead.cittaRichiedente,
-          provinciaRichiedente: normalizedLead.provinciaRichiedente,
-          dataNascitaRichiedente: normalizedLead.dataNascitaRichiedente,
-          luogoNascitaRichiedente: normalizedLead.luogoNascitaRichiedente,
-          // DATI ASSISTITO COMPLETI
           nomeAssistito: normalizedLead.nomeAssistito,
           cognomeAssistito: normalizedLead.cognomeAssistito,
-          emailAssistito: normalizedLead.emailAssistito,
-          telefonoAssistito: normalizedLead.telefonoAssistito,
           etaAssistito: normalizedLead.etaAssistito,
-          cfAssistito: normalizedLead.cfAssistito,
-          indirizzoAssistito: normalizedLead.indirizzoAssistito,
-          capAssistito: normalizedLead.capAssistito,
-          cittaAssistito: normalizedLead.cittaAssistito,
-          provinciaAssistito: normalizedLead.provinciaAssistito,
-          dataNascitaAssistito: normalizedLead.dataNascitaAssistito,
-          luogoNascitaAssistito: normalizedLead.luogoNascitaAssistito,
-          // SERVIZIO E CONDIZIONI
           pacchetto: normalizedLead.pacchetto,
-          condizioniSalute: normalizedLead.condizioniSalute,
-          urgenzaRisposta: normalizedLead.urgenzaRisposta,
-          giorniRisposta: normalizedLead.giorniRisposta,
-          preferenzaContatto: normalizedLead.preferenzaContatto,
-          // RICHIESTE
+          servizio: normalizedLead.servizio || 'PRO', // Tipo servizio eCura
           vuoleContratto: normalizedLead.vuoleContratto,
-          intestazioneContratto: normalizedLead.intestazioneContratto,
           vuoleBrochure: normalizedLead.vuoleBrochure,
           vuoleManuale: normalizedLead.vuoleManuale,
-          // ALTRI
-          note: normalizedLead.note,
           fonte: normalizedLead.fonte
         }
       }
@@ -3988,6 +3833,100 @@ app.post('/api/lead', async (c) => {
 })
 
 // 🔄 RESET COMPLETO SISTEMA - Cancella tutto e ricrea dati coerenti
+// CLEANUP - Elimina solo lead di test, mantiene 126 lead dall'Excel
+app.post('/api/admin/cleanup-test-leads', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ error: 'Database non configurato' }, 400)
+    }
+
+    console.log('🧹 PULIZIA LEAD DI TEST - V2');
+
+    // Step 1: Count total leads
+    const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first();
+    console.log(`Total leads in DB: ${totalLeads?.count}`);
+    
+    // Step 2: Delete test leads using explicit ID list (TEST: first 3 only)
+    // These are the 63 test lead IDs we identified
+    const allTestLeadIds = [
+      'LEAD_2025-12-25T211955823Z_C4VLK9', 'LEAD_2025-12-25T205008061Z_GC3563', 'LEAD_2025-12-25T204957004Z_MCNVSH',
+      'LEAD_2025-12-25T204530619Z_KJST6F', 'LEAD_2025-12-25T204200079Z_HFTDIQ', 'LEAD_2025-12-25T204149484Z_EDTLYT',
+      'LEAD_2025-12-25T204138898Z_RWZOGD', 'LEAD_2025-12-25T191135691Z_3XBNDO', 'LEAD_2025-12-25T191125265Z_MDFQCB',
+      'LEAD_2025-12-25T191114705Z_1EMLUN', 'LEAD_2025-12-25T191104119Z_0PRENZ', 'LEAD_2025-12-25T191053824Z_1EMY2G',
+      'LEAD_2025-12-25T191043239Z_2GUQGY', 'LEAD_2025-12-25T190029962Z_MK0N5L', 'LEAD_2025-12-25T190019474Z_QPO1PP',
+      'LEAD_2025-12-25T190008673Z_J6WGQ7', 'LEAD_2025-12-25T185958232Z_TL9HI0', 'LEAD_2025-12-25T185947909Z_51TB7B',
+      'LEAD_2025-12-25T185937335Z_WVBB9C', 'LEAD_2025-12-25T185909045Z_B0RLKE', 'LEAD_2025-12-25T110812797Z_F4AKJJ',
+      'LEAD_2025-12-25T110806573Z_UZWPR7', 'LEAD_2025-12-25T110800010Z_GLN8TE', 'LEAD_2025-12-25T110753291Z_5LVK65',
+      'LEAD_2025-12-25T110747228Z_3ZH8MR', 'LEAD_2025-12-25T110740528Z_PJ2JAS', 'LEAD_2025-12-25T082713825Z_4BRLYS',
+      'LEAD_2025-12-25T081934276Z_BKRE1H', 'LEAD_2025-12-25T081929110Z_HONW32', 'LEAD_2025-12-25T081923493Z_RBMKJ3',
+      'LEAD_2025-12-25T081917580Z_WY85K2', 'LEAD_2025-12-25T081912413Z_EWJWFJ', 'LEAD_2025-12-25T081904985Z_YXKTV1',
+      'LEAD_2025-12-22T075325154Z_0FSCAC', 'LEAD_2025-12-22T075220985Z_RA98UA', 'LEAD_2025-12-22T074037336Z_A6PRYV',
+      'LEAD_2025-12-22T074026814Z_N6NYWS', 'LEAD_2025-12-22T074016420Z_CNFCRN', 'LEAD_2025-12-22T074005330Z_DZII12',
+      'LEAD_2025-12-22T073954606Z_AZ2NXW', 'LEAD_2025-12-22T073943463Z_VKX7SP', 'LEAD_2025-12-21T225832616Z_15B4MT',
+      'LEAD_2025-12-21T225632332Z_NCQS0S', 'LEAD_2025-12-21T225426679Z_FOJF8R', 'LEAD_2025-12-21T222542567Z_GINYUY',
+      'LEAD_2025-12-21T221615529Z_YCEMIR', 'LEAD_2025-12-21T221239376Z_1JXGFE', 'LEAD_2025-12-21T220926109Z_0NIBT3',
+      'LEAD_2025-12-21T220107841Z_U7VODT', 'LEAD_2025-12-21T215428385Z_PIDJ7A', 'LEAD_2025-12-21T215403514Z_Q7FEQO',
+      'LEAD_2025-12-21T215332077Z_MZGRVW', 'LEAD_2025-12-21T194424688Z_1OHRLH', 'LEAD_2025-12-21T194318487Z_GXDVLZ',
+      'LEAD_2025-12-21T194010151Z_V7T12E', 'LEAD_2025-12-21T194006055Z_JS7R1F', 'LEAD_2025-12-21T193328137Z_1YRV4T',
+      'LEAD_2025-12-21T192929893Z_F9QWRN', 'LEAD_2025-12-21T192649104Z_80UJ2Z', 'LEAD_2025-12-21T132228882Z_RU8VL9',
+      'LEAD_2025-12-21T125004976Z_JDYS7F', 'LEAD_2025-12-21T124957602Z_QO8HRV', 'LEAD_2025-12-21T124921945Z_Q072Y6'
+    ];
+
+    // TEST: Use only first 3 leads for debugging
+    const testLeadIds = allTestLeadIds.slice(0, 3);
+
+    console.log(`Test leads to delete: ${testLeadIds.length} (total available: ${allTestLeadIds.length})`);
+
+    // Delete in batches
+    let deletedLeads = 0;
+    let failedLeads = 0;
+    for (const leadId of testLeadIds) {
+      try {
+        console.log(`Deleting lead: ${leadId}`);
+        // Delete related records
+        const r1 = await c.env.DB.prepare('DELETE FROM contracts WHERE leadId = ?').bind(leadId).run();
+        console.log(`  Contracts deleted: ${r1.meta.changes}`);
+        const r2 = await c.env.DB.prepare('DELETE FROM proforma WHERE leadId = ?').bind(leadId).run();
+        console.log(`  Proforma deleted: ${r2.meta.changes}`);
+        const r3 = await c.env.DB.prepare('DELETE FROM dispositivi WHERE leadId = ?').bind(leadId).run();
+        console.log(`  Dispositivi deleted: ${r3.meta.changes}`);
+        // Delete the lead
+        const r4 = await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(leadId).run();
+        console.log(`  Lead deleted: ${r4.meta.changes}`);
+        if (r4.meta.changes > 0) {
+          deletedLeads++;
+        } else {
+          console.log(`  WARNING: Lead ${leadId} not found in DB!`);
+          failedLeads++;
+        }
+      } catch (error) {
+        console.error(`Error deleting lead ${leadId}:`, error);
+        failedLeads++;
+      }
+    }
+
+    console.log(`✅ Eliminati ${deletedLeads} lead di test, ${failedLeads} non trovati`);
+
+    // Verify result
+    const remaining = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first();
+    
+    return c.json({
+      success: true,
+      deleted: deletedLeads,
+      remaining: remaining?.count || 0,
+      message: `Eliminati ${deletedLeads} lead di test. Rimangono ${remaining?.count || 0} lead dall'Excel (attesi 126).`
+    });
+
+  } catch (error) {
+    console.error('❌ Errore pulizia:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Errore durante pulizia',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 app.post('/api/admin/reset-and-regenerate', async (c) => {
   try {
     if (!c.env.DB) {
@@ -4242,6 +4181,78 @@ app.post('/api/admin/reset-and-regenerate', async (c) => {
   }
 });
 
+// ** CLEAR DB ONLY - NO TEST DATA **
+app.post('/api/admin/clear-database', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ error: 'Database non configurato' }, 400)
+    }
+
+    console.log('🔄 INIZIO PULIZIA COMPLETA DATABASE');
+
+    // Disabilita foreign keys temporaneamente
+    await c.env.DB.prepare('PRAGMA foreign_keys = OFF').run();
+    
+    // Cancella tutti i dati da tutte le tabelle
+    let deletedCounts = {
+      proforma: 0,
+      contracts: 0,
+      dispositivi: 0,
+      leads: 0,
+      document_repository: 0
+    };
+
+    try { 
+      const r1 = await c.env.DB.prepare('DELETE FROM proforma').run(); 
+      deletedCounts.proforma = r1.meta.changes;
+      console.log(`✅ Proforma cancellate: ${r1.meta.changes}`);
+    } catch (e) { console.log('⚠️ Tabella proforma:', e.message); }
+    
+    try { 
+      const r2 = await c.env.DB.prepare('DELETE FROM contracts').run(); 
+      deletedCounts.contracts = r2.meta.changes;
+      console.log(`✅ Contratti cancellati: ${r2.meta.changes}`);
+    } catch (e) { console.log('⚠️ Tabella contracts:', e.message); }
+    
+    try { 
+      const r3 = await c.env.DB.prepare('DELETE FROM dispositivi').run(); 
+      deletedCounts.dispositivi = r3.meta.changes;
+      console.log(`✅ Dispositivi cancellati: ${r3.meta.changes}`);
+    } catch (e) { console.log('⚠️ Tabella dispositivi:', e.message); }
+    
+    try { 
+      const r4 = await c.env.DB.prepare('DELETE FROM leads').run(); 
+      deletedCounts.leads = r4.meta.changes;
+      console.log(`✅ Lead cancellati: ${r4.meta.changes}`);
+    } catch (e) { console.log('⚠️ Tabella leads:', e.message); }
+    
+    try { 
+      const r5 = await c.env.DB.prepare('DELETE FROM document_repository').run(); 
+      deletedCounts.document_repository = r5.meta.changes;
+      console.log(`✅ Documenti cancellati: ${r5.meta.changes}`);
+    } catch (e) { console.log('⚠️ Tabella document_repository:', e.message); }
+
+    // Riabilita foreign keys
+    await c.env.DB.prepare('PRAGMA foreign_keys = ON').run();
+    
+    console.log('✅ DATABASE COMPLETAMENTE PULITO - Pronto per import Excel');
+
+    return c.json({
+      success: true,
+      message: 'Database pulito con successo. Pronto per importare 126 lead dall\'Excel.',
+      deleted: deletedCounts,
+      total: Object.values(deletedCounts).reduce((a, b) => a + b, 0)
+    });
+
+  } catch (error) {
+    console.error('❌ Errore durante pulizia database:', error);
+    return c.json({
+      success: false,
+      error: 'Errore durante pulizia database: ' + error.message
+    }, 500);
+  }
+});
+
 // API endpoint per recuperare i lead (admin)
 app.get('/api/leads', async (c) => {
   try {
@@ -4252,11 +4263,15 @@ app.get('/api/leads', async (c) => {
       }, 400)
     }
     
-    const leads = await c.env.DB.prepare('SELECT * FROM leads ORDER BY created_at DESC LIMIT 100').all()
+    const limit = c.req.query('limit') || '100'
+    const leads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY timestamp DESC LIMIT ?`).bind(parseInt(limit)).all()
+    
+    console.log('📊 Leads recuperati:', leads.results?.length || 0)
+    
     return c.json({
       success: true,
-      count: leads.results.length,
-      leads: leads.results
+      count: leads.results?.length || 0,
+      leads: leads.results || []
     })
   } catch (error) {
     console.error('❌ Errore recupero leads:', error)
@@ -4521,44 +4536,18 @@ app.post('/api/contracts/sign', async (c) => {
       env: c.env,
       leadData: {
         id: leadData.id,
-        // DATI RICHIEDENTE (intestatario contratto)
         nomeRichiedente: leadData.nomeRichiedente,
         cognomeRichiedente: leadData.cognomeRichiedente,
         emailRichiedente: leadData.email,
         telefonoRichiedente: leadData.telefono,
-        cfRichiedente: leadData.cfRichiedente,
-        indirizzoRichiedente: leadData.indirizzoRichiedente,
-        capRichiedente: leadData.capRichiedente,
-        cittaRichiedente: leadData.cittaRichiedente,
-        provinciaRichiedente: leadData.provinciaRichiedente,
-        luogoNascitaRichiedente: leadData.luogoNascitaRichiedente,
-        dataNascitaRichiedente: leadData.dataNascitaRichiedente,
-        // DATI ASSISTITO (chi riceve il servizio)
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
-        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : undefined,
-        cfAssistito: leadData.cfAssistito,
-        indirizzoAssistito: leadData.indirizzoAssistito,
-        capAssistito: leadData.capAssistito,
-        cittaAssistito: leadData.cittaAssistito,
-        provinciaAssistito: leadData.provinciaAssistito,
-        dataNascitaAssistito: leadData.dataNascitaAssistito,
-        luogoNascitaAssistito: leadData.luogoNascitaAssistito,
-        telefonoAssistito: leadData.telefonoAssistito,
-        emailAssistito: leadData.emailAssistito,
-        // SERVIZIO RICHIESTO
+        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
         pacchetto: leadData.tipoServizio || 'BASE',
         vuoleContratto: true,
         vuoleBrochure: leadData.vuoleBrochure === 'Si',
         vuoleManuale: leadData.vuoleManuale === 'Si',
-        intestazioneContratto: leadData.intestazioneContratto,
-        // ALTRI DATI
-        fonte: leadData.fonte || 'LANDING_PAGE',
-        condizioniSalute: leadData.condizioniSalute,
-        preferenzaContatto: leadData.preferenzaContatto,
-        urgenzaRisposta: leadData.urgenzaRisposta,
-        giorniRisposta: leadData.giorniRisposta,
-        note: leadData.note
+        fonte: leadData.fonte || 'LANDING_PAGE'
       },
       contractId,
       signatureData: firmaDigitale
@@ -4958,15 +4947,102 @@ app.post('/api/leads/external', async (c) => {
   }
 })
 
-// POINT 10 - API per visualizzazione contratto (correzione azione occhio)
-app.get('/api/contratti/:id/view', async (c) => {
-  const id = c.req.param('id')
-  
-  // Redirect to PDF download instead of showing HTML summary
-  return c.redirect(`/api/contratti/${id}/download`)
+// POST /api/webhooks/hubspot - Webhook HubSpot per lead da eCura
+app.post('/api/webhooks/hubspot', async (c) => {
+  try {
+    console.log('📥 Webhook HubSpot ricevuto da eCura')
+    
+    // Importa handler solo quando necessario (dynamic import per ottimizzazione)
+    const { handleHubSpotWebhook } = await import('./modules/hubspot-webhook-handler')
+    
+    // Delega la gestione al modulo dedicato
+    const response = await handleHubSpotWebhook(c.req.raw, c.env)
+    
+    // Copia la risposta mantenendo status e headers
+    return new Response(response.body, {
+      status: response.status,
+      headers: response.headers
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore webhook HubSpot:', error)
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Errore sconosciuto' 
+    }, 500)
+  }
 })
 
-app.get('/api/contratti/:id/view-html', async (c) => {
+// POST /api/webhooks/docusign - Webhook DocuSign per eventi firma
+app.post('/api/webhooks/docusign', async (c) => {
+  try {
+    console.log('📥 [WEBHOOK] DocuSign evento ricevuto')
+    
+    const event = await c.req.json()
+    const db = c.env.DB
+    
+    // Importa handler
+    const { DocuSignWebhookHandler } = await import('./modules/docusign-webhook-handler')
+    
+    // Processa evento
+    const result = await DocuSignWebhookHandler.handleWebhook(event, db, c.env)
+    
+    console.log(`✅ [WEBHOOK] DocuSign processato:`, result)
+    
+    return c.json({
+      success: result.success,
+      message: result.message,
+      envelopeId: result.envelopeId,
+      status: result.status,
+      actions: result.actions
+    })
+    
+  } catch (error) {
+    console.error('❌ [WEBHOOK] Errore DocuSign:', error)
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Errore webhook DocuSign' 
+    }, 500)
+  }
+})
+
+// POST /api/webhooks/stripe - Webhook Stripe per eventi pagamento (PASSO 4)
+app.post('/api/webhooks/stripe', async (c) => {
+  try {
+    console.log('📥 [WEBHOOK] Stripe evento ricevuto')
+    
+    const event = await c.req.json()
+    const db = c.env.DB
+    
+    // TODO: Verificare signature Stripe in produzione
+    // const signature = c.req.header('stripe-signature')
+    // const isValid = StripeService.verifyWebhookSignature(body, signature, webhookSecret)
+    
+    // Importa handler
+    const { StripeWebhookHandler } = await import('./modules/stripe-webhook-handler')
+    
+    // Processa evento pagamento
+    const result = await StripeWebhookHandler.processWebhook(event, db)
+    
+    console.log(`✅ [WEBHOOK] Stripe processato:`, result)
+    
+    return c.json({
+      success: result.success,
+      message: result.message,
+      eventType: event.type
+    })
+    
+  } catch (error) {
+    console.error('❌ [WEBHOOK] Errore Stripe:', error)
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Errore webhook Stripe' 
+    }, 500)
+  }
+})
+
+// POINT 10 - API per visualizzazione contratto (correzione azione occhio)
+app.get('/api/contratti/:id/view', async (c) => {
   const id = c.req.param('id')
   
   try {
@@ -4990,8 +5066,8 @@ app.get('/api/contratti/:id/view-html', async (c) => {
     }
     
     const contratto = await c.env.DB.prepare(`
-      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.emailRichiedente
-      FROM contracts c 
+      SELECT c.*, l.name as cliente_nome, l.email as cliente_email
+      FROM contratti c 
       LEFT JOIN leads l ON c.lead_id = l.id 
       WHERE c.id = ?
     `).bind(id).first()
@@ -5004,68 +5080,19 @@ app.get('/api/contratti/:id/view-html', async (c) => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Contratto ${contratto.codice_contratto}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-          h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
-          .info-box { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .info-row { display: flex; margin: 10px 0; }
-          .info-label { font-weight: bold; min-width: 150px; color: #374151; }
-          .info-value { color: #1f2937; }
-          .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
-          .status-signed { background: #d1fae5; color: #065f46; }
-          .status-sent { background: #fef3c7; color: #92400e; }
-        </style>
+        <title>Contratto ${contratto.codice}</title>
+        <style>body { font-family: Arial; padding: 20px; }</style>
       </head>
       <body>
-        <h1>📄 Contratto TeleMedCare</h1>
-        
-        <div class="info-box">
-          <div class="info-row">
-            <div class="info-label">Codice Contratto:</div>
-            <div class="info-value"><strong>${contratto.codice_contratto}</strong></div>
-          </div>
-          <div class="info-row">
-            <div class="info-label">Intestatario:</div>
-            <div class="info-value">${contratto.intestatario || contratto.nomeRichiedente + ' ' + contratto.cognomeRichiedente}</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label">Email:</div>
-            <div class="info-value">${contratto.emailRichiedente}</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label">Piano Servizio:</div>
-            <div class="info-value">${contratto.piano_servizio}</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label">Prezzo:</div>
-            <div class="info-value">€ ${contratto.prezzo ? contratto.prezzo.toFixed(2) : 'N/A'}</div>
-          </div>
-          <div class="info-row">
-            <div class="info-label">Status:</div>
-            <div class="info-value">
-              <span class="status ${contratto.status === 'SIGNED_MANUAL' || contratto.status === 'SIGNED_DOCUSIGN' ? 'status-signed' : 'status-sent'}">
-                ${contratto.status === 'SIGNED_MANUAL' ? '✅ Firmato' : contratto.status === 'SENT' ? '📤 Inviato' : contratto.status}
-              </span>
-            </div>
-          </div>
-          ${contratto.signature_date ? `
-          <div class="info-row">
-            <div class="info-label">Data Firma:</div>
-            <div class="info-value">${new Date(contratto.signature_date).toLocaleDateString('it-IT')}</div>
-          </div>
-          ` : ''}
-          <div class="info-row">
-            <div class="info-label">Data Creazione:</div>
-            <div class="info-value">${new Date(contratto.created_at).toLocaleDateString('it-IT')}</div>
-          </div>
-        </div>
-        
-        <h2>📋 Dettagli Servizio</h2>
-        <div class="info-box">
-          <p>Servizio di telemedicina ${contratto.piano_servizio} per assistenza sanitaria domiciliare.</p>
-          <p>Include dispositivo SiDLY Care Pro e monitoraggio continuo 24/7.</p>
-        </div>
+        <h1>Contratto TeleMedCare</h1>
+        <p><strong>Codice:</strong> ${contratto.codice}</p>
+        <p><strong>Cliente:</strong> ${contratto.cliente_nome}</p>
+        <p><strong>Email:</strong> ${contratto.cliente_email}</p>
+        <p><strong>Tipo:</strong> ${contratto.tipo}</p>
+        <p><strong>Data Firma:</strong> ${new Date(contratto.data_firma).toLocaleDateString('it-IT')}</p>
+        <h2>Dettagli Servizio</h2>
+        <p>${contratto.dettagli || 'Servizio di telemedicina per assistenza sanitaria domiciliare.'}</p>
+        <p><strong>Status:</strong> ${contratto.status}</p>
       </body>
       </html>
     `)
@@ -5092,108 +5119,25 @@ app.get('/api/contratti/:id/download', async (c) => {
       })
     }
     
-    const contratto = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first() as any
+    const contratto = await c.env.DB.prepare('SELECT * FROM contratti WHERE id = ?').bind(id).first()
     
     if (!contratto) {
       return c.json({ error: 'Contratto non trovato' }, 404)
     }
     
-    // Leggi PDF dal database (salvato come Base64)
-    if (!contratto.content) {
-      return c.json({ error: 'PDF del contratto non disponibile' }, 404)
-    }
+    // Qui si integrerebbe il generatore PDF reale
+    // Per ora ritorniamo un mock PDF
+    const pdfContent = `Mock PDF per contratto ${contratto.codice}`
     
-    // Decodifica il PDF da Base64
-    const pdfBuffer = Buffer.from(contratto.content, 'base64')
-    
-    return new Response(pdfBuffer, {
+    return new Response(pdfContent, {
       headers: {
         'Content-Type': 'application/pdf', 
-        'Content-Disposition': `inline; filename="contratto-${contratto.codice_contratto}.pdf"`
+        'Content-Disposition': `attachment; filename="contratto-${contratto.codice}.pdf"`
       }
     })
   } catch (error) {
     console.error('❌ Errore download contratto:', error)
     return c.json({ error: 'Errore download contratto' }, 500)
-  }
-})
-
-// ==========================================
-// PROFORMA PDF ENDPOINTS
-// ==========================================
-
-app.get('/api/proforma/:id/view', async (c) => {
-  const id = c.req.param('id')
-  return c.redirect(`/api/proforma/${id}/download`)
-})
-
-app.get('/api/proforma/:id/download', async (c) => {
-  const id = c.req.param('id')
-  
-  try {
-    if (!c.env?.DB) {
-      return c.json({ error: 'Database non disponibile' }, 500)
-    }
-    
-    const proforma = await c.env.DB.prepare('SELECT * FROM proforma WHERE id = ?').bind(id).first() as any
-    
-    if (!proforma) {
-      return c.json({ error: 'Proforma non trovata' }, 404)
-    }
-    
-    // Leggi PDF dal database (salvato come Base64)
-    if (!proforma.content) {
-      return c.json({ error: 'PDF della proforma non disponibile' }, 404)
-    }
-    
-    // Decodifica il PDF da Base64
-    const pdfBuffer = Buffer.from(proforma.content, 'base64')
-    
-    return new Response(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf', 
-        'Content-Disposition': `inline; filename="proforma-${proforma.numero_proforma}.pdf"`
-      }
-    })
-  } catch (error) {
-    console.error('❌ Errore download proforma:', error)
-    return c.json({ error: 'Errore download proforma' }, 500)
-  }
-})
-
-// Serve documenti statici (brochure, manuali) per allegati email
-app.get('/documents/*', async (c) => {
-  try {
-    // In sviluppo locale, prova a caricare dal filesystem se disponibile
-    if (typeof process !== 'undefined' && process?.versions?.node) {
-      const fs = await import('fs')
-      const path = await import('path')
-      
-      const requestPath = c.req.path.replace('/documents/', '')
-      const possiblePaths = [
-        path.join(process.cwd(), 'documents', requestPath),
-        path.join(process.cwd(), 'public', 'documents', requestPath),
-        path.join(process.cwd(), 'dist', 'documents', requestPath)
-      ]
-      
-      for (const fsPath of possiblePaths) {
-        if (fs.existsSync(fsPath)) {
-          const buffer = fs.readFileSync(fsPath)
-          return new Response(buffer, {
-            headers: {
-              'Content-Type': 'application/pdf',
-              'Content-Disposition': `inline; filename="${path.basename(fsPath)}"`
-            }
-          })
-        }
-      }
-    }
-    
-    // In Cloudflare Workers, i file sono serviti automaticamente da public/
-    return c.text('File non trovato', 404)
-  } catch (error) {
-    console.error('Errore servizio documenti:', error)
-    return c.text('Errore caricamento documento', 500)
   }
 })
 
@@ -5235,23 +5179,55 @@ app.put('/api/leads/:id', async (c) => {
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
     }
     
-    await c.env.DB.prepare(`
-      UPDATE leads 
-      SET name = ?, email = ?, phone = ?, status = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(
-      data.name || null,
-      data.email || null, 
-      data.phone || null,
-      data.status || null,
-      new Date().toISOString(),
-      id
-    ).run()
+    // Build dynamic UPDATE query based on provided fields
+    const updates: string[] = []
+    const binds: any[] = []
+    
+    // Map field names to DB columns
+    const fieldMap: Record<string, string> = {
+      'servizio': 'servizio',
+      'pacchetto': 'pacchetto',
+      'dispositivo': 'dispositivo',
+      'prezzo_annuale': 'prezzo_annuale',
+      'vuoleBrochure': 'vuoleBrochure',
+      'vuoleManuale': 'vuoleManuale',
+      'vuoleContratto': 'vuoleContratto',
+      'status': 'status',
+      'telefonoRichiedente': 'telefonoRichiedente',
+      'emailRichiedente': 'emailRichiedente',
+      'data_contatto': 'data_contatto',
+      'location': 'location',
+      'note': 'note',
+      'messaggio': 'messaggio',
+      'canale': 'canale'
+    }
+    
+    for (const [key, dbColumn] of Object.entries(fieldMap)) {
+      if (data[key] !== undefined) {
+        updates.push(`${dbColumn} = ?`)
+        binds.push(data[key])
+      }
+    }
+    
+    if (updates.length === 0) {
+      return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+    }
+    
+    // Add updated_at
+    updates.push('updated_at = ?')
+    binds.push(new Date().toISOString())
+    
+    // Add id for WHERE clause
+    binds.push(id)
+    
+    const query = `UPDATE leads SET ${updates.join(', ')} WHERE id = ?`
+    
+    await c.env.DB.prepare(query).bind(...binds).run()
     
     return c.json({ success: true, message: 'Lead aggiornato con successo' })
   } catch (error) {
     console.error('❌ Errore aggiornamento lead:', error)
-    return c.json({ error: 'Errore aggiornamento lead' }, 500)
+    return c.json({ success: false, error: 'Errore aggiornamento lead', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
@@ -5316,24 +5292,47 @@ app.get('/api/data/stats', async (c) => {
     }
     
     // Query reali per database D1
-    const [leadsCount, assistitiCount, contrattiCount, logsCount] = await Promise.all([
-      c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first(),
-      c.env.DB.prepare('SELECT COUNT(*) as count FROM assistiti WHERE status = "attivo"').first(),
-      c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE status = "firmato"').first(),
-      c.env.DB.prepare('SELECT COUNT(*) as count FROM system_logs WHERE DATE(timestamp) = DATE("now")').first()
-    ])
+    const leadsCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    const assistitiCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads WHERE status = "ACTIVE"').first()
+    const contrattiCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads WHERE status IN ("CONTRACT_SENT", "CONTRACT_SIGNED", "PAGATO", "ACTIVE")').first()
+    
+    console.log('📊 Stats:', { 
+      totalLeads: leadsCount?.count, 
+      assistitiAttivi: assistitiCount?.count,
+      contratti: contrattiCount?.count
+    })
     
     return c.json({
       success: true,
       totalLeads: leadsCount?.count || 0,
       assistitiAttivi: assistitiCount?.count || 0,
       contrattiFirmati: contrattiCount?.count || 0,
-      logsOggi: logsCount?.count || 0,
+      logsOggi: 0, // Non abbiamo system_logs table
       timestamp: new Date().toISOString()
     })
   } catch (error) {
     console.error('❌ Errore statistiche data dashboard:', error)
-    return c.json({ success: false, error: 'Errore recupero statistiche' }, 500)
+    console.error('Error details:', error instanceof Error ? error.message : String(error))
+    
+    // Fallback con dati reali se possibile
+    try {
+      const basicCount = await c.env.DB?.prepare('SELECT COUNT(*) as count FROM leads').first()
+      return c.json({
+        success: true,
+        totalLeads: basicCount?.count || 0,
+        assistitiAttivi: 0,
+        contrattiFirmati: 0,
+        logsOggi: 0,
+        timestamp: new Date().toISOString(),
+        fallback: true
+      })
+    } catch (fallbackError) {
+      return c.json({ 
+        success: false, 
+        error: 'Errore recupero statistiche',
+        details: error instanceof Error ? error.message : String(error)
+      }, 500)
+    }
   }
 })
 
@@ -7273,8 +7272,13 @@ function sostituisciPlaceholder(template: string, data: any): string {
   return result;
 }
 
-// LANDING PAGE - Route principale con form funzionante
+// HOMEPAGE - Dashboard Principale con accesso a tutte le sezioni
 app.get('/', (c) => {
+  return c.html(home)
+})
+
+// OLD LANDING PAGE (conservata come /landing)
+app.get('/landing', (c) => {
   return c.html(`
 <!DOCTYPE html>
 <html lang="it">
@@ -7574,6 +7578,27 @@ app.get('/', (c) => {
 </body>
 </html>
   `)
+})
+
+// ========== DASHBOARD ROUTES ==========
+// Dashboard Operativa - Centro di controllo staff con analytics e monitoring
+app.get('/dashboard', (c) => {
+  return c.html(dashboard)
+})
+
+// Dashboard Leads Modulare - Aggregazione dati dai 6 moduli Leads specializzati
+app.get('/admin/leads-dashboard', (c) => {
+  return c.html(leads_dashboard)
+})
+
+// Data Dashboard - Centro dati completo con analytics e KPI aziendali
+app.get('/admin/data-dashboard', (c) => {
+  return c.html(data_dashboard)
+})
+
+// Workflow Manager - Gestione completa workflow e forzatura eventi
+app.get('/admin/workflow-manager', (c) => {
+  return c.html(workflow_manager)
 })
 
 export default app

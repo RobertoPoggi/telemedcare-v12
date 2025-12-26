@@ -1,25 +1,31 @@
-# TeleMedCare Environment Variables (Development)
-# Copy this file to .dev.vars and fill with your credentials
+# =============================================================================
+# CLOUDFLARE WORKERS DEVELOPMENT VARIABLES
+# =============================================================================
+# 
+# 🔐 SECURITY: Rename this file to .dev.vars for local Wrangler development
+# 📝 IMPORTANT: .dev.vars is in .gitignore and will NOT be committed to GitHub
+# 🚀 PRODUCTION: Configure these in Cloudflare Pages Environment Variables
+#
+# This format is specifically for Cloudflare Workers/Pages with Wrangler
+#
 
-# Email Service (Resend)
-RESEND_API_KEY="re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt"
-EMAIL_FROM="noreply@telemedcare.it"
-EMAIL_TO_INFO="info@telemedcare.it"
+# Email Service API Keys
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+RESEND_API_KEY=re_your-resend-api-key-here
 
-# DocuSign API (Developer Sandbox)
-DOCUSIGN_INTEGRATION_KEY="your_integration_key_here"
-DOCUSIGN_SECRET_KEY="your_secret_key_here"
-DOCUSIGN_ACCOUNT_ID="your_account_id_here"
-DOCUSIGN_USER_ID="your_user_id_here"
-DOCUSIGN_BASE_URL="https://demo.docusign.net/restapi"
-DOCUSIGN_REDIRECT_URI="http://localhost:3001/api/docusign/callback"
+# Email Configuration
+EMAIL_FROM=noreply@telemedcare.it
+EMAIL_TO_INFO=info@telemedcare.it
 
-# Public URL (for webhooks and callbacks)
-PUBLIC_URL="http://localhost:3001"
+# Enterprise Integrations
+IRBEMA_API_KEY=your-irbema-api-key
+AON_API_KEY=your-aon-api-key
+MONDADORI_API_KEY=your-mondadori-api-key
+ENDERED_API_KEY=your-endered-api-key
 
-# Database (managed by Wrangler)
-# DB binding configured in wrangler.jsonc
+# AI/ML Services
+OPENAI_API_KEY=sk-your-openai-api-key
 
-# Debug Mode
-DEBUG_MODE="true"
-ENVIRONMENT="development"
+# Security
+JWT_SECRET=your-super-secret-jwt-key-here
+ENCRYPTION_KEY=your-encryption-key-here

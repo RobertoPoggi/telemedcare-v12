@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
+<title>Template Email eCura - Medica GB S.r.l.</title>
 <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -125,7 +125,7 @@
 
 <div class="email-container">
 <div class="email-header" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%)">
-<h3 style="margin: 0; font-size: 24px">🔔 Nuovo Lead TeleMedCare</h3>
+<h3 style="margin: 0; font-size: 24px">🔔 Nuovo Lead eCura</h3>
 <p style="margin: 10px 0 0 0">Sistema di Notifica Automatica</p>
 <div style="
               background-color: rgba(255, 255, 255, 0.2);
@@ -327,6 +327,29 @@
 </div>
 </div>
 </div>
+<div style="margin-bottom: 30px">
+<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">📋 Richieste del Lead</h4>
+<div style="
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 15px 0;
+              ">
+<div style="margin-bottom: 15px">
+<strong style="color: #333">Contratto:</strong> 
+<span style="color: {{VUOLE_CONTRATTO_COLOR}}; font-weight: 600">{{VUOLE_CONTRATTO_TEXT}}</span>
+</div>
+<div style="margin-bottom: 15px">
+<strong style="color: #333">Brochure Informativa:</strong> 
+<span style="color: {{VUOLE_BROCHURE_COLOR}}; font-weight: 600">{{VUOLE_BROCHURE_TEXT}}</span>
+</div>
+<div>
+<strong style="color: #333">Manuale d'Uso:</strong> 
+<span style="color: {{VUOLE_MANUALE_COLOR}}; font-weight: 600">{{VUOLE_MANUALE_TEXT}}</span>
+</div>
+</div>
+</div>
 <div style="
               background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
               border: 2px solid #ffc107;
@@ -337,12 +360,12 @@
             ">
 <h4 style="color: #856404; margin-bottom: 10px">⚡ Azione Richiesta</h4>
 <p style="color: #664d03; margin: 0">
-              Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
+              {{AZIONE_SUGGERITA}}
             </p>
 </div>
 <div class="contact-box">
 <h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
-<p><strong>E-MAIL:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="127b7c747d527f77767b717375703c7b66">[email&#160;protected]</a></p>
+<p><strong>E-MAIL:</strong> <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
 <p><strong>Telefono commerciale:</strong> 335 7301206</p>
 <p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
 </div>
@@ -351,7 +374,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px">
 <div>
 <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br/>
-              📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c9a0a7afa689a4acada0aaa8aeabe7a0bd">[email&#160;protected]</a> | 🌐 www.medicagb.it
+              📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a> | 🌐 www.medicagb.it
             </div>
 <div style="text-align: right">
 <small>Generato automaticamente da TeleMedCare {{VERSIONE_SISTEMA}}<br/>il {{DATA_RICHIESTA}} alle

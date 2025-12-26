@@ -1,0 +1,58 @@
+# =============================================
+# PRODUCER WORKER - Multi-Channel Lead Ingestion
+# =============================================
+# Riceve lead da tutti i canali e li invia a Cloudflare Queue
+
+name = "ecura-producer"
+main = "src/producer-worker-multi-channel.ts"
+compatibility_date = "2024-01-01"
+
+# Workers environment
+workers_dev = true
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
+
+# Routes (configurare con il tuo dominio)
+# route = "https://producer.ecura.it/*"
+
+# =============================================
+# CLOUDFLARE QUEUE BINDING
+# =============================================
+[[queues.producers]]
+queue = "ecura-leads-queue"
+binding = "ECURA_QUEUE"
+
+# =============================================
+# D1 DATABASE BINDING
+# =============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "ecura-db"
+database_id = "${D1_DATABASE_ID}"
+
+# =============================================
+# KV NAMESPACE per API Keys (Partner)
+# =============================================
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "${KV_NAMESPACE_ID}"
+
+# =============================================
+# ENVIRONMENT VARIABLES
+# =============================================
+[env.production]
+name = "ecura-producer-prod"
+
+[env.staging]
+name = "ecura-producer-staging"
+
+# =============================================
+# LIMITS & PERFORMANCE
+# =============================================
+[limits]
+cpu_ms = 50  # 50ms CPU time per request (sufficiente per ingestion)
+
+# =============================================
+# LOGGING
+# =============================================
+[observability]
+enabled = true

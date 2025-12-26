@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dashboard - TeleMedCare V11.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-database text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Data Dashboard</h1>
+                        <p class="text-blue-100">Centro dati completo con analytics e KPI aziendali</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                    <a href="/admin/leads-dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-users mr-2"></i>Leads
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- KPI Principali -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Lead Totali</p>
+                        <p class="text-3xl font-bold text-blue-600" id="kpiLeads">-</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Contratti</p>
+                        <p class="text-3xl font-bold text-green-600" id="kpiContracts">-</p>
+                    </div>
+                    <i class="fas fa-file-contract text-3xl text-green-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Revenue YTD</p>
+                        <p class="text-2xl font-bold text-purple-600" id="kpiRevenue">-</p>
+                    </div>
+                    <i class="fas fa-euro-sign text-3xl text-purple-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Conv. Rate</p>
+                        <p class="text-3xl font-bold text-orange-600" id="kpiConversion">-</p>
+                    </div>
+                    <i class="fas fa-percentage text-3xl text-orange-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">AOV</p>
+                        <p class="text-2xl font-bold text-red-600" id="kpiAov">-</p>
+                    </div>
+                    <i class="fas fa-chart-line text-3xl text-red-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metriche Servizi -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                Performance per Servizio
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- FAMILY -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-bold text-blue-600">eCura FAMILY</h4>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Senium CARE</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Lead:</span>
+                            <span class="font-bold" id="familyLeads">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Contratti:</span>
+                            <span class="font-bold" id="familyContracts">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Revenue:</span>
+                            <span class="font-bold text-green-600" id="familyRevenue">-</span>
+                        </div>
+                        <div class="pt-2 border-t">
+                            <div class="text-xs text-gray-500 mb-1">BASE vs AVANZATO</div>
+                            <div class="flex gap-2">
+                                <div class="flex-1 bg-blue-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">BASE</div>
+                                    <div class="font-bold text-sm" id="familyBase">-</div>
+                                </div>
+                                <div class="flex-1 bg-purple-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">AVANZ.</div>
+                                    <div class="font-bold text-sm" id="familyAvanzato">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRO -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-bold text-purple-600">eCura PRO</h4>
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">SiDLY CARE PRO</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Lead:</span>
+                            <span class="font-bold" id="proLeads">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Contratti:</span>
+                            <span class="font-bold" id="proContracts">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Revenue:</span>
+                            <span class="font-bold text-green-600" id="proRevenue">-</span>
+                        </div>
+                        <div class="pt-2 border-t">
+                            <div class="text-xs text-gray-500 mb-1">BASE vs AVANZATO</div>
+                            <div class="flex gap-2">
+                                <div class="flex-1 bg-blue-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">BASE</div>
+                                    <div class="font-bold text-sm" id="proBase">-</div>
+                                </div>
+                                <div class="flex-1 bg-purple-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">AVANZ.</div>
+                                    <div class="font-bold text-sm" id="proAvanzato">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREMIUM -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-bold text-green-600">eCura PREMIUM</h4>
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">SiDLY VITAL CARE</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Lead:</span>
+                            <span class="font-bold" id="premiumLeads">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Contratti:</span>
+                            <span class="font-bold" id="premiumContracts">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Revenue:</span>
+                            <span class="font-bold text-green-600" id="premiumRevenue">-</span>
+                        </div>
+                        <div class="pt-2 border-t">
+                            <div class="text-xs text-gray-500 mb-1">BASE vs AVANZATO</div>
+                            <div class="flex gap-2">
+                                <div class="flex-1 bg-blue-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">BASE</div>
+                                    <div class="font-bold text-sm" id="premiumBase">-</div>
+                                </div>
+                                <div class="flex-1 bg-purple-100 rounded px-2 py-1 text-center">
+                                    <div class="text-xs text-gray-600">AVANZ.</div>
+                                    <div class="font-bold text-sm" id="premiumAvanzato">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contratti Recenti -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-file-contract text-green-500 mr-2"></i>
+                Ultimi Contratti Generati
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Codice</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Dispositivo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Valore</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contractsTable">
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento contratti...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        loadDataDashboard();
+
+        async function loadDataDashboard() {
+            try {
+                // Carica statistiche generali
+                const statsResponse = await fetch('/api/data/stats');
+                const stats = await statsResponse.json();
+
+                document.getElementById('kpiLeads').textContent = stats.totalLeads || '0';
+                document.getElementById('kpiContracts').textContent = stats.totalContracts || '0';
+                document.getElementById('kpiRevenue').textContent = stats.totalRevenue ? `€${stats.totalRevenue}` : '€0';
+                document.getElementById('kpiConversion').textContent = stats.conversionRate || '0%';
+                document.getElementById('kpiAov').textContent = stats.averageOrderValue ? `€${stats.averageOrderValue}` : '€0';
+
+                // Carica lead per servizio
+                const leadsResponse = await fetch('/api/leads?limit=200');
+                const leadsData = await leadsResponse.json();
+                const leads = leadsData.leads || [];
+
+                // Analizza per servizio
+                const serviceData = analyzeByService(leads);
+                updateServiceMetrics(serviceData);
+
+                // Carica contratti
+                const contractsResponse = await fetch('/api/contratti?limit=20');
+                const contractsData = await contractsResponse.json();
+                const contracts = contractsData.contratti || [];
+                renderContractsTable(contracts);
+
+            } catch (error) {
+                console.error('Errore caricamento data dashboard:', error);
+            }
+        }
+
+        function analyzeByService(leads) {
+            const data = {
+                FAMILY: { leads: 0, base: 0, avanzato: 0, revenue: 0 },
+                PRO: { leads: 0, base: 0, avanzato: 0, revenue: 0 },
+                PREMIUM: { leads: 0, base: 0, avanzato: 0, revenue: 0 }
+            };
+
+            const prezzi = {
+                'FAMILY': { 'BASE': 390, 'AVANZATO': 690 },
+                'PRO': { 'BASE': 480, 'AVANZATO': 840 },
+                'PREMIUM': { 'BASE': 590, 'AVANZATO': 990 }
+            };
+
+            leads.forEach(lead => {
+                const servizio = lead.servizio;
+                const piano = lead.pacchetto || 'BASE';
+                
+                if (data[servizio]) {
+                    data[servizio].leads++;
+                    
+                    if (piano === 'BASE') {
+                        data[servizio].base++;
+                    } else {
+                        data[servizio].avanzato++;
+                    }
+
+                    if (lead.contratto_inviato && prezzi[servizio]?.[piano]) {
+                        data[servizio].revenue += prezzi[servizio][piano];
+                    }
+                }
+            });
+
+            return data;
+        }
+
+        function updateServiceMetrics(data) {
+            // FAMILY
+            document.getElementById('familyLeads').textContent = data.FAMILY.leads;
+            document.getElementById('familyContracts').textContent = data.FAMILY.base + data.FAMILY.avanzato;
+            document.getElementById('familyRevenue').textContent = `€${data.FAMILY.revenue.toFixed(0)}`;
+            document.getElementById('familyBase').textContent = data.FAMILY.base;
+            document.getElementById('familyAvanzato').textContent = data.FAMILY.avanzato;
+
+            // PRO
+            document.getElementById('proLeads').textContent = data.PRO.leads;
+            document.getElementById('proContracts').textContent = data.PRO.base + data.PRO.avanzato;
+            document.getElementById('proRevenue').textContent = `€${data.PRO.revenue.toFixed(0)}`;
+            document.getElementById('proBase').textContent = data.PRO.base;
+            document.getElementById('proAvanzato').textContent = data.PRO.avanzato;
+
+            // PREMIUM
+            document.getElementById('premiumLeads').textContent = data.PREMIUM.leads;
+            document.getElementById('premiumContracts').textContent = data.PREMIUM.base + data.PREMIUM.avanzato;
+            document.getElementById('premiumRevenue').textContent = `€${data.PREMIUM.revenue.toFixed(0)}`;
+            document.getElementById('premiumBase').textContent = data.PREMIUM.base;
+            document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
+        }
+
+        function renderContractsTable(contracts) {
+            const tbody = document.getElementById('contractsTable');
+            
+            if (contracts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = contracts.map(contract => {
+                const dispositivo = getDispositivoForService(contract.servizio || contract.tipo_servizio);
+                const date = new Date(contract.created_at).toLocaleDateString('it-IT');
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">${contract.codice_contratto || contract.id}</code>
+                        </td>
+                        <td class="py-3 text-sm font-medium">
+                            ${contract.cliente_nome || ''} ${contract.cliente_cognome || ''}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                ${contract.servizio || contract.tipo_servizio || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                                ${contract.piano || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-sm text-gray-600">${dispositivo}</td>
+                        <td class="py-3 text-sm font-bold text-green-600">
+                            €${parseFloat(contract.prezzo_totale || 0).toFixed(2)}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">
+                                ${contract.status || 'SENT'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getDispositivoForService(servizio) {
+            const dispositivi = {
+                'FAMILY': 'Senium CARE',
+                'PRO': 'SiDLY CARE PRO',
+                'PREMIUM': 'SiDLY VITAL CARE'
+            };
+            return dispositivi[servizio] || 'N/A';
+        }
+    </script>
+</body>
+</html>

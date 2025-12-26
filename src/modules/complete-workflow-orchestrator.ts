@@ -14,52 +14,12 @@ import SignatureManager from './signature-manager'
 import PaymentManager from './payment-manager'
 import ClientConfigurationManager from './client-configuration-manager'
 import DocumentRepository from './document-repository'
-import { generateContractPDF, ContractData } from './contract-generator'
-import { generateProformaPDF, ProformaData } from './proforma-generator'
-import { SERVICE_PRICES, IVA_RATES, calculatePriceWithVAT, SalesChannel, getFinalPrice } from '../config/pricing-config'
-import { sendContractWithDocuSign, isDocuSignAvailable } from './docusign-orchestrator-integration'
-
-/**
- * Genera un codice contratto sequenziale con anno (CTR_2025/0001, CTR_2025/0002, etc.)
- */
-async function generateSimpleContractCode(db: D1Database): Promise<string> {
-  try {
-    const currentYear = new Date().getFullYear();
-    const yearPrefix = `CTR_${currentYear}/`;
-    
-    // Query per ottenere l'ultimo codice contratto dell'anno corrente
-    // IMPORTANTE: Ordina per codice_contratto per evitare duplicati
-    const result = await db.prepare(
-      `SELECT codice_contratto FROM contracts 
-       WHERE codice_contratto LIKE ? 
-       ORDER BY codice_contratto DESC LIMIT 1`
-    ).bind(`${yearPrefix}%`).first() as any;
-    
-    if (!result || !result.codice_contratto) {
-      return `${yearPrefix}0001`;  // Primo contratto dell'anno
-    }
-    
-    // Estrae il numero dal formato CTR_YYYY/XXXX
-    const match = result.codice_contratto.match(/CTR_\d{4}\/(\d+)/);
-    if (match) {
-      const lastNumber = parseInt(match[1]);
-      const nextNumber = lastNumber + 1;
-      return `${yearPrefix}${String(nextNumber).padStart(4, '0')}`;  // CTR_2025/0007, CTR_2025/0008, etc.
-    }
-    
-    return `${yearPrefix}0001`;  // Fallback
-  } catch (error) {
-    console.error('Error generating contract code:', error);
-    // Fallback in caso di errore
-    return `CTR_${new Date().getFullYear()}/${String(Date.now()).slice(-4)}`;
-  }
-}
+import { generateAndSendContract } from './contract-workflow-manager'
 
 export interface WorkflowContext {
   db: D1Database
   env: any
   leadData: LeadData
-  requestUrl?: string  // URL della richiesta corrente per fetch documenti in dev
 }
 
 export interface WorkflowStepResult {
@@ -130,122 +90,32 @@ export async function processNewLead(
       // Percorso B: Contratto richiesto
       console.log(`📄 [ORCHESTRATOR] Lead richiede contratto ${ctx.leadData.pacchetto}`)
 
-      // Genera contratto (usando il sistema esistente)
-      const contractResult = await generateContractForLead(ctx)
-
-      if (contractResult.success) {
-        // ✨ NUOVO: Verifica disponibilità DocuSign
-        const docuSignAvailable = await isDocuSignAvailable(ctx.env, ctx.db)
-        
-        if (docuSignAvailable) {
-          // 🎯 OPZIONE A: Invia tramite DocuSign (firma elettronica)
-          console.log('📝 [ORCHESTRATOR] Invio contratto tramite DocuSign')
-          
-          const docusignResult = await sendContractWithDocuSign({
-            useDocuSign: true,
-            leadData: ctx.leadData,
-            contractPdfBuffer: contractResult.data.contractPdfBuffer,
-            contractId: contractResult.data.contractId,
-            contractCode: contractResult.data.contractCode
-          }, ctx.env, ctx.db)
-          
-          if (docusignResult.success) {
-            result.success = true
-            result.message = 'Lead processato: contratto inviato per firma DocuSign'
-            result.data = {
-              contractId: contractResult.data.contractId,
-              docusignEnvelopeId: docusignResult.envelopeId,
-              signingUrl: docusignResult.signingUrl,
-              method: 'docusign'
-            }
-            
-            console.log('✅ [ORCHESTRATOR] Contratto inviato via DocuSign:', docusignResult.envelopeId)
-          } else {
-            // Fallback: DocuSign fallito, usa email classica
-            console.warn('⚠️  [ORCHESTRATOR] DocuSign fallito, fallback a email classica')
-            result.errors.push(`DocuSign error: ${docusignResult.error}`)
-            
-            // Procedi con email classica
-            const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
-            const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
-              ctx.leadData,
-              contractResult.data,
-              ctx.env,
-              documentUrls,
-              ctx.db
-            )
-            
-            result.success = contrattoResult.success
-            result.message = contrattoResult.success 
-              ? 'Contratto inviato via email (DocuSign fallback)'
-              : 'Errore invio contratto'
-            result.data = {
-              contractId: contractResult.data.contractId,
-              emailsSent: contrattoResult.emailsSent,
-              method: 'email_fallback'
-            }
-          }
-        } else {
-          // 📧 OPZIONE B: Email classica (DocuSign non disponibile)
-          console.log('📧 [ORCHESTRATOR] DocuSign non disponibile, uso email classica')
-          
-          const documentUrls = await getDocumentUrls(ctx.leadData, ctx)
-          const contrattoResult = await WorkflowEmailManager.inviaEmailContratto(
-            ctx.leadData,
-            contractResult.data,
-            ctx.env,
-            documentUrls,
-            ctx.db
-          )
-
-          if (contrattoResult.success) {
-            result.success = true
-            result.message = 'Lead processato: contratto generato e inviato via email'
-            result.data = {
-              contractId: contractResult.data.contractId,
-              emailsSent: contrattoResult.emailsSent,
-              method: 'email'
-            }
-          } else {
-            result.errors.push(...contrattoResult.errors)
-            result.message = 'Errore invio contratto'
-          }
-        }
-      } else {
-        result.errors.push(contractResult.message)
-        result.message = 'Errore generazione contratto'
-      }
-    } else {
-      // Percorso C: Nessuna selezione → Invia brochure automaticamente
-      console.log(`📧 [ORCHESTRATOR] Nessuna selezione, invio brochure automatica`)
-      
-      // Forza vuoleBrochure a true per inviare la brochure
-      ctx.leadData.vuoleBrochure = true
-      
-      // Ottieni URLs documenti (solo brochure)
-      const documentUrls = await getDocumentUrls(ctx.leadData)
-      
-      // Invia email con brochure
-      const documentiResult = await WorkflowEmailManager.inviaEmailDocumentiInformativi(
+      // Genera contratto e invia email con brochure specifica
+      const contrattoResult = await generateAndSendContract(
         ctx.leadData,
         ctx.env,
-        documentUrls,
         ctx.db
       )
-      
-      if (documentiResult.success) {
+
+      if (contrattoResult.success) {
         result.success = true
-        result.message = 'Lead processato: brochure inviata automaticamente (default)'
-        result.data = { emailsSent: documentiResult.emailsSent }
+        result.message = 'Lead processato: contratto generato e inviato'
+        result.data = {
+          emailsSent: contrattoResult.emailsSent,
+          messageIds: contrattoResult.messageIds
+        }
       } else {
-        result.errors.push(...documentiResult.errors)
-        result.message = 'Errore invio brochure automatica'
+        result.errors.push(...contrattoResult.errors)
+        result.message = 'Errore generazione/invio contratto'
       }
+    } else {
+      result.message = 'Nessuna richiesta specifica (né documenti né contratto)'
+      result.success = true
     }
 
     // Aggiorna status lead
     await updateLeadStatus(ctx.db, ctx.leadData.id, 
-      ctx.leadData.vuoleContratto ? 'CONTRACT_SENT' : 'DOCUMENTI_INVIATI'
+      ctx.leadData.vuoleContratto ? 'CONTRACT_SENT' : 'DOCUMENTS_SENT'
     )
 
     console.log(`✅ [ORCHESTRATOR] STEP 1 completato: ${result.message}`)
@@ -592,126 +462,67 @@ export async function processDeviceAssociation(
 
 // ==================== HELPER FUNCTIONS ====================
 
-async function getDocumentUrls(leadData: LeadData, ctx: WorkflowContext): Promise<{ brochure?: string; manuale?: string }> {
+async function getDocumentUrls(leadData: LeadData): Promise<{ brochure?: string; manuale?: string }> {
   const urls: { brochure?: string; manuale?: string } = {}
   
-  // 🔧 RIPRISTINO LOGICA 12:22 FUNZIONANTE
-  // Restituisce PATH relativo, EmailService.loadPDFAsBase64() gestisce fetch con porta 8787
-  
   if (leadData.vuoleBrochure) {
-    urls.brochure = '/documents/brochures/brochure_telemedcare.pdf'  // ← PATH relativo!
+    urls.brochure = '/public/documents/Brochure_TeleMedCare.pdf'
   }
   
   if (leadData.vuoleManuale) {
-    urls.manuale = '/documents/manuals/manuale_sidly.pdf'  // ← PATH relativo!
+    urls.manuale = '/public/documents/Manuale_SiDLY.pdf'
   }
-  
-  console.log(`📎 [HELPER] Document paths:`, urls)
   
   return urls
 }
 
 async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowStepResult> {
+  // Placeholder: chiamata al sistema di generazione contratti esistente
+  // In produzione, questo chiamerà document-manager.ts
   console.log(`📄 [HELPER] Generazione contratto ${ctx.leadData.pacchetto} per lead ${ctx.leadData.id}`)
   
-  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') || ctx.leadData.pacchetto.toUpperCase().includes('ADVANCED') ? 'ADVANCED' : 'BASE'
-  
-  // 💰 Calcola prezzi usando configurazione centralizzata
-  const channel = (ctx.leadData as any).canale || SalesChannel.DIRECT
-  const pricing = getFinalPrice(tipoServizio, false, channel)
-  const prezzoBase = pricing.priceBeforeVAT
-  const prezzoIvaInclusa = pricing.finalPrice
+  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
+  const prezzoBase = tipoServizio === 'AVANZATO' ? 840 : 480
+  const prezzoIvaInclusa = prezzoBase * 1.22
   
   const contractId = `CTR${Date.now()}`
-  const contractCode = await generateSimpleContractCode(ctx.db)
+  const contractCode = `CTR-${ctx.leadData.id}-${Date.now()}`
   
-  // 📄 GENERA IL PDF DEL CONTRATTO
-  let pdfBuffer: Buffer | null = null
-  let filePath: string | null = null
-  
+  // 🔥 CRITICAL FIX: Save contract to database with status=SENT
+  // NOTE: Database persistence is attempted but not fatal if it fails
   try {
-    // CRITICO: Determina chi è l'intestatario del contratto in base alla scelta del lead
-    const intestazioneContratto = ctx.leadData.intestazioneContratto || 'richiedente'
-    const usaAssistitoComeIntestatario = intestazioneContratto === 'assistito'
+    const templateName = tipoServizio === 'AVANZATO' 
+      ? 'Template_Contratto_Avanzato_TeleMedCare' 
+      : 'Template_Contratto_Base_TeleMedCare'
     
-    console.log(`📋 [GENERATOR] Intestazione contratto: ${intestazioneContratto}`)
-    console.log(`📋 [GENERATOR] ${usaAssistitoComeIntestatario ? 'Contratto intestato all\'ASSISTITO' : 'Contratto intestato al RICHIEDENTE'}`)
-    
-    const contractData: ContractData = {
-      codiceContratto: contractCode,
-      tipoContratto: tipoServizio,
-      // DATI INTESTATARIO (chi paga e firma il contratto) - BASATO SU SCELTA LEAD
-      nomeIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.nomeAssistito || ctx.leadData.nomeRichiedente) : ctx.leadData.nomeRichiedente,
-      cognomeIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.cognomeAssistito || ctx.leadData.cognomeRichiedente) : ctx.leadData.cognomeRichiedente,
-      cfIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.cfAssistito || 'DA FORNIRE') : (ctx.leadData.cfRichiedente || 'DA FORNIRE'),
-      indirizzoIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.indirizzoAssistito || 'DA FORNIRE') : (ctx.leadData.indirizzoRichiedente || 'DA FORNIRE'),
-      capIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.capAssistito : ctx.leadData.capRichiedente,
-      cittaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.cittaAssistito : ctx.leadData.cittaRichiedente,
-      provinciaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.provinciaAssistito : ctx.leadData.provinciaRichiedente,
-      luogoNascitaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.luogoNascitaAssistito : ctx.leadData.luogoNascitaRichiedente,
-      dataNascitaIntestatario: usaAssistitoComeIntestatario ? ctx.leadData.dataNascitaAssistito : ctx.leadData.dataNascitaRichiedente,
-      telefonoIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.telefonoAssistito || ctx.leadData.telefonoRichiedente) : ctx.leadData.telefonoRichiedente,
-      emailIntestatario: usaAssistitoComeIntestatario ? (ctx.leadData.emailAssistito || ctx.leadData.emailRichiedente) : ctx.leadData.emailRichiedente,
-      // DATI ASSISTITO (chi riceve il servizio - sempre presenti)
-      nomeAssistito: ctx.leadData.nomeAssistito || ctx.leadData.nomeRichiedente,
-      cognomeAssistito: ctx.leadData.cognomeAssistito || ctx.leadData.cognomeRichiedente,
-      luogoNascitaAssistito: ctx.leadData.luogoNascitaAssistito,
-      dataNascitaAssistito: ctx.leadData.dataNascitaAssistito,
-      cfAssistito: ctx.leadData.cfAssistito,
-      indirizzoAssistito: ctx.leadData.indirizzoAssistito,
-      capAssistito: ctx.leadData.capAssistito,
-      cittaAssistito: ctx.leadData.cittaAssistito,
-      provinciaAssistito: ctx.leadData.provinciaAssistito,
-      telefonoAssistito: ctx.leadData.telefonoAssistito,
-      emailAssistito: ctx.leadData.emailAssistito,
-      // DATI CONTRATTO
-      dataContratto: new Date().toLocaleDateString('it-IT'),
-      prezzo: prezzoBase
-    }
-    
-    console.log(`📄 [GENERATOR] Generazione PDF contratto ${tipoServizio}...`)
-    pdfBuffer = await generateContractPDF(contractData)
-    
-    // In Cloudflare Workers non possiamo scrivere su filesystem
-    // Salviamo il PDF come base64 nel database o in R2/KV
-    filePath = `/documents/contratti/${contractCode}.pdf`
-    console.log(`✅ [GENERATOR] PDF contratto generato: ${pdfBuffer.length} bytes`)
-    
-  } catch (pdfError) {
-    console.error(`❌ [GENERATOR] Errore generazione PDF contratto:`, pdfError)
-    console.warn(`⚠️ [GENERATOR] Contratto PDF non generato, ma workflow continua`)
-  }
-  
-  // 💾 Salva contratto nel database
-  try {
     await ctx.db.prepare(`
       INSERT INTO contracts (
-        id, lead_id, codice_contratto, contract_type, piano_servizio,
-        prezzo, intestatario, cf_intestatario, indirizzo_intestatario,
-        file_path, content, status, created_at, updated_at
+        id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+        contenuto_html, prezzo_mensile, durata_mesi, prezzo_totale, status,
+        email_template_used, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       contractId,
       ctx.leadData.id,
       contractCode,
       tipoServizio,
-      `TeleMedCare ${tipoServizio}`,
+      templateName,
+      '<p>Contratto placeholder - sarà generato dal document manager</p>',
       prezzoBase,
-      `${ctx.leadData.nomeRichiedente} ${ctx.leadData.cognomeRichiedente}`,
-      ctx.leadData.cfRichiedente || '',
-      ctx.leadData.indirizzoRichiedente || '',
-      filePath,
-      pdfBuffer ? pdfBuffer.toString('base64') : null,
+      12,
+      prezzoIvaInclusa,
       'SENT',
+      'email_invio_contratto',
       new Date().toISOString(),
       new Date().toISOString()
     ).run()
     
-    console.log(`✅ [HELPER] Contratto ${contractId} salvato nel database con codice ${contractCode}`)
+    console.log(`✅ [HELPER] Contratto ${contractId} salvato nel database con status=SENT`)
   } catch (dbError) {
-    console.error(`❌ [HELPER] ERRORE CRITICO salvataggio contratto:`, dbError)
-    throw new Error(`Impossibile salvare contratto nel database: ${dbError.message}`)
+    console.error(`❌ [HELPER] Errore salvataggio contratto nel database:`, dbError)
+    console.warn(`⚠️ [HELPER] Contratto non salvato nel DB, ma workflow continua`)
+    // Continue anyway - the contract data is still valid for email sending
   }
   
   return {
@@ -722,7 +533,6 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
       contractId,
       contractCode,
       contractPdfUrl: `/documents/contratti/${contractCode}.pdf`,
-      contractPdfBuffer: pdfBuffer,  // 📎 PDF buffer for email attachment
       tipoServizio,
       prezzoBase,
       prezzoIvaInclusa
@@ -731,104 +541,55 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
 }
 
 async function generateProformaForContract(ctx: WorkflowContext & { contractId: string }): Promise<WorkflowStepResult> {
+  // Placeholder: chiamata al sistema di generazione proforma
   console.log(`💰 [HELPER] Generazione proforma per contratto ${ctx.contractId}`)
   
-  // 💰 Calcola prezzi usando configurazione centralizzata
-  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') || ctx.leadData.pacchetto.toUpperCase().includes('ADVANCED') ? 'ADVANCED' : 'BASE'
-  const channel = (ctx.leadData as any).canale || SalesChannel.DIRECT
-  const pricing = getFinalPrice(tipoServizio, false, channel)
-  const prezzoBase = pricing.priceBeforeVAT
-  const prezzoIvaInclusa = pricing.finalPrice
+  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
+  const prezzoBase = tipoServizio === 'AVANZATO' ? 840 : 480
+  const prezzoIvaInclusa = prezzoBase * 1.22
   
   const proformaId = `PRF${Date.now()}`
-  const numeroProforma = `PRF-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
+  const numeroProforma = `PRF-${ctx.leadData.id}-${Date.now()}`
   
   // Scadenza proforma: 30 giorni
   const dataEmissione = new Date()
   const dataScadenza = new Date()
   dataScadenza.setDate(dataScadenza.getDate() + 30)
   
-  // 📄 Genera PDF proforma usando il nuovo generatore (da template DOCX)
-  let pdfBuffer: Buffer | null = null
-  let filePath = ''
-  
-  try {
-    // Recupera contract per ottenere serial number dispositivo (se assegnato)
-    const contract = await ctx.db.prepare(`
-      SELECT c.*, d.serial_number 
-      FROM contracts c
-      LEFT JOIN dispositivi d ON c.lead_id = d.lead_id
-      WHERE c.id = ?
-    `).bind(ctx.contractId).first()
-    
-    const serialNumber = contract?.serial_number || 'DA_ASSEGNARE'
-    
-    const proformaData: ProformaData = {
-      numeroProforma,
-      dataRichiesta: dataEmissione.toLocaleDateString('it-IT'),
-      nomeAssistito: ctx.leadData.nomeAssistito || ctx.leadData.nomeRichiedente,
-      cognomeAssistito: ctx.leadData.cognomeAssistito || ctx.leadData.cognomeRichiedente,
-      codiceFiscale: (ctx.leadData as any).cfAssistito || (ctx.leadData as any).cfRichiedente || '',
-      indirizzoCompleto: (ctx.leadData as any).indirizzoAssistito || (ctx.leadData as any).indirizzoRichiedente || '',
-      citta: (ctx.leadData as any).cittaAssistito || (ctx.leadData as any).cittaRichiedente || '',
-      cap: (ctx.leadData as any).capAssistito || (ctx.leadData as any).capRichiedente,
-      provincia: (ctx.leadData as any).provinciaAssistito || (ctx.leadData as any).provinciaRichiedente,
-      emailRichiedente: ctx.leadData.emailRichiedente,
-      telefonoRichiedente: ctx.leadData.telefonoRichiedente,
-      dataAttivazione: dataEmissione.toLocaleDateString('it-IT'),
-      tipoPrestazione: tipoServizio as 'BASE' | 'ADVANCED',
-      serialNumber,
-      telefonoSidly: (ctx.leadData as any).telefonoSidly,
-      prezzoPacchetto: prezzoBase,
-      comunicazioneTipo: tipoServizio === 'ADVANCED' ? 'familiari/Centrale Operativa' : 'familiari'
-    }
-    
-    console.log(`📄 [GENERATOR] Generazione PDF proforma ${numeroProforma}...`)
-    pdfBuffer = await generateProformaPDF(proformaData)
-    filePath = `/documents/proforma/${numeroProforma}.pdf`
-    console.log(`✅ [GENERATOR] PDF proforma generato: ${pdfBuffer.length} bytes`)
-    
-  } catch (pdfError) {
-    console.error(`❌ [GENERATOR] Errore generazione PDF proforma:`, pdfError)
-    console.warn(`⚠️ [GENERATOR] Proforma PDF non generato, ma workflow continua`)
-  }
-  
-  // 💾 Salva proforma nel database
+  // 🔥 CRITICAL FIX: Save proforma to database with correct schema
   try {
     await ctx.db.prepare(`
       INSERT INTO proforma (
-        id, contract_id, lead_id, numero_proforma, data_emissione, data_scadenza,
+        id, contract_id, leadId, numero_proforma, data_emissione, data_scadenza,
         cliente_nome, cliente_cognome, cliente_email,
         tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-        file_path, content,
         status, email_template_used, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      proformaId || `PRF${Date.now()}`,
-      ctx.contractId || '',
-      ctx.leadData.id || '',
-      numeroProforma || `PRF-${Date.now()}`,
+      proformaId,
+      ctx.contractId,
+      ctx.leadData.id,
+      numeroProforma,
       dataEmissione.toISOString().split('T')[0], // Data formato YYYY-MM-DD
       dataScadenza.toISOString().split('T')[0],
       ctx.leadData.nomeRichiedente || 'Cliente',
       ctx.leadData.cognomeRichiedente || '',
       ctx.leadData.emailRichiedente || 'email@example.com',
-      tipoServizio || 'BASE',
-      prezzoBase || 0,
+      tipoServizio,
+      prezzoBase,
       12,
-      prezzoIvaInclusa || 0,
-      filePath || `/documents/proforma/${numeroProforma}.pdf`,
-      pdfBuffer ? pdfBuffer.toString('base64') : null,
+      prezzoIvaInclusa,
       'SENT',
       'email_invio_proforma',
       new Date().toISOString(),
       new Date().toISOString()
     ).run()
     
-    console.log(`✅ [HELPER] Proforma ${proformaId} salvata nel database con PDF`)
+    console.log(`✅ [HELPER] Proforma ${proformaId} salvata nel database`)
   } catch (dbError) {
     console.error(`❌ [HELPER] Errore salvataggio proforma nel database:`, dbError)
+    // Log the error but don't fail - proforma data is still returned for email
     console.warn(`⚠️ [HELPER] Proforma non salvata nel DB, ma workflow continua`)
   }
   
@@ -840,7 +601,6 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
       proformaId,
       numeroProforma,
       proformaPdfUrl: `/documents/proforma/${numeroProforma}.pdf`,
-      proformaPdfBuffer: pdfBuffer,  // 📎 PDF buffer for email attachment
       tipoServizio,
       prezzoBase,
       prezzoIvaInclusa,

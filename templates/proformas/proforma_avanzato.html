@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-forma TeleAssistenza Avanzata - Medica GB</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3b82f6; padding-bottom: 20px; }
+        .logo { color: #3b82f6; font-size: 28px; font-weight: bold; }
+        .invoice-title { font-size: 24px; margin: 20px 0; text-align: center; color: #1e40af; }
+        .invoice-info { display: flex; justify-content: space-between; margin: 20px 0; }
+        .company-info, .client-info { width: 48%; }
+        .invoice-details { background: #f8faff; padding: 15px; margin: 20px 0; border-left: 4px solid #3b82f6; }
+        .services-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .services-table th, .services-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .services-table th { background: #3b82f6; color: white; }
+        .total-section { background: #1e40af; color: white; padding: 15px; text-align: right; font-size: 18px; font-weight: bold; }
+        .payment-terms { margin: 20px 0; padding: 15px; background: #f0f9ff; border: 1px solid #bfdbfe; }
+         { body { margin: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Medica GB S.r.l.</div>
+        <div style="font-size: 16px; margin-top: 10px;">Startup Innovativa a Vocazione Sociale</div>
+        <div style="font-size: 14px; margin-top: 5px;">P.IVA: 12435130963</div>
+    </div>
+
+    <h1 class="invoice-title">PRO-FORMA - TELEASSISTENZA AVANZATA</h1>
+
+    <div class="invoice-details">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>Numero Pro-forma:</strong> PF-ADV-{{NUMERO_PROFORMA}}<br>
+                <strong>Data:</strong> {{DATA_PROFORMA}}
+            </div>
+            <div style="text-align: right;">
+                <strong>Validità Offerta:</strong> 30 giorni<br>
+                <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-info">
+        <div class="company-info">
+            <h3 style="color: #3b82f6; margin-bottom: 10px;">FORNITORE</h3>
+            <strong>Medica GB S.r.l.</strong><br>
+            Corso Garibaldi 34<br>
+            20121 Milano (MI)<br>
+            P.IVA: 12435130963<br>
+            📧 info@medicagb.it<br>
+            📬 PEC: medicagbsrl@pecimprese.it<br>
+            📞 Stefania: 331 643 2390<br>
+            📞 Roberto: 335 730 1206
+        </div>
+        <div class="client-info">
+            <h3 style="color: #3b82f6; margin-bottom: 10px;">CLIENTE</h3>
+            <strong>{{NOME_COGNOME_CLIENTE}}</strong><br>
+            {{INDIRIZZO_CLIENTE}}<br>
+            {{CITTA_CAP_CLIENTE}}<br>
+            C.F.: {{CODICE_FISCALE_CLIENTE}}<br>
+            📧 {{EMAIL_CLIENTE}}<br>
+            📞 {{TELEFONO_CLIENTE}}
+        </div>
+    </div>
+
+    <table class="services-table">
+        <thead>
+            <tr>
+                <th style="width: 60%;">Descrizione Servizio</th>
+                <th style="width: 15%;">Quantità</th>
+                <th style="width: 15%;">Prezzo Unitario</th>
+                <th style="width: 15%;">Totale</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <strong>TELEASSISTENZA AVANZATA - PRIMO ANNO</strong><br>
+                    <small><strong>Tutto il Piano Base PLUS:</strong><br>
+                    🏥 Centrale Operativa H24/7 - 🩺 Assistenza medica specializzata - 🚨 Intervento immediato<br>
+                    📊 Monitoraggio avanzato parametri - 📈 Report sanitari periodici - 👨‍⚕️ Coordinamento emergenze<br>
+                    📱 Supporto famiglia H24 - 🎯 Soglie personalizzate - 💬 Consulenze telefoniche</small>
+                </td>
+                <td style="text-align: center;">1</td>
+                <td style="text-align: right;">€840,00</td>
+                <td style="text-align: right; font-weight: bold;">€840,00</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right; font-weight: bold; background: #f8faff;">Subtotale:</td>
+                <td style="text-align: right; font-weight: bold; background: #f8faff;">€840,00</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right;">IVA 22%:</td>
+                <td style="text-align: right;">€184,80</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        TOTALE COMPLESSIVO: €1.024,80
+    </div>
+
+    <div class="payment-terms">
+        <h3 style="color: #1e40af; margin-top: 0;">CONDIZIONI DI PAGAMENTO E ATTIVAZIONE</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <p><strong>💳 Modalità di Pagamento:</strong></p>
+                <ul>
+                    <li>Bonifico bancario</li>
+                </ul>
+
+                <p><strong>📅 Scadenza Pagamento:</strong><br>
+                Alla conferma dell'ordine</p>
+            </div>
+            <div>
+                <p><strong>🚀 Attivazione Servizio:</strong></p>
+                <ul>
+                    <li>Consegna dispositivo: 5 giorni lavorativi</li>
+                    <li>Configurazione personalizzata</li>
+                    <li>Training completo incluso</li>
+                    <li>Test con Centrale Operativa</li>
+                </ul>
+
+                <p><strong>🔄 Rinnovo Annuale:</strong><br>
+                €600,00 + IVA (€732,00 totale)</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 30px 0; padding: 20px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px;">
+        <h3 style="color: #d97706; margin-top: 0;">⭐ ESCLUSIVO PIANO AVANZATO</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <p><strong>🏥 Centrale Operativa H24/7:</strong></p>
+                <ul>
+                    <li>Operatori qualificati sempre disponibili</li>
+                    <li>Attivazione immediata servizi di emergenza</li>
+                    <li>Coordinamento completo situazioni critiche</li>
+                </ul>
+            </div>
+            <div>
+                <p><strong>📊 Monitoraggio Professionale:</strong></p>
+                <ul>
+                    <li>Soglie personalizzate parametri vitali</li>
+                    <li>Report sanitari periodici dettagliati</li>
+                    <li>Consulenze mediche telefoniche</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 30px 0; padding: 20px; background: #ecfdf5; border: 2px solid #22c55e; border-radius: 8px;">
+        <h3 style="color: #16a34a; margin-top: 0;">💰 BENEFICI FISCALI MASSIMI</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <p><strong>📋 Detrazione Fiscale 730:</strong></p>
+                <ul>
+                    <li>Detraibilità 19% come spesa sanitaria</li>
+                    <li>Risparmio annuo: fino a €194,72</li>
+                    <li>Documentazione fiscale completa</li>
+                </ul>
+            </div>
+            <div>
+                <p><strong>🏛️ Possibili Rimborsi INPS:</strong></p>
+                <ul>
+                    <li>ISEE < €6.000 + Legge 104</li>
+                    <li>Valutazione prioritaria piano avanzato</li>
+                    <li>Assistenza pratica completa inclusa</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 30px 0; font-size: 12px; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 20px;">
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <p><strong>Validità Offerta:</strong> 30 giorni dalla data di emissione<br>
+                <strong>Termini:</strong> Accettazione tramite firma contratto</p>
+            </div>
+            <div style="text-align: right;">
+                <p><strong>Emessa da:</strong> Medica GB S.r.l.<br>
+                <strong>Per informazioni:</strong> info@medicagb.it</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+            <p style="text-align: center; margin: 0;"><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale fondata nel 2022<br>
+            🏢 Milano: Corso Garibaldi 34, 20121 | 🏢 Genova: Via delle Eriche 53, 16148<br>
+            📧 info@medicagb.it | 📧 roberto.poggi@medicagb.it (335 730 1206) | 📧 stefania.rocca@medicagb.it (331 643 2390)<br>
+            🌐 www.medicagb.it | 📬 PEC: medicagbsrl@pecimprese.it</p>
+        </div>
+    </div>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDvUaHf7K3IQwVjW2yxmdfoNmwvfSwjzu4sFd8pHE2NyMOHPItraP2omVw62potPVPOM7bAru7%2BP%2Be0dHuMGvtPwwmBIEOtGl9NPtzcIS6wAGgLyd3CRz5kGI9QhgPSQMOJtYVdxX44O3SvHb%2FsgO4xMskxdZrfv1jkfiJ6jwWn34KmOCBL6XOBTsGYUeHr8l2gxHBeVEqQsWEa6krTvD8y57nn1CeRujRYtwJwOF55ylXwHmmF7EENYH727Qu8IexsypJOfMmhszAsMYa6%2FNVYm2urceC32ETg2Cv6eNJ78eb2skXoakL9jxlawh1Jlvfoyjaz5ZhO5ot8C3uZaNlugtFRUJ4lmC5Sb3cK89Y8yq619o38EHdOHeEZ4zcdj0b3DBZ9z3Dv7hcuGQcuHEY%2BwA8Vrp7pjNnTZKj7QrtpErYbyxjJK1XqHSrPKK1CWBXK95x8I%2B1DWcqKGCSe69ewG8PEdkRrMyCp%2BWIzEHIN0MdQFvLwAHvTt0O049c2hUMg%3D%3D";
+        window.__genspark_locale = "it-IT";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDvUaHf7K3IQwVjW2yxmdfoNmwvfSwjzu4sFd8pHE2NyMOHPItraP2omVw62potPVPOM7bAru7+P+e0dHuMGvtPwwmBIEOtGl9NPtzcIS6wAGgLyd3CRz5kGI9QhgPSQMOJtYVdxX44O3SvHb/sgO4xMskxdZrfv1jkfiJ6jwWn34KmOCBL6XOBTsGYUeHr8l2gxHBeVEqQsWEa6krTvD8y57nn1CeRujRYtwJwOF55ylXwHmmF7EENYH727Qu8IexsypJOfMmhszAsMYa6/NVYm2urceC32ETg2Cv6eNJ78eb2skXoakL9jxlawh1Jlvfoyjaz5ZhO5ot8C3uZaNlugtFRUJ4lmC5Sb3cK89Y8yq619o38EHdOHeEZ4zcdj0b3DBZ9z3Dv7hcuGQcuHEY+wA8Vrp7pjNnTZKj7QrtpErYbyxjJK1XqHSrPKK1CWBXK95x8I+1DWcqKGCSe69ewG8PEdkRrMyCp+WIzEHIN0MdQFvLwAHvTt0O049c2hUMg==";
+    </script>
+    
+        <script id="html_badge_script2" src="https://www.genspark.ai/html_badge.js"></script>
+        
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    

@@ -7,21 +7,19 @@
     "nodejs_compat"
   ],
   
+  // Browser Rendering binding for PDF generation
+  "browser": {
+    "binding": "BROWSER"
+  },
+  
   // Environment: Development (local)
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "telemedcare-leads",
-      "database_id": "e6fd921d-06df-4b65-98f9-fce81ef78825"
+      "database_id": "local-database-for-development"
     }
   ],
-
-  // Variables for local development
-  "vars": {
-    "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt",
-    "EMAIL_FROM": "noreply@telemedcare.it",
-    "EMAIL_TO_INFO": "info@telemedcare.it"
-  },
 
   // Environment configurations per deployment
   "env": {
@@ -31,13 +29,12 @@
         {
           "binding": "DB",
           "database_name": "telemedcare-leads",
-          "database_id": "e6fd921d-06df-4b65-98f9-fce81ef78825"
+          "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
         }
       ],
       "vars": {
         "ENVIRONMENT": "preview",
-        "DEBUG_MODE": "true",
-        "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt"
+        "DEBUG_MODE": "true"
       }
     },
     
@@ -47,15 +44,12 @@
         {
           "binding": "DB", 
           "database_name": "telemedcare-leads",
-          "database_id": "e6fd921d-06df-4b65-98f9-fce81ef78825"
+          "database_id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
         }
       ],
       "vars": {
         "ENVIRONMENT": "production",
-        "DEBUG_MODE": "false",
-        "RESEND_API_KEY": "re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt",
-        "EMAIL_FROM": "noreply@telemedcare.it",
-        "EMAIL_TO_INFO": "info@telemedcare.it"
+        "DEBUG_MODE": "false"
       }
     }
   }

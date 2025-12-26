@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operativa - TeleMedCare V11.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-sent { background: #dcfce7; color: #16a34a; }
+        .status-pending { background: #fef3c7; color: #ca8a04; }
+        .status-error { background: #fee2e2; color: #dc2626; }
+        .refresh-btn {
+            animation: rotate 1s linear infinite;
+            animation-play-state: paused;
+        }
+        .refresh-btn.rotating {
+            animation-play-state: running;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Dashboard Operativa</h1>
+                        <p class="text-purple-100">Centro di controllo staff - TeleMedCare V11.0</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/admin/leads-dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-users mr-2"></i>Leads
+                    </a>
+                    <button onclick="refreshData()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2 refresh-btn" id="refreshIcon"></i>Aggiorna
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Lead Totali</p>
+                        <p class="text-3xl font-bold text-blue-600" id="totalLeads">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Contratti Inviati</p>
+                        <p class="text-3xl font-bold text-green-600" id="contractsSent">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Oggi</p>
+                    </div>
+                    <i class="fas fa-file-contract text-3xl text-green-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Email Inviate</p>
+                        <p class="text-3xl font-bold text-purple-600" id="emailsSent">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 7 giorni</p>
+                    </div>
+                    <i class="fas fa-envelope text-3xl text-purple-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Servizio Più Richiesto</p>
+                        <p class="text-xl font-bold text-orange-600" id="topService">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Questo mese</p>
+                    </div>
+                    <i class="fas fa-star text-3xl text-orange-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servizi e Dispositivi -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Distribuzione Servizi -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                    Distribuzione Servizi
+                </h3>
+                <div id="servicesChart" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Piano BASE vs AVANZATO -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                    Piano BASE vs AVANZATO
+                </h3>
+                <div id="plansChart" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Ultimi Lead Ricevuti -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-clock text-green-500 mr-2"></i>
+                    Ultimi Lead Ricevuti
+                </h3>
+                <span class="text-sm text-gray-500" id="lastUpdate">Aggiornato ora</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Dispositivo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTable">
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento dati...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+
+        // Carica dati iniziali
+        loadDashboardData();
+
+        // Auto-refresh ogni 30 secondi
+        refreshInterval = setInterval(loadDashboardData, 30000);
+
+        async function loadDashboardData() {
+            try {
+                // Carica statistiche
+                const statsResponse = await fetch('/api/data/stats');
+                const stats = await statsResponse.json();
+                
+                // Aggiorna KPI
+                document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
+                document.getElementById('contractsSent').textContent = stats.contractsToday || '0';
+                document.getElementById('emailsSent').textContent = stats.emailsWeek || '0';
+                document.getElementById('topService').textContent = stats.topService || '-';
+
+                // Carica ultimi lead
+                const leadsResponse = await fetch('/api/leads?limit=10');
+                const leadsData = await leadsResponse.json();
+                const leads = leadsData.leads || [];
+
+                // Popola tabella lead
+                const tbody = document.getElementById('leadsTable');
+                if (leads.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                Nessun lead trovato
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = leads.map(lead => {
+                        const servizio = lead.servizio || 'N/A';
+                        const piano = lead.pacchetto || 'N/A';
+                        const dispositivo = getDispositivoForService(servizio);
+                        const prezzo = getPrezzoForService(servizio, piano);
+                        const statusClass = lead.contratto_inviato ? 'status-sent' : 'status-pending';
+                        const statusText = lead.contratto_inviato ? 'Inviato' : 'In attesa';
+                        const date = new Date(lead.created_at).toLocaleString('it-IT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        return `
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="py-3 text-sm">
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">${lead.leadId || lead.id}</code>
+                                </td>
+                                <td class="py-3 text-sm">
+                                    <div class="font-medium">${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}</div>
+                                    <div class="text-xs text-gray-500">${lead.emailRichiedente || ''}</div>
+                                </td>
+                                <td class="py-3 text-sm font-medium text-purple-600">${servizio}</td>
+                                <td class="py-3 text-sm">${piano}</td>
+                                <td class="py-3 text-sm text-gray-600">${dispositivo}</td>
+                                <td class="py-3 text-sm font-bold text-green-600">€${prezzo}</td>
+                                <td class="py-3">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                </td>
+                                <td class="py-3 text-xs text-gray-500">${date}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Aggiorna grafici
+                updateServicesChart(leads);
+                updatePlansChart(leads);
+
+                // Aggiorna timestamp
+                document.getElementById('lastUpdate').textContent = `Aggiornato: ${new Date().toLocaleTimeString('it-IT')}`;
+
+            } catch (error) {
+                console.error('Errore caricamento dashboard:', error);
+                document.getElementById('leadsTable').innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                            <p>Errore nel caricamento dei dati</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function refreshData() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('rotating');
+            loadDashboardData().finally(() => {
+                setTimeout(() => icon.classList.remove('rotating'), 1000);
+            });
+        }
+
+        function getDispositivoForService(servizio) {
+            const dispositivi = {
+                'FAMILY': 'Senium CARE',
+                'PRO': 'SiDLY CARE PRO',
+                'PREMIUM': 'SiDLY VITAL CARE'
+            };
+            return dispositivi[servizio] || 'N/A';
+        }
+
+        function getPrezzoForService(servizio, piano) {
+            const prezzi = {
+                'FAMILY': { 'BASE': '390.00', 'AVANZATO': '690.00' },
+                'PRO': { 'BASE': '480.00', 'AVANZATO': '840.00' },
+                'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
+            };
+            return prezzi[servizio]?.[piano] || '0.00';
+        }
+
+        function updateServicesChart(leads) {
+            const serviceCounts = {};
+            leads.forEach(lead => {
+                const service = lead.servizio || 'N/A';
+                serviceCounts[service] = (serviceCounts[service] || 0) + 1;
+            });
+
+            const total = leads.length || 1;
+            const colors = {
+                'FAMILY': 'bg-blue-500',
+                'PRO': 'bg-purple-500',
+                'PREMIUM': 'bg-green-500'
+            };
+
+            const html = Object.entries(serviceCounts).map(([service, count]) => {
+                const percentage = Math.round((count / total) * 100);
+                const color = colors[service] || 'bg-gray-500';
+                return `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${service}</span>
+                            <span class="text-sm font-bold text-gray-900">${count} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('servicesChart').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>';
+        }
+
+        function updatePlansChart(leads) {
+            const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
+            leads.forEach(lead => {
+                const plan = lead.pacchetto || 'BASE';
+                if (planCounts[plan] !== undefined) {
+                    planCounts[plan]++;
+                }
+            });
+
+            const total = leads.length || 1;
+            const basePercentage = Math.round((planCounts.BASE / total) * 100);
+            const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
+
+            document.getElementById('plansChart').innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700">BASE</span>
+                        <span class="text-sm font-bold text-gray-900">${planCounts.BASE} (${basePercentage}%)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: ${basePercentage}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700">AVANZATO</span>
+                        <span class="text-sm font-bold text-gray-900">${planCounts.AVANZATO} (${avanzatoPercentage}%)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-purple-500 h-2 rounded-full" style="width: ${avanzatoPercentage}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
