@@ -7273,17 +7273,13 @@ function sostituisciPlaceholder(template: string, data: any): string {
 }
 
 // HOMEPAGE - Dashboard Principale con accesso a tutte le sezioni
-// FIX: Redirect permanente per bypassare cache Cloudflare
+// FORCE REFRESH: Direct serve home template to bypass Cloudflare aggressive cache
 app.get('/', (c) => {
-  return c.redirect('/home', 302)
-})
-
-// Homepage reale servita su /home
-app.get('/home', (c) => {
-  // No-cache header per evitare problemi di cache
-  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
   c.header('Pragma', 'no-cache')
   c.header('Expires', '0')
+  c.header('X-Cache-Bypass', 'true')
+  c.header('X-TeleMedCare-Version', '11.0-' + Date.now())
   return c.html(home)
 })
 
@@ -7593,21 +7589,29 @@ app.get('/landing', (c) => {
 // ========== DASHBOARD ROUTES ==========
 // Dashboard Operativa - Centro di controllo staff con analytics e monitoring
 app.get('/dashboard', (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'operativa')
   return c.html(dashboard)
 })
 
 // Dashboard Leads Modulare - Aggregazione dati dai 6 moduli Leads specializzati
 app.get('/admin/leads-dashboard', (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'leads')
   return c.html(leads_dashboard)
 })
 
 // Data Dashboard - Centro dati completo con analytics e KPI aziendali
 app.get('/admin/data-dashboard', (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'data')
   return c.html(data_dashboard)
 })
 
 // Workflow Manager - Gestione completa workflow e forzatura eventi
 app.get('/admin/workflow-manager', (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'workflow')
   return c.html(workflow_manager)
 })
 
