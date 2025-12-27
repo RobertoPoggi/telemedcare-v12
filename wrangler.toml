@@ -1,15 +1,26 @@
-# ⚠️ IMPORTANTE: Questo progetto usa SOLO Cloudflare Pages
-# NON fare deploy con: wrangler deploy (crea Workers indesiderati!)
-# USA SOLO: git push origin main (auto-deploy Pages via GitHub)
+# ⚠️ ⚠️ ⚠️ BLOCCO WORKERS - NON MODIFICARE! ⚠️ ⚠️ ⚠️
 #
-# URL UFFICIALE: https://telemedcare-v12.pages.dev/
+# QUESTO PROGETTO USA ESCLUSIVAMENTE CLOUDFLARE PAGES
+# 
+# ❌ NON ESEGUIRE MAI: wrangler deploy
+# ❌ NON ESEGUIRE MAI: wrangler publish
+# ❌ NON CREARE Workers manualmente
 #
-# Questo file wrangler.toml serve SOLO per configurare Pages,
-# NON per deploy Workers!
+# ✅ USA SOLO: git push origin main
+# ✅ Deploy automatico: GitHub → Cloudflare Pages
+# ✅ URL UFFICIALE: https://telemedcare-v12.pages.dev/
+#
+# Se qualcuno esegue "wrangler deploy" per errore,
+# questo file è configurato per NON creare Workers funzionanti
+# (nome diverso dal progetto reale, nessun main script)
 
-# Configurazione necessaria per Cloudflare Pages
+# Configurazione Cloudflare Pages (NON Workers!)
 name = "telemedcare-v12-pages"
 compatibility_date = "2025-10-06"
+
+# ⚠️ NOTA: NO "main" parameter → Blocca deploy Workers
+# Se ci fosse: main = "dist/_worker.js" → creerebbe Workers!
+# Lasciando vuoto, wrangler deploy fallisce o crea Workers vuoti
 
 # Environment Variables (non-sensitive)
 [vars]
