@@ -995,8 +995,8 @@ export const dashboard = `<!DOCTYPE html>
             
             isLoading = true;
             try {
-                // Carica TUTTI i lead per statistiche accurate
-                const allLeadsResponse = await fetch('/api/leads?limit=200');
+                // Carica TUTTI i lead per statistiche accurate (aumentato a 300)
+                const allLeadsResponse = await fetch('/api/leads?limit=300');
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -1201,43 +1201,46 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         function updatePlansChart(leads) {
-            const leadsToUse = window.allLeadsData || leads;
-            const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
-            
-            // Conta i piani reali basati sul campo note
-            leadsToUse.forEach(lead => {
-                const isAvanzato = lead.note && lead.note.includes('Piano: AVANZATO');
-                if (isAvanzato) {
-                    planCounts.AVANZATO++;
-                } else {
-                    planCounts.BASE++;
-                }
+            // USA SOLO ASSISTITI per conteggio piani (non tutti i lead)
+            const assistitiResponse = fetch('/api/assistiti').then(r => r.json()).then(data => {
+                const assistiti = data.assistiti || [];
+                const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
+                
+                // Conta i piani reali basati sui contratti degli assistiti
+                assistiti.forEach(assistito => {
+                    const piano = assistito.piano || 'BASE';
+                    if (piano === 'AVANZATO') {
+                        planCounts.AVANZATO++;
+                    } else {
+                        planCounts.BASE++;
+                    }
+                });
+
+                const total = assistiti.length || 1;
+                const basePercentage = Math.round((planCounts.BASE / total) * 100);
+                const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
+
+                document.getElementById('plansChart').innerHTML = \`
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">BASE</span>
+                            <span class="text-sm font-bold text-gray-900">\${planCounts.BASE} (\${basePercentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: \${basePercentage}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">AVANZATO</span>
+                            <span class="text-sm font-bold text-gray-900">\${planCounts.AVANZATO} (\${avanzatoPercentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: \${avanzatoPercentage}%"></div>
+                        </div>
+                    </div>
+                \`;
             });
-
-            const total = leadsToUse.length || 1;
-            const basePercentage = Math.round((planCounts.BASE / total) * 100);
-            const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
-
-            document.getElementById('plansChart').innerHTML = \`
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm font-medium text-gray-700">BASE</span>
-                        <span class="text-sm font-bold text-gray-900">\${planCounts.BASE} (\${basePercentage}%)</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full" style="width: \${basePercentage}%"></div>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm font-medium text-gray-700">AVANZATO</span>
-                        <span class="text-sm font-bold text-gray-900">\${planCounts.AVANZATO} (\${avanzatoPercentage}%)</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-purple-500 h-2 rounded-full" style="width: \${avanzatoPercentage}%"></div>
-                    </div>
-                </div>
-            \`;
         }
 
         function renderAssistitiTable(assistiti) {
