@@ -1494,7 +1494,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead aggiornato con successo!');
+                    alert(\`✅ Lead aggiornato con successo!\`);
                     closeModal('editLeadModal');
                     loadLeads();
                 } else {
@@ -1518,7 +1518,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead eliminato con successo!');
+                    alert(\`✅ Lead eliminato con successo!\`);
                     loadLeads();
                 } else {
                     alert(\`❌ Errore: \${result.error}\`);
@@ -1571,7 +1571,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead creato con successo!\\n\\nID: ' + result.lead.id);
+                    alert(\`✅ Lead creato con successo!\\n\\nID: \${result.lead.id}\`);
                     closeModal('newLeadModal');
                     loadLeads();
                 } else {
@@ -3034,7 +3034,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Firma registrata con successo!\n\nProforma generata e inviata.');
+                        alert(\`✅ Firma registrata con successo!\\n\\nProforma generata e inviata.\`);
                         closeSignModal();
                         refreshWorkflows();
                     } else {
@@ -3073,7 +3073,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Pagamento registrato con successo!\n\nProcedura di attivazione avviata.');
+                    alert(\`✅ Pagamento registrato con successo!\\n\\nProcedura di attivazione avviata.\`);
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
