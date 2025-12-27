@@ -559,6 +559,27 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- Import API Buttons per Canale -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-download mr-2 text-blue-600"></i>Import Lead da Canali
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <button onclick="importFromChannel('Excel')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-file-excel mr-2"></i>Excel
+                </button>
+                <button onclick="importFromChannel('Irbema')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-building mr-2"></i>Irbema
+                </button>
+                <button onclick="importFromChannel('AON')" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-handshake mr-2"></i>AON
+                </button>
+                <button onclick="importFromChannel('DoubleYou')" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-chart-line mr-2"></i>DoubleYou
+                </button>
+            </div>
+        </div>
+
         <!-- Servizi e Dispositivi -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <!-- Distribuzione Servizi -->
@@ -768,6 +789,39 @@ export const dashboard = `<!DOCTYPE html>
                 \`;
             } finally {
                 isLoading = false;
+            }
+        }
+
+        
+        function importFromChannel(channel) {
+            if (confirm(\`📥 Vuoi importare i lead dal canale \${channel}?\\n\\nQuesta operazione:\n- Scaricherà i nuovi lead da \${channel}\n- Aggiornerà il database\n- Sincronizzerà i dati\\n\\nProcedi?\`)) {
+                // Mostra loading
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importazione...';
+                
+                fetch(\`/api/leads/import/\${channel.toLowerCase()}\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    
+                    if (data.success) {
+                        alert(\`✅ Import completato!\\n\\nCanale: \${channel}\\nLead importati: \${data.count || 0}\\nTotale lead: \${data.total || 0}\`);
+                        loadDashboardData(); // Ricarica dashboard
+                    } else {
+                        alert(\`❌ Errore import:\\n\\n\${data.error || 'Errore sconosciuto'}\`);
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    alert(\`❌ Errore di comunicazione:\\n\\n\${error.message}\`);
+                });
             }
         }
 
@@ -2870,9 +2924,6 @@ export const workflow_manager = `<!DOCTYPE html>
                         return;
                 }
                 
-                // Mostra loading
-                const loadingMsg = alert(\`⏳ Caricamento \${title}...\\n\\nAttendi...\`);
-                
                 const response = await fetch(url);
                 const data = await response.json();
                 
@@ -2894,7 +2945,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra tutti i record se <= 10
                     items.forEach((item, idx) => {
                         if (type === 'leads') {
-                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''} - \${item.email || 'N/A'}\\n\`;
+                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${item.email || 'N/A'}\\n\`;
                         } else if (type === 'contratti') {
                             message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
                         } else if (type === 'firme') {
@@ -2904,7 +2955,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         } else if (type === 'pagamenti') {
                             message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
                         } else {
-                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''} - ATTIVO\\n\`;
+                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - ATTIVO\\n\`;
                         }
                     });
                 } else {
@@ -2912,7 +2963,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     message += 'Primi 10 record:\\n\\n';
                     items.slice(0, 10).forEach((item, idx) => {
                         if (type === 'leads' || type === 'attivi') {
-                            message += \`\${idx+1}. \${item.nome || ''} \${item.cognome || ''}\\n\`;
+                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''}\\n\`;
                         } else if (type === 'contratti') {
                             message += \`\${idx+1}. \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
                         } else {
