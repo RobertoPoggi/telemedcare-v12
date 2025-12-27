@@ -2681,9 +2681,6 @@ export const workflow_manager = `<!DOCTYPE html>
         let allLeads = [];
         let isLoading = false; // Previene chiamate multiple simultanee
 
-        // Load workflows on page load
-        loadWorkflows();
-
         async function loadWorkflows() {
             // Previeni chiamate multiple simultanee
             if (isLoading) {
@@ -3087,6 +3084,11 @@ export const workflow_manager = `<!DOCTYPE html>
             }
         });
         }
+
+        // Load workflows on page load (chiamata dopo tutte le definizioni)
+        window.addEventListener('DOMContentLoaded', () => {
+            loadWorkflows();
+        });
     </script>
 </body>
 </html>
