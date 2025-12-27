@@ -1290,7 +1290,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${lead.nome || ''} \${lead.cognome || ''}</div>
+                            <div class="font-medium">\${(lead.nome && lead.cognome) ? (lead.nome + ' ' + lead.cognome) : (lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -2190,8 +2190,6 @@ export const data_dashboard = `<!DOCTYPE html>
         // ============================================
         // CRUD CONTRATTI + PDF VIEWER
         // ============================================
-        
-        let allContracts = [];
         
         async function viewContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
