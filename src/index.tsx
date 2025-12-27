@@ -6675,6 +6675,37 @@ app.get('/api/check-version', async (c) => {
   })
 })
 
+// Endpoint per reset completo assistiti/contratti (SOLO PER DEVELOPMENT)
+app.post('/api/reset-assistiti', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🗑️ Reset completo assistiti e contratti...')
+    
+    // Cancella tutti i contratti e assistiti
+    await c.env.DB.prepare('DELETE FROM contracts').run()
+    await c.env.DB.prepare('DELETE FROM assistiti').run()
+    await c.env.DB.prepare('DELETE FROM leads WHERE id LIKE "LEAD-%-"').run()
+    
+    console.log('✅ Database pulito')
+    
+    return c.json({
+      success: true,
+      message: 'Database assistiti/contratti resettato',
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ Errore reset:', error)
+    return c.json({
+      success: false,
+      error: 'Errore reset database',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 app.post('/api/init-assistiti', async (c) => {
   try {
     if (!c.env?.DB) {
