@@ -6900,10 +6900,10 @@ app.post('/api/init-assistiti', async (c) => {
         // Step 6: Crea contratto collegato al lead
         const codiceContratto = `CTR-${assistito.cognome.toUpperCase()}-${new Date().getFullYear()}`
         
-        // Verifica se contratto esiste
+        // Verifica se contratto esiste (by IMEI, leadId o codice_contratto)
         const existingContract = await c.env.DB.prepare(
-          'SELECT id FROM contracts WHERE imei_dispositivo = ? OR leadId = ?'
-        ).bind(assistito.imei, leadId).first()
+          'SELECT id FROM contracts WHERE imei_dispositivo = ? OR leadId = ? OR codice_contratto = ?'
+        ).bind(assistito.imei, leadId, codiceContratto).first()
 
         if (!existingContract) {
           const contractId = `CONTRACT-${assistito.cognome.toUpperCase()}-${Date.now()}`
@@ -6927,6 +6927,8 @@ app.post('/api/init-assistiti', async (c) => {
           ).run()
           contractsCreated++
           console.log(`✅ Contratto creato: ${codiceContratto} per ${assistito.nome} ${assistito.cognome} (leadId: ${leadId})`)
+        } else {
+          console.log(`ℹ️ Contratto esistente trovato: ${existingContract.id}`)
         }
       }
     }
