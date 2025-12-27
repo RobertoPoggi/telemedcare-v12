@@ -6385,6 +6385,307 @@ app.delete('/api/leads/:id', async (c) => {
   }
 })
 
+// ========================================
+// ENDPOINT INIZIALIZZAZIONE ASSISTITI REALI
+// ========================================
+
+// POST /api/init-assistiti - Popola database con assistiti reali
+app.post('/api/init-assistiti', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🚀 Inizializzazione assistiti reali...')
+
+    // Step 1: Aggiungi colonna IMEI alla tabella assistiti se non esiste
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE assistiti ADD COLUMN imei TEXT
+      `).run()
+      console.log('✅ Colonna IMEI aggiunta a tabella assistiti')
+    } catch (error) {
+      console.log('ℹ️ Colonna IMEI già esistente o errore non critico:', error)
+    }
+
+    // Step 2: Aggiungi colonna imei_dispositivo alla tabella contracts se non esiste
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE contracts ADD COLUMN imei_dispositivo TEXT
+      `).run()
+      console.log('✅ Colonna imei_dispositivo aggiunta a tabella contracts')
+    } catch (error) {
+      console.log('ℹ️ Colonna imei_dispositivo già esistente:', error)
+    }
+
+    // Step 3: Dati reali assistiti
+    const assistitiReali = [
+      {
+        nome: 'Eileen Elisabeth',
+        cognome: 'King',
+        imei: '868298061208378',
+        servizio: 'eCura PRO',
+        piano: 'AVANZATO',
+        careGiver: 'Elena Saglia',
+        parentela: 'figlia',
+        dataNascita: '1935-05-18',
+        sesso: 'Donna',
+        peso: 80,
+        altezza: 157,
+        telefono: '+393475951175',
+        indirizzo: 'Via Diaz 34, Cernusco sul Naviglio (MI)',
+        email: '',
+        contratto: true
+      },
+      {
+        nome: 'Giuseppina',
+        cognome: 'Cozzi',
+        imei: '868298061207735',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Elisabetta Cattini, Germana Cattini',
+        parentela: 'operatori sanitari',
+        dataNascita: '1939-01-28',
+        sesso: 'Donna',
+        peso: 80,
+        altezza: 150,
+        telefono: '+393313809634',
+        indirizzo: 'VIA 4 NOVEMBRE 12, 20014 NERVIANO MI',
+        email: '',
+        contratto: true
+      },
+      {
+        nome: 'Maria',
+        cognome: 'Capone',
+        imei: '868298061173234',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Giorgio Riela',
+        parentela: 'figlio',
+        dataNascita: '1934-08-15',
+        sesso: 'Donna',
+        peso: 64,
+        altezza: 140,
+        telefono: '+393478740585',
+        indirizzo: 'via 100/80 Castiglione torinese to',
+        email: 'marycap34@gmail.com',
+        contratto: true
+      },
+      {
+        nome: 'Gianni Paolo',
+        cognome: 'Pizzutto',
+        imei: '868298060601011',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Simona Pizzutto',
+        parentela: 'figlia',
+        dataNascita: '1939-06-26',
+        sesso: 'Uomo',
+        peso: 80,
+        altezza: 170,
+        telefono: '+393398444530',
+        indirizzo: 'Via Costituzione 5, S. Mauro Torinese (TO)',
+        email: '',
+        contratto: true
+      },
+      {
+        nome: 'Rita',
+        cognome: 'Pennacchio',
+        imei: '868298061123759',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Caterina D\'Alterio',
+        parentela: 'figlia',
+        dataNascita: '1934-10-28',
+        sesso: 'Donna',
+        peso: 60,
+        altezza: 150,
+        telefono: '+393398331711',
+        indirizzo: 'Via Antonio Fogazzaro 28, Giugliano (NA)',
+        email: '',
+        contratto: true
+      },
+      {
+        nome: 'Giuliana',
+        cognome: 'Balzarotti',
+        imei: '868298061206968',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Paolo Magrì',
+        parentela: 'figlio',
+        dataNascita: '',
+        sesso: 'Donna',
+        peso: 70,
+        altezza: 165,
+        telefono: '+393312826048',
+        indirizzo: '',
+        email: '',
+        contratto: true
+      },
+      {
+        nome: 'Laura',
+        cognome: 'Calvi',
+        imei: '864866055431174',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        careGiver: 'Daniela Rocca',
+        parentela: 'figlia',
+        dataNascita: '',
+        sesso: 'Donna',
+        peso: 0,
+        altezza: 0,
+        telefono: '',
+        indirizzo: '',
+        email: '',
+        contratto: false
+      }
+    ]
+
+    let insertedCount = 0
+    let updatedCount = 0
+    let contractsCreated = 0
+
+    // Step 4: Inserisci o aggiorna assistiti
+    for (const assistito of assistitiReali) {
+      const codiceAssistito = `ASS-${assistito.cognome.toUpperCase()}-${Date.now()}`
+      const timestamp = new Date().toISOString()
+
+      // Verifica se assistito esiste già (by IMEI)
+      const existing = await c.env.DB.prepare(
+        'SELECT id FROM assistiti WHERE imei = ?'
+      ).bind(assistito.imei).first()
+
+      if (existing) {
+        // Aggiorna esistente
+        await c.env.DB.prepare(`
+          UPDATE assistiti 
+          SET nome = ?, email = ?, telefono = ?, status = 'ATTIVO'
+          WHERE imei = ?
+        `).bind(
+          `${assistito.nome} ${assistito.cognome}`,
+          assistito.email,
+          assistito.telefono,
+          assistito.imei
+        ).run()
+        updatedCount++
+        console.log(`✅ Aggiornato assistito: ${assistito.nome} ${assistito.cognome} (IMEI: ${assistito.imei})`)
+      } else {
+        // Inserisci nuovo
+        await c.env.DB.prepare(`
+          INSERT INTO assistiti (
+            codice, nome, email, telefono, imei, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?)
+        `).bind(
+          codiceAssistito,
+          `${assistito.nome} ${assistito.cognome}`,
+          assistito.email,
+          assistito.telefono,
+          assistito.imei,
+          timestamp
+        ).run()
+        insertedCount++
+        console.log(`✅ Inserito assistito: ${assistito.nome} ${assistito.cognome} (IMEI: ${assistito.imei})`)
+      }
+
+      // Step 5: Crea contratto se necessario
+      if (assistito.contratto) {
+        const codiceContratto = `CTR-${assistito.cognome.toUpperCase()}-${new Date().getFullYear()}`
+        
+        // Verifica se contratto esiste
+        const existingContract = await c.env.DB.prepare(
+          'SELECT id FROM contracts WHERE imei_dispositivo = ?'
+        ).bind(assistito.imei).first()
+
+        if (!existingContract) {
+          const contractId = `CONTRACT-${assistito.cognome.toUpperCase()}-${Date.now()}`
+          const prezzoTotale = assistito.piano === 'AVANZATO' ? 840 : 480
+
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, codice_contratto, tipo_contratto, status, 
+              prezzo_totale, imei_dispositivo, created_at
+            ) VALUES (?, ?, ?, 'SIGNED', ?, ?, ?)
+          `).bind(
+            contractId,
+            codiceContratto,
+            assistito.piano,
+            prezzoTotale,
+            assistito.imei,
+            timestamp
+          ).run()
+          contractsCreated++
+          console.log(`✅ Contratto creato: ${codiceContratto} per ${assistito.nome} ${assistito.cognome}`)
+        }
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Database inizializzato con assistiti reali',
+      stats: {
+        assistitiInseriti: insertedCount,
+        assistitiAggiornati: updatedCount,
+        contrattiCreati: contractsCreated,
+        totaleAssistiti: assistitiReali.length
+      },
+      assistiti: assistitiReali.map(a => ({
+        nome: `${a.nome} ${a.cognome}`,
+        imei: a.imei,
+        piano: a.piano,
+        contratto: a.contratto ? '✅' : '❌'
+      }))
+    })
+  } catch (error) {
+    console.error('❌ Errore inizializzazione assistiti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore inizializzazione assistiti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/assistiti - Lista assistiti con IMEI
+app.get('/api/assistiti', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const assistiti = await c.env.DB.prepare(`
+      SELECT 
+        a.id,
+        a.codice,
+        a.nome,
+        a.email,
+        a.telefono,
+        a.imei,
+        a.status,
+        a.created_at,
+        c.codice_contratto,
+        c.tipo_contratto as piano,
+        c.status as contratto_status
+      FROM assistiti a
+      LEFT JOIN contracts c ON a.imei = c.imei_dispositivo
+      WHERE a.status = 'ATTIVO'
+      ORDER BY a.created_at DESC
+    `).all()
+
+    return c.json({
+      success: true,
+      count: assistiti.results.length,
+      assistiti: assistiti.results
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero assistiti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore recupero assistiti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POINT 10 FIX - API per statistiche Data Dashboard
 app.get('/api/data/stats', async (c) => {
   try {

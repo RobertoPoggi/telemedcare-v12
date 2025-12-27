@@ -864,18 +864,19 @@ export const dashboard = `<!DOCTYPE html>
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-sm font-semibold text-gray-600">Assistito</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Età</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Richiedente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Parentela</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">IMEI Dispositivo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Email</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Codice Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="assistitiTable">
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento assistiti...</p>
                             </td>
@@ -1004,6 +1005,11 @@ export const dashboard = `<!DOCTYPE html>
                 const contractsData = await contractsResponse.json();
                 const contracts = contractsData.contratti || [];
                 
+                // Carica ASSISTITI reali con IMEI
+                const assistitiResponse = await fetch('/api/assistiti');
+                const assistitiData = await assistitiResponse.json();
+                const assistiti = assistitiData.assistiti || [];
+                
                 // Calcola statistiche reali
                 const totalLeads = allLeads.length;
                 const contratti = contracts.length; // Conta contratti reali, non lead convertiti
@@ -1073,8 +1079,8 @@ export const dashboard = `<!DOCTYPE html>
                 updateServicesChart(allLeads);
                 updatePlansChart(allLeads);
                 
-                // Renderizza assistiti da contratti
-                renderAssistitiTable(contracts, allLeads);
+                // Renderizza assistiti da API dedicata
+                renderAssistitiTable(assistiti);
 
                 // Aggiorna timestamp
                 document.getElementById('lastUpdate').textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
@@ -1234,13 +1240,8 @@ export const dashboard = `<!DOCTYPE html>
             \`;
         }
 
-        function renderAssistitiTable(contracts, leads) {
+        function renderAssistitiTable(assistiti) {
             const tbody = document.getElementById('assistitiTable');
-            
-            // Filtra solo i contratti con assistito (CONVERTED/SIGNED)
-            const assistiti = contracts.filter(c => 
-                c.status === 'SIGNED' || c.status === 'CONVERTED' || c.status === 'SENT'
-            );
             
             // Aggiorna contatore
             document.getElementById('assistitiCount').textContent = assistiti.length;
@@ -1248,7 +1249,8 @@ export const dashboard = `<!DOCTYPE html>
             if (assistiti.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="8" class="py-8 text-center text-gray-400">
+                        <td colspan="9" class="py-8 text-center text-gray-400">
+                            <i class="fas fa-users text-3xl mb-2"></i><br>
                             Nessun assistito attivo trovato
                         </td>
                     </tr>
@@ -1256,47 +1258,47 @@ export const dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            tbody.innerHTML = assistiti.map(contract => {
-                // Trova il lead associato per ottenere i dati dell'assistito
-                const lead = leads.find(l => l.id === contract.lead_id);
-                
-                const nomeAssistito = lead?.nomeAssistito || contract.nome_assistito || 'N/A';
-                const cognomeAssistito = lead?.cognomeAssistito || contract.cognome_assistito || '';
-                const eta = lead?.etaAssistito || contract.eta_assistito || 'N/A';
-                const nomeRichiedente = contract.cliente_nome || lead?.nomeRichiedente || 'N/A';
-                const cognomeRichiedente = contract.cliente_cognome || lead?.cognomeRichiedente || '';
-                const parentela = lead?.parentelaAssistito || contract.parentela || 'N/A';
-                const servizio = contract.servizio || lead?.servizio || 'eCura PRO';
-                const piano = (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                const status = contract.status || 'SIGNED';
-                const codice = contract.codice_contratto || contract.id;
+            tbody.innerHTML = assistiti.map(assistito => {
+                // Dati assistito reali
+                const nomeCompleto = assistito.nome || 'N/A';
+                const imei = assistito.imei || 'N/A';
+                const email = assistito.email || 'N/A';
+                const telefono = assistito.telefono || 'N/A';
+                const servizio = 'eCura PRO';
+                const piano = assistito.piano || 'BASE';
+                const status = assistito.contratto_status || assistito.status || 'ATTIVO';
+                const codice = assistito.codice_contratto || assistito.codice || 'N/A';
                 
                 // Status badge colors
                 const statusColors = {
                     'SIGNED': 'bg-green-100 text-green-700',
                     'SENT': 'bg-blue-100 text-blue-700',
                     'CONVERTED': 'bg-purple-100 text-purple-700',
-                    'ACTIVE': 'bg-green-100 text-green-700'
+                    'ACTIVE': 'bg-green-100 text-green-700',
+                    'ATTIVO': 'bg-green-100 text-green-700'
                 };
                 const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700';
+                
+                // Piano badge colors
+                const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${nomeAssistito} \${cognomeAssistito}</div>
+                            <div class="font-medium">\${nomeCompleto}</div>
                         </td>
-                        <td class="py-3 text-sm text-gray-600">\${eta}</td>
-                        <td class="py-3 text-sm">
-                            <div class="font-medium">\${nomeRichiedente} \${cognomeRichiedente}</div>
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded font-mono">\${imei}</code>
                         </td>
-                        <td class="py-3 text-sm text-gray-600">\${parentela}</td>
+                        <td class="py-3 text-sm text-gray-600">\${email}</td>
+                        <td class="py-3 text-sm text-gray-600">\${telefono}</td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
                                 \${servizio}
                             </span>
                         </td>
                         <td class="py-3">
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                            <span class="px-2 py-1 \${pianoColor} text-xs rounded font-medium">
                                 \${piano}
                             </span>
                         </td>
@@ -1307,6 +1309,11 @@ export const dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
+                        </td>
+                        <td class="py-3 text-xs text-center">
+                            <button onclick="alert('Dettaglio assistito: ' + '\${nomeCompleto}')" class="text-blue-600 hover:text-blue-800" title="Visualizza">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </td>
                     </tr>
                 \`;
