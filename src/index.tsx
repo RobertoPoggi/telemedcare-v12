@@ -6418,6 +6418,49 @@ app.post('/api/db/migrate', async (c) => {
       console.log('ℹ️ Tabella assistiti già esistente')
     }
 
+    // Migrazione 1.5: Aggiungi colonne nome_assistito, cognome_assistito, nome_caregiver, cognome_caregiver
+    const assistitiColumns = [
+      { name: 'nome_assistito', type: 'TEXT' },
+      { name: 'cognome_assistito', type: 'TEXT' },
+      { name: 'nome_caregiver', type: 'TEXT' },
+      { name: 'cognome_caregiver', type: 'TEXT' },
+      { name: 'parentela_caregiver', type: 'TEXT' }
+    ]
+
+    for (const col of assistitiColumns) {
+      try {
+        await c.env.DB.prepare(`
+          ALTER TABLE assistiti ADD COLUMN ${col.name} ${col.type}
+        `).run()
+        console.log(`✅ Colonna ${col.name} aggiunta a assistiti`)
+      } catch (error) {
+        console.log(`ℹ️ Colonna ${col.name} già esistente in assistiti`)
+      }
+    }
+
+    // Migra dati esistenti da 'nome' a 'nome_assistito' e 'cognome_assistito'
+    try {
+      await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET nome_assistito = CASE 
+          WHEN nome_assistito IS NULL AND nome LIKE '% %' 
+          THEN substr(nome, 1, instr(nome, ' ') - 1)
+          WHEN nome_assistito IS NULL 
+          THEN nome
+          ELSE nome_assistito
+        END,
+        cognome_assistito = CASE 
+          WHEN cognome_assistito IS NULL AND nome LIKE '% %' 
+          THEN substr(nome, instr(nome, ' ') + 1)
+          ELSE cognome_assistito
+        END
+        WHERE nome_assistito IS NULL OR cognome_assistito IS NULL
+      `).run()
+      console.log('✅ Dati migrati da nome a nome_assistito/cognome_assistito')
+    } catch (error) {
+      console.log('ℹ️ Migrazione dati assistiti già effettuata')
+    }
+
     // Migrazione 2: Aggiungi colonna imei_dispositivo a contracts
     try {
       await c.env.DB.prepare(`
@@ -7027,10 +7070,17 @@ app.post('/api/init-assistiti', async (c) => {
         // Aggiorna esistente
         await c.env.DB.prepare(`
           UPDATE assistiti 
-          SET nome = ?, email = ?, telefono = ?, status = 'ATTIVO'
+          SET nome = ?, nome_assistito = ?, cognome_assistito = ?,
+              nome_caregiver = ?, cognome_caregiver = ?, parentela_caregiver = ?,
+              email = ?, telefono = ?, status = 'ATTIVO'
           WHERE imei = ?
         `).bind(
           `${assistito.nome} ${assistito.cognome}`,
+          assistito.nome,
+          assistito.cognome,
+          assistito.careGiver ? assistito.careGiver.split(' ')[0] : null,
+          assistito.careGiver ? assistito.careGiver.split(' ').slice(1).join(' ') : null,
+          assistito.parentela || null,
           assistito.email,
           assistito.telefono,
           assistito.imei
@@ -7041,11 +7091,18 @@ app.post('/api/init-assistiti', async (c) => {
         // Inserisci nuovo
         await c.env.DB.prepare(`
           INSERT INTO assistiti (
-            codice, nome, email, telefono, imei, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?)
+            codice, nome, nome_assistito, cognome_assistito, 
+            nome_caregiver, cognome_caregiver, parentela_caregiver,
+            email, telefono, imei, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?)
         `).bind(
           codiceAssistito,
-          `${assistito.nome} ${assistito.cognome}`,
+          `${assistito.nome} ${assistito.cognome}`, // Mantieni per compatibilità
+          assistito.nome,
+          assistito.cognome,
+          assistito.careGiver ? assistito.careGiver.split(' ')[0] : null,
+          assistito.careGiver ? assistito.careGiver.split(' ').slice(1).join(' ') : null,
+          assistito.parentela || null,
           assistito.email,
           assistito.telefono,
           assistito.imei,
@@ -7257,6 +7314,11 @@ app.get('/api/assistiti', async (c) => {
         a.id,
         a.codice,
         a.nome,
+        a.nome_assistito,
+        a.cognome_assistito,
+        a.nome_caregiver,
+        a.cognome_caregiver,
+        a.parentela_caregiver,
         a.email,
         a.telefono,
         a.imei,

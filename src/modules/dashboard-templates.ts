@@ -1314,8 +1314,14 @@ export const dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
                         </td>
                         <td class="py-3 text-xs text-center">
-                            <button onclick="alert('Dettaglio assistito: ' + '\${nomeCompleto}')" class="text-blue-600 hover:text-blue-800" title="Visualizza">
+                            <button onclick="viewAssistito(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mr-2" title="Visualizza">
                                 <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editAssistito(\${assistito.id})" class="text-yellow-600 hover:text-yellow-800 mr-2" title="Modifica">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteAssistito(\${assistito.id}, '\${nomeCompleto}')" class="text-red-600 hover:text-red-800" title="Elimina">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
