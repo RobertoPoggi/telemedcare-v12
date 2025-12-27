@@ -854,11 +854,17 @@ export const dashboard = `<!DOCTYPE html>
 
         <!-- Elenco Assistiti -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-users text-green-500 mr-2"></i>
-                Assistiti Attivi
-                <span id="assistitiCount" class="ml-3 text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">0</span>
-            </h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-users text-green-500 mr-2"></i>
+                    Assistiti Attivi
+                    <span id="assistitiCount" class="ml-3 text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">0</span>
+                </h3>
+                <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Nuovo Assistito
+                </button>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
@@ -3052,6 +3058,57 @@ export const data_dashboard = `<!DOCTYPE html>
                 
                 if (result.success) {
                     alert(\`✅ Assistito \${nome} eliminato con successo!\`);
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        
+        async function nuovoAssistito() {
+            try {
+                // Richiedi dati nuovo assistito
+                const nomeAssistito = prompt('Nome Assistito:');
+                if (!nomeAssistito) return;
+                
+                const cognomeAssistito = prompt('Cognome Assistito:');
+                if (!cognomeAssistito) return;
+                
+                const email = prompt('Email (opzionale):') || '';
+                const telefono = prompt('Telefono (opzionale):') || '';
+                const imei = prompt('IMEI Dispositivo (richiesto):');
+                if (!imei) {
+                    alert('⚠️ IMEI è obbligatorio!');
+                    return;
+                }
+                
+                const caregiverNome = prompt('Nome Caregiver (opzionale):') || '';
+                const caregiverCognome = prompt('Cognome Caregiver (opzionale):') || '';
+                const parentela = prompt('Parentela Caregiver (opzionale, es: figlia, figlio):') || '';
+                
+                // Crea assistito
+                const response = await fetch('/api/assistiti', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome_assistito: nomeAssistito,
+                        cognome_assistito: cognomeAssistito,
+                        nome_caregiver: caregiverNome,
+                        cognome_caregiver: caregiverCognome,
+                        parentela_caregiver: parentela,
+                        email,
+                        telefono,
+                        imei,
+                        status: 'ATTIVO'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Assistito \${nomeAssistito} \${cognomeAssistito} creato con successo!\`);
                     loadDashboardData(); // Ricarica dashboard
                 } else {
                     alert(\`❌ Errore: \${result.error}\`);
