@@ -995,8 +995,8 @@ export const dashboard = `<!DOCTYPE html>
             
             isLoading = true;
             try {
-                // Carica TUTTI i lead per statistiche accurate (aumentato a 300)
-                const allLeadsResponse = await fetch('/api/leads?limit=300');
+                // Carica TUTTI i lead (limite massimo 999999)
+                const allLeadsResponse = await fetch('/api/leads?limit=999999');
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
