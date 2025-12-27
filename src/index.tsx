@@ -6666,6 +6666,15 @@ app.post('/api/import/excel', async (c) => {
 })
 
 // POST /api/init-assistiti - Popola database con assistiti reali
+// Endpoint diagnostico per verificare deploy
+app.get('/api/check-version', async (c) => {
+  return c.json({
+    version: 'v2.0-leadId-fix',
+    timestamp: new Date().toISOString(),
+    message: 'Endpoint aggiornato con fix leadId NOT NULL'
+  })
+})
+
 app.post('/api/init-assistiti', async (c) => {
   try {
     if (!c.env?.DB) {
