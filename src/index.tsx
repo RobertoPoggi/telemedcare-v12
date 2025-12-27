@@ -6292,8 +6292,8 @@ app.post('/api/leads', async (c) => {
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
         nomeAssistito, cognomeAssistito, tipoServizio, 
         vuoleBrochure, vuoleContratto, vuoleManuale,
-        note, canale, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        note, fonte, status, created_at, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -6306,8 +6306,7 @@ app.post('/api/leads', async (c) => {
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      data.note || 'Lead inserito manualmente via dashboard',
-      data.canale || 'Dashboard Manuale',
+      `${data.note || 'Lead inserito manualmente via dashboard'} | Canale: ${data.canale || 'Dashboard Manuale'}`,
       data.fonte || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
@@ -6690,7 +6689,10 @@ app.post('/api/fix-lead-associations', async (c) => {
         assistito: { nome: 'Giuseppina', cognome: 'Cozzi', imei: '868298061207735' },
         lead: { id: 'LEAD-EXCEL-071', nome: 'Elisabetta', cognome: 'Cattini', ruolo: 'caregiver' }
       },
-      // Laura Calvi - lead Daniela Rocca non trovato, skippo per ora
+      {
+        assistito: { nome: 'Laura', cognome: 'Calvi', imei: '864866055431174' },
+        lead: { id: 'LEAD-EXCEL-065', nome: 'Laura', cognome: 'Calvi', ruolo: 'assistita (lead stesso)' }
+      }
     ]
 
     let contractsUpdated = 0
@@ -7279,6 +7281,164 @@ app.get('/api/assistiti', async (c) => {
     return c.json({
       success: false,
       error: 'Errore recupero assistiti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/assistiti - Crea nuovo assistito
+app.post('/api/assistiti', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const data = await c.req.json()
+
+    // Validazione campi obbligatori
+    if (!data.nome || !data.cognome) {
+      return c.json({ 
+        success: false, 
+        error: 'Campi obbligatori mancanti: nome, cognome' 
+      }, 400)
+    }
+
+    const codice = `ASS-${data.cognome.toUpperCase()}-${Date.now()}`
+    const timestamp = new Date().toISOString()
+
+    await c.env.DB.prepare(`
+      INSERT INTO assistiti (
+        codice, nome, email, telefono, imei, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?)
+    `).bind(
+      codice,
+      `${data.nome} ${data.cognome}`,
+      data.email || '',
+      data.telefono || '',
+      data.imei || '',
+      timestamp
+    ).run()
+
+    console.log('✅ Assistito creato:', codice)
+
+    return c.json({ 
+      success: true, 
+      message: 'Assistito creato con successo',
+      codice,
+      assistito: {
+        codice,
+        nome: `${data.nome} ${data.cognome}`,
+        email: data.email,
+        telefono: data.telefono,
+        imei: data.imei
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore creazione assistito:', error)
+    return c.json({
+      success: false,
+      error: 'Errore creazione assistito',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// PUT /api/assistiti/:id - Aggiorna assistito
+app.put('/api/assistiti/:id', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const id = c.req.param('id')
+    const data = await c.req.json()
+
+    // Verifica esistenza
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM assistiti WHERE id = ?'
+    ).bind(id).first()
+
+    if (!existing) {
+      return c.json({ success: false, error: 'Assistito non trovato' }, 404)
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET nome = ?, email = ?, telefono = ?, imei = ?
+      WHERE id = ?
+    `).bind(
+      data.nome,
+      data.email || '',
+      data.telefono || '',
+      data.imei || '',
+      id
+    ).run()
+
+    console.log('✅ Assistito aggiornato:', id)
+
+    return c.json({ 
+      success: true, 
+      message: 'Assistito aggiornato con successo'
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento assistito:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiornamento assistito',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// DELETE /api/assistiti/:id - Elimina assistito
+app.delete('/api/assistiti/:id', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const id = c.req.param('id')
+
+    // Verifica esistenza
+    const existing = await c.env.DB.prepare(
+      'SELECT id, nome FROM assistiti WHERE id = ?'
+    ).bind(id).first()
+
+    if (!existing) {
+      return c.json({ success: false, error: 'Assistito non trovato' }, 404)
+    }
+
+    // Verifica contratti associati
+    const contracts = await c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM contracts WHERE imei_dispositivo = (SELECT imei FROM assistiti WHERE id = ?)'
+    ).bind(id).first()
+
+    if (contracts && contracts.count > 0) {
+      return c.json({ 
+        success: false, 
+        error: 'Impossibile eliminare: assistito ha contratti associati',
+        hasContracts: true 
+      }, 400)
+    }
+
+    // Soft delete (cambia status)
+    await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET status = 'ELIMINATO'
+      WHERE id = ?
+    `).bind(id).run()
+
+    console.log('✅ Assistito eliminato (soft):', id)
+
+    return c.json({ 
+      success: true, 
+      message: 'Assistito eliminato con successo'
+    })
+  } catch (error) {
+    console.error('❌ Errore eliminazione assistito:', error)
+    return c.json({
+      success: false,
+      error: 'Errore eliminazione assistito',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }

@@ -2039,17 +2039,17 @@ export const leads_dashboard = `<!DOCTYPE html>
         
         async function saveNewLead() {
             const formData = {
-                nome: document.getElementById('newNome').value,
-                cognome: document.getElementById('newCognome').value,
+                nomeRichiedente: document.getElementById('newNome').value,
+                cognomeRichiedente: document.getElementById('newCognome').value,
                 email: document.getElementById('newEmail').value,
                 telefono: document.getElementById('newTelefono').value,
-                servizio: 'eCura PRO',
-                canaleAcquisizione: document.getElementById('newCanale').value,
+                tipoServizio: document.getElementById('newServizio').value,
+                canale: document.getElementById('newCanale').value,
                 note: 'Piano: ' + document.getElementById('newPiano').value + '\\n' + document.getElementById('newNote').value
             };
             
             // Validation
-            if (!formData.nome || !formData.cognome || !formData.email || !formData.telefono) {
+            if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
                 alert('⚠️ Compila tutti i campi obbligatori');
                 return;
             }
@@ -2064,13 +2064,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(\`✅ Lead creato con successo!\\n\\nID: \${result.lead.id}\`);
+                    alert(\`✅ Lead creato con successo!\\n\\nID: \${result.id}\`);
                     closeModal('newLeadModal');
-                    loadLeads();
+                    document.getElementById('newLeadForm').reset();
+                    loadDashboardData();
                 } else {
-                    alert(\`❌ Errore: \${result.error}\`);
+                    alert(\`❌ Errore: \${result.error || 'Errore sconosciuto'}\`);
                 }
             } catch (error) {
+                console.error('❌ Errore creazione lead:', error);
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
@@ -2101,6 +2103,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Telefono *</label>
                             <input type="tel" id="newTelefono" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Servizio *</label>
+                            <select id="newServizio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Seleziona servizio...</option>
+                                <option value="eCura PRO" selected>eCura PRO</option>
+                                <option value="eCura BASE">eCura BASE</option>
+                                <option value="eCura PREMIUM">eCura PREMIUM</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Canale Acquisizione *</label>
