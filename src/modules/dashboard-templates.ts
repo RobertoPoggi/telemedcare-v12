@@ -417,70 +417,70 @@ export const home = `<!DOCTYPE html>
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <!-- Contratti e Proforma -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-amber-500 to-amber-600 p-6 text-center">
-                    <i class="fas fa-file-contract text-5xl text-white mb-3"></i>
-                    <h3 class="text-lg font-bold text-white">Contratti & Proforma</h3>
-                </div>
-                <div class="p-4">
-                    <p class="text-sm text-gray-600 mb-4 text-center">Archivio contratti personalizzati e proforma</p>
-                    <a href="/admin/contracts" class="block w-full bg-amber-500 hover:bg-amber-600 text-white text-center py-2 rounded-lg transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-4xl text-amber-500 mb-3">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Contratti & Proforma</h3>
+                    <p class="text-gray-600 text-sm mb-4">Archivio contratti personalizzati e proforma</p>
+                    <a href="/admin/contracts" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-folder-open mr-1"></i>Gestisci
                     </a>
                 </div>
             </div>
 
             <!-- Contratti Firmati -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-center">
-                    <i class="fas fa-file-signature text-5xl text-white mb-3"></i>
-                    <h3 class="text-lg font-bold text-white">Contratti Firmati</h3>
-                </div>
-                <div class="p-4">
-                    <p class="text-sm text-gray-600 mb-4 text-center">Archivio contratti definitivi firmati</p>
-                    <a href="/admin/signed-contracts" class="block w-full bg-emerald-500 hover:bg-emerald-600 text-white text-center py-2 rounded-lg transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-4xl text-emerald-500 mb-3">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Contratti Firmati</h3>
+                    <p class="text-gray-600 text-sm mb-4">Archivio contratti definitivi firmati</p>
+                    <a href="/admin/signed-contracts" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-certificate mr-1"></i>Visualizza
                     </a>
                 </div>
             </div>
 
             <!-- Documentazione -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 text-center">
-                    <i class="fas fa-book text-5xl text-white mb-3"></i>
-                    <h3 class="text-lg font-bold text-white">Documentazione</h3>
-                </div>
-                <div class="p-4">
-                    <p class="text-sm text-gray-600 mb-4 text-center">Lettura e modifica documentazione sistema</p>
-                    <a href="/admin/docs" class="block w-full bg-indigo-500 hover:bg-indigo-600 text-white text-center py-2 rounded-lg transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-4xl text-indigo-500 mb-3">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Documentazione</h3>
+                    <p class="text-gray-600 text-sm mb-4">Lettura e modifica documentazione sistema</p>
+                    <a href="/admin/docs" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-edit mr-1"></i>Modifica
                     </a>
                 </div>
             </div>
 
             <!-- Template Manager -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-pink-500 to-pink-600 p-6 text-center">
-                    <i class="fas fa-layer-group text-5xl text-white mb-3"></i>
-                    <h3 class="text-lg font-bold text-white">Template Manager</h3>
-                </div>
-                <div class="p-4">
-                    <p class="text-sm text-gray-600 mb-4 text-center">Gestione template email e documenti</p>
-                    <a href="/template-system" class="block w-full bg-pink-500 hover:bg-pink-600 text-white text-center py-2 rounded-lg transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-4xl text-pink-500 mb-3">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Template Manager</h3>
+                    <p class="text-gray-600 text-sm mb-4">Gestione template email e documenti</p>
+                    <a href="/template-system" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-palette mr-1"></i>Gestisci
                     </a>
                 </div>
             </div>
 
             <!-- Magazzino DM -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-teal-500 to-teal-600 p-6 text-center">
-                    <i class="fas fa-warehouse text-5xl text-white mb-3"></i>
-                    <h3 class="text-lg font-bold text-white">Magazzino DM</h3>
-                </div>
-                <div class="p-4">
-                    <p class="text-sm text-gray-600 mb-4 text-center">Gestione completa dispositivi medici e inventario</p>
-                    <a href="/admin/warehouse" class="block w-full bg-teal-500 hover:bg-teal-600 text-white text-center py-2 rounded-lg transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-4xl text-teal-500 mb-3">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Magazzino DM</h3>
+                    <p class="text-gray-600 text-sm mb-4">Gestione completa dispositivi medici e inventario</p>
+                    <a href="/admin/warehouse" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-boxes mr-1"></i>Gestisci
                     </a>
                 </div>
@@ -496,42 +496,42 @@ export const home = `<!DOCTYPE html>
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Testing Dashboard -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-red-500 to-red-600 p-8 text-center">
-                    <i class="fas fa-bug text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">Testing Dashboard</h3>
-                    <p class="text-red-100 text-sm">Test funzionali e stress test automatizzati</p>
-                </div>
-                <div class="p-6">
-                    <a href="/admin/testing-dashboard" class="block w-full bg-red-500 hover:bg-red-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-red-500 mb-4">
+                        <i class="fas fa-bug"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Testing Dashboard</h3>
+                    <p class="text-gray-600 mb-4">Test funzionali e stress test automatizzati</p>
+                    <a href="/admin/testing-dashboard" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-play mr-2"></i>Avvia Test
                     </a>
                 </div>
             </div>
 
             <!-- Email Testing -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-8 text-center">
-                    <i class="fas fa-envelope text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">Email Testing</h3>
-                    <p class="text-orange-100 text-sm">Test template email e invio messaggi</p>
-                </div>
-                <div class="p-6">
-                    <a href="/email-test" class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-orange-500 mb-4">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Email Testing</h3>
+                    <p class="text-gray-600 mb-4">Test template email e invio messaggi</p>
+                    <a href="/email-test" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-paper-plane mr-2"></i>Test Email
                     </a>
                 </div>
             </div>
 
             <!-- Contract Testing -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-teal-500 to-teal-600 p-8 text-center">
-                    <i class="fas fa-file-pdf text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">Contract Testing</h3>
-                    <p class="text-teal-100 text-sm">Test generazione contratti PDF</p>
-                </div>
-                <div class="p-6">
-                    <a href="/contract-test" class="block w-full bg-teal-500 hover:bg-teal-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-teal-500 mb-4">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Contract Testing</h3>
+                    <p class="text-gray-600 mb-4">Test generazione contratti PDF</p>
+                    <a href="/contract-test" class="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-file-alt mr-2"></i>Test PDF
                     </a>
                 </div>
@@ -547,42 +547,42 @@ export const home = `<!DOCTYPE html>
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Device Management -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-cyan-500 to-cyan-600 p-8 text-center">
-                    <i class="fas fa-mobile-alt text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">Gestione Dispositivi</h3>
-                    <p class="text-cyan-100 text-sm">Registrazione e monitoring dispositivi SiDLY</p>
-                </div>
-                <div class="p-6">
-                    <a href="/admin/devices" class="block w-full bg-cyan-500 hover:bg-cyan-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-cyan-500 mb-4">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Gestione Dispositivi</h3>
+                    <p class="text-gray-600 mb-4">Registrazione e monitoring dispositivi SiDLY</p>
+                    <a href="/admin/devices" class="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-cogs mr-2"></i>Gestisci
                     </a>
                 </div>
             </div>
 
             <!-- System Status -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-gray-500 to-gray-600 p-8 text-center">
-                    <i class="fas fa-server text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">System Status</h3>
-                    <p class="text-gray-100 text-sm">Monitoraggio stato sistema e API</p>
-                </div>
-                <div class="p-6">
-                    <a href="/admin/system-status" class="block w-full bg-gray-500 hover:bg-gray-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-gray-500 mb-4">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">System Status</h3>
+                    <p class="text-gray-600 mb-4">Monitoraggio stato sistema e API</p>
+                    <a href="/admin/system-status" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-heartbeat mr-2"></i>System Status
                     </a>
                 </div>
             </div>
 
             <!-- Sistema Backup -->
-            <div class="bg-white rounded-xl shadow-md card-hover overflow-hidden">
-                <div class="bg-gradient-to-br from-green-500 to-green-600 p-8 text-center">
-                    <i class="fas fa-cloud-download-alt text-6xl text-white mb-4"></i>
-                    <h3 class="text-2xl font-bold text-white mb-2">Sistema Backup</h3>
-                    <p class="text-green-100 text-sm">Backup automatico TEST/STAGING/PRODUZIONE</p>
-                </div>
-                <div class="p-6">
-                    <a href="/admin/backup-system" class="block w-full bg-green-500 hover:bg-green-600 text-white text-center py-3 rounded-lg font-semibold transition-colors">
+            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+                <div class="text-center">
+                    <div class="text-5xl text-green-500 mb-4">
+                        <i class="fas fa-cloud-download-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Sistema Backup</h3>
+                    <p class="text-gray-600 mb-4">Backup automatico TEST/STAGING/PRODUZIONE</p>
+                    <a href="/admin/backup-system" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-save mr-2"></i>Gestisci
                     </a>
                 </div>
