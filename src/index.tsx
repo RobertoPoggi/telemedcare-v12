@@ -6667,6 +6667,132 @@ app.post('/api/import/excel', async (c) => {
 
 // POST /api/init-assistiti - Popola database con assistiti reali
 
+// POST /api/fix-lead-associations - Corregge associazioni lead reali
+app.post('/api/fix-lead-associations', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Correzione associazioni lead-contratti-assistiti...')
+
+    // Mappatura corretta: assistito -> lead reale
+    const realAssociations = [
+      {
+        assistito: { nome: 'Maria', cognome: 'Capone', imei: '868298061173234' },
+        lead: { id: 'LEAD-EXCEL-059', nome: 'Giorgio', cognome: 'Riela', ruolo: 'caregiver/figlio' }
+      },
+      {
+        assistito: { nome: 'Giuliana', cognome: 'Balzarotti', imei: '868298061206968' },
+        lead: { id: 'LEAD-EXCEL-060', nome: 'Paolo', cognome: 'Magrì', ruolo: 'caregiver/figlio' }
+      },
+      {
+        assistito: { nome: 'Giuseppina', cognome: 'Cozzi', imei: '868298061207735' },
+        lead: { id: 'LEAD-EXCEL-071', nome: 'Elisabetta', cognome: 'Cattini', ruolo: 'caregiver' }
+      },
+      // Laura Calvi - lead Daniela Rocca non trovato, skippo per ora
+    ]
+
+    let contractsUpdated = 0
+    let leadsUpdated = 0
+    let contractsCreated = 0
+
+    for (const assoc of realAssociations) {
+      // Trova il lead reale
+      const lead = await c.env.DB.prepare(
+        'SELECT id FROM leads WHERE id = ? OR (nomeRichiedente = ? AND cognomeRichiedente = ?)'
+      ).bind(
+        assoc.lead.id,
+        assoc.lead.nome,
+        assoc.lead.cognome
+      ).first()
+
+      if (!lead) {
+        console.warn(`⚠️ Lead non trovato: ${assoc.lead.nome} ${assoc.lead.cognome} (${assoc.lead.id})`)
+        continue
+      }
+
+      console.log(`✅ Lead trovato: ${lead.id} per ${assoc.assistito.nome} ${assoc.assistito.cognome}`)
+
+      // Aggiorna lead con info assistito se mancanti
+      await c.env.DB.prepare(`
+        UPDATE leads 
+        SET nomeAssistito = ?, cognomeAssistito = ?, 
+            note = COALESCE(note, '') || ' | Assistito: ' || ? || ' ' || ? || ' (IMEI: ' || ? || ')'
+        WHERE id = ? AND (nomeAssistito IS NULL OR nomeAssistito = '')
+      `).bind(
+        assoc.assistito.nome,
+        assoc.assistito.cognome,
+        assoc.assistito.nome,
+        assoc.assistito.cognome,
+        assoc.assistito.imei,
+        lead.id
+      ).run()
+      leadsUpdated++
+
+      // Trova o crea contratto per questo assistito
+      const existingContract = await c.env.DB.prepare(
+        'SELECT id, leadId FROM contracts WHERE imei_dispositivo = ?'
+      ).bind(assoc.assistito.imei).first()
+
+      if (existingContract) {
+        // Aggiorna leadId del contratto esistente
+        await c.env.DB.prepare(`
+          UPDATE contracts 
+          SET leadId = ?
+          WHERE id = ?
+        `).bind(lead.id, existingContract.id).run()
+        contractsUpdated++
+        console.log(`✅ Contratto aggiornato: ${existingContract.id} → leadId: ${lead.id}`)
+      } else if (assoc.assistito.cognome !== 'Calvi') {
+        // Crea contratto se mancante (esclusa Laura Calvi)
+        const contractId = `CONTRACT-${assoc.assistito.cognome.toUpperCase()}-${Date.now()}`
+        const codiceContratto = `CTR-${assoc.assistito.cognome.toUpperCase()}-2025`
+        const piano = assoc.assistito.cognome === 'King' ? 'AVANZATO' : 'BASE'
+        const prezzoTotale = piano === 'AVANZATO' ? 840 : 480
+        const prezzoMensile = piano === 'AVANZATO' ? 69 : 39
+
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, tipo_contratto, status, 
+            prezzo_totale, prezzo_mensile, durata_mesi, imei_dispositivo, 
+            created_at, template_utilizzato, contenuto_html
+          ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, 12, ?, ?, 'BASE', '')
+        `).bind(
+          contractId,
+          lead.id,
+          codiceContratto,
+          piano,
+          prezzoTotale,
+          prezzoMensile,
+          assoc.assistito.imei,
+          new Date().toISOString()
+        ).run()
+        contractsCreated++
+        console.log(`✅ Contratto creato: ${codiceContratto} per ${assoc.assistito.nome} ${assoc.assistito.cognome}`)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Associazioni corrette con lead reali',
+      stats: {
+        leadsAggiornati: leadsUpdated,
+        contrattiAggiornati: contractsUpdated,
+        contrattiCreati: contractsCreated,
+        totaleAssociazioni: realAssociations.length
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore correzione associazioni:', error)
+    return c.json({
+      success: false,
+      error: 'Errore correzione associazioni',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Endpoint diagnostico - Schema DB leads
 app.get('/api/db/schema/leads', async (c) => {
   try {
