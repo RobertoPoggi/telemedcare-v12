@@ -6664,6 +6664,30 @@ app.post('/api/import/excel', async (c) => {
 })
 
 // POST /api/init-assistiti - Popola database con assistiti reali
+
+// Endpoint diagnostico - Schema DB leads
+app.get('/api/db/schema/leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ error: 'DB non configurato' }, 500)
+    }
+    
+    // Get table info
+    const result = await c.env.DB.prepare('PRAGMA table_info(leads)').all()
+    
+    return c.json({
+      success: true,
+      columns: result.results,
+      count: result.results.length
+    })
+  } catch (error) {
+    return c.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error) 
+    }, 500)
+  }
+})
+
 // Endpoint diagnostico per verificare deploy
 app.get('/api/check-version', async (c) => {
   return c.json({
