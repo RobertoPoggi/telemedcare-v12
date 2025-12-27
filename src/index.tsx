@@ -6872,39 +6872,29 @@ app.post('/api/init-assistiti', async (c) => {
         console.log(`✅ Inserito assistito: ${assistito.nome} ${assistito.cognome} (IMEI: ${assistito.imei})`)
       }
 
-      // Step 5: Crea lead se necessario per il contratto
+      // Step 5: Trova il lead esistente per questo assistito
       let leadId = null
       if (assistito.contratto) {
-        // Verifica se esiste già un lead per questo assistito (by email o nome+cognome)
-        const existingLead = await c.env.DB.prepare(
-          'SELECT id FROM leads WHERE email = ? OR (nomeAssistito = ? AND cognomeAssistito = ?)'
-        ).bind(assistito.email || '', assistito.nome, assistito.cognome).first()
+        // Cerca lead per nome assistito o care giver (richiedente)
+        const existingLead = await c.env.DB.prepare(`
+          SELECT id FROM leads 
+          WHERE (nomeAssistito = ? AND cognomeAssistito = ?)
+             OR nomeRichiedente LIKE ?
+             OR email = ?
+          LIMIT 1
+        `).bind(
+          assistito.nome, 
+          assistito.cognome,
+          `%${assistito.careGiver.split(' ')[0]}%`,
+          assistito.email || ''
+        ).first()
 
         if (existingLead) {
           leadId = existingLead.id
-          console.log(`ℹ️ Lead esistente trovato: ${leadId}`)
+          console.log(`✅ Lead esistente trovato: ${leadId} per ${assistito.nome} ${assistito.cognome}`)
         } else {
-          // Crea nuovo lead
-          leadId = `LEAD-${assistito.cognome.toUpperCase()}-${Date.now()}`
-          await c.env.DB.prepare(`
-            INSERT INTO leads (
-              id, nomeRichiedente, cognomeRichiedente, email, telefono,
-              nomeAssistito, cognomeAssistito, tipoServizio, status, 
-              note, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONVERTED', ?, ?)
-          `).bind(
-            leadId,
-            assistito.careGiver,
-            '',
-            assistito.email || `${assistito.cognome.toLowerCase()}@assistito.it`,
-            assistito.telefono,
-            assistito.nome,
-            assistito.cognome,
-            assistito.servizio,
-            `Piano ${assistito.piano} - CareGiver: ${assistito.careGiver} (${assistito.parentela}) - IMEI: ${assistito.imei}`,
-            timestamp
-          ).run()
-          console.log(`✅ Lead creato: ${leadId} per ${assistito.nome} ${assistito.cognome}`)
+          console.warn(`⚠️ Lead NON trovato per ${assistito.nome} ${assistito.cognome} - Contratto NON creato`)
+          continue // Salta la creazione del contratto se non c'è il lead
         }
 
         // Step 6: Crea contratto collegato al lead
