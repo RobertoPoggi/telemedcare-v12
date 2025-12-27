@@ -63,18 +63,8 @@ export const home = `<!DOCTYPE html>
 
     <!-- Hero Stats -->
     <section class="container mx-auto px-6 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-blue-100 text-sm mb-1">Sistema</p>
-                        <p class="text-3xl font-bold" id="systemVersion">V12.0</p>
-                        <p class="text-xs text-blue-100 mt-1">Modular Enterprise</p>
-                    </div>
-                    <i class="fas fa-server text-4xl text-blue-200"></i>
-                </div>
-            </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <!-- Lead Oggi -->
             <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
@@ -86,25 +76,63 @@ export const home = `<!DOCTYPE html>
                 </div>
             </div>
 
+            <!-- Contratti Oggi -->
             <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-purple-100 text-sm mb-1">Contratti</p>
-                        <p class="text-3xl font-bold" id="contractsTotal">-</p>
-                        <p class="text-xs text-purple-100 mt-1">Totali generati</p>
+                        <p class="text-purple-100 text-sm mb-1">Contratti Oggi</p>
+                        <p class="text-3xl font-bold" id="contractsToday">-</p>
+                        <p class="text-xs text-purple-100 mt-1">Ultimi 24h</p>
                     </div>
                     <i class="fas fa-file-contract text-4xl text-purple-200"></i>
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-xl shadow-lg">
+            <!-- Proforma Oggi -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-orange-100 text-sm mb-1">Uptime</p>
-                        <p class="text-3xl font-bold">99.9%</p>
-                        <p class="text-xs text-orange-100 mt-1">Disponibilità</p>
+                        <p class="text-blue-100 text-sm mb-1">Proforma Oggi</p>
+                        <p class="text-3xl font-bold" id="proformaToday">-</p>
+                        <p class="text-xs text-blue-100 mt-1">Ultimi 24h</p>
                     </div>
-                    <i class="fas fa-chart-line text-4xl text-orange-200"></i>
+                    <i class="fas fa-file-invoice text-4xl text-blue-200"></i>
+                </div>
+            </div>
+
+            <!-- Pagamenti Oggi -->
+            <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-yellow-100 text-sm mb-1">Pagamenti Oggi</p>
+                        <p class="text-3xl font-bold" id="paymentsToday">-</p>
+                        <p class="text-xs text-yellow-100 mt-1">Ultimi 24h</p>
+                    </div>
+                    <i class="fas fa-euro-sign text-4xl text-yellow-200"></i>
+                </div>
+            </div>
+
+            <!-- Configurazioni Oggi -->
+            <div class="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-cyan-100 text-sm mb-1">Configurazioni Oggi</p>
+                        <p class="text-3xl font-bold" id="configurationsToday">-</p>
+                        <p class="text-xs text-cyan-100 mt-1">Ultimi 24h</p>
+                    </div>
+                    <i class="fas fa-cog text-4xl text-cyan-200"></i>
+                </div>
+            </div>
+
+            <!-- Attivazioni Oggi -->
+            <div class="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-pink-100 text-sm mb-1">Attivazioni Oggi</p>
+                        <p class="text-3xl font-bold" id="activationsToday">-</p>
+                        <p class="text-xs text-pink-100 mt-1">Ultimi 24h</p>
+                    </div>
+                    <i class="fas fa-power-off text-4xl text-pink-200"></i>
                 </div>
             </div>
         </div>
@@ -641,16 +669,47 @@ export const home = `<!DOCTYPE html>
                 const response = await fetch('/api/data/stats');
                 const stats = await response.json();
                 
+                // Lead Oggi
                 if (stats.leadsToday !== undefined) {
                     document.getElementById('leadsToday').textContent = stats.leadsToday;
                 }
-                if (stats.totalContracts !== undefined) {
-                    document.getElementById('contractsTotal').textContent = stats.totalContracts;
+                
+                // Contratti Oggi
+                if (stats.contractsToday !== undefined) {
+                    document.getElementById('contractsToday').textContent = stats.contractsToday;
+                } else if (stats.totalContracts !== undefined) {
+                    // Fallback per compatibilità
+                    document.getElementById('contractsToday').textContent = stats.totalContracts;
+                }
+                
+                // Proforma Oggi
+                if (stats.proformaToday !== undefined) {
+                    document.getElementById('proformaToday').textContent = stats.proformaToday;
+                }
+                
+                // Pagamenti Oggi
+                if (stats.paymentsToday !== undefined) {
+                    document.getElementById('paymentsToday').textContent = stats.paymentsToday;
+                }
+                
+                // Configurazioni Oggi
+                if (stats.configurationsToday !== undefined) {
+                    document.getElementById('configurationsToday').textContent = stats.configurationsToday;
+                }
+                
+                // Attivazioni Oggi
+                if (stats.activationsToday !== undefined) {
+                    document.getElementById('activationsToday').textContent = stats.activationsToday;
                 }
             } catch (error) {
                 console.log('Stats not yet available');
+                // Set tutti a 0 in caso di errore
                 document.getElementById('leadsToday').textContent = '0';
-                document.getElementById('contractsTotal').textContent = '0';
+                document.getElementById('contractsToday').textContent = '0';
+                document.getElementById('proformaToday').textContent = '0';
+                document.getElementById('paymentsToday').textContent = '0';
+                document.getElementById('configurationsToday').textContent = '0';
+                document.getElementById('activationsToday').textContent = '0';
             }
         }
 
