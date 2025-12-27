@@ -6863,14 +6863,48 @@ app.post('/api/init-assistiti', async (c) => {
         console.log(`✅ Inserito assistito: ${assistito.nome} ${assistito.cognome} (IMEI: ${assistito.imei})`)
       }
 
-      // Step 5: Crea contratto se necessario
+      // Step 5: Crea lead se necessario per il contratto
+      let leadId = null
       if (assistito.contratto) {
+        // Verifica se esiste già un lead per questo assistito (by email o nome+cognome)
+        const existingLead = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE email = ? OR (nomeAssistito = ? AND cognomeAssistito = ?)'
+        ).bind(assistito.email || '', assistito.nome, assistito.cognome).first()
+
+        if (existingLead) {
+          leadId = existingLead.id
+          console.log(`ℹ️ Lead esistente trovato: ${leadId}`)
+        } else {
+          // Crea nuovo lead
+          leadId = `LEAD-${assistito.cognome.toUpperCase()}-${Date.now()}`
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, tipoServizio, status, 
+              note, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONVERTED', ?, ?)
+          `).bind(
+            leadId,
+            assistito.careGiver,
+            '',
+            assistito.email || `${assistito.cognome.toLowerCase()}@assistito.it`,
+            assistito.telefono,
+            assistito.nome,
+            assistito.cognome,
+            assistito.servizio,
+            `Piano ${assistito.piano} - CareGiver: ${assistito.careGiver} (${assistito.parentela}) - IMEI: ${assistito.imei}`,
+            timestamp
+          ).run()
+          console.log(`✅ Lead creato: ${leadId} per ${assistito.nome} ${assistito.cognome}`)
+        }
+
+        // Step 6: Crea contratto collegato al lead
         const codiceContratto = `CTR-${assistito.cognome.toUpperCase()}-${new Date().getFullYear()}`
         
         // Verifica se contratto esiste
         const existingContract = await c.env.DB.prepare(
-          'SELECT id FROM contracts WHERE imei_dispositivo = ?'
-        ).bind(assistito.imei).first()
+          'SELECT id FROM contracts WHERE imei_dispositivo = ? OR leadId = ?'
+        ).bind(assistito.imei, leadId).first()
 
         if (!existingContract) {
           const contractId = `CONTRACT-${assistito.cognome.toUpperCase()}-${Date.now()}`
@@ -6878,19 +6912,22 @@ app.post('/api/init-assistiti', async (c) => {
 
           await c.env.DB.prepare(`
             INSERT INTO contracts (
-              id, codice_contratto, tipo_contratto, status, 
-              prezzo_totale, imei_dispositivo, created_at
-            ) VALUES (?, ?, ?, 'SIGNED', ?, ?, ?)
+              id, leadId, codice_contratto, tipo_contratto, status, 
+              prezzo_totale, imei_dispositivo, created_at,
+              template_utilizzato, contenuto_html, prezzo_mensile, durata_mesi
+            ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, ?, 'BASE', '', ?, 12)
           `).bind(
             contractId,
+            leadId,
             codiceContratto,
             assistito.piano,
             prezzoTotale,
             assistito.imei,
-            timestamp
+            timestamp,
+            assistito.piano === 'AVANZATO' ? 69 : 39
           ).run()
           contractsCreated++
-          console.log(`✅ Contratto creato: ${codiceContratto} per ${assistito.nome} ${assistito.cognome}`)
+          console.log(`✅ Contratto creato: ${codiceContratto} per ${assistito.nome} ${assistito.cognome} (leadId: ${leadId})`)
         }
       }
     }
