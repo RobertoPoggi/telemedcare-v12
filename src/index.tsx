@@ -6577,11 +6577,11 @@ app.post('/api/init-workflow-leads', async (c) => {
         // Aggiorna esistente
         await c.env.DB.prepare(`
           UPDATE leads 
-          SET status = ?, note = ?, telefonoRichiedente = ?, emailRichiedente = ?
+          SET status = ?, note = ?, telefono = ?, email = ?
           WHERE id = ?
         `).bind(
           lead.status,
-          lead.note,
+          `${lead.servizio} - ${lead.piano} - ${lead.note}`,
           lead.telefono,
           lead.email || 'no-email@assistito.it',
           existing.id
@@ -6592,17 +6592,19 @@ app.post('/api/init-workflow-leads', async (c) => {
         // Inserisci nuovo
         await c.env.DB.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
-            note, status, fonte, timestamp
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'INIT_WORKFLOW', ?)
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            tipoServizio, note, status, fonte, created_at, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'INIT_WORKFLOW', ?, ?)
         `).bind(
           leadId,
           lead.nome,
           lead.cognome,
           lead.email || 'no-email@assistito.it',
           lead.telefono,
-          `${lead.servizio} - ${lead.piano} - ${lead.note}`,
+          lead.servizio,
+          `Piano: ${lead.piano} - ${lead.note}`,
           lead.status,
+          timestamp,
           timestamp
         ).run()
         insertedCount++
