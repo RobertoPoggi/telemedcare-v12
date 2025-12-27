@@ -7022,6 +7022,87 @@ app.post('/api/init-assistiti', async (c) => {
   }
 })
 
+// FORCE ENDPOINT - Bypassa cache Cloudflare
+app.post('/api/init-force', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🚀🚀🚀 FORCE INIT - Creazione lead + contratti...')
+    
+    const assistitiReali = [
+      { nome: 'Eileen Elisabeth', cognome: 'King', imei: '868298061208378', piano: 'AVANZATO', careGiver: 'Elena Saglia', parentela: 'figlia', telefono: '+393475951175', email: '', servizio: 'eCura PRO' },
+      { nome: 'Giuseppina', cognome: 'Cozzi', imei: '868298061207735', piano: 'BASE', careGiver: 'Elisabetta Cattini', parentela: 'operatore', telefono: '+393313809634', email: '', servizio: 'eCura PRO' },
+      { nome: 'Maria', cognome: 'Capone', imei: '868298061173234', piano: 'BASE', careGiver: 'Giorgio Riela', parentela: 'figlio', telefono: '+393478740585', email: 'marycap34@gmail.com', servizio: 'eCura PRO' },
+      { nome: 'Gianni Paolo', cognome: 'Pizzutto', imei: '868298060601011', piano: 'BASE', careGiver: 'Simona Pizzutto', parentela: 'figlia', telefono: '+393398444530', email: '', servizio: 'eCura PRO' },
+      { nome: 'Rita', cognome: 'Pennacchio', imei: '868298061123759', piano: 'BASE', careGiver: 'Caterina D\'Alterio', parentela: 'figlia', telefono: '+393398331711', email: '', servizio: 'eCura PRO' },
+      { nome: 'Giuliana', cognome: 'Balzarotti', imei: '868298061206968', piano: 'BASE', careGiver: 'Paolo Magrì', parentela: 'figlio', telefono: '+393312826048', email: '', servizio: 'eCura PRO' }
+    ]
+
+    let leadsCreated = 0
+    let contractsCreated = 0
+
+    for (const a of assistitiReali) {
+      const timestamp = new Date().toISOString()
+      
+      // Cerca lead esistente
+      let leadId = null
+      const existingLead = await c.env.DB.prepare(
+        'SELECT id FROM leads WHERE email = ? OR (nomeAssistito = ? AND cognomeAssistito = ?)'
+      ).bind(a.email || '', a.nome, a.cognome).first()
+
+      if (existingLead) {
+        leadId = existingLead.id
+      } else {
+        leadId = `LEAD-${a.cognome.toUpperCase()}-${Date.now()}`
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            nomeAssistito, cognomeAssistito, tipoServizio, status, note, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONVERTED', ?, ?)
+        `).bind(
+          leadId, a.careGiver, '', a.email || `${a.cognome.toLowerCase()}@assistito.it`,
+          a.telefono, a.nome, a.cognome, a.servizio,
+          `Piano ${a.piano} - IMEI: ${a.imei}`, timestamp
+        ).run()
+        leadsCreated++
+      }
+
+      // Contratto
+      const codiceContratto = `CTR-${a.cognome.toUpperCase()}-2025`
+      const existingContract = await c.env.DB.prepare(
+        'SELECT id FROM contracts WHERE imei_dispositivo = ? OR leadId = ? OR codice_contratto = ?'
+      ).bind(a.imei, leadId, codiceContratto).first()
+
+      if (!existingContract) {
+        const contractId = `CONTRACT-${a.cognome.toUpperCase()}-${Date.now()}`
+        const prezzo = a.piano === 'AVANZATO' ? 840 : 480
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, tipo_contratto, status, 
+            prezzo_totale, imei_dispositivo, created_at,
+            template_utilizzato, contenuto_html, prezzo_mensile, durata_mesi
+          ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, ?, 'BASE', '', ?, 12)
+        `).bind(
+          contractId, leadId, codiceContratto, a.piano, prezzo, a.imei, timestamp,
+          a.piano === 'AVANZATO' ? 69 : 39
+        ).run()
+        contractsCreated++
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'FORCE INIT completato',
+      stats: { leadsCreated, contractsCreated, assistitiTotali: assistitiReali.length }
+    })
+  } catch (error) {
+    console.error('❌ FORCE ERROR:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 // GET /api/assistiti - Lista assistiti con IMEI
 app.get('/api/assistiti', async (c) => {
   try {
