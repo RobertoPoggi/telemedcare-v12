@@ -2702,7 +2702,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 console.error('Errore caricamento workflow:', error);
                 document.getElementById('workflowTable').innerHTML = \`
                     <tr>
-                        <td colspan="7" class="py-8 text-center text-red-500">
+                        <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
                             <p>Errore nel caricamento dei workflow</p>
                         </td>
