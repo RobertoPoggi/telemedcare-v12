@@ -7031,7 +7031,7 @@ app.post('/api/init-force', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
-    console.log('🚀🚀🚀 FORCE INIT - Creazione lead + contratti...')
+    console.log('🚀🚀🚀 FORCE INIT - Creazione lead + contratti + FIX existing...')
     
     const assistitiReali = [
       { nome: 'Eileen Elisabeth', cognome: 'King', imei: '868298061208378', piano: 'AVANZATO', careGiver: 'Elena Saglia', parentela: 'figlia', telefono: '+393475951175', email: '', servizio: 'eCura PRO' },
@@ -7044,9 +7044,11 @@ app.post('/api/init-force', async (c) => {
 
     let leadsCreated = 0
     let contractsCreated = 0
+    let contractsUpdated = 0
 
     for (const a of assistitiReali) {
       const timestamp = new Date().toISOString()
+      const codiceContratto = `CTR-${a.cognome.toUpperCase()}-2025`
       
       // Cerca lead esistente
       let leadId = null
@@ -7071,13 +7073,38 @@ app.post('/api/init-force', async (c) => {
         leadsCreated++
       }
 
-      // Contratto
-      const codiceContratto = `CTR-${a.cognome.toUpperCase()}-2025`
-      const existingContract = await c.env.DB.prepare(
-        'SELECT id FROM contracts WHERE imei_dispositivo = ? OR leadId = ? OR codice_contratto = ?'
-      ).bind(a.imei, leadId, codiceContratto).first()
+      // Cerca contratto esistente per leadId o per nome assistito (via lead)
+      const existingContract = await c.env.DB.prepare(`
+        SELECT c.id, c.leadId FROM contracts c
+        LEFT JOIN leads l ON c.leadId = l.id
+        WHERE c.leadId = ? 
+           OR (c.codice_contratto = ?)
+           OR (l.nomeAssistito = ? AND l.cognomeAssistito = ?)
+        LIMIT 1
+      `).bind(leadId, codiceContratto, a.nome, a.cognome).first()
 
-      if (!existingContract) {
+      if (existingContract) {
+        // UPDATE contratto esistente con IMEI e codice
+        await c.env.DB.prepare(`
+          UPDATE contracts
+          SET imei_dispositivo = ?, 
+              codice_contratto = ?, 
+              tipo_contratto = ?,
+              prezzo_totale = ?,
+              prezzo_mensile = ?
+          WHERE id = ?
+        `).bind(
+          a.imei,
+          codiceContratto,
+          a.piano,
+          a.piano === 'AVANZATO' ? 840 : 480,
+          a.piano === 'AVANZATO' ? 69 : 39,
+          existingContract.id
+        ).run()
+        contractsUpdated++
+        console.log(`✅ Contratto aggiornato: ${codiceContratto} con IMEI ${a.imei}`)
+      } else {
+        // INSERT nuovo contratto
         const contractId = `CONTRACT-${a.cognome.toUpperCase()}-${Date.now()}`
         const prezzo = a.piano === 'AVANZATO' ? 840 : 480
         await c.env.DB.prepare(`
@@ -7091,13 +7118,14 @@ app.post('/api/init-force', async (c) => {
           a.piano === 'AVANZATO' ? 69 : 39
         ).run()
         contractsCreated++
+        console.log(`✅ Contratto creato: ${codiceContratto} per ${a.nome} ${a.cognome}`)
       }
     }
 
     return c.json({
       success: true,
-      message: 'FORCE INIT completato',
-      stats: { leadsCreated, contractsCreated, assistitiTotali: assistitiReali.length }
+      message: 'FORCE INIT completato con UPDATE contratti',
+      stats: { leadsCreated, contractsCreated, contractsUpdated, assistitiTotali: assistitiReali.length }
     })
   } catch (error) {
     console.error('❌ FORCE ERROR:', error)
