@@ -21,6 +21,9 @@ export const home = `<!DOCTYPE html>
             transform: translateY(-8px) scale(1.02); 
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
+        .icon-bounce:hover {
+            animation: bounce 0.5s;
+        }
         .pulse-dot {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
@@ -410,16 +413,16 @@ export const home = `<!DOCTYPE html>
     </section>
 
     <!-- Archivi e Documentazione -->
-    <section class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-6 mb-12">
         <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
             <i class="fas fa-archive mr-2 text-amber-600"></i>
             Archivi e Documentazione
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <!-- Contratti e Proforma -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <!-- Contratti e Proforma Personalizzati -->
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-4xl text-amber-500 mb-3">
+                    <div class="text-4xl text-amber-500 mb-3 icon-bounce">
                         <i class="fas fa-file-contract"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Contratti & Proforma</h3>
@@ -431,9 +434,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Contratti Firmati -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-4xl text-emerald-500 mb-3">
+                    <div class="text-4xl text-emerald-500 mb-3 icon-bounce">
                         <i class="fas fa-file-signature"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Contratti Firmati</h3>
@@ -445,9 +448,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Documentazione -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-4xl text-indigo-500 mb-3">
+                    <div class="text-4xl text-indigo-500 mb-3 icon-bounce">
                         <i class="fas fa-book"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Documentazione</h3>
@@ -459,9 +462,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Template Manager -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-4xl text-pink-500 mb-3">
+                    <div class="text-4xl text-pink-500 mb-3 icon-bounce">
                         <i class="fas fa-layer-group"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Template Manager</h3>
@@ -473,9 +476,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Magazzino DM -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-4xl text-teal-500 mb-3">
+                    <div class="text-4xl text-teal-500 mb-3 icon-bounce">
                         <i class="fas fa-warehouse"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Magazzino DM</h3>
@@ -486,19 +489,19 @@ export const home = `<!DOCTYPE html>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- Testing e Sviluppo -->
-    <section class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-6 mb-12">
         <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
             <i class="fas fa-flask mr-2 text-red-600"></i>
             Testing e Sviluppo
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Testing Dashboard -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-red-500 mb-4">
+                    <div class="text-5xl text-red-500 mb-4 icon-bounce">
                         <i class="fas fa-bug"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Testing Dashboard</h3>
@@ -510,9 +513,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Email Testing -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-orange-500 mb-4">
+                    <div class="text-5xl text-orange-500 mb-4 icon-bounce">
                         <i class="fas fa-envelope"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Email Testing</h3>
@@ -524,9 +527,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Contract Testing -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-teal-500 mb-4">
+                    <div class="text-5xl text-teal-500 mb-4 icon-bounce">
                         <i class="fas fa-file-pdf"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Contract Testing</h3>
@@ -537,19 +540,19 @@ export const home = `<!DOCTYPE html>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Dispositivi e Sistema -->
-    <section class="container mx-auto px-6 py-8">
-        <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
-            <i class="fas fa-microchip mr-2 text-cyan-600"></i>
-            Dispositivi e Sistema
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Sezione Dispositivi e Sistema -->
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">
+                    <i class="fas fa-microchip mr-2 text-cyan-600"></i>
+                    Dispositivi e Sistema
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Device Management -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-cyan-500 mb-4">
+                    <div class="text-5xl text-cyan-500 mb-4 icon-bounce">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Gestione Dispositivi</h3>
@@ -561,9 +564,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- System Status -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-gray-500 mb-4">
+                    <div class="text-5xl text-gray-500 mb-4 icon-bounce">
                         <i class="fas fa-server"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">System Status</h3>
@@ -575,9 +578,9 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Sistema Backup -->
-            <div class="bg-white rounded-xl shadow-md card-hover p-6">
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
                 <div class="text-center">
-                    <div class="text-5xl text-green-500 mb-4">
+                    <div class="text-5xl text-green-500 mb-4 icon-bounce">
                         <i class="fas fa-cloud-download-alt"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Sistema Backup</h3>
@@ -586,25 +589,54 @@ export const home = `<!DOCTYPE html>
                         <i class="fas fa-save mr-2"></i>Gestisci
                     </a>
                 </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-800 text-white py-6 mt-16">
+            <div class="container mx-auto px-6 text-center">
+                <p class="text-lg">
+                    <i class="fas fa-shield-alt mr-2 text-blue-400"></i>
+                    TeleMedCare V12.0 Enterprise - Sistema Completo di TeleAssistenza
+                </p>
+                <p class="text-gray-400 mt-2">
+                    Ambiente: <span class="text-green-400 font-semibold">Development</span> | 
+                    Versione: <span class="text-blue-400 font-semibold">V12.0-Modular-Enterprise</span> |
+                    Status: <span class="text-green-400 font-semibold">🟢 Online</span>
+                </p>
             </div>
         </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 mt-12">
-        <div class="container mx-auto px-6 text-center">
-            <p class="text-gray-400 mb-2">© 2025 Medica GB S.r.l. - Tutti i diritti riservati</p>
-            <p class="text-sm text-gray-500">
-                Corso Giuseppe Garibaldi, 34 – 20121 Milano | 
-                <a href="mailto:info@medicagb.it" class="text-blue-400 hover:text-blue-300">info@medicagb.it</a> | 
-                <a href="https://www.ecura.it" target="_blank" class="text-blue-400 hover:text-blue-300">www.ecura.it</a>
-            </p>
-        </div>
-    </footer>
+        <script>
+            // Effetto hover animato per le cards
+            document.querySelectorAll('.card-hover').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
 
-    <script>
-        // Load stats on page load
-        async function loadStats() {
+            // Controllo status in tempo reale
+            async function checkSystemStatus() {
+                try {
+                    const response = await fetch('/api/system/status');
+                    const status = await response.json();
+                    console.log('System Status:', status);
+                } catch (error) {
+                    console.log('Status check failed:', error);
+                }
+            }
+            
+            // Check status ogni 30 secondi
+            checkSystemStatus();
+            setInterval(checkSystemStatus, 30000);
+            
+            // Load stats on page load (manteniamo per compatibilità)
+            async function loadStats() {
             try {
                 const response = await fetch('/api/data/stats');
                 const stats = await response.json();
