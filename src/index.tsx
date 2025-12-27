@@ -7426,10 +7426,24 @@ app.put('/api/assistiti/:id', async (c) => {
 
     await c.env.DB.prepare(`
       UPDATE assistiti 
-      SET nome = ?, email = ?, telefono = ?, imei = ?
+      SET nome = ?, 
+          nome_assistito = ?, 
+          cognome_assistito = ?,
+          nome_caregiver = ?,
+          cognome_caregiver = ?,
+          parentela_caregiver = ?,
+          email = ?, 
+          telefono = ?, 
+          imei = ?,
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
-      data.nome,
+      `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
+      data.nome_assistito || '',
+      data.cognome_assistito || '',
+      data.nome_caregiver || '',
+      data.cognome_caregiver || '',
+      data.parentela_caregiver || '',
       data.email || '',
       data.telefono || '',
       data.imei || '',
