@@ -6389,6 +6389,85 @@ app.delete('/api/leads/:id', async (c) => {
 // ENDPOINT INIZIALIZZAZIONE ASSISTITI REALI
 // ========================================
 
+// POST /api/db/migrate - Esegue migrazioni database
+app.post('/api/db/migrate', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Esecuzione migrazioni database...')
+
+    // Migrazione 1: Crea tabella assistiti
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS assistiti (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          codice TEXT UNIQUE NOT NULL,
+          nome TEXT NOT NULL,
+          email TEXT,
+          telefono TEXT,
+          imei TEXT UNIQUE,
+          status TEXT DEFAULT 'ATTIVO',
+          lead_id TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run()
+      console.log('✅ Tabella assistiti creata')
+    } catch (error) {
+      console.log('ℹ️ Tabella assistiti già esistente')
+    }
+
+    // Migrazione 2: Aggiungi colonna imei_dispositivo a contracts
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE contracts ADD COLUMN imei_dispositivo TEXT
+      `).run()
+      console.log('✅ Colonna imei_dispositivo aggiunta a contracts')
+    } catch (error) {
+      console.log('ℹ️ Colonna imei_dispositivo già esistente')
+    }
+
+    // Migrazione 3: Aggiungi altre colonne mancanti a contracts
+    const columnsToAdd = [
+      { name: 'codice_contratto', type: 'TEXT' },
+      { name: 'tipo_contratto', type: 'TEXT' },
+      { name: 'status', type: 'TEXT DEFAULT "DRAFT"' },
+      { name: 'prezzo_totale', type: 'INTEGER' },
+      { name: 'created_at', type: 'DATETIME DEFAULT CURRENT_TIMESTAMP' }
+    ]
+
+    for (const col of columnsToAdd) {
+      try {
+        await c.env.DB.prepare(`
+          ALTER TABLE contracts ADD COLUMN ${col.name} ${col.type}
+        `).run()
+        console.log(`✅ Colonna ${col.name} aggiunta a contracts`)
+      } catch (error) {
+        console.log(`ℹ️ Colonna ${col.name} già esistente`)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Migrazioni completate',
+      migrations: [
+        'Tabella assistiti creata',
+        'Colonna imei_dispositivo aggiunta a contracts',
+        'Colonne aggiuntive verificate in contracts'
+      ]
+    })
+  } catch (error) {
+    console.error('❌ Errore migrazioni:', error)
+    return c.json({
+      success: false,
+      error: 'Errore esecuzione migrazioni',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-workflow-leads - Inizializza lead per workflow manager
 app.post('/api/init-workflow-leads', async (c) => {
   try {
