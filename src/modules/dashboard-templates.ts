@@ -580,6 +580,39 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- Elenco Assistiti -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-users text-green-500 mr-2"></i>
+                Assistiti Attivi
+                <span id="assistitiCount" class="ml-3 text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">0</span>
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Assistito</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Età</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Richiedente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Parentela</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Codice Contratto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assistitiTable">
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento assistiti...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Servizi e Dispositivi -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <!-- Distribuzione Servizi -->
@@ -767,6 +800,9 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici con tutti i lead
                 updateServicesChart(allLeads);
                 updatePlansChart(allLeads);
+                
+                // Renderizza assistiti da contratti
+                renderAssistitiTable(contracts, allLeads);
 
                 // Aggiorna timestamp
                 document.getElementById('lastUpdate').textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
@@ -924,6 +960,85 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
             \`;
+        }
+
+        function renderAssistitiTable(contracts, leads) {
+            const tbody = document.getElementById('assistitiTable');
+            
+            // Filtra solo i contratti con assistito (CONVERTED/SIGNED)
+            const assistiti = contracts.filter(c => 
+                c.status === 'SIGNED' || c.status === 'CONVERTED' || c.status === 'SENT'
+            );
+            
+            // Aggiorna contatore
+            document.getElementById('assistitiCount').textContent = assistiti.length;
+            
+            if (assistiti.length === 0) {
+                tbody.innerHTML = \`
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-400">
+                            Nessun assistito attivo trovato
+                        </td>
+                    </tr>
+                \`;
+                return;
+            }
+            
+            tbody.innerHTML = assistiti.map(contract => {
+                // Trova il lead associato per ottenere i dati dell'assistito
+                const lead = leads.find(l => l.id === contract.lead_id);
+                
+                const nomeAssistito = lead?.nomeAssistito || contract.nome_assistito || 'N/A';
+                const cognomeAssistito = lead?.cognomeAssistito || contract.cognome_assistito || '';
+                const eta = lead?.etaAssistito || contract.eta_assistito || 'N/A';
+                const nomeRichiedente = contract.cliente_nome || lead?.nomeRichiedente || 'N/A';
+                const cognomeRichiedente = contract.cliente_cognome || lead?.cognomeRichiedente || '';
+                const parentela = lead?.parentelaAssistito || contract.parentela || 'N/A';
+                const servizio = contract.servizio || lead?.servizio || 'eCura PRO';
+                const piano = (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                const status = contract.status || 'SIGNED';
+                const codice = contract.codice_contratto || contract.id;
+                
+                // Status badge colors
+                const statusColors = {
+                    'SIGNED': 'bg-green-100 text-green-700',
+                    'SENT': 'bg-blue-100 text-blue-700',
+                    'CONVERTED': 'bg-purple-100 text-purple-700',
+                    'ACTIVE': 'bg-green-100 text-green-700'
+                };
+                const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700';
+                
+                return \`
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-sm">
+                            <div class="font-medium">\${nomeAssistito} \${cognomeAssistito}</div>
+                        </td>
+                        <td class="py-3 text-sm text-gray-600">\${eta}</td>
+                        <td class="py-3 text-sm">
+                            <div class="font-medium">\${nomeRichiedente} \${cognomeRichiedente}</div>
+                        </td>
+                        <td class="py-3 text-sm text-gray-600">\${parentela}</td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                \${servizio}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                                \${piano}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 \${statusColor} text-xs rounded font-medium">
+                                \${status}
+                            </span>
+                        </td>
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
+                        </td>
+                    </tr>
+                \`;
+            }).join('');
         }
 
         function updateChannelsChart(leads) {
@@ -2219,6 +2334,9 @@ export const data_dashboard = `<!DOCTYPE html>
                                 <button onclick="viewContract('\${contract.id}')" class="text-blue-600 hover:text-blue-800" title="Visualizza">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                <button onclick="signContract('\${contract.id}')" class="text-purple-600 hover:text-purple-800" title="Firma Contratto">
+                                    <i class="fas fa-signature"></i>
+                                </button>
                                 <button onclick="editContract('\${contract.id}')" class="text-green-600 hover:text-green-800" title="Modifica">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -2285,6 +2403,75 @@ export const data_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
+        
+        // ============================================
+        // FIRMA CONTRATTO
+        // ============================================
+        
+        function signContract(contractId) {
+            const contract = allContracts.find(c => c.id === contractId);
+            if (!contract) {
+                alert(\`❌ Contratto non trovato\`);
+                return;
+            }
+            
+            // Pre-compila la modale con i dati del contratto
+            document.getElementById('signContractId').value = contract.id;
+            document.getElementById('signContractCode').textContent = contract.codice_contratto || contract.id;
+            document.getElementById('signClienteName').textContent = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim() || 'N/A';
+            document.getElementById('signDigitalName').value = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim();
+            
+            // Imposta data odierna
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('signDate').value = today;
+            
+            // Apri modale
+            document.getElementById('signContractModal').classList.remove('hidden');
+            document.getElementById('signContractModal').style.display = 'flex';
+        }
+        
+        function closeSignContractModal() {
+            document.getElementById('signContractModal').classList.add('hidden');
+            document.getElementById('signContractModal').style.display = 'none';
+            document.getElementById('signContractForm').reset();
+        }
+        
+        // Submit handler firma contratto
+        document.getElementById('signContractForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const contractId = document.getElementById('signContractId').value;
+            const firmaDigitale = document.getElementById('signDigitalName').value;
+            const dataFirma = document.getElementById('signDate').value;
+            const note = document.getElementById('signNotes').value;
+            
+            try {
+                const response = await fetch('/api/contracts/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contractId,
+                        firmaDigitale,
+                        dataFirma,
+                        notes: note,
+                        ipAddress: 'MANUAL_SIGNATURE',
+                        userAgent: 'Data Dashboard'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.\`);
+                    closeSignContractModal();
+                    loadDataDashboard(); // Ricarica i dati
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+            } catch (error) {
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
+            }
+        });
         
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
@@ -2471,6 +2658,54 @@ export const data_dashboard = `<!DOCTYPE html>
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Firma Contratto -->
+    <div id="signContractModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="bg-purple-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-signature mr-3"></i>
+                    Registra Firma Contratto
+                </h3>
+            </div>
+            <form id="signContractForm" class="p-6">
+                <input type="hidden" id="signContractId">
+                <div class="space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-700">
+                            <strong>Contratto:</strong> <span id="signContractCode"></span><br>
+                            <strong>Cliente:</strong> <span id="signClienteName"></span>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Firma Digitale *</label>
+                        <input type="text" id="signDigitalName" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                            placeholder="Nome Cognome del firmatario">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Data Firma</label>
+                        <input type="date" id="signDate" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Note</label>
+                        <textarea id="signNotes" rows="3"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                            placeholder="Es: Contratto firmato in sede"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-3">
+                    <button type="button" onclick="closeSignContractModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition-colors">
+                        Annulla
+                    </button>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Conferma Firma
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2825,11 +3060,6 @@ export const workflow_manager = `<!DOCTYPE html>
                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded" 
                                     title="Visualizza Dettagli">
                                     <i class="fas fa-eye"></i>
-                                </button>
-                                <button onclick="quickAction('\${lead.id}', 'contract')" 
-                                    class="px-2 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs rounded" 
-                                    title="Registra Firma Contratto">
-                                    <i class="fas fa-signature"></i>
                                 </button>
                                 <button onclick="quickAction('\${lead.id}', 'payment')" 
                                     class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded" 
