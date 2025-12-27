@@ -1291,7 +1291,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${lead.nome || ''} \${lead.cognome || ''}</div>
-                            <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -2009,7 +2008,6 @@ export const data_dashboard = `<!DOCTYPE html>
 
     <script>
         let allContracts = [];
-        loadDataDashboard();
 
         async function loadDataDashboard() {
             try {
@@ -2346,7 +2344,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 if (result.success) {
                     alert(\`✅ Contratto creato con successo!\\n\\nCodice: \${result.contract.codice_contratto || result.contract.id}\\nImporto: €\${importo}/anno\\nPiano: \${piano}\`);
                     closeNewContractModal();
-                    loadData(); // Ricarica la pagina
+                    loadDataDashboard(); // Ricarica la pagina
                 } else {
                     alert('❌ Errore: ' + result.error);
                 }
@@ -2354,6 +2352,11 @@ export const data_dashboard = `<!DOCTYPE html>
                 alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
+
+        // Load data on page load (chiamata dopo tutte le definizioni)
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDataDashboard();
+        });
     </script>
 
     <!-- MODAL: NEW CONTRACT -->
@@ -2734,7 +2737,6 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${lead.nome || ''} \${lead.cognome || ''}</div>
-                            <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="flex items-center text-gray-700">
