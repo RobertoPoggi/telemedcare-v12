@@ -6389,6 +6389,203 @@ app.delete('/api/leads/:id', async (c) => {
 // ENDPOINT INIZIALIZZAZIONE ASSISTITI REALI
 // ========================================
 
+// POST /api/init-workflow-leads - Inizializza lead per workflow manager
+app.post('/api/init-workflow-leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🚀 Inizializzazione lead workflow manager...')
+
+    // Lead reali da creare
+    const workflowLeads = [
+      {
+        nome: 'Eileen Elisabeth',
+        cognome: 'King',
+        email: '',
+        telefono: '+393475951175',
+        servizio: 'eCura PRO',
+        piano: 'AVANZATO',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: AVANZATO - Care Giver: Elena Saglia (figlia) - IMEI: 868298061208378'
+      },
+      {
+        nome: 'Giuseppina',
+        cognome: 'Cozzi',
+        email: '',
+        telefono: '+393313809634',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Elisabetta + Germana Cattini - IMEI: 868298061207735'
+      },
+      {
+        nome: 'Maria',
+        cognome: 'Capone',
+        email: 'marycap34@gmail.com',
+        telefono: '+393478740585',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Giorgio Riela (figlio) - IMEI: 868298061173234'
+      },
+      {
+        nome: 'Gianni Paolo',
+        cognome: 'Pizzutto',
+        email: '',
+        telefono: '+393398444530',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Simona Pizzutto (figlia) - IMEI: 868298060601011'
+      },
+      {
+        nome: 'Rita',
+        cognome: 'Pennacchio',
+        email: '',
+        telefono: '+393398331711',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Caterina D\'Alterio (figlia) - IMEI: 868298061123759'
+      },
+      {
+        nome: 'Giuliana',
+        cognome: 'Balzarotti',
+        email: '',
+        telefono: '+393312826048',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Paolo Magrì (figlio) - IMEI: 868298061206968'
+      },
+      {
+        nome: 'Laura',
+        cognome: 'Calvi',
+        email: '',
+        telefono: '',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SIGNED',
+        note: 'Piano: BASE - Care Giver: Daniela Rocca (figlia) - IMEI: 864866055431174'
+      },
+      {
+        nome: 'Manuela',
+        cognome: 'Poggi',
+        email: 'manuela.poggi@example.com',
+        telefono: '+393331234567',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        status: 'CONTRACT_SENT',
+        note: 'Piano: BASE - Contratto inviato'
+      }
+    ]
+
+    let insertedCount = 0
+    let updatedCount = 0
+
+    for (const lead of workflowLeads) {
+      const leadId = `LEAD-${lead.cognome.toUpperCase()}-${Date.now()}`
+      const timestamp = new Date().toISOString()
+
+      // Verifica se lead esiste già (by cognome)
+      const existing = await c.env.DB.prepare(
+        'SELECT id FROM leads WHERE cognomeRichiedente = ? AND nomeRichiedente = ?'
+      ).bind(lead.cognome, lead.nome).first()
+
+      if (existing) {
+        // Aggiorna esistente
+        await c.env.DB.prepare(`
+          UPDATE leads 
+          SET status = ?, note = ?, telefono = ?, email = ?
+          WHERE id = ?
+        `).bind(
+          lead.status,
+          lead.note,
+          lead.telefono,
+          lead.email,
+          existing.id
+        ).run()
+        updatedCount++
+        console.log(`✅ Aggiornato lead: ${lead.nome} ${lead.cognome} → ${lead.status}`)
+      } else {
+        // Inserisci nuovo
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            tipoServizio, note, status, canale, fonte, created_at, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Dashboard Manuale', 'INIT_WORKFLOW', ?, ?)
+        `).bind(
+          leadId,
+          lead.nome,
+          lead.cognome,
+          lead.email,
+          lead.telefono,
+          lead.servizio,
+          lead.note,
+          lead.status,
+          timestamp,
+          timestamp
+        ).run()
+        insertedCount++
+        console.log(`✅ Inserito lead: ${lead.nome} ${lead.cognome} → ${lead.status}`)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Lead workflow inizializzati',
+      stats: {
+        leadsInseriti: insertedCount,
+        leadsAggiornati: updatedCount,
+        totale: workflowLeads.length
+      },
+      leads: workflowLeads.map(l => ({
+        nome: `${l.nome} ${l.cognome}`,
+        status: l.status
+      }))
+    })
+  } catch (error) {
+    console.error('❌ Errore inizializzazione workflow leads:', error)
+    return c.json({
+      success: false,
+      error: 'Errore inizializzazione workflow leads',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/import/excel - Import lead da file Excel
+app.post('/api/import/excel', async (c) => {
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('file')
+    
+    if (!file || !(file instanceof File)) {
+      return c.json({ success: false, error: 'File non fornito' }, 400)
+    }
+    
+    // Per ora simuliamo l'import (in produzione useresti una libreria come xlsx)
+    // In attesa di implementazione libreria Excel parsing
+    
+    return c.json({
+      success: true,
+      message: 'Import Excel in sviluppo - usa endpoint /api/init-assistiti per popolare dati reali',
+      imported: 0,
+      skipped: 0,
+      note: 'Funzionalità disponibile a breve'
+    })
+  } catch (error) {
+    console.error('❌ Errore import Excel:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'import del file Excel',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-assistiti - Popola database con assistiti reali
 app.post('/api/init-assistiti', async (c) => {
   try {

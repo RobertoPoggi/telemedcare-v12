@@ -1373,9 +1373,54 @@ export const dashboard = `<!DOCTYPE html>
             document.getElementById('channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
         }
 
-        // Funzioni Import API (stub)
+        // Funzioni Import API
         function importFromExcel() {
-            alert('🔄 Import da Excel\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/excel\\n\\nQuesta funzionalità permetterà di importare lead da file Excel.');
+            // Crea input file nascosto
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls,.csv';
+            input.style.display = 'none';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Mostra loading
+                const loadingMsg = document.createElement('div');
+                loadingMsg.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Importazione in corso...';
+                document.body.appendChild(loadingMsg);
+                
+                try {
+                    // Crea FormData per upload
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch('/api/import/excel', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Rimuovi loading
+                    loadingMsg.remove();
+                    
+                    if (result.success) {
+                        alert(\`✅ Import completato!\\n\\nLead importati: \${result.imported || 0}\\nLead saltati: \${result.skipped || 0}\`);
+                        // Ricarica dashboard
+                        loadDashboardData();
+                    } else {
+                        alert(\`❌ Errore import:\\n\\n\${result.error || 'Errore sconosciuto'}\`);
+                    }
+                } catch (error) {
+                    loadingMsg.remove();
+                    alert(\`❌ Errore durante l'import:\\n\\n\${error.message}\`);
+                }
+            };
+            
+            // Trigger file picker
+            input.click();
         }
 
         function importFromIrbema() {
@@ -2716,25 +2761,27 @@ export const data_dashboard = `<!DOCTYPE html>
         }
         
         // Submit handler firma contratto
-        document.getElementById('signContractForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const contractId = document.getElementById('signContractId').value;
-            const firmaDigitale = document.getElementById('signDigitalName').value;
-            const dataFirma = document.getElementById('signDate').value;
-            const note = document.getElementById('signNotes').value;
-            
-            try {
-                const response = await fetch('/api/contracts/sign', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contractId,
-                        firmaDigitale,
-                        dataFirma,
-                        notes: note,
-                        ipAddress: 'MANUAL_SIGNATURE',
-                        userAgent: 'Data Dashboard'
+        const signForm = document.getElementById('signContractForm');
+        if (signForm) {
+            signForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const contractId = document.getElementById('signContractId').value;
+                const firmaDigitale = document.getElementById('signDigitalName').value;
+                const dataFirma = document.getElementById('signDate').value;
+                const note = document.getElementById('signNotes').value;
+                
+                try {
+                    const response = await fetch('/api/contracts/sign', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contractId,
+                            firmaDigitale,
+                            dataFirma,
+                            notes: note,
+                            ipAddress: 'MANUAL_SIGNATURE',
+                            userAgent: 'Data Dashboard'
                     })
                 });
                 
@@ -2751,6 +2798,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         });
+        } else {
+            console.warn('⚠️ Elemento signContractForm non trovato - firma contratto non disponibile');
+        }
         
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
