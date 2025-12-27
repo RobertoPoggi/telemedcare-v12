@@ -637,7 +637,7 @@ export const dashboard = `<!DOCTYPE html>
                     </thead>
                     <tbody id="leadsTable">
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento dati...</p>
                             </td>
@@ -697,7 +697,7 @@ export const dashboard = `<!DOCTYPE html>
                 if (leads.length === 0) {
                     tbody.innerHTML = \`
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 Nessun lead trovato
                             </td>
                         </tr>
@@ -2536,6 +2536,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Email</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Stato</th>
@@ -2546,7 +2547,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     </thead>
                     <tbody id="workflowTable">
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento workflow...</p>
                             </td>
@@ -2735,6 +2736,11 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <div class="text-xs text-gray-600">
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || lead.emailRichiedente || '-'}
+                            </div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="flex items-center text-gray-700">
