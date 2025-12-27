@@ -1,22 +1,17 @@
 # ⚠️ IMPORTANTE: Questo progetto usa SOLO Cloudflare Pages
-# NON fare deploy con: wrangler deploy (crea Workers!)
-# USA SOLO: git push origin main (auto-deploy Pages)
+# NON fare deploy con: wrangler deploy (crea Workers indesiderati!)
+# USA SOLO: git push origin main (auto-deploy Pages via GitHub)
 #
-# URL corretto: https://telemedcare-v12.pages.dev/
-# Workers URL (DA NON USARE): https://telemedcare-v12.*.workers.dev/
+# URL UFFICIALE: https://telemedcare-v12.pages.dev/
+#
+# Questo file wrangler.toml serve SOLO per configurare Pages,
+# NON per deploy Workers!
 
-name = "telemedcare-v12"
-main = "dist/_worker.js"
+# Configurazione necessaria per Cloudflare Pages
+name = "telemedcare-v12-pages"
 compatibility_date = "2025-10-06"
 
 # Environment Variables (non-sensitive)
 [vars]
-EMAIL_FROM = "info@telemedcare.it"
-EMAIL_TO_INFO = "info@telemedcare.it"
-
-[env.production]
-name = "telemedcare-v12"
-
-[env.production.vars]
 EMAIL_FROM = "info@telemedcare.it"
 EMAIL_TO_INFO = "info@telemedcare.it"
