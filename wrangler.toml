@@ -1,3 +1,10 @@
+# ⚠️ IMPORTANTE: Questo progetto usa SOLO Cloudflare Pages
+# NON fare deploy con: wrangler deploy (crea Workers!)
+# USA SOLO: git push origin main (auto-deploy Pages)
+#
+# URL corretto: https://telemedcare-v12.pages.dev/
+# Workers URL (DA NON USARE): https://telemedcare-v12.*.workers.dev/
+
 name = "telemedcare-v12"
 main = "dist/_worker.js"
 compatibility_date = "2025-10-06"
