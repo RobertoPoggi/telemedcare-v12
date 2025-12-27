@@ -6577,13 +6577,13 @@ app.post('/api/init-workflow-leads', async (c) => {
         // Aggiorna esistente
         await c.env.DB.prepare(`
           UPDATE leads 
-          SET status = ?, note = ?, telefono = ?, email = ?
+          SET status = ?, note = ?, telefonoRichiedente = ?, emailRichiedente = ?
           WHERE id = ?
         `).bind(
           lead.status,
           lead.note,
           lead.telefono,
-          lead.email,
+          lead.email || 'no-email@assistito.it',
           existing.id
         ).run()
         updatedCount++
@@ -6592,19 +6592,17 @@ app.post('/api/init-workflow-leads', async (c) => {
         // Inserisci nuovo
         await c.env.DB.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            tipoServizio, note, status, canale, fonte, created_at, timestamp
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Dashboard Manuale', 'INIT_WORKFLOW', ?, ?)
+            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+            note, status, fonte, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'INIT_WORKFLOW', ?)
         `).bind(
           leadId,
           lead.nome,
           lead.cognome,
-          lead.email,
+          lead.email || 'no-email@assistito.it',
           lead.telefono,
-          lead.servizio,
-          lead.note,
+          `${lead.servizio} - ${lead.piano} - ${lead.note}`,
           lead.status,
-          timestamp,
           timestamp
         ).run()
         insertedCount++
@@ -6903,29 +6901,39 @@ app.post('/api/init-assistiti', async (c) => {
         console.log(`✅ Inserito assistito: ${assistito.nome} ${assistito.cognome} (IMEI: ${assistito.imei})`)
       }
 
-      // Step 5: Trova il lead esistente per questo assistito
+      // Step 5: Crea o trova lead per il contratto
       let leadId = null
       if (assistito.contratto) {
-        // Cerca lead per nome assistito o care giver (richiedente)
-        const existingLead = await c.env.DB.prepare(`
-          SELECT id FROM leads 
-          WHERE (nomeAssistito = ? AND cognomeAssistito = ?)
-             OR nomeRichiedente LIKE ?
-             OR email = ?
-          LIMIT 1
-        `).bind(
-          assistito.nome, 
-          assistito.cognome,
-          `%${assistito.careGiver.split(' ')[0]}%`,
-          assistito.email || ''
-        ).first()
+        // Verifica se esiste già un lead per questo assistito (by email o nome+cognome)
+        const existingLead = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE email = ? OR (nomeAssistito = ? AND cognomeAssistito = ?)'
+        ).bind(assistito.email || '', assistito.nome, assistito.cognome).first()
 
         if (existingLead) {
           leadId = existingLead.id
-          console.log(`✅ Lead esistente trovato: ${leadId} per ${assistito.nome} ${assistito.cognome}`)
+          console.log(`ℹ️ Lead esistente trovato: ${leadId}`)
         } else {
-          console.warn(`⚠️ Lead NON trovato per ${assistito.nome} ${assistito.cognome} - Contratto NON creato`)
-          continue // Salta la creazione del contratto se non c'è il lead
+          // Crea nuovo lead
+          leadId = `LEAD-${assistito.cognome.toUpperCase()}-${Date.now()}`
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, tipoServizio, status, 
+              note, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONVERTED', ?, ?)
+          `).bind(
+            leadId,
+            assistito.careGiver,
+            '',
+            assistito.email || `${assistito.cognome.toLowerCase()}@assistito.it`,
+            assistito.telefono,
+            assistito.nome,
+            assistito.cognome,
+            assistito.servizio,
+            `Piano ${assistito.piano} - CareGiver: ${assistito.careGiver} (${assistito.parentela}) - IMEI: ${assistito.imei}`,
+            timestamp
+          ).run()
+          console.log(`✅ Lead creato: ${leadId} per ${assistito.nome} ${assistito.cognome}`)
         }
 
         // Step 6: Crea contratto collegato al lead
