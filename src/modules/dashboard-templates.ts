@@ -1290,7 +1290,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nome && lead.cognome) ? (lead.nome + ' ' + lead.cognome) : (lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? (lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : (lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -1442,8 +1442,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             document.getElementById('viewLeadId').textContent = lead.id;
-            document.getElementById('viewNome').textContent = lead.nome || '-';
-            document.getElementById('viewCognome').textContent = lead.cognome || '-';
+            document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
+            document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
             document.getElementById('viewEmail').textContent = lead.email || '-';
             document.getElementById('viewTelefono').textContent = lead.telefono || '-';
             document.getElementById('viewServizio').textContent = lead.servizio || 'eCura PRO';
@@ -1462,8 +1462,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             document.getElementById('editLeadId').value = lead.id;
-            document.getElementById('editNome').value = lead.nome || '';
-            document.getElementById('editCognome').value = lead.cognome || '';
+            document.getElementById('editNome').value = lead.nomeRichiedente || '';
+            document.getElementById('editCognome').value = lead.cognomeRichiedente || '';
             document.getElementById('editEmail').value = lead.email || '';
             document.getElementById('editTelefono').value = lead.telefono || '';
             
@@ -2734,7 +2734,7 @@ export const workflow_manager = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${lead.nome || ''} \${lead.cognome || ''}</div>
+                            <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="flex items-center text-gray-700">
@@ -2938,7 +2938,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
-                    alert(\`👤 LEAD: \${lead.nome || ''} \${lead.cognome || ''}
+                    alert(\`👤 LEAD: \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}
                     
 📧 Email: \${lead.email || 'N/A'}
 📞 Telefono: \${lead.telefono || 'N/A'}
@@ -2953,16 +2953,16 @@ export const workflow_manager = `<!DOCTYPE html>
                     
                 case 'contract':
                     // Pre-compila modale firma contratto
-                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${lead.nome || ''} \${lead.cognome || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
                         document.getElementById('signContractId').value = lead.id;
-                        document.getElementById('signDigital').value = \`\${lead.nome || ''} \${lead.cognome || ''}\`;
+                        document.getElementById('signDigital').value = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`;
                         openSignModal();
                     }
                     break;
                     
                 case 'payment':
                     // Pre-compila modale pagamento
-                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${lead.nome || ''} \${lead.cognome || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
                         fetch(\`/api/proforma?lead_id=\${lead.id}\`)
                             .then(res => res.json())
