@@ -1402,7 +1402,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
 
@@ -1426,7 +1426,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
 
@@ -1501,7 +1501,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
         
@@ -1524,7 +1524,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
         
@@ -1578,7 +1578,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
     </script>
@@ -2194,7 +2194,7 @@ export const data_dashboard = `<!DOCTYPE html>
         async function viewContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato');
+                alert(\`❌ Contratto non trovato\`);
                 return;
             }
             
@@ -2202,11 +2202,11 @@ export const data_dashboard = `<!DOCTYPE html>
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\nPUT /api/contratti/' + contractId);
+            alert(\`⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/\${contractId}\`);
         }
         
         async function deleteContract(contractId) {
-            if (!confirm('⚠️ Sei sicuro di voler eliminare questo contratto?\\n\\nQuesta operazione è irreversibile.')) {
+            if (!confirm(\`⚠️ Sei sicuro di voler eliminare questo contratto?\\n\\nQuesta operazione è irreversibile.\`)) {
                 return;
             }
             
@@ -2218,24 +2218,24 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto eliminato con successo!');
+                    alert(\`✅ Contratto eliminato con successo!\`);
                     loadData();
                 } else {
                     if (result.isSigned) {
-                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.');
+                        alert(\`❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.\`);
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert(\`❌ Errore: \${result.error}\`);
                     }
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
         
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato');
+                alert(\`❌ Contratto non trovato\`);
                 return;
             }
             
@@ -2310,12 +2310,12 @@ export const data_dashboard = `<!DOCTYPE html>
             const note = document.getElementById('newContractNote').value;
             
             if (!leadId) {
-                alert('⚠️ Seleziona un lead');
+                alert(\`⚠️ Seleziona un lead\`);
                 return;
             }
             
             if (!piano) {
-                alert('⚠️ Seleziona un piano');
+                alert(\`⚠️ Seleziona un piano\`);
                 return;
             }
             
@@ -2347,7 +2347,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
 
@@ -3038,10 +3038,10 @@ export const workflow_manager = `<!DOCTYPE html>
                         closeSignModal();
                         refreshWorkflows();
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert(\`❌ Errore: \${result.error}\`);
                     }
                 } catch (error) {
-                    alert('❌ Errore di comunicazione: ' + error.message);
+                    alert(\`❌ Errore di comunicazione: \${error.message}\`);
                 }
             });
         }
@@ -3080,7 +3080,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         });
         }
