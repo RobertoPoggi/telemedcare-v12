@@ -1399,7 +1399,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert(\`✅ Contratto inviato con successo!\\n\\nCodice: \${result.contractCode}\\nTemplate: email_invio_contratto\`);
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -1423,7 +1423,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert(\`✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure\`);
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -1498,7 +1498,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     closeModal('editLeadModal');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -1521,7 +1521,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Lead eliminato con successo!');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -1575,7 +1575,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     closeModal('newLeadModal');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -2344,7 +2344,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
@@ -3077,7 +3077,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert(\`❌ Errore: \${result.error}\`);
                 }
             } catch (error) {
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
