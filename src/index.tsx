@@ -6974,6 +6974,99 @@ app.post('/api/fix-contracts-piano', async (c) => {
   }
 })
 
+// Endpoint per import massivo lead da Excel
+app.post('/api/import-excel-leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const body = await c.req.json()
+    const leads = body.leads || []
+
+    if (!Array.isArray(leads) || leads.length === 0) {
+      return c.json({ success: false, error: 'Nessun lead fornito' }, 400)
+    }
+
+    console.log(`📥 Import di ${leads.length} lead da Excel...`)
+
+    let imported = 0
+    let skipped = 0
+    let errors = 0
+
+    for (const lead of leads) {
+      try {
+        // Verifica se esiste già (email O telefono)
+        let existing = null
+        if (lead.email) {
+          existing = await c.env.DB.prepare(`
+            SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1
+          `).bind(lead.email).first()
+        }
+        if (!existing && lead.telefono) {
+          existing = await c.env.DB.prepare(`
+            SELECT id FROM leads WHERE telefonoRichiedente = ? LIMIT 1
+          `).bind(lead.telefono).first()
+        }
+
+        if (existing) {
+          skipped++
+          continue
+        }
+
+        // Inserisci nuovo lead
+        const leadId = `LEAD-EXCEL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+            servizio, canale, location, note, messaggio, nomeAssistito, fonte, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          lead.nome || '',
+          lead.cognome || '',
+          lead.email || null,
+          lead.telefono || null,
+          'eCura PRO',
+          lead.canale || 'IRBEMA',
+          lead.location || '',
+          lead.note || '',
+          lead.messaggio || '',
+          lead.assistito_nome || null,
+          'EXCEL_IMPORT',
+          'NUOVO',
+          new Date().toISOString()
+        ).run()
+
+        imported++
+      } catch (error) {
+        console.error(`❌ Errore import lead ${lead.nome}:`, error)
+        errors++
+      }
+    }
+
+    console.log(`✅ Import completato: ${imported} importati, ${skipped} già esistenti, ${errors} errori`)
+
+    return c.json({
+      success: true,
+      message: 'Import lead completato',
+      stats: {
+        total: leads.length,
+        imported,
+        skipped,
+        errors
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore import lead:', error)
+    return c.json({
+      success: false,
+      error: 'Errore import lead',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Endpoint diagnostico - Schema DB leads
 app.get('/api/db/schema/leads', async (c) => {
   try {
