@@ -7000,12 +7000,12 @@ app.post('/api/import-excel-leads', async (c) => {
         let existing = null
         if (lead.email) {
           existing = await c.env.DB.prepare(`
-            SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1
+            SELECT id FROM leads WHERE email = ? LIMIT 1
           `).bind(lead.email).first()
         }
         if (!existing && lead.telefono) {
           existing = await c.env.DB.prepare(`
-            SELECT id FROM leads WHERE telefonoRichiedente = ? LIMIT 1
+            SELECT id FROM leads WHERE telefono = ? LIMIT 1
           `).bind(lead.telefono).first()
         }
 
@@ -7016,25 +7016,27 @@ app.post('/api/import-excel-leads', async (c) => {
 
         // Inserisci nuovo lead
         const leadId = `LEAD-EXCEL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        
+        // Prepara email (required field): se manca, usa placeholder con telefono
+        const emailValue = lead.email || (lead.telefono ? `noemail+${lead.telefono}@telemedcare.it` : `noemail+${leadId}@telemedcare.it`)
+        
         await c.env.DB.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
-            servizio, canale, location, note, messaggio, nomeAssistito, fonte, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            tipoServizio, fonte, status, note, nomeAssistito, cognomeAssistito, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
-          lead.nome || '',
-          lead.cognome || '',
-          lead.email || null,
-          lead.telefono || null,
+          lead.nome || 'N/A',
+          lead.cognome || 'N/A',
+          emailValue,
+          lead.telefono || '',
           'eCura PRO',
-          lead.canale || 'IRBEMA',
-          lead.location || '',
-          lead.note || '',
-          lead.messaggio || '',
-          lead.assistito_nome || null,
           'EXCEL_IMPORT',
           'NUOVO',
+          `Canale: ${lead.canale || 'IRBEMA'} | Location: ${lead.location || ''} | Note: ${lead.note || ''} | Messaggio: ${lead.messaggio || ''}`.trim(),
+          lead.assistito_nome ? lead.assistito_nome.split(' ')[0] : null,
+          lead.assistito_nome ? lead.assistito_nome.split(' ').slice(1).join(' ') : null,
           new Date().toISOString()
         ).run()
 
