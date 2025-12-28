@@ -6864,6 +6864,55 @@ app.post('/api/fix-lead-associations', async (c) => {
   }
 })
 
+// Endpoint per eliminare lead duplicati manual specifici
+app.post('/api/delete-manual-duplicates', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🧹 Eliminazione lead manual duplicati...')
+
+    // IDs specifici da eliminare
+    const idsToDelete = [
+      'LEAD-MANUAL-1766885130882',  // Paolo Magrì (duplicato LEAD-EXCEL-060)
+      'LEAD-MANUAL-1766885181620'   // Elena Saglia (duplicato LEAD-CONTRATTO-003)
+    ]
+
+    let deleted = 0
+    for (const id of idsToDelete) {
+      try {
+        const result = await c.env.DB.prepare(`DELETE FROM leads WHERE id = ?`).bind(id).run()
+        if (result.meta.changes > 0) {
+          console.log(`✅ Eliminato: ${id}`)
+          deleted++
+        }
+      } catch (error) {
+        console.error(`❌ Errore eliminando ${id}:`, error)
+      }
+    }
+
+    // Conta lead dopo
+    const afterCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+
+    return c.json({
+      success: true,
+      message: 'Lead duplicati manual eliminati',
+      stats: {
+        deleted,
+        totalLeads: afterCount?.count || 0
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore eliminazione duplicati:', error)
+    return c.json({
+      success: false,
+      error: 'Errore eliminazione duplicati',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Endpoint pulizia lead duplicati INIT/MANUAL
 app.post('/api/cleanup-duplicate-leads', async (c) => {
   try {
