@@ -6918,6 +6918,62 @@ app.post('/api/cleanup-duplicate-leads', async (c) => {
   }
 })
 
+// Endpoint per forzare update piani contratti
+app.post('/api/fix-contracts-piano', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Fix piani contratti basandosi su prezzo_totale...')
+
+    // Prima verifica se la colonna esiste
+    const schema = await c.env.DB.prepare('PRAGMA table_info(contracts)').all()
+    const hasPianoColumn = schema.results.some((col: any) => col.name === 'piano')
+    
+    if (!hasPianoColumn) {
+      // Aggiungi la colonna se non esiste
+      await c.env.DB.prepare(`ALTER TABLE contracts ADD COLUMN piano TEXT`).run()
+      console.log('✅ Colonna piano aggiunta')
+    }
+
+    // Aggiorna i piani
+    const updateResult = await c.env.DB.prepare(`
+      UPDATE contracts 
+      SET piano = CASE 
+        WHEN prezzo_totale >= 800 THEN 'AVANZATO'
+        WHEN prezzo_totale > 0 THEN 'BASE'
+        ELSE 'BASE'
+      END
+      WHERE piano IS NULL
+    `).run()
+
+    console.log(`✅ Aggiornati ${updateResult.meta.changes} contratti`)
+
+    // Verifica risultato
+    const verifyResult = await c.env.DB.prepare(`
+      SELECT id, piano, prezzo_totale FROM contracts ORDER BY prezzo_totale DESC
+    `).all()
+
+    return c.json({
+      success: true,
+      message: 'Piani contratti aggiornati',
+      stats: {
+        updated: updateResult.meta.changes,
+        hasPianoColumn,
+        contracts: verifyResult.results
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore fix piani:', error)
+    return c.json({
+      success: false,
+      error: 'Errore fix piani contratti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Endpoint diagnostico - Schema DB leads
 app.get('/api/db/schema/leads', async (c) => {
   try {
