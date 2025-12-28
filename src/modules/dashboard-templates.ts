@@ -860,10 +860,19 @@ export const dashboard = `<!DOCTYPE html>
                     Assistiti Attivi
                     <span id="assistitiCount" class="ml-3 text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">0</span>
                 </h3>
-                <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                    <i class="fas fa-user-plus mr-2"></i>
-                    Nuovo Assistito
-                </button>
+                <div class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="searchAssistitoCognome" 
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-56" 
+                        placeholder="🔍 Cerca assistito..."
+                        onkeyup="filterAssistiti()"
+                    />
+                    <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Nuovo Assistito
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -1086,6 +1095,7 @@ export const dashboard = `<!DOCTYPE html>
                 updatePlansChart(allLeads);
                 
                 // Renderizza assistiti da API dedicata
+                allAssistiti = assistiti;  // Salva per filtri
                 renderAssistitiTable(assistiti);
 
                 // Aggiorna timestamp
@@ -1340,6 +1350,34 @@ export const dashboard = `<!DOCTYPE html>
                     </tr>
                 \`;
             }).join('');
+        }
+
+        // Variabile globale per tenere tutti gli assistiti
+        let allAssistiti = [];
+
+        function filterAssistiti() {
+            const searchTerm = document.getElementById('searchAssistitoCognome').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                renderAssistitiTable(allAssistiti);
+                return;
+            }
+
+            const filtered = allAssistiti.filter(assistito => {
+                const nomeAssistito = (assistito.nome_assistito || '').toLowerCase();
+                const cognomeAssistito = (assistito.cognome_assistito || '').toLowerCase();
+                const nomeCompleto = (assistito.nome || '').toLowerCase();
+                const caregiverNome = (assistito.nome_caregiver || '').toLowerCase();
+                const caregiverCognome = (assistito.cognome_caregiver || '').toLowerCase();
+                
+                return nomeAssistito.includes(searchTerm) || 
+                       cognomeAssistito.includes(searchTerm) ||
+                       nomeCompleto.includes(searchTerm) ||
+                       caregiverNome.includes(searchTerm) ||
+                       caregiverCognome.includes(searchTerm);
+            });
+
+            renderAssistitiTable(filtered);
         }
 
         function updateChannelsChart(leads) {
@@ -1616,6 +1654,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     Tutti i Lead
                 </h3>
                 <div class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="searchCognome" 
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64" 
+                        placeholder="🔍 Cerca per cognome..."
+                        onkeyup="applyFilters()"
+                    />
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
                         <option value="FAMILY">FAMILY</option>
@@ -1884,11 +1929,20 @@ export const leads_dashboard = `<!DOCTYPE html>
         function applyFilters() {
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
+            const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
                 const matchServizio = !servizioFilter || lead.tipoServizio === servizioFilter;
                 const matchPiano = !pianoFilter || '' === pianoFilter;
-                return matchServizio && matchPiano;
+                
+                // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
+                const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
+                const cognomeAssistito = (lead.cognomeAssistito || '').toLowerCase();
+                const matchCognome = !searchCognome || 
+                    cognomeRichiedente.includes(searchCognome) || 
+                    cognomeAssistito.includes(searchCognome);
+                
+                return matchServizio && matchPiano && matchCognome;
             });
 
             renderLeadsTable(filtered);
