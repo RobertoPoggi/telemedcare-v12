@@ -1687,7 +1687,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const totalLeads = allLeads.length;
                 const converted = allLeads.filter(l => l.status === 'CONTRACT_SIGNED' || l.status === 'CONVERTED').length;
                 const conversionRate = totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) + '%' : '0%';
-                const totalValue = converted * 480; // BASE price assumption
+                
+                // Calcola revenue totale dai contratti reali (non assumere tutto BASE)
+                const contrattiResponse = await fetch('/api/contratti');
+                const contrattiData = await contrattiResponse.json();
+                const contratti = contrattiData.contratti || [];
+                let totalValue = 0;
+                contratti.forEach(c => {
+                    if (c.prezzo_totale) totalValue += parseFloat(c.prezzo_totale);
+                });
                 const today = new Date().toISOString().split('T')[0];
                 const leadsToday = allLeads.filter(l => l.created_at && l.created_at.startsWith(today)).length;
                 

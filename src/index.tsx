@@ -6491,13 +6491,39 @@ app.post('/api/db/migrate', async (c) => {
       }
     }
 
+    // Migrazione 4: Aggiungi colonna piano a contracts se non esiste
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE contracts ADD COLUMN piano TEXT
+      `).run()
+      console.log('✅ Colonna piano aggiunta a contracts')
+    } catch (error) {
+      console.log('ℹ️ Colonna piano già esistente in contracts')
+    }
+
+    // Migrazione 5: Aggiorna piano basandosi su prezzo_totale
+    try {
+      await c.env.DB.prepare(`
+        UPDATE contracts 
+        SET piano = CASE 
+          WHEN prezzo_totale >= 800 THEN 'AVANZATO'
+          ELSE 'BASE'
+        END
+        WHERE piano IS NULL AND prezzo_totale IS NOT NULL
+      `).run()
+      console.log('✅ Campo piano aggiornato nei contratti')
+    } catch (error) {
+      console.log('⚠️ Errore aggiornamento piano contratti:', error)
+    }
+
     return c.json({
       success: true,
       message: 'Migrazioni completate',
       migrations: [
         'Tabella assistiti creata',
         'Colonna imei_dispositivo aggiunta a contracts',
-        'Colonne aggiuntive verificate in contracts'
+        'Colonne aggiuntive verificate in contracts',
+        'Colonna piano aggiunta e aggiornata in contracts'
       ]
     })
   } catch (error) {
