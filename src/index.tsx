@@ -6838,6 +6838,60 @@ app.post('/api/fix-lead-associations', async (c) => {
   }
 })
 
+// Endpoint pulizia lead duplicati INIT/MANUAL
+app.post('/api/cleanup-duplicate-leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🧹 Pulizia lead duplicati (INIT_WORKFLOW e MANUAL test)...')
+
+    // Conta lead prima della pulizia
+    const beforeCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    
+    // Elimina lead INIT_WORKFLOW (duplicati creati automaticamente)
+    const deleteInit = await c.env.DB.prepare(`
+      DELETE FROM leads 
+      WHERE fonte = 'INIT_WORKFLOW'
+    `).run()
+    
+    // Elimina lead MANUAL test
+    const deleteManual = await c.env.DB.prepare(`
+      DELETE FROM leads 
+      WHERE fonte = 'MANUAL_ENTRY' 
+      AND (nomeRichiedente = 'Test' OR nomeRichiedente = 'Roberto')
+    `).run()
+    
+    // Conta lead dopo la pulizia
+    const afterCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    
+    const deletedCount = (beforeCount?.count || 0) - (afterCount?.count || 0)
+    
+    console.log(`✅ Eliminati ${deletedCount} lead duplicati`)
+    console.log(`📊 Lead rimasti: ${afterCount?.count}`)
+
+    return c.json({
+      success: true,
+      message: 'Lead duplicati eliminati',
+      stats: {
+        beforeCount: beforeCount?.count,
+        afterCount: afterCount?.count,
+        deletedCount,
+        deletedInit: deleteInit.meta.changes,
+        deletedManual: deleteManual.meta.changes
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore pulizia lead:', error)
+    return c.json({
+      success: false,
+      error: 'Errore pulizia lead duplicati',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Endpoint diagnostico - Schema DB leads
 app.get('/api/db/schema/leads', async (c) => {
   try {

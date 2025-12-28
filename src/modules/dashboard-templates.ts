@@ -2060,14 +2060,17 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         async function saveNewLead() {
+            const canale = document.getElementById('newCanale').value;
+            const piano = document.getElementById('newPiano').value;
+            const noteExtra = document.getElementById('newNote').value;
+            
             const formData = {
                 nomeRichiedente: document.getElementById('newNome').value,
                 cognomeRichiedente: document.getElementById('newCognome').value,
                 email: document.getElementById('newEmail').value,
                 telefono: document.getElementById('newTelefono').value,
                 tipoServizio: document.getElementById('newServizio').value,
-                canale: document.getElementById('newCanale').value,
-                note: 'Piano: ' + document.getElementById('newPiano').value + '\\n' + document.getElementById('newNote').value
+                note: 'Canale: ' + canale + ' | Piano: ' + piano + (noteExtra ? ' | ' + noteExtra : '')
             };
             
             // Validation
@@ -2086,10 +2089,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(\`✅ Lead creato con successo!\\n\\nID: \${result.id}\`);
+                    alert(\`✅ Lead creato con successo!\\n\\nID: \${result.leadId || result.id}\`);
                     closeModal('newLeadModal');
                     document.getElementById('newLeadForm').reset();
-                    loadDashboardData();
+                    // Ricarica la pagina per aggiornare i dati
+                    window.location.reload();
                 } else {
                     alert(\`❌ Errore: \${result.error || 'Errore sconosciuto'}\`);
                 }
@@ -2147,6 +2151,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="Partner">Partner Esterno</option>
                                 <option value="Phone">Telefonico</option>
                                 <option value="Email">Email Diretto</option>
+                                <option value="Test">Test</option>
                             </select>
                         </div>
                         <div>
