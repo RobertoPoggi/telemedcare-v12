@@ -1394,24 +1394,39 @@ export const dashboard = `<!DOCTYPE html>
                 if (data.success && data.assistiti && data.assistiti.length > 0) {
                     const assistito = data.assistiti[0];
                     
-                    // Popola form modal
-                    document.getElementById('editAssistitoId').value = id;
-                    document.getElementById('editNomeAssistito').value = assistito.nome_assistito || '';
-                    document.getElementById('editCognomeAssistito').value = assistito.cognome_assistito || '';
-                    document.getElementById('editEmailAssistito').value = assistito.email || '';
-                    document.getElementById('editTelefonoAssistito').value = assistito.telefono || '';
-                    document.getElementById('editIMEI').value = assistito.imei || '';
-                    document.getElementById('editNomeCaregiver').value = assistito.nome_caregiver || '';
-                    document.getElementById('editCognomeCaregiver').value = assistito.cognome_caregiver || '';
-                    document.getElementById('editParentela').value = assistito.parentela_caregiver || '';
-                    document.getElementById('editPianoAssistito').value = assistito.piano || 'BASE';
+                    // Verifica che il modal esista
+                    const modal = document.getElementById('editAssistitoModal');
+                    if (!modal) {
+                        console.error('Modal editAssistitoModal non trovato');
+                        alert('❌ Errore: Modal non trovato. Ricaricare la pagina.');
+                        return;
+                    }
+                    
+                    // Popola form modal con controlli
+                    const setValueSafe = (id, value) => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = value || '';
+                        else console.warn(\`Elemento \${id} non trovato\`);
+                    };
+                    
+                    setValueSafe('editAssistitoId', id);
+                    setValueSafe('editNomeAssistito', assistito.nome_assistito);
+                    setValueSafe('editCognomeAssistito', assistito.cognome_assistito);
+                    setValueSafe('editEmailAssistito', assistito.email);
+                    setValueSafe('editTelefonoAssistito', assistito.telefono);
+                    setValueSafe('editIMEI', assistito.imei);
+                    setValueSafe('editNomeCaregiver', assistito.nome_caregiver);
+                    setValueSafe('editCognomeCaregiver', assistito.cognome_caregiver);
+                    setValueSafe('editParentela', assistito.parentela_caregiver);
+                    setValueSafe('editPianoAssistito', assistito.piano || 'BASE');
                     
                     // Mostra modal
-                    document.getElementById('editAssistitoModal').classList.remove('hidden');
+                    modal.classList.remove('hidden');
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
+                console.error('Errore editAssistito:', error);
                 alert(\`❌ Errore: \${error.message}\`);
             }
         }
