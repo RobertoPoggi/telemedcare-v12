@@ -117,14 +117,14 @@ export const home = `<!DOCTYPE html>
             </div>
 
             <!-- Configurazioni Oggi -->
-            <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-xl shadow-lg">
+            <div id="boxConfigurazioni" style="background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%) !important;" class="text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-white text-sm mb-1">Configurazioni Oggi</p>
-                        <p class="text-3xl font-bold text-white" id="configurationsToday">-</p>
-                        <p class="text-xs text-white mt-1">Ultimi 24h</p>
+                        <p style="color: white !important;" class="text-sm mb-1 font-semibold">Configurazioni Oggi</p>
+                        <p style="color: white !important;" class="text-3xl font-bold" id="configurationsToday">0</p>
+                        <p style="color: white !important;" class="text-xs mt-1 font-medium">Ultimi 24h</p>
                     </div>
-                    <i class="fas fa-cog text-4xl text-white opacity-90"></i>
+                    <i style="color: white !important;" class="fas fa-cog text-4xl"></i>
                 </div>
             </div>
 
