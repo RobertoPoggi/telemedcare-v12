@@ -4249,17 +4249,15 @@ app.post('/api/leads/clean-import', async (c) => {
           await DB.prepare(`
             INSERT INTO leads (
               id, nomeRichiedente, cognomeRichiedente, email, telefono, 
-              fonte, canale, origine, tipoServizio, status, note, 
+              fonte, tipoServizio, status, note, 
               created_at, updated_at, timestamp
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             lead.id,
             nome,
             cognome,
             lead.email || '',
             lead.telefono || '',
-            lead.canale || 'IRBEMA',
-            lead.canale || 'IRBEMA',
             lead.canale || 'IRBEMA',
             'eCura PRO',
             lead.status || 'NEW',
