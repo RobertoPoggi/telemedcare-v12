@@ -850,9 +850,15 @@ export const dashboard = `<!DOCTYPE html>
                 <button onclick="importFromAON()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-handshake mr-2"></i>AON
                 </button>
-                <button onclick="importFromDoubleYou()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                <button onclick="importFromDoubleYou()" class="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md" style="color: white !important; background-color: #db2777 !important;">
                     <i class="fas fa-chart-line mr-2"></i>DoubleYou
                 </button>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <button onclick="standardizeLeadIds()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full">
+                    <i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)
+                </button>
+                <p class="text-xs text-gray-500 mt-2">⚠️ Questa operazione rinomina tutti i lead esistenti con il formato standard LEAD-IRBEMA-00001, LEAD-AON-00001, etc.</p>
             </div>
         </div>
 
@@ -1273,27 +1279,12 @@ export const dashboard = `<!DOCTYPE html>
             });
         }
         
-        // Funzione per formattare ID lead in formato breve
+        // Funzione per formattare ID lead - mostra ID completo in formato LEAD-CANALE-NUMERO
         function formatLeadId(leadId) {
             if (!leadId) return 'N/A';
             const id = leadId.toString();
             
-            // Se già corto (max 15 caratteri), mostra tutto
-            if (id.length <= 15) return id;
-            
-            // Pattern: LEAD-{CANALE}-{NUMERO} -> mostra CANALE-NUMERO
-            const match = id.match(/LEAD-([A-Z]+)-(\d+)/i);
-            if (match) {
-                const canale = match[1].substring(0, 3).toUpperCase(); // Prime 3 lettere
-                const numero = match[2];
-                return \`\${canale}-\${numero}\`;
-            }
-            
-            // Fallback: mostra primi 6 + ultimi 4 caratteri
-            if (id.length > 12) {
-                return \`\${id.substring(0, 6)}...\${id.substring(id.length - 4)}\`;
-            }
-            
+            // Mostra l'ID completo (formato LEAD-IRBEMA-xxxxx)
             return id;
         }
         
@@ -1816,6 +1807,46 @@ export const dashboard = `<!DOCTYPE html>
         function importFromDoubleYou() {
             alert('🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.');
         }
+
+        // 🔧 Standardizza ID dei lead con formato LEAD-{CANALE}-{NUMERO}
+        async function standardizeLeadIds() {
+            if (!confirm('🔧 STANDARDIZZAZIONE CODICI LEAD\\n\\nQuesta operazione rinominerà TUTTI i lead esistenti con il formato standard:\\n\\n• LEAD-IRBEMA-00001\\n• LEAD-EXCEL-00001\\n• LEAD-AON-00001\\n• LEAD-WEB-00001\\n• LEAD-DOUBLEYOU-00001\\n• LEAD-NETWORKING-00001\\n\\n⚠️ Questa operazione NON può essere annullata.\\n\\nContinuare?')) {
+                return;
+            }
+
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Standardizzazione in corso...';
+
+                const response = await fetch('/api/leads/standardize-ids', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(\`✅ STANDARDIZZAZIONE COMPLETATA!\\n\\n• Lead aggiornati: \${result.updated}\\n• Lead saltati: \${result.skipped}\\n\\nContatori per canale:\\n\${Object.entries(result.channelCounters || {}).map(([ch, count]) => \`  - \${ch}: \${count}\`).join('\\n')}\\n\\nLa dashboard verrà ricaricata.\`);
+                    loadDashboardData(); // Ricarica i dati
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)';
+
+            } catch (error) {
+                console.error('Errore standardizzazione:', error);
+                alert(\`❌ Errore durante la standardizzazione: \${error.message}\`);
+                const btn = event.target;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)';
+            }
+        }
+        window.standardizeLeadIds = standardizeLeadIds;
     </script>
 
     <!-- MODAL: EDIT ASSISTITO -->

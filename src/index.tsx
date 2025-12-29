@@ -4222,6 +4222,103 @@ app.post('/api/leads/import/:channel', async (c) => {
   }
 })
 
+// 🔧 RINOMINA LEAD CON FORMATO STANDARD LEAD-{CANALE}-{NUMERO}
+app.post('/api/leads/standardize-ids', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🔧 Inizio standardizzazione ID lead...')
+
+    // Recupera tutti i lead
+    const allLeads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY created_at ASC`).all()
+    const leads = allLeads.results || []
+
+    console.log(`📊 Trovati ${leads.length} lead da processare`)
+
+    let updatedCount = 0
+    let skippedCount = 0
+    const channelCounters: Record<string, number> = {}
+
+    for (const lead of leads) {
+      try {
+        // Determina il canale del lead
+        let canale = 'WEB' // Default
+        const leadId = (lead.id || '').toString().toUpperCase()
+        const fonte = (lead.fonte || '').toLowerCase()
+        const nomeCompleto = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim().toLowerCase()
+
+        // Rilevamento canale con priorità
+        if (leadId.includes('IRBEMA') || fonte.includes('irbema')) {
+          canale = 'IRBEMA'
+        } else if (leadId.includes('EXCEL') || fonte.includes('excel')) {
+          canale = 'EXCEL'
+        } else if (leadId.includes('AON') || fonte.includes('aon')) {
+          canale = 'AON'
+        } else if (leadId.includes('DOUBLEYOU') || fonte.includes('doubleyou') || fonte.includes('double you')) {
+          canale = 'DOUBLEYOU'
+        } else if (nomeCompleto.includes('francesca grati')) {
+          canale = 'WEB'
+        } else if (nomeCompleto.includes('laura calvi')) {
+          canale = 'NETWORKING'
+        }
+
+        // Inizializza contatore per questo canale
+        if (!channelCounters[canale]) {
+          channelCounters[canale] = 1
+        }
+
+        // Genera nuovo ID nel formato LEAD-{CANALE}-{NUMERO}
+        const numeroFormattato = String(channelCounters[canale]).padStart(5, '0')
+        const nuovoId = `LEAD-${canale}-${numeroFormattato}`
+
+        // Salta se l'ID è già nel formato corretto
+        if (leadId === nuovoId) {
+          skippedCount++
+          channelCounters[canale]++
+          continue
+        }
+
+        // Aggiorna il lead con il nuovo ID
+        await c.env.DB.prepare(`
+          UPDATE leads 
+          SET id = ?, fonte = ?
+          WHERE id = ?
+        `).bind(nuovoId, canale, lead.id).run()
+
+        console.log(`✅ Rinominato: ${lead.id} -> ${nuovoId}`)
+        updatedCount++
+        channelCounters[canale]++
+
+      } catch (err: any) {
+        console.error(`❌ Errore rinominando lead ${lead.id}:`, err.message)
+        skippedCount++
+      }
+    }
+
+    console.log(`✅ Standardizzazione completata: ${updatedCount} aggiornati, ${skippedCount} saltati`)
+
+    return c.json({
+      success: true,
+      updated: updatedCount,
+      skipped: skippedCount,
+      channelCounters,
+      message: `Standardizzazione completata: ${updatedCount} lead rinominati`
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore standardizzazione ID:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore standardizzazione ID'
+    }, 500)
+  }
+})
+
 // 🗑️ CLEANUP DUPLICATI FAMILIARI
 app.post('/api/leads/cleanup-family-duplicates', async (c) => {
   try {
