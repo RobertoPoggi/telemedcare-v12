@@ -74,7 +74,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p class="text-green-100 text-sm mb-1">Lead Oggi</p>
                         <p class="text-3xl font-bold" id="leadsToday">-</p>
-                        <p class="text-xs text-green-100 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-green-100 mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-users text-4xl text-green-200"></i>
                 </div>
@@ -86,7 +86,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p class="text-purple-100 text-sm mb-1">Contratti Oggi</p>
                         <p class="text-3xl font-bold" id="contractsToday">-</p>
-                        <p class="text-xs text-purple-100 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-purple-100 mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-file-contract text-4xl text-purple-200"></i>
                 </div>
@@ -98,7 +98,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p class="text-blue-100 text-sm mb-1">Proforma Oggi</p>
                         <p class="text-3xl font-bold" id="proformaToday">-</p>
-                        <p class="text-xs text-blue-100 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-blue-100 mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-file-invoice text-4xl text-blue-200"></i>
                 </div>
@@ -110,7 +110,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p class="text-white text-sm mb-1">Pagamenti Oggi</p>
                         <p class="text-3xl font-bold" id="paymentsToday">-</p>
-                        <p class="text-xs text-white mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-white mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-euro-sign text-4xl text-white opacity-80"></i>
                 </div>
@@ -122,7 +122,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p style="color: white !important;" class="text-sm mb-1 font-semibold">Configurazioni Oggi</p>
                         <p style="color: white !important;" class="text-3xl font-bold" id="configurationsToday">0</p>
-                        <p style="color: white !important;" class="text-xs mt-1 font-medium">Ultimi 24h</p>
+                        <p style="color: white !important;" class="text-xs mt-1 font-medium">Ultime 24h</p>
                     </div>
                     <i style="color: white !important;" class="fas fa-cog text-4xl"></i>
                 </div>
@@ -134,7 +134,7 @@ export const home = `<!DOCTYPE html>
                     <div>
                         <p class="text-pink-100 text-sm mb-1">Attivazioni Oggi</p>
                         <p class="text-3xl font-bold" id="activationsToday">-</p>
-                        <p class="text-xs text-pink-100 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-pink-100 mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-power-off text-4xl text-pink-200"></i>
                 </div>
@@ -1579,7 +1579,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <div>
                         <p class="text-gray-600 text-sm mb-1">Lead Oggi</p>
                         <p class="text-3xl font-bold text-purple-600" id="leadsToday">-</p>
-                        <p class="text-xs text-gray-500 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultime 24h</p>
                     </div>
                     <i class="fas fa-calendar-day text-3xl text-purple-500"></i>
                 </div>
