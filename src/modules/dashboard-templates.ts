@@ -120,7 +120,7 @@ export const home = `<!DOCTYPE html>
             <div id="boxConfigurazioni" style="background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%) !important;" class="text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p style="color: white !important;" class="text-sm mb-1 font-semibold">Configurazioni Oggi</p>
+                        <p style="color: white !important; white-space: nowrap;" class="text-xs mb-1 font-semibold">Configurazioni Oggi</p>
                         <p style="color: white !important;" class="text-3xl font-bold" id="configurationsToday">0</p>
                         <p style="color: white !important;" class="text-xs mt-1 font-medium">Ultime 24h</p>
                     </div>
