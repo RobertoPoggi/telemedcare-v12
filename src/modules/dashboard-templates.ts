@@ -1480,6 +1480,12 @@ export const dashboard = `<!DOCTYPE html>
             }
         }
         window.saveEditAssistito = saveEditAssistito;
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        window.closeModal = closeModal;
 
         function renderAssistitiTable(assistiti) {
             const tbody = document.getElementById('assistitiTable');
