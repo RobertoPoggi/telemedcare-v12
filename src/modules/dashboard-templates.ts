@@ -854,25 +854,6 @@ export const dashboard = `<!DOCTYPE html>
                     <i class="fas fa-chart-line mr-2"></i>DoubleYou
                 </button>
             </div>
-            <div class="mt-4 pt-4 border-t border-gray-200">
-                <button onclick="cleanImportFromExcel()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full mb-3">
-                    <i class="fas fa-trash-restore mr-2"></i>🗑️ CANCELLA E REIMPORTA DA EXCEL (129 lead)
-                </button>
-                <p class="text-xs text-red-600 mt-2 mb-4">
-                    ⚠️ <strong>ATTENZIONE!</strong> Questa operazione cancella TUTTI i lead esistenti e li reimporta dall'Excel con date e ID corretti.<br>
-                    📅 Caterina D'Alterio avrà <strong>LEAD-IRBEMA-00030</strong> (posizione 30/129)<br>
-                    📊 Totale: 129 lead (127 IRBEMA, 1 WEB, 1 NETWORKING)<br>
-                    🔴 <strong>Operazione NON reversibile!</strong>
-                </p>
-                
-                <button onclick="standardizeLeadIds()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full">
-                    <i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (solo rinomina)
-                </button>
-                <p class="text-xs text-gray-500 mt-2">
-                    ⚠️ Questa operazione rinomina solo gli ID dei lead esistenti (NON cancella).<br>
-                    📅 <strong>I lead vengono numerati in ordine cronologico</strong>: 00001 = più vecchio, 00132 = più recente.
-                </p>
-            </div>
         </div>
 
         <!-- Elenco Assistiti -->
@@ -1769,58 +1750,21 @@ export const dashboard = `<!DOCTYPE html>
 
         // Funzioni Import API
         function importFromExcel() {
-            // Crea input file nascosto
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.xlsx,.xls,.csv';
-            input.style.display = 'none';
-            
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) {
-                    document.body.removeChild(input); // Rimuovi input
-                    return;
-                }
-                
-                // Mostra loading
-                const loadingMsg = document.createElement('div');
-                loadingMsg.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-                loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Importazione in corso...';
-                document.body.appendChild(loadingMsg);
-                
-                try {
-                    // Crea FormData per upload
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const response = await fetch('/api/import/excel', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    // Rimuovi loading
-                    loadingMsg.remove();
-                    document.body.removeChild(input); // Rimuovi input
-                    
-                    if (result.success) {
-                        alert(\`✅ Import completato!\\n\\nLead importati: \${result.imported || 0}\\nLead saltati: \${result.skipped || 0}\`);
-                        // Ricarica dashboard
-                        loadDashboardData();
-                    } else {
-                        alert(\`❌ Errore import:\\n\\n\${result.error || 'Errore sconosciuto'}\`);
-                    }
-                } catch (error) {
-                    loadingMsg.remove();
-                    document.body.removeChild(input); // Rimuovi input
-                    alert(\`❌ Errore durante l'import:\\n\\n\${error.message}\`);
-                }
-            };
-            
-            // Aggiungi al DOM, trigger file picker, poi rimuovi
-            document.body.appendChild(input);
-            input.click();
+            alert('📋 IMPORT DA EXCEL\\n\\n' +
+                  '📁 Preparazione file Excel richiesta:\\n\\n' +
+                  '1️⃣ Usa il template Excel già popolato\\n' +
+                  '2️⃣ Compila i campi richiesti:\\n' +
+                  '   • Colonna B: DATA DI ARRIVO RICHIESTA\\n' +
+                  '   • Colonna F: CANALE (info@irbema.com, diretto, ecc.)\\n' +
+                  '   • Colonna G: NOME E COGNOME\\n' +
+                  '   • Colonna I: E-MAIL\\n' +
+                  '   • Colonna J: CONTATTO TELEFONICO\\n\\n' +
+                  '3️⃣ Il sistema assegnerà automaticamente:\\n' +
+                  '   • ID progressivi (LEAD-CANALE-00130, 00131...)\\n' +
+                  '   • Status: NEW o CONVERTED\\n' +
+                  '   • Canale: IRBEMA, WEB, NETWORKING, ecc.\\n\\n' +
+                  '✅ I nuovi lead saranno AGGIUNTI senza cancellare gli esistenti.\\n\\n' +
+                  '🚧 Funzionalità in sviluppo - contatta l\\'amministratore.');
         }
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
@@ -1837,106 +1781,6 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
-        async function cleanImportFromExcel() {
-            if (!confirm('🗑️ CLEAN IMPORT DA EXCEL\\n\\nQuesta operazione:\\n\\n1️⃣ CANCELLERÀ tutti i lead esistenti\\n2️⃣ IMPORTERÀ i 129 lead dall\\'Excel\\n3️⃣ Assegnerà ID corretti (LEAD-IRBEMA-00001 ... LEAD-IRBEMA-00127)\\n\\n📊 Lead da importare: 129\\n   • IRBEMA: 127 lead\\n   • WEB: 1 lead (Francesca Grati)\\n   • NETWORKING: 1 lead (Laura Calvi)\\n\\n📅 Ordinamento cronologico:\\n   LEAD-IRBEMA-00001 = Claudio Macchi (01/03/2025)\\n   LEAD-IRBEMA-00030 = Caterina D\\'Alterio (25/04/2025)\\n   LEAD-IRBEMA-00127 = Roberto Bifulco (17/12/2025)\\n\\n⚠️ ATTENZIONE: Questa operazione è IRREVERSIBILE!\\n\\nContinuare?')) {
-                return;
-            }
-
-            try {
-                const btn = event.target;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Caricamento lead da Excel...';
-
-                // Step 1: Carica i 129 lead dal JSON
-                console.log('📥 Caricamento leads_clean_import.json...');
-                const leadsResponse = await fetch('/leads_clean_import.json');
-                
-                if (!leadsResponse.ok) {
-                    throw new Error(\`Errore caricamento JSON: \${leadsResponse.status}\`);
-                }
-                
-                const leadsData = await leadsResponse.json();
-                const leads = leadsData.leads || [];
-                
-                console.log(\`✅ Caricati \${leads.length} lead dall'Excel\`);
-                
-                if (leads.length === 0) {
-                    throw new Error('Nessun lead trovato nel file JSON');
-                }
-
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cancellazione e reimport in corso...';
-
-                // Step 2: Invia al clean-import endpoint
-                const response = await fetch('/api/leads/clean-import', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ leads })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const errorMsg = result.errors > 0 ? \`\\n\\n⚠️ Errori: \${result.errors}\\n\${(result.errorDetails || []).slice(0, 5).map(e => \`  - \${e.id}: \${e.error}\`).join('\\n')}\` : '';
-                    alert(\`✅ CLEAN IMPORT COMPLETATO!\\n\\n🗑️  Lead cancellati: \${result.deleted}\\n📥 Lead importati: \${result.imported}\\n❌ Errori: \${result.errors}\${errorMsg}\\n\\n✅ Totale lead nel DB: \${result.imported}\\n\\nLa dashboard verrà ricaricata.\`);
-                    loadDashboardData(); // Ricarica i dati
-                } else {
-                    alert(\`❌ Errore: \${result.error}\`);
-                }
-
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>🗑️ Clean Import (129 Lead da Excel)';
-
-            } catch (error) {
-                console.error('Errore clean import:', error);
-                alert(\`❌ Errore durante il clean import: \${error.message}\`);
-                const btn = event.target;
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>🗑️ Clean Import (129 Lead da Excel)';
-            }
-        }
-        window.cleanImportFromExcel = cleanImportFromExcel;
-
-        // 🔧 Standardizza ID dei lead con formato LEAD-{CANALE}-{NUMERO}
-        async function standardizeLeadIds() {
-            if (!confirm('🔧 STANDARDIZZAZIONE CODICI LEAD\\n\\nQuesta operazione rinominerà TUTTI i lead esistenti con il formato standard:\\n\\n• LEAD-IRBEMA-00001 (più vecchio) ... LEAD-IRBEMA-00132 (più recente)\\n• LEAD-EXCEL-00001\\n• LEAD-AON-00001\\n• LEAD-WEB-00001\\n• LEAD-DOUBLEYOU-00001\\n• LEAD-NETWORKING-00001\\n\\n📅 IMPORTANTE: I numeri seguono l\\'ordine cronologico\\n   00001 = lead più vecchio\\n   00132 = lead più recente\\n\\n⚠️ Questa operazione NON può essere annullata.\\n\\nContinuare?')) {
-                return;
-            }
-
-            try {
-                const btn = event.target;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Standardizzazione in corso...';
-
-                const response = await fetch('/api/leads/standardize-ids', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(\`✅ STANDARDIZZAZIONE COMPLETATA!\\n\\n• Lead aggiornati: \${result.updated}\\n• Lead saltati: \${result.skipped}\\n\\nContatori per canale:\\n\${Object.entries(result.channelCounters || {}).map(([ch, count]) => \`  - \${ch}: \${count}\`).join('\\n')}\\n\\nLa dashboard verrà ricaricata.\`);
-                    loadDashboardData(); // Ricarica i dati
-                } else {
-                    alert(\`❌ Errore: \${result.error}\`);
-                }
-
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)';
-
-            } catch (error) {
-                console.error('Errore standardizzazione:', error);
-                alert(\`❌ Errore durante la standardizzazione: \${error.message}\`);
-                const btn = event.target;
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)';
-            }
-        }
-        window.standardizeLeadIds = standardizeLeadIds;
     </script>
 
     <!-- MODAL: EDIT ASSISTITO -->
