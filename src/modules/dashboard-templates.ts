@@ -1310,7 +1310,6 @@ export const dashboard = `<!DOCTYPE html>
                 const status = assistito.status || 'ATTIVO';  // Default ATTIVO per assistiti attivi
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
                 const assistitoId = assistito.id;  // Salva ID in variabile
-                const nomeEscaped = nomeCompleto.replace(/'/g, "\\'");  // Escape apici per onclick
                 
                 // Status badge colors (italiano)
                 const statusColors = {
@@ -1353,7 +1352,7 @@ export const dashboard = `<!DOCTYPE html>
                         '<button onclick="editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifica">' +
                             '<i class="fas fa-edit"></i>' +
                         '</button>' +
-                        '<button onclick="deleteAssistito(' + assistitoId + ', \'' + nomeEscaped + '\')" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">' +
+                        '<button onclick="deleteAssistito(' + assistitoId + ', &quot;' + nomeCompleto + '&quot;)" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">' +
                             '<i class="fas fa-trash"></i>' +
                         '</button>' +
                     '</td>' +
