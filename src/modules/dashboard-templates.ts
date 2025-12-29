@@ -1275,6 +1275,117 @@ export const dashboard = `<!DOCTYPE html>
             });
         }
 
+        // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
+        
+        async function viewAssistito(id) {
+            try {
+                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Mostra modal dettagli assistito
+                    alert(\`📋 Dettagli Assistito\\n\\n\` +
+                        \`Nome: \${assistito.nome_assistito} \${assistito.cognome_assistito}\\n\` +
+                        \`Caregiver: \${assistito.nome_caregiver || 'N/A'} \${assistito.cognome_caregiver || ''}\\n\` +
+                        \`Parentela: \${assistito.parentela_caregiver || 'N/A'}\\n\` +
+                        \`IMEI: \${assistito.imei}\\n\` +
+                        \`Email: \${assistito.email || 'N/A'}\\n\` +
+                        \`Telefono: \${assistito.telefono || 'N/A'}\\n\` +
+                        \`Piano: \${assistito.piano || 'BASE'}\\n\` +
+                        \`Contratto: \${assistito.codice_contratto || 'Nessuno'}\\n\` +
+                        \`Status: \${assistito.contratto_status || assistito.status}\`
+                    );
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        window.viewAssistito = viewAssistito;  // Esponi globalmente
+        
+        async function editAssistito(id) {
+            try {
+                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Richiedi nuovi dati
+                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '');
+                    if (!nuovoNome) return;
+                    
+                    const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '');
+                    if (!nuovoCognome) return;
+                    
+                    const nuovaEmail = prompt('Email:', assistito.email || '');
+                    const nuovoTelefono = prompt('Telefono:', assistito.telefono || '');
+                    const nuovoIMEI = prompt('IMEI Dispositivo:', assistito.imei || '');
+                    
+                    const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '');
+                    const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '');
+                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
+                    
+                    // Aggiorna
+                    const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_assistito: nuovoNome,
+                            cognome_assistito: nuovoCognome,
+                            nome_caregiver: caregiverNome,
+                            cognome_caregiver: caregiverCognome,
+                            parentela_caregiver: parentela,
+                            email: nuovaEmail,
+                            telefono: nuovoTelefono,
+                            imei: nuovoIMEI
+                        })
+                    });
+                    
+                    const result = await updateResponse.json();
+                    
+                    if (result.success) {
+                        alert('✅ Assistito aggiornato con successo!');
+                        loadDashboardData(); // Ricarica dashboard
+                    } else {
+                        alert(\`❌ Errore: \${result.error}\`);
+                    }
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        window.editAssistito = editAssistito;  // Esponi globalmente
+        
+        async function deleteAssistito(id, nome) {
+            if (!confirm(\`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\\n\\nQuesta azione non può essere annullata!\`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/assistiti/\${id}\`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Assistito \${nome} eliminato con successo!\`);
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        window.deleteAssistito = deleteAssistito;  // Esponi globalmente
+
         function renderAssistitiTable(assistiti) {
             const tbody = document.getElementById('assistitiTable');
             
@@ -3129,113 +3240,6 @@ export const data_dashboard = `<!DOCTYPE html>
             loadDataDashboard();
         });
         
-        // ========== CRUD ASSISTITI ==========
-        
-        async function viewAssistito(id) {
-            try {
-                const response = await fetch(\`/api/assistiti?id=\${id}\`);
-                const data = await response.json();
-                
-                if (data.success && data.assistiti && data.assistiti.length > 0) {
-                    const assistito = data.assistiti[0];
-                    
-                    // Mostra modal dettagli assistito
-                    alert(\`📋 Dettagli Assistito\n\n\` +
-                        \`Nome: \${assistito.nome_assistito} \${assistito.cognome_assistito}\n\` +
-                        \`Caregiver: \${assistito.nome_caregiver || 'N/A'} \${assistito.cognome_caregiver || ''}\n\` +
-                        \`Parentela: \${assistito.parentela_caregiver || 'N/A'}\n\` +
-                        \`IMEI: \${assistito.imei}\n\` +
-                        \`Email: \${assistito.email || 'N/A'}\n\` +
-                        \`Telefono: \${assistito.telefono || 'N/A'}\n\` +
-                        \`Piano: \${assistito.piano || 'BASE'}\n\` +
-                        \`Contratto: \${assistito.codice_contratto || 'Nessuno'}\n\` +
-                        \`Status: \${assistito.contratto_status || assistito.status}\`
-                    );
-                } else {
-                    alert('❌ Assistito non trovato');
-                }
-            } catch (error) {
-                alert(\`❌ Errore: \${error.message}\`);
-            }
-        }
-        
-        async function editAssistito(id) {
-            try {
-                const response = await fetch(\`/api/assistiti?id=\${id}\`);
-                const data = await response.json();
-                
-                if (data.success && data.assistiti && data.assistiti.length > 0) {
-                    const assistito = data.assistiti[0];
-                    
-                    // Richiedi nuovi dati
-                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '');
-                    if (!nuovoNome) return;
-                    
-                    const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '');
-                    if (!nuovoCognome) return;
-                    
-                    const nuovaEmail = prompt('Email:', assistito.email || '');
-                    const nuovoTelefono = prompt('Telefono:', assistito.telefono || '');
-                    const nuovoIMEI = prompt('IMEI Dispositivo:', assistito.imei || '');
-                    
-                    const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '');
-                    const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '');
-                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
-                    
-                    // Aggiorna
-                    const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            nome_assistito: nuovoNome,
-                            cognome_assistito: nuovoCognome,
-                            nome_caregiver: caregiverNome,
-                            cognome_caregiver: caregiverCognome,
-                            parentela_caregiver: parentela,
-                            email: nuovaEmail,
-                            telefono: nuovoTelefono,
-                            imei: nuovoIMEI
-                        })
-                    });
-                    
-                    const result = await updateResponse.json();
-                    
-                    if (result.success) {
-                        alert('✅ Assistito aggiornato con successo!');
-                        loadDashboardData(); // Ricarica dashboard
-                    } else {
-                        alert(\`❌ Errore: \${result.error}\`);
-                    }
-                } else {
-                    alert('❌ Assistito non trovato');
-                }
-            } catch (error) {
-                alert(\`❌ Errore: \${error.message}\`);
-            }
-        }
-        
-        async function deleteAssistito(id, nome) {
-            if (!confirm(\`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\n\nQuesta azione non può essere annullata!\`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(\`/api/assistiti/\${id}\`, {
-                    method: 'DELETE'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(\`✅ Assistito \${nome} eliminato con successo!\`);
-                    loadDashboardData(); // Ricarica dashboard
-                } else {
-                    alert(\`❌ Errore: \${result.error}\`);
-                }
-            } catch (error) {
-                alert(\`❌ Errore: \${error.message}\`);
-            }
-        }
         
         async function nuovoAssistito() {
             try {
