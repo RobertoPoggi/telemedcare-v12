@@ -1038,35 +1038,33 @@ export const dashboard = `<!DOCTYPE html>
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
-                // Lead già convertiti in assistiti da escludere
-                const convertedNames = [
-                    "Daniela Rocca", 
-                    "Simona Pizzutto", 
-                    "Caterina D'Alterio",
-                    "Caterina D Alterio",
-                    "Caterina dAlterio",
-                    "Rita Pennacchio"
-                ];
+                // REGOLA: Mostra solo lead NON convertiti (senza hardcoding)
+                // Un lead è convertito se:
+                // 1. Status è CONVERTED, CONTRACT_SIGNED o ACTIVE
+                // 2. Note contengono parole chiave: "contratto", "firmato", "convertito", "inviato contratto"
                 
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
                     const status = (lead.status || '').toUpperCase();
                     const isRecent = leadDate >= thirtyDaysAgo;
-                    const notConverted = !['CONVERTED', 'CONTRACT_SIGNED'].includes(status);
                     
-                    // Escludi lead già diventati assistiti (confronto più robusto)
-                    const fullName = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`
-                        .trim()
-                        .toLowerCase()
-                        .replace(/'/g, '')  // Rimuovi apostrofi
-                        .replace(/\s+/g, ' '); // Normalizza spazi
+                    // Controlla se lo status indica conversione
+                    const statusConverted = ['CONVERTED', 'CONTRACT_SIGNED', 'ACTIVE'].includes(status);
                     
-                    const notAssistito = !convertedNames.some(name => {
-                        const normalizedName = name.toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
-                        return fullName.includes(normalizedName);
-                    });
+                    // Controlla se le note indicano conversione
+                    const note = (lead.note || lead.notes || '').toLowerCase();
+                    const noteConverted = 
+                        note.includes('contratto') || 
+                        note.includes('firmato') || 
+                        note.includes('convertito') ||
+                        note.includes('inviato contratto') ||
+                        note.includes('pagamento') ||
+                        note.includes('consegna');
                     
-                    return isRecent && notConverted && notAssistito;
+                    // Lead è convertito se status O note indicano conversione
+                    const notConverted = !statusConverted && !noteConverted;
+                    
+                    return isRecent && notConverted;
                 });
                 
                 // Ultimi 10 lead recenti non convertiti per la tabella
