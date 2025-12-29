@@ -957,6 +957,7 @@ export const dashboard = `<!DOCTYPE html>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Dispositivo</th>
@@ -1029,7 +1030,7 @@ export const dashboard = `<!DOCTYPE html>
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 // Lead già convertiti in assistiti da escludere
-                const convertedNames = ["Daniela Rocca", "Simona Pizzutto", "Caterina D'Alterio"];
+                const convertedNames = ["Daniela Rocca", "Simona Pizzutto", "Caterina D'Alterio", "Rita Pennacchio"];
                 
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
@@ -1067,6 +1068,7 @@ export const dashboard = `<!DOCTYPE html>
                         const prezzo = piano === 'AVANZATO' ? '840' : '480';
                         const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
                         const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
+                        const telefono = lead.telefono || 'N/A';
                         const date = new Date(lead.created_at).toLocaleString('it-IT', {
                             day: '2-digit',
                             month: '2-digit',
@@ -1078,12 +1080,13 @@ export const dashboard = `<!DOCTYPE html>
                         return \`
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-3 text-sm">
-                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${lead.id}</code>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${lead.id}">\${formatLeadId(lead.id)}</code>
                                 </td>
                                 <td class="py-3 text-sm">
                                     <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
                                     <div class="text-xs text-gray-500">\${lead.email || ''}</div>
                                 </td>
+                                <td class="py-3 text-sm text-gray-600">\${telefono}</td>
                                 <td class="py-3 text-sm font-medium text-purple-600">\${servizio}</td>
                                 <td class="py-3 text-sm">\${piano}</td>
                                 <td class="py-3 text-sm text-gray-600">\${dispositivo}</td>
@@ -1270,28 +1273,69 @@ export const dashboard = `<!DOCTYPE html>
             });
         }
         
+        // Funzione per formattare ID lead in formato breve
+        function formatLeadId(leadId) {
+            if (!leadId) return 'N/A';
+            const id = leadId.toString();
+            
+            // Se già corto (max 15 caratteri), mostra tutto
+            if (id.length <= 15) return id;
+            
+            // Pattern: LEAD-{CANALE}-{NUMERO} -> mostra CANALE-NUMERO
+            const match = id.match(/LEAD-([A-Z]+)-(\d+)/i);
+            if (match) {
+                const canale = match[1].substring(0, 3).toUpperCase(); // Prime 3 lettere
+                const numero = match[2];
+                return \`\${canale}-\${numero}\`;
+            }
+            
+            // Fallback: mostra primi 6 + ultimi 4 caratteri
+            if (id.length > 12) {
+                return \`\${id.substring(0, 6)}...\${id.substring(id.length - 4)}\`;
+            }
+            
+            return id;
+        }
+        
         function updateChannelsDistribution(leads) {
             // Conta lead per canale
             const channelCounts = {};
             const channelColors = {
+                'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
-                'Irbema': 'bg-blue-500', 
-                'AON': 'bg-purple-500',
-                'DoubleYou': 'bg-orange-500',
                 'Web': 'bg-cyan-500',
-                'Altro': 'bg-gray-500'
+                'Networking': 'bg-purple-500',
+                'AON': 'bg-orange-500',
+                'DoubleYou': 'bg-pink-500'
             };
             
             leads.forEach(lead => {
-                // Estrai canale dal campo canale o origine
-                let canale = lead.canale || lead.origine || 'Web';
+                let canale = 'Web'; // Default
                 
-                // Normalizza nome canale
-                if (canale.toLowerCase().includes('excel')) canale = 'Excel';
-                else if (canale.toLowerCase().includes('irbema')) canale = 'Irbema';
-                else if (canale.toLowerCase().includes('aon')) canale = 'AON';
-                else if (canale.toLowerCase().includes('doubleyou') || canale.toLowerCase().includes('double')) canale = 'DoubleYou';
-                else if (!channelColors[canale]) canale = 'Web';
+                // Estrai info lead
+                const leadId = (lead.id || '').toString().toUpperCase();
+                const nomeCompleto = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`.trim().toLowerCase();
+                const canaleField = (lead.canale || lead.origine || '').toLowerCase();
+                
+                // Rilevamento canale con priorità
+                if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
+                    canale = 'Excel';
+                } else if (leadId.includes('IRBEMA') || canaleField.includes('irbema')) {
+                    canale = 'Irbema';
+                } else if (nomeCompleto.includes('francesca grati')) {
+                    canale = 'Web';
+                } else if (nomeCompleto.includes('laura calvi')) {
+                    canale = 'Networking';
+                } else if (canaleField.includes('aon')) {
+                    canale = 'AON';
+                } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
+                    canale = 'DoubleYou';
+                } else if (canaleField.includes('network')) {
+                    canale = 'Networking';
+                } else if (leadId.startsWith('LEAD-') && !leadId.includes('EXCEL')) {
+                    // Lead generici probabilmente da Irbema (la maggioranza)
+                    canale = 'Irbema';
+                }
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
