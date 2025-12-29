@@ -1039,7 +1039,14 @@ export const dashboard = `<!DOCTYPE html>
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 // Lead già convertiti in assistiti da escludere
-                const convertedNames = ["Daniela Rocca", "Simona Pizzutto", "Caterina D'Alterio", "Rita Pennacchio"];
+                const convertedNames = [
+                    "Daniela Rocca", 
+                    "Simona Pizzutto", 
+                    "Caterina D'Alterio",
+                    "Caterina D Alterio",
+                    "Caterina dAlterio",
+                    "Rita Pennacchio"
+                ];
                 
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
@@ -1047,11 +1054,17 @@ export const dashboard = `<!DOCTYPE html>
                     const isRecent = leadDate >= thirtyDaysAgo;
                     const notConverted = !['CONVERTED', 'CONTRACT_SIGNED'].includes(status);
                     
-                    // Escludi lead già diventati assistiti
-                    const fullName = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`.trim();
-                    const notAssistito = !convertedNames.some(name => 
-                        fullName.toLowerCase().includes(name.toLowerCase())
-                    );
+                    // Escludi lead già diventati assistiti (confronto più robusto)
+                    const fullName = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`
+                        .trim()
+                        .toLowerCase()
+                        .replace(/'/g, '')  // Rimuovi apostrofi
+                        .replace(/\s+/g, ' '); // Normalizza spazi
+                    
+                    const notAssistito = !convertedNames.some(name => {
+                        const normalizedName = name.toLowerCase().replace(/'/g, '').replace(/\s+/g, ' ');
+                        return fullName.includes(normalizedName);
+                    });
                     
                     return isRecent && notConverted && notAssistito;
                 });

@@ -4280,6 +4280,16 @@ app.post('/api/leads/standardize-ids', async (c) => {
     console.log('📊 Distribuzione per canale:')
     Object.entries(leadsByChannel).forEach(([canale, leads]) => {
       console.log(`  - ${canale}: ${leads.length} lead`)
+      
+      // Mostra i primi 5 lead per debug (con date)
+      if (leads.length > 0) {
+        console.log(`    Primi 5 lead di ${canale}:`)
+        leads.slice(0, 5).forEach((lead, idx) => {
+          const nome = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          const data = lead.created_at || lead.timestamp || 'NO DATA'
+          console.log(`      ${idx + 1}. ${nome} - ${data}`)
+        })
+      }
     })
 
     // FASE 2: Rinumera ogni canale partendo da 00001 (in ordine temporale)
@@ -4312,6 +4322,17 @@ app.post('/api/leads/standardize-ids', async (c) => {
             SET id = ?, fonte = ?
             WHERE id = ?
           `).bind(nuovoId, canale, lead.id).run()
+
+          const nomeCompleto = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          
+          // Log speciale per Caterina D'Alterio
+          if (nomeCompleto.toLowerCase().includes('caterina') && nomeCompleto.toLowerCase().includes('alterio')) {
+            console.log(`🔍 CATERINA D'ALTERIO TROVATA:`)
+            console.log(`   Vecchio ID: ${lead.id}`)
+            console.log(`   Nuovo ID: ${nuovoId}`)
+            console.log(`   Data: ${lead.created_at || lead.timestamp}`)
+            console.log(`   Posizione: ${numeroProgressivo}/${channelLeads.length}`)
+          }
 
           console.log(`✅ ${numeroProgressivo}/${channelLeads.length} - Rinominato: ${lead.id} -> ${nuovoId}`)
           updatedCount++
