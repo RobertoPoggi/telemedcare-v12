@@ -8132,6 +8132,58 @@ app.put('/api/assistiti/:id', async (c) => {
   }
 })
 
+// POST /api/assistiti/debug-eileen - Debug info Eileen
+app.post('/api/assistiti/debug-eileen', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔍 Debug Eileen Elisabeth King...')
+
+    // Cerca Eileen
+    const eileen = await c.env.DB.prepare(`
+      SELECT * 
+      FROM assistiti 
+      WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')
+         OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
+      LIMIT 1
+    `).first()
+
+    if (!eileen) {
+      return c.json({ 
+        success: false, 
+        error: 'Eileen non trovata' 
+      }, 404)
+    }
+
+    // Verifica se colonna piano esiste
+    let hasPianoColumn = false
+    try {
+      await c.env.DB.prepare('SELECT piano FROM assistiti LIMIT 1').first()
+      hasPianoColumn = true
+    } catch {
+      hasPianoColumn = false
+    }
+
+    return c.json({
+      success: true,
+      eileen: eileen,
+      has_piano_column: hasPianoColumn,
+      note: hasPianoColumn 
+        ? `Piano attuale: ${eileen.piano || 'NULL'}` 
+        : 'Colonna piano non esiste - esegui /api/assistiti/add-piano-column'
+    })
+  } catch (error) {
+    console.error('❌ Errore debug Eileen:', error)
+    return c.json({
+      success: false,
+      error: 'Errore debug Eileen',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/add-piano-column - Aggiunge colonna piano alla tabella
 app.post('/api/assistiti/add-piano-column', async (c) => {
   try {
