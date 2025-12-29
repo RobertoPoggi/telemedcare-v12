@@ -1090,8 +1090,8 @@ export const dashboard = `<!DOCTYPE html>
                 // Salva tutti i lead per i grafici
                 window.allLeadsData = allLeads;
                 
-                // Aggiorna grafici con tutti i lead
-                updateServicesChart(allLeads);
+                // Aggiorna grafici: servizi basati su ASSISTITI, piani basati su ASSISTITI
+                updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
                 updatePlansChart(allLeads);
                 
                 // Renderizza assistiti da API dedicata
@@ -1181,14 +1181,14 @@ export const dashboard = `<!DOCTYPE html>
             return prezzi[servizio]?.[piano] || '0.00';
         }
 
-        function updateServicesChart(leads) {
-            // Usa allLeads se disponibile, altrimenti leads
-            const leadsToUse = window.allLeadsData || leads;
-            const total = leadsToUse.length || 1;
+        function updateServicesChart(assistiti) {
+            // FIX: Usa assistiti attivi, non lead
+            const total = assistiti.length || 1;
             
-            // TUTTI i 126 lead sono "eCura PRO"
+            // Conta servizi basandosi sui piani degli assistiti
+            // eCura PRO BASE e AVANZATO (tutti gli assistiti attuali)
             const serviceCounts = {
-                'eCura PRO': total
+                'eCura PRO': total  // Tutti gli assistiti attivi sono eCura PRO
             };
 
             const colors = {
@@ -2164,6 +2164,114 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore di comunicazione: \${error.message}\`);
             }
         }
+        
+        // ========== CRUD ASSISTITI ==========
+        
+        async function viewAssistito(id) {
+            try {
+                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Mostra modal dettagli assistito
+                    alert(\`📋 Dettagli Assistito\\n\\n\` +
+                        \`Nome: \${assistito.nome_assistito} \${assistito.cognome_assistito}\\n\` +
+                        \`Caregiver: \${assistito.nome_caregiver || 'N/A'} \${assistito.cognome_caregiver || ''}\\n\` +
+                        \`Parentela: \${assistito.parentela_caregiver || 'N/A'}\\n\` +
+                        \`IMEI: \${assistito.imei}\\n\` +
+                        \`Email: \${assistito.email || 'N/A'}\\n\` +
+                        \`Telefono: \${assistito.telefono || 'N/A'}\\n\` +
+                        \`Piano: \${assistito.piano || 'BASE'}\\n\` +
+                        \`Contratto: \${assistito.codice_contratto || 'Nessuno'}\\n\` +
+                        \`Status: \${assistito.contratto_status || assistito.status}\`
+                    );
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        
+        async function editAssistito(id) {
+            try {
+                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Richiedi nuovi dati
+                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '');
+                    if (!nuovoNome) return;
+                    
+                    const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '');
+                    if (!nuovoCognome) return;
+                    
+                    const nuovaEmail = prompt('Email:', assistito.email || '');
+                    const nuovoTelefono = prompt('Telefono:', assistito.telefono || '');
+                    const nuovoIMEI = prompt('IMEI Dispositivo:', assistito.imei || '');
+                    
+                    const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '');
+                    const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '');
+                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
+                    
+                    // Aggiorna
+                    const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_assistito: nuovoNome,
+                            cognome_assistito: nuovoCognome,
+                            nome_caregiver: caregiverNome,
+                            cognome_caregiver: caregiverCognome,
+                            parentela_caregiver: parentela,
+                            email: nuovaEmail,
+                            telefono: nuovoTelefono,
+                            imei: nuovoIMEI
+                        })
+                    });
+                    
+                    const result = await updateResponse.json();
+                    
+                    if (result.success) {
+                        alert('✅ Assistito aggiornato con successo!');
+                        loadDashboardData(); // Ricarica dashboard
+                    } else {
+                        alert(\`❌ Errore: \${result.error}\`);
+                    }
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
+        
+        async function deleteAssistito(id, nome) {
+            if (!confirm(\`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\\n\\nQuesta azione non può essere annullata!\`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/assistiti/\${id}\`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(\`✅ Assistito \${nome} eliminato con successo!\`);
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+            } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+            }
+        }
     </script>
 
     <!-- MODAL: NEW LEAD -->
@@ -2794,7 +2902,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            alert(\`📄 CONTRATTO: \${contract.codice_contratto || contract.id}\\n\\n👤 Cliente: \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\\n💰 Importo: €\${contract.importo_annuo || 'N/A'}\\n📅 Data: \${new Date(contract.created_at).toLocaleDateString('it-IT')}\\n📊 Status: \${contract.status || 'N/A'}\\n\`);
+            alert(\`📄 CONTRATTO: \${contract.codice_contratto || contract.id}\\n\\n👤 Cliente: \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\\n💰 Importo: €\${contract.prezzo_totale || 'N/A'}\\n📅 Data: \${new Date(contract.created_at).toLocaleDateString('it-IT')}\\n📊 Status: \${contract.status || 'N/A'}\\n\`);
         }
         
         async function editContract(contractId) {
@@ -2909,32 +3017,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            // Cerca il PDF nella cartella public/contratti basandosi sul nome cliente
-            const nomeCliente = (contract.cliente_nome + ' ' + contract.cliente_cognome).trim();
-            
-            // Elenca i PDF disponibili (questa lista dovrebbe essere dinamica)
-            const pdfsDisponibili = [
-                'Paolo Magri',
-                'Elena Saglia',
-                'Simona Pizzutto',
-                'Caterina D\\'Alterio',
-                'Gianni Paolo Pizzutto',
-                'Manuela Poggi',
-                'Rita Pennacchio',
-                'Eileen King'
-            ];
-            
-            const pdfMatch = pdfsDisponibili.find(pdf => 
-                nomeCliente.toLowerCase().includes(pdf.toLowerCase()) || 
-                pdf.toLowerCase().includes(nomeCliente.toLowerCase())
-            );
-            
-            if (pdfMatch) {
-                // Apri in nuova finestra
-                window.open('/contratti/' + encodeURIComponent(pdfMatch) + '.pdf', '_blank');
-            } else {
-                alert('❌ PDF non trovato per: ' + nomeCliente + '\\n\\nPDF disponibili:\\n' + pdfsDisponibili.join('\\n'));
-            }
+            // Usa l'endpoint API per generare/scaricare il PDF
+            const pdfUrl = \`/api/contratti/\${contractId}/download\`;
+            window.open(pdfUrl, '_blank');
         }
 
         // ============================================
@@ -3664,13 +3749,23 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function getWorkflowStatus(lead) {
-            // Determina stato workflow
-            if (lead.status === 'ACTIVE') {
+            // Determina stato workflow con tutti gli stati
+            const status = lead.status?.toUpperCase();
+            
+            if (status === 'CONVERTED') {
+                return { class: 'bg-green-100 text-green-700', text: 'CONVERTITO' };
+            } else if (status === 'CONTRACT_SIGNED') {
+                return { class: 'bg-green-100 text-green-700', text: 'CONTRATTO FIRMATO' };
+            } else if (status === 'CONTRACT_SENT') {
+                return { class: 'bg-blue-100 text-blue-700', text: 'CONTRATTO INVIATO' };
+            } else if (status === 'ACTIVE') {
                 return { class: 'bg-green-100 text-green-700', text: 'ATTIVO' };
             } else if (lead.contratto_inviato) {
                 return { class: 'bg-blue-100 text-blue-700', text: 'CONTRATTO INVIATO' };
-            } else {
+            } else if (status === 'NEW' || status === 'NUOVO') {
                 return { class: 'bg-yellow-100 text-yellow-700', text: 'NUOVO' };
+            } else {
+                return { class: 'bg-gray-100 text-gray-700', text: status || 'NUOVO' };
             }
         }
 
