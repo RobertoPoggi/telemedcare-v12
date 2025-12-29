@@ -858,7 +858,10 @@ export const dashboard = `<!DOCTYPE html>
                 <button onclick="standardizeLeadIds()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full">
                     <i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)
                 </button>
-                <p class="text-xs text-gray-500 mt-2">⚠️ Questa operazione rinomina tutti i lead esistenti con il formato standard LEAD-IRBEMA-00001, LEAD-AON-00001, etc.</p>
+                <p class="text-xs text-gray-500 mt-2">
+                    ⚠️ Questa operazione rinomina tutti i lead esistenti con il formato standard.<br>
+                    📅 <strong>I lead vengono numerati in ordine cronologico</strong>: 00001 = più vecchio, 00132 = più recente.
+                </p>
             </div>
         </div>
 
@@ -1810,7 +1813,7 @@ export const dashboard = `<!DOCTYPE html>
 
         // 🔧 Standardizza ID dei lead con formato LEAD-{CANALE}-{NUMERO}
         async function standardizeLeadIds() {
-            if (!confirm('🔧 STANDARDIZZAZIONE CODICI LEAD\\n\\nQuesta operazione rinominerà TUTTI i lead esistenti con il formato standard:\\n\\n• LEAD-IRBEMA-00001\\n• LEAD-EXCEL-00001\\n• LEAD-AON-00001\\n• LEAD-WEB-00001\\n• LEAD-DOUBLEYOU-00001\\n• LEAD-NETWORKING-00001\\n\\n⚠️ Questa operazione NON può essere annullata.\\n\\nContinuare?')) {
+            if (!confirm('🔧 STANDARDIZZAZIONE CODICI LEAD\\n\\nQuesta operazione rinominerà TUTTI i lead esistenti con il formato standard:\\n\\n• LEAD-IRBEMA-00001 (più vecchio) ... LEAD-IRBEMA-00132 (più recente)\\n• LEAD-EXCEL-00001\\n• LEAD-AON-00001\\n• LEAD-WEB-00001\\n• LEAD-DOUBLEYOU-00001\\n• LEAD-NETWORKING-00001\\n\\n📅 IMPORTANTE: I numeri seguono l\\'ordine cronologico\\n   00001 = lead più vecchio\\n   00132 = lead più recente\\n\\n⚠️ Questa operazione NON può essere annullata.\\n\\nContinuare?')) {
                 return;
             }
 

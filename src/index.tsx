@@ -4234,70 +4234,95 @@ app.post('/api/leads/standardize-ids', async (c) => {
 
     console.log('🔧 Inizio standardizzazione ID lead...')
 
-    // Recupera tutti i lead
-    const allLeads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY created_at ASC`).all()
+    // Recupera tutti i lead ORDINATI PER DATA (dal più vecchio al più recente)
+    const allLeads = await c.env.DB.prepare(`
+      SELECT * FROM leads 
+      ORDER BY 
+        COALESCE(created_at, timestamp, updated_at) ASC,
+        id ASC
+    `).all()
     const leads = allLeads.results || []
 
-    console.log(`📊 Trovati ${leads.length} lead da processare`)
+    console.log(`📊 Trovati ${leads.length} lead da processare (ordinati per data di arrivo)`)
 
+    // FASE 1: Classifica tutti i lead per canale (mantenendo l'ordine temporale)
+    const leadsByChannel: Record<string, any[]> = {}
+
+    for (const lead of leads) {
+      // Determina il canale del lead
+      let canale = 'WEB' // Default
+      const leadId = (lead.id || '').toString().toUpperCase()
+      const fonte = (lead.fonte || '').toLowerCase()
+      const nomeCompleto = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim().toLowerCase()
+
+      // Rilevamento canale con priorità
+      if (leadId.includes('IRBEMA') || fonte.includes('irbema')) {
+        canale = 'IRBEMA'
+      } else if (leadId.includes('EXCEL') || fonte.includes('excel')) {
+        canale = 'EXCEL'
+      } else if (leadId.includes('AON') || fonte.includes('aon')) {
+        canale = 'AON'
+      } else if (leadId.includes('DOUBLEYOU') || fonte.includes('doubleyou') || fonte.includes('double you')) {
+        canale = 'DOUBLEYOU'
+      } else if (nomeCompleto.includes('francesca grati')) {
+        canale = 'WEB'
+      } else if (nomeCompleto.includes('laura calvi')) {
+        canale = 'NETWORKING'
+      }
+
+      // Aggiungi lead al canale corrispondente
+      if (!leadsByChannel[canale]) {
+        leadsByChannel[canale] = []
+      }
+      leadsByChannel[canale].push({ ...lead, canale })
+    }
+
+    console.log('📊 Distribuzione per canale:')
+    Object.entries(leadsByChannel).forEach(([canale, leads]) => {
+      console.log(`  - ${canale}: ${leads.length} lead`)
+    })
+
+    // FASE 2: Rinumera ogni canale partendo da 00001 (in ordine temporale)
     let updatedCount = 0
     let skippedCount = 0
     const channelCounters: Record<string, number> = {}
 
-    for (const lead of leads) {
-      try {
-        // Determina il canale del lead
-        let canale = 'WEB' // Default
-        const leadId = (lead.id || '').toString().toUpperCase()
-        const fonte = (lead.fonte || '').toLowerCase()
-        const nomeCompleto = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim().toLowerCase()
-
-        // Rilevamento canale con priorità
-        if (leadId.includes('IRBEMA') || fonte.includes('irbema')) {
-          canale = 'IRBEMA'
-        } else if (leadId.includes('EXCEL') || fonte.includes('excel')) {
-          canale = 'EXCEL'
-        } else if (leadId.includes('AON') || fonte.includes('aon')) {
-          canale = 'AON'
-        } else if (leadId.includes('DOUBLEYOU') || fonte.includes('doubleyou') || fonte.includes('double you')) {
-          canale = 'DOUBLEYOU'
-        } else if (nomeCompleto.includes('francesca grati')) {
-          canale = 'WEB'
-        } else if (nomeCompleto.includes('laura calvi')) {
-          canale = 'NETWORKING'
-        }
-
-        // Inizializza contatore per questo canale
-        if (!channelCounters[canale]) {
-          channelCounters[canale] = 1
-        }
-
-        // Genera nuovo ID nel formato LEAD-{CANALE}-{NUMERO}
-        const numeroFormattato = String(channelCounters[canale]).padStart(5, '0')
+    for (const [canale, channelLeads] of Object.entries(leadsByChannel)) {
+      console.log(`\\n🔧 Processando canale ${canale} (${channelLeads.length} lead)...`)
+      
+      for (let i = 0; i < channelLeads.length; i++) {
+        const lead = channelLeads[i]
+        const numeroProgressivo = i + 1 // Parte da 1
+        const numeroFormattato = String(numeroProgressivo).padStart(5, '0')
         const nuovoId = `LEAD-${canale}-${numeroFormattato}`
 
-        // Salta se l'ID è già nel formato corretto
-        if (leadId === nuovoId) {
+        const leadId = (lead.id || '').toString().toUpperCase()
+
+        try {
+          // Salta se l'ID è già nel formato corretto
+          if (leadId === nuovoId) {
+            console.log(`⏭️  Saltato (già corretto): ${nuovoId}`)
+            skippedCount++
+            continue
+          }
+
+          // Aggiorna il lead con il nuovo ID
+          await c.env.DB.prepare(`
+            UPDATE leads 
+            SET id = ?, fonte = ?
+            WHERE id = ?
+          `).bind(nuovoId, canale, lead.id).run()
+
+          console.log(`✅ ${numeroProgressivo}/${channelLeads.length} - Rinominato: ${lead.id} -> ${nuovoId}`)
+          updatedCount++
+
+        } catch (err: any) {
+          console.error(`❌ Errore rinominando lead ${lead.id}:`, err.message)
           skippedCount++
-          channelCounters[canale]++
-          continue
         }
-
-        // Aggiorna il lead con il nuovo ID
-        await c.env.DB.prepare(`
-          UPDATE leads 
-          SET id = ?, fonte = ?
-          WHERE id = ?
-        `).bind(nuovoId, canale, lead.id).run()
-
-        console.log(`✅ Rinominato: ${lead.id} -> ${nuovoId}`)
-        updatedCount++
-        channelCounters[canale]++
-
-      } catch (err: any) {
-        console.error(`❌ Errore rinominando lead ${lead.id}:`, err.message)
-        skippedCount++
       }
+
+      channelCounters[canale] = channelLeads.length
     }
 
     console.log(`✅ Standardizzazione completata: ${updatedCount} aggiornati, ${skippedCount} saltati`)
