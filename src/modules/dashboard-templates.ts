@@ -841,16 +841,16 @@ export const dashboard = `<!DOCTYPE html>
                 <i class="fas fa-download mr-2 text-blue-600"></i>Import Lead da Canali
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <button onclick="importFromChannel('Excel')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                <button onclick="importFromExcel()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-file-excel mr-2"></i>Excel
                 </button>
-                <button onclick="importFromChannel('Irbema')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                <button onclick="importFromIrbema()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-building mr-2"></i>Irbema
                 </button>
-                <button onclick="importFromChannel('AON')" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                <button onclick="importFromAON()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-handshake mr-2"></i>AON
                 </button>
-                <button onclick="importFromChannel('DoubleYou')" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                <button onclick="importFromDoubleYou()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-chart-line mr-2"></i>DoubleYou
                 </button>
             </div>
@@ -936,24 +936,8 @@ export const dashboard = `<!DOCTYPE html>
                 <i class="fas fa-network-wired text-orange-500 mr-2"></i>
                 Distribuzione per Canale
             </h3>
-            <div class="mb-4">
-                <canvas id="channelsChartCanvas" style="max-height: 300px;"></canvas>
-            </div>
-            
-            <!-- Pulsanti Import API -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                <button onclick="importFromExcel()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm transition-colors">
-                    <i class="fas fa-file-excel mr-2"></i> Import Excel
-                </button>
-                <button onclick="importFromIrbema()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm transition-colors">
-                    <i class="fas fa-building mr-2"></i> Import Irbema
-                </button>
-                <button onclick="importFromAON()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded text-sm transition-colors">
-                    <i class="fas fa-shield-alt mr-2"></i> Import AON
-                </button>
-                <button onclick="importFromDoubleYou()" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm transition-colors">
-                    <i class="fas fa-network-wired mr-2"></i> Import DoubleYou
-                </button>
+            <div id="channelsDistribution" class="space-y-3">
+                <!-- Distribuzione canali verrà popolata dinamicamente -->
             </div>
         </div>
 
@@ -1044,12 +1028,22 @@ export const dashboard = `<!DOCTYPE html>
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
+                // Lead già convertiti in assistiti da escludere
+                const convertedNames = ['Daniela Rocca', 'Simona Pizzutto', 'Caterina D\'Alterio'];
+                
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
                     const status = (lead.status || '').toUpperCase();
                     const isRecent = leadDate >= thirtyDaysAgo;
                     const notConverted = !['CONVERTED', 'CONTRACT_SIGNED'].includes(status);
-                    return isRecent && notConverted;
+                    
+                    // Escludi lead già diventati assistiti
+                    const fullName = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`.trim();
+                    const notAssistito = !convertedNames.some(name => 
+                        fullName.toLowerCase().includes(name.toLowerCase())
+                    );
+                    
+                    return isRecent && notConverted && notAssistito;
                 });
                 
                 // Ultimi 10 lead recenti non convertiti per la tabella
@@ -1109,6 +1103,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici: servizi basati su ASSISTITI, piani basati su ASSISTITI
                 updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
                 updatePlansChart(allLeads);
+                updateChannelsDistribution(allLeads);
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
@@ -1273,6 +1268,62 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                 \`;
             });
+        }
+        
+        function updateChannelsDistribution(leads) {
+            // Conta lead per canale
+            const channelCounts = {};
+            const channelColors = {
+                'Excel': 'bg-green-500',
+                'Irbema': 'bg-blue-500', 
+                'AON': 'bg-purple-500',
+                'DoubleYou': 'bg-orange-500',
+                'Web': 'bg-cyan-500',
+                'Altro': 'bg-gray-500'
+            };
+            
+            leads.forEach(lead => {
+                // Estrai canale dal campo canale o origine
+                let canale = lead.canale || lead.origine || 'Web';
+                
+                // Normalizza nome canale
+                if (canale.toLowerCase().includes('excel')) canale = 'Excel';
+                else if (canale.toLowerCase().includes('irbema')) canale = 'Irbema';
+                else if (canale.toLowerCase().includes('aon')) canale = 'AON';
+                else if (canale.toLowerCase().includes('doubleyou') || canale.toLowerCase().includes('double')) canale = 'DoubleYou';
+                else if (!channelColors[canale]) canale = 'Web';
+                
+                channelCounts[canale] = (channelCounts[canale] || 0) + 1;
+            });
+            
+            const total = leads.length || 1;
+            let html = '';
+            
+            // Ordina per count discendente
+            const sortedChannels = Object.entries(channelCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (sortedChannels.length === 0) {
+                html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
+            } else {
+                sortedChannels.forEach(([canale, count]) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = channelColors[canale] || 'bg-gray-500';
+                    
+                    html += \`
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">\${canale}</span>
+                                <span class="text-sm font-bold text-gray-900">\${count} (\${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
+                            </div>
+                        </div>
+                    \`;
+                });
+            }
+            
+            document.getElementById('channelsDistribution').innerHTML = html;
         }
 
         // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
