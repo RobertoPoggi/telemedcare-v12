@@ -1029,7 +1029,7 @@ export const dashboard = `<!DOCTYPE html>
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 // Lead già convertiti in assistiti da escludere
-                const convertedNames = ['Daniela Rocca', 'Simona Pizzutto', 'Caterina D\'Alterio'];
+                const convertedNames = ["Daniela Rocca", "Simona Pizzutto", "Caterina D'Alterio"];
                 
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
