@@ -1323,40 +1323,40 @@ export const dashboard = `<!DOCTYPE html>
                 // Piano badge colors
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
-                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
-                    '<td class="py-2 text-xs">' +
-                        '<div class="font-medium">' + nomeCompleto + '</div>' +
-                        '<div class="text-xs text-gray-500">Caregiver: ' + caregiver + ' (' + parentela + ')</div>' +
-                    '</td>' +
-                    '<td class="py-2 text-xs">' +
-                        '<code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">' + imei + '</code>' +
-                    '</td>' +
-                    '<td class="py-2 text-xs text-gray-600">' + email + '</td>' +
-                    '<td class="py-2 text-xs text-gray-600">' + telefono + '</td>' +
-                    '<td class="py-2">' +
-                        '<span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">' + servizio + '</span>' +
-                    '</td>' +
-                    '<td class="py-2">' +
-                        '<span class="px-2 py-1 ' + pianoColor + ' text-xs rounded">' + piano + '</span>' +
-                    '</td>' +
-                    '<td class="py-2">' +
-                        '<span class="px-2 py-1 ' + statusColor + ' text-xs rounded">' + status + '</span>' +
-                    '</td>' +
-                    '<td class="py-2 text-xs">' +
-                        '<code class="bg-gray-100 px-2 py-1 rounded text-xs">' + codice + '</code>' +
-                    '</td>' +
-                    '<td class="py-2 text-xs text-center">' +
-                        '<button onclick="viewAssistito(' + assistitoId + ')" class="text-blue-600 hover:text-blue-800 mx-1" title="Visualizza">' +
-                            '<i class="fas fa-eye"></i>' +
-                        '</button>' +
-                        '<button onclick="editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifica">' +
-                            '<i class="fas fa-edit"></i>' +
-                        '</button>' +
-                        '<button onclick="deleteAssistito(' + assistitoId + ', &quot;' + nomeCompleto + '&quot;)" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">' +
-                            '<i class="fas fa-trash"></i>' +
-                        '</button>' +
-                    '</td>' +
-                '</tr>';
+                return \`<tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-2 text-xs">
+                        <div class="font-medium">\${nomeCompleto}</div>
+                        <div class="text-xs text-gray-500">Caregiver: \${caregiver} (\${parentela})</div>
+                    </td>
+                    <td class="py-2 text-xs">
+                        <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">\${imei}</code>
+                    </td>
+                    <td class="py-2 text-xs text-gray-600">\${email}</td>
+                    <td class="py-2 text-xs text-gray-600">\${telefono}</td>
+                    <td class="py-2">
+                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">\${servizio}</span>
+                    </td>
+                    <td class="py-2">
+                        <span class="px-2 py-1 \${pianoColor} text-xs rounded">\${piano}</span>
+                    </td>
+                    <td class="py-2">
+                        <span class="px-2 py-1 \${statusColor} text-xs rounded">\${status}</span>
+                    </td>
+                    <td class="py-2 text-xs">
+                        <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${codice}</code>
+                    </td>
+                    <td class="py-2 text-xs text-center">
+                        <button onclick="window.viewAssistito(\${assistitoId})" class="text-blue-600 hover:text-blue-800 mx-1" title="Visualizza">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="window.editAssistito(\${assistitoId})" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifica">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="window.deleteAssistito(\${assistitoId}, '\${nomeCompleto.replace(/'/g, "\\\\'")}')" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>\`;
             }).join('');
         }
 
@@ -1496,6 +1496,7 @@ export const dashboard = `<!DOCTYPE html>
             document.body.appendChild(input);
             input.click();
         }
+        window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
             alert('🔄 Import da Irbema\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/irbema\\n\\nQuesta funzionalità permetterà di importare lead dal partner Irbema.');
@@ -3895,7 +3896,11 @@ export const workflow_manager = `<!DOCTYPE html>
                     message += 'Primi 10 record:\\n\\n';
                     items.slice(0, 10).forEach((item, idx) => {
                         if (type === 'leads' || type === 'attivi') {
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''}\\n\`;
+                            const status = item.status || 'NUOVO';
+                            const statusText = status === 'ACTIVE' ? '✅ ATTIVO' : 
+                                             status === 'CONVERTED' ? '✓ CONVERTITO' :
+                                             status === 'CONTRACT_SIGNED' ? '✍️ FIRMATO' : '🆕 NUOVO';
+                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${statusText}\\n\`;
                         } else if (type === 'contratti') {
                             message += \`\${idx+1}. \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
                         } else {
@@ -3913,6 +3918,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 alert('❌ Errore nel caricamento dell\\'archivio.\\n\\n' + error.message);
             }
         }
+        window.openArchive = openArchive;  // Esponi globalmente
 
         // Quick Actions per ogni riga della tabella
         function quickAction(leadId, action) {
