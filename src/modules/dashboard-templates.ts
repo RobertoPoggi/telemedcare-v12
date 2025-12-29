@@ -1040,8 +1040,20 @@ export const dashboard = `<!DOCTYPE html>
                 document.getElementById('emailsSent').textContent = '0'; // TODO
                 document.getElementById('topService').textContent = topService;
 
-                // Ultimi 10 lead per la tabella
-                const leads = allLeads.slice(0, 10);
+                // Filtra ultimi 30 giorni e NON convertiti
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                
+                const recentLeads = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    const status = (lead.status || '').toUpperCase();
+                    const isRecent = leadDate >= thirtyDaysAgo;
+                    const notConverted = !['CONVERTED', 'CONTRACT_SIGNED'].includes(status);
+                    return isRecent && notConverted;
+                });
+                
+                // Ultimi 10 lead recenti non convertiti per la tabella
+                const leads = recentLeads.slice(0, 10);
 
                 // Popola tabella lead
                 const tbody = document.getElementById('leadsTable');
@@ -1295,7 +1307,7 @@ export const dashboard = `<!DOCTYPE html>
                 const telefono = assistito.telefono || 'N/A';
                 const servizio = 'eCura PRO';
                 const piano = assistito.piano || 'BASE';
-                const status = assistito.contratto_status || assistito.status || 'ATTIVO';
+                const status = assistito.contratto_status || 'SIGNED';  // Default SIGNED se nessuno status
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
                 
                 // Status badge colors
@@ -1341,13 +1353,13 @@ export const dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
                         </td>
                         <td class="py-3 text-xs text-center">
-                            <button onclick="viewAssistito(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mr-2" title="Visualizza">
+                            <button onclick="viewAssistito('${assistito.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Visualizza">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="editAssistito(\${assistito.id})" class="text-yellow-600 hover:text-yellow-800 mr-2" title="Modifica">
+                            <button onclick="editAssistito('${assistito.id}')" class="text-yellow-600 hover:text-yellow-800 mr-2" title="Modifica">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteAssistito(\${assistito.id}, '\${nomeCompleto}')" class="text-red-600 hover:text-red-800" title="Elimina">
+                            <button onclick="deleteAssistito('${assistito.id}', '${nomeCompleto.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800" title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -1447,7 +1459,10 @@ export const dashboard = `<!DOCTYPE html>
             
             input.onchange = async (e) => {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    document.body.removeChild(input); // Rimuovi input
+                    return;
+                }
                 
                 // Mostra loading
                 const loadingMsg = document.createElement('div');
@@ -1469,6 +1484,7 @@ export const dashboard = `<!DOCTYPE html>
                     
                     // Rimuovi loading
                     loadingMsg.remove();
+                    document.body.removeChild(input); // Rimuovi input
                     
                     if (result.success) {
                         alert(\`✅ Import completato!\\n\\nLead importati: \${result.imported || 0}\\nLead saltati: \${result.skipped || 0}\`);
@@ -1479,11 +1495,13 @@ export const dashboard = `<!DOCTYPE html>
                     }
                 } catch (error) {
                     loadingMsg.remove();
+                    document.body.removeChild(input); // Rimuovi input
                     alert(\`❌ Errore durante l'import:\\n\\n\${error.message}\`);
                 }
             };
             
-            // Trigger file picker
+            // Aggiungi al DOM, trigger file picker, poi rimuovi
+            document.body.appendChild(input);
             input.click();
         }
 
