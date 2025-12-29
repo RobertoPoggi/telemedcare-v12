@@ -1307,16 +1307,15 @@ export const dashboard = `<!DOCTYPE html>
                 const telefono = assistito.telefono || 'N/A';
                 const servizio = 'eCura PRO';
                 const piano = assistito.piano || 'BASE';
-                const status = assistito.contratto_status || 'SIGNED';  // Default SIGNED se nessuno status
+                const status = assistito.status || 'ATTIVO';  // Default ATTIVO per assistiti attivi
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
                 
-                // Status badge colors
+                // Status badge colors (italiano)
                 const statusColors = {
-                    'SIGNED': 'bg-green-100 text-green-700',
-                    'SENT': 'bg-blue-100 text-blue-700',
-                    'CONVERTED': 'bg-purple-100 text-purple-700',
-                    'ACTIVE': 'bg-green-100 text-green-700',
-                    'ATTIVO': 'bg-green-100 text-green-700'
+                    'ATTIVO': 'bg-green-100 text-green-700',
+                    'FIRMATO': 'bg-green-100 text-green-700',
+                    'INVIATO': 'bg-blue-100 text-blue-700',
+                    'CONVERTITO': 'bg-purple-100 text-purple-700'
                 };
                 const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700';
                 
@@ -1332,34 +1331,34 @@ export const dashboard = `<!DOCTYPE html>
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded font-mono">\${imei}</code>
                         </td>
-                        <td class="py-3 text-sm text-gray-600">\${email}</td>
-                        <td class="py-3 text-sm text-gray-600">\${telefono}</td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                        <td class="py-2 text-xs text-gray-600">\${email}</td>
+                        <td class="py-2 text-xs text-gray-600">\${telefono}</td>
+                        <td class="py-2">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
                                 \${servizio}
                             </span>
                         </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 \${pianoColor} text-xs rounded font-medium">
+                        <td class="py-2">
+                            <span class="px-2 py-1 \${pianoColor} text-xs rounded">
                                 \${piano}
                             </span>
                         </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 \${statusColor} text-xs rounded font-medium">
+                        <td class="py-2">
+                            <span class="px-2 py-1 \${statusColor} text-xs rounded">
                                 \${status}
                             </span>
                         </td>
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
                         </td>
-                        <td class="py-3 text-xs text-center">
-                            <button onclick="viewAssistito('\${assistito.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Visualizza">
+                        <td class="py-2 text-xs text-center">
+                            <button onclick="viewAssistito(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mx-1" title="Visualizza">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="editAssistito('\${assistito.id}')" class="text-yellow-600 hover:text-yellow-800 mr-2" title="Modifica">
+                            <button onclick="editAssistito(\${assistito.id})" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifica">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="deleteAssistito('\${assistito.id}', '\${nomeCompleto.replace(/'/g, "\\'")}')\" class="text-red-600 hover:text-red-800" title="Elimina">
+                            <button onclick="deleteAssistito(\${assistito.id}, '\${nomeCompleto.replace(/'/g, "\\'")}')\" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
