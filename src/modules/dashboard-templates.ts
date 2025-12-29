@@ -1845,19 +1845,41 @@ export const dashboard = `<!DOCTYPE html>
             try {
                 const btn = event.target;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Clean Import in corso...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Caricamento lead da Excel...';
 
+                // Step 1: Carica i 129 lead dal JSON
+                console.log('📥 Caricamento leads_clean_import.json...');
+                const leadsResponse = await fetch('/leads_clean_import.json');
+                
+                if (!leadsResponse.ok) {
+                    throw new Error(\`Errore caricamento JSON: \${leadsResponse.status}\`);
+                }
+                
+                const leadsData = await leadsResponse.json();
+                const leads = leadsData.leads || [];
+                
+                console.log(\`✅ Caricati \${leads.length} lead dall'Excel\`);
+                
+                if (leads.length === 0) {
+                    throw new Error('Nessun lead trovato nel file JSON');
+                }
+
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cancellazione e reimport in corso...';
+
+                // Step 2: Invia al clean-import endpoint
                 const response = await fetch('/api/leads/clean-import', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ leads })
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(\`✅ CLEAN IMPORT COMPLETATO!\\n\\n🗑️  Lead cancellati: \${result.deleted}\\n📥 Lead importati: \${result.imported}\\n❌ Errori: \${result.errors}\\n\\nTotale lead nel DB: \${result.imported}\\n\\nLa dashboard verrà ricaricata.\`);
+                    const errorMsg = result.errors > 0 ? \`\\n\\n⚠️ Errori: \${result.errors}\\n\${(result.errorDetails || []).slice(0, 5).map(e => \`  - \${e.id}: \${e.error}\`).join('\\n')}\` : '';
+                    alert(\`✅ CLEAN IMPORT COMPLETATO!\\n\\n🗑️  Lead cancellati: \${result.deleted}\\n📥 Lead importati: \${result.imported}\\n❌ Errori: \${result.errors}\${errorMsg}\\n\\n✅ Totale lead nel DB: \${result.imported}\\n\\nLa dashboard verrà ricaricata.\`);
                     loadDashboardData(); // Ricarica i dati
                 } else {
                     alert(\`❌ Errore: \${result.error}\`);

@@ -4218,9 +4218,16 @@ app.post('/api/leads/clean-import', async (c) => {
     const deleteResult = await DB.prepare('DELETE FROM leads').run()
     console.log(`✅ Cancellati ${deleteResult.changes || 0} lead esistenti`)
 
-    // Step 2: Carica i 129 lead dall'Excel
-    const leadsData = await import('./leads_clean_import.json')
-    const leads = leadsData.leads || []
+    // Step 2: Ricevi i lead dal body
+    const body = await c.req.json()
+    const leads = body.leads || []
+    
+    if (!Array.isArray(leads) || leads.length === 0) {
+      return c.json({
+        success: false,
+        error: 'Nessun lead fornito nel body. Usa { "leads": [...] }'
+      }, 400)
+    }
     
     console.log(`📥 Step 2: Import di ${leads.length} lead dall'Excel...`)
 
@@ -4235,7 +4242,7 @@ app.post('/api/leads/clean-import', async (c) => {
       for (const lead of batch) {
         try {
           // Splitta nome in nome e cognome
-          const nameParts = lead.nome.split(' ')
+          const nameParts = (lead.nome || '').split(' ')
           const nome = nameParts[0] || ''
           const cognome = nameParts.slice(1).join(' ') || ''
           
@@ -4249,14 +4256,14 @@ app.post('/api/leads/clean-import', async (c) => {
             lead.id,
             nome,
             cognome,
-            lead.email,
-            lead.telefono,
-            lead.canale,
-            lead.canale,
-            lead.canale,
+            lead.email || '',
+            lead.telefono || '',
+            lead.canale || 'IRBEMA',
+            lead.canale || 'IRBEMA',
+            lead.canale || 'IRBEMA',
             'eCura PRO',
-            lead.status,
-            lead.note,
+            lead.status || 'NEW',
+            lead.note || '',
             lead.data_arrivo,
             lead.data_arrivo,
             new Date(lead.data_arrivo).getTime()
