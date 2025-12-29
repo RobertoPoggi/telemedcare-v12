@@ -1039,29 +1039,33 @@ export const dashboard = `<!DOCTYPE html>
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 // REGOLA: Mostra solo lead NON convertiti (senza hardcoding)
-                // Un lead è convertito se:
-                // 1. Status è CONVERTED, CONTRACT_SIGNED o ACTIVE
-                // 2. Note contengono parole chiave: "contratto", "firmato", "convertito", "inviato contratto"
+                // Un lead è DAVVERO convertito SOLO se ha:
+                // 1. Status: CONVERTED, CONTRACT_SIGNED, ACTIVE
+                // 2. Note con parole chiave FORTE: "firmato", "pagato", "consegnato", "attivo"
+                // 
+                // IMPORTANTE: "inviato contratto" NON significa convertito!
+                // Solo quando c'è conferma di firma/pagamento/consegna
                 
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
                     const status = (lead.status || '').toUpperCase();
                     const isRecent = leadDate >= thirtyDaysAgo;
                     
-                    // Controlla se lo status indica conversione
+                    // Controlla se lo status indica conversione REALE
                     const statusConverted = ['CONVERTED', 'CONTRACT_SIGNED', 'ACTIVE'].includes(status);
                     
-                    // Controlla se le note indicano conversione
+                    // Controlla se le note indicano conversione REALE (non solo "inviato")
                     const note = (lead.note || lead.notes || '').toLowerCase();
                     const noteConverted = 
-                        note.includes('contratto') || 
-                        note.includes('firmato') || 
-                        note.includes('convertito') ||
-                        note.includes('inviato contratto') ||
-                        note.includes('pagamento') ||
-                        note.includes('consegna');
+                        note.includes('firmato') ||           // Contratto firmato
+                        note.includes('pagato') ||            // Pagamento ricevuto
+                        note.includes('consegnato') ||        // Dispositivo consegnato
+                        note.includes('attivo') ||            // Servizio attivo
+                        note.includes('installato') ||        // Dispositivo installato
+                        (note.includes('contratto') && note.includes('firmato')) ||  // "contratto firmato"
+                        (note.includes('contratto') && note.includes('pagato'));     // "contratto pagato"
                     
-                    // Lead è convertito se status O note indicano conversione
+                    // Lead è convertito SOLO se status O note indicano conversione REALE
                     const notConverted = !statusConverted && !noteConverted;
                     
                     return isRecent && notConverted;
