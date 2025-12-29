@@ -8087,7 +8087,6 @@ app.put('/api/assistiti/:id', async (c) => {
           email = ?, 
           telefono = ?, 
           imei = ?,
-          piano = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
@@ -8100,9 +8099,22 @@ app.put('/api/assistiti/:id', async (c) => {
       data.email || '',
       data.telefono || '',
       data.imei || '',
-      data.piano || 'BASE',
       id
     ).run()
+
+    // Prova ad aggiornare il piano separatamente (se la colonna esiste)
+    try {
+      if (data.piano) {
+        await c.env.DB.prepare(`
+          UPDATE assistiti 
+          SET piano = ?
+          WHERE id = ?
+        `).bind(data.piano, id).run()
+        console.log(`✅ Piano aggiornato: ${data.piano}`)
+      }
+    } catch (pianoError) {
+      console.warn('⚠️ Colonna piano non trovata, saltata')
+    }
 
     console.log('✅ Assistito aggiornato:', id)
 
@@ -8115,6 +8127,58 @@ app.put('/api/assistiti/:id', async (c) => {
     return c.json({
       success: false,
       error: 'Errore aggiornamento assistito',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/assistiti/add-piano-column - Aggiunge colonna piano alla tabella
+app.post('/api/assistiti/add-piano-column', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Aggiunta colonna piano alla tabella assistiti...')
+
+    try {
+      // Prova ad aggiungere la colonna piano
+      await c.env.DB.prepare(`
+        ALTER TABLE assistiti 
+        ADD COLUMN piano TEXT DEFAULT 'BASE'
+      `).run()
+
+      console.log('✅ Colonna piano aggiunta con successo')
+
+      // Aggiorna assistiti esistenti che dovrebbero avere AVANZATO
+      // (Eileen Elisabeth King con caregiver Elena Saglia)
+      const updated = await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET piano = 'AVANZATO'
+        WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')
+           OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
+      `).run()
+
+      return c.json({
+        success: true,
+        message: 'Colonna piano aggiunta con successo',
+        eileen_updated: updated.changes || 0
+      })
+    } catch (alterError: any) {
+      if (alterError.message && alterError.message.includes('duplicate column')) {
+        return c.json({
+          success: true,
+          message: 'Colonna piano già esistente',
+          note: 'Nessuna modifica necessaria'
+        })
+      }
+      throw alterError
+    }
+  } catch (error) {
+    console.error('❌ Errore aggiunta colonna piano:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiunta colonna piano',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
