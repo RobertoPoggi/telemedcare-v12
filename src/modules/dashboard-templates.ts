@@ -2216,6 +2216,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore: \${error.message}\`);
             }
         }
+        window.viewAssistito = viewAssistito;  // Esponi globalmente
         
         async function editAssistito(id) {
             try {
@@ -2271,6 +2272,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore: \${error.message}\`);
             }
         }
+        window.editAssistito = editAssistito;  // Esponi globalmente
         
         async function deleteAssistito(id, nome) {
             if (!confirm(\`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\\n\\nQuesta azione non può essere annullata!\`)) {
@@ -2294,6 +2296,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert(\`❌ Errore: \${error.message}\`);
             }
         }
+        window.deleteAssistito = deleteAssistito;  // Esponi globalmente
     </script>
 
     <!-- MODAL: NEW LEAD -->
