@@ -153,7 +153,7 @@ export const home = `<!DOCTYPE html>
                                 PRINCIPALE
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2">Dashboard Operativa</h3>
+                        <h3 class="text-xl font-bold mb-2">Dashboard Operativa</h3>
                         <p class="text-purple-100 text-sm">Centro di controllo staff</p>
                     </div>
                     <div class="p-6">
@@ -802,7 +802,7 @@ export const dashboard = `<!DOCTYPE html>
                     <div>
                         <p class="text-gray-600 text-sm mb-1">Contratti Inviati</p>
                         <p class="text-3xl font-bold text-green-600" id="contractsSent">-</p>
-                        <p class="text-xs text-gray-500 mt-1">Oggi</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
                     </div>
                     <i class="fas fa-file-contract text-3xl text-green-500"></i>
                 </div>
@@ -813,7 +813,7 @@ export const dashboard = `<!DOCTYPE html>
                     <div>
                         <p class="text-gray-600 text-sm mb-1">Email Inviate</p>
                         <p class="text-3xl font-bold text-purple-600" id="emailsSent">-</p>
-                        <p class="text-xs text-gray-500 mt-1">Ultimi 7 giorni</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
                     </div>
                     <i class="fas fa-envelope text-3xl text-purple-500"></i>
                 </div>
