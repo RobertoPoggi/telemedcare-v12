@@ -104,23 +104,23 @@ export const home = `<!DOCTYPE html>
             <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-yellow-100 text-sm mb-1">Pagamenti Oggi</p>
+                        <p class="text-white text-sm mb-1">Pagamenti Oggi</p>
                         <p class="text-3xl font-bold" id="paymentsToday">-</p>
-                        <p class="text-xs text-yellow-100 mt-1">Ultimi 24h</p>
+                        <p class="text-xs text-white mt-1">Ultimi 24h</p>
                     </div>
-                    <i class="fas fa-euro-sign text-4xl text-yellow-200"></i>
+                    <i class="fas fa-euro-sign text-4xl text-white opacity-80"></i>
                 </div>
             </div>
 
             <!-- Configurazioni Oggi -->
-            <div class="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white p-6 rounded-xl shadow-lg">
+            <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-cyan-100 text-sm mb-1">Configurazioni Oggi</p>
-                        <p class="text-3xl font-bold" id="configurationsToday">-</p>
-                        <p class="text-xs text-cyan-100 mt-1">Ultimi 24h</p>
+                        <p class="text-white text-sm mb-1">Configurazioni Oggi</p>
+                        <p class="text-3xl font-bold text-white" id="configurationsToday">-</p>
+                        <p class="text-xs text-white mt-1">Ultimi 24h</p>
                     </div>
-                    <i class="fas fa-cog text-4xl text-cyan-200"></i>
+                    <i class="fas fa-cog text-4xl text-white opacity-90"></i>
                 </div>
             </div>
 
