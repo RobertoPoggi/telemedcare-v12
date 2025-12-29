@@ -855,11 +855,21 @@ export const dashboard = `<!DOCTYPE html>
                 </button>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-200">
+                <button onclick="cleanImportFromExcel()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full mb-3">
+                    <i class="fas fa-trash-restore mr-2"></i>🗑️ CANCELLA E REIMPORTA DA EXCEL (129 lead)
+                </button>
+                <p class="text-xs text-red-600 mt-2 mb-4">
+                    ⚠️ <strong>ATTENZIONE!</strong> Questa operazione cancella TUTTI i lead esistenti e li reimporta dall'Excel con date e ID corretti.<br>
+                    📅 Caterina D'Alterio avrà <strong>LEAD-IRBEMA-00030</strong> (posizione 30/129)<br>
+                    📊 Totale: 129 lead (127 IRBEMA, 1 WEB, 1 NETWORKING)<br>
+                    🔴 <strong>Operazione NON reversibile!</strong>
+                </p>
+                
                 <button onclick="standardizeLeadIds()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md w-full">
-                    <i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (LEAD-CANALE-XXXXX)
+                    <i class="fas fa-sync-alt mr-2"></i>🔧 Standardizza Codici Lead (solo rinomina)
                 </button>
                 <p class="text-xs text-gray-500 mt-2">
-                    ⚠️ Questa operazione rinomina tutti i lead esistenti con il formato standard.<br>
+                    ⚠️ Questa operazione rinomina solo gli ID dei lead esistenti (NON cancella).<br>
                     📅 <strong>I lead vengono numerati in ordine cronologico</strong>: 00001 = più vecchio, 00132 = più recente.
                 </p>
             </div>
@@ -1825,6 +1835,46 @@ export const dashboard = `<!DOCTYPE html>
         function importFromDoubleYou() {
             alert('🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.');
         }
+
+        // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
+        async function cleanImportFromExcel() {
+            if (!confirm('🗑️ CLEAN IMPORT DA EXCEL\\n\\nQuesta operazione:\\n\\n1️⃣ CANCELLERÀ tutti i lead esistenti\\n2️⃣ IMPORTERÀ i 129 lead dall\\'Excel\\n3️⃣ Assegnerà ID corretti (LEAD-IRBEMA-00001 ... LEAD-IRBEMA-00127)\\n\\n📊 Lead da importare: 129\\n   • IRBEMA: 127 lead\\n   • WEB: 1 lead (Francesca Grati)\\n   • NETWORKING: 1 lead (Laura Calvi)\\n\\n📅 Ordinamento cronologico:\\n   LEAD-IRBEMA-00001 = Claudio Macchi (01/03/2025)\\n   LEAD-IRBEMA-00030 = Caterina D\\'Alterio (25/04/2025)\\n   LEAD-IRBEMA-00127 = Roberto Bifulco (17/12/2025)\\n\\n⚠️ ATTENZIONE: Questa operazione è IRREVERSIBILE!\\n\\nContinuare?')) {
+                return;
+            }
+
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Clean Import in corso...';
+
+                const response = await fetch('/api/leads/clean-import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(\`✅ CLEAN IMPORT COMPLETATO!\\n\\n🗑️  Lead cancellati: \${result.deleted}\\n📥 Lead importati: \${result.imported}\\n❌ Errori: \${result.errors}\\n\\nTotale lead nel DB: \${result.imported}\\n\\nLa dashboard verrà ricaricata.\`);
+                    loadDashboardData(); // Ricarica i dati
+                } else {
+                    alert(\`❌ Errore: \${result.error}\`);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>🗑️ Clean Import (129 Lead da Excel)';
+
+            } catch (error) {
+                console.error('Errore clean import:', error);
+                alert(\`❌ Errore durante il clean import: \${error.message}\`);
+                const btn = event.target;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-file-import mr-2"></i>🗑️ Clean Import (129 Lead da Excel)';
+            }
+        }
+        window.cleanImportFromExcel = cleanImportFromExcel;
 
         // 🔧 Standardizza ID dei lead con formato LEAD-{CANALE}-{NUMERO}
         async function standardizeLeadIds() {

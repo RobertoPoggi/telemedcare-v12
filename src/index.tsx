@@ -4199,6 +4199,103 @@ app.post('/api/leads/import-bulk', async (c) => {
   }
 })
 
+// Endpoint per CLEAN IMPORT: Cancella tutti i lead esistenti e importa i 129 dall'Excel
+app.post('/api/leads/clean-import', async (c) => {
+  try {
+    const { DB } = c.env
+    
+    if (!DB) {
+      return c.json({ 
+        success: false, 
+        error: 'Database D1 non configurato' 
+      }, 400)
+    }
+
+    console.log('🔄 CLEAN IMPORT: Inizio cancellazione e reimport da Excel...')
+
+    // Step 1: Cancella tutti i lead esistenti
+    console.log('🗑️  Step 1: Cancellazione lead esistenti...')
+    const deleteResult = await DB.prepare('DELETE FROM leads').run()
+    console.log(`✅ Cancellati ${deleteResult.changes || 0} lead esistenti`)
+
+    // Step 2: Carica i 129 lead dall'Excel
+    const leadsData = await import('./leads_clean_import.json')
+    const leads = leadsData.leads || []
+    
+    console.log(`📥 Step 2: Import di ${leads.length} lead dall'Excel...`)
+
+    let imported = 0
+    let errors = 0
+    const errorDetails: any[] = []
+
+    // Step 3: Inserisci i lead in batch di 20
+    for (let i = 0; i < leads.length; i += 20) {
+      const batch = leads.slice(i, i + 20)
+      
+      for (const lead of batch) {
+        try {
+          // Splitta nome in nome e cognome
+          const nameParts = lead.nome.split(' ')
+          const nome = nameParts[0] || ''
+          const cognome = nameParts.slice(1).join(' ') || ''
+          
+          await DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono, 
+              fonte, canale, origine, tipoServizio, status, note, 
+              created_at, updated_at, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            lead.id,
+            nome,
+            cognome,
+            lead.email,
+            lead.telefono,
+            lead.canale,
+            lead.canale,
+            lead.canale,
+            'eCura PRO',
+            lead.status,
+            lead.note,
+            lead.data_arrivo,
+            lead.data_arrivo,
+            new Date(lead.data_arrivo).getTime()
+          ).run()
+          
+          imported++
+        } catch (err: any) {
+          console.error(`❌ Errore import lead ${lead.id}:`, err.message)
+          errors++
+          errorDetails.push({
+            id: lead.id,
+            nome: lead.nome,
+            error: err.message
+          })
+        }
+      }
+    }
+
+    console.log(`✅ CLEAN IMPORT completato: ${imported} importati, ${errors} errori`)
+
+    return c.json({
+      success: true,
+      message: 'Clean import completato',
+      deleted: deleteResult.changes || 0,
+      imported,
+      errors,
+      errorDetails,
+      total: leads.length
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore clean import:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore clean import'
+    }, 500)
+  }
+})
+
 // Endpoint per import da canali esterni (mock per ora)
 app.post('/api/leads/import/:channel', async (c) => {
   try {
@@ -4218,6 +4315,99 @@ app.post('/api/leads/import/:channel', async (c) => {
     return c.json({
       success: false,
       error: error.message || 'Errore import da canale'
+    }, 500)
+  }
+})
+
+// 🗑️ CANCELLA TUTTI I LEAD E REIMPORTA DA EXCEL
+app.post('/api/leads/clean-import-from-excel', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🗑️ Inizio cancellazione e reimport lead da Excel...')
+
+    // FASE 1: Cancella tutti i lead esistenti
+    console.log('🗑️ FASE 1: Cancellazione lead esistenti...')
+    await c.env.DB.prepare(`DELETE FROM leads`).run()
+    console.log('✅ Tutti i lead esistenti sono stati cancellati')
+
+    // FASE 2: Importa lead dal file JSON generato dall'Excel
+    console.log('📥 FASE 2: Import lead da Excel...')
+    
+    // Carica il JSON preparato (leads_clean_import.json)
+    const leadsData = await import('./leads_clean_import.json')
+    const leadsToImport = leadsData.default.leads || leadsData.leads || []
+
+    console.log(`📊 Trovati ${leadsToImport.length} lead da importare`)
+
+    let importedCount = 0
+    let errorCount = 0
+    const errors: any[] = []
+
+    // Import in batch da 20
+    for (let i = 0; i < leadsToImport.length; i += 20) {
+      const batch = leadsToImport.slice(i, i + 20)
+      
+      for (const lead of batch) {
+        try {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              fonte, canale, tipoServizio, status, note,
+              created_at, updated_at, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            lead.id,
+            lead.nomeRichiedente || '',
+            lead.cognomeRichiedente || '',
+            lead.email || '',
+            lead.telefono || '',
+            lead.fonte || lead.canale || 'IRBEMA',
+            lead.canale || 'IRBEMA',
+            lead.tipoServizio || 'eCura PRO',
+            lead.status || 'NEW',
+            lead.note || '',
+            lead.created_at,
+            lead.created_at,
+            lead.timestamp || lead.created_at
+          ).run()
+
+          importedCount++
+          
+          if (importedCount % 20 === 0) {
+            console.log(`📊 Importati ${importedCount}/${leadsToImport.length} lead...`)
+          }
+        } catch (err: any) {
+          errorCount++
+          errors.push({
+            lead: lead.id,
+            error: err.message
+          })
+          console.error(`❌ Errore import lead ${lead.id}:`, err.message)
+        }
+      }
+    }
+
+    console.log(`✅ Import completato: ${importedCount} importati, ${errorCount} errori`)
+
+    return c.json({
+      success: true,
+      imported: importedCount,
+      errors: errorCount,
+      errorDetails: errors,
+      message: `Import completato: ${importedCount} lead importati dall'Excel con ID corretti`
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore clean import:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore durante il clean import'
     }, 500)
   }
 })
