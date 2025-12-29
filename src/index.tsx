@@ -4199,6 +4199,29 @@ app.post('/api/leads/import-bulk', async (c) => {
   }
 })
 
+// Endpoint per import da canali esterni (mock per ora)
+app.post('/api/leads/import/:channel', async (c) => {
+  try {
+    const channel = c.req.param('channel')
+    
+    // Per ora ritorna successo con 0 lead (mock)
+    // In futuro implementare integrazione reale con Irbema, AON, etc.
+    return c.json({
+      success: true,
+      message: `Import da ${channel} completato`,
+      count: 0,
+      total: 0,
+      note: 'Funzionalità di import automatico in fase di sviluppo. Utilizzare import manuale da Excel.'
+    })
+  } catch (error: any) {
+    console.error('❌ Errore import canale:', error)
+    return c.json({
+      success: false,
+      error: error.message || 'Errore import da canale'
+    }, 500)
+  }
+})
+
 // 🗑️ CLEANUP DUPLICATI FAMILIARI
 app.post('/api/leads/cleanup-family-duplicates', async (c) => {
   try {
@@ -4425,6 +4448,7 @@ app.get('/api/contratti', async (c) => {
         c.codice_contratto as codice,
         c.tipo_contratto as tipo,
         c.status,
+        c.piano,
         c.data_invio,
         c.prezzo_totale,
         c.created_at,

@@ -2624,7 +2624,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 // Calcola revenue dai contratti reali
                 let totalRevenue = 0;
                 contracts.forEach(c => {
-                    if (c.importo_annuo) totalRevenue += parseFloat(c.importo_annuo);
+                    if (c.prezzo_totale) totalRevenue += parseFloat(c.prezzo_totale);
                 });
                 
                 // Conta contratti firmati
@@ -2670,8 +2670,8 @@ export const data_dashboard = `<!DOCTYPE html>
                 }
                 
                 // Somma revenue
-                if (contract.importo_annuo) {
-                    data.PRO.revenue += parseFloat(contract.importo_annuo);
+                if (contract.prezzo_totale) {
+                    data.PRO.revenue += parseFloat(contract.prezzo_totale);
                 }
             });
 
