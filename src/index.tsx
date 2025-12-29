@@ -8087,6 +8087,7 @@ app.put('/api/assistiti/:id', async (c) => {
           email = ?, 
           telefono = ?, 
           imei = ?,
+          piano = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
@@ -8099,6 +8100,7 @@ app.put('/api/assistiti/:id', async (c) => {
       data.email || '',
       data.telefono || '',
       data.imei || '',
+      data.piano || 'BASE',
       id
     ).run()
 
@@ -8113,6 +8115,63 @@ app.put('/api/assistiti/:id', async (c) => {
     return c.json({
       success: false,
       error: 'Errore aggiornamento assistito',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/assistiti/fix-eileen - Corregge piano Eileen Elisabeth King
+app.post('/api/assistiti/fix-eileen', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Correzione piano Eileen Elisabeth King...')
+
+    // Trova Eileen
+    const eileen = await c.env.DB.prepare(`
+      SELECT id, nome_assistito, cognome_assistito, piano 
+      FROM assistiti 
+      WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')
+         OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
+    `).all()
+
+    if (!eileen.results || eileen.results.length === 0) {
+      return c.json({ 
+        success: false, 
+        error: 'Eileen non trovata' 
+      }, 404)
+    }
+
+    const assistito = eileen.results[0]
+    console.log(`Found: ${assistito.nome_assistito} ${assistito.cognome_assistito}, Piano attuale: ${assistito.piano}`)
+
+    // Aggiorna piano a AVANZATO
+    await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET piano = 'AVANZATO',
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(assistito.id).run()
+
+    console.log(`✅ Piano aggiornato: ${assistito.id} -> AVANZATO`)
+
+    return c.json({
+      success: true,
+      message: 'Piano Eileen aggiornato a AVANZATO',
+      assistito: {
+        id: assistito.id,
+        nome: `${assistito.nome_assistito} ${assistito.cognome_assistito}`,
+        piano_precedente: assistito.piano,
+        piano_nuovo: 'AVANZATO'
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore fix Eileen:', error)
+    return c.json({
+      success: false,
+      error: 'Errore fix Eileen',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
