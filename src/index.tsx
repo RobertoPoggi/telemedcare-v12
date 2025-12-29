@@ -7606,11 +7606,21 @@ app.post('/api/init-force', async (c) => {
   }
 })
 
-// GET /api/assistiti - Lista assistiti con IMEI
+// GET /api/assistiti - Lista assistiti con IMEI (supporta filtro ?id=X)
 app.get('/api/assistiti', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Query parameter per filtrare singolo assistito
+    const idFilter = c.req.query('id')
+    let whereClause = "WHERE a.status = 'ATTIVO'"
+    const bindings = []
+    
+    if (idFilter) {
+      whereClause += " AND a.id = ?"
+      bindings.push(parseInt(idFilter))
     }
 
     const assistiti = await c.env.DB.prepare(`
@@ -7633,9 +7643,9 @@ app.get('/api/assistiti', async (c) => {
         c.status as contratto_status
       FROM assistiti a
       LEFT JOIN contracts c ON a.imei = c.imei_dispositivo
-      WHERE a.status = 'ATTIVO'
+      ${whereClause}
       ORDER BY a.created_at DESC
-    `).all()
+    `).bind(...bindings).all()
 
     return c.json({
       success: true,
