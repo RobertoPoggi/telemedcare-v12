@@ -1324,12 +1324,12 @@ export const dashboard = `<!DOCTYPE html>
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 text-sm">
+                        <td class="py-2 text-xs">
                             <div class="font-medium">\${nomeCompleto}</div>
                             <div class="text-xs text-gray-500">Caregiver: \${caregiver} (\${parentela})</div>
                         </td>
-                        <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded font-mono">\${imei}</code>
+                        <td class="py-2 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">\${imei}</code>
                         </td>
                         <td class="py-2 text-xs text-gray-600">\${email}</td>
                         <td class="py-2 text-xs text-gray-600">\${telefono}</td>
@@ -1348,8 +1348,8 @@ export const dashboard = `<!DOCTYPE html>
                                 \${status}
                             </span>
                         </td>
-                        <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${codice}</code>
+                        <td class="py-2 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${codice}</code>
                         </td>
                         <td class="py-2 text-xs text-center">
                             <button onclick="viewAssistito(\${assistito.id})" class="text-blue-600 hover:text-blue-800 mx-1" title="Visualizza">
