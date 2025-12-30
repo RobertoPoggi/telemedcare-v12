@@ -8045,12 +8045,15 @@ app.get('/api/assistiti', async (c) => {
         a.servizio,
         a.piano,
         a.status,
+        a.lead_id,
         a.created_at,
+        c.id as contratto_id,
         c.codice_contratto,
         c.tipo_contratto as piano_contratto,
+        c.servizio as servizio_contratto,
         c.status as contratto_status
       FROM assistiti a
-      LEFT JOIN contracts c ON a.imei = c.imei_dispositivo
+      LEFT JOIN contracts c ON a.lead_id = c.leadId
       ${whereClause}
       ORDER BY a.created_at DESC
     `).bind(...bindings).all()
