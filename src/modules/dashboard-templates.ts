@@ -3486,7 +3486,7 @@ PUT /api/contratti/\${contractId}\`);
         function signContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato;
+                alert('❌ Contratto non trovato');
                 return;
             }
             
@@ -3556,7 +3556,7 @@ PUT /api/contratti/\${contractId}\`);
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato;
+                alert('❌ Contratto non trovato');
                 return;
             }
             
@@ -3608,12 +3608,12 @@ PUT /api/contratti/\${contractId}\`);
             const note = document.getElementById('newContractNote').value;
             
             if (!leadId) {
-                alert('⚠️ Seleziona un lead;
+                alert('⚠️ Seleziona un lead');
                 return;
             }
             
             if (!piano) {
-                alert('⚠️ Seleziona un piano;
+                alert('⚠️ Seleziona un piano');
                 return;
             }
             
