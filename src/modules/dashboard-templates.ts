@@ -988,13 +988,13 @@ export const dashboard = `<!DOCTYPE html>
     <script>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
-            if (!text) return '';
+            if (!text) return "";
             const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
@@ -1107,19 +1107,19 @@ export const dashboard = `<!DOCTYPE html>
                     \`;
                 } else {
                     tbody.innerHTML = leads.map(lead => {
-                        const servizio = 'eCura PRO';
-                        const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                        const dispositivo = 'SiDLY CARE PRO';
-                        const prezzo = piano === 'AVANZATO' ? '840' : '480';
-                        const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
-                        const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
-                        const telefono = lead.telefono || 'N/A';
-                        const date = new Date(lead.created_at).toLocaleString('it-IT', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                        const servizio = "eCura PRO";
+                        const piano = (lead.note && lead.note.includes("Piano: AVANZATO")) ? "AVANZATO" : "BASE";
+                        const dispositivo = "SiDLY CARE PRO";
+                        const prezzo = piano === "AVANZATO" ? "840" : "480";
+                        const statusClass = (lead.vuoleBrochure === "Si") ? "status-sent" : "status-pending";
+                        const statusText = (lead.vuoleBrochure === "Si") ? "Inviata brochure" : "Da contattare";
+                        const telefono = lead.telefono || "N/A";
+                        const date = new Date(lead.created_at).toLocaleString("it-IT", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
                         });
 
                         return \`
@@ -1704,18 +1704,18 @@ export const dashboard = `<!DOCTYPE html>
             
             tbody.innerHTML = assistiti.map(assistito => {
                 // Dati assistito reali con nuovi campi
-                const nomeAssistito = assistito.nome_assistito || '';
-                const cognomeAssistito = assistito.cognome_assistito || '';
-                const nomeCompleto = assistito.nome || (nomeAssistito + ' ' + cognomeAssistito).trim() || 'N/A';
-                const caregiverNome = assistito.nome_caregiver || '';
-                const caregiverCognome = assistito.cognome_caregiver || '';
-                const caregiver = (caregiverNome + ' ' + caregiverCognome).trim() || 'N/A';
-                const parentela = assistito.parentela_caregiver || 'N/A';
-                const imei = assistito.imei || 'N/A';
-                const email = assistito.email || 'N/A';
-                const telefono = assistito.telefono || 'N/A';
-                const servizio = assistito.servizio || 'eCura PRO';
-                const piano = assistito.piano || 'BASE';
+                const nomeAssistito = assistito.nome_assistito || "";
+                const cognomeAssistito = assistito.cognome_assistito || "";
+                const nomeCompleto = assistito.nome || (nomeAssistito + " " + cognomeAssistito).trim() || "N/A";
+                const caregiverNome = assistito.nome_caregiver || "";
+                const caregiverCognome = assistito.cognome_caregiver || "";
+                const caregiver = (caregiverNome + " " + caregiverCognome).trim() || "N/A";
+                const parentela = assistito.parentela_caregiver || "N/A";
+                const imei = assistito.imei || "N/A";
+                const email = assistito.email || "N/A";
+                const telefono = assistito.telefono || "N/A";
+                const servizio = assistito.servizio || "eCura PRO";
+                const piano = assistito.piano || "BASE";
                 
                 // Calcola prezzo dinamico
                 const PREZZI_ECURA_TABLE = {
@@ -2194,13 +2194,13 @@ export const leads_dashboard = `<!DOCTYPE html>
     <script>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
-            if (!text) return '';
+            if (!text) return "";
             const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
@@ -2394,10 +2394,10 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = leads.map(lead => {
-                const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                const prezzo = (piano === 'AVANZATO') ? '840' : '480';
-                const date = new Date(lead.created_at).toLocaleDateString('it-IT');
-                const hasContract = ['LEAD-CONTRATTO-001', 'LEAD-CONTRATTO-002', 'LEAD-CONTRATTO-003', 'LEAD-EXCEL-065'].includes(lead.id);
+                const piano = (lead.note && lead.note.includes("Piano: AVANZATO")) ? "AVANZATO" : "BASE";
+                const prezzo = (piano === "AVANZATO") ? "840" : "480";
+                const date = new Date(lead.created_at).toLocaleDateString("it-IT");
+                const hasContract = ["LEAD-CONTRATTO-001", "LEAD-CONTRATTO-002", "LEAD-CONTRATTO-003", "LEAD-EXCEL-065"].includes(lead.id);
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -3260,13 +3260,13 @@ export const data_dashboard = `<!DOCTYPE html>
     <script>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
-            if (!text) return '';
+            if (!text) return "";
             const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "\"": "&quot;",
+                "'": "&#039;"
             };
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
