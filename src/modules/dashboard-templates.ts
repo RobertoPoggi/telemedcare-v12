@@ -681,45 +681,45 @@ export const home = `<!DOCTYPE html>
                 
                 // Lead Oggi
                 if (stats.leadsToday !== undefined) {
-                    document.getElementById('leadsToday').textContent = stats.leadsToday;
+                    document.getElementById("leadsToday").textContent = stats.leadsToday;
                 }
                 
                 // Contratti Oggi
                 if (stats.contractsToday !== undefined) {
-                    document.getElementById('contractsToday').textContent = stats.contractsToday;
+                    document.getElementById("contractsToday").textContent = stats.contractsToday;
                 } else if (stats.totalContracts !== undefined) {
                     // Fallback per compatibilità
-                    document.getElementById('contractsToday').textContent = stats.totalContracts;
+                    document.getElementById("contractsToday").textContent = stats.totalContracts;
                 }
                 
                 // Proforma Oggi
                 if (stats.proformaToday !== undefined) {
-                    document.getElementById('proformaToday').textContent = stats.proformaToday;
+                    document.getElementById("proformaToday").textContent = stats.proformaToday;
                 }
                 
                 // Pagamenti Oggi
                 if (stats.paymentsToday !== undefined) {
-                    document.getElementById('paymentsToday').textContent = stats.paymentsToday;
+                    document.getElementById("paymentsToday").textContent = stats.paymentsToday;
                 }
                 
                 // Configurazioni Oggi
                 if (stats.configurationsToday !== undefined) {
-                    document.getElementById('configurationsToday').textContent = stats.configurationsToday;
+                    document.getElementById("configurationsToday").textContent = stats.configurationsToday;
                 }
                 
                 // Attivazioni Oggi
                 if (stats.activationsToday !== undefined) {
-                    document.getElementById('activationsToday').textContent = stats.activationsToday;
+                    document.getElementById("activationsToday").textContent = stats.activationsToday;
                 }
             } catch (error) {
                 console.log('Stats not yet available');
                 // Set tutti a 0 in caso di errore
-                document.getElementById('leadsToday').textContent = '0';
-                document.getElementById('contractsToday').textContent = '0';
-                document.getElementById('proformaToday').textContent = '0';
-                document.getElementById('paymentsToday').textContent = '0';
-                document.getElementById('configurationsToday').textContent = '0';
-                document.getElementById('activationsToday').textContent = '0';
+                document.getElementById("leadsToday").textContent = '0';
+                document.getElementById("contractsToday").textContent = '0';
+                document.getElementById("proformaToday").textContent = '0';
+                document.getElementById("paymentsToday").textContent = '0';
+                document.getElementById("configurationsToday").textContent = '0';
+                document.getElementById("activationsToday").textContent = '0';
             }
         }
 
@@ -1019,7 +1019,7 @@ export const dashboard = `<!DOCTYPE html>
             try {
                 // MIGRAZIONE AUTOMATICA SCHEMA (eseguita una sola volta)
                 try {
-                    const migrateResponse = await fetch('/api/migrate-schema', { method: 'POST' });
+                    const migrateResponse = await fetch('/api/migrate-schema', { method: "POST" });
                     const migrateData = await migrateResponse.json();
                     if (migrateData.success) {
                         console.log('✅ Migrazione schema:', migrateData.migrations);
@@ -1049,10 +1049,10 @@ export const dashboard = `<!DOCTYPE html>
                 const topService = 'eCura PRO';
                 
                 // Aggiorna KPI
-                document.getElementById('totalLeads').textContent = totalLeads;
-                document.getElementById('contractsSent').textContent = contratti;
-                document.getElementById('emailsSent').textContent = '0'; // TODO
-                document.getElementById('topService').textContent = topService;
+                document.getElementById("totalLeads").textContent = totalLeads;
+                document.getElementById("contractsSent").textContent = contratti;
+                document.getElementById("emailsSent").textContent = '0'; // TODO
+                document.getElementById("topService").textContent = topService;
 
                 // Filtra ultimi 3 mesi (90 giorni) e NON convertiti
                 const threeMonthsAgo = new Date();
@@ -1095,7 +1095,7 @@ export const dashboard = `<!DOCTYPE html>
                 const leads = recentLeads.slice(0, 10);
 
                 // Popola tabella lead
-                const tbody = document.getElementById('leadsTable');
+                const tbody = document.getElementById("leadsTable');
                 if (leads.length === 0) {
                     tbody.innerHTML = \`
                         <tr>
@@ -1157,13 +1157,13 @@ export const dashboard = `<!DOCTYPE html>
                 renderAssistitiTable(assistiti);
 
                 // Aggiorna timestamp
-                document.getElementById('lastUpdate').textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
+                document.getElementById("lastUpdate").textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
 
             } catch (error) {
                 console.error('Errore caricamento dashboard:', error);
                 // Mostra dettagli errore per debugging
                 const errorMsg = error.message || 'Errore sconosciuto';
-                document.getElementById('leadsTable').innerHTML = \`
+                document.getElementById("leadsTable').innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
@@ -1190,8 +1190,8 @@ export const dashboard = `<!DOCTYPE html>
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importazione...';
                 
                 fetch(\`/api/leads/import/\${channel.toLowerCase()}\`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -1214,7 +1214,7 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         function refreshData() {
-            const icon = document.getElementById('refreshIcon');
+            const icon = document.getElementById("refreshIcon');
             icon.classList.add('rotating');
             loadDashboardData().finally(() => {
                 setTimeout(() => icon.classList.remove('rotating'), 1000);
@@ -1227,7 +1227,7 @@ export const dashboard = `<!DOCTYPE html>
                 'PRO': 'SiDLY CARE PRO',
                 'PREMIUM': 'SiDLY VITAL CARE'
             };
-            return dispositivi[servizio] || 'N/A';
+            return dispositivi[servizio] || "N/A";
         }
 
         function getPrezzoForService(servizio, piano) {
@@ -1271,7 +1271,7 @@ export const dashboard = `<!DOCTYPE html>
                 \`;
             }).join('');
 
-            document.getElementById('servicesChart').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>';
+            document.getElementById("servicesChart').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>';
         }
 
         function updatePlansChart(leads) {
@@ -1283,7 +1283,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Conta i piani reali basati sui contratti degli assistiti
                 assistiti.forEach(assistito => {
                     const piano = assistito.piano || 'BASE';
-                    if (piano === 'AVANZATO') {
+                    if (piano === "AVANZATO") {
                         planCounts.AVANZATO++;
                     } else {
                         planCounts.BASE++;
@@ -1294,7 +1294,7 @@ export const dashboard = `<!DOCTYPE html>
                 const basePercentage = Math.round((planCounts.BASE / total) * 100);
                 const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
 
-                document.getElementById('plansChart').innerHTML = \`
+                document.getElementById("plansChart').innerHTML = \`
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700">BASE</span>
@@ -1396,7 +1396,7 @@ export const dashboard = `<!DOCTYPE html>
                 });
             }
             
-            document.getElementById('channelsDistribution').innerHTML = html;
+            document.getElementById("channelsDistribution').innerHTML = html;
         }
 
         // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
@@ -1412,14 +1412,14 @@ export const dashboard = `<!DOCTYPE html>
                     // Mostra modal dettagli assistito
                     alert('📋 Dettagli Assistito\\n\\n' +
                         'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
-                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
-                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
-                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
-                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
-                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
+                        'Caregiver: ' + (assistito.nome_caregiver || "N/A") + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
+                        'Parentela: ' + (assistito.parentela_caregiver || "N/A") + '\\n' +
+                        'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
+                        'Email: ' + (assistito.email || "N/A") + '\\n' +
+                        'Telefono: ' + (assistito.telefono || "N/A") + '\\n' +
                         'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
                         'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
-                        'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
+                        'Status: ' + (assistito.contratto_status || assistito.status || "N/A")
                     );
                 } else {
                     alert('❌ Assistito non trovato');
@@ -1455,8 +1455,8 @@ export const dashboard = `<!DOCTYPE html>
                     
                     // Aggiorna
                     const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             nome_assistito: nuovoNome,
                             cognome_assistito: nuovoCognome,
@@ -1525,7 +1525,7 @@ export const dashboard = `<!DOCTYPE html>
                     const assistito = data.assistiti[0];
                     
                     // Verifica che il modal esista
-                    const modal = document.getElementById('editAssistitoModal');
+                    const modal = document.getElementById("editAssistitoModal');
                     if (!modal) {
                         console.error('Modal editAssistitoModal non trovato');
                         alert('❌ Errore: Modal non trovato. Ricaricare la pagina.');
@@ -1567,17 +1567,17 @@ export const dashboard = `<!DOCTYPE html>
         window.editAssistito = editAssistito;  // Esponi globalmente
         
         async function saveEditAssistito() {
-            const id = document.getElementById('editAssistitoId').value;
-            const nomeAssistito = document.getElementById('editNomeAssistito').value;
-            const cognomeAssistito = document.getElementById('editCognomeAssistito').value;
-            const email = document.getElementById('editEmailAssistito').value;
-            const telefono = document.getElementById('editTelefonoAssistito').value;
-            const imei = document.getElementById('editIMEI').value;
-            const servizio = document.getElementById('editServizioAssistito').value;
-            const nomeCaregiver = document.getElementById('editNomeCaregiver').value;
-            const cognomeCaregiver = document.getElementById('editCognomeCaregiver').value;
-            const parentela = document.getElementById('editParentela').value;
-            const piano = document.getElementById('editPianoAssistito').value;
+            const id = document.getElementById("editAssistitoId').value;
+            const nomeAssistito = document.getElementById("editNomeAssistito').value;
+            const cognomeAssistito = document.getElementById("editCognomeAssistito').value;
+            const email = document.getElementById("editEmailAssistito').value;
+            const telefono = document.getElementById("editTelefonoAssistito').value;
+            const imei = document.getElementById("editIMEI').value;
+            const servizio = document.getElementById("editServizioAssistito').value;
+            const nomeCaregiver = document.getElementById("editNomeCaregiver').value;
+            const cognomeCaregiver = document.getElementById("editCognomeCaregiver').value;
+            const parentela = document.getElementById("editParentela').value;
+            const piano = document.getElementById("editPianoAssistito').value;
             
             // DEBUG: Log dei dati raccolti
             console.log('📝 SAVE EDIT ASSISTITO:', {
@@ -1613,8 +1613,8 @@ export const dashboard = `<!DOCTYPE html>
             
             try {
                 const response = await fetch(\`/api/assistiti/\${id}\`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
                 });
                 
@@ -1644,9 +1644,9 @@ export const dashboard = `<!DOCTYPE html>
         };
         
         function updatePrezziServizio() {
-            const servizio = document.getElementById('editServizioAssistito')?.value || 'eCura PRO';
-            const piano = document.getElementById('editPianoAssistito')?.value || 'BASE';
-            const prezzoInfo = document.getElementById('prezzoInfo');
+            const servizio = document.getElementById("editServizioAssistito')?.value || 'eCura PRO';
+            const piano = document.getElementById("editPianoAssistito')?.value || 'BASE';
+            const prezzoInfo = document.getElementById("prezzoInfo');
             
             if (!prezzoInfo) return;
             
@@ -1654,7 +1654,7 @@ export const dashboard = `<!DOCTYPE html>
             if (!prezzi) return;
             
             const prezzoAnno1 = prezzi[piano];
-            const prezzoRinnovo = prezzi['rinnovo_' + piano];
+            const prezzoRinnovo = prezzi['rinnovo_" + piano];
             
             prezzoInfo.innerHTML = 
                 '<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">' +
@@ -1669,7 +1669,7 @@ export const dashboard = `<!DOCTYPE html>
                 '</div>';
             
             // Aggiorna anche il testo delle opzioni
-            const pianoSelect = document.getElementById('editPianoAssistito');
+            const pianoSelect = document.getElementById("editPianoAssistito');
             if (pianoSelect) {
                 pianoSelect.innerHTML = 
                     '<option value="BASE" data-prezzo="' + prezzi.BASE + '">BASE - €' + prezzi.BASE + '/anno</option>' +
@@ -1686,10 +1686,10 @@ export const dashboard = `<!DOCTYPE html>
         window.closeModal = closeModal;
 
         function renderAssistitiTable(assistiti) {
-            const tbody = document.getElementById('assistitiTable');
+            const tbody = document.getElementById("assistitiTable');
             
             // Aggiorna contatore
-            document.getElementById('assistitiCount').textContent = assistiti.length;
+            document.getElementById("assistitiCount").textContent = assistiti.length;
             
             if (assistiti.length === 0) {
                 tbody.innerHTML = '<tr>' +
@@ -1725,7 +1725,7 @@ export const dashboard = `<!DOCTYPE html>
                 const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
                 
                 const status = assistito.status || 'ATTIVO';
-                const codice = assistito.codice_contratto || assistito.codice || 'N/A';
+                const codice = assistito.codice_contratto || assistito.codice || "N/A";
                 const assistitoId = assistito.id;
                 
                 // Status badge colors
@@ -1738,7 +1738,7 @@ export const dashboard = `<!DOCTYPE html>
                 const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700';
                 
                 // Piano badge colors
-                const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                const pianoColor = piano === "AVANZATO" ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
                     '<td class="py-3 px-2">' +
@@ -1760,7 +1760,7 @@ export const dashboard = `<!DOCTYPE html>
                         '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">' + servizio + '</span>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
-                        '<span class="px-3 py-1 ' + pianoColor + ' text-xs font-medium rounded-full">' + piano + '</span>' +
+                        '<span class="px-3 py-1 " + pianoColor + ' text-xs font-medium rounded-full">" + piano + '</span>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
                         '<div class="font-bold text-green-600 text-base">€' + prezzoAnno + '</div>' +
@@ -1790,7 +1790,7 @@ export const dashboard = `<!DOCTYPE html>
         let allAssistiti = [];
 
         function filterAssistiti() {
-            const searchTerm = document.getElementById('searchAssistitoCognome').value.toLowerCase().trim();
+            const searchTerm = document.getElementById("searchAssistitoCognome').value.toLowerCase().trim();
             
             if (!searchTerm) {
                 renderAssistitiTable(allAssistiti);
@@ -1864,7 +1864,7 @@ export const dashboard = `<!DOCTYPE html>
                     \`;
                 }).join('');
 
-            document.getElementById('channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
+            document.getElementById("channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
         }
 
         // Funzioni Import API
@@ -2214,11 +2214,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const statsResponse = await fetch('/api/data/stats');
                 const stats = await statsResponse.json();
 
-                document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
-                document.getElementById('conversionRate').textContent = stats.conversionRate || '0%';
-                document.getElementById('leadsToday').textContent = stats.leadsToday || '0';
-                document.getElementById('totalValue').textContent = stats.totalValue ? ('\u20AC' + stats.totalValue) : '\u20AC0';
-                document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
+                document.getElementById("totalLeads").textContent = stats.totalLeads || '0';
+                document.getElementById("conversionRate").textContent = stats.conversionRate || '0%';
+                document.getElementById("leadsToday").textContent = stats.leadsToday || '0';
+                document.getElementById("totalValue").textContent = stats.totalValue ? ('\u20AC' + stats.totalValue) : '\u20AC0';
+                document.getElementById("leadsGrowth").textContent = stats.leadsGrowth || '+0%';
 
                 // Carica lead
                 const leadsResponse = await fetch('/api/leads?limit=200');
@@ -2246,11 +2246,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const leadsToday = allLeads.filter(l => l.created_at && l.created_at.startsWith(today)).length;
                 
                 // Update KPIs
-                document.getElementById('totalLeads').textContent = totalLeads;
-                document.getElementById('conversionRate').textContent = conversionRate;
-                document.getElementById('leadsToday').textContent = leadsToday;
-                document.getElementById('totalValue').textContent = '€' + totalValue.toLocaleString('it-IT');
-                document.getElementById('leadsGrowth').textContent = '+0%'; // TODO
+                document.getElementById("totalLeads").textContent = totalLeads;
+                document.getElementById("conversionRate").textContent = conversionRate;
+                document.getElementById("leadsToday").textContent = leadsToday;
+                document.getElementById("totalValue").textContent = '€' + totalValue.toLocaleString('it-IT');
+                document.getElementById("leadsGrowth").textContent = '+0%'; // TODO
 
                 // Aggiorna grafici
                 updateServicesBreakdown(allLeads);
@@ -2262,7 +2262,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             } catch (error) {
                 console.error("Errore caricamento leads:", error);
-                document.getElementById('leadsTableBody').innerHTML = \`
+                document.getElementById("leadsTableBody').innerHTML = \`
                     <tr>
                         <td colspan="9" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
@@ -2289,7 +2289,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 </div>
             \`;
 
-            document.getElementById('servicesBreakdown').innerHTML = html;
+            document.getElementById("servicesBreakdown').innerHTML = html;
         }
 
         async function updatePlansBreakdown(leads) {
@@ -2339,7 +2339,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 \`;
             }).join('');
 
-            document.getElementById('plansBreakdown').innerHTML = html;
+            document.getElementById("plansBreakdown').innerHTML = html;
         }
 
         function updateChannelsBreakdown(leads) {
@@ -2373,14 +2373,14 @@ export const leads_dashboard = `<!DOCTYPE html>
             });
             
             // Aggiorna i KPI: IRBEMA → Partner, Web → Web, Networking → Email
-            document.getElementById('channelPartner').textContent = channelCounts['IRBEMA'];
-            document.getElementById('channelWeb').textContent = channelCounts['Web'];
-            document.getElementById('channelEmail').textContent = channelCounts['Networking'];
-            document.getElementById('channelPhone').textContent = channelCounts['Altro'];
+            document.getElementById("channelPartner").textContent = channelCounts['IRBEMA'];
+            document.getElementById("channelWeb").textContent = channelCounts['Web'];
+            document.getElementById("channelEmail").textContent = channelCounts['Networking'];
+            document.getElementById("channelPhone").textContent = channelCounts['Altro'];
         }
 
         function renderLeadsTable(leads) {
-            const tbody = document.getElementById('leadsTableBody');
+            const tbody = document.getElementById("leadsTableBody');
             
             if (leads.length === 0) {
                 tbody.innerHTML = \`
@@ -2403,7 +2403,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || "N/A")}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -2472,9 +2472,9 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function applyFilters() {
-            const servizioFilter = document.getElementById('filterServizio').value;
-            const pianoFilter = document.getElementById('filterPiano').value;
-            const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
+            const servizioFilter = document.getElementById("filterServizio').value;
+            const pianoFilter = document.getElementById("filterPiano').value;
+            const searchCognome = document.getElementById("searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
                 const matchServizio = !servizioFilter || lead.tipoServizio === servizioFilter;
@@ -2510,15 +2510,15 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ tipoContratto: piano })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + (result.contractCode || 'N/A') + '\\nTemplate: email_invio_contratto');
+                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + (result.contractCode || "N/A") + '\\nTemplate: email_invio_contratto');
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert("❌ Errore: " + result.error);
@@ -2535,8 +2535,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-brochure\`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
                 });
                 
                 const result = await response.json();
@@ -2563,15 +2563,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            document.getElementById('viewLeadId').textContent = lead.id;
-            document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
-            document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
-            document.getElementById('viewEmail').textContent = lead.email || '-';
-            document.getElementById('viewTelefono').textContent = lead.telefono || '-';
-            document.getElementById('viewServizio').textContent = lead.servizio || 'eCura PRO';
-            document.getElementById('viewPiano').textContent = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-            document.getElementById('viewNote').textContent = lead.note || '-';
-            document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
+            document.getElementById("viewLeadId").textContent = lead.id;
+            document.getElementById("viewNome").textContent = lead.nomeRichiedente || '-';
+            document.getElementById("viewCognome").textContent = lead.cognomeRichiedente || '-';
+            document.getElementById("viewEmail").textContent = lead.email || '-';
+            document.getElementById("viewTelefono").textContent = lead.telefono || '-';
+            document.getElementById("viewServizio").textContent = lead.servizio || 'eCura PRO';
+            document.getElementById("viewPiano").textContent = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+            document.getElementById("viewNote").textContent = lead.note || '-';
+            document.getElementById("viewData").textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             
             openModal('viewLeadModal');
         }
@@ -2583,33 +2583,33 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            document.getElementById('editLeadId').value = lead.id;
-            document.getElementById('editNome').value = lead.nomeRichiedente || '';
-            document.getElementById('editCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('editEmail').value = lead.email || '';
-            document.getElementById('editTelefono').value = lead.telefono || '';
+            document.getElementById("editLeadId').value = lead.id;
+            document.getElementById("editNome').value = lead.nomeRichiedente || '';
+            document.getElementById("editCognome').value = lead.cognomeRichiedente || '';
+            document.getElementById("editEmail').value = lead.email || '';
+            document.getElementById("editTelefono').value = lead.telefono || '';
             
             const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-            document.getElementById('editPiano').value = currentPiano;
-            document.getElementById('editNote').value = lead.note || '';
+            document.getElementById("editPiano').value = currentPiano;
+            document.getElementById("editNote').value = lead.note || '';
             
             openModal('editLeadModal');
         }
         
         async function saveEditLead() {
-            const leadId = document.getElementById('editLeadId').value;
+            const leadId = document.getElementById("editLeadId').value;
             const formData = {
-                nome: document.getElementById('editNome').value,
-                cognome: document.getElementById('editCognome').value,
-                email: document.getElementById('editEmail').value,
-                telefono: document.getElementById('editTelefono').value,
-                note: document.getElementById('editNote').value
+                nome: document.getElementById("editNome').value,
+                cognome: document.getElementById("editCognome').value,
+                email: document.getElementById("editEmail').value,
+                telefono: document.getElementById("editTelefono').value,
+                note: document.getElementById("editNote').value
             };
             
             try {
                 const response = await fetch(\`/api/leads/\${leadId}\`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData)
                 });
                 
@@ -2662,22 +2662,22 @@ export const leads_dashboard = `<!DOCTYPE html>
         
         function openNewLeadModal() {
             // Reset form
-            document.getElementById('newLeadForm').reset();
+            document.getElementById("newLeadForm').reset();
             openModal('newLeadModal');
         }
         
         async function saveNewLead() {
-            const canale = document.getElementById('newCanale').value;
-            const piano = document.getElementById('newPiano').value;
-            const noteExtra = document.getElementById('newNote').value;
+            const canale = document.getElementById("newCanale').value;
+            const piano = document.getElementById("newPiano').value;
+            const noteExtra = document.getElementById("newNote').value;
             
             const formData = {
-                nomeRichiedente: document.getElementById('newNome').value,
-                cognomeRichiedente: document.getElementById('newCognome').value,
-                email: document.getElementById('newEmail').value,
-                telefono: document.getElementById('newTelefono').value,
-                tipoServizio: document.getElementById('newServizio').value,
-                note: 'Canale: ' + canale + ' | Piano: ' + piano + (noteExtra ? ' | ' + noteExtra : '')
+                nomeRichiedente: document.getElementById("newNome').value,
+                cognomeRichiedente: document.getElementById("newCognome').value,
+                email: document.getElementById("newEmail').value,
+                telefono: document.getElementById("newTelefono').value,
+                tipoServizio: document.getElementById("newServizio').value,
+                note: 'Canale: ' + canale + ' | Piano: " + piano + (noteExtra ? ' | ' + noteExtra : '')
             };
             
             // Validation
@@ -2688,8 +2688,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             try {
                 const response = await fetch('/api/leads', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData)
                 });
                 
@@ -2698,7 +2698,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 if (result.success) {
                     alert('✅ Lead creato con successo!\\n\\nID: ' + (result.leadId || result.id));
                     closeModal('newLeadModal');
-                    document.getElementById('newLeadForm').reset();
+                    document.getElementById("newLeadForm').reset();
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
@@ -2723,14 +2723,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                     // Mostra modal dettagli assistito
                     alert('📋 Dettagli Assistito\\n\\n' +
                         'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
-                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
-                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
-                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
-                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
-                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
+                        'Caregiver: ' + (assistito.nome_caregiver || "N/A") + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
+                        'Parentela: ' + (assistito.parentela_caregiver || "N/A") + '\\n' +
+                        'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
+                        'Email: ' + (assistito.email || "N/A") + '\\n' +
+                        'Telefono: ' + (assistito.telefono || "N/A") + '\\n' +
                         'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
                         'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
-                        'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
+                        'Status: ' + (assistito.contratto_status || assistito.status || "N/A")
                     );
                 } else {
                     alert('❌ Assistito non trovato');
@@ -2766,8 +2766,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     
                     // Aggiorna
                     const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             nome_assistito: nuovoNome,
                             cognome_assistito: nuovoCognome,
@@ -3273,14 +3273,14 @@ export const data_dashboard = `<!DOCTYPE html>
         async function loadDataDashboard() {
             try {
                 // Carica lead per calcolare statistiche reali
-                const leadsResponse = await fetch('/api/leads?limit=200');
+                const leadsResponse = await fetch("/api/leads?limit=200");
                 if (!leadsResponse.ok) throw new Error("Errore caricamento leads");
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
                 
                 // Carica contratti REALI
-                const contractsResponse = await fetch('/api/contratti?limit=100');
-                if (!contractsResponse.ok) throw new Error("Errore caricamento contratti");
+                const contractsResponse = await fetch("/api/contratti?limit=100");
+                if (!leadsResponse.ok) throw new Error("Errore caricamento contratti");
                 const contractsData = await contractsResponse.json();
                 const contracts = contractsData.contratti || [];
                 allContracts = contracts; // Salva per uso nelle funzioni CRUD
@@ -3296,16 +3296,16 @@ export const data_dashboard = `<!DOCTYPE html>
                 });
                 
                 // Conta contratti firmati
-                const signedContracts = contracts.filter(c => c.status === 'SIGNED').length;
-                const conversionRate = totalLeads > 0 ? ((signedContracts / totalLeads) * 100).toFixed(2) + '%' : '0%';
+                const signedContracts = contracts.filter(c => c.status === "SIGNED").length;
+                const conversionRate = totalLeads > 0 ? ((signedContracts / totalLeads) * 100).toFixed(2) + "%" : "0%";
                 const averageOrderValue = totalContracts > 0 ? Math.round(totalRevenue / totalContracts) : 0;
 
                 // Aggiorna KPI con dati reali
-                document.getElementById('kpiLeads').textContent = totalLeads;
-                document.getElementById('kpiContracts').textContent = totalContracts;
-                document.getElementById('kpiRevenue').textContent = '\u20AC' + totalRevenue.toFixed(0);
-                document.getElementById('kpiConversion').textContent = conversionRate;
-                document.getElementById('kpiAov').textContent = '\u20AC' + averageOrderValue;
+                document.getElementById("kpiLeads").textContent = totalLeads;
+                document.getElementById("kpiContracts").textContent = totalContracts;
+                document.getElementById("kpiRevenue").textContent = "\u20AC" + totalRevenue.toFixed(0);
+                document.getElementById("kpiConversion").textContent = conversionRate;
+                document.getElementById("kpiAov").textContent = "\u20AC" + averageOrderValue;
 
                 // Analizza per servizio (TUTTI sono eCura PRO)
                 const serviceData = analyzeByService(leads, contracts);
@@ -3348,29 +3348,29 @@ export const data_dashboard = `<!DOCTYPE html>
 
         function updateServiceMetrics(data) {
             // FAMILY
-            document.getElementById('familyLeads').textContent = data.FAMILY.leads;
-            document.getElementById('familyContracts').textContent = data.FAMILY.contracts;
-            document.getElementById('familyRevenue').textContent = '\u20AC' + data.FAMILY.revenue;
-            document.getElementById('familyBase').textContent = data.FAMILY.base;
-            document.getElementById('familyAvanzato').textContent = data.FAMILY.avanzato;
+            document.getElementById("familyLeads").textContent = data.FAMILY.leads;
+            document.getElementById("familyContracts").textContent = data.FAMILY.contracts;
+            document.getElementById("familyRevenue").textContent = '\u20AC' + data.FAMILY.revenue;
+            document.getElementById("familyBase").textContent = data.FAMILY.base;
+            document.getElementById("familyAvanzato").textContent = data.FAMILY.avanzato;
 
             // PRO (TUTTI i 126 lead)
-            document.getElementById('proLeads').textContent = data.PRO.leads;
-            document.getElementById('proContracts').textContent = data.PRO.contracts;
-            document.getElementById('proRevenue').textContent = '\u20AC' + data.PRO.revenue;
-            document.getElementById('proBase').textContent = data.PRO.base;
-            document.getElementById('proAvanzato').textContent = data.PRO.avanzato;
+            document.getElementById("proLeads").textContent = data.PRO.leads;
+            document.getElementById("proContracts").textContent = data.PRO.contracts;
+            document.getElementById("proRevenue").textContent = '\u20AC' + data.PRO.revenue;
+            document.getElementById("proBase").textContent = data.PRO.base;
+            document.getElementById("proAvanzato").textContent = data.PRO.avanzato;
 
             // PREMIUM
-            document.getElementById('premiumLeads').textContent = data.PREMIUM.leads;
-            document.getElementById('premiumContracts').textContent = data.PREMIUM.contracts;
-            document.getElementById('premiumRevenue').textContent = '\u20AC' + data.PREMIUM.revenue;
-            document.getElementById('premiumBase').textContent = data.PREMIUM.base;
-            document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
+            document.getElementById("premiumLeads").textContent = data.PREMIUM.leads;
+            document.getElementById("premiumContracts").textContent = data.PREMIUM.contracts;
+            document.getElementById("premiumRevenue").textContent = '\u20AC' + data.PREMIUM.revenue;
+            document.getElementById("premiumBase").textContent = data.PREMIUM.base;
+            document.getElementById("premiumAvanzato").textContent = data.PREMIUM.avanzato;
         }
 
         function renderContractsTable(contracts, leads) {
-            const tbody = document.getElementById('contractsTable');
+            const tbody = document.getElementById("contractsTable');
             
             if (contracts.length === 0) {
                 tbody.innerHTML = \`
@@ -3448,7 +3448,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 'PRO': 'SiDLY CARE PRO',
                 'PREMIUM': 'SiDLY VITAL CARE'
             };
-            return dispositivi[servizio] || 'N/A';
+            return dispositivi[servizio] || "N/A";
         }
 
         // ============================================
@@ -3508,41 +3508,41 @@ export const data_dashboard = `<!DOCTYPE html>
             }
             
             // Pre-compila la modale con i dati del contratto
-            document.getElementById('signContractId').value = contract.id;
-            document.getElementById('signContractCode').textContent = contract.codice_contratto || contract.id;
-            document.getElementById('signClienteName').textContent = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim() || 'N/A';
-            document.getElementById('signDigitalName').value = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim();
+            document.getElementById("signContractId').value = contract.id;
+            document.getElementById("signContractCode").textContent = contract.codice_contratto || contract.id;
+            document.getElementById("signClienteName").textContent = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim() || "N/A";
+            document.getElementById("signDigitalName').value = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim();
             
             // Imposta data odierna
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('signDate').value = today;
+            document.getElementById("signDate').value = today;
             
             // Apri modale
-            document.getElementById('signContractModal').classList.remove('hidden');
-            document.getElementById('signContractModal').style.display = 'flex';
+            document.getElementById("signContractModal').classList.remove('hidden');
+            document.getElementById("signContractModal").style.display = 'flex';
         }
         
         function closeSignContractModal() {
-            document.getElementById('signContractModal').classList.add('hidden');
-            document.getElementById('signContractModal').style.display = 'none';
-            document.getElementById('signContractForm').reset();
+            document.getElementById("signContractModal').classList.add('hidden');
+            document.getElementById("signContractModal").style.display = 'none';
+            document.getElementById("signContractForm').reset();
         }
         
         // Submit handler firma contratto
-        const signForm = document.getElementById('signContractForm');
+        const signForm = document.getElementById("signContractForm');
         if (signForm) {
             signForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const contractId = document.getElementById('signContractId').value;
-                const firmaDigitale = document.getElementById('signDigitalName').value;
-                const dataFirma = document.getElementById('signDate').value;
-                const note = document.getElementById('signNotes').value;
+                const contractId = document.getElementById("signContractId').value;
+                const firmaDigitale = document.getElementById("signDigitalName').value;
+                const dataFirma = document.getElementById("signDate').value;
+                const note = document.getElementById("signNotes').value;
                 
                 try {
                     const response = await fetch('/api/contracts/sign', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             contractId,
                             firmaDigitale,
@@ -3579,7 +3579,7 @@ export const data_dashboard = `<!DOCTYPE html>
             
             // Usa l'endpoint API per generare/scaricare il PDF
             const pdfUrl = \`/api/contratti/\${contractId}/download\`;
-            window.open(pdfUrl, '_blank');
+            window.open(pdfUrl, "_blank");
         }
 
         // ============================================
@@ -3587,15 +3587,15 @@ export const data_dashboard = `<!DOCTYPE html>
         // ============================================
         
         function openNewContractModal() {
-            document.getElementById('newContractForm').reset();
-            document.getElementById('newContractModal').classList.remove('hidden');
+            document.getElementById("newContractForm').reset();
+            document.getElementById("newContractModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             // Carica lista lead per dropdown
             loadLeadsForContract();
         }
         
         function closeNewContractModal() {
-            document.getElementById('newContractModal').classList.add('hidden');
+            document.getElementById("newContractModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
         
@@ -3605,7 +3605,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const data = await response.json();
                 const leads = data.leads || [];
                 
-                const select = document.getElementById('newContractLeadId');
+                const select = document.getElementById("newContractLeadId');
                 select.innerHTML = '<option value="">Seleziona lead...</option>';
                 
                 leads.forEach(lead => {
@@ -3620,9 +3620,9 @@ export const data_dashboard = `<!DOCTYPE html>
         }
         
         async function saveNewContract() {
-            const leadId = document.getElementById('newContractLeadId').value;
-            const piano = document.getElementById('newContractPiano').value;
-            const note = document.getElementById('newContractNote').value;
+            const leadId = document.getElementById("newContractLeadId').value;
+            const piano = document.getElementById("newContractPiano').value;
+            const note = document.getElementById("newContractNote').value;
             
             if (!leadId) {
                 alert("⚠️ Seleziona un lead");
@@ -3635,20 +3635,20 @@ export const data_dashboard = `<!DOCTYPE html>
             }
             
             // Calcola importo in base al piano
-            const importo = piano === 'AVANZATO' ? 840 : 480;
+            const importo = piano === "AVANZATO" ? 840 : 480;
             
             const contractData = {
                 lead_id: leadId,
                 piano: piano,
                 importo_annuo: importo,
-                status: 'DRAFT',
-                note: note || 'Piano: ' + piano
+                status: "DRAFT",
+                note: note || 'Piano: " + piano
             };
             
             try {
                 const response = await fetch('/api/contratti', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(contractData)
                 });
                 
@@ -3695,8 +3695,8 @@ export const data_dashboard = `<!DOCTYPE html>
                 
                 // Crea assistito
                 const response = await fetch('/api/assistiti', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         nome_assistito: nomeAssistito,
                         cognome_assistito: cognomeAssistito,
@@ -4116,7 +4116,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 renderWorkflowTable(allLeads);
             } catch (error) {
                 console.error('Errore caricamento workflow:', error);
-                document.getElementById('workflowTable').innerHTML = \`
+                document.getElementById("workflowTable').innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
@@ -4130,7 +4130,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function renderWorkflowTable(leads) {
-            const tbody = document.getElementById('workflowTable');
+            const tbody = document.getElementById("workflowTable');
             
             if (leads.length === 0) {
                 tbody.innerHTML = \`
@@ -4240,7 +4240,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function applyFilters() {
-            const statusFilter = document.getElementById('filterStatus').value;
+            const statusFilter = document.getElementById("filterStatus').value;
             const filtered = allLeads.filter(lead => {
                 if (!statusFilter) return true;
                 return getWorkflowStatus(lead).text === statusFilter;
@@ -4315,7 +4315,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra tutti i record se <= 10
                     items.forEach((item, idx) => {
                         if (type === 'leads') {
-                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || 'N/A'}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || "N/A"}\\n\`;
                         } else if (type === 'contratti') {
                             message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else if (type === 'firme') {
@@ -4323,7 +4323,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         } else if (type === 'proforma') {
                             message += \`\${idx+1}. Proforma \${item.numero || item.id} - €\${item.importo || '0'}\\n\`;
                         } else if (type === 'pagamenti') {
-                            message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
+                            message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || "N/A"}\\n\`;
                         } else {
                             message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - ATTIVO\\n\`;
                         }
@@ -4370,8 +4370,8 @@ export const workflow_manager = `<!DOCTYPE html>
                 case 'view':
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                    const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
-                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\n\n📧 Email: ' + (lead.email || 'N/A') + '\n📞 Telefono: ' + (lead.telefono || 'N/A') + '\n🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\n📋 Piano: ' + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString(\'it-IT\') + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || 'Nessuna nota'));
+                    const prezzo = piano === "AVANZATO" ? '€840' : '€480';
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\n\n📧 Email: ' + (lead.email || "N/A") + '\n📞 Telefono: ' + (lead.telefono || "N/A") + '\n🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\n📋 Piano: " + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString(\'it-IT\') + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || 'Nessuna nota'));
                     break;
                     
                 case 'contract':
@@ -4379,8 +4379,8 @@ export const workflow_manager = `<!DOCTYPE html>
                     const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
                     const emailSafe = escapeQuotes(lead.email || '');
                     if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?\`)) {
-                        document.getElementById('signContractId').value = lead.id;
-                        document.getElementById('signDigital').value = nomeCompleto;
+                        document.getElementById("signContractId').value = lead.id;
+                        document.getElementById("signDigital').value = nomeCompleto;
                         openSignModal();
                     }
                     break;
@@ -4396,8 +4396,8 @@ export const workflow_manager = `<!DOCTYPE html>
                             .then(data => {
                                 if (data.proforma && data.proforma.length > 0) {
                                     const proforma = data.proforma[0];
-                                    document.getElementById('paymentProformaId').value = proforma.id;
-                                    document.getElementById('paymentAmount').value = proforma.importo;
+                                    document.getElementById("paymentProformaId').value = proforma.id;
+                                    document.getElementById("paymentAmount').value = proforma.importo;
                                     openPaymentModal();
                                 } else {
                                     alert('⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.');
@@ -4418,38 +4418,38 @@ export const workflow_manager = `<!DOCTYPE html>
 
         // Modal functions
         function openSignModal() {
-            document.getElementById('signModal').classList.add('active');
+            document.getElementById("signModal').classList.add('active');
         }
 
         function closeSignModal() {
-            document.getElementById('signModal').classList.remove('active');
-            document.getElementById('signForm').reset();
+            document.getElementById("signModal').classList.remove('active');
+            document.getElementById("signForm').reset();
         }
 
         function openPaymentModal() {
-            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById("paymentModal').classList.add('active');
         }
 
         function closePaymentModal() {
-            document.getElementById('paymentModal').classList.remove('active');
-            document.getElementById('paymentForm').reset();
+            document.getElementById("paymentModal').classList.remove('active');
+            document.getElementById("paymentForm').reset();
         }
 
         // Form submissions (usa once: true per evitare listener multipli)
-        const signForm = document.getElementById('signForm');
+        const signForm = document.getElementById("signForm');
         if (signForm && !signForm.dataset.listenerAdded) {
             signForm.dataset.listenerAdded = 'true';
             signForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                const contractId = document.getElementById('signContractId').value;
-                const firmaDigitale = document.getElementById('signDigital').value || 'Firma Manuale';
-                const notes = document.getElementById('signNotes').value;
+                const contractId = document.getElementById("signContractId').value;
+                const firmaDigitale = document.getElementById("signDigital').value || 'Firma Manuale';
+                const notes = document.getElementById("signNotes').value;
                 
                 try {
                     const response = await fetch('/api/contracts/sign', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             contractId,
                             firmaDigitale: firmaDigitale + (notes ? \` - \${notes}\` : ''),
@@ -4473,21 +4473,21 @@ export const workflow_manager = `<!DOCTYPE html>
             });
         }
 
-        const paymentForm = document.getElementById('paymentForm');
+        const paymentForm = document.getElementById("paymentForm');
         if (paymentForm && !paymentForm.dataset.listenerAdded) {
             paymentForm.dataset.listenerAdded = 'true';
             paymentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const proformaId = document.getElementById('paymentProformaId').value;
-            const importo = parseFloat(document.getElementById('paymentAmount').value);
-            const transactionId = document.getElementById('paymentTransactionId').value || 'MANUAL_PAYMENT';
-            const notes = document.getElementById('paymentNotes').value;
+            const proformaId = document.getElementById("paymentProformaId').value;
+            const importo = parseFloat(document.getElementById("paymentAmount').value);
+            const transactionId = document.getElementById("paymentTransactionId').value || 'MANUAL_PAYMENT';
+            const notes = document.getElementById("paymentNotes').value;
             
             try {
                 const response = await fetch('/api/payments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         proformaId,
                         importo,
