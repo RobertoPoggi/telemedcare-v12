@@ -4110,13 +4110,13 @@ export const workflow_manager = `<!DOCTYPE html>
             isLoading = true;
             
             try {
-                const response = await fetch('/api/leads?limit=100');
+                const response = await fetch("/api/leads?limit=100");
                 const data = await response.json();
                 allLeads = data.leads || [];
                 renderWorkflowTable(allLeads);
             } catch (error) {
-                console.error('Errore caricamento workflow:', error);
-                document.getElementById("workflowTable').innerHTML = \`
+                console.error("Errore caricamento workflow:", error);
+                document.getElementById("workflowTable").innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
@@ -4130,7 +4130,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function renderWorkflowTable(leads) {
-            const tbody = document.getElementById("workflowTable');
+            const tbody = document.getElementById("workflowTable");
             
             if (leads.length === 0) {
                 tbody.innerHTML = \`
@@ -4149,25 +4149,25 @@ export const workflow_manager = `<!DOCTYPE html>
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
+                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || "").substring(0, 25)}</code>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || lead.emailRichiedente || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || lead.emailRichiedente || "-"}
                             </div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="flex items-center text-gray-700">
                                 <i class="fas fa-phone text-xs mr-1 text-gray-400"></i>
-                                <span class="text-xs">\${lead.telefono || '-'}</span>
+                                <span class="text-xs">\${lead.telefono || "-"}</span>
                             </div>
                         </td>
                         <td class="py-3 text-sm">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium whitespace-nowrap">
-                                \${lead.servizio || lead.tipoServizio || 'eCura PRO'}
+                                \${lead.servizio || lead.tipoServizio || "eCura PRO"}
                             </span>
                         </td>
                         <td class="py-3">
@@ -4184,12 +4184,12 @@ export const workflow_manager = `<!DOCTYPE html>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">
                             <div class="flex space-x-1">
-                                <button onclick="quickAction('\${lead.id}', 'view')" 
+                                <button onclick="quickAction('\${lead.id}', \"view\")" 
                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded" 
                                     title="Visualizza Dettagli">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="quickAction('\${lead.id}', 'payment')" 
+                                <button onclick="quickAction('\${lead.id}', \"payment\")" 
                                     class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded" 
                                     title="Registra Pagamento">
                                     <i class="fas fa-euro-sign"></i>
