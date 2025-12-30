@@ -1142,7 +1142,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici: servizi basati su ASSISTITI, piani basati su ASSISTITI
                 updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
                 updatePlansChart(allLeads);
-                updateChannelsDistribution(allLeads);
+                updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
@@ -1318,8 +1318,8 @@ export const dashboard = `<!DOCTYPE html>
             return id;
         }
         
-        function updateChannelsDistribution(leads) {
-            // Conta lead per canale - ANALIZZA TUTTI I LEAD (non solo assistiti)
+        function updateChannelsDistribution(assistiti) {
+            // Analizza SOLO gli ASSISTITI ATTIVI per identificare il canale di provenienza
             const channelCounts = {};
             const channelColors = {
                 'Irbema': 'bg-blue-500',
@@ -1330,14 +1330,14 @@ export const dashboard = `<!DOCTYPE html>
                 'DoubleYou': 'bg-pink-500'
             };
             
-            leads.forEach(lead => {
+            assistiti.forEach(assistito => {
                 let canale = 'Web'; // Default
                 
-                // Estrai info lead
-                const leadId = (lead.id || '').toString().toUpperCase();
-                const emailRichiedente = (lead.emailRichiedente || lead.email || '').toLowerCase().trim();
-                const nomeCompleto = \`\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}\`.trim().toLowerCase();
-                const canaleField = (lead.canale || lead.origine || '').toLowerCase();
+                // Estrai info assistito
+                const leadId = (assistito.id || '').toString().toUpperCase();
+                const emailRichiedente = (assistito.emailRichiedente || assistito.email || '').toLowerCase().trim();
+                const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente)} \${escapeHtml(assistito.cognomeRichiedente)}\`.trim().toLowerCase();
+                const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
                 // ⚡ NUOVA LOGICA: Priorità email richiedente per identificare canale
                 if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('irbema.it')) {
@@ -1364,7 +1364,7 @@ export const dashboard = `<!DOCTYPE html>
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
             
-            const total = leads.length || 1;
+            const total = assistiti.length || 1;
             let html = '';
             
             // Ordina per count discendente
