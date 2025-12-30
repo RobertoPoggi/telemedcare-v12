@@ -2516,7 +2516,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure;
+                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure');
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert('❌ Errore: ' + result.error);
@@ -3461,7 +3461,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     loadData();
                 } else {
                     if (result.isSigned) {
-                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.;
+                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.');
                     } else {
                         alert('❌ Errore: ' + result.error);
                     }
@@ -3531,7 +3531,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.;
+                    alert('✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.');
                     closeSignContractModal();
                     loadDataDashboard(); // Ricarica i dati
                 } else {
@@ -4228,7 +4228,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...;
+            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...');
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
@@ -4443,7 +4443,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Firma registrata con successo!\\n\\nProforma generata e inviata.;
+                        alert('✅ Firma registrata con successo!\\n\\nProforma generata e inviata.');
                         closeSignModal();
                         refreshWorkflows();
                     } else {
@@ -4482,7 +4482,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Pagamento registrato con successo!\\n\\nProcedura di attivazione avviata.;
+                    alert('✅ Pagamento registrato con successo!\\n\\nProcedura di attivazione avviata.');
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
