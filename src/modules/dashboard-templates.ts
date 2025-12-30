@@ -1324,7 +1324,7 @@ export const dashboard = `<!DOCTYPE html>
             const channelColors = {
                 'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
-                'Web': 'bg-teal-600',
+                'Web': 'bg-indigo-600',
                 'Networking': 'bg-purple-500',
                 'AON': 'bg-orange-500',
                 'DoubleYou': 'bg-pink-500'
@@ -1339,27 +1339,26 @@ export const dashboard = `<!DOCTYPE html>
                 const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente)} \${escapeHtml(assistito.cognomeRichiedente)}\`.trim().toLowerCase();
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
-                // ⚡ NUOVA LOGICA: Priorità email richiedente per identificare canale
-                if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('irbema.it')) {
+                // ⚡ LOGICA SEMPLIFICATA: Identifica canale da email richiedente
+                // PRIORITÀ 1: Email Irbema
+                if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('@irbema.')) {
                     canale = 'Irbema';
-                } else if (nomeCompleto.includes('laura calvi')) {
-                    // Laura Calvi è networking
+                } 
+                // PRIORITÀ 2: Laura Calvi = Networking
+                else if (nomeCompleto.includes('laura calvi')) {
                     canale = 'Networking';
-                } else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
+                } 
+                // PRIORITÀ 3: Altri canali specifici
+                else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
                     canale = 'Excel';
-                } else if (leadId.includes('IRBEMA') || canaleField.includes('irbema')) {
-                    canale = 'Irbema';
                 } else if (canaleField.includes('aon')) {
                     canale = 'AON';
                 } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
                     canale = 'DoubleYou';
                 } else if (canaleField.includes('network')) {
                     canale = 'Networking';
-                } else if (leadId.startsWith('LEAD-') && !leadId.includes('EXCEL') && !emailRichiedente.includes('@')) {
-                    // Lead generici senza email probabilmente da Irbema
-                    canale = 'Irbema';
                 }
-                // ELSE: Rimane Web (default) per lead diretti/online
+                // ELSE: Rimane Web (default) - Non più assegnazione automatica a Irbema
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
