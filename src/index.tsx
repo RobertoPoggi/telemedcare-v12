@@ -8076,44 +8076,75 @@ app.put('/api/assistiti/:id', async (c) => {
       return c.json({ success: false, error: 'Assistito non trovato' }, 404)
     }
 
-    await c.env.DB.prepare(`
-      UPDATE assistiti 
-      SET nome = ?, 
-          nome_assistito = ?, 
-          cognome_assistito = ?,
-          nome_caregiver = ?,
-          cognome_caregiver = ?,
-          parentela_caregiver = ?,
-          email = ?, 
-          telefono = ?, 
-          imei = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).bind(
-      `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
-      data.nome_assistito || '',
-      data.cognome_assistito || '',
-      data.nome_caregiver || '',
-      data.cognome_caregiver || '',
-      data.parentela_caregiver || '',
-      data.email || '',
-      data.telefono || '',
-      data.imei || '',
-      id
-    ).run()
-
-    // Prova ad aggiornare il piano separatamente (se la colonna esiste)
+    // Prima prova UPDATE con piano
+    let updateSuccess = false
     try {
-      if (data.piano) {
+      await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET nome = ?, 
+            nome_assistito = ?, 
+            cognome_assistito = ?,
+            nome_caregiver = ?,
+            cognome_caregiver = ?,
+            parentela_caregiver = ?,
+            email = ?, 
+            telefono = ?, 
+            imei = ?,
+            piano = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(
+        `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
+        data.nome_assistito || '',
+        data.cognome_assistito || '',
+        data.nome_caregiver || '',
+        data.cognome_caregiver || '',
+        data.parentela_caregiver || '',
+        data.email || '',
+        data.telefono || '',
+        data.imei || '',
+        data.piano || 'BASE',
+        id
+      ).run()
+      
+      updateSuccess = true
+      console.log(`✅ Assistito aggiornato con piano: ${data.piano || 'BASE'}`)
+    } catch (pianoError: any) {
+      // Se fallisce con errore colonna piano, prova senza piano
+      if (pianoError.message && pianoError.message.includes('no column named piano')) {
+        console.warn('⚠️ Colonna piano non trovata, provo UPDATE senza piano')
+        
         await c.env.DB.prepare(`
           UPDATE assistiti 
-          SET piano = ?
+          SET nome = ?, 
+              nome_assistito = ?, 
+              cognome_assistito = ?,
+              nome_caregiver = ?,
+              cognome_caregiver = ?,
+              parentela_caregiver = ?,
+              email = ?, 
+              telefono = ?, 
+              imei = ?,
+              updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).bind(data.piano, id).run()
-        console.log(`✅ Piano aggiornato: ${data.piano}`)
+        `).bind(
+          `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
+          data.nome_assistito || '',
+          data.cognome_assistito || '',
+          data.nome_caregiver || '',
+          data.cognome_caregiver || '',
+          data.parentela_caregiver || '',
+          data.email || '',
+          data.telefono || '',
+          data.imei || '',
+          id
+        ).run()
+        
+        updateSuccess = true
+        console.log('✅ Assistito aggiornato (senza piano)')
+      } else {
+        throw pianoError
       }
-    } catch (pianoError) {
-      console.warn('⚠️ Colonna piano non trovata, saltata')
     }
 
     console.log('✅ Assistito aggiornato:', id)
@@ -8127,6 +8158,66 @@ app.put('/api/assistiti/:id', async (c) => {
     return c.json({
       success: false,
       error: 'Errore aggiornamento assistito',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/migrate-schema - Migrazione automatica schema database
+app.post('/api/migrate-schema', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔄 MIGRAZIONE SCHEMA DATABASE...')
+    const migrations = []
+
+    // MIGRAZIONE 1: Aggiungi colonna piano alla tabella assistiti
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE assistiti 
+        ADD COLUMN piano TEXT DEFAULT 'BASE'
+      `).run()
+      migrations.push('✅ Colonna piano aggiunta')
+      console.log('✅ Colonna piano aggiunta')
+    } catch (e: any) {
+      if (e.message && e.message.includes('duplicate column')) {
+        migrations.push('ℹ️ Colonna piano già esiste')
+        console.log('ℹ️ Colonna piano già esiste')
+      } else {
+        throw e
+      }
+    }
+
+    // MIGRAZIONE 2: Aggiorna Eileen a AVANZATO
+    try {
+      const eileenUpdate = await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET piano = 'AVANZATO'
+        WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
+           OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
+      `).run()
+      
+      if (eileenUpdate.changes && eileenUpdate.changes > 0) {
+        migrations.push(`✅ Eileen aggiornata a AVANZATO (${eileenUpdate.changes} record)`)
+      } else {
+        migrations.push('ℹ️ Eileen non trovata o già aggiornata')
+      }
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore aggiornamento Eileen: ${e.message}`)
+    }
+
+    return c.json({
+      success: true,
+      message: 'Migrazione schema completata',
+      migrations
+    })
+  } catch (error) {
+    console.error('❌ Errore migrazione schema:', error)
+    return c.json({
+      success: false,
+      error: 'Errore migrazione schema',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
