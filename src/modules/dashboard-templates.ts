@@ -1019,7 +1019,7 @@ export const dashboard = `<!DOCTYPE html>
             try {
                 // MIGRAZIONE AUTOMATICA SCHEMA (eseguita una sola volta)
                 try {
-                    const migrateResponse = await fetch("/api/migrate-schema', { method: "POST" });
+                    const migrateResponse = await fetch("/api/migrate-schema", { method: "POST" });
                     const migrateData = await migrateResponse.json();
                     if (migrateData.success) {
                         console.log('✅ Migrazione schema:', migrateData.migrations);
@@ -1411,7 +1411,7 @@ export const dashboard = `<!DOCTYPE html>
                     
                     // Mostra modal dettagli assistito
                     alert('📋 Dettagli Assistito\\n\\n' +
-                        'Nome: ' + (assistito.nome_assistito || '") + ' ' + (assistito.cognome_assistito || '") + '\\n' +
+                        'Nome: ' + (assistito.nome_assistito || "") + ' ' + (assistito.cognome_assistito || '") + '\\n' +
                         'Caregiver: ' + (assistito.nome_caregiver || "N/A") + ' ' + (assistito.cognome_caregiver || '") + '\\n' +
                         'Parentela: ' + (assistito.parentela_caregiver || "N/A") + '\\n' +
                         'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
@@ -1439,7 +1439,7 @@ export const dashboard = `<!DOCTYPE html>
                     const assistito = data.assistiti[0];
                     
                     // Richiedi nuovi dati
-                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '");
+                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || "");
                     if (!nuovoNome) return;
                     
                     const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '");
@@ -1518,7 +1518,7 @@ export const dashboard = `<!DOCTYPE html>
         
         async function editAssistito(id) {
             try {
-                const response = await fetch("/api/assistiti?id=' + id);
+                const response = await fetch("/api/assistiti?id=" + id);
                 const data = await response.json();
                 
                 if (data.success && data.assistiti && data.assistiti.length > 0) {
@@ -2687,7 +2687,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             try {
-                const response = await fetch("/api/leads', {
+                const response = await fetch("/api/leads", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData)
@@ -2722,7 +2722,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     
                     // Mostra modal dettagli assistito
                     alert('📋 Dettagli Assistito\\n\\n' +
-                        'Nome: ' + (assistito.nome_assistito || '") + ' ' + (assistito.cognome_assistito || '") + '\\n' +
+                        'Nome: ' + (assistito.nome_assistito || "") + ' ' + (assistito.cognome_assistito || '") + '\\n' +
                         'Caregiver: ' + (assistito.nome_caregiver || "N/A") + ' ' + (assistito.cognome_caregiver || '") + '\\n' +
                         'Parentela: ' + (assistito.parentela_caregiver || "N/A") + '\\n' +
                         'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
@@ -2750,7 +2750,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const assistito = data.assistiti[0];
                     
                     // Richiedi nuovi dati
-                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '");
+                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || "");
                     if (!nuovoNome) return;
                     
                     const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '");
@@ -3540,7 +3540,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const note = document.getElementById("signNotes").value;
                 
                 try {
-                    const response = await fetch("/api/contracts/sign', {
+                    const response = await fetch("/api/contracts/sign", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -3646,7 +3646,7 @@ export const data_dashboard = `<!DOCTYPE html>
             };
             
             try {
-                const response = await fetch("/api/contratti', {
+                const response = await fetch("/api/contratti", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(contractData)
@@ -3694,7 +3694,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const parentela = prompt("Parentela Caregiver (opzionale, es: figlia, figlio):") || "";
                 
                 // Crea assistito
-                const response = await fetch("/api/assistiti', {
+                const response = await fetch("/api/assistiti", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -4391,7 +4391,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     const emailSafePayment = escapeQuotes(lead.email || "");
                     if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
-                        fetch("/api/proforma?lead_id=' + lead.id)
+                        fetch("/api/proforma?lead_id=" + lead.id)
                             .then(res => res.json())
                             .then(data => {
                                 if (data.proforma && data.proforma.length > 0) {
@@ -4447,7 +4447,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 const notes = document.getElementById("signNotes").value;
                 
                 try {
-                    const response = await fetch("/api/contracts/sign', {
+                    const response = await fetch("/api/contracts/sign", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -4485,7 +4485,7 @@ export const workflow_manager = `<!DOCTYPE html>
             const notes = document.getElementById("paymentNotes").value;
             
             try {
-                const response = await fetch("/api/payments', {
+                const response = await fetch("/api/payments", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
