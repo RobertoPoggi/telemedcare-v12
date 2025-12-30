@@ -1712,11 +1712,11 @@ export const dashboard = `<!DOCTYPE html>
                 };
                 const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
                 
-                const status = assistito.status || 'ATTIVO';  // Default ATTIVO per assistiti attivi
+                const status = assistito.status || 'ATTIVO';
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
-                const assistitoId = assistito.id;  // Salva ID in variabile
+                const assistitoId = assistito.id;
                 
-                // Status badge colors (italiano)
+                // Status badge colors
                 const statusColors = {
                     'ATTIVO': 'bg-green-100 text-green-700',
                     'FIRMATO': 'bg-green-100 text-green-700',
@@ -1728,49 +1728,49 @@ export const dashboard = `<!DOCTYPE html>
                 // Piano badge colors
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
-                return \`<tr class="border-b border-gray-100 hover:bg-gray-50">
-                    <td class="py-3 px-2">
-                        <div class="font-semibold text-sm text-gray-800">\${nomeCompleto}</div>
-                        <div class="text-xs text-gray-500 mt-1">
-                            <i class="fas fa-user-friends mr-1"></i>\${caregiver} (\${parentela})
-                        </div>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">\${imei}</code>
-                    </td>
-                    <td class="py-3 px-2 text-sm text-gray-700">
-                        <div><i class="fas fa-envelope text-gray-400 mr-1"></i>\${email}</div>
-                    </td>
-                    <td class="py-3 px-2 text-sm text-gray-700">
-                        <div><i class="fas fa-phone text-gray-400 mr-1"></i>\${telefono}</div>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">\${servizio}</span>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <span class="px-3 py-1 \${pianoColor} text-xs font-medium rounded-full">\${piano}</span>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <div class="font-bold text-green-600 text-base">€\${prezzoAnno}</div>
-                        <div class="text-xs text-gray-500">/anno</div>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <span class="px-3 py-1 \${statusColor} text-xs font-medium rounded-full">\${status}</span>
-                    </td>
-                    <td class="py-3 px-2 text-center">
-                        <div class="flex justify-center gap-2">
-                            <button onclick="window.viewAssistito(\${assistitoId})" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="window.editAssistito(\${assistitoId})" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="window.deleteAssistito(\${assistitoId})" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>\`;
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                    '<td class="py-3 px-2">' +
+                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + '</div>' +
+                        '<div class="text-xs text-gray-500 mt-1">' +
+                            '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (' + parentela + ')' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">' + imei + '</code>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-sm text-gray-700">' +
+                        '<div><i class="fas fa-envelope text-gray-400 mr-1"></i>' + email + '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-sm text-gray-700">' +
+                        '<div><i class="fas fa-phone text-gray-400 mr-1"></i>' + telefono + '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">' + servizio + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 ' + pianoColor + ' text-xs font-medium rounded-full">' + piano + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<div class="font-bold text-green-600 text-base">€' + prezzoAnno + '</div>' +
+                        '<div class="text-xs text-gray-500">/anno</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 ' + statusColor + ' text-xs font-medium rounded-full">' + status + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<div class="flex justify-center gap-2">' +
+                            '<button onclick="window.viewAssistito(' + assistitoId + ')" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">' +
+                                '<i class="fas fa-eye"></i>' +
+                            '</button>' +
+                            '<button onclick="window.editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">' +
+                                '<i class="fas fa-edit"></i>' +
+                            '</button>' +
+                            '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">' +
+                                '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
             }).join('');
         }
 
