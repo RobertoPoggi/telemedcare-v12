@@ -1346,20 +1346,27 @@ export const dashboard = `<!DOCTYPE html>
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
                 // DEBUG: Log per capire i dati
-                if (!emailRichiedente || emailRichiedente === '') {
-                    console.log('Assistito senza email:', { id: assistito.id, nome: nomeCompleto, assistito });
-                }
+                console.log('📋 Assistito:', {
+                    id: assistito.id,
+                    nome: nomeCompleto,
+                    canaleField: canaleField,
+                    emailRichiedente: emailRichiedente,
+                    campi: Object.keys(assistito)
+                });
                 
-                // ⚡ LOGICA SEMPLIFICATA: Identifica canale da email richiedente
-                // PRIORITÀ 1: Email Irbema
-                if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('@irbema.')) {
+                // ⚡ LOGICA SEMPLIFICATA: Identifica canale da campo canale (colonna F Excel)
+                // PRIORITÀ 1: Canale Irbema (info@irbema.com o varianti)
+                if (canaleField.includes('info@irbema') || canaleField.includes('@irbema') || 
+                    emailRichiedente.includes('info@irbema') || emailRichiedente.includes('@irbema')) {
                     canale = 'Irbema';
-                    console.log('✅ Irbema:', nomeCompleto, '->', emailRichiedente);
+                    console.log('✅ Irbema:', nomeCompleto, '-> canale:', canaleField, 'email:', emailRichiedente);
                 } 
-                // PRIORITÀ 2: Laura Calvi = Networking
-                else if (nomeCompleto.includes('laura calvi')) {
+                // PRIORITÀ 2: Laura Calvi = Networking (stefania.rocca@medicagb.it)
+                else if (nomeCompleto.includes('laura calvi') || 
+                         canaleField.includes('stefania.rocca') || 
+                         emailRichiedente.includes('stefania.rocca')) {
                     canale = 'Networking';
-                    console.log('✅ Networking:', nomeCompleto);
+                    console.log('✅ Networking:', nomeCompleto, '-> canale:', canaleField);
                 } 
                 // PRIORITÀ 3: Altri canali specifici
                 else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
