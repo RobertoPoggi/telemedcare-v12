@@ -3257,7 +3257,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 const contractsResponse = await fetch('/api/contratti?limit=100');
                 if (!contractsResponse.ok) throw new Error('Errore caricamento contratti');
                 const contractsData = await contractsResponse.json();
+                console.log('📊 Contratti ricevuti dall API:', contractsData);
                 const contracts = contractsData.contratti || [];
+                console.log('📋 Array contratti dopo parsing:', contracts, 'Lunghezza:', contracts.length);
                 allContracts = contracts; // Salva per uso nelle funzioni CRUD
                 
                 // Calcola statistiche REALI dai contratti
@@ -3345,6 +3347,7 @@ export const data_dashboard = `<!DOCTYPE html>
         }
 
         function renderContractsTable(contracts, leads) {
+            console.log('🎨 renderContractsTable chiamata con:', contracts.length, 'contratti e', leads.length, 'leads');
             const tbody = document.getElementById('contractsTable');
             
             if (contracts.length === 0) {
