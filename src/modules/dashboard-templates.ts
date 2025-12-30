@@ -1521,6 +1521,7 @@ export const dashboard = `<!DOCTYPE html>
                     setValueSafe('editEmailAssistito', assistito.email);
                     setValueSafe('editTelefonoAssistito', assistito.telefono);
                     setValueSafe('editIMEI', assistito.imei);
+                    setValueSafe('editServizioAssistito', assistito.servizio || 'eCura PRO');
                     setValueSafe('editNomeCaregiver', assistito.nome_caregiver);
                     setValueSafe('editCognomeCaregiver', assistito.cognome_caregiver);
                     setValueSafe('editParentela', assistito.parentela_caregiver);
@@ -1545,6 +1546,7 @@ export const dashboard = `<!DOCTYPE html>
             const email = document.getElementById('editEmailAssistito').value;
             const telefono = document.getElementById('editTelefonoAssistito').value;
             const imei = document.getElementById('editIMEI').value;
+            const servizio = document.getElementById('editServizioAssistito').value;
             const nomeCaregiver = document.getElementById('editNomeCaregiver').value;
             const cognomeCaregiver = document.getElementById('editCognomeCaregiver').value;
             const parentela = document.getElementById('editParentela').value;
@@ -1565,6 +1567,7 @@ export const dashboard = `<!DOCTYPE html>
                         email: email,
                         telefono: telefono,
                         imei: imei,
+                        servizio: servizio,
                         nome_caregiver: nomeCaregiver,
                         cognome_caregiver: cognomeCaregiver,
                         parentela_caregiver: parentela,
@@ -1623,7 +1626,7 @@ export const dashboard = `<!DOCTYPE html>
                 const imei = assistito.imei || 'N/A';
                 const email = assistito.email || 'N/A';
                 const telefono = assistito.telefono || 'N/A';
-                const servizio = 'eCura PRO';
+                const servizio = assistito.servizio || 'eCura PRO';
                 const piano = assistito.piano || 'BASE';
                 const status = assistito.status || 'ATTIVO';  // Default ATTIVO per assistiti attivi
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
@@ -1825,6 +1828,14 @@ export const dashboard = `<!DOCTYPE html>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">IMEI Dispositivo *</label>
                         <input type="text" id="editIMEI" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
+                        <select id="editServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="eCura PRO">eCura PRO</option>
+                            <option value="eCura BASE">eCura BASE</option>
+                            <option value="Telemedicina">Telemedicina</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>

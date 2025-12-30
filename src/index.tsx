@@ -8076,7 +8076,7 @@ app.put('/api/assistiti/:id', async (c) => {
       return c.json({ success: false, error: 'Assistito non trovato' }, 404)
     }
 
-    // Prima prova UPDATE con piano
+    // Prima prova UPDATE con piano e servizio
     let updateSuccess = false
     try {
       await c.env.DB.prepare(`
@@ -8090,6 +8090,7 @@ app.put('/api/assistiti/:id', async (c) => {
             email = ?, 
             telefono = ?, 
             imei = ?,
+            servizio = ?,
             piano = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
@@ -8103,16 +8104,17 @@ app.put('/api/assistiti/:id', async (c) => {
         data.email || '',
         data.telefono || '',
         data.imei || '',
+        data.servizio || 'eCura PRO',
         data.piano || 'BASE',
         id
       ).run()
       
       updateSuccess = true
-      console.log(`✅ Assistito aggiornato con piano: ${data.piano || 'BASE'}`)
-    } catch (pianoError: any) {
-      // Se fallisce con errore colonna piano, prova senza piano
-      if (pianoError.message && pianoError.message.includes('no column named piano')) {
-        console.warn('⚠️ Colonna piano non trovata, provo UPDATE senza piano')
+      console.log(`✅ Assistito aggiornato con servizio: ${data.servizio || 'eCura PRO'}, piano: ${data.piano || 'BASE'}`)
+    } catch (columnError: any) {
+      // Se fallisce con errore colonna, prova senza piano/servizio
+      if (columnError.message && (columnError.message.includes('no column named piano') || columnError.message.includes('no column named servizio'))) {
+        console.warn('⚠️ Colonne piano/servizio non trovate, provo UPDATE base')
         
         await c.env.DB.prepare(`
           UPDATE assistiti 
@@ -8141,9 +8143,9 @@ app.put('/api/assistiti/:id', async (c) => {
         ).run()
         
         updateSuccess = true
-        console.log('✅ Assistito aggiornato (senza piano)')
+        console.log('✅ Assistito aggiornato (senza piano/servizio)')
       } else {
-        throw pianoError
+        throw columnError
       }
     }
 
@@ -8173,7 +8175,24 @@ app.post('/api/migrate-schema', async (c) => {
     console.log('🔄 MIGRAZIONE SCHEMA DATABASE...')
     const migrations = []
 
-    // MIGRAZIONE 1: Aggiungi colonna piano alla tabella assistiti
+    // MIGRAZIONE 1: Aggiungi colonna servizio alla tabella assistiti
+    try {
+      await c.env.DB.prepare(`
+        ALTER TABLE assistiti 
+        ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'
+      `).run()
+      migrations.push('✅ Colonna servizio aggiunta')
+      console.log('✅ Colonna servizio aggiunta')
+    } catch (e: any) {
+      if (e.message && e.message.includes('duplicate column')) {
+        migrations.push('ℹ️ Colonna servizio già esiste')
+        console.log('ℹ️ Colonna servizio già esiste')
+      } else {
+        migrations.push(`⚠️ Errore colonna servizio: ${e.message}`)
+      }
+    }
+
+    // MIGRAZIONE 2: Aggiungi colonna piano alla tabella assistiti
     try {
       await c.env.DB.prepare(`
         ALTER TABLE assistiti 
@@ -8186,15 +8205,15 @@ app.post('/api/migrate-schema', async (c) => {
         migrations.push('ℹ️ Colonna piano già esiste')
         console.log('ℹ️ Colonna piano già esiste')
       } else {
-        throw e
+        migrations.push(`⚠️ Errore colonna piano: ${e.message}`)
       }
     }
 
-    // MIGRAZIONE 2: Aggiorna Eileen a AVANZATO
+    // MIGRAZIONE 3: Aggiorna Eileen a AVANZATO
     try {
       const eileenUpdate = await c.env.DB.prepare(`
         UPDATE assistiti 
-        SET piano = 'AVANZATO'
+        SET piano = 'AVANZATO', servizio = 'eCura PRO'
         WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
            OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
       `).run()
