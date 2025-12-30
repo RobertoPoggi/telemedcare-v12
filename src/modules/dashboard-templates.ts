@@ -3437,11 +3437,11 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '''') + ' ' + (contract.cliente_cognome || '''') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
+            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + (contractId);
+            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + contractId);
         }
         
         async function deleteContract(contractId) {
