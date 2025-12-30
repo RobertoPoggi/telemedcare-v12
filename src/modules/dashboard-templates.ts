@@ -3441,7 +3441,7 @@ export const data_dashboard = `<!DOCTYPE html>
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + contractId);
+            alert('⚠️ Funzione Edit Contratto in sviluppo.\n\nPer ora puoi modificare i contratti tramite API:\nPUT /api/contratti/' + contractId);
         }
         
         async function deleteContract(contractId) {
