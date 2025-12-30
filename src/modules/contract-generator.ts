@@ -1025,7 +1025,7 @@ ET`
   /**
    * Genera PDF semplice ma valido con contenuto contratto
    */
-  private static generateSimplePDF(data: ContractData): Uint8Array {
+  private static generateStandalonePDF(data: ContractData): Uint8Array {
     // Genera contenuto testuale del contratto
     const content = this.generatePDFTextContent(data)
     
