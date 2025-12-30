@@ -2294,15 +2294,34 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('servicesBreakdown').innerHTML = html;
         }
 
-        function updatePlansBreakdown(leads) {
+        async function updatePlansBreakdown(leads) {
             const counts = { 'BASE': 0, 'AVANZATO': 0 };
-            leads.forEach(l => {
-                const note = l.note || '';
-                const nomeCompleto = ((l.nomeRichiedente || '') + ' ' + (l.cognomeRichiedente || '')).trim().toLowerCase();
-                // Eileen King è AVANZATO, oppure se nelle note c'è "Piano: AVANZATO"
-                const plan = (nomeCompleto === 'eileen king' || note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                counts[plan]++;
-            });
+            
+            // Carica tutti i contratti per verificare il piano
+            try {
+                const contrattiResponse = await fetch('/api/contratti?limit=1000');
+                const contrattiData = await contrattiResponse.json();
+                const contratti = contrattiData.contratti || [];
+                
+                // Crea mappa lead_id -> piano dal contratto
+                const leadToPiano = {};
+                contratti.forEach(c => {
+                    if (c.lead_id && c.piano) {
+                        leadToPiano[c.lead_id] = c.piano;
+                    }
+                });
+                
+                leads.forEach(l => {
+                    // Prima controlla se c'è un contratto associato
+                    const piano = leadToPiano[l.id] || 'BASE';
+                    counts[piano.toUpperCase()]++;
+                });
+                
+            } catch (error) {
+                console.error('Errore caricamento contratti per piani:', error);
+                // Fallback: tutti BASE
+                leads.forEach(() => counts['BASE']++);
+            }
 
             const total = leads.length || 1;
             const colors = { 'BASE': 'bg-blue-500', 'AVANZATO': 'bg-purple-500' };
@@ -2328,7 +2347,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updateChannelsBreakdown(leads) {
             // Conta lead per canale usando stessa logica della dashboard operativa
             const channelCounts = {
-                'Partner': 0,
+                'IRBEMA': 0,
                 'Web': 0,
                 'Networking': 0,
                 'Altro': 0
@@ -2340,26 +2359,26 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const canaleField = (lead.canale || lead.origine || lead.fonte || '').toLowerCase();
                 
                 // Rilevamento canale
-                if (leadId.includes('IRBEMA') || canaleField.includes('irbema') || leadId.includes('LEAD-') && !leadId.includes('EXCEL')) {
-                    channelCounts['Partner']++;
+                if (leadId.includes('IRBEMA') || canaleField.includes('irbema') || (leadId.includes('LEAD-') && !leadId.includes('EXCEL'))) {
+                    channelCounts['IRBEMA']++;
                 } else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
-                    channelCounts['Partner']++;
+                    channelCounts['IRBEMA']++;  // Excel import è comunque IRBEMA
                 } else if (nomeCompleto.includes('francesca grati')) {
                     channelCounts['Web']++;
                 } else if (nomeCompleto.includes('laura calvi') || canaleField.includes('network')) {
                     channelCounts['Networking']++;
                 } else if (canaleField.includes('aon') || canaleField.includes('doubleyou')) {
-                    channelCounts['Partner']++;
+                    channelCounts['IRBEMA']++;  // Altri partner vanno in IRBEMA
                 } else {
-                    channelCounts['Partner']++; // Default: la maggioranza viene da partner
+                    channelCounts['IRBEMA']++;  // Default: la maggioranza viene da IRBEMA
                 }
             });
             
-            // Aggiorna i KPI
+            // Aggiorna i KPI: IRBEMA → Partner, Web → Web, Networking → Email
+            document.getElementById('channelPartner').textContent = channelCounts['IRBEMA'];
             document.getElementById('channelWeb').textContent = channelCounts['Web'];
-            document.getElementById('channelEmail').textContent = channelCounts['Networking']; // Networking
+            document.getElementById('channelEmail').textContent = channelCounts['Networking'];
             document.getElementById('channelPhone').textContent = channelCounts['Altro'];
-            document.getElementById('channelPartner').textContent = channelCounts['Partner'];
         }
 
         function renderLeadsTable(leads) {
@@ -2397,7 +2416,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </div>
                         </td>
                         <td class="py-3">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium whitespace-nowrap">
                                 eCura PRO
                             </span>
                         </td>
@@ -3381,7 +3400,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             \${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}
                         </td>
                         <td class="py-3">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium whitespace-nowrap">
                                 eCura PRO
                             </span>
                         </td>
@@ -3446,7 +3465,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '''') + ' ' + (contract.cliente_cognome || '''') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
+            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
         }
         
         async function editContract(contractId) {
@@ -4150,7 +4169,7 @@ export const workflow_manager = `<!DOCTYPE html>
                             </div>
                         </td>
                         <td class="py-3 text-sm">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium whitespace-nowrap">
                                 \${lead.servizio || lead.tipoServizio || 'eCura PRO'}
                             </span>
                         </td>
