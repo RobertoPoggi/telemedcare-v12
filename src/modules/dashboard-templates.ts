@@ -986,6 +986,19 @@ export const dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let refreshInterval;
         let isLoading = false;
 
@@ -1115,8 +1128,8 @@ export const dashboard = `<!DOCTYPE html>
                                     <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${lead.id}">\${formatLeadId(lead.id)}</code>
                                 </td>
                                 <td class="py-3 text-sm">
-                                    <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
-                                    <div class="text-xs text-gray-500">\${lead.email || ''}</div>
+                                    <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
+                                    <div class="text-xs text-gray-500">\${escapeHtml(lead.email)}</div>
                                 </td>
                                 <td class="py-3 text-sm text-gray-600">\${telefono}</td>
                                 <td class="py-3 text-sm font-medium text-purple-600">\${servizio}</td>
@@ -2181,6 +2194,19 @@ export const leads_dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let allLeads = [];
 
         // Carica dati
@@ -2333,14 +2359,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? (lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : (lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email) || '-'}
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${lead.telefono || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono) || '-'}
                             </div>
                         </td>
                         <td class="py-3">
@@ -3186,6 +3212,19 @@ export const data_dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let allContracts = [];
 
         async function loadDataDashboard() {
@@ -3312,7 +3351,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${contract.codice_contratto || contract.id}</code>
                         </td>
                         <td class="py-3 text-sm font-medium">
-                            \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}
+                            \${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
