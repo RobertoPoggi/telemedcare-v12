@@ -394,6 +394,61 @@ async function inviaEmailLandingPagePersonalizzata(email: string, nome: string, 
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+// 🔧 MIGRAZIONE AUTOMATICA DATABASE - Eseguita una sola volta all'avvio
+let migrationCompleted = false
+
+app.use('*', async (c, next) => {
+  // Esegui migrazione solo se DB è disponibile e non è già stata fatta
+  if (!migrationCompleted && c.env?.DB) {
+    try {
+      console.log('🔄 Avvio migrazione automatica database...')
+      
+      // Aggiungi colonna servizio
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
+        console.log('✅ Colonna servizio aggiunta')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna servizio:', e.message)
+        }
+      }
+      
+      // Aggiungi colonna piano
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN piano TEXT DEFAULT 'BASE'`).run()
+        console.log('✅ Colonna piano aggiunta')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna piano:', e.message)
+        }
+      }
+      
+      // Fix Eileen automatico
+      try {
+        const eileenFix = await c.env.DB.prepare(`
+          UPDATE assistiti 
+          SET servizio = 'eCura PRO', piano = 'AVANZATO'
+          WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
+             OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
+        `).run()
+        
+        if (eileenFix.changes && eileenFix.changes > 0) {
+          console.log(`✅ Eileen aggiornata a eCura PRO AVANZATO (${eileenFix.changes} record)`)
+        }
+      } catch (e: any) {
+        console.warn('⚠️ Errore aggiornamento Eileen:', e.message)
+      }
+      
+      migrationCompleted = true
+      console.log('✅ Migrazione automatica completata')
+    } catch (error) {
+      console.error('❌ Errore migrazione automatica:', error)
+    }
+  }
+  
+  await next()
+})
+
 // Enable CORS for API routes
 app.use('/api/*', cors())
 
@@ -7974,10 +8029,12 @@ app.get('/api/assistiti', async (c) => {
         a.email,
         a.telefono,
         a.imei,
+        a.servizio,
+        a.piano,
         a.status,
         a.created_at,
         c.codice_contratto,
-        c.tipo_contratto as piano,
+        c.tipo_contratto as piano_contratto,
         c.status as contratto_status
       FROM assistiti a
       LEFT JOIN contracts c ON a.imei = c.imei_dispositivo
@@ -8711,69 +8768,12 @@ app.get('/api/data/stats', async (c) => {
   }
 })
 
+/* RIMOSSO: Endpoint duplicato con mock data - Usa quello principale a riga 8003
 // POINT 10 FIX - API per assistiti Data Dashboard
 app.get('/api/assistiti', async (c) => {
-  try {
-    if (!c.env?.DB) { // Fallback se DB non disponibile
-      const mockAssistiti = [
-        {
-          id: 1,
-          codice: 'ASS-2024-001',
-          nome: 'Mario Rossi',
-          status: 'Attivo',
-          ultima_attivita: '2024-10-10T14:30:00Z',
-          dispositivo: 'SiDLY-001'
-        },
-        {
-          id: 2,
-          codice: 'ASS-2024-002',
-          nome: 'Anna Verdi',
-          status: 'Attivo',
-          ultima_attivita: '2024-10-10T12:15:00Z',
-          dispositivo: 'SiDLY-002'
-        },
-        {
-          id: 3,
-          codice: 'ASS-2024-003',
-          nome: 'Giuseppe Bianchi',
-          status: 'Attivo',
-          ultima_attivita: '2024-10-10T09:45:00Z',
-          dispositivo: 'SiDLY-003'
-        }
-      ]
-      
-      return c.json({
-        success: true,
-        count: mockAssistiti.length,
-        assistiti: mockAssistiti,
-        stats: {
-          oggi: 15,
-          mese: 89,
-          media: 3.2
-        }
-      })
-    }
-    
-    const assistiti = await c.env.DB.prepare(`
-      SELECT * FROM assistiti 
-      ORDER BY ultima_attivita DESC LIMIT 100
-    `).all()
-    
-    return c.json({
-      success: true,
-      count: assistiti.results.length,
-      assistiti: assistiti.results,
-      stats: {
-        oggi: 15,
-        mese: assistiti.results.length,
-        media: Math.round(assistiti.results.length / 30 * 10) / 10
-      }
-    })
-  } catch (error) {
-    console.error('❌ Errore recupero assistiti:', error)
-    return c.json({ success: false, error: 'Errore recupero assistiti' }, 500)
-  }
+  ... RIMOSSO ...
 })
+*/
 
 // POINT 10 FIX - API per logs Data Dashboard  
 app.get('/api/logs', async (c) => {
