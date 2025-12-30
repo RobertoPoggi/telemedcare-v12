@@ -1055,9 +1055,9 @@ export const dashboard = `<!DOCTYPE html>
                 document.getElementById('emailsSent').textContent = '0'; // TODO
                 document.getElementById('topService').textContent = topService;
 
-                // Filtra ultimi 30 giorni e NON convertiti
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                // Filtra ultimi 3 mesi (90 giorni) e NON convertiti
+                const threeMonthsAgo = new Date();
+                threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
                 
                 // REGOLA: Mostra solo lead NON convertiti (senza hardcoding)
                 // Un lead è DAVVERO convertito SOLO se ha:
@@ -1070,7 +1070,7 @@ export const dashboard = `<!DOCTYPE html>
                 const recentLeads = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
                     const status = (lead.status || '').toUpperCase();
-                    const isRecent = leadDate >= thirtyDaysAgo;
+                    const isRecent = leadDate >= threeMonthsAgo;
                     
                     // Controlla se lo status indica conversione REALE
                     const statusConverted = ['CONVERTED', 'CONTRACT_SIGNED', 'ACTIVE'].includes(status);
@@ -1333,7 +1333,7 @@ export const dashboard = `<!DOCTYPE html>
             const channelColors = {
                 'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
-                'Web': 'bg-cyan-500',
+                'Web': 'bg-teal-600',
                 'Networking': 'bg-purple-500',
                 'AON': 'bg-orange-500',
                 'DoubleYou': 'bg-pink-500'
@@ -1771,14 +1771,14 @@ export const dashboard = `<!DOCTYPE html>
                         '<span class="px-3 py-1 ' + statusColor + ' text-xs font-medium rounded-full">' + status + '</span>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
-                        '<div class="flex justify-center gap-2">' +
-                            '<button onclick="window.viewAssistito(' + assistitoId + ')" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">' +
+                        '<div class="flex justify-center gap-1">' +
+                            '<button onclick="window.viewAssistito(' + assistitoId + ')" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition text-sm" title="Visualizza">' +
                                 '<i class="fas fa-eye"></i>' +
                             '</button>' +
-                            '<button onclick="window.editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">' +
+                            '<button onclick="window.editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-1 rounded transition text-sm" title="Modifica">' +
                                 '<i class="fas fa-edit"></i>' +
                             '</button>' +
-                            '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">' +
+                            '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
                                 '<i class="fas fa-trash"></i>' +
                             '</button>' +
                         '</div>' +
@@ -2472,7 +2472,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + ((result.contractCode) + '\nTemplate: email_invio_contratto;
+                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + (result.contractCode || 'N/A') + '\\nTemplate: email_invio_contratto');
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert('❌ Errore: ' + result.error);
