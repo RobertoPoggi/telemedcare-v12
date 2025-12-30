@@ -1344,7 +1344,7 @@ export const dashboard = `<!DOCTYPE html>
                 
                 // Estrai info lead
                 const leadId = (lead.id || '').toString().toUpperCase();
-                const nomeCompleto = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`.trim().toLowerCase();
+                const nomeCompleto = \`\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}\`.trim().toLowerCase();
                 const canaleField = (lead.canale || lead.origine || '').toLowerCase();
                 
                 // Rilevamento canale con priorità
@@ -3467,8 +3467,8 @@ export const data_dashboard = `<!DOCTYPE html>
             // Pre-compila la modale con i dati del contratto
             document.getElementById('signContractId').value = contract.id;
             document.getElementById('signContractCode').textContent = contract.codice_contratto || contract.id;
-            document.getElementById('signClienteName').textContent = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim() || 'N/A';
-            document.getElementById('signDigitalName').value = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim();
+            document.getElementById('signClienteName').textContent = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim() || 'N/A';
+            document.getElementById('signDigitalName').value = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim();
             
             // Imposta data odierna
             const today = new Date().toISOString().split('T')[0];
@@ -3568,7 +3568,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 leads.forEach(lead => {
                     const option = document.createElement('option');
                     option.value = lead.id;
-                    option.textContent = \`\${lead.nome || ''} \${lead.cognome || ''} - \${lead.email || ''}\`;
+                    option.textContent = \`\${escapeHtml(lead.nome)} \${escapeHtml(lead.cognome)} - \${escapeHtml(lead.email)}\`;
                     select.appendChild(option);
                 });
             } catch (error) {
@@ -4109,7 +4109,7 @@ export const workflow_manager = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
+                            <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -4270,9 +4270,9 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra tutti i record se <= 10
                     items.forEach((item, idx) => {
                         if (type === 'leads') {
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${item.email || 'N/A'}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || 'N/A'}\\n\`;
                         } else if (type === 'contratti') {
-                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else if (type === 'firme') {
                             message += \`\${idx+1}. Firma \${item.id} - Contratto: \${item.contract_id}\\n\`;
                         } else if (type === 'proforma') {
@@ -4280,7 +4280,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         } else if (type === 'pagamenti') {
                             message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
                         } else {
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - ATTIVO\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - ATTIVO\\n\`;
                         }
                     });
                 } else {
@@ -4292,9 +4292,9 @@ export const workflow_manager = `<!DOCTYPE html>
                             const statusText = status === 'ACTIVE' ? '✅ ATTIVO' : 
                                              status === 'CONVERTED' ? '✓ CONVERTITO' :
                                              status === 'CONTRACT_SIGNED' ? '✍️ FIRMATO' : '🆕 NUOVO';
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${statusText}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${statusText}\\n\`;
                         } else if (type === 'contratti') {
-                            message += \`\${idx+1}. \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else {
                             message += \`\${idx+1}. ID: \${item.id}\\n\`;
                         }
