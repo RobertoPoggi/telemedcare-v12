@@ -1634,8 +1634,6 @@ export const dashboard = `<!DOCTYPE html>
                 alert('❌ Errore: ' + error.message);
                 console.error('❌ Errore catch:', error);
             }
-                alert('❌ Errore: ' + error.message);
-            }
         }
         window.saveEditAssistito = saveEditAssistito;
         
