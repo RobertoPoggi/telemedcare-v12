@@ -1333,20 +1333,33 @@ export const dashboard = `<!DOCTYPE html>
             assistiti.forEach(assistito => {
                 let canale = 'Web'; // Default
                 
-                // Estrai info assistito
+                // Estrai info assistito - prova vari nomi campo
                 const leadId = (assistito.id || '').toString().toUpperCase();
-                const emailRichiedente = (assistito.emailRichiedente || assistito.email || '').toLowerCase().trim();
-                const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente)} \${escapeHtml(assistito.cognomeRichiedente)}\`.trim().toLowerCase();
+                const emailRichiedente = (
+                    assistito.emailRichiedente || 
+                    assistito.email || 
+                    assistito.email_richiedente ||
+                    assistito.emailrichiedente ||
+                    ''
+                ).toLowerCase().trim();
+                const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} \${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}\`.trim().toLowerCase();
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
+                
+                // DEBUG: Log per capire i dati
+                if (!emailRichiedente || emailRichiedente === '') {
+                    console.log('Assistito senza email:', { id: assistito.id, nome: nomeCompleto, assistito });
+                }
                 
                 // ⚡ LOGICA SEMPLIFICATA: Identifica canale da email richiedente
                 // PRIORITÀ 1: Email Irbema
                 if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('@irbema.')) {
                     canale = 'Irbema';
+                    console.log('✅ Irbema:', nomeCompleto, '->', emailRichiedente);
                 } 
                 // PRIORITÀ 2: Laura Calvi = Networking
                 else if (nomeCompleto.includes('laura calvi')) {
                     canale = 'Networking';
+                    console.log('✅ Networking:', nomeCompleto);
                 } 
                 // PRIORITÀ 3: Altri canali specifici
                 else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
@@ -1357,11 +1370,16 @@ export const dashboard = `<!DOCTYPE html>
                     canale = 'DoubleYou';
                 } else if (canaleField.includes('network')) {
                     canale = 'Networking';
+                } else {
+                    console.log('⚠️  Web (default):', nomeCompleto, '->', emailRichiedente);
                 }
                 // ELSE: Rimane Web (default) - Non più assegnazione automatica a Irbema
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
+            
+            // DEBUG: Mostra distribuzione finale
+            console.log('📊 Distribuzione Canali:', channelCounts);
             
             const total = assistiti.length || 1;
             let html = '';
