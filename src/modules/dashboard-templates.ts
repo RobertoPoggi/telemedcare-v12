@@ -1028,7 +1028,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Carica CONTRATTI reali per conteggio accurato
                 const contractsResponse = await fetch('/api/contratti?limit=100');
                 const contractsData = await contractsResponse.json();
-                const contracts = contractsData.contratti || [];
+                const contracts = contractsData.contracts || contractsData.contratti || contractsData.data || [];
                 
                 // Carica ASSISTITI reali con IMEI
                 const assistitiResponse = await fetch('/api/assistiti');
@@ -2255,7 +2255,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Calcola revenue totale dai contratti reali (non assumere tutto BASE)
                 const contrattiResponse = await fetch('/api/contratti');
                 const contrattiData = await contrattiResponse.json();
-                const contratti = contrattiData.contratti || [];
+                const contratti = contrattiData.contracts || contrattiData.contratti || contrattiData.data || [];
                 let totalValue = 0;
                 contratti.forEach(c => {
                     if (c.prezzo_totale) totalValue += parseFloat(c.prezzo_totale);
