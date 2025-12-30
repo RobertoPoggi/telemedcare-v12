@@ -8457,6 +8457,170 @@ app.delete('/api/assistiti/:id', async (c) => {
   }
 })
 
+// DEBUG: Verifica colonne tabella assistiti e dati Eileen
+app.get('/api/assistiti/debug-schema', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // 1. Prova a fare SELECT * da una riga qualsiasi per vedere tutte le colonne
+    const sampleRow = await c.env.DB.prepare(
+      'SELECT * FROM assistiti LIMIT 1'
+    ).first()
+
+    // 2. Cerca Eileen
+    const eileen = await c.env.DB.prepare(
+      `SELECT * FROM assistiti WHERE nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%' LIMIT 1`
+    ).first()
+
+    // 3. Conta totale assistiti
+    const total = await c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM assistiti'
+    ).first()
+
+    return c.json({
+      success: true,
+      schema: {
+        columns: sampleRow ? Object.keys(sampleRow) : [],
+        hasServizioColumn: sampleRow && 'servizio' in sampleRow,
+        hasPianoColumn: sampleRow && 'piano' in sampleRow,
+      },
+      eileen: eileen || null,
+      totalAssistiti: total?.count || 0,
+      sampleRow: sampleRow
+    })
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+
+// ENDPOINT MANUALE: Forza migrazione e fix Eileen
+app.post('/api/assistiti/force-fix-eileen', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const steps = []
+    
+    // Step 1: Verifica colonne esistenti
+    const sample = await c.env.DB.prepare('SELECT * FROM assistiti LIMIT 1').first()
+    const hasServizio = sample && 'servizio' in sample
+    const hasPiano = sample && 'piano' in sample
+    
+    steps.push({
+      step: 1,
+      name: 'Verifica colonne',
+      hasServizio,
+      hasPiano,
+      columns: sample ? Object.keys(sample) : []
+    })
+
+    // Step 2: Aggiungi colonna servizio se manca
+    if (!hasServizio) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
+        steps.push({ step: 2, name: 'Colonna servizio', status: '✅ Aggiunta' })
+      } catch (e: any) {
+        steps.push({ step: 2, name: 'Colonna servizio', status: `❌ ${e.message}` })
+      }
+    } else {
+      steps.push({ step: 2, name: 'Colonna servizio', status: 'ℹ️ Già esiste' })
+    }
+
+    // Step 3: Aggiungi colonna piano se manca
+    if (!hasPiano) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN piano TEXT DEFAULT 'BASE'`).run()
+        steps.push({ step: 3, name: 'Colonna piano', status: '✅ Aggiunta' })
+      } catch (e: any) {
+        steps.push({ step: 3, name: 'Colonna piano', status: `❌ ${e.message}` })
+      }
+    } else {
+      steps.push({ step: 3, name: 'Colonna piano', status: 'ℹ️ Già esiste' })
+    }
+
+    // Step 4: Cerca Eileen
+    const eileen = await c.env.DB.prepare(`
+      SELECT id, nome_assistito, cognome_assistito, nome_caregiver, cognome_caregiver, servizio, piano
+      FROM assistiti 
+      WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')
+         OR (nome_caregiver LIKE '%Elena%' OR cognome_caregiver LIKE '%Saglia%')
+      LIMIT 1
+    `).first()
+
+    if (!eileen) {
+      steps.push({ step: 4, name: 'Cerca Eileen', status: '❌ NON TROVATA' })
+      return c.json({ success: false, error: 'Eileen non trovata', steps })
+    }
+
+    steps.push({ 
+      step: 4, 
+      name: 'Cerca Eileen', 
+      status: '✅ TROVATA',
+      eileen: {
+        id: eileen.id,
+        nome: eileen.nome_assistito,
+        cognome: eileen.cognome_assistito,
+        caregiver: `${eileen.nome_caregiver} ${eileen.cognome_caregiver}`,
+        servizio_attuale: eileen.servizio || 'NULL',
+        piano_attuale: eileen.piano || 'NULL'
+      }
+    })
+
+    // Step 5: Aggiorna Eileen
+    const updateResult = await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET servizio = 'eCura PRO', piano = 'AVANZATO'
+      WHERE id = ?
+    `).bind(eileen.id).run()
+
+    steps.push({ 
+      step: 5, 
+      name: 'Aggiorna Eileen', 
+      status: updateResult.changes && updateResult.changes > 0 ? '✅ AGGIORNATA' : '❌ FALLITO',
+      changes: updateResult.changes || 0
+    })
+
+    // Step 6: Verifica finale
+    const eileenAfter = await c.env.DB.prepare(`
+      SELECT id, nome_assistito, cognome_assistito, servizio, piano
+      FROM assistiti 
+      WHERE id = ?
+    `).bind(eileen.id).first()
+
+    steps.push({
+      step: 6,
+      name: 'Verifica finale',
+      eileen_dopo: {
+        servizio: eileenAfter?.servizio,
+        piano: eileenAfter?.piano
+      },
+      success: eileenAfter?.servizio === 'eCura PRO' && eileenAfter?.piano === 'AVANZATO'
+    })
+
+    return c.json({
+      success: true,
+      message: 'Fix Eileen completato',
+      steps,
+      eileen_before: eileen,
+      eileen_after: eileenAfter
+    })
+
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+
 // POINT 10 FIX - API per statistiche Data Dashboard
 app.get('/api/data/stats', async (c) => {
   try {
