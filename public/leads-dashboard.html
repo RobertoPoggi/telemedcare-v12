@@ -195,6 +195,19 @@
     <script>
         let allLeads = [];
 
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         // Carica dati
         loadLeadsData();
 
@@ -321,10 +334,10 @@
                             <code class="bg-gray-100 px-2 py-1 rounded">${(lead.leadId || lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}</div>
+                            <div class="font-medium">${escapeHtml(lead.nomeRichiedente)} ${escapeHtml(lead.cognomeRichiedente)}</div>
                         </td>
                         <td class="py-3 text-xs text-gray-600">
-                            <div>${lead.emailRichiedente || ''}</div>
+                            <div>${escapeHtml(lead.emailRichiedente)}</div>
                             <div>${lead.telefono || ''}</div>
                         </td>
                         <td class="py-3">

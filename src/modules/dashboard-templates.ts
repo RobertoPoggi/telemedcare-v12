@@ -642,6 +642,12 @@ export const home = `<!DOCTYPE html>
         </div>
 
         <script>
+            // Helper function to escape single quotes in strings to prevent syntax errors
+            function escapeQuotes(str) {
+                if (!str) return '';
+                return String(str).replace(/'/g, "\\'");
+            }
+            
             // Effetto hover animato per le cards
             document.querySelectorAll('.card-hover').forEach(card => {
                 card.addEventListener('mouseenter', function() {
@@ -980,6 +986,19 @@ export const dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let refreshInterval;
         let isLoading = false;
 
@@ -1109,8 +1128,8 @@ export const dashboard = `<!DOCTYPE html>
                                     <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${lead.id}">\${formatLeadId(lead.id)}</code>
                                 </td>
                                 <td class="py-3 text-sm">
-                                    <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
-                                    <div class="text-xs text-gray-500">\${lead.email || ''}</div>
+                                    <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
+                                    <div class="text-xs text-gray-500">\${escapeHtml(lead.email)}</div>
                                 </td>
                                 <td class="py-3 text-sm text-gray-600">\${telefono}</td>
                                 <td class="py-3 text-sm font-medium text-purple-600">\${servizio}</td>
@@ -1181,16 +1200,16 @@ export const dashboard = `<!DOCTYPE html>
                     btn.innerHTML = originalHTML;
                     
                     if (data.success) {
-                        alert('✅ Import completato!\\n\\nCanale: \' + channel + '\\nLead importati: \' + data.count || 0 + '\\nTotale lead: \' + data.total || 0 + ';
+                        alert('✅ Import completato!\\n\\nCanale: ' + (channel + '\\nLead importati: ' + (data.count || 0 + '\\nTotale lead: ' + (data.total || 0 );
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore import:\\n\\n\' + data.error || 'Errore sconosciuto' + ';
+                        alert('❌ Errore import:\\n\\n' + (data.error || 'Errore sconosciuto' );
                     }
                 })
                 .catch(error => {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
-                    alert('❌ Errore di comunicazione:\\n\\n\' + error.message + ';
+                    alert('❌ Errore di comunicazione:\\n\\n' + (error.message );
                 });
             }
         }
@@ -1325,7 +1344,7 @@ export const dashboard = `<!DOCTYPE html>
                 
                 // Estrai info lead
                 const leadId = (lead.id || '').toString().toUpperCase();
-                const nomeCompleto = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`.trim().toLowerCase();
+                const nomeCompleto = \`\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}\`.trim().toLowerCase();
                 const canaleField = (lead.canale || lead.origine || '').toLowerCase();
                 
                 // Rilevamento canale con priorità
@@ -1457,13 +1476,13 @@ export const dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: \' + result.error + ';
+                        alert('❌ Errore: ' + (result.error );
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1490,10 +1509,10 @@ export const dashboard = `<!DOCTYPE html>
                     alert('✅ Assistito ' + nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -1543,7 +1562,7 @@ export const dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 console.error('Errore editAssistito:', error);
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1608,14 +1627,14 @@ export const dashboard = `<!DOCTYPE html>
                     closeModal('editAssistitoModal');
                     loadDashboardData();
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                     console.error('❌ Dettagli errore:', result);
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
                 console.error('❌ Errore catch:', error);
             }
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.saveEditAssistito = saveEditAssistito;
@@ -2175,6 +2194,19 @@ export const leads_dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let allLeads = [];
 
         // Carica dati
@@ -2327,14 +2359,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? (lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : (lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email) || '-'}
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${lead.telefono || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono) || '-'}
                             </div>
                         </td>
                         <td class="py-3">
@@ -2442,13 +2474,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto inviato con successo!\\n\\nCodice: \' + result.contractCode + '\\nTemplate: email_invio_contratto;
+                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + ((result.contractCode) + '\nTemplate: email_invio_contratto;
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
 
@@ -2469,10 +2501,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure;
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
 
@@ -2540,14 +2572,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead aggiornato con successo!;
+                    alert('✅ Lead aggiornato con successo!');
                     closeModal('editLeadModal');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
         
@@ -2564,13 +2596,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead eliminato con successo!;
+                    alert('✅ Lead eliminato con successo!');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
         
@@ -2620,17 +2652,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead creato con successo!\\n\\nID: \' + result.leadId || result.id + ';
+                    alert('✅ Lead creato con successo!\\n\\nID: ' + (result.leadId || result.id );
                     closeModal('newLeadModal');
                     document.getElementById('newLeadForm').reset();
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
-                    alert('❌ Errore: \' + result.error || 'Errore sconosciuto' + ';
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto' );
                 }
             } catch (error) {
                 console.error('❌ Errore creazione lead:', error);
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
         
@@ -2710,13 +2742,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: \' + result.error + ';
+                        alert('❌ Errore: ' + (result.error );
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -2734,13 +2766,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Assistito \' + nome + ' eliminato con successo!;
+                    alert('✅ Assistito ' + (nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -3180,6 +3212,19 @@ export const data_dashboard = `<!DOCTYPE html>
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         let allContracts = [];
 
         async function loadDataDashboard() {
@@ -3306,7 +3351,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${contract.codice_contratto || contract.id}</code>
                         </td>
                         <td class="py-3 text-sm font-medium">
-                            \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}
+                            \${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
@@ -3370,15 +3415,15 @@ export const data_dashboard = `<!DOCTYPE html>
         async function viewContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato;
+                alert('❌ Contratto non trovato');
                 return;
             }
             
-            alert('📄 CONTRATTO: \' + contract.codice_contratto || contract.id + '\\n\\n👤 Cliente: \' + contract.cliente_nome || '' + ' \' + contract.cliente_cognome || '' + '\\n💰 Importo: €\' + contract.prezzo_totale || 'N/A' + '\\n📅 Data: \' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\\n📊 Status: \' + contract.status || 'N/A' + '\\n;
+            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '''') + ' ' + (contract.cliente_cognome || '''') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/\' + contractId + ';
+            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + (contractId);
         }
         
         async function deleteContract(contractId) {
@@ -3394,17 +3439,17 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto eliminato con successo!;
+                    alert('✅ Contratto eliminato con successo!');
                     loadData();
                 } else {
                     if (result.isSigned) {
                         alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.;
                     } else {
-                        alert('❌ Errore: \' + result.error + ';
+                        alert('❌ Errore: ' + (result.error );
                     }
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
         
@@ -3422,8 +3467,8 @@ export const data_dashboard = `<!DOCTYPE html>
             // Pre-compila la modale con i dati del contratto
             document.getElementById('signContractId').value = contract.id;
             document.getElementById('signContractCode').textContent = contract.codice_contratto || contract.id;
-            document.getElementById('signClienteName').textContent = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim() || 'N/A';
-            document.getElementById('signDigitalName').value = \`\${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}\`.trim();
+            document.getElementById('signClienteName').textContent = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim() || 'N/A';
+            document.getElementById('signDigitalName').value = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim();
             
             // Imposta data odierna
             const today = new Date().toISOString().split('T')[0];
@@ -3472,10 +3517,10 @@ export const data_dashboard = `<!DOCTYPE html>
                     closeSignContractModal();
                     loadDataDashboard(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         });
         } else {
@@ -3523,7 +3568,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 leads.forEach(lead => {
                     const option = document.createElement('option');
                     option.value = lead.id;
-                    option.textContent = \`\${lead.nome || ''} \${lead.cognome || ''} - \${lead.email || ''}\`;
+                    option.textContent = \`\${escapeHtml(lead.nome)} \${escapeHtml(lead.cognome)} - \${escapeHtml(lead.email)}\`;
                     select.appendChild(option);
                 });
             } catch (error) {
@@ -3567,14 +3612,14 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto creato con successo!\\n\\nCodice: \' + result.contract.codice_contratto || result.contract.id + '\\nImporto: €\' + importo + '/anno\\nPiano: \' + piano + ';
+                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + (result.contract.codice_contratto || result.contract.id + '\\nImporto: €' + (importo + '/anno\\nPiano: ' + (piano );
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         }
 
@@ -3625,13 +3670,13 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Assistito \' + nomeAssistito + ' \' + cognomeAssistito + ' creato con successo!;
+                    alert('✅ Assistito ' + (nomeAssistito + ' ' + (cognomeAssistito + ' creato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore: \' + error.message + ';
+                alert('❌ Errore: ' + (error.message );
             }
         }
         
@@ -4064,7 +4109,7 @@ export const workflow_manager = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}</div>
+                            <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -4165,7 +4210,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: \' + leadId + '\n\nFunzionalità in sviluppo...;
+            alert('Dettagli workflow per Lead: ' + (leadId + '\n\nFunzionalità in sviluppo...;
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
@@ -4225,9 +4270,9 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra tutti i record se <= 10
                     items.forEach((item, idx) => {
                         if (type === 'leads') {
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${item.email || 'N/A'}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || 'N/A'}\\n\`;
                         } else if (type === 'contratti') {
-                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else if (type === 'firme') {
                             message += \`\${idx+1}. Firma \${item.id} - Contratto: \${item.contract_id}\\n\`;
                         } else if (type === 'proforma') {
@@ -4235,7 +4280,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         } else if (type === 'pagamenti') {
                             message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
                         } else {
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - ATTIVO\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - ATTIVO\\n\`;
                         }
                     });
                 } else {
@@ -4247,9 +4292,9 @@ export const workflow_manager = `<!DOCTYPE html>
                             const statusText = status === 'ACTIVE' ? '✅ ATTIVO' : 
                                              status === 'CONVERTED' ? '✓ CONVERTITO' :
                                              status === 'CONTRACT_SIGNED' ? '✍️ FIRMATO' : '🆕 NUOVO';
-                            message += \`\${idx+1}. \${item.nomeRichiedente || ''} \${item.cognomeRichiedente || ''} - \${statusText}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${statusText}\\n\`;
                         } else if (type === 'contratti') {
-                            message += \`\${idx+1}. \${item.cliente_nome || ''} \${item.cliente_cognome || ''}\\n\`;
+                            message += \`\${idx+1}. \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else {
                             message += \`\${idx+1}. ID: \${item.id}\\n\`;
                         }
@@ -4280,33 +4325,37 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
-                    alert('👤 LEAD: \' + lead.nomeRichiedente || '' + ' \' + lead.cognomeRichiedente || '' + '
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '' + ' ' + (lead.cognomeRichiedente || '' + '
                     
-📧 Email: \' + lead.email || 'N/A' + '
-📞 Telefono: \' + lead.telefono || 'N/A' + '
-🏥 Servizio: \' + lead.servizio || 'eCura PRO' + '
-📋 Piano: \' + piano + ' (\' + prezzo + '/anno)
-📅 Creato: \' + new Date(lead.created_at).toLocaleDateString('it-IT') + '
-📍 Stato: \' + getWorkflowStatus(lead).text + '
-🔄 Step: \' + getWorkflowStep(lead).text + '
+📧 Email: ' + (lead.email || 'N/A' + '
+📞 Telefono: ' + (lead.telefono || 'N/A' + '
+🏥 Servizio: ' + (lead.servizio || 'eCura PRO' + '
+📋 Piano: ' + (piano + ' (' + (prezzo + '/anno)
+📅 Creato: ' + (new Date(lead.created_at).toLocaleDateString('it-IT') + '
+📍 Stato: ' + (getWorkflowStatus(lead).text + '
+🔄 Step: ' + (getWorkflowStep(lead).text + '
                     
-📝 Note: \' + lead.note || 'Nessuna nota' + ';
+📝 Note: ' + (lead.note || 'Nessuna nota' );
                     break;
                     
                 case 'contract':
                     // Pre-compila modale firma contratto
-                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
+                    const emailSafe = escapeQuotes(lead.email || '');
+                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?\`)) {
                         document.getElementById('signContractId').value = lead.id;
-                        document.getElementById('signDigital').value = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`;
+                        document.getElementById('signDigital').value = nomeCompleto;
                         openSignModal();
                     }
                     break;
                     
                 case 'payment':
                     // Pre-compila modale pagamento
-                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    const nomeCompletoPayment = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
+                    const emailSafePayment = escapeQuotes(lead.email || '');
+                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
-                        fetch('/api/proforma?lead_id=\' + lead.id + '
+                        fetch('/api/proforma?lead_id=' + lead.id)
                             .then(res => res.json())
                             .then(data => {
                                 if (data.proforma && data.proforma.length > 0) {
@@ -4380,10 +4429,10 @@ export const workflow_manager = `<!DOCTYPE html>
                         closeSignModal();
                         refreshWorkflows();
                     } else {
-                        alert('❌ Errore: \' + result.error + ';
+                        alert('❌ Errore: ' + (result.error );
                     }
                 } catch (error) {
-                    alert('❌ Errore di comunicazione: \' + error.message + ';
+                    alert('❌ Errore di comunicazione: ' + (error.message );
                 }
             });
         }
@@ -4419,10 +4468,10 @@ export const workflow_manager = `<!DOCTYPE html>
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
-                    alert('❌ Errore: \' + result.error + ';
+                    alert('❌ Errore: ' + (result.error );
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: \' + error.message + ';
+                alert('❌ Errore di comunicazione: ' + (error.message );
             }
         });
         }

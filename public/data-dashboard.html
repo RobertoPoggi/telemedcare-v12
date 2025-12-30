@@ -243,6 +243,19 @@
     </div>
 
     <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         loadDataDashboard();
 
         async function loadDataDashboard() {
@@ -357,7 +370,7 @@
                             <code class="bg-gray-100 px-2 py-1 rounded">${contract.codice_contratto || contract.id}</code>
                         </td>
                         <td class="py-3 text-sm font-medium">
-                            ${contract.cliente_nome || ''} ${contract.cliente_cognome || ''}
+                            ${escapeHtml(contract.cliente_nome)} ${escapeHtml(contract.cliente_cognome)}
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
