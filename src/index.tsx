@@ -423,6 +423,19 @@ app.use('*', async (c, next) => {
         }
       }
       
+      // Aggiungi colonna servizio alla tabella contracts
+      try {
+        await c.env.DB.prepare(`ALTER TABLE contracts ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
+        console.log('✅ Colonna servizio aggiunta a contracts')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna servizio contracts:', e.message)
+        }
+      }
+      
+      // Rinomina tipo_contratto in piano nella tabella contracts (se non esiste già)
+      // Nota: SQLite non supporta RENAME COLUMN direttamente, quindi usiamo tipo_contratto come piano
+      
       // Fix Eileen automatico
       try {
         const eileenFix = await c.env.DB.prepare(`

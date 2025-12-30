@@ -890,13 +890,12 @@ export const dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Codice Contratto</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="assistitiTable">
                         <tr>
-                            <td colspan="10" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento assistiti...</p>
                             </td>
@@ -1556,30 +1555,47 @@ export const dashboard = `<!DOCTYPE html>
             const parentela = document.getElementById('editParentela').value;
             const piano = document.getElementById('editPianoAssistito').value;
             
+            // DEBUG: Log dei dati raccolti
+            console.log('📝 SAVE EDIT ASSISTITO:', {
+                id,
+                nomeAssistito,
+                cognomeAssistito,
+                servizio,
+                piano,
+                email,
+                telefono,
+                imei
+            });
+            
             if (!nomeAssistito || !cognomeAssistito || !imei) {
                 alert('⚠️ Campi obbligatori: Nome, Cognome e IMEI');
                 return;
             }
             
+            const payload = {
+                nome_assistito: nomeAssistito,
+                cognome_assistito: cognomeAssistito,
+                email: email,
+                telefono: telefono,
+                imei: imei,
+                servizio: servizio,
+                nome_caregiver: nomeCaregiver,
+                cognome_caregiver: cognomeCaregiver,
+                parentela_caregiver: parentela,
+                piano: piano
+            };
+            
+            console.log('📤 PAYLOAD INVIATO:', payload);
+            
             try {
                 const response = await fetch(\`/api/assistiti/\${id}\`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        nome_assistito: nomeAssistito,
-                        cognome_assistito: cognomeAssistito,
-                        email: email,
-                        telefono: telefono,
-                        imei: imei,
-                        servizio: servizio,
-                        nome_caregiver: nomeCaregiver,
-                        cognome_caregiver: cognomeCaregiver,
-                        parentela_caregiver: parentela,
-                        piano: piano
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
                 const result = await response.json();
+                console.log('📥 RISPOSTA SERVER:', result);
                 
                 if (result.success) {
                     alert('✅ Assistito aggiornato con successo!');
@@ -1587,8 +1603,12 @@ export const dashboard = `<!DOCTYPE html>
                     loadDashboardData();
                 } else {
                     alert(\`❌ Errore: \${result.error}\`);
+                    console.error('❌ Dettagli errore:', result);
                 }
             } catch (error) {
+                alert(\`❌ Errore: \${error.message}\`);
+                console.error('❌ Errore catch:', error);
+            }
                 alert(\`❌ Errore: \${error.message}\`);
             }
         }
@@ -1654,7 +1674,7 @@ export const dashboard = `<!DOCTYPE html>
             if (assistiti.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="10" class="py-8 text-center text-gray-400">
+                        <td colspan="9" class="py-8 text-center text-gray-400">
                             <i class="fas fa-users text-3xl mb-2"></i><br>
                             Nessun assistito attivo trovato
                         </td>
@@ -1703,41 +1723,46 @@ export const dashboard = `<!DOCTYPE html>
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
                 return \`<tr class="border-b border-gray-100 hover:bg-gray-50">
-                    <td class="py-2 text-xs">
-                        <div class="font-medium">\${nomeCompleto}</div>
-                        <div class="text-xs text-gray-500">Caregiver: \${caregiver} (\${parentela})</div>
+                    <td class="py-3 px-2">
+                        <div class="font-semibold text-sm text-gray-800">\${nomeCompleto}</div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-user-friends mr-1"></i>\${caregiver} (\${parentela})
+                        </div>
                     </td>
-                    <td class="py-2 text-xs">
+                    <td class="py-3 px-2 text-center">
                         <code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">\${imei}</code>
                     </td>
-                    <td class="py-2 text-xs text-gray-600">\${email}</td>
-                    <td class="py-2 text-xs text-gray-600">\${telefono}</td>
-                    <td class="py-2">
-                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">\${servizio}</span>
+                    <td class="py-3 px-2 text-sm text-gray-700">
+                        <div><i class="fas fa-envelope text-gray-400 mr-1"></i>\${email}</div>
                     </td>
-                    <td class="py-2">
-                        <span class="px-2 py-1 \${pianoColor} text-xs rounded">\${piano}</span>
+                    <td class="py-3 px-2 text-sm text-gray-700">
+                        <div><i class="fas fa-phone text-gray-400 mr-1"></i>\${telefono}</div>
                     </td>
-                    <td class="py-2">
-                        <span class="font-semibold text-green-600">€\${prezzoAnno}</span>
-                        <span class="text-xs text-gray-500">/anno</span>
+                    <td class="py-3 px-2 text-center">
+                        <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">\${servizio}</span>
                     </td>
-                    <td class="py-2">
-                        <span class="px-2 py-1 \${statusColor} text-xs rounded">\${status}</span>
+                    <td class="py-3 px-2 text-center">
+                        <span class="px-3 py-1 \${pianoColor} text-xs font-medium rounded-full">\${piano}</span>
                     </td>
-                    <td class="py-2 text-xs">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${codice}</code>
+                    <td class="py-3 px-2 text-center">
+                        <div class="font-bold text-green-600 text-base">€\${prezzoAnno}</div>
+                        <div class="text-xs text-gray-500">/anno</div>
                     </td>
-                    <td class="py-2 text-xs text-center">
-                        <button onclick="window.viewAssistito(\${assistitoId})" class="text-blue-600 hover:text-blue-800 mx-1" title="Visualizza">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button onclick="window.editAssistito(\${assistitoId})" class="text-yellow-600 hover:text-yellow-800 mx-1" title="Modifica">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="window.deleteAssistito(\${assistitoId}, '\${nomeCompleto.replace(/'/g, "\\\\'")}')" class="text-red-600 hover:text-red-800 mx-1" title="Elimina">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                    <td class="py-3 px-2 text-center">
+                        <span class="px-3 py-1 \${statusColor} text-xs font-medium rounded-full">\${status}</span>
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="window.viewAssistito(\${assistitoId})" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="window.editAssistito(\${assistitoId})" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="window.deleteAssistito(\${assistitoId}, '\${nomeCompleto.replace(/'/g, "\\\\'")}')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>\`;
             }).join('');
