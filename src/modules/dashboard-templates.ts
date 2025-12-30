@@ -2267,7 +2267,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('totalLeads').textContent = totalLeads;
                 document.getElementById('conversionRate').textContent = conversionRate;
                 document.getElementById('leadsToday').textContent = leadsToday;
-                document.getElementById('totalValue').textContent = '\\u20AC' + totalValue;
+                document.getElementById('totalValue').textContent = '\u20AC' + totalValue;
                 document.getElementById('leadsGrowth').textContent = '+0%'; // TODO
 
                 // Aggiorna grafici
