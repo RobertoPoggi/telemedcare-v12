@@ -1333,7 +1333,7 @@ export const dashboard = `<!DOCTYPE html>
             const channelColors = {
                 'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
-                'Web': 'bg-teal-600',
+                'Web': 'bg-indigo-600',
                 'Networking': 'bg-purple-500',
                 'AON': 'bg-orange-500',
                 'DoubleYou': 'bg-pink-500'
@@ -2238,7 +2238,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const contratti = contrattiData.contratti || [];
                 let totalValue = 0;
                 contratti.forEach(c => {
-                    if (c.prezzo_totale) totalValue += parseFloat(c.prezzo_totale);
+                    // Solo contratti attivi o firmati
+                    const status = (c.status || '').toUpperCase();
+                    if ((status === 'ACTIVE' || status === 'FIRMATO' || status === 'ATTIVO') && c.prezzo_totale) {
+                        totalValue += parseFloat(c.prezzo_totale);
+                    }
                 });
                 const today = new Date().toISOString().split('T')[0];
                 const leadsToday = allLeads.filter(l => l.created_at && l.created_at.startsWith(today)).length;
@@ -2247,7 +2251,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('totalLeads').textContent = totalLeads;
                 document.getElementById('conversionRate').textContent = conversionRate;
                 document.getElementById('leadsToday').textContent = leadsToday;
-                document.getElementById('totalValue').textContent = '\\u20AC' + totalValue;
+                document.getElementById('totalValue').textContent = '€' + totalValue.toLocaleString('it-IT');
                 document.getElementById('leadsGrowth').textContent = '+0%'; // TODO
 
                 // Aggiorna grafici
@@ -2320,17 +2324,40 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function updateChannelsBreakdown(leads) {
-            const channels = {};
-            leads.forEach(l => {
-                const ch = l.fonte || l.canale || 'Non specificato';
-                channels[ch] = (channels[ch] || 0) + 1;
+            // Conta lead per canale usando stessa logica della dashboard operativa
+            const channelCounts = {
+                'Partner': 0,
+                'Web': 0,
+                'Networking': 0,
+                'Altro': 0
+            };
+            
+            leads.forEach(lead => {
+                const leadId = (lead.id || '').toString().toUpperCase();
+                const nomeCompleto = ((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '')).trim().toLowerCase();
+                const canaleField = (lead.canale || lead.origine || lead.fonte || '').toLowerCase();
+                
+                // Rilevamento canale
+                if (leadId.includes('IRBEMA') || canaleField.includes('irbema') || leadId.includes('LEAD-') && !leadId.includes('EXCEL')) {
+                    channelCounts['Partner']++;
+                } else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
+                    channelCounts['Partner']++;
+                } else if (nomeCompleto.includes('francesca grati')) {
+                    channelCounts['Web']++;
+                } else if (nomeCompleto.includes('laura calvi') || canaleField.includes('network')) {
+                    channelCounts['Networking']++;
+                } else if (canaleField.includes('aon') || canaleField.includes('doubleyou')) {
+                    channelCounts['Partner']++;
+                } else {
+                    channelCounts['Partner']++; // Default: la maggioranza viene da partner
+                }
             });
             
-            // Mostra i canali reali
-            document.getElementById('channelWeb').textContent = channels['EXCEL_IMPORT'] || 0;
-            document.getElementById('channelEmail').textContent = channels['EMAIL'] || 0;
-            document.getElementById('channelPhone').textContent = channels['TELEFONO'] || 0;
-            document.getElementById('channelPartner').textContent = channels['CONTRATTO_PDF'] || 0;
+            // Aggiorna i KPI
+            document.getElementById('channelWeb').textContent = channelCounts['Web'];
+            document.getElementById('channelEmail').textContent = channelCounts['Networking']; // Networking
+            document.getElementById('channelPhone').textContent = channelCounts['Altro'];
+            document.getElementById('channelPartner').textContent = channelCounts['Partner'];
         }
 
         function renderLeadsTable(leads) {
@@ -3458,7 +3485,7 @@ export const data_dashboard = `<!DOCTYPE html>
         function signContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato;
+                alert('❌ Contratto non trovato');
                 return;
             }
             
@@ -3511,7 +3538,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.;
+                    alert('✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.');
                     closeSignContractModal();
                     loadDataDashboard(); // Ricarica i dati
                 } else {
@@ -3528,7 +3555,7 @@ export const data_dashboard = `<!DOCTYPE html>
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato;
+                alert('❌ Contratto non trovato');
                 return;
             }
             
@@ -3580,12 +3607,12 @@ export const data_dashboard = `<!DOCTYPE html>
             const note = document.getElementById('newContractNote').value;
             
             if (!leadId) {
-                alert('⚠️ Seleziona un lead;
+                alert('⚠️ Seleziona un lead');
                 return;
             }
             
             if (!piano) {
-                alert('⚠️ Seleziona un piano;
+                alert('⚠️ Seleziona un piano');
                 return;
             }
             
@@ -3610,7 +3637,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + result.contract.codice_contratto || result.contract.id + '\\nImporto: €' + importo + '/anno\\nPiano: ' + (piano);
+                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + (result.contract.codice_contratto || result.contract.id) + '\\nImporto: €' + importo + '/anno\\nPiano: ' + piano);
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
@@ -4208,7 +4235,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...;
+            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...');
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
