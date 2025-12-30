@@ -989,13 +989,12 @@ export const dashboard = `<!DOCTYPE html>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
             if (!text) return "";
-            const map = {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                "\"": "&quot;",
-                "'": "&#039;"
-            };
+            const map = {};
+            map["&"] = "&amp;";
+            map["<"] = "&lt;";
+            map[">"] = "&gt;";
+            map['"'] = "&quot;";
+            map["'"] = "&#039;";
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
@@ -2195,13 +2194,12 @@ export const leads_dashboard = `<!DOCTYPE html>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
             if (!text) return "";
-            const map = {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                "\"": "&quot;",
-                "'": "&#039;"
-            };
+            const map = {};
+            map["&"] = "&amp;";
+            map["<"] = "&lt;";
+            map[">"] = "&gt;";
+            map['"'] = "&quot;";
+            map["'"] = "&#039;";
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
@@ -3261,13 +3259,12 @@ export const data_dashboard = `<!DOCTYPE html>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
             if (!text) return "";
-            const map = {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                "\"": "&quot;",
-                "'": "&#039;"
-            };
+            const map = {};
+            map["&"] = "&amp;";
+            map["<"] = "&lt;";
+            map[">"] = "&gt;";
+            map['"'] = "&quot;";
+            map["'"] = "&#039;";
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
