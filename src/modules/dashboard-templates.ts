@@ -1678,14 +1678,12 @@ export const dashboard = `<!DOCTYPE html>
             document.getElementById('assistitiCount').textContent = assistiti.length;
             
             if (assistiti.length === 0) {
-                tbody.innerHTML = \`
-                    <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-400">
-                            <i class="fas fa-users text-3xl mb-2"></i><br>
-                            Nessun assistito attivo trovato
-                        </td>
-                    </tr>
-                \`;
+                tbody.innerHTML = '<tr>' +
+                    '<td colspan="9" class="py-8 text-center text-gray-400">' +
+                        '<i class="fas fa-users text-3xl mb-2"></i><br>' +
+                        'Nessun assistito attivo trovato' +
+                    '</td>' +
+                '</tr>';
                 return;
             }
             
