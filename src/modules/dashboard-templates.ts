@@ -1759,13 +1759,13 @@ export const dashboard = `<!DOCTYPE html>
                     </td>
                     <td class="py-3 px-2 text-center">
                         <div class="flex justify-center gap-2">
-                            <button onclick="window.viewAssistito(${assistitoId})" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">
+                            <button onclick="window.viewAssistito(\${assistitoId})" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded transition" title="Visualizza">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="window.editAssistito(${assistitoId})" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">
+                            <button onclick="window.editAssistito(\${assistitoId})" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-2 rounded transition" title="Modifica">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="window.deleteAssistito(${assistitoId})" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">
+                            <button onclick="window.deleteAssistito(\${assistitoId})" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition" title="Elimina">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
