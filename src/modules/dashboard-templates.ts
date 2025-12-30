@@ -3387,9 +3387,9 @@ export const data_dashboard = `<!DOCTYPE html>
             tbody.innerHTML = contracts.map(contract => {
                 // Determina il piano dal lead associato
                 const lead = leads.find(l => l.id === contract.lead_id);
-                const piano = (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                const prezzo = piano === 'AVANZATO' ? '840' : '480';
-                const date = new Date(contract.created_at).toLocaleDateString('it-IT');
+                const piano = (lead && lead.note && lead.note.includes("Piano: AVANZATO")) ? "AVANZATO" : "BASE";
+                const prezzo = piano === "AVANZATO" ? "840" : "480";
+                const date = new Date(contract.created_at).toLocaleDateString("it-IT");
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -4147,7 +4147,7 @@ export const workflow_manager = `<!DOCTYPE html>
             tbody.innerHTML = leads.map(lead => {
                 const status = getWorkflowStatus(lead);
                 const step = getWorkflowStep(lead);
-                const date = new Date(lead.created_at).toLocaleString('it-IT');
+                const date = new Date(lead.created_at).toLocaleString("it-IT");
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
