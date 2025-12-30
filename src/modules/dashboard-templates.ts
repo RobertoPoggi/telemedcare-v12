@@ -911,8 +911,8 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Servizi e Dispositivi -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Analisi Lead: Servizi, Piani e Canali (Compattati su 1 riga) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Distribuzione Servizi -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
@@ -934,17 +934,8 @@ export const dashboard = `<!DOCTYPE html>
                     <!-- Populated by JS -->
                 </div>
             </div>
-        </div>
 
-        <!-- Distribuzione per Canale -->
-        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-network-wired text-orange-500 mr-2"></i>
-                Distribuzione per Canale
-            </h3>
-            <div id="channelsDistribution" class="space-y-3">
-                <!-- Distribuzione canali verrà popolata dinamicamente -->
-            </div>
+            <!-- Distribuzione per Canale -->\n            <div class=\"bg-white p-6 rounded-xl shadow-sm\">\n                <h3 class=\"text-lg font-bold text-gray-800 mb-4 flex items-center\">\n                    <i class=\"fas fa-network-wired text-orange-500 mr-2\"></i>\n                    Distribuzione per Canale\n                </h3>\n                <div id=\"channelsDistribution\" class=\"space-y-3\">\n                    <!-- Distribuzione canali verrà popolata dinamicamente -->\n                </div>\n            </div>
         </div>
 
         <!-- Ultimi Lead Ricevuti -->
@@ -1328,7 +1319,7 @@ export const dashboard = `<!DOCTYPE html>
         }
         
         function updateChannelsDistribution(leads) {
-            // Conta lead per canale
+            // Conta lead per canale - ANALIZZA TUTTI I LEAD (non solo assistiti)
             const channelCounts = {};
             const channelColors = {
                 'Irbema': 'bg-blue-500',
@@ -1344,28 +1335,31 @@ export const dashboard = `<!DOCTYPE html>
                 
                 // Estrai info lead
                 const leadId = (lead.id || '').toString().toUpperCase();
+                const emailRichiedente = (lead.emailRichiedente || lead.email || '').toLowerCase().trim();
                 const nomeCompleto = \`\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}\`.trim().toLowerCase();
                 const canaleField = (lead.canale || lead.origine || '').toLowerCase();
                 
-                // Rilevamento canale con priorità
-                if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
+                // ⚡ NUOVA LOGICA: Priorità email richiedente per identificare canale
+                if (emailRichiedente.includes('info@irbema') || emailRichiedente.includes('irbema.it')) {
+                    canale = 'Irbema';
+                } else if (nomeCompleto.includes('laura calvi')) {
+                    // Laura Calvi è networking
+                    canale = 'Networking';
+                } else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
                     canale = 'Excel';
                 } else if (leadId.includes('IRBEMA') || canaleField.includes('irbema')) {
                     canale = 'Irbema';
-                } else if (nomeCompleto.includes('francesca grati')) {
-                    canale = 'Web';
-                } else if (nomeCompleto.includes('laura calvi')) {
-                    canale = 'Networking';
                 } else if (canaleField.includes('aon')) {
                     canale = 'AON';
                 } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
                     canale = 'DoubleYou';
                 } else if (canaleField.includes('network')) {
                     canale = 'Networking';
-                } else if (leadId.startsWith('LEAD-') && !leadId.includes('EXCEL')) {
-                    // Lead generici probabilmente da Irbema (la maggioranza)
+                } else if (leadId.startsWith('LEAD-') && !leadId.includes('EXCEL') && !emailRichiedente.includes('@')) {
+                    // Lead generici senza email probabilmente da Irbema
                     canale = 'Irbema';
                 }
+                // ELSE: Rimane Web (default) per lead diretti/online
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
