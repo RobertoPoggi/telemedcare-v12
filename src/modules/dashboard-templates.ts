@@ -3638,7 +3638,7 @@ PUT /api/contratti/\${contractId}\`);
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + result.contract.codice_contratto || result.contract.id + '\\nImporto: €' + importo + '/anno\\nPiano: ' + (piano);
+                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + (result.contract.codice_contratto || result.contract.id) + '\\nImporto: €' + importo + '/anno\\nPiano: ' + piano);
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
