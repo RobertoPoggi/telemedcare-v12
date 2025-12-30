@@ -1333,7 +1333,7 @@ export const dashboard = `<!DOCTYPE html>
             const channelColors = {
                 'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
-                'Web': 'bg-indigo-600',
+                'Web': 'bg-cyan-500',
                 'Networking': 'bg-purple-500',
                 'AON': 'bg-orange-500',
                 'DoubleYou': 'bg-pink-500'
@@ -3465,7 +3465,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString("it-IT") + '\n📊 Status: ' + (contract.status || 'N/A'));
+            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString(\'it-IT\') + '\n📊 Status: ' + (contract.status || 'N/A'));
         }
         
         async function editContract(contractId) {
@@ -4374,7 +4374,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
-                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\n\n📧 Email: ' + (lead.email || 'N/A') + '\n📞 Telefono: ' + (lead.telefono || 'N/A') + '\n🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\n📋 Piano: ' + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString("it-IT") + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || 'Nessuna nota'));
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\n\n📧 Email: ' + (lead.email || 'N/A') + '\n📞 Telefono: ' + (lead.telefono || 'N/A') + '\n🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\n📋 Piano: ' + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString(\'it-IT\') + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || 'Nessuna nota'));
                     break;
                     
                 case 'contract':
