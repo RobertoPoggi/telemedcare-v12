@@ -1200,16 +1200,16 @@ export const dashboard = `<!DOCTYPE html>
                     btn.innerHTML = originalHTML;
                     
                     if (data.success) {
-                        alert('✅ Import completato!\\n\\nCanale: ' + (channel + '\\nLead importati: ' + (data.count || 0 + '\\nTotale lead: ' + (data.total || 0 );
+                        alert('✅ Import completato!\\n\\nCanale: ' + channel + '\\nLead importati: ' + (data.count || 0) + '\\nTotale lead: ' + (data.total || 0));
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore import:\\n\\n' + (data.error || 'Errore sconosciuto' );
+                        alert('❌ Errore import:\\n\\n' + (data.error || 'Errore sconosciuto'));
                     }
                 })
                 .catch(error => {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
-                    alert('❌ Errore di comunicazione:\\n\\n' + (error.message );
+                    alert('❌ Errore di comunicazione:\\n\\n' + error.message);
                 });
             }
         }
@@ -1476,13 +1476,13 @@ export const dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: ' + (result.error );
+                        alert('❌ Errore: ' + result.error);
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1509,10 +1509,10 @@ export const dashboard = `<!DOCTYPE html>
                     alert('✅ Assistito ' + nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -1562,7 +1562,7 @@ export const dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 console.error('Errore editAssistito:', error);
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1627,14 +1627,14 @@ export const dashboard = `<!DOCTYPE html>
                     closeModal('editAssistitoModal');
                     loadDashboardData();
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                     console.error('❌ Dettagli errore:', result);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
                 console.error('❌ Errore catch:', error);
             }
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.saveEditAssistito = saveEditAssistito;
@@ -2477,10 +2477,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + ((result.contractCode) + '\nTemplate: email_invio_contratto;
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
 
@@ -2501,10 +2501,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure;
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
 
@@ -2576,10 +2576,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     closeModal('editLeadModal');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
         
@@ -2599,10 +2599,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Lead eliminato con successo!');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
         
@@ -2652,17 +2652,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead creato con successo!\\n\\nID: ' + (result.leadId || result.id );
+                    alert('✅ Lead creato con successo!\\n\\nID: ' + result.leadId || result.id);
                     closeModal('newLeadModal');
                     document.getElementById('newLeadForm').reset();
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto' );
+                    alert('❌ Errore: ' + result.error || 'Errore sconosciuto');
                 }
             } catch (error) {
                 console.error('❌ Errore creazione lead:', error);
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
         
@@ -2742,13 +2742,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: ' + (result.error );
+                        alert('❌ Errore: ' + result.error);
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -2766,13 +2766,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Assistito ' + (nome + ' eliminato con successo!');
+                    alert('✅ Assistito ' + nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -3445,11 +3445,11 @@ export const data_dashboard = `<!DOCTYPE html>
                     if (result.isSigned) {
                         alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.;
                     } else {
-                        alert('❌ Errore: ' + (result.error );
+                        alert('❌ Errore: ' + result.error);
                     }
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
         
@@ -3517,10 +3517,10 @@ export const data_dashboard = `<!DOCTYPE html>
                     closeSignContractModal();
                     loadDataDashboard(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         });
         } else {
@@ -3612,14 +3612,14 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + (result.contract.codice_contratto || result.contract.id + '\\nImporto: €' + (importo + '/anno\\nPiano: ' + (piano );
+                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + result.contract.codice_contratto || result.contract.id + '\\nImporto: €' + importo + '/anno\\nPiano: ' + (piano);
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
 
@@ -3670,13 +3670,13 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Assistito ' + (nomeAssistito + ' ' + (cognomeAssistito + ' creato con successo!');
+                    alert('✅ Assistito ' + nomeAssistito + ' ' + cognomeAssistito + ' creato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + (error.message );
+                alert('❌ Errore: ' + error.message);
             }
         }
         
@@ -4210,7 +4210,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: ' + (leadId + '\n\nFunzionalità in sviluppo...;
+            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...;
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
@@ -4330,7 +4330,7 @@ export const workflow_manager = `<!DOCTYPE html>
 📧 Email: ' + (lead.email || 'N/A' + '
 📞 Telefono: ' + (lead.telefono || 'N/A' + '
 🏥 Servizio: ' + (lead.servizio || 'eCura PRO' + '
-📋 Piano: ' + (piano + ' (' + (prezzo + '/anno)
+📋 Piano: ' + piano + ' (' + prezzo + '/anno)
 📅 Creato: ' + (new Date(lead.created_at).toLocaleDateString('it-IT') + '
 📍 Stato: ' + (getWorkflowStatus(lead).text + '
 🔄 Step: ' + (getWorkflowStep(lead).text + '
@@ -4429,10 +4429,10 @@ export const workflow_manager = `<!DOCTYPE html>
                         closeSignModal();
                         refreshWorkflows();
                     } else {
-                        alert('❌ Errore: ' + (result.error );
+                        alert('❌ Errore: ' + result.error);
                     }
                 } catch (error) {
-                    alert('❌ Errore di comunicazione: ' + (error.message );
+                    alert('❌ Errore di comunicazione: ' + error.message);
                 }
             });
         }
@@ -4468,10 +4468,10 @@ export const workflow_manager = `<!DOCTYPE html>
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
-                    alert('❌ Errore: ' + (result.error );
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + (error.message );
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         });
         }
