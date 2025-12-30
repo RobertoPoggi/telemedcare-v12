@@ -642,6 +642,12 @@ export const home = `<!DOCTYPE html>
         </div>
 
         <script>
+            // Helper function to escape single quotes in strings to prevent syntax errors
+            function escapeQuotes(str) {
+                if (!str) return '';
+                return String(str).replace(/'/g, "\\'");
+            }
+            
             // Effetto hover animato per le cards
             document.querySelectorAll('.card-hover').forEach(card => {
                 card.addEventListener('mouseenter', function() {
@@ -4295,18 +4301,22 @@ export const workflow_manager = `<!DOCTYPE html>
                     
                 case 'contract':
                     // Pre-compila modale firma contratto
-                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
+                    const emailSafe = escapeQuotes(lead.email || '');
+                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?\`)) {
                         document.getElementById('signContractId').value = lead.id;
-                        document.getElementById('signDigital').value = \`\${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\`;
+                        document.getElementById('signDigital').value = nomeCompleto;
                         openSignModal();
                     }
                     break;
                     
                 case 'payment':
                     // Pre-compila modale pagamento
-                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''}\\n📧 \${lead.email || ''}\\n\\n✅ Procedi?\`)) {
+                    const nomeCompletoPayment = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
+                    const emailSafePayment = escapeQuotes(lead.email || '');
+                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
-                        fetch('/api/proforma?lead_id=' + (lead.id + '
+                        fetch('/api/proforma?lead_id=' + lead.id)
                             .then(res => res.json())
                             .then(data => {
                                 if (data.proforma && data.proforma.length > 0) {
