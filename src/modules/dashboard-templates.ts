@@ -888,6 +888,7 @@ export const dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Codice Contratto</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
@@ -895,7 +896,7 @@ export const dashboard = `<!DOCTYPE html>
                     </thead>
                     <tbody id="assistitiTable">
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-gray-400">
+                            <td colspan="10" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento assistiti...</p>
                             </td>
@@ -1527,6 +1528,9 @@ export const dashboard = `<!DOCTYPE html>
                     setValueSafe('editParentela', assistito.parentela_caregiver);
                     setValueSafe('editPianoAssistito', assistito.piano || 'BASE');
                     
+                    // Aggiorna prezzi dinamicamente
+                    setTimeout(() => updatePrezziServizio(), 100);
+                    
                     // Mostra modal
                     modal.classList.remove('hidden');
                 } else {
@@ -1590,6 +1594,51 @@ export const dashboard = `<!DOCTYPE html>
         }
         window.saveEditAssistito = saveEditAssistito;
         
+        // Tabella prezzi eCura (1° anno)
+        const PREZZI_ECURA = {
+            'eCura FAMILY': { BASE: 390, AVANZATO: 690, rinnovo_BASE: 200, rinnovo_AVANZATO: 500 },
+            'eCura PRO': { BASE: 480, AVANZATO: 840, rinnovo_BASE: 240, rinnovo_AVANZATO: 600 },
+            'eCura PREMIUM': { BASE: 590, AVANZATO: 990, rinnovo_BASE: 300, rinnovo_AVANZATO: 750 }
+        };
+        
+        function updatePrezziServizio() {
+            const servizio = document.getElementById('editServizioAssistito')?.value || 'eCura PRO';
+            const piano = document.getElementById('editPianoAssistito')?.value || 'BASE';
+            const prezzoInfo = document.getElementById('prezzoInfo');
+            
+            if (!prezzoInfo) return;
+            
+            const prezzi = PREZZI_ECURA[servizio];
+            if (!prezzi) return;
+            
+            const prezzoAnno1 = prezzi[piano];
+            const prezzoRinnovo = prezzi[\`rinnovo_\${piano}\`];
+            
+            prezzoInfo.innerHTML = \`
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-blue-900">1° Anno:</span>
+                        <span class="text-xl font-bold text-blue-600">€\${prezzoAnno1}</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-sm text-gray-600">Rinnovo (dal 2° anno):</span>
+                        <span class="font-semibold text-gray-700">€\${prezzoRinnovo}/anno</span>
+                    </div>
+                </div>
+            \`;
+            
+            // Aggiorna anche il testo delle opzioni
+            const pianoSelect = document.getElementById('editPianoAssistito');
+            if (pianoSelect) {
+                pianoSelect.innerHTML = \`
+                    <option value="BASE" data-prezzo="\${prezzi.BASE}">BASE - €\${prezzi.BASE}/anno</option>
+                    <option value="AVANZATO" data-prezzo="\${prezzi.AVANZATO}">AVANZATO - €\${prezzi.AVANZATO}/anno</option>
+                \`;
+                pianoSelect.value = piano; // Ripristina selezione
+            }
+        }
+        window.updatePrezziServizio = updatePrezziServizio;
+        
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
             document.body.style.overflow = 'auto';
@@ -1605,7 +1654,7 @@ export const dashboard = `<!DOCTYPE html>
             if (assistiti.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-400">
+                        <td colspan="10" class="py-8 text-center text-gray-400">
                             <i class="fas fa-users text-3xl mb-2"></i><br>
                             Nessun assistito attivo trovato
                         </td>
@@ -1628,6 +1677,15 @@ export const dashboard = `<!DOCTYPE html>
                 const telefono = assistito.telefono || 'N/A';
                 const servizio = assistito.servizio || 'eCura PRO';
                 const piano = assistito.piano || 'BASE';
+                
+                // Calcola prezzo dinamico
+                const PREZZI_ECURA_TABLE = {
+                    'eCura FAMILY': { BASE: 390, AVANZATO: 690 },
+                    'eCura PRO': { BASE: 480, AVANZATO: 840 },
+                    'eCura PREMIUM': { BASE: 590, AVANZATO: 990 }
+                };
+                const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
+                
                 const status = assistito.status || 'ATTIVO';  // Default ATTIVO per assistiti attivi
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
                 const assistitoId = assistito.id;  // Salva ID in variabile
@@ -1659,6 +1717,10 @@ export const dashboard = `<!DOCTYPE html>
                     </td>
                     <td class="py-2">
                         <span class="px-2 py-1 \${pianoColor} text-xs rounded">\${piano}</span>
+                    </td>
+                    <td class="py-2">
+                        <span class="font-semibold text-green-600">€\${prezzoAnno}</span>
+                        <span class="text-xs text-gray-500">/anno</span>
                     </td>
                     <td class="py-2">
                         <span class="px-2 py-1 \${statusColor} text-xs rounded">\${status}</span>
@@ -1831,18 +1893,19 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
-                        <select id="editServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="eCura PRO">eCura PRO</option>
-                            <option value="eCura BASE">eCura BASE</option>
-                            <option value="Telemedicina">Telemedicina</option>
+                        <select id="editServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updatePrezziServizio()">
+                            <option value="eCura FAMILY">eCura FAMILY (Senium CARE)</option>
+                            <option value="eCura PRO">eCura PRO (SiDLY CARE PRO)</option>
+                            <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
-                        <select id="editPianoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="BASE">BASE - €480/anno</option>
-                            <option value="AVANZATO">AVANZATO - €840/anno</option>
+                        <select id="editPianoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updatePrezziServizio()">
+                            <option value="BASE" data-prezzo="480">BASE - €480/anno</option>
+                            <option value="AVANZATO" data-prezzo="840">AVANZATO - €840/anno</option>
                         </select>
+                        <div id="prezzoInfo" class="mt-2 text-sm text-gray-600"></div>
                     </div>
                 </div>
                 
