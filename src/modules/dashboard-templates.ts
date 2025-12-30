@@ -1638,28 +1638,26 @@ export const dashboard = `<!DOCTYPE html>
             if (!prezzi) return;
             
             const prezzoAnno1 = prezzi[piano];
-            const prezzoRinnovo = prezzi[\`rinnovo_\${piano}\`];
+            const prezzoRinnovo = prezzi['rinnovo_' + piano];
             
-            prezzoInfo.innerHTML = \`
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-blue-900">1° Anno:</span>
-                        <span class="text-xl font-bold text-blue-600">€\${prezzoAnno1}</span>
-                    </div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-sm text-gray-600">Rinnovo (dal 2° anno):</span>
-                        <span class="font-semibold text-gray-700">€\${prezzoRinnovo}/anno</span>
-                    </div>
-                </div>
-            \`;
+            prezzoInfo.innerHTML = 
+                '<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">' +
+                    '<div class="flex justify-between items-center">' +
+                        '<span class="font-semibold text-blue-900">1° Anno:</span>' +
+                        '<span class="text-xl font-bold text-blue-600">€' + prezzoAnno1 + '</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between items-center mt-1">' +
+                        '<span class="text-sm text-gray-600">Rinnovo (dal 2° anno):</span>' +
+                        '<span class="font-semibold text-gray-700">€' + prezzoRinnovo + '/anno</span>' +
+                    '</div>' +
+                '</div>';
             
             // Aggiorna anche il testo delle opzioni
             const pianoSelect = document.getElementById('editPianoAssistito');
             if (pianoSelect) {
-                pianoSelect.innerHTML = \`
-                    <option value="BASE" data-prezzo="\${prezzi.BASE}">BASE - €\${prezzi.BASE}/anno</option>
-                    <option value="AVANZATO" data-prezzo="\${prezzi.AVANZATO}">AVANZATO - €\${prezzi.AVANZATO}/anno</option>
-                \`;
+                pianoSelect.innerHTML = 
+                    '<option value="BASE" data-prezzo="' + prezzi.BASE + '">BASE - €' + prezzi.BASE + '/anno</option>' +
+                    '<option value="AVANZATO" data-prezzo="' + prezzi.AVANZATO + '">AVANZATO - €' + prezzi.AVANZATO + '/anno</option>';
                 pianoSelect.value = piano; // Ripristina selezione
             }
         }
