@@ -649,7 +649,7 @@ export const home = `<!DOCTYPE html>
             }
             
             // Effetto hover animato per le cards
-            document.querySelectorAll('.card-hover").forEach(card => {
+            document.querySelectorAll(".card-hover").forEach(card => {
                 card.addEventListener('mouseenter', function() {
                     this.style.transform = 'translateY(-8px) scale(1.02)";
                 });
@@ -712,7 +712,7 @@ export const home = `<!DOCTYPE html>
                     document.getElementById("activationsToday").textContent = stats.activationsToday;
                 }
             } catch (error) {
-                console.log('Stats not yet available");
+                console.log("Stats not yet available");
                 // Set tutti a 0 in caso di errore
                 document.getElementById("leadsToday").textContent = "0";
                 document.getElementById("contractsToday").textContent = "0";
@@ -1051,7 +1051,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna KPI
                 document.getElementById("totalLeads").textContent = totalLeads;
                 document.getElementById("contractsSent").textContent = contratti;
-                document.getElementById("emailsSent").textContent = "0'; // TODO
+                document.getElementById("emailsSent").textContent = "0"; // TODO
                 document.getElementById("topService").textContent = topService;
 
                 // Filtra ultimi 3 mesi (90 giorni) e NON convertiti
@@ -1075,15 +1075,15 @@ export const dashboard = `<!DOCTYPE html>
                     const statusConverted = ['CONVERTED', 'CONTRACT_SIGNED', 'ACTIVE'].includes(status);
                     
                     // Controlla se le note indicano conversione REALE (non solo "inviato")
-                    const note = (lead.note || lead.notes || '").toLowerCase();
+                    const note = (lead.note || lead.notes || "").toLowerCase();
                     const noteConverted = 
-                        note.includes('firmato") ||           // Contratto firmato
-                        note.includes('pagato") ||            // Pagamento ricevuto
-                        note.includes('consegnato") ||        // Dispositivo consegnato
-                        note.includes('attivo") ||            // Servizio attivo
-                        note.includes('installato") ||        // Dispositivo installato
-                        (note.includes('contratto") && note.includes('firmato")) ||  // "contratto firmato"
-                        (note.includes('contratto") && note.includes('pagato"));     // "contratto pagato"
+                        note.includes("firmato") ||           // Contratto firmato
+                        note.includes("pagato") ||            // Pagamento ricevuto
+                        note.includes("consegnato") ||        // Dispositivo consegnato
+                        note.includes("attivo") ||            // Servizio attivo
+                        note.includes("installato") ||        // Dispositivo installato
+                        (note.includes("contratto") && note.includes("firmato")) ||  // "contratto firmato"
+                        (note.includes("contratto") && note.includes("pagato"));     // "contratto pagato"
                     
                     // Lead è convertito SOLO se status O note indicano conversione REALE
                     const notConverted = !statusConverted && !noteConverted;
@@ -1141,7 +1141,7 @@ export const dashboard = `<!DOCTYPE html>
                                 <td class="py-3 text-xs text-gray-500">\${date}</td>
                             </tr>
                         \`;
-                    }).join('");
+                    }).join("");
                 }
 
                 // Salva tutti i lead per i grafici
@@ -1157,12 +1157,12 @@ export const dashboard = `<!DOCTYPE html>
                 renderAssistitiTable(assistiti);
 
                 // Aggiorna timestamp
-                document.getElementById("lastUpdate").textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT")}\`;
+                document.getElementById("lastUpdate").textContent = \`Aggiornato: \${new Date().toLocaleTimeString("it-IT")}\`;
 
             } catch (error) {
                 console.error('Errore caricamento dashboard:', error);
                 // Mostra dettagli errore per debugging
-                const errorMsg = error.message || 'Errore sconosciuto";
+                const errorMsg = error.message || "Errore sconosciuto";
                 document.getElementById("leadsTable").innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
@@ -1184,7 +1184,7 @@ export const dashboard = `<!DOCTYPE html>
         function importFromChannel(channel) {
             if (confirm(\`📥 Vuoi importare i lead dal canale \${channel}?\\n\\nQuesta operazione:\n- Scaricherà i nuovi lead da \${channel}\n- Aggiornerà il database\n- Sincronizzerà i dati\\n\\nProcedi?\`)) {
                 // Mostra loading
-                const btn = event.target.closest('button");
+                const btn = event.target.closest("button");
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importazione...";
@@ -1202,7 +1202,7 @@ export const dashboard = `<!DOCTYPE html>
                         alert('✅ Import completato!\\n\\nCanale: ' + channel + '\\nLead importati: ' + (data.count || 0) + '\\nTotale lead: ' + (data.total || 0));
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore import:\\n\\n' + (data.error || 'Errore sconosciuto"));
+                        alert('❌ Errore import:\\n\\n' + (data.error || "Errore sconosciuto"));
                     }
                 })
                 .catch(error => {
@@ -1215,9 +1215,9 @@ export const dashboard = `<!DOCTYPE html>
 
         function refreshData() {
             const icon = document.getElementById("refreshIcon");
-            icon.classList.add('rotating");
+            icon.classList.add("rotating");
             loadDashboardData().finally(() => {
-                setTimeout(() => icon.classList.remove('rotating"), 1000);
+                setTimeout(() => icon.classList.remove("rotating"), 1000);
             });
         }
 
@@ -1236,7 +1236,7 @@ export const dashboard = `<!DOCTYPE html>
                 'PRO': { 'BASE': '480.00', 'AVANZATO': '840.00' },
                 'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
             };
-            return prezzi[servizio]?.[piano] || '0.00";
+            return prezzi[servizio]?.[piano] || "0.00"
         }
 
         function updateServicesChart(assistiti) {
@@ -1257,7 +1257,7 @@ export const dashboard = `<!DOCTYPE html>
 
             const html = Object.entries(serviceCounts).map(([service, count]) => {
                 const percentage = 100; // Sempre 100% per eCura PRO
-                const color = colors[service] || 'bg-gray-500";
+                const color = colors[service] || "bg-gray-500";
                 return \`
                     <div>
                         <div class="flex items-center justify-between mb-1">
@@ -1269,9 +1269,9 @@ export const dashboard = `<!DOCTYPE html>
                         </div>
                     </div>
                 \`;
-            }).join('");
+            }).join("");
 
-            document.getElementById("servicesChart").innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>";
+            document.getElementById("servicesChart").innerHTML = html || "<p class="text-gray-400 text-sm">Nessun dato disponibile</p>";
         }
 
         function updatePlansChart(leads) {
@@ -1282,7 +1282,7 @@ export const dashboard = `<!DOCTYPE html>
                 
                 // Conta i piani reali basati sui contratti degli assistiti
                 assistiti.forEach(assistito => {
-                    const piano = assistito.piano || 'BASE";
+                    const piano = assistito.piano || "BASE";
                     if (piano === "AVANZATO") {
                         planCounts.AVANZATO++;
                     } else {
@@ -1344,24 +1344,24 @@ export const dashboard = `<!DOCTYPE html>
                 // Estrai info lead
                 const leadId = (lead.id || '").toString().toUpperCase();
                 const nomeCompleto = \`\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}\`.trim().toLowerCase();
-                const canaleField = (lead.canale || lead.origine || '").toLowerCase();
+                const canaleField = (lead.canale || lead.origine || "").toLowerCase();
                 
                 // Rilevamento canale con priorità
-                if (leadId.includes('LEAD-EXCEL") || canaleField.includes('excel")) {
+                if (leadId.includes("LEAD-EXCEL") || canaleField.includes("excel")) {
                     canale = 'Excel";
-                } else if (leadId.includes('IRBEMA") || canaleField.includes('irbema")) {
+                } else if (leadId.includes("IRBEMA") || canaleField.includes("irbema")) {
                     canale = 'Irbema";
-                } else if (nomeCompleto.includes('francesca grati")) {
+                } else if (nomeCompleto.includes("francesca grati")) {
                     canale = 'Web";
-                } else if (nomeCompleto.includes('laura calvi")) {
+                } else if (nomeCompleto.includes("laura calvi")) {
                     canale = 'Networking";
-                } else if (canaleField.includes('aon")) {
+                } else if (canaleField.includes("aon")) {
                     canale = 'AON";
-                } else if (canaleField.includes('doubleyou") || canaleField.includes('double")) {
+                } else if (canaleField.includes("doubleyou") || canaleField.includes("double")) {
                     canale = 'DoubleYou";
-                } else if (canaleField.includes('network")) {
+                } else if (canaleField.includes("network")) {
                     canale = 'Networking";
-                } else if (leadId.startsWith('LEAD-") && !leadId.includes('EXCEL")) {
+                } else if (leadId.startsWith("LEAD-") && !leadId.includes("EXCEL")) {
                     // Lead generici probabilmente da Irbema (la maggioranza)
                     canale = 'Irbema";
                 }
@@ -1380,7 +1380,7 @@ export const dashboard = `<!DOCTYPE html>
             } else {
                 sortedChannels.forEach(([canale, count]) => {
                     const percentage = Math.round((count / total) * 100);
-                    const color = channelColors[canale] || 'bg-gray-500";
+                    const color = channelColors[canale] || "bg-gray-500";
                     
                     html += \`
                         <div>
@@ -1417,12 +1417,12 @@ export const dashboard = `<!DOCTYPE html>
                         'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
                         'Email: ' + (assistito.email || "N/A") + '\\n' +
                         'Telefono: ' + (assistito.telefono || "N/A") + '\\n' +
-                        'Piano: ' + (assistito.piano || 'BASE") + '\\n' +
-                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno") + '\\n' +
+                        'Piano: ' + (assistito.piano || "BASE") + '\\n' +
+                        'Contratto: ' + (assistito.codice_contratto || "Nessuno") + '\\n' +
                         'Status: ' + (assistito.contratto_status || assistito.status || "N/A")
                     );
                 } else {
-                    alert('❌ Assistito non trovato");
+                    alert("❌ Assistito non trovato");
                 }
             } catch (error) {
                 alert("❌ Errore: " + error.message);
@@ -1451,7 +1451,7 @@ export const dashboard = `<!DOCTYPE html>
                     
                     const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '");
                     const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '");
-                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '");
+                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || "");
                     
                     // Aggiorna
                     const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
@@ -1472,13 +1472,13 @@ export const dashboard = `<!DOCTYPE html>
                     const result = await updateResponse.json();
                     
                     if (result.success) {
-                        alert('✅ Assistito aggiornato con successo!");
+                        alert("✅ Assistito aggiornato con successo!");
                         loadDashboardData(); // Ricarica dashboard
                     } else {
                         alert("❌ Errore: " + result.error);
                     }
                 } else {
-                    alert('❌ Assistito non trovato");
+                    alert("❌ Assistito non trovato");
                 }
             } catch (error) {
                 alert("❌ Errore: " + error.message);
@@ -1490,7 +1490,7 @@ export const dashboard = `<!DOCTYPE html>
             // Trova l'assistito nell'array globale per ottenere il nome
             const assistito = allAssistiti.find(a => a.id === id);
             const nome = assistito ? 
-                (assistito.nome || ((assistito.nome_assistito || '") + ' ' + (assistito.cognome_assistito || '")).trim() || 'questo assistito") 
+                (assistito.nome || ((assistito.nome_assistito || '") + ' ' + (assistito.cognome_assistito || "")).trim() || "questo assistito") 
                 : 'questo assistito";
             
             if (!confirm('⚠️ Sei sicuro di voler eliminare l\\'assistito ' + nome + '?\\n\\nQuesta azione non può essere annullata!")) {
@@ -1527,8 +1527,8 @@ export const dashboard = `<!DOCTYPE html>
                     // Verifica che il modal esista
                     const modal = document.getElementById("editAssistitoModal");
                     if (!modal) {
-                        console.error('Modal editAssistitoModal non trovato");
-                        alert('❌ Errore: Modal non trovato. Ricaricare la pagina.");
+                        console.error("Modal editAssistitoModal non trovato");
+                        alert("❌ Errore: Modal non trovato. Ricaricare la pagina.");
                         return;
                     }
                     
@@ -1545,19 +1545,19 @@ export const dashboard = `<!DOCTYPE html>
                     setValueSafe('editEmailAssistito', assistito.email);
                     setValueSafe('editTelefonoAssistito', assistito.telefono);
                     setValueSafe('editIMEI', assistito.imei);
-                    setValueSafe('editServizioAssistito', assistito.servizio || 'eCura PRO");
+                    setValueSafe('editServizioAssistito', assistito.servizio || "eCura PRO");
                     setValueSafe('editNomeCaregiver', assistito.nome_caregiver);
                     setValueSafe('editCognomeCaregiver', assistito.cognome_caregiver);
                     setValueSafe('editParentela', assistito.parentela_caregiver);
-                    setValueSafe('editPianoAssistito', assistito.piano || 'BASE");
+                    setValueSafe('editPianoAssistito', assistito.piano || "BASE");
                     
                     // Aggiorna prezzi dinamicamente
                     setTimeout(() => updatePrezziServizio(), 100);
                     
                     // Mostra modal
-                    modal.classList.remove('hidden");
+                    modal.classList.remove("hidden");
                 } else {
-                    alert('❌ Assistito non trovato");
+                    alert("❌ Assistito non trovato");
                 }
             } catch (error) {
                 console.error('Errore editAssistito:', error);
@@ -1592,7 +1592,7 @@ export const dashboard = `<!DOCTYPE html>
             });
             
             if (!nomeAssistito || !cognomeAssistito || !imei) {
-                alert('⚠️ Campi obbligatori: Nome, Cognome e IMEI");
+                alert("⚠️ Campi obbligatori: Nome, Cognome e IMEI");
                 return;
             }
             
@@ -1622,8 +1622,8 @@ export const dashboard = `<!DOCTYPE html>
                 console.log('📥 RISPOSTA SERVER:', result);
                 
                 if (result.success) {
-                    alert('✅ Assistito aggiornato con successo!");
-                    closeModal('editAssistitoModal");
+                    alert("✅ Assistito aggiornato con successo!");
+                    closeModal("editAssistitoModal");
                     loadDashboardData();
                 } else {
                     alert("❌ Errore: " + result.error);
@@ -1644,8 +1644,8 @@ export const dashboard = `<!DOCTYPE html>
         };
         
         function updatePrezziServizio() {
-            const servizio = document.getElementById("editServizioAssistito")?.value || 'eCura PRO";
-            const piano = document.getElementById("editPianoAssistito")?.value || 'BASE";
+            const servizio = document.getElementById("editServizioAssistito")?.value || "eCura PRO";
+            const piano = document.getElementById("editPianoAssistito")?.value || "BASE";
             const prezzoInfo = document.getElementById("prezzoInfo");
             
             if (!prezzoInfo) return;
@@ -1680,7 +1680,7 @@ export const dashboard = `<!DOCTYPE html>
         window.updatePrezziServizio = updatePrezziServizio;
         
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden");
+            document.getElementById(modalId).classList.add("hidden");
             document.body.style.overflow = 'auto";
         }
         window.closeModal = closeModal;
@@ -1724,8 +1724,8 @@ export const dashboard = `<!DOCTYPE html>
                 };
                 const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
                 
-                const status = assistito.status || 'ATTIVO";
-                const codice = assistito.codice_contratto || assistito.codice || "N/A";
+                const status = assistito.status || "ATTIVO";
+                const codice = assistito.codice_contratto || assistito.codice || "N/A"
                 const assistitoId = assistito.id;
                 
                 // Status badge colors
@@ -1735,7 +1735,7 @@ export const dashboard = `<!DOCTYPE html>
                     'INVIATO': 'bg-blue-100 text-blue-700',
                     'CONVERTITO': 'bg-purple-100 text-purple-700'
                 };
-                const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700";
+                const statusColor = statusColors[status] || "bg-gray-100 text-gray-700";
                 
                 // Piano badge colors
                 const pianoColor = piano === "AVANZATO" ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700";
@@ -1744,7 +1744,7 @@ export const dashboard = `<!DOCTYPE html>
                     '<td class="py-3 px-2">' +
                         '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + '</div>' +
                         '<div class="text-xs text-gray-500 mt-1">' +
-                            '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (' + parentela + ")' +
+                            '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (" + parentela + ")' +
                         '</div>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
@@ -1771,19 +1771,19 @@ export const dashboard = `<!DOCTYPE html>
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
                         '<div class="flex justify-center gap-1">' +
-                            '<button onclick="window.viewAssistito(' + assistitoId + ")" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition text-sm" title="Visualizza">' +
+                            '<button onclick="window.viewAssistito(" + assistitoId + ")" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition text-sm" title="Visualizza">' +
                                 '<i class="fas fa-eye"></i>' +
                             '</button>' +
-                            '<button onclick="window.editAssistito(' + assistitoId + ")" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-1 rounded transition text-sm" title="Modifica">' +
+                            '<button onclick="window.editAssistito(" + assistitoId + ")" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-1 rounded transition text-sm" title="Modifica">' +
                                 '<i class="fas fa-edit"></i>' +
                             '</button>' +
-                            '<button onclick="window.deleteAssistito(' + assistitoId + ")" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
+                            '<button onclick="window.deleteAssistito(" + assistitoId + ")" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
                                 '<i class="fas fa-trash"></i>' +
                             '</button>' +
                         '</div>' +
                     '</td>' +
                 '</tr>";
-            }).join('");
+            }).join("");
         }
 
         // Variabile globale per tenere tutti gli assistiti
@@ -1827,13 +1827,13 @@ export const dashboard = `<!DOCTYPE html>
                     channel = lead.canale;
                 } else if (lead.note) {
                     // Cerca pattern comuni nelle note
-                    if (lead.note.includes('Irbema") || lead.note.includes('IRBEMA")) {
+                    if (lead.note.includes("Irbema") || lead.note.includes("IRBEMA")) {
                         channel = 'Irbema";
-                    } else if (lead.note.includes('AON")) {
+                    } else if (lead.note.includes("AON")) {
                         channel = 'AON";
-                    } else if (lead.note.includes('Double You")) {
+                    } else if (lead.note.includes("Double You")) {
                         channel = 'Double You";
-                    } else if (lead.note.includes('Excel")) {
+                    } else if (lead.note.includes("Excel")) {
                         channel = 'Excel Import";
                     }
                 }
@@ -1862,9 +1862,9 @@ export const dashboard = `<!DOCTYPE html>
                             </div>
                         </div>
                     \`;
-                }).join('");
+                }).join("");
 
-            document.getElementById("channelsChart").innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>";
+            document.getElementById("channelsChart").innerHTML = html || "<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>"
         }
 
         // Funzioni Import API
@@ -1888,15 +1888,15 @@ export const dashboard = `<!DOCTYPE html>
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
-            alert('🔄 Import da Irbema\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/irbema\\n\\nQuesta funzionalità permetterà di importare lead dal partner Irbema.");
+            alert("🔄 Import da Irbema\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/irbema\\n\\nQuesta funzionalità permetterà di importare lead dal partner Irbema.");
         }
 
         function importFromAON() {
-            alert('🔄 Import da AON\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/aon\\n\\nQuesta funzionalità permetterà di importare lead dal partner AON.");
+            alert("🔄 Import da AON\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/aon\\n\\nQuesta funzionalità permetterà di importare lead dal partner AON.");
         }
 
         function importFromDoubleYou() {
-            alert('🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.");
+            alert("🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.");
         }
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
@@ -1907,7 +1907,7 @@ export const dashboard = `<!DOCTYPE html>
         <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-screen overflow-y-auto">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="text-xl font-bold">✏️ Modifica Assistito</h3>
-                <button onclick="closeModal('editAssistitoModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                <button onclick="closeModal("editAssistitoModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6">
                 <input type="hidden" id="editAssistitoId">
@@ -1969,7 +1969,7 @@ export const dashboard = `<!DOCTYPE html>
                 </div>
                 
                 <div class="flex justify-end gap-3">
-                    <button onclick="closeModal('editAssistitoModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                    <button onclick="closeModal("editAssistitoModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Annulla
                     </button>
                     <button onclick="saveEditAssistito()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -2214,11 +2214,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const statsResponse = await fetch("/api/data/stats");
                 const stats = await statsResponse.json();
 
-                document.getElementById("totalLeads").textContent = stats.totalLeads || '0";
-                document.getElementById("conversionRate").textContent = stats.conversionRate || '0%";
-                document.getElementById("leadsToday").textContent = stats.leadsToday || '0";
+                document.getElementById("totalLeads").textContent = stats.totalLeads || "0";
+                document.getElementById("conversionRate").textContent = stats.conversionRate || "0%";
+                document.getElementById("leadsToday").textContent = stats.leadsToday || "0";
                 document.getElementById("totalValue").textContent = stats.totalValue ? ('\u20AC' + stats.totalValue) : '\u20AC0";
-                document.getElementById("leadsGrowth").textContent = stats.leadsGrowth || '+0%";
+                document.getElementById("leadsGrowth").textContent = stats.leadsGrowth || "+0%";
 
                 // Carica lead
                 const leadsResponse = await fetch("/api/leads?limit=200");
@@ -2242,15 +2242,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                         totalValue += parseFloat(c.prezzo_totale);
                     }
                 });
-                const today = new Date().toISOString().split('T")[0];
+                const today = new Date().toISOString().split("T")[0];
                 const leadsToday = allLeads.filter(l => l.created_at && l.created_at.startsWith(today)).length;
                 
                 // Update KPIs
                 document.getElementById("totalLeads").textContent = totalLeads;
                 document.getElementById("conversionRate").textContent = conversionRate;
                 document.getElementById("leadsToday").textContent = leadsToday;
-                document.getElementById("totalValue").textContent = "€' + totalValue.toLocaleString('it-IT");
-                document.getElementById("leadsGrowth").textContent = "+0%'; // TODO
+                document.getElementById("totalValue").textContent = "€' + totalValue.toLocaleString("it-IT");
+                document.getElementById("leadsGrowth").textContent = "+0%"; // TODO
 
                 // Aggiorna grafici
                 updateServicesBreakdown(allLeads);
@@ -2311,7 +2311,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 leads.forEach(l => {
                     // Prima controlla se c'è un contratto associato
-                    const piano = leadToPiano[l.id] || 'BASE";
+                    const piano = leadToPiano[l.id] || "BASE"
                     counts[piano.toUpperCase()]++;
                 });
                 
@@ -2337,7 +2337,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </div>
                     </div>
                 \`;
-            }).join('");
+            }).join("");
 
             document.getElementById("plansBreakdown").innerHTML = html;
         }
@@ -2354,18 +2354,18 @@ export const leads_dashboard = `<!DOCTYPE html>
             leads.forEach(lead => {
                 const leadId = (lead.id || '").toString().toUpperCase();
                 const nomeCompleto = ((lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || '")).trim().toLowerCase();
-                const canaleField = (lead.canale || lead.origine || lead.fonte || '").toLowerCase();
+                const canaleField = (lead.canale || lead.origine || lead.fonte || "").toLowerCase();
                 
                 // Rilevamento canale
-                if (leadId.includes('IRBEMA") || canaleField.includes('irbema") || (leadId.includes('LEAD-") && !leadId.includes('EXCEL"))) {
+                if (leadId.includes("IRBEMA") || canaleField.includes("irbema") || (leadId.includes("LEAD-") && !leadId.includes("EXCEL"))) {
                     channelCounts['IRBEMA']++;
-                } else if (leadId.includes('LEAD-EXCEL") || canaleField.includes('excel")) {
+                } else if (leadId.includes("LEAD-EXCEL") || canaleField.includes("excel")) {
                     channelCounts['IRBEMA']++;  // Excel import è comunque IRBEMA
-                } else if (nomeCompleto.includes('francesca grati")) {
+                } else if (nomeCompleto.includes("francesca grati")) {
                     channelCounts['Web']++;
-                } else if (nomeCompleto.includes('laura calvi") || canaleField.includes('network")) {
+                } else if (nomeCompleto.includes("laura calvi") || canaleField.includes("network")) {
                     channelCounts['Networking']++;
-                } else if (canaleField.includes('aon") || canaleField.includes('doubleyou")) {
+                } else if (canaleField.includes("aon") || canaleField.includes("doubleyou")) {
                     channelCounts['IRBEMA']++;  // Altri partner vanno in IRBEMA
                 } else {
                     channelCounts['IRBEMA']++;  // Default: la maggioranza viene da IRBEMA
@@ -2400,7 +2400,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '").substring(0, 20)}</code>
+                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || "").substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || "N/A")}</div>
@@ -2440,7 +2440,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     <i class="fas fa-file-contract"></i>
                                 </button>
                                 <button 
-                                    onclick="sendBrochure('\${lead.id}")" 
+                                    onclick="sendBrochure("\${lead.id}")" 
                                     class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
                                     title="Invia Brochure">
                                     <i class="fas fa-book"></i>
@@ -2449,17 +2449,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <div class="flex space-x-1">
-                                <button onclick="viewLead('\${lead.id}")" 
+                                <button onclick="viewLead("\${lead.id}")" 
                                         class="text-blue-600 hover:text-blue-800 px-1" 
                                         title="Visualizza">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="editLead('\${lead.id}")" 
+                                <button onclick="editLead("\${lead.id}")" 
                                         class="text-green-600 hover:text-green-800 px-1" 
                                         title="Modifica">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteLead('\${lead.id}")" 
+                                <button onclick="deleteLead("\${lead.id}")" 
                                         class="text-red-600 hover:text-red-800 px-1" 
                                         title="Elimina">
                                     <i class="fas fa-trash"></i>
@@ -2468,7 +2468,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                     </tr>
                 \`;
-            }).join('");
+            }).join("");
         }
 
         function applyFilters() {
@@ -2499,7 +2499,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 'PRO': { 'BASE': '480.00', 'AVANZATO': '840.00' },
                 'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
             };
-            return prezzi[servizio]?.[piano] || '0.00";
+            return prezzi[servizio]?.[piano] || "0.00";
         }
 
         // Funzioni per invio manuale documenti
@@ -2529,7 +2529,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         async function sendBrochure(leadId) {
-            if (!confirm('Inviare brochure al lead?")) {
+            if (!confirm("Inviare brochure al lead?")) {
                 return;
             }
             
@@ -2542,7 +2542,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure");
+                    alert("✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure");
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert("❌ Errore: " + result.error);
@@ -2559,41 +2559,41 @@ export const leads_dashboard = `<!DOCTYPE html>
         function viewLead(leadId) {
             const lead = allLeads.find(l => l.id === leadId);
             if (!lead) {
-                alert('❌ Lead non trovato");
+                alert("❌ Lead non trovato");
                 return;
             }
             
             document.getElementById("viewLeadId").textContent = lead.id;
-            document.getElementById("viewNome").textContent = lead.nomeRichiedente || '-";
-            document.getElementById("viewCognome").textContent = lead.cognomeRichiedente || '-";
-            document.getElementById("viewEmail").textContent = lead.email || '-";
-            document.getElementById("viewTelefono").textContent = lead.telefono || '-";
-            document.getElementById("viewServizio").textContent = lead.servizio || 'eCura PRO";
-            document.getElementById("viewPiano").textContent = (lead.note && lead.note.includes('Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
-            document.getElementById("viewNote").textContent = lead.note || '-";
-            document.getElementById("viewData").textContent = new Date(lead.created_at).toLocaleDateString('it-IT");
+            document.getElementById("viewNome").textContent = lead.nomeRichiedente || "-";
+            document.getElementById("viewCognome").textContent = lead.cognomeRichiedente || "-";
+            document.getElementById("viewEmail").textContent = lead.email || "-";
+            document.getElementById("viewTelefono").textContent = lead.telefono || "-";
+            document.getElementById("viewServizio").textContent = lead.servizio || "eCura PRO";
+            document.getElementById("viewPiano").textContent = (lead.note && lead.note.includes("Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
+            document.getElementById("viewNote").textContent = lead.note || "-";
+            document.getElementById("viewData").textContent = new Date(lead.created_at).toLocaleDateString("it-IT");
             
-            openModal('viewLeadModal");
+            openModal("viewLeadModal");
         }
         
         function editLead(leadId) {
             const lead = allLeads.find(l => l.id === leadId);
             if (!lead) {
-                alert('❌ Lead non trovato");
+                alert("❌ Lead non trovato");
                 return;
             }
             
             document.getElementById("editLeadId").value = lead.id;
-            document.getElementById("editNome").value = lead.nomeRichiedente || '";
-            document.getElementById("editCognome").value = lead.cognomeRichiedente || '";
-            document.getElementById("editEmail").value = lead.email || '";
-            document.getElementById("editTelefono").value = lead.telefono || '";
+            document.getElementById("editNome").value = lead.nomeRichiedente || "";
+            document.getElementById("editCognome").value = lead.cognomeRichiedente || "";
+            document.getElementById("editEmail").value = lead.email || "";
+            document.getElementById("editTelefono").value = lead.telefono || "";
             
-            const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
+            const currentPiano = (lead.note && lead.note.includes("Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
             document.getElementById("editPiano").value = currentPiano;
-            document.getElementById("editNote").value = lead.note || '";
+            document.getElementById("editNote").value = lead.note || "";
             
-            openModal('editLeadModal");
+            openModal("editLeadModal");
         }
         
         async function saveEditLead() {
@@ -2616,8 +2616,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead aggiornato con successo!");
-                    closeModal('editLeadModal");
+                    alert("✅ Lead aggiornato con successo!");
+                    closeModal("editLeadModal");
                     loadLeads();
                 } else {
                     alert("❌ Errore: " + result.error);
@@ -2628,7 +2628,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         async function deleteLead(leadId) {
-            if (!confirm('⚠️ Sei sicuro di voler eliminare questo lead?\\n\\nQuesta operazione è irreversibile.")) {
+            if (!confirm("⚠️ Sei sicuro di voler eliminare questo lead?\\n\\nQuesta operazione è irreversibile.")) {
                 return;
             }
             
@@ -2640,7 +2640,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead eliminato con successo!");
+                    alert("✅ Lead eliminato con successo!");
                     loadLeads();
                 } else {
                     alert("❌ Errore: " + result.error);
@@ -2651,19 +2651,19 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden");
+            document.getElementById(modalId).classList.remove("hidden");
             document.body.style.overflow = 'hidden";
         }
         
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden");
+            document.getElementById(modalId).classList.add("hidden");
             document.body.style.overflow = 'auto";
         }
         
         function openNewLeadModal() {
             // Reset form
             document.getElementById("newLeadForm").reset();
-            openModal('newLeadModal");
+            openModal("newLeadModal");
         }
         
         async function saveNewLead() {
@@ -2682,7 +2682,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             // Validation
             if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
-                alert('⚠️ Compila tutti i campi obbligatori");
+                alert("⚠️ Compila tutti i campi obbligatori");
                 return;
             }
             
@@ -2697,12 +2697,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 if (result.success) {
                     alert('✅ Lead creato con successo!\\n\\nID: ' + (result.leadId || result.id));
-                    closeModal('newLeadModal");
+                    closeModal("newLeadModal");
                     document.getElementById("newLeadForm").reset();
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
-                    alert('❌ Errore: ' + result.error || 'Errore sconosciuto");
+                    alert('❌ Errore: ' + result.error || "Errore sconosciuto");
                 }
             } catch (error) {
                 console.error('❌ Errore creazione lead:', error);
@@ -2728,12 +2728,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                         'IMEI: ' + (assistito.imei || "N/A") + '\\n' +
                         'Email: ' + (assistito.email || "N/A") + '\\n' +
                         'Telefono: ' + (assistito.telefono || "N/A") + '\\n' +
-                        'Piano: ' + (assistito.piano || 'BASE") + '\\n' +
-                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno") + '\\n' +
+                        'Piano: ' + (assistito.piano || "BASE") + '\\n' +
+                        'Contratto: ' + (assistito.codice_contratto || "Nessuno") + '\\n' +
                         'Status: ' + (assistito.contratto_status || assistito.status || "N/A")
                     );
                 } else {
-                    alert('❌ Assistito non trovato");
+                    alert("❌ Assistito non trovato");
                 }
             } catch (error) {
                 alert("❌ Errore: " + error.message);
@@ -2762,7 +2762,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     
                     const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '");
                     const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '");
-                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '");
+                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || "");
                     
                     // Aggiorna
                     const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
@@ -2783,13 +2783,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const result = await updateResponse.json();
                     
                     if (result.success) {
-                        alert('✅ Assistito aggiornato con successo!");
+                        alert("✅ Assistito aggiornato con successo!");
                         loadDashboardData(); // Ricarica dashboard
                     } else {
                         alert("❌ Errore: " + result.error);
                     }
                 } else {
-                    alert('❌ Assistito non trovato");
+                    alert("❌ Assistito non trovato");
                 }
             } catch (error) {
                 alert("❌ Errore: " + error.message);
@@ -2827,7 +2827,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="text-xl font-bold">➕ Nuovo Lead</h3>
-                <button onclick="closeModal('newLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                <button onclick="closeModal("newLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6">
                 <form id="newLeadForm">
@@ -2885,7 +2885,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" onclick="closeModal('newLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                        <button type="button" onclick="closeModal("newLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                             Annulla
                         </button>
                         <button type="button" onclick="saveNewLead()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
@@ -2902,7 +2902,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="text-xl font-bold">👤 Dettagli Lead</h3>
-                <button onclick="closeModal('viewLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                <button onclick="closeModal("viewLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-2 gap-4">
@@ -2944,7 +2944,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end">
-                    <button onclick="closeModal('viewLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                    <button onclick="closeModal("viewLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Chiudi
                     </button>
                 </div>
@@ -2957,7 +2957,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="text-xl font-bold">✏️ Modifica Lead</h3>
-                <button onclick="closeModal('editLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                <button onclick="closeModal("editLeadModal")" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6">
                 <input type="hidden" id="editLeadId">
@@ -2991,7 +2991,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end gap-3">
-                    <button onclick="closeModal('editLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                    <button onclick="closeModal("editLeadModal")" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Annulla
                     </button>
                     <button onclick="saveEditLead()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -3417,22 +3417,22 @@ export const data_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">
-                            <button onclick="viewContractPDF('\${contract.id}")" class="text-blue-600 hover:text-blue-800" title="Visualizza PDF">
+                            <button onclick="viewContractPDF("\${contract.id}")" class="text-blue-600 hover:text-blue-800" title="Visualizza PDF">
                                 <i class="fas fa-file-pdf text-lg"></i>
                             </button>
                         </td>
                         <td class="py-3">
                             <div class="flex space-x-2">
-                                <button onclick="viewContract('\${contract.id}")" class="text-blue-600 hover:text-blue-800" title="Visualizza">
+                                <button onclick="viewContract("\${contract.id}")" class="text-blue-600 hover:text-blue-800" title="Visualizza">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="signContract('\${contract.id}")" class="text-purple-600 hover:text-purple-800" title="Firma Contratto">
+                                <button onclick="signContract("\${contract.id}")" class="text-purple-600 hover:text-purple-800" title="Firma Contratto">
                                     <i class="fas fa-signature"></i>
                                 </button>
-                                <button onclick="editContract('\${contract.id}")" class="text-green-600 hover:text-green-800" title="Modifica">
+                                <button onclick="editContract("\${contract.id}")" class="text-green-600 hover:text-green-800" title="Modifica">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteContract('\${contract.id}")" class="text-red-600 hover:text-red-800" title="Elimina">
+                                <button onclick="deleteContract("\${contract.id}")" class="text-red-600 hover:text-red-800" title="Elimina">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -3514,16 +3514,16 @@ export const data_dashboard = `<!DOCTYPE html>
             document.getElementById("signDigitalName").value = \`\${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}\`.trim();
             
             // Imposta data odierna
-            const today = new Date().toISOString().split('T")[0];
+            const today = new Date().toISOString().split("T")[0];
             document.getElementById("signDate").value = today;
             
             // Apri modale
-            document.getElementById("signContractModal").classList.remove('hidden");
+            document.getElementById("signContractModal").classList.remove("hidden");
             document.getElementById("signContractModal").style.display = 'flex";
         }
         
         function closeSignContractModal() {
-            document.getElementById("signContractModal").classList.add('hidden");
+            document.getElementById("signContractModal").classList.add("hidden");
             document.getElementById("signContractModal").style.display = 'none";
             document.getElementById("signContractForm").reset();
         }
@@ -3588,14 +3588,14 @@ export const data_dashboard = `<!DOCTYPE html>
         
         function openNewContractModal() {
             document.getElementById("newContractForm").reset();
-            document.getElementById("newContractModal").classList.remove('hidden");
+            document.getElementById("newContractModal").classList.remove("hidden");
             document.body.style.overflow = 'hidden";
             // Carica lista lead per dropdown
             loadLeadsForContract();
         }
         
         function closeNewContractModal() {
-            document.getElementById("newContractModal").classList.add('hidden");
+            document.getElementById("newContractModal").classList.add("hidden");
             document.body.style.overflow = 'auto";
         }
         
@@ -3609,7 +3609,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 select.innerHTML = '<option value="">Seleziona lead...</option>";
                 
                 leads.forEach(lead => {
-                    const option = document.createElement('option");
+                    const option = document.createElement("option");
                     option.value = lead.id;
                     option.textContent = \`\${escapeHtml(lead.nome)} \${escapeHtml(lead.cognome)} - \${escapeHtml(lead.email)}\`;
                     select.appendChild(option);
@@ -3642,7 +3642,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 piano: piano,
                 importo_annuo: importo,
                 status: "DRAFT",
-                note: note || 'Piano: " + piano
+                note: note || "Piano: " + piano
             };
             
             try {
@@ -3675,23 +3675,23 @@ export const data_dashboard = `<!DOCTYPE html>
         async function nuovoAssistito() {
             try {
                 // Richiedi dati nuovo assistito
-                const nomeAssistito = prompt('Nome Assistito:");
+                const nomeAssistito = prompt("Nome Assistito:");
                 if (!nomeAssistito) return;
                 
-                const cognomeAssistito = prompt('Cognome Assistito:");
+                const cognomeAssistito = prompt("Cognome Assistito:");
                 if (!cognomeAssistito) return;
                 
-                const email = prompt('Email (opzionale):") || '";
-                const telefono = prompt('Telefono (opzionale):") || '";
-                const imei = prompt('IMEI Dispositivo (richiesto):");
+                const email = prompt("Email (opzionale):") || "";
+                const telefono = prompt("Telefono (opzionale):") || "";
+                const imei = prompt("IMEI Dispositivo (richiesto):");
                 if (!imei) {
                     alert("⚠️ IMEI è obbligatorio!");
                     return;
                 }
                 
-                const caregiverNome = prompt('Nome Caregiver (opzionale):") || '";
-                const caregiverCognome = prompt('Cognome Caregiver (opzionale):") || '";
-                const parentela = prompt('Parentela Caregiver (opzionale, es: figlia, figlio):") || '";
+                const caregiverNome = prompt("Nome Caregiver (opzionale):") || "";
+                const caregiverCognome = prompt("Cognome Caregiver (opzionale):") || "";
+                const parentela = prompt("Parentela Caregiver (opzionale, es: figlia, figlio):") || "";
                 
                 // Crea assistito
                 const response = await fetch("/api/assistiti', {
@@ -3894,32 +3894,32 @@ export const workflow_manager = `<!DOCTYPE html>
                 Stati Workflow TeleMedCare
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div onclick="openArchive('leads")" class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("leads")" class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-user-plus text-3xl text-blue-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">1. Lead</h4>
                     <p class="text-xs text-gray-600 mt-1">Acquisizione contatto</p>
                 </div>
-                <div onclick="openArchive('contratti")" class="border-2 border-green-200 bg-green-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("contratti")" class="border-2 border-green-200 bg-green-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-file-contract text-3xl text-green-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">2. Contratto</h4>
                     <p class="text-xs text-gray-600 mt-1">Generazione PDF</p>
                 </div>
-                <div onclick="openArchive('firme")" class="border-2 border-purple-200 bg-purple-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("firme")" class="border-2 border-purple-200 bg-purple-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-signature text-3xl text-purple-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">3. Firma</h4>
                     <p class="text-xs text-gray-600 mt-1">Firma elettronica</p>
                 </div>
-                <div onclick="openArchive('proforma")" class="border-2 border-yellow-200 bg-yellow-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("proforma")" class="border-2 border-yellow-200 bg-yellow-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-file-invoice text-3xl text-yellow-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">4. Proforma</h4>
                     <p class="text-xs text-gray-600 mt-1">Generazione fattura</p>
                 </div>
-                <div onclick="openArchive('pagamenti")" class="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("pagamenti")" class="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-credit-card text-3xl text-orange-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">5. Pagamento</h4>
                     <p class="text-xs text-gray-600 mt-1">Conferma bonifico</p>
                 </div>
-                <div onclick="openArchive('attivi")" class="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
+                <div onclick="openArchive("attivi")" class="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all">
                     <i class="fas fa-check-circle text-3xl text-indigo-600 mb-2"></i>
                     <h4 class="font-bold text-sm text-gray-800">6. Attivazione</h4>
                     <p class="text-xs text-gray-600 mt-1">Servizio attivo</p>
@@ -4103,7 +4103,7 @@ export const workflow_manager = `<!DOCTYPE html>
         async function loadWorkflows() {
             // Previeni chiamate multiple simultanee
             if (isLoading) {
-                console.log('Caricamento già in corso, skip...");
+                console.log("Caricamento già in corso, skip...");
                 return;
             }
             
@@ -4290,7 +4290,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         title = '✅ SERVIZI ATTIVI";
                         break;
                     default:
-                        alert('⚠️ Archivio non riconosciuto");
+                        alert("⚠️ Archivio non riconosciuto");
                         return;
                 }
                 
@@ -4333,7 +4333,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     message += 'Primi 10 record:\\n\\n";
                     items.slice(0, 10).forEach((item, idx) => {
                         if (type === 'leads' || type === 'attivi") {
-                            const status = item.status || 'NUOVO";
+                            const status = item.status || "NUOVO"
                             const statusText = status === 'ACTIVE' ? '✅ ATTIVO' : 
                                              status === 'CONVERTED' ? '✓ CONVERTITO' :
                                              status === 'CONTRACT_SIGNED' ? '✍️ FIRMATO' : '🆕 NUOVO";
@@ -4362,22 +4362,22 @@ export const workflow_manager = `<!DOCTYPE html>
         function quickAction(leadId, action) {
             const lead = allLeads.find(l => l.id === leadId);
             if (!lead) {
-                alert('❌ Lead non trovato");
+                alert("❌ Lead non trovato");
                 return;
             }
             
             switch(action) {
                 case 'view':
                     // Mostra dettagli completi del lead
-                    const piano = (lead.note && lead.note.includes('Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
+                    const piano = (lead.note && lead.note.includes("Piano: AVANZATO")) ? 'AVANZATO' : 'BASE";
                     const prezzo = piano === "AVANZATO" ? '€840' : '€480";
-                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || '") + '\n\n📧 Email: ' + (lead.email || "N/A") + '\n📞 Telefono: ' + (lead.telefono || "N/A") + '\n🏥 Servizio: ' + (lead.servizio || 'eCura PRO") + '\n📋 Piano: " + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString(\'it-IT\") + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || 'Nessuna nota"));
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || '") + '\n\n📧 Email: ' + (lead.email || "N/A") + '\n📞 Telefono: ' + (lead.telefono || "N/A") + '\n🏥 Servizio: ' + (lead.servizio || "eCura PRO") + '\n📋 Piano: " + piano + ' (' + prezzo + '/anno)\n📅 Creato: ' + new Date(lead.created_at).toLocaleDateString(\'it-IT\") + '\n📍 Stato: ' + getWorkflowStatus(lead).text + '\n🔄 Step: ' + getWorkflowStep(lead).text + '\n\n📝 Note: ' + (lead.note || "Nessuna nota"));
                     break;
                     
                 case 'contract':
                     // Pre-compila modale firma contratto
-                    const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || '"));
-                    const emailSafe = escapeQuotes(lead.email || '");
+                    const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || ""));
+                    const emailSafe = escapeQuotes(lead.email || "");
                     if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?\`)) {
                         document.getElementById("signContractId").value = lead.id;
                         document.getElementById("signDigital").value = nomeCompleto;
@@ -4387,8 +4387,8 @@ export const workflow_manager = `<!DOCTYPE html>
                     
                 case 'payment':
                     // Pre-compila modale pagamento
-                    const nomeCompletoPayment = escapeQuotes((lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || '"));
-                    const emailSafePayment = escapeQuotes(lead.email || '");
+                    const nomeCompletoPayment = escapeQuotes((lead.nomeRichiedente || '") + ' ' + (lead.cognomeRichiedente || ""));
+                    const emailSafePayment = escapeQuotes(lead.email || "");
                     if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
                         fetch("/api/proforma?lead_id=' + lead.id)
@@ -4400,38 +4400,38 @@ export const workflow_manager = `<!DOCTYPE html>
                                     document.getElementById("paymentAmount").value = proforma.importo;
                                     openPaymentModal();
                                 } else {
-                                    alert('⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.");
+                                    alert("⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.");
                                 }
                             })
                             .catch(err => {
                                 console.error('Errore caricamento proforma:', err);
-                                alert('❌ Errore nel caricamento della proforma.\\n\\nInserisci manualmente i dati.");
+                                alert("❌ Errore nel caricamento della proforma.\\n\\nInserisci manualmente i dati.");
                                 openPaymentModal();
                             });
                     }
                     break;
                     
                 default:
-                    alert('⚠️ Azione non riconosciuta");
+                    alert("⚠️ Azione non riconosciuta");
             }
         }
 
         // Modal functions
         function openSignModal() {
-            document.getElementById("signModal").classList.add('active");
+            document.getElementById("signModal").classList.add("active");
         }
 
         function closeSignModal() {
-            document.getElementById("signModal").classList.remove('active");
+            document.getElementById("signModal").classList.remove("active");
             document.getElementById("signForm").reset();
         }
 
         function openPaymentModal() {
-            document.getElementById("paymentModal").classList.add('active");
+            document.getElementById("paymentModal").classList.add("active");
         }
 
         function closePaymentModal() {
-            document.getElementById("paymentModal").classList.remove('active");
+            document.getElementById("paymentModal").classList.remove("active");
             document.getElementById("paymentForm").reset();
         }
 
@@ -4443,7 +4443,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 e.preventDefault();
                 
                 const contractId = document.getElementById("signContractId").value;
-                const firmaDigitale = document.getElementById("signDigital").value || 'Firma Manuale";
+                const firmaDigitale = document.getElementById("signDigital").value || "Firma Manuale";
                 const notes = document.getElementById("signNotes").value;
                 
                 try {
@@ -4461,7 +4461,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Firma registrata con successo!\\n\\nProforma generata e inviata.;
+                        alert("✅ Firma registrata con successo!\\n\\nProforma generata e inviata.;
                         closeSignModal();
                         refreshWorkflows();
                     } else {
@@ -4481,7 +4481,7 @@ export const workflow_manager = `<!DOCTYPE html>
             
             const proformaId = document.getElementById("paymentProformaId").value;
             const importo = parseFloat(document.getElementById("paymentAmount").value);
-            const transactionId = document.getElementById("paymentTransactionId").value || 'MANUAL_PAYMENT";
+            const transactionId = document.getElementById("paymentTransactionId").value || "MANUAL_PAYMENT";
             const notes = document.getElementById("paymentNotes").value;
             
             try {
