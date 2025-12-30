@@ -3437,7 +3437,12 @@ export const data_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString('it-IT') + '\n📊 Status: ' + (contract.status || 'N/A'));
+            alert(\`📄 CONTRATTO: \${contract.codice_contratto || contract.id}
+
+👤 Cliente: \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}
+💰 Importo: €\${contract.prezzo_totale || 'N/A'}
+📅 Data: \${new Date(contract.created_at).toLocaleDateString('it-IT')}
+📊 Status: \${contract.status || 'N/A'}\`);
         }
         
         async function editContract(contractId) {
