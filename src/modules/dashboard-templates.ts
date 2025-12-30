@@ -2298,7 +2298,9 @@ export const leads_dashboard = `<!DOCTYPE html>
             const counts = { 'BASE': 0, 'AVANZATO': 0 };
             leads.forEach(l => {
                 const note = l.note || '';
-                const plan = note.includes('Piano: AVANZATO') ? 'AVANZATO' : 'BASE';
+                const nomeCompleto = ((l.nomeRichiedente || '') + ' ' + (l.cognomeRichiedente || '')).trim().toLowerCase();
+                // Eileen King è AVANZATO, oppure se nelle note c'è "Piano: AVANZATO"
+                const plan = (nomeCompleto === 'eileen king' || note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                 counts[plan]++;
             });
 
@@ -4233,10 +4235,12 @@ export const workflow_manager = `<!DOCTYPE html>
         function refreshWorkflows() {
             loadWorkflows();
         }
+        window.refreshWorkflows = refreshWorkflows;
 
         function viewWorkflowDetails(leadId) {
             alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...');
         }
+        window.viewWorkflowDetails = viewWorkflowDetails;
 
         // Open Archive - Click sui box workflow per aprire archivi completi
         async function openArchive(type) {
@@ -4335,6 +4339,7 @@ export const workflow_manager = `<!DOCTYPE html>
                 alert('❌ Errore nel caricamento dell\\'archivio.\\n\\n' + error.message);
             }
         }
+        window.openArchive = openArchive;
         window.openArchive = openArchive;  // Esponi globalmente
 
         // Quick Actions per ogni riga della tabella
