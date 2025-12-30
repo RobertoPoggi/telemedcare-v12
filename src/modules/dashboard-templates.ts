@@ -2496,7 +2496,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure;
+                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure');
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert('❌ Errore: ' + result.error);
@@ -2650,7 +2650,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead creato con successo!\\n\\nID: ' + result.leadId || result.id);
+                    alert('✅ Lead creato con successo!\\n\\nID: ' + (result.leadId || result.id));
                     closeModal('newLeadModal');
                     document.getElementById('newLeadForm').reset();
                     // Ricarica la pagina per aggiornare i dati
@@ -3421,7 +3421,7 @@ export const data_dashboard = `<!DOCTYPE html>
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + (contractId);
+            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + contractId);
         }
         
         async function deleteContract(contractId) {
@@ -3441,7 +3441,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     loadData();
                 } else {
                     if (result.isSigned) {
-                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.;
+                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.');
                     } else {
                         alert('❌ Errore: ' + result.error);
                     }
