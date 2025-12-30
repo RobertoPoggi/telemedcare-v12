@@ -1385,29 +1385,29 @@ export const dashboard = `<!DOCTYPE html>
         
         async function viewAssistito(id) {
             try {
-                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const response = await fetch('/api/assistiti?id=' + id);
                 const data = await response.json();
                 
                 if (data.success && data.assistiti && data.assistiti.length > 0) {
                     const assistito = data.assistiti[0];
                     
                     // Mostra modal dettagli assistito
-                    alert(\`📋 Dettagli Assistito\\n\\n\` +
-                        \`Nome: \${assistito.nome_assistito} \${assistito.cognome_assistito}\\n\` +
-                        \`Caregiver: \${assistito.nome_caregiver || 'N/A'} \${assistito.cognome_caregiver || ''}\\n\` +
-                        \`Parentela: \${assistito.parentela_caregiver || 'N/A'}\\n\` +
-                        \`IMEI: \${assistito.imei}\\n\` +
-                        \`Email: \${assistito.email || 'N/A'}\\n\` +
-                        \`Telefono: \${assistito.telefono || 'N/A'}\\n\` +
-                        \`Piano: \${assistito.piano || 'BASE'}\\n\` +
-                        \`Contratto: \${assistito.codice_contratto || 'Nessuno'}\\n\` +
-                        \`Status: \${assistito.contratto_status || assistito.status}\`
+                    alert('📋 Dettagli Assistito\\n\\n' +
+                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
+                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
+                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
+                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
+                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
+                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
+                        'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
+                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
+                        'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
                     );
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert(\`❌ Errore: \${error.message}\`);
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.viewAssistito = viewAssistito;  // Esponi globalmente
@@ -2638,29 +2638,29 @@ export const leads_dashboard = `<!DOCTYPE html>
         
         async function viewAssistito(id) {
             try {
-                const response = await fetch(\`/api/assistiti?id=\${id}\`);
+                const response = await fetch('/api/assistiti?id=' + id);
                 const data = await response.json();
                 
                 if (data.success && data.assistiti && data.assistiti.length > 0) {
                     const assistito = data.assistiti[0];
                     
                     // Mostra modal dettagli assistito
-                    alert(\`📋 Dettagli Assistito\\n\\n\` +
-                        \`Nome: \${assistito.nome_assistito} \${assistito.cognome_assistito}\\n\` +
-                        \`Caregiver: \${assistito.nome_caregiver || 'N/A'} \${assistito.cognome_caregiver || ''}\\n\` +
-                        \`Parentela: \${assistito.parentela_caregiver || 'N/A'}\\n\` +
-                        \`IMEI: \${assistito.imei}\\n\` +
-                        \`Email: \${assistito.email || 'N/A'}\\n\` +
-                        \`Telefono: \${assistito.telefono || 'N/A'}\\n\` +
-                        \`Piano: \${assistito.piano || 'BASE'}\\n\` +
-                        \`Contratto: \${assistito.codice_contratto || 'Nessuno'}\\n\` +
-                        \`Status: \${assistito.contratto_status || assistito.status}\`
+                    alert('📋 Dettagli Assistito\\n\\n' +
+                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
+                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
+                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
+                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
+                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
+                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
+                        'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
+                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
+                        'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
                     );
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert(\`❌ Errore: \${error.message}\`);
+                alert('❌ Errore: ' + error.message);
             }
         }
         window.viewAssistito = viewAssistito;  // Esponi globalmente
