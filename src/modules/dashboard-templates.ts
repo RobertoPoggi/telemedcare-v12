@@ -1426,7 +1426,7 @@ export const dashboard = `<!DOCTYPE html>
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.viewAssistito = viewAssistito;  // Esponi globalmente
@@ -1476,13 +1476,13 @@ export const dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert("❌ Errore: " + result.error);
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1509,10 +1509,10 @@ export const dashboard = `<!DOCTYPE html>
                     alert('✅ Assistito ' + nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -1562,7 +1562,7 @@ export const dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 console.error('Errore editAssistito:', error);
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -1627,11 +1627,11 @@ export const dashboard = `<!DOCTYPE html>
                     closeModal('editAssistitoModal');
                     loadDashboardData();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                     console.error('❌ Dettagli errore:', result);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
                 console.error('❌ Errore catch:', error);
             }
         }
@@ -2263,7 +2263,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 renderLeadsTable(allLeads);
 
             } catch (error) {
-                console.error('Errore caricamento leads:', error);
+                console.error("Errore caricamento leads:", error);
                 document.getElementById('leadsTableBody').innerHTML = \`
                     <tr>
                         <td colspan="9" class="py-8 text-center text-red-500">
@@ -2523,10 +2523,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + (result.contractCode || 'N/A') + '\\nTemplate: email_invio_contratto');
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
 
@@ -2547,10 +2547,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure');
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
 
@@ -2622,10 +2622,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     closeModal('editLeadModal');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
         
@@ -2645,10 +2645,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Lead eliminato con successo!');
                     loadLeads();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
         
@@ -2708,7 +2708,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 console.error('❌ Errore creazione lead:', error);
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
         
@@ -2738,7 +2738,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.viewAssistito = viewAssistito;  // Esponi globalmente
@@ -2788,13 +2788,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         alert('✅ Assistito aggiornato con successo!');
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert("❌ Errore: " + result.error);
                     }
                 } else {
                     alert('❌ Assistito non trovato');
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.editAssistito = editAssistito;  // Esponi globalmente
@@ -2815,10 +2815,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Assistito ' + nome + ' eliminato con successo!');
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
@@ -3277,13 +3277,13 @@ export const data_dashboard = `<!DOCTYPE html>
             try {
                 // Carica lead per calcolare statistiche reali
                 const leadsResponse = await fetch('/api/leads?limit=200');
-                if (!leadsResponse.ok) throw new Error('Errore caricamento leads');
+                if (!leadsResponse.ok) throw new Error("Errore caricamento leads");
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
                 
                 // Carica contratti REALI
                 const contractsResponse = await fetch('/api/contratti?limit=100');
-                if (!contractsResponse.ok) throw new Error('Errore caricamento contratti');
+                if (!contractsResponse.ok) throw new Error("Errore caricamento contratti");
                 const contractsData = await contractsResponse.json();
                 const contracts = contractsData.contratti || [];
                 allContracts = contracts; // Salva per uso nelle funzioni CRUD
@@ -3318,8 +3318,8 @@ export const data_dashboard = `<!DOCTYPE html>
                 renderContractsTable(contracts, leads);
 
             } catch (error) {
-                console.error('Errore caricamento data dashboard:', error);
-                alert('⚠️ Errore caricamento Data Dashboard:\\n\\n' + error.message + '\\n\\nRicarica la pagina.');
+                console.error("Errore caricamento data dashboard:", error);
+                alert("⚠️ Errore caricamento Data Dashboard:\n\n" + error.message + "\n\nRicarica la pagina.");
             }
         }
 
@@ -3333,7 +3333,7 @@ export const data_dashboard = `<!DOCTYPE html>
 
             // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali
             contracts.forEach(contract => {
-                const isAvanzato = contract.piano === 'AVANZATO' || (contract.note && contract.note.includes('AVANZATO'));
+                const isAvanzato = contract.piano === "AVANZATO" || (contract.note && contract.note.includes("AVANZATO"));
                 if (isAvanzato) {
                     data.PRO.avanzato++;
                 } else {
@@ -3461,15 +3461,15 @@ export const data_dashboard = `<!DOCTYPE html>
         async function viewContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato');
+                alert("❌ Contratto non trovato");
                 return;
             }
             
-            alert('📄 CONTRATTO: ' + (contract.codice_contratto || contract.id) + '\n\n👤 Cliente: ' + (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '') + '\n💰 Importo: €' + (contract.prezzo_totale || 'N/A') + '\n📅 Data: ' + new Date(contract.created_at).toLocaleDateString(\'it-IT\') + '\n📊 Status: ' + (contract.status || 'N/A'));
+            alert("📄 CONTRATTO: " + (contract.codice_contratto || contract.id) + "\n\n👤 Cliente: " + (contract.cliente_nome || "") + " " + (contract.cliente_cognome || "") + "\n💰 Importo: €" + (contract.prezzo_totale || "N/A") + "\n📅 Data: " + new Date(contract.created_at).toLocaleDateString("it-IT") + "\n📊 Status: " + (contract.status || "N/A"));
         }
         
         async function editContract(contractId) {
-            alert('⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/' + contractId);
+            alert("⚠️ Funzione Edit Contratto in sviluppo.\\n\\nPer ora puoi modificare i contratti tramite API:\\nPUT /api/contratti/" + contractId);
         }
         
         async function deleteContract(contractId) {
@@ -3479,23 +3479,23 @@ export const data_dashboard = `<!DOCTYPE html>
             
             try {
                 const response = await fetch(\`/api/contratti/\${contractId}\`, {
-                    method: 'DELETE'
+                    method: "DELETE"
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto eliminato con successo!');
+                    alert("✅ Contratto eliminato con successo!");
                     loadData();
                 } else {
                     if (result.isSigned) {
-                        alert('❌ Impossibile eliminare un contratto FIRMATO.\\n\\nPer motivi legali, i contratti firmati non possono essere eliminati.');
+                        alert("❌ Impossibile eliminare un contratto FIRMATO.\n\nPer motivi legali, i contratti firmati non possono essere eliminati.");
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert("❌ Errore: " + result.error);
                     }
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
         
@@ -3506,7 +3506,7 @@ export const data_dashboard = `<!DOCTYPE html>
         function signContract(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato');
+                alert("❌ Contratto non trovato");
                 return;
             }
             
@@ -3559,24 +3559,24 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto firmato con successo!\\n\\n📄 Proforma generata e inviata al cliente.');
+                    alert("✅ Contratto firmato con successo!\n\n📄 Proforma generata e inviata al cliente.");
                     closeSignContractModal();
                     loadDataDashboard(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         });
         } else {
-            console.warn('⚠️ Elemento signContractForm non trovato - firma contratto non disponibile');
+            console.warn("⚠️ Elemento signContractForm non trovato - firma contratto non disponibile");
         }
         
         async function viewContractPDF(contractId) {
             const contract = allContracts.find(c => c.id === contractId);
             if (!contract) {
-                alert('❌ Contratto non trovato');
+                alert("❌ Contratto non trovato");
                 return;
             }
             
@@ -3618,7 +3618,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error('Errore caricamento leads:', error);
+                console.error("Errore caricamento leads:", error);
             }
         }
         
@@ -3628,12 +3628,12 @@ export const data_dashboard = `<!DOCTYPE html>
             const note = document.getElementById('newContractNote').value;
             
             if (!leadId) {
-                alert('⚠️ Seleziona un lead');
+                alert("⚠️ Seleziona un lead");
                 return;
             }
             
             if (!piano) {
-                alert('⚠️ Seleziona un piano');
+                alert("⚠️ Seleziona un piano");
                 return;
             }
             
@@ -3658,14 +3658,14 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto creato con successo!\\n\\nCodice: ' + (result.contract.codice_contratto || result.contract.id) + '\\nImporto: €' + importo + '/anno\\nPiano: ' + piano);
+                    alert("✅ Contratto creato con successo!\n\nCodice: " + (result.contract.codice_contratto || result.contract.id) + "\nImporto: €" + importo + "/anno\nPiano: " + piano);
                     closeNewContractModal();
                     loadDataDashboard(); // Ricarica la pagina
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
 
@@ -3688,7 +3688,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 const telefono = prompt('Telefono (opzionale):') || '';
                 const imei = prompt('IMEI Dispositivo (richiesto):');
                 if (!imei) {
-                    alert('⚠️ IMEI è obbligatorio!');
+                    alert("⚠️ IMEI è obbligatorio!");
                     return;
                 }
                 
@@ -3716,13 +3716,13 @@ export const data_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Assistito ' + nomeAssistito + ' ' + cognomeAssistito + ' creato con successo!');
+                    alert("✅ Assistito " + nomeAssistito + " " + cognomeAssistito + " creato con successo!");
                     loadDashboardData(); // Ricarica dashboard
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore: ' + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
         
@@ -4468,10 +4468,10 @@ export const workflow_manager = `<!DOCTYPE html>
                         closeSignModal();
                         refreshWorkflows();
                     } else {
-                        alert('❌ Errore: ' + result.error);
+                        alert("❌ Errore: " + result.error);
                     }
                 } catch (error) {
-                    alert('❌ Errore di comunicazione: ' + error.message);
+                    alert("❌ Errore di comunicazione: " + error.message);
                 }
             });
         }
@@ -4507,10 +4507,10 @@ export const workflow_manager = `<!DOCTYPE html>
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    alert("❌ Errore: " + result.error);
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         });
         }
