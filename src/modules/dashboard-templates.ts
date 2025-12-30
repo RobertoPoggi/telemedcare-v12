@@ -3258,7 +3258,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 if (!contractsResponse.ok) throw new Error('Errore caricamento contratti');
                 const contractsData = await contractsResponse.json();
                 console.log('📊 Contratti ricevuti dall API:', contractsData);
-                const contracts = contractsData.contracts || contractsData.contratti || [];
+                console.log('🔑 Chiavi oggetto risposta:', Object.keys(contractsData));
+                console.log('📦 Tipo di contractsData:', typeof contractsData, Array.isArray(contractsData) ? 'È un array' : 'Non è un array');
+                const contracts = contractsData.contracts || contractsData.contratti || contractsData.data || [];
                 console.log('📋 Array contratti dopo parsing:', contracts, 'Lunghezza:', contracts.length);
                 allContracts = contracts; // Salva per uso nelle funzioni CRUD
                 
