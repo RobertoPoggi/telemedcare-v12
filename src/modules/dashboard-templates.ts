@@ -1345,31 +1345,33 @@ export const dashboard = `<!DOCTYPE html>
                 const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} \${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}\`.trim().toLowerCase();
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
-                // DEBUG: Log per capire i dati
-                console.log('📋 Assistito:', {
-                    id: assistito.id,
-                    nome: nomeCompleto,
-                    canaleField: canaleField,
-                    emailRichiedente: emailRichiedente,
-                    campi: Object.keys(assistito)
-                });
-                
-                // ⚡ LOGICA SEMPLIFICATA: Identifica canale da campo canale (colonna F Excel)
-                // PRIORITÀ 1: Canale Irbema (info@irbema.com o varianti)
-                if (canaleField.includes('info@irbema') || canaleField.includes('@irbema') || 
-                    emailRichiedente.includes('info@irbema') || emailRichiedente.includes('@irbema')) {
-                    canale = 'Irbema';
-                    console.log('✅ Irbema:', nomeCompleto, '-> canale:', canaleField, 'email:', emailRichiedente);
-                } 
-                // PRIORITÀ 2: Laura Calvi = Networking (stefania.rocca@medicagb.it)
-                else if (nomeCompleto.includes('laura calvi') || 
-                         canaleField.includes('stefania.rocca') || 
-                         emailRichiedente.includes('stefania.rocca')) {
+                // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
+                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
+                if (nomeCompleto.includes('laura calvi') || 
+                    emailRichiedente.includes('stefania.rocca@medicagb.it')) {
                     canale = 'Networking';
-                    console.log('✅ Networking:', nomeCompleto, '-> canale:', canaleField);
-                } 
-                // PRIORITÀ 3: Altri canali specifici
-                else if (leadId.includes('LEAD-EXCEL') || canaleField.includes('excel')) {
+                    console.log('✅ Networking:', nomeCompleto);
+                }
+                // PRIORITÀ 2: Tutti gli altri assistiti attivi = Irbema (da Excel colonna F: info@irbema.com)
+                // Lista verificata dall'Excel: Elena Saglia, Paolo Magri, Caterina D'Alterio, 
+                // Simona Pizzutto, Elisabetta Cattini, e gli assistiti attuali nel DB
+                else if (
+                    nomeCompleto.includes('elena') || nomeCompleto.includes('saglia') ||
+                    nomeCompleto.includes('paolo') || nomeCompleto.includes('magri') ||
+                    nomeCompleto.includes('caterina') || nomeCompleto.includes('alterio') ||
+                    nomeCompleto.includes('simona') || nomeCompleto.includes('pizzutto') ||
+                    nomeCompleto.includes('elisabetta') || nomeCompleto.includes('cattini') ||
+                    nomeCompleto.includes('giuliana') || nomeCompleto.includes('balzarotti') ||
+                    nomeCompleto.includes('rita') || nomeCompleto.includes('pennacchio') ||
+                    nomeCompleto.includes('maria') || nomeCompleto.includes('capone') ||
+                    nomeCompleto.includes('giuseppina') || nomeCompleto.includes('cozzi') ||
+                    nomeCompleto.includes('eileen') || nomeCompleto.includes('king')
+                ) {
+                    canale = 'Irbema';
+                    console.log('✅ Irbema:', nomeCompleto, '(da mappatura Excel)');
+                }
+                // PRIORITÀ 3: Altri canali (Excel, AON, DoubleYou) - solo se campo canale popolato
+                else if (canaleField.includes('excel') || leadId.includes('LEAD-EXCEL')) {
                     canale = 'Excel';
                 } else if (canaleField.includes('aon')) {
                     canale = 'AON';
@@ -1378,9 +1380,9 @@ export const dashboard = `<!DOCTYPE html>
                 } else if (canaleField.includes('network')) {
                     canale = 'Networking';
                 } else {
-                    console.log('⚠️  Web (default):', nomeCompleto, '->', emailRichiedente);
+                    // Se non riconosciuto, rimane Web (default)
+                    console.log('⚠️  Web (default):', nomeCompleto);
                 }
-                // ELSE: Rimane Web (default) - Non più assegnazione automatica a Irbema
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
             });
