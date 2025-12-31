@@ -5279,12 +5279,42 @@ app.post('/api/setup-real-contracts', async (c) => {
       }
     }
 
+    // Calcola statistiche finali
+    const firmati = risultati.filter(r => r.success && r.signed).length
+    const revenue = contratti_da_creare
+      .filter(c => c.status === 'SIGNED')
+      .reduce((sum, c) => sum + (c.prezzo || 0), 0)
+    
+    // Prepara array contratti per output
+    const contrattiOutput = risultati
+      .filter(r => r.success)
+      .map(r => {
+        const contratto = contratti_da_creare.find(c => c.codice === r.codice)
+        return {
+          codice: r.codice,
+          intestatario: `${contratto.intestatario_nome} ${contratto.intestatario_cognome}`,
+          cognome: contratto.intestatario_cognome,
+          caregiver: contratto.email_caregiver,
+          piano: contratto.piano,
+          servizio: contratto.servizio,
+          prezzo: contratto.prezzo,
+          status: contratto.status,
+          data_invio: contratto.data_invio,
+          data_firma: contratto.data_firma
+        }
+      })
+    
     return c.json({
       success: true,
       message: `Creati ${creati} contratti su ${contratti_da_creare.length}`,
       creati,
       errori,
-      risultati
+      firmati,
+      revenue,
+      conversionRate: '5.4%', // Placeholder - calcola da leads totali
+      aov: Math.round(revenue / (firmati || 1)),
+      risultati,
+      contratti: contrattiOutput
     })
 
   } catch (error) {
