@@ -4921,8 +4921,8 @@ app.post('/api/setup-real-contracts', async (c) => {
       },
       {
         codice: 'CTR-PIZZUTTO-G-2025',
-        email_caregiver: 'info@tredilibreria.com',
-        cognome_fallback: 'Pizzutto', // Fallback: cerca per cognome se email non trovata
+        email_caregiver: 'simona.pizzutto@coopbarbarab.it',
+        cognome_fallback: 'Pizzutto', // Fallback se email non trovata
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
