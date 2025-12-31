@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crea Contratti nel Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .info-box {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        .info-box h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .contratti-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .contratti-list li {
+            padding: 8px 0;
+            color: #4a5568;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .contratti-list li:last-child {
+            border-bottom: none;
+        }
+        .contratti-list li strong {
+            color: #2d3748;
+            font-weight: 600;
+        }
+        .signed {
+            color: #48bb78;
+            font-weight: bold;
+        }
+        .sent {
+            color: #ed8936;
+            font-weight: bold;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #risultato {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        #risultato.success {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            color: #22543d;
+            display: block;
+        }
+        #risultato.error {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            color: #742a2a;
+            display: block;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dettagli {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #cbd5e0;
+        }
+        .dettaglio-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        .dettaglio-success {
+            border-left: 3px solid #48bb78;
+        }
+        .dettaglio-error {
+            border-left: 3px solid #fc8181;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Crea Contratti nel Database</h1>
+        <p class="subtitle">TeleMedCare V12.0 - Setup Contratti Reali</p>
+        
+        <div class="info-box">
+            <h3>📋 Contratti da Creare:</h3>
+            <ul class="contratti-list">
+                <li><strong>CTR-KING-2025</strong> - Eileen King (AVANZATO €840) - <span class="signed">FIRMATO 10/05</span></li>
+                <li><strong>CTR-BALZAROTTI-2025</strong> - Giuliana Balzarotti (BASE €480) - <span class="signed">FIRMATO 16/06</span></li>
+                <li><strong>CTR-PIZZUTTO-G-2025</strong> - Gianni Paolo Pizzutto (BASE €480) - <span class="signed">FIRMATO 15/05</span></li>
+                <li><strong>CTR-PENNACCHIO-2025</strong> - Rita Pennacchio (BASE €480) - <span class="signed">FIRMATO 14/05</span></li>
+                <li><strong>CTR-DALTERIO-2025</strong> - Caterina D'Alterio (BASE €480) - <span class="signed">FIRMATO 14/05</span></li>
+                <li><strong>CTR-COZZI-2025</strong> - Giuseppina Cozzi (BASE €480) - <span class="signed">FIRMATO 15/07</span></li>
+                <li><strong>CTR-POGGI-2025</strong> - Manuela Poggi (BASE €480) - <span class="sent">INVIATO 08/05 - NON FIRMATO</span></li>
+            </ul>
+        </div>
+
+        <button id="creaBtn" onclick="creaContratti()">
+            🚀 Crea Tutti i Contratti
+        </button>
+        
+        <div class="loader" id="loader"></div>
+        
+        <div id="risultato"></div>
+    </div>
+
+    <script>
+        async function creaContratti() {
+            const btn = document.getElementById('creaBtn');
+            const loader = document.getElementById('loader');
+            const risultato = document.getElementById('risultato');
+            
+            // Disabilita button e mostra loader
+            btn.disabled = true;
+            btn.textContent = '⏳ Creazione in corso...';
+            loader.style.display = 'block';
+            risultato.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/setup-real-contracts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                loader.style.display = 'none';
+                
+                if (data.success) {
+                    risultato.className = 'success';
+                    let html = `<h3>✅ ${data.message}</h3>`;
+                    html += `<p style="margin-top: 10px;">Contratti creati con successo: <strong>${data.creati}</strong></p>`;
+                    
+                    if (data.errori > 0) {
+                        html += `<p style="color: #ed8936;">⚠️ Errori: ${data.errori}</p>`;
+                    }
+                    
+                    if (data.risultati && data.risultati.length > 0) {
+                        html += '<div class="dettagli"><h4>Dettagli:</h4>';
+                        data.risultati.forEach(r => {
+                            const classe = r.success ? 'dettaglio-success' : 'dettaglio-error';
+                            const icona = r.success ? '✅' : '❌';
+                            html += `<div class="dettaglio-item ${classe}">`;
+                            html += `${icona} <strong>${r.codice}</strong>`;
+                            if (r.success) {
+                                html += ` - Lead ID: ${r.leadId}`;
+                            } else {
+                                html += ` - ${r.error}`;
+                            }
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                    }
+                    
+                    html += '<p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #cbd5e0;">';
+                    html += '🔗 Verifica su: <a href="/admin/data-dashboard" style="color: #667eea; font-weight: bold;">Data Dashboard</a>';
+                    html += '</p>';
+                    
+                    risultato.innerHTML = html;
+                    btn.textContent = '✅ Contratti Creati!';
+                } else {
+                    risultato.className = 'error';
+                    risultato.innerHTML = `<h3>❌ Errore</h3><p>${data.error}</p>`;
+                    if (data.details) {
+                        risultato.innerHTML += `<p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">${data.details}</p>`;
+                    }
+                    btn.textContent = '❌ Errore - Riprova';
+                    btn.disabled = false;
+                }
+                
+            } catch (error) {
+                loader.style.display = 'none';
+                risultato.className = 'error';
+                risultato.innerHTML = `<h3>❌ Errore di Connessione</h3><p>${error.message}</p>`;
+                btn.textContent = '❌ Errore - Riprova';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

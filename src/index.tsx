@@ -4886,6 +4886,199 @@ app.get('/api/contratti', async (c) => {
   }
 })
 
+// POST /api/setup-real-contracts - CREA DIRETTAMENTE I 7 CONTRATTI NEL DATABASE
+app.post('/api/setup-real-contracts', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const contratti_da_creare = [
+      {
+        codice: 'CTR-KING-2025',
+        email_caregiver: 'elenasaglia@hotmail.com',
+        tipo: 'AVANZATO',
+        piano: 'AVANZATO',
+        prezzo: 840,
+        data_invio: '2025-05-08',
+        data_firma: '2025-05-10',
+        status: 'SIGNED',
+        pdf: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza Avanzato SIDLY FIRMATO_Eileen King.pdf',
+        note: 'Assistito: Eileen King - Caregiver: Elena Saglia (figlia) - Contratto AVANZATO firmato 10/05/2025'
+      },
+      {
+        codice: 'CTR-BALZAROTTI-2025',
+        email_caregiver: 'paolo@paolomagri.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-06-13',
+        data_firma: '2025-06-16',
+        status: 'SIGNED',
+        pdf: '/contratti/13.06.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE - Paolo Magri.pdf',
+        note: 'Assistito: Giuliana Balzarotti - Caregiver: Paolo Magri (figlio) - Contratto BASE firmato 16/06/2025'
+      },
+      {
+        codice: 'CTR-PIZZUTTO-G-2025',
+        email_caregiver: 'info@tredilibreria.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-05-08',
+        data_firma: '2025-05-15',
+        status: 'SIGNED',
+        pdf: '/contratti/12.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Gianni Paolo Pizzutto_firmato.pdf',
+        note: 'Assistito: Gianni Paolo Pizzutto - Caregiver: Simona Pizzutto (figlia) - Contratto BASE firmato 15/05/2025'
+      },
+      {
+        codice: 'CTR-PENNACCHIO-2025',
+        email_caregiver: 'caterinadalterio108@gmail.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-05-08',
+        data_firma: '2025-05-14',
+        status: 'SIGNED',
+        pdf: '/contratti/12.05.2025_Contratto firmato SIDLY BASE_Pennacchio Rita - Contratto firmato.pdf',
+        note: 'Assistito: Rita Pennacchio - Caregiver: Caterina D\'Alterio - Contratto BASE firmato 14/05/2025'
+      },
+      {
+        codice: 'CTR-DALTERIO-2025',
+        email_caregiver: 'caterinadalterio108@gmail.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-05-08',
+        data_firma: '2025-05-14',
+        status: 'SIGNED',
+        pdf: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Sig.ra Caterina D\'Alterio .pdf',
+        note: 'Assistito: Caterina D\'Alterio - Contratto BASE firmato 14/05/2025'
+      },
+      {
+        codice: 'CTR-COZZI-2025',
+        email_caregiver: 'elisabettacattini@gmail.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-07-10',
+        data_firma: '2025-07-15',
+        status: 'SIGNED',
+        pdf: '/contratti/Contratto_Giuseppina_Cozzi.pdf',
+        note: 'Assistito: Giuseppina Cozzi - Caregiver: Elisabetta Cattini (figlia) - Contratto BASE firmato 15/07/2025'
+      },
+      {
+        codice: 'CTR-POGGI-2025',
+        email_caregiver: 'manuela.poggi1@icloud.com',
+        tipo: 'BASE',
+        piano: 'BASE',
+        prezzo: 480,
+        data_invio: '2025-05-08',
+        data_firma: null,
+        status: 'SENT',
+        pdf: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza base SIDLY_Sig.ra Manuela Poggi.pdf',
+        note: 'Assistito: Manuela Poggi - Contratto BASE inviato 08/05/2025 - NON FIRMATO'
+      }
+    ]
+
+    const risultati = []
+    let creati = 0
+    let errori = 0
+
+    for (const contratto of contratti_da_creare) {
+      try {
+        // Trova il lead tramite email caregiver
+        const lead = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE LOWER(email) = LOWER(?)'
+        ).bind(contratto.email_caregiver).first()
+
+        if (!lead) {
+          risultati.push({
+            codice: contratto.codice,
+            success: false,
+            error: `Lead non trovato per email: ${contratto.email_caregiver}`
+          })
+          errori++
+          continue
+        }
+
+        // Genera ID univoco per il contratto
+        const contractId = `CONTRACT_${contratto.codice}_${Date.now()}`
+        const now = new Date().toISOString()
+
+        // Inserisci il contratto nel database
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, tipo_contratto, piano,
+            status, prezzo_totale, prezzo_mensile, durata_mesi,
+            data_invio, data_firma, pdf_url, note,
+            email_sent, pdf_generated, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          contractId,
+          lead.id,
+          contratto.codice,
+          contratto.tipo,
+          contratto.piano,
+          contratto.status,
+          contratto.prezzo,
+          Math.round(contratto.prezzo / 12),
+          12,
+          contratto.data_invio,
+          contratto.data_firma,
+          contratto.pdf,
+          contratto.note,
+          1,
+          1,
+          now,
+          now
+        ).run()
+
+        // Aggiorna status del lead
+        const newLeadStatus = contratto.status === 'SIGNED' ? 'CONTRACT_SIGNED' : 'CONTRACT_SENT'
+        await c.env.DB.prepare(
+          'UPDATE leads SET status = ?, updated_at = ? WHERE id = ?'
+        ).bind(newLeadStatus, now, lead.id).run()
+
+        risultati.push({
+          codice: contratto.codice,
+          success: true,
+          contractId: contractId,
+          leadId: lead.id,
+          email: contratto.email_caregiver
+        })
+        creati++
+
+        console.log(`✅ Contratto ${contratto.codice} creato per lead ${lead.id}`)
+
+      } catch (error) {
+        console.error(`❌ Errore creazione contratto ${contratto.codice}:`, error)
+        risultati.push({
+          codice: contratto.codice,
+          success: false,
+          error: error.message
+        })
+        errori++
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: `Creati ${creati} contratti su ${contratti_da_creare.length}`,
+      creati,
+      errori,
+      risultati
+    })
+
+  } catch (error) {
+    console.error('❌ Errore generale setup contratti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante la creazione dei contratti',
+      details: error.message
+    }, 500)
+  }
+})
+
 // ========================================
 // ENDPOINTS FLUSSO OPERATIVO COMPLETO
 // ========================================
