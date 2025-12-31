@@ -2464,9 +2464,16 @@ export const leads_dashboard = `<!DOCTYPE html>
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
-                // Filtro Servizio: estrae PRO da "eCura PRO" o usa lead.servizio
-                const leadServizio = lead.servizio || (lead.tipoServizio || '').replace('eCura ', '').trim();
-                const matchServizio = !servizioFilter || leadServizio === servizioFilter;
+                // Filtro Servizio: cerca nel campo servizio o tipoServizio del DB
+                // Normalizza: "eCura PRO" -> "PRO", "eCura FAMILY" -> "FAMILY"
+                let leadServizio = lead.servizio || lead.tipoServizio || '';
+                
+                // Rimuovi "eCura " se presente per normalizzare
+                if (leadServizio.includes('eCura')) {
+                    leadServizio = leadServizio.replace(/eCura\s*/i, '').trim();
+                }
+                
+                const matchServizio = !servizioFilter || leadServizio.toUpperCase() === servizioFilter.toUpperCase();
                 
                 // Filtro Piano: cerca nelle note "Piano: AVANZATO" o default BASE
                 const leadPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
