@@ -4922,6 +4922,7 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-PIZZUTTO-G-2025',
         email_caregiver: 'info@tredilibreria.com',
+        cognome_fallback: 'Pizzutto', // Fallback: cerca per cognome se email non trovata
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
@@ -5012,15 +5013,26 @@ app.post('/api/setup-real-contracts', async (c) => {
     for (const contratto of contratti_da_creare) {
       try {
         // Trova il lead tramite email caregiver
-        const lead = await c.env.DB.prepare(
-          'SELECT id FROM leads WHERE LOWER(email) = LOWER(?)'
+        let lead = await c.env.DB.prepare(
+          'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(email) = LOWER(?)'
         ).bind(contratto.email_caregiver).first()
+
+        // Se non trovato via email, prova a cercare per cognome (fallback)
+        if (!lead && contratto.cognome_fallback) {
+          lead = await c.env.DB.prepare(
+            'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+          ).bind(contratto.cognome_fallback).first()
+          
+          if (lead) {
+            console.log(`⚠️ Lead ${contratto.codice} trovato via cognome fallback: ${lead.cognomeRichiedente} (${lead.email})`)
+          }
+        }
 
         if (!lead) {
           risultati.push({
             codice: contratto.codice,
             success: false,
-            error: `Lead non trovato per email: ${contratto.email_caregiver}`
+            error: `Lead non trovato per email: ${contratto.email_caregiver}${contratto.cognome_fallback ? ' né per cognome: ' + contratto.cognome_fallback : ''}`
           })
           errori++
           continue
