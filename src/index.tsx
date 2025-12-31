@@ -4902,7 +4902,6 @@ app.delete('/api/setup-real-contracts', async (c) => {
       'CTR-BALZAROTTI-2025',
       'CTR-PIZZUTTO-G-2025',
       'CTR-PENNACCHIO-2025',
-      'CTR-DALTERIO-2025',
       'CTR-COZZI-2025',
       'CTR-POGGI-2025',
       'CTR-DANDRAIA-2025',
@@ -5004,18 +5003,6 @@ app.post('/api/setup-real-contracts', async (c) => {
         status: 'SIGNED',
         pdf: '/contratti/12.05.2025_Contratto firmato SIDLY BASE_Pennacchio Rita - Contratto firmato.pdf',
         note: 'Assistito: Rita Pennacchio - Caregiver: Caterina D\'Alterio - Contratto BASE firmato 14/05/2025'
-      },
-      {
-        codice: 'CTR-DALTERIO-2025',
-        email_caregiver: 'caterinadalterio108@gmail.com',
-        tipo: 'BASE',
-        piano: 'BASE',
-        servizio: 'PRO',
-        data_invio: '2025-05-08',
-        data_firma: '2025-05-14',
-        status: 'SIGNED',
-        pdf: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Sig.ra Caterina D\'Alterio .pdf',
-        note: 'Assistito: Caterina D\'Alterio - Contratto BASE firmato 14/05/2025'
       },
       {
         codice: 'CTR-COZZI-2025',
@@ -6240,22 +6227,19 @@ app.get('/api/contratti/:id/download', async (c) => {
       })
     }
     
-    const contratto = await c.env.DB.prepare('SELECT * FROM contratti WHERE id = ?').bind(id).first()
+    const contratto = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?').bind(id).first()
     
     if (!contratto) {
       return c.json({ error: 'Contratto non trovato' }, 404)
     }
     
-    // Qui si integrerebbe il generatore PDF reale
-    // Per ora ritorniamo un mock PDF
-    const pdfContent = `Mock PDF per contratto ${contratto.codice}`
+    // Se esiste pdf_url, fai redirect al PDF
+    if (contratto.pdf_url) {
+      return c.redirect(contratto.pdf_url)
+    }
     
-    return new Response(pdfContent, {
-      headers: {
-        'Content-Type': 'application/pdf', 
-        'Content-Disposition': `attachment; filename="contratto-${contratto.codice}.pdf"`
-      }
-    })
+    // Altrimenti ritorna errore
+    return c.json({ error: 'PDF non disponibile per questo contratto' }, 404)
   } catch (error) {
     console.error('❌ Errore download contratto:', error)
     return c.json({ error: 'Errore download contratto' }, 500)

@@ -2565,6 +2565,15 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
             document.getElementById('editPiano').value = currentPiano;
+            
+            // Estrai servizio dalle note o usa default PRO
+            let currentServizio = 'PRO';
+            if (lead.note) {
+                if (lead.note.includes('Servizio: FAMILY') || lead.note.includes('eCura FAMILY')) currentServizio = 'FAMILY';
+                else if (lead.note.includes('Servizio: PREMIUM') || lead.note.includes('eCura PREMIUM')) currentServizio = 'PREMIUM';
+            }
+            document.getElementById('editServizio').value = currentServizio;
+            
             document.getElementById('editNote').value = lead.note || '';
             
             openModal('editLeadModal');
@@ -2572,11 +2581,16 @@ export const leads_dashboard = `<!DOCTYPE html>
         
         async function saveEditLead() {
             const leadId = document.getElementById('editLeadId').value;
+            const piano = document.getElementById('editPiano').value;
+            const servizio = document.getElementById('editServizio').value;
+            
             const formData = {
                 nome: document.getElementById('editNome').value,
                 cognome: document.getElementById('editCognome').value,
                 email: document.getElementById('editEmail').value,
                 telefono: document.getElementById('editTelefono').value,
+                piano: piano,
+                servizio: servizio,
                 note: document.getElementById('editNote').value
             };
             
@@ -2826,9 +2840,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Servizio *</label>
                             <select id="newServizio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">Seleziona servizio...</option>
-                                <option value="eCura PRO" selected>eCura PRO</option>
-                                <option value="eCura BASE">eCura BASE</option>
-                                <option value="eCura PREMIUM">eCura PREMIUM</option>
+                                <option value="FAMILY">eCura FAMILY</option>
+                                <option value="PRO" selected>eCura PRO</option>
+                                <option value="PREMIUM">eCura PREMIUM</option>
                             </select>
                         </div>
                         <div>
@@ -2957,6 +2971,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <select id="editPiano" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="BASE">BASE - €480/anno</option>
                             <option value="AVANZATO">AVANZATO - €840/anno</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
+                        <select id="editServizio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="FAMILY">eCura FAMILY</option>
+                            <option value="PRO" selected>eCura PRO</option>
+                            <option value="PREMIUM">eCura PREMIUM</option>
                         </select>
                     </div>
                     <div class="col-span-2">
@@ -3318,7 +3340,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 PREMIUM: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 }
             };
 
-            // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali
+            // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali (SOLO FIRMATI)
             contracts.forEach(contract => {
                 const isAvanzato = contract.piano === 'AVANZATO' || (contract.note && contract.note.includes('AVANZATO'));
                 if (isAvanzato) {
@@ -3327,8 +3349,8 @@ export const data_dashboard = `<!DOCTYPE html>
                     data.PRO.base++;
                 }
                 
-                // Somma revenue
-                if (contract.prezzo_totale) {
+                // Somma revenue SOLO se contratto FIRMATO
+                if (contract.status === 'SIGNED' && contract.prezzo_totale) {
                     data.PRO.revenue += parseFloat(contract.prezzo_totale);
                 }
             });
@@ -3403,7 +3425,7 @@ export const data_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">
-                                \${contract.status || 'SENT'}
+                                \${contract.status_italiano || contract.status || 'SENT'}
                             </span>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
@@ -3458,7 +3480,7 @@ export const data_dashboard = `<!DOCTYPE html>
 👤 Cliente: \${contract.cliente_nome || ''} \${contract.cliente_cognome || ''}
 💰 Importo: €\${contract.prezzo_totale || 'N/A'}
 📅 Data: \${new Date(contract.created_at).toLocaleDateString('it-IT')}
-📊 Status: \${contract.status || 'N/A'}\`);
+📊 Status: \${contract.status_italiano || contract.status || 'N/A'}\`);
         }
         
         async function editContract(contractId) {
