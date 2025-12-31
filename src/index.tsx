@@ -11477,26 +11477,33 @@ app.get('/admin/test-contratti', (c) => {
 
     <!-- Buttons -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-      <div class="flex gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <button 
-          id="btnDelete" 
-          onclick="deleteContracts()"
-          class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
-          🗑️ DELETE Contratti Esistenti
-        </button>
-        
-        <button 
-          id="btnCreate" 
-          onclick="createContracts()"
-          class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
-          ✅ POST Nuovi Contratti
+          id="btnSetupComplete" 
+          onclick="setupComplete()"
+          class="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl text-lg">
+          ⚡ SETUP COMPLETO (LEADS + CONTRATTI)
         </button>
         
         <button 
           id="btnAll" 
           onclick="runFullCycle()"
           class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
-          🚀 DELETE + POST (Ciclo Completo)
+          🚀 DELETE + POST Contratti
+        </button>
+        
+        <button 
+          id="btnDelete" 
+          onclick="deleteContracts()"
+          class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          🗑️ DELETE Contratti
+        </button>
+        
+        <button 
+          id="btnCreate" 
+          onclick="createContracts()"
+          class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          ✅ POST Contratti
         </button>
       </div>
     </div>
@@ -11711,6 +11718,136 @@ app.get('/admin/test-contratti', (c) => {
       } catch (deleteError) {
         log('❌ ERRORE DELETE:', 'text-red-400');
         log(deleteError.message, 'text-red-400');
+      }
+    }
+    
+    async function setupComplete() {
+      clearLog();
+      log('⚡ SETUP COMPLETO: LEADS + CONTRATTI', 'text-purple-400');
+      log('', '');
+      
+      // STEP 1: Crea 9 leads
+      log('1️⃣ Creazione 9 leads...', 'text-yellow-400');
+      
+      const leadsData = [
+        { id: 'LEAD-KING-2025', nomeRichiedente: 'Elena', cognomeRichiedente: 'Saglia', email: 'elenasaglia@hotmail.com', telefono: '3350000000', fonte: 'Excel', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Eileen King (madre)', piano: 'AVANZATO', canaleAcquisizione: 'Excel' },
+        { id: 'LEAD-BALZAROTTI-2025', nomeRichiedente: 'Paolo', cognomeRichiedente: 'Magri', email: 'paolo@paolomagri.com', telefono: '+41793311949', fonte: 'Excel', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Giuliana Balzarotti (madre)', piano: 'BASE', canaleAcquisizione: 'Excel' },
+        { id: 'LEAD-PIZZUTTO-2025', nomeRichiedente: 'Simona', cognomeRichiedente: 'Pizzutto', email: 'simonapizzutto.sp@gmail.com', telefono: '3450016665', fonte: 'Excel', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Gianni Paolo Pizzutto (padre)', piano: 'BASE', canaleAcquisizione: 'Excel' },
+        { id: 'LEAD-PENNACCHIO-2025', nomeRichiedente: 'Caterina', cognomeRichiedente: 'D\\\\'Alterio', email: 'caterinadalterio108@gmail.com', telefono: '3361234567', fonte: 'AON', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Rita Pennacchio', piano: 'BASE', canaleAcquisizione: 'AON' },
+        { id: 'LEAD-COZZI-2025', nomeRichiedente: 'Elisabetta', cognomeRichiedente: 'Cattini', email: 'elisabettacattini@gmail.com', telefono: '3371234567', fonte: 'Irbema', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Giuseppina Cozzi (madre)', piano: 'BASE', canaleAcquisizione: 'Irbema' },
+        { id: 'LEAD-POGGI-2025', nomeRichiedente: 'Manuela', cognomeRichiedente: 'Poggi', email: 'manuela.poggi1@icloud.com', telefono: '3351234567', fonte: 'Irbema', tipoServizio: 'eCura PRO', status: 'CONTRACT_SENT', note: 'Lead per contratto Manuela Poggi', piano: 'BASE', canaleAcquisizione: 'Irbema' },
+        { id: 'LEAD-DANDRAIA-2025', nomeRichiedente: 'Giovanni', cognomeRichiedente: 'Dandraia', email: 'dandraia.g@gmail.com', telefono: '3381234567', fonte: 'Excel', tipoServizio: 'eCura PRO', status: 'CONTRACT_SENT', note: 'Lead per contratto Giovanni Dandraia', piano: 'BASE', canaleAcquisizione: 'Excel' },
+        { id: 'LEAD-DESTRO-2025', nomeRichiedente: 'Ettore', cognomeRichiedente: 'Destro', email: 'ettoredestro@gmail.com', telefono: '3391234567', fonte: 'Excel', tipoServizio: 'eCura PRO', status: 'CONTRACT_SENT', note: 'Lead per contratto Ettore Destro - 2 Servizi AVANZATI', piano: 'AVANZATO', canaleAcquisizione: 'Excel' },
+        { id: 'LEAD-CAPONE-2025', nomeRichiedente: 'Giorgio', cognomeRichiedente: 'Riela', email: 'gr@ecotorino.it', telefono: '3301234567', fonte: 'DoubleYou', tipoServizio: 'eCura PRO', status: 'CONVERTED', note: 'Lead per contratto Maria Capone (madre)', piano: 'BASE', canaleAcquisizione: 'DoubleYou' }
+      ];
+      
+      try {
+        const leadsResponse = await fetch('/api/leads/import-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leads: leadsData })
+        });
+        
+        if (!leadsResponse.ok) {
+          throw new Error(\`Leads import failed: \${leadsResponse.status}\`);
+        }
+        
+        const leadsResult = await leadsResponse.json();
+        log(\`✅ Leads creati: \${leadsResult.imported || 0}\`, 'text-green-400');
+        log('', '');
+        log('⏳ Attesa 2 secondi prima di creare i contratti...', 'text-gray-400');
+        log('', '');
+        
+        // STEP 2: DELETE contratti esistenti
+        setTimeout(async () => {
+          log('2️⃣ DELETE contratti esistenti...', 'text-yellow-400');
+          
+          try {
+            const deleteResponse = await fetch('/api/setup-real-contracts', { 
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!deleteResponse.ok) {
+              throw new Error(\`DELETE failed: \${deleteResponse.status}\`);
+            }
+            
+            const deleteResult = await deleteResponse.json();
+            log(\`✅ DELETE completato - Rimossi: \${deleteResult.removed || 0}\`, 'text-green-400');
+            log('', '');
+            log('⏳ Attesa 2 secondi...', 'text-gray-400');
+            log('', '');
+            
+            // STEP 3: POST nuovi contratti
+            setTimeout(async () => {
+              log('3️⃣ POST nuovi contratti...', 'text-yellow-400');
+              
+              try {
+                const createResponse = await fetch('/api/setup-real-contracts', { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!createResponse.ok) {
+                  throw new Error(\`POST failed: \${createResponse.status}\`);
+                }
+                
+                const result = await createResponse.json();
+                log('✅ SETUP COMPLETO!', 'text-green-400');
+                log('', '');
+                log('═══════════════════════════════════════', 'text-cyan-400');
+                log('📊 RIEPILOGO FINALE', 'text-cyan-400');
+                log('═══════════════════════════════════════', 'text-cyan-400');
+                log(\`✓ Contratti creati:      \${result.creati}\`, 'text-green-400');
+                log(\`✗ Errori:                \${result.errori}\`, 'text-red-400');
+                log(\`📝 Contratti FIRMATI:    \${result.firmati}\`, 'text-green-400');
+                log(\`💰 REVENUE ANNUALE:      €\${result.revenue}\`, 'text-green-400');
+                log(\`📈 Conversion Rate:      \${result.conversionRate}\`, 'text-blue-400');
+                log(\`💵 AOV:                  €\${result.aov}\`, 'text-blue-400');
+                log('═══════════════════════════════════════', 'text-cyan-400');
+                
+                if (result.contratti) {
+                  log('', '');
+                  log('📋 CONTRATTI FIRMATI:', 'text-cyan-400');
+                  result.contratti
+                    .filter(c => c.status === 'SIGNED')
+                    .forEach((c, i) => {
+                      log(\`\${i + 1}. \${c.codice} - \${c.intestatario} - €\${c.prezzo}\`, 'text-green-400');
+                    });
+                  
+                  log('', '');
+                  log('📤 CONTRATTI INVIATI:', 'text-cyan-400');
+                  result.contratti
+                    .filter(c => c.status !== 'SIGNED')
+                    .forEach((c, i) => {
+                      log(\`\${i + 1}. \${c.codice} - \${c.intestatario} - €\${c.prezzo}\`, 'text-yellow-400');
+                    });
+                }
+                
+                log('', '');
+                log('✅ COMPLETATO! La pagina si ricaricherà tra 3 secondi...', 'text-green-400');
+                
+                setTimeout(() => {
+                  location.reload();
+                }, 3000);
+                
+              } catch (postError) {
+                log('❌ ERRORE POST contratti:', 'text-red-400');
+                log(postError.message, 'text-red-400');
+              }
+              
+            }, 2000);
+            
+          } catch (deleteError) {
+            log('❌ ERRORE DELETE:', 'text-red-400');
+            log(deleteError.message, 'text-red-400');
+          }
+          
+        }, 2000);
+        
+      } catch (leadsError) {
+        log('❌ ERRORE creazione leads:', 'text-red-400');
+        log(leadsError.message, 'text-red-400');
       }
     }
   </script>
