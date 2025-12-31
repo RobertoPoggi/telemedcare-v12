@@ -2346,12 +2346,24 @@ export const leads_dashboard = `<!DOCTYPE html>
                 channels[ch] = (channels[ch] || 0) + 1;
             });
             
+            // Debug: mostra tutti i canali trovati
+            console.log('📊 Canali rilevati:', channels);
+            
             // Mostra i canali reali aggregati
-            // Alcuni leads hanno: Irbema, AON, Excel, DoubleYou, ecc.
-            document.getElementById('channelWeb').textContent = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0);
-            document.getElementById('channelEmail').textContent = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
-            document.getElementById('channelPhone').textContent = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0);
-            document.getElementById('channelPartner').textContent = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0);
+            // Web: Website, EXCEL_IMPORT, Excel
+            // Email: EMAIL, Email
+            // Telefono: TELEFONO, Telefono, Phone
+            // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
+            
+            const webCount = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0) + (channels['Web'] || 0);
+            const emailCount = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
+            const phoneCount = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0) + (channels['Phone'] || 0);
+            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0);
+            
+            document.getElementById('channelWeb').textContent = webCount;
+            document.getElementById('channelEmail').textContent = emailCount;
+            document.getElementById('channelPhone').textContent = phoneCount;
+            document.getElementById('channelPartner').textContent = partnerCount;
         }
 
         function renderLeadsTable(leads) {
@@ -2452,8 +2464,13 @@ export const leads_dashboard = `<!DOCTYPE html>
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
-                const matchServizio = !servizioFilter || lead.tipoServizio === servizioFilter;
-                const matchPiano = !pianoFilter || '' === pianoFilter;
+                // Filtro Servizio: estrae PRO da "eCura PRO" o usa lead.servizio
+                const leadServizio = lead.servizio || (lead.tipoServizio || '').replace('eCura ', '').trim();
+                const matchServizio = !servizioFilter || leadServizio === servizioFilter;
+                
+                // Filtro Piano: cerca nelle note "Piano: AVANZATO" o default BASE
+                const leadPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                const matchPiano = !pianoFilter || leadPiano === pianoFilter;
                 
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
                 const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
@@ -2538,12 +2555,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
+            // Determina servizio (priorità: lead.servizio > lead.tipoServizio > default PRO)
+            const servizio = lead.servizio || lead.tipoServizio || 'PRO';
+            
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
             document.getElementById('viewEmail').textContent = lead.email || '-';
             document.getElementById('viewTelefono').textContent = lead.telefono || '-';
-            document.getElementById('viewServizio').textContent = lead.servizio || 'eCura PRO';
+            document.getElementById('viewServizio').textContent = 'eCura ' + servizio;
             document.getElementById('viewPiano').textContent = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');

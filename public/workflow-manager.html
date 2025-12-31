@@ -340,7 +340,7 @@
                         </td>
                         <td class="py-3 text-xs text-gray-500">${date}</td>
                         <td class="py-3">
-                            <button onclick='viewWorkflowDetails(${JSON.stringify(lead.leadId || lead.id)})' 
+                            <button onclick="viewWorkflowDetails('${(lead.leadId || lead.id).replace(/'/g, "\\'")}')" 
                                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded">
                                 <i class="fas fa-eye"></i> Dettagli
                             </button>
