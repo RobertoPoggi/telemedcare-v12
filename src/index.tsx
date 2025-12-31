@@ -4858,6 +4858,7 @@ app.get('/api/contratti', async (c) => {
         c.tipo_contratto as tipo,
         c.status,
         c.piano,
+        c.servizio,
         c.data_invio,
         c.prezzo_totale,
         c.created_at,

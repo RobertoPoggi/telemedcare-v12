@@ -3423,10 +3423,11 @@ export const data_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = contracts.map(contract => {
-                // Determina il piano dal lead associato
+                // Determina il piano dal contratto o dalle note del lead
                 const lead = leads.find(l => l.id === contract.lead_id);
-                const piano = (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                const prezzo = piano === 'AVANZATO' ? '840' : '480';
+                const piano = contract.piano || (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                const prezzo = contract.prezzo_totale || (piano === 'AVANZATO' ? '840' : '480');
+                const servizio = contract.servizio || 'eCura PRO'; // Legge dal DB o default
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
                 
                 return \`
@@ -3439,7 +3440,7 @@ export const data_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                eCura PRO
+                                \${servizio}
                             </span>
                         </td>
                         <td class="py-3">
