@@ -11450,4 +11450,273 @@ app.get('/admin/workflow-manager', (c) => {
   return c.html(workflow_manager)
 })
 
+// Route Test Contratti
+app.get('/admin/test-contratti', (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  return c.html(`<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Caricamento Contratti - TeleMedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-8">
+  
+  <div class="max-w-6xl mx-auto">
+    
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">
+        🧪 Test Caricamento Contratti
+      </h1>
+      <p class="text-gray-600">
+        Verifica e carica i 9 contratti reali nel database
+      </p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex gap-4">
+        <button 
+          id="btnDelete" 
+          onclick="deleteContracts()"
+          class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          🗑️ DELETE Contratti Esistenti
+        </button>
+        
+        <button 
+          id="btnCreate" 
+          onclick="createContracts()"
+          class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          ✅ POST Nuovi Contratti
+        </button>
+        
+        <button 
+          id="btnAll" 
+          onclick="runFullCycle()"
+          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          🚀 DELETE + POST (Ciclo Completo)
+        </button>
+      </div>
+    </div>
+
+    <!-- Log Output -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">📋 Log Output</h2>
+      <div id="output" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-auto" style="max-height: 600px;">
+        <div class="text-gray-500">In attesa di comandi...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const output = document.getElementById('output');
+    
+    function log(message, color = 'text-green-400') {
+      const div = document.createElement('div');
+      div.className = color;
+      div.textContent = message;
+      output.appendChild(div);
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    function clearLog() {
+      output.innerHTML = '';
+    }
+    
+    async function deleteContracts() {
+      clearLog();
+      log('🗑️ DELETE /api/setup-real-contracts...', 'text-yellow-400');
+      
+      try {
+        const response = await fetch('/api/setup-real-contracts', { 
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        log(\`📡 Response: \${response.status} \${response.statusText}\`, 'text-blue-400');
+        
+        if (!response.ok) {
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        log('✅ DELETE completato!', 'text-green-400');
+        log(\`   Contratti rimossi: \${result.removed || 0}\`, 'text-green-400');
+        log(JSON.stringify(result, null, 2), 'text-gray-400');
+        
+      } catch (error) {
+        log('❌ ERRORE:', 'text-red-400');
+        log(error.message, 'text-red-400');
+        console.error(error);
+      }
+    }
+    
+    async function createContracts() {
+      clearLog();
+      log('✅ POST /api/setup-real-contracts...', 'text-yellow-400');
+      
+      try {
+        const response = await fetch('/api/setup-real-contracts', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        log(\`📡 Response: \${response.status} \${response.statusText}\`, 'text-blue-400');
+        
+        if (!response.ok) {
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        log('✅ CREAZIONE COMPLETATA!', 'text-green-400');
+        log('', '');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        log('📊 RIEPILOGO STATISTICHE', 'text-cyan-400');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        log(\`✓ Contratti creati:      \${result.creati}\`, 'text-green-400');
+        log(\`✗ Errori:                \${result.errori}\`, 'text-red-400');
+        log(\`📝 Contratti FIRMATI:    \${result.firmati}\`, 'text-green-400');
+        log(\`📝 Contratti INVIATI:    \${result.creati - result.firmati}\`, 'text-yellow-400');
+        log(\`💰 REVENUE ANNUALE:      €\${result.revenue}\`, 'text-green-400');
+        log(\`📈 Conversion Rate:      \${result.conversionRate}\`, 'text-blue-400');
+        log(\`💵 AOV (valore medio):   €\${result.aov}\`, 'text-blue-400');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        log('', '');
+        
+        if (result.contratti) {
+          log('📋 CONTRATTI CREATI:', 'text-cyan-400');
+          log('', '');
+          result.contratti.forEach((c, i) => {
+            const status = c.status === 'SIGNED' ? '✅ Firmato' : '📤 Inviato';
+            log(\`\${i + 1}. \${c.codice}\`, 'text-white');
+            log(\`   Intestatario: \${c.intestatario}\`, 'text-gray-400');
+            log(\`   Piano: \${c.piano} | Prezzo: €\${c.prezzo}\`, 'text-gray-400');
+            log(\`   Status: \${status}\`, c.status === 'SIGNED' ? 'text-green-400' : 'text-yellow-400');
+            log(\`   Data firma: \${c.data_firma || '-'}\`, 'text-gray-400');
+            log('', '');
+          });
+        }
+        
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        log('🔍 VERIFICHE INTESTATARI:', 'text-cyan-400');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        
+        const verifiche = [
+          { codice: 'CTR-KING-2025', intestatario: 'Eileen King', prezzo: 840 },
+          { codice: 'CTR-BALZAROTTI-2025', intestatario: 'Giuliana Balzarotti', prezzo: 480 },
+          { codice: 'CTR-PIZZUTTO-G-2025', intestatario: 'Gianni Paolo Pizzutto', prezzo: 480 },
+          { codice: 'CTR-PENNACCHIO-2025', intestatario: 'Rita Pennacchio', prezzo: 480 },
+          { codice: 'CTR-COZZI-2025', intestatario: 'Giuseppina Cozzi', prezzo: 480 },
+          { codice: 'CTR-CAPONE-2025', intestatario: 'Maria Capone', prezzo: 480 }
+        ];
+        
+        verifiche.forEach(v => {
+          const found = result.contratti.find(c => c.codice === v.codice);
+          if (found) {
+            const ok = found.intestatario === v.intestatario && found.prezzo === v.prezzo;
+            log(\`\${ok ? '✅' : '❌'} \${v.codice}: \${found.intestatario} (€\${found.prezzo})\`, ok ? 'text-green-400' : 'text-red-400');
+          } else {
+            log(\`❌ \${v.codice}: NON TROVATO\`, 'text-red-400');
+          }
+        });
+        
+        log('', '');
+        log('✅ COMPLETATO! Controlla la Dashboard per vedere i risultati.', 'text-green-400');
+        
+      } catch (error) {
+        log('❌ ERRORE:', 'text-red-400');
+        log(error.message, 'text-red-400');
+        console.error(error);
+      }
+    }
+    
+    async function runFullCycle() {
+      clearLog();
+      log('🚀 CICLO COMPLETO: DELETE + POST', 'text-cyan-400');
+      log('', '');
+      
+      // DELETE
+      log('1️⃣ DELETE contratti esistenti...', 'text-yellow-400');
+      
+      try {
+        const deleteResponse = await fetch('/api/setup-real-contracts', { 
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!deleteResponse.ok) {
+          throw new Error(\`DELETE failed: \${deleteResponse.status} \${deleteResponse.statusText}\`);
+        }
+        
+        const deleteResult = await deleteResponse.json();
+        log(\`✅ DELETE completato - Rimossi: \${deleteResult.removed || 0}\`, 'text-green-400');
+        log('', '');
+        log('⏳ Attesa 2 secondi...', 'text-gray-400');
+        log('', '');
+        
+        // POST dopo 2 secondi
+        setTimeout(async () => {
+          log('2️⃣ POST nuovi contratti...', 'text-yellow-400');
+          
+          try {
+            const createResponse = await fetch('/api/setup-real-contracts', { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (!createResponse.ok) {
+              throw new Error(\`POST failed: \${createResponse.status} \${createResponse.statusText}\`);
+            }
+            
+            const result = await createResponse.json();
+            log('✅ POST completato!', 'text-green-400');
+            log('', '');
+            log('═══════════════════════════════════════', 'text-cyan-400');
+            log('📊 RIEPILOGO FINALE', 'text-cyan-400');
+            log('═══════════════════════════════════════', 'text-cyan-400');
+            log(\`✓ Contratti creati:      \${result.creati}\`, 'text-green-400');
+            log(\`✗ Errori:                \${result.errori}\`, 'text-red-400');
+            log(\`📝 Contratti FIRMATI:    \${result.firmati}\`, 'text-green-400');
+            log(\`💰 REVENUE ANNUALE:      €\${result.revenue}\`, 'text-green-400');
+            log(\`📈 Conversion Rate:      \${result.conversionRate}\`, 'text-blue-400');
+            log(\`💵 AOV:                  €\${result.aov}\`, 'text-blue-400');
+            log('═══════════════════════════════════════', 'text-cyan-400');
+            
+            if (result.contratti) {
+              log('', '');
+              log('📋 CONTRATTI:', 'text-cyan-400');
+              result.contratti.forEach((c, i) => {
+                log(\`\${i + 1}. \${c.codice} - \${c.intestatario} - \${c.status === 'SIGNED' ? '✅' : '📤'} €\${c.prezzo}\`, 
+                    c.status === 'SIGNED' ? 'text-green-400' : 'text-yellow-400');
+              });
+            }
+            
+            log('', '');
+            log('✅ COMPLETATO! La pagina si ricaricherà tra 3 secondi...', 'text-green-400');
+            
+            setTimeout(() => {
+              location.reload();
+            }, 3000);
+            
+          } catch (postError) {
+            log('❌ ERRORE POST:', 'text-red-400');
+            log(postError.message, 'text-red-400');
+          }
+          
+        }, 2000);
+        
+      } catch (deleteError) {
+        log('❌ ERRORE DELETE:', 'text-red-400');
+        log(deleteError.message, 'text-red-400');
+      }
+    }
+  </script>
+
+</body>
+</html>`)
+})
+
 export default app

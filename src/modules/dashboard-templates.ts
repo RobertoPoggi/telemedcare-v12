@@ -2313,8 +2313,15 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updatePlansBreakdown(leads) {
             const counts = { 'BASE': 0, 'AVANZATO': 0 };
             leads.forEach(l => {
-                const note = l.note || '';
-                const plan = note.includes('Piano: AVANZATO') ? 'AVANZATO' : 'BASE';
+                // Cerca prima nel campo piano, poi nelle note
+                let plan = 'BASE'; // default
+                
+                if (l.piano) {
+                    plan = l.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
+                } else if (l.note) {
+                    plan = l.note.includes('Piano: AVANZATO') || l.note.includes('AVANZATO') ? 'AVANZATO' : 'BASE';
+                }
+                
                 counts[plan]++;
             });
 
@@ -2475,8 +2482,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 const matchServizio = !servizioFilter || leadServizio.toUpperCase() === servizioFilter.toUpperCase();
                 
-                // Filtro Piano: cerca nelle note "Piano: AVANZATO" o default BASE
-                const leadPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                // Filtro Piano: cerca nel campo piano o nelle note come fallback
+                let leadPiano = 'BASE'; // default
+                if (lead.piano) {
+                    leadPiano = lead.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
+                } else if (lead.note) {
+                    leadPiano = (lead.note.includes('Piano: AVANZATO') || lead.note.includes('AVANZATO')) ? 'AVANZATO' : 'BASE';
+                }
                 const matchPiano = !pianoFilter || leadPiano === pianoFilter;
                 
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
