@@ -5004,31 +5004,49 @@ app.post('/api/setup-real-contracts', async (c) => {
         // Genera ID univoco per il contratto
         const contractId = `CONTRACT_${contratto.codice}_${Date.now()}`
         const now = new Date().toISOString()
+        
+        // Template utilizzato
+        const template = contratto.tipo === 'AVANZATO' 
+          ? 'Template_Contratto_Avanzato_TeleMedCare' 
+          : 'Template_Contratto_Base_TeleMedCare'
+        
+        // Contenuto HTML placeholder (contratto già firmato, PDF esistente)
+        const contenutoHtml = `<html><body><h1>Contratto ${contratto.tipo} - ${contratto.codice}</h1><p>PDF: ${contratto.pdf}</p></body></html>`
+        
+        // Data scadenza (30 giorni dall'invio)
+        const dataInvio = new Date(contratto.data_invio)
+        const dataScadenza = new Date(dataInvio.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
         // Inserisci il contratto nel database
         await c.env.DB.prepare(`
           INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, piano,
-            status, prezzo_totale, prezzo_mensile, durata_mesi,
-            data_invio, data_firma, pdf_url, note,
-            email_sent, pdf_generated, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+            contenuto_html, pdf_url, pdf_generated, 
+            prezzo_mensile, durata_mesi, prezzo_totale,
+            status, data_invio, data_scadenza,
+            email_sent, email_template_used,
+            piano, servizio,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           contractId,
           lead.id,
           contratto.codice,
           contratto.tipo,
-          contratto.piano,
-          contratto.status,
-          contratto.prezzo,
+          template,
+          contenutoHtml,
+          contratto.pdf,
+          1, // pdf_generated = TRUE
           Math.round(contratto.prezzo / 12),
           12,
+          contratto.prezzo,
+          contratto.status,
           contratto.data_invio,
-          contratto.data_firma,
-          contratto.pdf,
-          contratto.note,
-          1,
-          1,
+          dataScadenza,
+          1, // email_sent = TRUE
+          'email_invio_contratto',
+          contratto.piano,
+          'eCura PRO',
           now,
           now
         ).run()
@@ -5039,12 +5057,34 @@ app.post('/api/setup-real-contracts', async (c) => {
           'UPDATE leads SET status = ?, updated_at = ? WHERE id = ?'
         ).bind(newLeadStatus, now, lead.id).run()
 
+        // Se il contratto è SIGNED, crea anche il record signature
+        if (contratto.status === 'SIGNED' && contratto.data_firma) {
+          await c.env.DB.prepare(`
+            INSERT INTO signatures (
+              contract_id, firma_digitale, tipo_firma,
+              ip_address, user_agent, timestamp_firma,
+              hash_documento, certificato_firma, valida
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            contractId,
+            'FIRMA_PDF_ESISTENTE',
+            'ELETTRONICA',
+            '0.0.0.0',
+            'Import from PDF',
+            contratto.data_firma,
+            `hash_${contratto.codice}`,
+            'Contratto firmato importato da PDF',
+            1 // valida = TRUE
+          ).run()
+        }
+
         risultati.push({
           codice: contratto.codice,
           success: true,
           contractId: contractId,
           leadId: lead.id,
-          email: contratto.email_caregiver
+          email: contratto.email_caregiver,
+          signed: contratto.status === 'SIGNED'
         })
         creati++
 
