@@ -5125,35 +5125,26 @@ app.post('/api/setup-real-contracts', async (c) => {
 
     for (const contratto of contratti_da_creare) {
       try {
-        // 🔍 DEBUG: Log email cercata
-        console.log(`🔍 Cercando lead per contratto ${contratto.codice} con email: ${contratto.email_caregiver}`)
+        // 🔍 Cerca il lead usando NOME + COGNOME dell'intestatario
+        const nomeIntestario = contratto.intestatario_nome
+        const cognomeIntestatario = contratto.intestatario_cognome
         
-        // Trova il lead tramite email caregiver
+        console.log(`🔍 Cercando lead per contratto ${contratto.codice}:`)
+        console.log(`   Nome: ${nomeIntestario}, Cognome: ${cognomeIntestatario}`)
+        
         let lead = await c.env.DB.prepare(
-          'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(email) = LOWER(?)'
-        ).bind(contratto.email_caregiver).first()
+          'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(nomeRichiedente) = LOWER(?) AND LOWER(cognomeRichiedente) = LOWER(?)'
+        ).bind(nomeIntestario, cognomeIntestatario).first()
 
         // 🔍 DEBUG: Risultato ricerca
         if (lead) {
-          console.log(`✅ Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email})`)
+          console.log(`✅ Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
         } else {
-          console.log(`❌ Lead NON trovato per email: ${contratto.email_caregiver}`)
-        }
-
-        // Se non trovato via email, prova a cercare per cognome (fallback)
-        if (!lead && contratto.cognome_fallback) {
-          console.log(`🔄 Tentativo fallback per cognome: ${contratto.cognome_fallback}`)
-          lead = await c.env.DB.prepare(
-            'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
-          ).bind(contratto.cognome_fallback).first()
-          
-          if (lead) {
-            console.log(`⚠️ Lead ${contratto.codice} trovato via cognome fallback: ${lead.cognomeRichiedente} (${lead.email})`)
-          }
+          console.log(`❌ Lead NON trovato per: ${nomeIntestario} ${cognomeIntestatario}`)
         }
 
         if (!lead) {
-          const errorMsg = `Lead non trovato per email: ${contratto.email_caregiver}${contratto.cognome_fallback ? ' né per cognome: ' + contratto.cognome_fallback : ''}`
+          const errorMsg = `Lead non trovato per intestatario: ${nomeIntestario} ${cognomeIntestatario}`
           console.log(`❌ ${contratto.codice}: ${errorMsg}`)
           risultati.push({
             codice: contratto.codice,
@@ -7054,23 +7045,22 @@ app.put('/api/leads/:id', async (c) => {
     const updates: string[] = []
     const binds: any[] = []
     
-    // Map field names to DB columns
+    // Map field names to DB columns (basato su schema SQL)
     const fieldMap: Record<string, string> = {
-      'servizio': 'servizio',
+      'nomeRichiedente': 'nomeRichiedente',
+      'cognomeRichiedente': 'cognomeRichiedente',
+      'emailRichiedente': 'emailRichiedente',
+      'telefonoRichiedente': 'telefonoRichiedente',
+      'nomeAssistito': 'nomeAssistito',
+      'cognomeAssistito': 'cognomeAssistito',
       'pacchetto': 'pacchetto',
-      'dispositivo': 'dispositivo',
-      'prezzo_annuale': 'prezzo_annuale',
       'vuoleBrochure': 'vuoleBrochure',
       'vuoleManuale': 'vuoleManuale',
       'vuoleContratto': 'vuoleContratto',
       'status': 'status',
-      'telefonoRichiedente': 'telefonoRichiedente',
-      'emailRichiedente': 'emailRichiedente',
-      'data_contatto': 'data_contatto',
-      'location': 'location',
       'note': 'note',
-      'messaggio': 'messaggio',
-      'canale': 'canale'
+      'fonte': 'fonte',
+      'priority': 'priority'
     }
     
     for (const [key, dbColumn] of Object.entries(fieldMap)) {
