@@ -4899,6 +4899,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'elenasaglia@hotmail.com',
         tipo: 'AVANZATO',
         piano: 'AVANZATO',
+        servizio: 'eCura PRO', // Servizio principale per contratti AVANZATO
         prezzo: 840,
         data_invio: '2025-05-08',
         data_firma: '2025-05-10',
@@ -4911,6 +4912,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'paolo@paolomagri.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family', // Servizio base per contratti BASE
         prezzo: 480,
         data_invio: '2025-06-13',
         data_firma: '2025-06-16',
@@ -4923,6 +4925,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'info@tredilibreria.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family',
         prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: '2025-05-15',
@@ -4935,6 +4938,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'caterinadalterio108@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family',
         prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: '2025-05-14',
@@ -4947,6 +4951,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'caterinadalterio108@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family',
         prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: '2025-05-14',
@@ -4959,6 +4964,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'elisabettacattini@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family',
         prezzo: 480,
         data_invio: '2025-07-10',
         data_firma: '2025-07-15',
@@ -4971,6 +4977,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'manuela.poggi1@icloud.com',
         tipo: 'BASE',
         piano: 'BASE',
+        servizio: 'eCura Family',
         prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: null,
@@ -5046,7 +5053,7 @@ app.post('/api/setup-real-contracts', async (c) => {
           1, // email_sent = TRUE
           'email_invio_contratto',
           contratto.piano,
-          'eCura PRO',
+          contratto.servizio, // eCura Family, eCura PRO, o eCura Premium
           now,
           now
         ).run()
