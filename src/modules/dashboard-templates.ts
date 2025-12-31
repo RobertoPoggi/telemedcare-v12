@@ -2592,7 +2592,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 if (result.success) {
                     alert('✅ Lead aggiornato con successo!');
                     closeModal('editLeadModal');
-                    loadLeads();
+                    loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + result.error);
                 }
@@ -2615,7 +2615,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 if (result.success) {
                     alert('✅ Lead eliminato con successo!');
-                    loadLeads();
+                    loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + result.error);
                 }
