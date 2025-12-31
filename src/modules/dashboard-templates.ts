@@ -2342,15 +2342,16 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updateChannelsBreakdown(leads) {
             const channels = {};
             leads.forEach(l => {
-                const ch = l.fonte || l.canale || 'Non specificato';
+                const ch = l.canaleAcquisizione || l.fonte || l.canale || 'Non specificato';
                 channels[ch] = (channels[ch] || 0) + 1;
             });
             
-            // Mostra i canali reali
-            document.getElementById('channelWeb').textContent = channels['EXCEL_IMPORT'] || 0;
-            document.getElementById('channelEmail').textContent = channels['EMAIL'] || 0;
-            document.getElementById('channelPhone').textContent = channels['TELEFONO'] || 0;
-            document.getElementById('channelPartner').textContent = channels['CONTRATTO_PDF'] || 0;
+            // Mostra i canali reali aggregati
+            // Alcuni leads hanno: Irbema, AON, Excel, DoubleYou, ecc.
+            document.getElementById('channelWeb').textContent = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0);
+            document.getElementById('channelEmail').textContent = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
+            document.getElementById('channelPhone').textContent = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0);
+            document.getElementById('channelPartner').textContent = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0);
         }
 
         function renderLeadsTable(leads) {
