@@ -14,6 +14,7 @@ import * as PDF from './modules/pdf'
 import * as Utils from './modules/utils'
 import * as Logging from './modules/logging'
 import DocumentRepository from './modules/document-repository'
+import { getPricing, calculatePrimoAnno } from './modules/ecura-pricing'
 
 // Import TeleMedCare V12.0 Complete Workflow Modules
 import SignatureService from './modules/signature-service'
@@ -4899,8 +4900,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'elenasaglia@hotmail.com',
         tipo: 'AVANZATO',
         piano: 'AVANZATO',
-        servizio: 'eCura PRO', // Servizio principale per contratti AVANZATO
-        prezzo: 840,
+        servizio: 'PRO', // eCura PRO AVANZATO
         data_invio: '2025-05-08',
         data_firma: '2025-05-10',
         status: 'SIGNED',
@@ -4912,8 +4912,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'paolo@paolomagri.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family', // Servizio base per contratti BASE
-        prezzo: 480,
+        servizio: 'PRO', // eCura PRO BASE
         data_invio: '2025-06-13',
         data_firma: '2025-06-16',
         status: 'SIGNED',
@@ -4925,8 +4924,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'info@tredilibreria.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family',
-        prezzo: 480,
+        servizio: 'PRO',
         data_invio: '2025-05-08',
         data_firma: '2025-05-15',
         status: 'SIGNED',
@@ -4938,8 +4936,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'caterinadalterio108@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family',
-        prezzo: 480,
+        servizio: 'PRO',
         data_invio: '2025-05-08',
         data_firma: '2025-05-14',
         status: 'SIGNED',
@@ -4951,8 +4948,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'caterinadalterio108@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family',
-        prezzo: 480,
+        servizio: 'PRO',
         data_invio: '2025-05-08',
         data_firma: '2025-05-14',
         status: 'SIGNED',
@@ -4964,8 +4960,7 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'elisabettacattini@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family',
-        prezzo: 480,
+        servizio: 'PRO',
         data_invio: '2025-07-10',
         data_firma: '2025-07-15',
         status: 'SIGNED',
@@ -4977,13 +4972,36 @@ app.post('/api/setup-real-contracts', async (c) => {
         email_caregiver: 'manuela.poggi1@icloud.com',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'eCura Family',
-        prezzo: 480,
+        servizio: 'PRO',
         data_invio: '2025-05-08',
         data_firma: null,
         status: 'SENT',
         pdf: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza base SIDLY_Sig.ra Manuela Poggi.pdf',
         note: 'Assistito: Manuela Poggi - Contratto BASE inviato 08/05/2025 - NON FIRMATO'
+      },
+      {
+        codice: 'CTR-DANDRAIA-2025',
+        email_caregiver: 'giovanni.dandraia@example.com', // TODO: verificare email corretta
+        tipo: 'BASE',
+        piano: 'BASE',
+        servizio: 'PRO',
+        data_invio: '2025-09-15', // TODO: verificare data corretta
+        data_firma: null,
+        status: 'SENT',
+        pdf: '/contratti/Contratto Medica GB_SIDLY_Signor Giovanni Dandraia.pdf',
+        note: 'Assistito: Giovanni Dandraia - Contratto BASE inviato - NON FIRMATO'
+      },
+      {
+        codice: 'CTR-DESTRO-2025',
+        email_caregiver: 'ettore.destro@example.com', // TODO: verificare email corretta
+        tipo: 'AVANZATO',
+        piano: 'AVANZATO',
+        servizio: 'PRO',
+        data_invio: '2025-09-23',
+        data_firma: null,
+        status: 'SENT',
+        pdf: '/contratti/23.09.2025_Contratto Medica GB_SIDLY_Ettore Destro_2 Servizi AVANZATI.pdf',
+        note: 'Assistito: Ettore Destro - 2 Servizi AVANZATI - Contratto inviato 23/09/2025 - NON FIRMATO'
       }
     ]
 
@@ -5024,6 +5042,22 @@ app.post('/api/setup-real-contracts', async (c) => {
         const dataInvio = new Date(contratto.data_invio)
         const dataScadenza = new Date(dataInvio.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
+        // Calcola prezzi dalla matrice eCura Pricing
+        const pricing = getPricing(contratto.servizio, contratto.piano)
+        if (!pricing) {
+          risultati.push({
+            codice: contratto.codice,
+            success: false,
+            error: `Pricing non trovato per ${contratto.servizio} ${contratto.piano}`
+          })
+          errori++
+          continue
+        }
+        
+        const prezzoTotale = pricing.setupTotale
+        const prezzoMensile = Math.round(prezzoTotale / 12)
+        const serviceName = `eCura ${contratto.servizio}`
+
         // Inserisci il contratto nel database
         await c.env.DB.prepare(`
           INSERT INTO contracts (
@@ -5044,16 +5078,16 @@ app.post('/api/setup-real-contracts', async (c) => {
           contenutoHtml,
           contratto.pdf,
           1, // pdf_generated = TRUE
-          Math.round(contratto.prezzo / 12),
+          prezzoMensile,
           12,
-          contratto.prezzo,
+          prezzoTotale,
           contratto.status,
           contratto.data_invio,
           dataScadenza,
           1, // email_sent = TRUE
           'email_invio_contratto',
           contratto.piano,
-          contratto.servizio, // eCura Family, eCura PRO, o eCura Premium
+          serviceName, // eCura FAMILY, eCura PRO, o eCura PREMIUM
           now,
           now
         ).run()
