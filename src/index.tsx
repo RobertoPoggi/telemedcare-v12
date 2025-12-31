@@ -5133,13 +5133,22 @@ app.post('/api/setup-real-contracts', async (c) => {
         
         if (contratto.email_caregiver) {
           console.log(`   1️⃣ Tentativo ricerca per EMAIL: ${contratto.email_caregiver}`)
+          
+          // Prova con emailRichiedente (schema SQL standard)
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
+            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
           ).bind(contratto.email_caregiver).first()
+          
+          // Se non trovato, prova con campo "email" (possibile alias)
+          if (!lead) {
+            lead = await c.env.DB.prepare(
+              'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(email) = LOWER(?)'
+            ).bind(contratto.email_caregiver).first()
+          }
           
           if (lead) {
             metodoTrovato = 'EMAIL'
-            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
+            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email || lead.emailRichiedente})`)
           } else {
             console.log(`   ❌ Lead NON trovato per email: ${contratto.email_caregiver}`)
           }
@@ -5148,13 +5157,22 @@ app.post('/api/setup-real-contracts', async (c) => {
         // STEP 2: Fallback - Cerca per COGNOME intestatario
         if (!lead && contratto.intestatario_cognome) {
           console.log(`   2️⃣ Fallback ricerca per COGNOME: ${contratto.intestatario_cognome}`)
+          
+          // Prova cognomeRichiedente
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
+          
+          // Se non trovato, prova campo "cognome"
+          if (!lead) {
+            lead = await c.env.DB.prepare(
+              'SELECT id, email, nome AS nomeRichiedente, cognome AS cognomeRichiedente FROM leads WHERE LOWER(cognome) = LOWER(?) LIMIT 1'
+            ).bind(contratto.intestatario_cognome).first()
+          }
           
           if (lead) {
             metodoTrovato = 'COGNOME'
-            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
+            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email || lead.emailRichiedente})`)
           } else {
             console.log(`   ❌ Lead NON trovato per cognome: ${contratto.intestatario_cognome}`)
           }
