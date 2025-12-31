@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Contratti SQL - TeleMedCare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-2xl p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-database text-blue-600 mr-3"></i>
+            Setup Contratti Database - Script SQL
+        </h1>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <p class="text-sm text-blue-700">
+                <strong>Istruzioni:</strong> Esegui questo script SQL nel database D1 tramite Wrangler CLI o console Cloudflare
+            </p>
+        </div>
+
+        <div class="mb-6">
+            <button 
+                onclick="copySQL()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+            >
+                <i class="fas fa-copy mr-2"></i>
+                Copia SQL
+            </button>
+            <button 
+                onclick="downloadSQL()" 
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors ml-2"
+            >
+                <i class="fas fa-download mr-2"></i>
+                Scarica setup.sql
+            </button>
+        </div>
+
+        <div class="bg-gray-900 text-green-400 p-6 rounded-lg overflow-auto max-h-96 font-mono text-sm">
+            <pre id="sqlScript">-- =============================================
+-- SETUP CONTRATTI DA PDF
+-- Inserimento contratti associati a lead esistenti
+-- =============================================
+
+-- Contratto 1: Eileen King (AVANZATO - BUONO)
+-- Care Giver: Elena Saglia (figlia) - elenasaglia@hotmail.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_KING_' || hex(randomblob(8)),
+  l.id,
+  'CTR-KING-2025',
+  'AVANZATO',
+  'AVANZATO',
+  'SIGNED',
+  840,
+  70,
+  12,
+  '2025-05-08',
+  '2025-05-10',
+  '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza Avanzato SIDLY FIRMATO_Eileen King.pdf',
+  'Contratto AVANZATO firmato da Elena Saglia per madre Eileen King - BUONO',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'elenasaglia@hotmail.com'
+LIMIT 1;
+
+-- Contratto 2: Giuliana Balzarotti
+-- Care Giver: Paolo Magri (figlio) - paolo@paolomagri.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_BALZAROTTI_' || hex(randomblob(8)),
+  l.id,
+  'CTR-BALZAROTTI-2025',
+  'BASE',
+  'BASE',
+  'SIGNED',
+  480,
+  40,
+  12,
+  '2025-06-13',
+  '2025-06-16',
+  '/contratti/13.06.2025_Contratto Medica GB_SIDLY BASE - Paolo Magri.pdf',
+  'Contratto BASE FIRMATO 16/06 da Paolo Magri (figlio) per madre Giuliana Balzarotti',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'paolo@paolomagri.com'
+LIMIT 1;
+
+-- Contratto 3: Gianni Paolo Pizzutto
+-- Care Giver: Simona Pizzutto (figlia) - simonapizzutto.sp@gmail.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_PIZZUTTO_' || hex(randomblob(8)),
+  l.id,
+  'CTR-PIZZUTTO-G-2025',
+  'BASE',
+  'BASE',
+  'SIGNED',
+  480,
+  40,
+  12,
+  '2025-05-12',
+  '2025-05-15',
+  '/contratti/12.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Gianni Paolo Pizzutto_firmato.pdf',
+  'Contratto firmato da Simona Pizzutto per padre Gianni Paolo',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'simonapizzutto.sp@gmail.com'
+LIMIT 1;
+
+-- Contratto 4: Rita Pennacchio
+-- Care Giver: Rita Pennacchio - caterinadalterio108@gmail.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_PENNACCHIO_' || hex(randomblob(8)),
+  l.id,
+  'CTR-PENNACCHIO-2025',
+  'BASE',
+  'BASE',
+  'SIGNED',
+  480,
+  40,
+  12,
+  '2025-05-12',
+  '2025-05-14',
+  '/contratti/12.05.2025_Contratto firmato SIDLY BASE_Pennacchio Rita - Contratto firmato.pdf',
+  'Contratto firmato',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'caterinadalterio108@gmail.com'
+LIMIT 1;
+
+-- Contratto 5: Caterina D'Alterio
+-- Care Giver: Caterina D'Alterio - caterinadalterio108@gmail.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_DALTERIO_' || hex(randomblob(8)),
+  l.id,
+  'CTR-DALTERIO-2025',
+  'BASE',
+  'BASE',
+  'SIGNED',
+  480,
+  40,
+  12,
+  '2025-05-08',
+  '2025-05-14',
+  '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Sig.ra Caterina D''Alterio .pdf',
+  '08/05/2025 inviato contratto base - Pagamento 14/05 - FIRMATO',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'caterinadalterio108@gmail.com'
+AND l.id NOT IN (
+  SELECT leadId FROM contracts WHERE codice_contratto = 'CTR-PENNACCHIO-2025'
+)
+LIMIT 1;
+
+-- Contratto 6: Giuseppina Cozzi
+-- Care Giver: Elisabetta Cattini - elisabettacattini@gmail.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_COZZI_' || hex(randomblob(8)),
+  l.id,
+  'CTR-COZZI-2025',
+  'BASE',
+  'BASE',
+  'SIGNED',
+  480,
+  40,
+  12,
+  '2025-07-10',
+  '2025-07-15',
+  '/contratti/contratto_cattini_cozzi.pdf',
+  'Contratto firmato da Elisabetta Cattini per Giuseppina Cozzi',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'elisabettacattini@gmail.com'
+LIMIT 1;
+
+-- Contratto 7: Manuela Poggi (NON FIRMATO)
+-- Care Giver: Manuela Poggi - manuela.poggi1@icloud.com
+INSERT INTO contracts (
+  id, leadId, codice_contratto, tipo_contratto, piano, status,
+  prezzo_totale, prezzo_mensile, durata_mesi,
+  data_invio, data_firma, pdf_url, note,
+  email_sent, pdf_generated, created_at, updated_at
+)
+SELECT
+  'CONTRACT_POGGI_' || hex(randomblob(8)),
+  l.id,
+  'CTR-POGGI-2025',
+  'BASE',
+  'BASE',
+  'SENT',
+  480,
+  40,
+  12,
+  '2025-05-08',
+  NULL,
+  '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza base SIDLY_Sig.ra Manuela Poggi.pdf',
+  '08/05/2025 inviato contratto - NON ancora firmato - Mai restituito',
+  1,
+  1,
+  datetime('now'),
+  datetime('now')
+FROM leads l
+WHERE LOWER(l.email) = 'manuela.poggi1@icloud.com'
+LIMIT 1;
+
+-- Verifica risultati
+SELECT 
+  c.codice_contratto,
+  c.status,
+  c.prezzo_totale,
+  c.data_firma,
+  l.nomeRichiedente || ' ' || l.cognomeRichiedente as care_giver,
+  l.email as care_giver_email
+FROM contracts c
+LEFT JOIN leads l ON c.leadId = l.id
+WHERE c.codice_contratto LIKE 'CTR-%2025'
+ORDER BY c.data_invio;</pre>
+        </div>
+
+        <div class="mt-6 bg-gray-50 border border-gray-300 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-800 mb-2">
+                <i class="fas fa-terminal text-green-600 mr-2"></i>
+                Come eseguire (Wrangler CLI):
+            </h3>
+            <pre class="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm overflow-x-auto">wrangler d1 execute ecura-db --file=setup_contracts.sql --remote</pre>
+        </div>
+    </div>
+
+    <script>
+        function copySQL() {
+            const sql = document.getElementById('sqlScript').textContent;
+            navigator.clipboard.writeText(sql).then(() => {
+                alert('✅ SQL copiato negli appunti!');
+            });
+        }
+
+        function downloadSQL() {
+            const sql = document.getElementById('sqlScript').textContent;
+            const blob = new Blob([sql], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'setup_contracts.sql';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('✅ File setup_contracts.sql scaricato!');
+        }
+    </script>
+</body>
+</html>

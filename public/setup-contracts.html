@@ -6,26 +6,32 @@
     <title>Setup Contratti PDF - TeleMedCare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-6">
-                <i class="fas fa-link text-blue-600 mr-3"></i>
-                Associa Contratti a Lead Esistenti
+                <i class="fas fa-database text-blue-600 mr-3"></i>
+                Setup Contratti Database
             </h1>
 
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                 <div class="flex">
-                    <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+                    <i class="fas fa-info-circle text-blue-400 mr-3 mt-1"></i>
                     <div>
-                        <p class="text-sm text-yellow-700">
-                            <strong>Attenzione:</strong> Questa operazione associerà i contratti ai <strong>lead ESISTENTI</strong>.
+                        <p class="text-sm text-blue-700">
+                            <strong>Modalità:</strong> Inserimento SQL diretto nel database D1
                         </p>
-                        <ul class="text-sm text-yellow-700 mt-2 list-disc list-inside">
-                            <li>I lead sono già presenti nel database</li>
-                            <li>Gli assistiti sono già presenti nel database</li>
-                            <li>Verranno creati SOLO i contratti e le associazioni</li>
+                        <ul class="text-sm text-blue-700 mt-2 list-disc list-inside">
+                            <li>I lead devono già esistere (ricerca per email care giver)</li>
+                            <li>Gli assistiti devono già esistere (ricerca per nome/cognome)</li>
+                            <li>Vengono creati record nella tabella <code class="bg-blue-100 px-1 rounded">contracts</code></li>
+                            <li>Vengono create le firme nella tabella <code class="bg-blue-100 px-1 rounded">signatures</code></li>
+                            <li>Vengono aggiornati gli status dei lead</li>
                         </ul>
                     </div>
                 </div>
