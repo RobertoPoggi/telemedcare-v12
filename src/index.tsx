@@ -5125,13 +5125,24 @@ app.post('/api/setup-real-contracts', async (c) => {
 
     for (const contratto of contratti_da_creare) {
       try {
+        // 🔍 DEBUG: Log email cercata
+        console.log(`🔍 Cercando lead per contratto ${contratto.codice} con email: ${contratto.email_caregiver}`)
+        
         // Trova il lead tramite email caregiver
         let lead = await c.env.DB.prepare(
           'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(email) = LOWER(?)'
         ).bind(contratto.email_caregiver).first()
 
+        // 🔍 DEBUG: Risultato ricerca
+        if (lead) {
+          console.log(`✅ Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email})`)
+        } else {
+          console.log(`❌ Lead NON trovato per email: ${contratto.email_caregiver}`)
+        }
+
         // Se non trovato via email, prova a cercare per cognome (fallback)
         if (!lead && contratto.cognome_fallback) {
+          console.log(`🔄 Tentativo fallback per cognome: ${contratto.cognome_fallback}`)
           lead = await c.env.DB.prepare(
             'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
           ).bind(contratto.cognome_fallback).first()
@@ -5142,10 +5153,12 @@ app.post('/api/setup-real-contracts', async (c) => {
         }
 
         if (!lead) {
+          const errorMsg = `Lead non trovato per email: ${contratto.email_caregiver}${contratto.cognome_fallback ? ' né per cognome: ' + contratto.cognome_fallback : ''}`
+          console.log(`❌ ${contratto.codice}: ${errorMsg}`)
           risultati.push({
             codice: contratto.codice,
             success: false,
-            error: `Lead non trovato per email: ${contratto.email_caregiver}${contratto.cognome_fallback ? ' né per cognome: ' + contratto.cognome_fallback : ''}`
+            error: errorMsg
           })
           errori++
           continue
@@ -11477,6 +11490,15 @@ app.get('/admin/test-contratti', (c) => {
 
     <!-- Buttons -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="mb-4">
+        <button 
+          id="btnDebug" 
+          onclick="debugLeads()"
+          class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          🔍 DEBUG: Mostra Email Leads nel Database
+        </button>
+      </div>
+      
       <div class="grid grid-cols-2 gap-4">
         <button 
           id="btnSetupComplete" 
@@ -11553,6 +11575,67 @@ app.get('/admin/test-contratti', (c) => {
         log('✅ DELETE completato!', 'text-green-400');
         log(\`   Contratti rimossi: \${result.removed || 0}\`, 'text-green-400');
         log(JSON.stringify(result, null, 2), 'text-gray-400');
+        
+      } catch (error) {
+        log('❌ ERRORE:', 'text-red-400');
+        log(error.message, 'text-red-400');
+        console.error(error);
+      }
+    }
+    
+    async function debugLeads() {
+      clearLog();
+      log('🔍 DEBUG: Caricamento email leads dal database...', 'text-yellow-400');
+      log('', '');
+      
+      try {
+        const response = await fetch('/api/debug/leads-emails');
+        
+        if (!response.ok) {
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+        }
+        
+        const result = await response.json();
+        
+        log(\`✅ Trovati \${result.total} leads nel database\`, 'text-green-400');
+        log('', '');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        log('📧 EMAIL LEADS NEL DATABASE:', 'text-cyan-400');
+        log('═══════════════════════════════════════', 'text-cyan-400');
+        
+        if (result.leads && result.leads.length > 0) {
+          result.leads.forEach((lead, i) => {
+            log(\`\${i + 1}. \${lead.email}\`, 'text-white');
+            log(\`   Nome: \${lead.nome_completo}\`, 'text-gray-400');
+            log(\`   ID: \${lead.id}\`, 'text-gray-400');
+            log('', '');
+          });
+          
+          log('═══════════════════════════════════════', 'text-cyan-400');
+          log('🔍 EMAIL RICHIESTE DAI CONTRATTI:', 'text-cyan-400');
+          log('═══════════════════════════════════════', 'text-cyan-400');
+          
+          const emailRichieste = [
+            'elenasaglia@hotmail.com',
+            'paolo@paolomagri.com',
+            'simona.pizzutto@coopbarbarab.it',
+            'caterinadalterio108@gmail.com',
+            'elisabettacattini@gmail.com',
+            'gr@ecotorino.it'
+          ];
+          
+          emailRichieste.forEach((email, i) => {
+            const found = result.leads.find(l => l.email.toLowerCase() === email.toLowerCase());
+            if (found) {
+              log(\`\${i + 1}. ✅ \${email} → TROVATO (\${found.nome_completo})\`, 'text-green-400');
+            } else {
+              log(\`\${i + 1}. ❌ \${email} → NON TROVATO\`, 'text-red-400');
+            }
+          });
+          
+        } else {
+          log('⚠️ Nessun lead trovato nel database!', 'text-red-400');
+        }
         
       } catch (error) {
         log('❌ ERRORE:', 'text-red-400');
@@ -11854,6 +11937,41 @@ app.get('/admin/test-contratti', (c) => {
 
 </body>
 </html>`)
+})
+
+// 🔍 DEBUG ENDPOINT - Lista email leads nel database
+app.get('/api/debug/leads-emails', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const result = await c.env.DB.prepare(`
+      SELECT id, email, nomeRichiedente, cognomeRichiedente, created_at
+      FROM leads
+      ORDER BY created_at DESC
+      LIMIT 200
+    `).all()
+
+    const leads = result.results || []
+    
+    return c.json({
+      success: true,
+      total: leads.length,
+      leads: leads.map(l => ({
+        id: l.id,
+        email: l.email,
+        nome_completo: `${l.nomeRichiedente} ${l.cognomeRichiedente}`,
+        created_at: l.created_at
+      }))
+    })
+  } catch (error) {
+    console.error('❌ Errore debug leads:', error)
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500)
+  }
 })
 
 export default app
