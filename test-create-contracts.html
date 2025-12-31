@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>Crea Contratti</title></head>
+<body>
+<h1>Setup Contratti Reali</h1>
+<button onclick="setupContracts()">Crea 8 Contratti</button>
+<pre id="result"></pre>
+<script>
+async function setupContracts() {
+  const result = document.getElementById('result');
+  result.textContent = 'Creazione contratti in corso...';
+  
+  try {
+    const response = await fetch('/api/setup-real-contracts', { method: 'POST' });
+    const data = await response.json();
+    result.textContent = JSON.stringify(data, null, 2);
+  } catch (error) {
+    result.textContent = 'Errore: ' + error.message;
+  }
+}
+</script>
+</body>
+</html>
