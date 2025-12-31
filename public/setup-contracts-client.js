@@ -39,12 +39,12 @@ const CONTRACTS_DATA = [
     assistito_cognome: 'Balzarotti',
     tipo_contratto: 'BASE',
     piano: 'BASE',
-    status: 'SIGNED',
+    status: 'SIGNED', // ✅ FIRMATO
     prezzo_totale: 480,
     data_invio: '2025-06-13',
-    data_firma: '2025-06-16',
+    data_firma: '2025-06-16', // ✅ Firmato 16 giugno 2025
     pdf_url: '/contratti/13.06.2025_Contratto Medica GB_SIDLY BASE - Paolo Magri.pdf',
-    note: 'Contratto firmato da Paolo Magri per madre Giuliana Balzarotti'
+    note: 'Contratto BASE FIRMATO 16/06 da Paolo Magri (figlio) per madre Giuliana Balzarotti'
   },
   {
     codice_contratto: 'CTR-PIZZUTTO-G-2025',
