@@ -11509,27 +11509,31 @@ app.get('/admin/test-contratti', (c) => {
         </button>
       </div>
       
-      <div class="grid grid-cols-2 gap-4">
-        <button 
-          id="btnSetupComplete" 
-          onclick="setupComplete()"
-          class="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl text-lg">
-          ⚡ SETUP COMPLETO (LEADS + CONTRATTI)
-        </button>
-        
+      <div class="grid grid-cols-1 gap-4">
         <button 
           id="btnAll" 
           onclick="runFullCycle()"
-          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
-          🚀 DELETE + POST Contratti
+          class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl text-lg">
+          🚀 CARICA CONTRATTI (DELETE + POST)
         </button>
-        
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4 mt-4">
         <button 
           id="btnDelete" 
           onclick="deleteContracts()"
           class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
           🗑️ DELETE Contratti
         </button>
+        
+        <button 
+          id="btnCreate" 
+          onclick="createContracts()"
+          class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg">
+          ✅ POST Contratti
+        </button>
+      </div>
+    </div>
         
         <button 
           id="btnCreate" 
