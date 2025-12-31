@@ -4887,7 +4887,68 @@ app.get('/api/contratti', async (c) => {
   }
 })
 
-// POST /api/setup-real-contracts - CREA DIRETTAMENTE I 7 CONTRATTI NEL DATABASE
+// DELETE /api/setup-real-contracts - RIMUOVE TUTTI I CONTRATTI DI TEST
+app.delete('/api/setup-real-contracts', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const db = c.env.DB
+
+    // Lista dei codici contratti da rimuovere
+    const codici = [
+      'CTR-KING-2025',
+      'CTR-BALZAROTTI-2025',
+      'CTR-PIZZUTTO-G-2025',
+      'CTR-PENNACCHIO-2025',
+      'CTR-DALTERIO-2025',
+      'CTR-COZZI-2025',
+      'CTR-POGGI-2025',
+      'CTR-DANDRAIA-2025',
+      'CTR-DESTRO-2025',
+      'CTR-CAPONE-2025'
+    ]
+
+    let removed = 0
+
+    for (const codice of codici) {
+      // Trova contratto
+      const contract = await db.prepare(
+        'SELECT id FROM contracts WHERE codice_contratto = ?'
+      ).bind(codice).first()
+
+      if (contract) {
+        // Rimuovi firme associate
+        await db.prepare('DELETE FROM signatures WHERE contract_id = ?')
+          .bind(contract.id).run()
+
+        // Rimuovi contratto
+        await db.prepare('DELETE FROM contracts WHERE id = ?')
+          .bind(contract.id).run()
+
+        removed++
+        console.log(`Rimosso contratto ${codice}`)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: `Rimossi ${removed} contratti`,
+      removed
+    })
+
+  } catch (error) {
+    console.error('Errore rimozione contratti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante la rimozione dei contratti',
+      details: error.message
+    }, 500)
+  }
+})
+
+// POST /api/setup-real-contracts - CREA DIRETTAMENTE I 10 CONTRATTI NEL DATABASE
 app.post('/api/setup-real-contracts', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -5003,6 +5064,20 @@ app.post('/api/setup-real-contracts', async (c) => {
         status: 'SENT',
         pdf: '/contratti/23.09.2025_Contratto Medica GB_SIDLY_Ettore Destro_2 Servizi AVANZATI.pdf',
         note: 'Assistito: Ettore Destro - 2 Servizi AVANZATI - Contratto inviato 23/09/2025 - NON FIRMATO'
+      },
+      {
+        codice: 'CTR-CAPONE-2025',
+        email_caregiver: 'gr@ecotorino.it',
+        cognome_fallback: 'Riela', // Fallback per Giorgio Riela
+        tipo: 'BASE',
+        piano: 'BASE',
+        servizio: 'PRO',
+        prezzo: 480,
+        data_invio: '2025-06-28',
+        data_firma: '2025-06-28',
+        status: 'SIGNED',
+        pdf: '/contratti/28.06.2025_Contratto_Medica_GB_bracciale_SiDLY_Maria_Capone.pdf',
+        note: 'Assistito: Maria Capone - Caregiver: Giorgio Riela (figlio) - Contratto BASE firmato 28/06/2025'
       }
     ]
 

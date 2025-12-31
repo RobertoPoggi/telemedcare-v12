@@ -3276,16 +3276,19 @@ export const data_dashboard = `<!DOCTYPE html>
                 const totalLeads = leads.length;
                 const totalContracts = contracts.length;
                 
-                // Calcola revenue dai contratti reali
+                // Calcola revenue dai contratti reali (SOLO FIRMATI!)
                 let totalRevenue = 0;
                 contracts.forEach(c => {
-                    if (c.prezzo_totale) totalRevenue += parseFloat(c.prezzo_totale);
+                    // Solo contratti SIGNED contano per il revenue
+                    if (c.status === 'SIGNED' && c.prezzo_totale) {
+                        totalRevenue += parseFloat(c.prezzo_totale);
+                    }
                 });
                 
                 // Conta contratti firmati
                 const signedContracts = contracts.filter(c => c.status === 'SIGNED').length;
                 const conversionRate = totalLeads > 0 ? ((signedContracts / totalLeads) * 100).toFixed(2) + '%' : '0%';
-                const averageOrderValue = totalContracts > 0 ? Math.round(totalRevenue / totalContracts) : 0;
+                const averageOrderValue = signedContracts > 0 ? Math.round(totalRevenue / signedContracts) : 0;
 
                 // Aggiorna KPI con dati reali
                 document.getElementById('kpiLeads').textContent = totalLeads;
