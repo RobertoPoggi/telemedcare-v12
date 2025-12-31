@@ -5154,27 +5154,20 @@ app.post('/api/setup-real-contracts', async (c) => {
           }
         }
         
-        // STEP 2: Fallback - Cerca per COGNOME intestatario
+        // STEP 2: Fallback - Cerca per COGNOME ASSISTITO (intestatario)
         if (!lead && contratto.intestatario_cognome) {
-          console.log(`   2️⃣ Fallback ricerca per COGNOME: ${contratto.intestatario_cognome}`)
+          console.log(`   2️⃣ Fallback ricerca per COGNOME ASSISTITO: ${contratto.intestatario_cognome}`)
           
-          // Prova cognomeRichiedente
+          // Cerca nel campo cognomeAssistito (lo schema corretto)
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
-          // Se non trovato, prova campo "cognome"
-          if (!lead) {
-            lead = await c.env.DB.prepare(
-              'SELECT id, email, nome AS nomeRichiedente, cognome AS cognomeRichiedente FROM leads WHERE LOWER(cognome) = LOWER(?) LIMIT 1'
-            ).bind(contratto.intestatario_cognome).first()
-          }
-          
           if (lead) {
-            metodoTrovato = 'COGNOME'
-            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email || lead.emailRichiedente})`)
+            metodoTrovato = 'COGNOME_ASSISTITO'
+            console.log(`   ✅ Lead trovato via COGNOME ASSISTITO: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nomeRichiedente} ${lead.cognomeRichiedente})`)
           } else {
-            console.log(`   ❌ Lead NON trovato per cognome: ${contratto.intestatario_cognome}`)
+            console.log(`   ❌ Lead NON trovato per cognome assistito: ${contratto.intestatario_cognome}`)
           }
         }
 
