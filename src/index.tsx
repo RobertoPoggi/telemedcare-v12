@@ -4957,10 +4957,17 @@ app.post('/api/setup-real-contracts', async (c) => {
     const contratti_da_creare = [
       {
         codice: 'CTR-KING-2025',
-        email_caregiver: 'elenasaglia@hotmail.com',
+        email_caregiver: 'elenasaglia@hotmail.com', // Lead = Elena Saglia (figlia/caregiver)
+        // Intestatario contratto (chi firma e detrae fiscalmente)
+        intestatario_nome: 'Eileen',
+        intestatario_cognome: 'King',
+        // Assistito (chi riceve il servizio)
+        assistito_nome: 'Eileen',
+        assistito_cognome: 'King',
         tipo: 'AVANZATO',
         piano: 'AVANZATO',
-        servizio: 'PRO', // eCura PRO AVANZATO
+        servizio: 'PRO',
+        prezzo: 840,
         data_invio: '2025-05-08',
         data_firma: '2025-05-10',
         status: 'SIGNED',
@@ -4969,10 +4976,17 @@ app.post('/api/setup-real-contracts', async (c) => {
       },
       {
         codice: 'CTR-BALZAROTTI-2025',
-        email_caregiver: 'paolo@paolomagri.com',
+        email_caregiver: 'paolo@paolomagri.com', // Lead = Paolo Magri (figlio/caregiver)
+        // Intestatario contratto
+        intestatario_nome: 'Giuliana',
+        intestatario_cognome: 'Balzarotti',
+        // Assistito
+        assistito_nome: 'Giuliana',
+        assistito_cognome: 'Balzarotti',
         tipo: 'BASE',
         piano: 'BASE',
-        servizio: 'PRO', // eCura PRO BASE
+        servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-06-13',
         data_firma: '2025-06-16',
         status: 'SIGNED',
@@ -4982,10 +4996,15 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-PIZZUTTO-G-2025',
         email_caregiver: 'simona.pizzutto@coopbarbarab.it',
-        cognome_fallback: 'Pizzutto', // Fallback se email non trovata
+        cognome_fallback: 'Pizzutto',
+        intestatario_nome: 'Gianni Paolo',
+        intestatario_cognome: 'Pizzutto',
+        assistito_nome: 'Gianni Paolo',
+        assistito_cognome: 'Pizzutto',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: '2025-05-15',
         status: 'SIGNED',
@@ -4995,9 +5014,14 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-PENNACCHIO-2025',
         email_caregiver: 'caterinadalterio108@gmail.com',
+        intestatario_nome: 'Rita',
+        intestatario_cognome: 'Pennacchio',
+        assistito_nome: 'Rita',
+        assistito_cognome: 'Pennacchio',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: '2025-05-14',
         status: 'SIGNED',
@@ -5007,9 +5031,14 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-COZZI-2025',
         email_caregiver: 'elisabettacattini@gmail.com',
+        intestatario_nome: 'Giuseppina',
+        intestatario_cognome: 'Cozzi',
+        assistito_nome: 'Giuseppina',
+        assistito_cognome: 'Cozzi',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-07-10',
         data_firma: '2025-07-15',
         status: 'SIGNED',
@@ -5019,9 +5048,14 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-POGGI-2025',
         email_caregiver: 'manuela.poggi1@icloud.com',
+        intestatario_nome: 'Manuela',
+        intestatario_cognome: 'Poggi',
+        assistito_nome: 'Manuela',
+        assistito_cognome: 'Poggi',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-05-08',
         data_firma: null,
         status: 'SENT',
@@ -5031,9 +5065,14 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-DANDRAIA-2025',
         email_caregiver: 'dandraia.g@gmail.com',
+        intestatario_nome: 'Giovanni',
+        intestatario_cognome: 'Dandraia',
+        assistito_nome: 'Giovanni',
+        assistito_cognome: 'Dandraia',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
+        prezzo: 480,
         data_invio: '2025-09-15',
         data_firma: null,
         status: 'SENT',
@@ -5043,9 +5082,14 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-DESTRO-2025',
         email_caregiver: 'ettoredestro@gmail.com',
+        intestatario_nome: 'Ettore',
+        intestatario_cognome: 'Destro',
+        assistito_nome: 'Ettore',
+        assistito_cognome: 'Destro',
         tipo: 'AVANZATO',
         piano: 'AVANZATO',
         servizio: 'PRO',
+        prezzo: 840,
         data_invio: '2025-09-23',
         data_firma: null,
         status: 'SENT',
@@ -5055,7 +5099,11 @@ app.post('/api/setup-real-contracts', async (c) => {
       {
         codice: 'CTR-CAPONE-2025',
         email_caregiver: 'gr@ecotorino.it',
-        cognome_fallback: 'Riela', // Fallback per Giorgio Riela
+        cognome_fallback: 'Riela',
+        intestatario_nome: 'Maria',
+        intestatario_cognome: 'Capone',
+        assistito_nome: 'Maria',
+        assistito_cognome: 'Capone',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
@@ -5109,28 +5157,40 @@ app.post('/api/setup-real-contracts', async (c) => {
           ? 'Template_Contratto_Avanzato_TeleMedCare' 
           : 'Template_Contratto_Base_TeleMedCare'
         
-        // Contenuto HTML placeholder (contratto già firmato, PDF esistente)
-        const contenutoHtml = `<html><body><h1>Contratto ${contratto.tipo} - ${contratto.codice}</h1><p>PDF: ${contratto.pdf}</p></body></html>`
+        // Contenuto HTML placeholder con intestatario corretto
+        const contenutoHtml = `<html><body>
+          <h1>Contratto ${contratto.tipo} - ${contratto.codice}</h1>
+          <p><strong>Intestatario:</strong> ${intestatarioNome} ${intestatarioCognome}</p>
+          <p><strong>Assistito:</strong> ${contratto.assistito_nome || intestatarioNome} ${contratto.assistito_cognome || intestatarioCognome}</p>
+          <p><strong>PDF:</strong> ${contratto.pdf}</p>
+        </body></html>`
         
         // Data scadenza (30 giorni dall'invio)
         const dataInvio = new Date(contratto.data_invio)
         const dataScadenza = new Date(dataInvio.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-        // Calcola prezzi dalla matrice eCura Pricing
-        const pricing = getPricing(contratto.servizio, contratto.piano)
-        if (!pricing) {
-          risultati.push({
-            codice: contratto.codice,
-            success: false,
-            error: `Pricing non trovato per ${contratto.servizio} ${contratto.piano}`
-          })
-          errori++
-          continue
+        // Usa prezzo specificato o fallback alla matrice eCura Pricing
+        let prezzoTotale = contratto.prezzo || 0
+        if (!prezzoTotale) {
+          const pricing = getPricing(contratto.servizio, contratto.piano)
+          if (!pricing) {
+            risultati.push({
+              codice: contratto.codice,
+              success: false,
+              error: `Pricing non trovato per ${contratto.servizio} ${contratto.piano}`
+            })
+            errori++
+            continue
+          }
+          prezzoTotale = pricing.setupTotale
         }
         
-        const prezzoTotale = pricing.setupTotale
         const prezzoMensile = Math.round(prezzoTotale / 12)
         const serviceName = `eCura ${contratto.servizio}`
+        
+        // Dati intestatario (se specificati, altrimenti usa lead)
+        const intestatarioNome = contratto.intestatario_nome || lead.nomeRichiedente || ''
+        const intestatarioCognome = contratto.intestatario_cognome || lead.cognomeRichiedente || ''
 
         // Inserisci il contratto nel database
         await c.env.DB.prepare(`
