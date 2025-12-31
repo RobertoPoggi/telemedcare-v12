@@ -4981,11 +4981,11 @@ app.post('/api/setup-real-contracts', async (c) => {
       },
       {
         codice: 'CTR-DANDRAIA-2025',
-        email_caregiver: 'giovanni.dandraia@example.com', // TODO: verificare email corretta
+        email_caregiver: 'dandraia.g@gmail.com',
         tipo: 'BASE',
         piano: 'BASE',
         servizio: 'PRO',
-        data_invio: '2025-09-15', // TODO: verificare data corretta
+        data_invio: '2025-09-15',
         data_firma: null,
         status: 'SENT',
         pdf: '/contratti/Contratto Medica GB_SIDLY_Signor Giovanni Dandraia.pdf',
@@ -4993,7 +4993,7 @@ app.post('/api/setup-real-contracts', async (c) => {
       },
       {
         codice: 'CTR-DESTRO-2025',
-        email_caregiver: 'ettore.destro@example.com', // TODO: verificare email corretta
+        email_caregiver: 'ettoredestro@gmail.com',
         tipo: 'AVANZATO',
         piano: 'AVANZATO',
         servizio: 'PRO',
