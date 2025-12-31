@@ -5125,27 +5125,45 @@ app.post('/api/setup-real-contracts', async (c) => {
 
     for (const contratto of contratti_da_creare) {
       try {
-        // 🔍 Cerca il lead usando NOME + COGNOME dell'intestatario
-        const nomeIntestario = contratto.intestatario_nome
-        const cognomeIntestatario = contratto.intestatario_cognome
+        console.log(`\n🔍 Contratto ${contratto.codice}:`)
         
-        console.log(`🔍 Cercando lead per contratto ${contratto.codice}:`)
-        console.log(`   Nome: ${nomeIntestario}, Cognome: ${cognomeIntestatario}`)
+        // STEP 1: Cerca per EMAIL (se disponibile)
+        let lead = null
+        let metodoTrovato = ''
         
-        let lead = await c.env.DB.prepare(
-          'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(nomeRichiedente) = LOWER(?) AND LOWER(cognomeRichiedente) = LOWER(?)'
-        ).bind(nomeIntestario, cognomeIntestatario).first()
-
-        // 🔍 DEBUG: Risultato ricerca
-        if (lead) {
-          console.log(`✅ Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
-        } else {
-          console.log(`❌ Lead NON trovato per: ${nomeIntestario} ${cognomeIntestatario}`)
+        if (contratto.email_caregiver) {
+          console.log(`   1️⃣ Tentativo ricerca per EMAIL: ${contratto.email_caregiver}`)
+          lead = await c.env.DB.prepare(
+            'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
+          ).bind(contratto.email_caregiver).first()
+          
+          if (lead) {
+            metodoTrovato = 'EMAIL'
+            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
+          } else {
+            console.log(`   ❌ Lead NON trovato per email: ${contratto.email_caregiver}`)
+          }
+        }
+        
+        // STEP 2: Fallback - Cerca per COGNOME intestatario
+        if (!lead && contratto.intestatario_cognome) {
+          console.log(`   2️⃣ Fallback ricerca per COGNOME: ${contratto.intestatario_cognome}`)
+          lead = await c.env.DB.prepare(
+            'SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+          ).bind(contratto.intestatario_cognome).first()
+          
+          if (lead) {
+            metodoTrovato = 'COGNOME'
+            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.emailRichiedente})`)
+          } else {
+            console.log(`   ❌ Lead NON trovato per cognome: ${contratto.intestatario_cognome}`)
+          }
         }
 
+        // STEP 3: Se ancora non trovato → errore
         if (!lead) {
-          const errorMsg = `Lead non trovato per intestatario: ${nomeIntestario} ${cognomeIntestatario}`
-          console.log(`❌ ${contratto.codice}: ${errorMsg}`)
+          const errorMsg = `Lead non trovato per email: ${contratto.email_caregiver} né per cognome: ${contratto.intestatario_cognome}`
+          console.log(`   ❌ ${contratto.codice}: ${errorMsg}`)
           risultati.push({
             codice: contratto.codice,
             success: false,
@@ -5154,6 +5172,8 @@ app.post('/api/setup-real-contracts', async (c) => {
           errori++
           continue
         }
+        
+        console.log(`   🎯 Lead associato: ${lead.id} (trovato via ${metodoTrovato})`)
 
         // Genera ID univoco per il contratto
         const contractId = `CONTRACT_${contratto.codice}_${Date.now()}`
