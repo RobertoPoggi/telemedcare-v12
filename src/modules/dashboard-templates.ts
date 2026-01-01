@@ -3433,12 +3433,13 @@ export const data_dashboard = `<!DOCTYPE html>
                 PREMIUM: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 }
             };
 
-            // Conta lead PER SERVIZIO dai dati reali
+            // Conta lead PER SERVIZIO
+            // IMPORTANTE: La tabella leads NON HA campo 'servizio'!
+            // Tutti i lead sono eCura PRO (default)
+            // Se in futuro aggiungeremo FAMILY/PREMIUM, aggiungeremo un campo servizio
             leads.forEach(lead => {
-                const servizio = (lead.servizio || lead.tipoServizio || 'PRO').toUpperCase().replace(/^ECURA\s+/i, '');
-                if (data[servizio]) {
-                    data[servizio].leads++;
-                }
+                // Per ora tutti i lead sono PRO
+                data.PRO.leads++;
             });
 
             // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali (SOLO FIRMATI)

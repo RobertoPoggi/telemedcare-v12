@@ -7112,38 +7112,23 @@ app.put('/api/leads/:id', async (c) => {
     const updateFields: string[] = []
     const binds: any[] = []
     
-    // Mapping campi base: frontend → DB
-    const basicFieldMapping: Record<string, string> = {
+    // Mapping campi: frontend → DB
+    const fieldMapping: Record<string, string> = {
       nome: 'nomeRichiedente',
       cognome: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      status: 'status'
+      status: 'status',
+      note: 'note',
+      piano: 'tipoServizio'  // Piano → tipoServizio (BASE/AVANZATO)
     }
     
-    // Aggiungi solo i campi base presenti nel payload
-    for (const [frontendKey, dbKey] of Object.entries(basicFieldMapping)) {
+    // Aggiungi solo i campi presenti nel payload
+    for (const [frontendKey, dbKey] of Object.entries(fieldMapping)) {
       if (data[frontendKey] !== undefined) {
         updateFields.push(`${dbKey} = ?`)
         binds.push(data[frontendKey])
       }
-    }
-    
-    // Se ci sono servizio/piano, aggiornali nelle note
-    let noteText = data.note || ''
-    if (data.servizio || data.piano) {
-      // Genera note strutturate
-      const serviceLine = data.servizio ? `Servizio: eCura ${data.servizio}` : ''
-      const pianoLine = data.piano ? `Piano: ${data.piano}` : ''
-      
-      // Se ci sono già note, appendile
-      const existingNotes = noteText.replace(/Servizio:.*\n?/g, '').replace(/Piano:.*\n?/g, '').trim()
-      noteText = [serviceLine, pianoLine, existingNotes].filter(Boolean).join('\n')
-    }
-    
-    if (noteText) {
-      updateFields.push('note = ?')
-      binds.push(noteText)
     }
     
     // Aggiungi updated_at
