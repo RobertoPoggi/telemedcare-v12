@@ -5196,6 +5196,10 @@ app.post('/api/setup-real-contracts', async (c) => {
         
         console.log(`   🎯 Lead associato: ${lead.id} (trovato via ${metodoTrovato})`)
 
+        // Dati intestatario (PRIMA di usarli!)
+        const intestatarioNome = contratto.intestatario_nome || lead.nome || ''
+        const intestatarioCognome = contratto.intestatario_cognome || lead.cognome || ''
+
         // Genera ID univoco per il contratto
         const contractId = `CONTRACT_${contratto.codice}_${Date.now()}`
         const now = new Date().toISOString()
@@ -5235,44 +5239,53 @@ app.post('/api/setup-real-contracts', async (c) => {
         
         const prezzoMensile = Math.round(prezzoTotale / 12)
         const serviceName = `eCura ${contratto.servizio}`
-        
-        // Dati intestatario (se specificati, altrimenti usa lead)
-        const intestatarioNome = contratto.intestatario_nome || lead.nomeRichiedente || ''
-        const intestatarioCognome = contratto.intestatario_cognome || lead.cognomeRichiedente || ''
 
         // Inserisci il contratto nel database
-        await c.env.DB.prepare(`
-          INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
-            contenuto_html, pdf_url, pdf_generated, 
-            prezzo_mensile, durata_mesi, prezzo_totale,
-            status, data_invio, data_scadenza,
-            email_sent, email_template_used,
-            piano, servizio,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          contractId,
-          lead.id,
-          contratto.codice,
-          contratto.tipo,
-          template,
-          contenutoHtml,
-          contratto.pdf,
-          1, // pdf_generated = TRUE
-          prezzoMensile,
-          12,
-          prezzoTotale,
-          contratto.status,
-          contratto.data_invio,
-          dataScadenza,
-          1, // email_sent = TRUE
-          'email_invio_contratto',
-          contratto.piano,
-          serviceName, // eCura FAMILY, eCura PRO, o eCura PREMIUM
-          now,
-          now
-        ).run()
+        try {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+              contenuto_html, pdf_url, pdf_generated, 
+              prezzo_mensile, durata_mesi, prezzo_totale,
+              status, data_invio, data_scadenza,
+              email_sent, email_template_used,
+              piano, servizio,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            contractId,
+            lead.id,
+            contratto.codice,
+            contratto.tipo,
+            template,
+            contenutoHtml,
+            contratto.pdf,
+            1, // pdf_generated = TRUE
+            prezzoMensile,
+            12,
+            prezzoTotale,
+            contratto.status,
+            contratto.data_invio,
+            dataScadenza,
+            1, // email_sent = TRUE
+            'email_invio_contratto',
+            contratto.piano,
+            serviceName, // eCura FAMILY, eCura PRO, o eCura PREMIUM
+            now,
+            now
+          ).run()
+          
+          console.log(`   ✅ Contratto inserito: ${contratto.codice}`)
+        } catch (insertError) {
+          console.error(`   ❌ Errore INSERT contratto ${contratto.codice}:`, insertError)
+          risultati.push({
+            codice: contratto.codice,
+            success: false,
+            error: `Errore DB: ${insertError instanceof Error ? insertError.message : String(insertError)}`
+          })
+          errori++
+          continue
+        }
 
         // Aggiorna status del lead
         const newLeadStatus = contratto.status === 'SIGNED' ? 'CONTRACT_SIGNED' : 'CONTRACT_SENT'
