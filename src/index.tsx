@@ -11841,7 +11841,7 @@ app.get('/admin/test-contratti', (c) => {
 </html>`)
 })
 
-// 🔍 DEBUG ENDPOINT - Schema tabella leads
+// 🔍 DEBUG ENDPOINT - Schema tabella leads (VERITÀ ASSOLUTA!)
 app.get('/api/debug/leads-schema', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -11850,10 +11850,17 @@ app.get('/api/debug/leads-schema', async (c) => {
     
     const schema = await c.env.DB.prepare('PRAGMA table_info(leads)').all()
     
+    const columns = schema.results?.map((col: any) => ({
+      name: col.name,
+      type: col.type,
+      required: col.notnull === 1
+    }))
+    
     return c.json({ 
       success: true, 
-      columns: schema.results,
-      count: schema.results?.length || 0
+      table: 'leads',
+      columns: columns,
+      count: columns?.length || 0
     })
   } catch (error) {
     console.error('❌ Errore schema leads:', error)
