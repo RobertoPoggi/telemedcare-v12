@@ -7108,8 +7108,52 @@ app.put('/api/leads/:id', async (c) => {
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
     }
     
-    // USA LO SCHEMA UFFICIALE per generare la query
-    const { query, binds } = buildLeadUpdateQuery(data, id)
+    // Costruisci query UPDATE dinamica
+    const updateFields: string[] = []
+    const binds: any[] = []
+    
+    // Mapping campi base: frontend → DB
+    const basicFieldMapping: Record<string, string> = {
+      nome: 'nomeRichiedente',
+      cognome: 'cognomeRichiedente',
+      email: 'email',
+      telefono: 'telefono',
+      status: 'status'
+    }
+    
+    // Aggiungi solo i campi base presenti nel payload
+    for (const [frontendKey, dbKey] of Object.entries(basicFieldMapping)) {
+      if (data[frontendKey] !== undefined) {
+        updateFields.push(`${dbKey} = ?`)
+        binds.push(data[frontendKey])
+      }
+    }
+    
+    // Se ci sono servizio/piano, aggiornali nelle note
+    let noteText = data.note || ''
+    if (data.servizio || data.piano) {
+      // Genera note strutturate
+      const serviceLine = data.servizio ? `Servizio: eCura ${data.servizio}` : ''
+      const pianoLine = data.piano ? `Piano: ${data.piano}` : ''
+      
+      // Se ci sono già note, appendile
+      const existingNotes = noteText.replace(/Servizio:.*\n?/g, '').replace(/Piano:.*\n?/g, '').trim()
+      noteText = [serviceLine, pianoLine, existingNotes].filter(Boolean).join('\n')
+    }
+    
+    if (noteText) {
+      updateFields.push('note = ?')
+      binds.push(noteText)
+    }
+    
+    // Aggiungi updated_at
+    updateFields.push('updated_at = ?')
+    binds.push(new Date().toISOString())
+    
+    // Aggiungi ID alla fine per WHERE
+    binds.push(id)
+    
+    const query = `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
     
     console.log(`🔍 Query SQL:`, query)
     console.log(`🔍 Binds:`, binds)
@@ -7932,6 +7976,87 @@ app.post('/api/fix-contracts-piano', async (c) => {
     return c.json({
       success: false,
       error: 'Errore fix piani contratti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// FIX: Rimuovi duplicazione "eCura eCura" dal DB
+app.post('/api/fix-ecura-duplication', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🧹 Pulizia duplicazione "eCura eCura" dal database...')
+
+    let fixedCount = 0
+    
+    // Fix 1: Contratti - campo servizio
+    const contractsResult = await c.env.DB.prepare(`
+      UPDATE contracts 
+      SET servizio = REPLACE(servizio, 'eCura eCura', 'eCura')
+      WHERE servizio LIKE '%eCura eCura%'
+    `).run()
+    fixedCount += contractsResult.meta?.changes || 0
+    console.log(`✅ Contratti fixati: ${contractsResult.meta?.changes || 0}`)
+    
+    // Fix 2: Leads - campo servizio
+    const leadsServizioResult = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET servizio = REPLACE(servizio, 'eCura eCura', 'eCura')
+      WHERE servizio LIKE '%eCura eCura%'
+    `).run()
+    fixedCount += leadsServizioResult.meta?.changes || 0
+    console.log(`✅ Leads (servizio) fixati: ${leadsServizioResult.meta?.changes || 0}`)
+    
+    // Fix 3: Leads - campo tipoServizio
+    const leadsTipoResult = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET tipoServizio = REPLACE(tipoServizio, 'eCura eCura', 'eCura')
+      WHERE tipoServizio LIKE '%eCura eCura%'
+    `).run()
+    fixedCount += leadsTipoResult.meta?.changes || 0
+    console.log(`✅ Leads (tipoServizio) fixati: ${leadsTipoResult.meta?.changes || 0}`)
+    
+    // Fix 4: Leads - note (Servizio: eCura eCura → eCura)
+    const leadsNotesResult = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET note = REPLACE(note, 'Servizio: eCura eCura', 'Servizio: eCura')
+      WHERE note LIKE '%Servizio: eCura eCura%'
+    `).run()
+    fixedCount += leadsNotesResult.meta?.changes || 0
+    console.log(`✅ Leads (note) fixati: ${leadsNotesResult.meta?.changes || 0}`)
+    
+    // Verifica: stampa alcuni esempi
+    const sampleContracts = await c.env.DB.prepare(`
+      SELECT codice_contratto, servizio FROM contracts WHERE servizio LIKE '%eCura%' LIMIT 5
+    `).all()
+    
+    const sampleLeads = await c.env.DB.prepare(`
+      SELECT id, servizio, tipoServizio FROM leads WHERE servizio LIKE '%eCura%' OR tipoServizio LIKE '%eCura%' LIMIT 5
+    `).all()
+
+    return c.json({
+      success: true,
+      message: `✅ Duplicazione "eCura eCura" rimossa con successo!`,
+      stats: {
+        totalFixed: fixedCount,
+        contracts: contractsResult.meta?.changes || 0,
+        leadsServizio: leadsServizioResult.meta?.changes || 0,
+        leadsTipo: leadsTipoResult.meta?.changes || 0,
+        leadsNotes: leadsNotesResult.meta?.changes || 0
+      },
+      samples: {
+        contracts: sampleContracts.results,
+        leads: sampleLeads.results
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore fix duplicazione eCura:', error)
+    return c.json({
+      success: false,
+      error: 'Errore fix duplicazione eCura',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }

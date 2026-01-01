@@ -2136,16 +2136,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <span class="font-bold" id="channelWeb">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Partner</span>
+                            <span class="font-bold" id="channelPartner">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Networking</span>
+                            <span class="font-bold" id="channelNetworking">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
                             <span class="text-gray-600">Email</span>
                             <span class="font-bold" id="channelEmail">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-gray-600">Telefono</span>
                             <span class="font-bold" id="channelPhone">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Partner</span>
-                            <span class="font-bold" id="channelPartner">-</span>
                         </div>
                     </div>
                 </div>
@@ -2373,20 +2377,23 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             // Mostra i canali reali aggregati
             // Web: Website, EXCEL_IMPORT, Excel, Landing Page
+            // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
+            // Networking: Networking, NETWORKING, Network
             // Email: EMAIL, Email
             // Telefono: TELEFONO, Telefono, Phone
-            // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
             
             const webCount = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0) + (channels['Web'] || 0) + (channels['Landing Page V12.0-Cloudflare'] || 0) + (channels['Landing Page'] || 0);
+            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0) + (channels['IRBEMA'] || 0);
+            const networkingCount = (channels['Networking'] || 0) + (channels['NETWORKING'] || 0) + (channels['Network'] || 0);
             const emailCount = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
             const phoneCount = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0) + (channels['Phone'] || 0);
-            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0) + (channels['IRBEMA'] || 0);
             const nonSpecificato = channels['Non specificato'] || 0;
             
             document.getElementById('channelWeb').textContent = webCount;
+            document.getElementById('channelPartner').textContent = partnerCount;
+            document.getElementById('channelNetworking').textContent = networkingCount;
             document.getElementById('channelEmail').textContent = emailCount;
             document.getElementById('channelPhone').textContent = phoneCount;
-            document.getElementById('channelPartner').textContent = partnerCount;
             
             // Se tutto è zero, mostra messaggio debug
             if (webCount === 0 && emailCount === 0 && phoneCount === 0 && partnerCount === 0) {
@@ -4204,6 +4211,18 @@ export const workflow_manager = `<!DOCTYPE html>
     <script>
         let allLeads = [];
         let isLoading = false; // Previene chiamate multiple simultanee
+        
+        // Helper: escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Helper: escape quotes for strings in JS
+        function escapeQuotes(str) {
+            return String(str || '').replace(/"/g, '\\"').replace(/'/g, "\\'");
+        }
 
         async function loadWorkflows() {
             // Previeni chiamate multiple simultanee
