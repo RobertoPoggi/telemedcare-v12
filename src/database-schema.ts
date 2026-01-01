@@ -12,8 +12,8 @@
 // ============================================================================
 export interface Lead {
   id: string                      // PRIMARY KEY
-  nome: string                    // Nome richiedente/caregiver
-  cognome: string                 // Cognome richiedente/caregiver
+  nomeRichiedente: string         // Nome richiedente/caregiver
+  cognomeRichiedente: string      // Cognome richiedente/caregiver
   email: string                   // Email richiedente/caregiver
   telefono: string                // Telefono richiedente/caregiver
   nomeAssistito: string | null    // Nome assistito
@@ -40,8 +40,8 @@ export interface Lead {
  * Campi MODIFICABILI via CRUD (esclude campi read-only)
  */
 export const LEAD_EDITABLE_FIELDS = [
-  'nome',
-  'cognome',
+  'nomeRichiedente',
+  'cognomeRichiedente',
   'email',
   'telefono',
   'nomeAssistito',

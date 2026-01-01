@@ -5140,12 +5140,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   1️⃣ Ricerca per EMAIL: ${contratto.email_caregiver}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(email) = LOWER(?)'
+            'SELECT id, email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(email) = LOWER(?)'
           ).bind(contratto.email_caregiver).first()
           
           if (lead) {
             metodoTrovato = 'EMAIL'
-            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nome} ${lead.cognome}`)
+            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
           } else {
             console.log(`   ❌ Email non trovata nel database`)
           }
@@ -5156,12 +5156,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   2️⃣ Fallback COGNOME ASSISTITO: ${contratto.intestatario_cognome}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
+            'SELECT id, email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
           if (lead) {
             metodoTrovato = 'COGNOME_ASSISTITO'
-            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nome})`)
+            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nomeRichiedente})`)
           } else {
             console.log(`   ❌ Cognome assistito non trovato`)
           }
@@ -5172,12 +5172,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   3️⃣ Ultimo tentativo COGNOME RICHIEDENTE: ${contratto.intestatario_cognome}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognome) = LOWER(?) LIMIT 1'
+            'SELECT id, email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
           if (lead) {
             metodoTrovato = 'COGNOME_RICHIEDENTE'
-            console.log(`   ✅ Lead trovato via COGNOME RICHIEDENTE: ${lead.nome} ${lead.cognome}`)
+            console.log(`   ✅ Lead trovato via COGNOME RICHIEDENTE: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
           }
         }
 
@@ -5197,8 +5197,8 @@ app.post('/api/setup-real-contracts', async (c) => {
         console.log(`   🎯 Lead associato: ${lead.id} (trovato via ${metodoTrovato})`)
 
         // Dati intestatario (PRIMA di usarli!)
-        const intestatarioNome = contratto.intestatario_nome || lead.nome || ''
-        const intestatarioCognome = contratto.intestatario_cognome || lead.cognome || ''
+        const intestatarioNome = contratto.intestatario_nome || lead.nomeRichiedente || ''
+        const intestatarioCognome = contratto.intestatario_cognome || lead.cognomeRichiedente || ''
 
         // Genera ID univoco per il contratto
         const contractId = `CONTRACT_${contratto.codice}_${Date.now()}`
