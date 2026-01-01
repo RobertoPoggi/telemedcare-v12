@@ -2329,12 +2329,17 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updatePlansBreakdown(leads) {
             const counts = { 'BASE': 0, 'AVANZATO': 0 };
             leads.forEach(l => {
-                // Cerca prima nel campo piano, poi nelle note
+                // PRIORITY: piano > tipoServizio > note > default BASE
                 let plan = 'BASE'; // default
                 
                 if (l.piano) {
+                    // Nuovo campo piano (dopo migration 0006)
                     plan = l.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
+                } else if (l.tipoServizio) {
+                    // Vecchio campo tipoServizio (prima della migration)
+                    plan = l.tipoServizio.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
                 } else if (l.note) {
+                    // Fallback: cerca nelle note
                     plan = l.note.includes('Piano: AVANZATO') || l.note.includes('AVANZATO') ? 'AVANZATO' : 'BASE';
                 }
                 
@@ -2436,7 +2441,16 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = leads.map(lead => {
-                const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                // PRIORITY: piano > tipoServizio > note > default BASE
+                let piano = 'BASE';
+                if (lead.piano) {
+                    piano = lead.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
+                } else if (lead.tipoServizio) {
+                    piano = lead.tipoServizio.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
+                } else if (lead.note && lead.note.includes('Piano: AVANZATO')) {
+                    piano = 'AVANZATO';
+                }
+                
                 const prezzo = (piano === 'AVANZATO') ? '840' : '480';
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
                 const hasContract = ['LEAD-CONTRATTO-001', 'LEAD-CONTRATTO-002', 'LEAD-CONTRATTO-003', 'LEAD-EXCEL-065'].includes(lead.id);
