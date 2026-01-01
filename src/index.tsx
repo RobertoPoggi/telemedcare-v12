@@ -5242,6 +5242,12 @@ app.post('/api/setup-real-contracts', async (c) => {
 
         // Inserisci il contratto nel database
         try {
+          console.log(`   📦 Preparazione INSERT per ${contratto.codice}:`)
+          console.log(`      - Lead ID: ${lead.id}`)
+          console.log(`      - Intestatario: ${intestatarioNome} ${intestatarioCognome}`)
+          console.log(`      - Prezzo: €${prezzoTotale} (€${prezzoMensile}/mese)`)
+          console.log(`      - Status: ${contratto.status}`)
+          
           await c.env.DB.prepare(`
             INSERT INTO contracts (
               id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
@@ -5278,6 +5284,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   ✅ Contratto inserito: ${contratto.codice}`)
         } catch (insertError) {
           console.error(`   ❌ Errore INSERT contratto ${contratto.codice}:`, insertError)
+          console.error(`   ❌ Dettagli errore:`, {
+            message: insertError instanceof Error ? insertError.message : String(insertError),
+            contractId,
+            leadId: lead.id,
+            codice: contratto.codice
+          })
           risultati.push({
             codice: contratto.codice,
             success: false,
