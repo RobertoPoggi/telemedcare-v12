@@ -8065,34 +8065,67 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
     const hasServizio = columns.includes('servizio')
     
     console.log(`📊 Colonne esistenti: piano=${hasPiano}, servizio=${hasServizio}`)
+    console.log(`📊 Tutte le colonne:`, columns)
+
+    let pianoAdded = false
+    let servizioAdded = false
+    let pianoError = null
+    let servizioError = null
 
     // Step 2: Aggiungi colonne se non esistono
     if (!hasPiano) {
-      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN piano TEXT DEFAULT 'BASE'`).run()
-      console.log('✅ Colonna piano aggiunta')
+      try {
+        const result = await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN piano TEXT DEFAULT 'BASE'`).run()
+        console.log('✅ Colonna piano aggiunta:', result)
+        pianoAdded = true
+      } catch (err) {
+        console.error('❌ Errore aggiunta colonna piano:', err)
+        pianoError = err instanceof Error ? err.message : String(err)
+      }
     }
     
     if (!hasServizio) {
-      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
-      console.log('✅ Colonna servizio aggiunta')
+      try {
+        const result = await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
+        console.log('✅ Colonna servizio aggiunta:', result)
+        servizioAdded = true
+      } catch (err) {
+        console.error('❌ Errore aggiunta colonna servizio:', err)
+        servizioError = err instanceof Error ? err.message : String(err)
+      }
     }
 
-    // Step 3: Migra dati esistenti
-    // CORREZIONE: tipoServizio contiene IL SERVIZIO (es. "eCura PRO"), NON il piano!
-    // Piano va estratto dalle note
-    const migrateResult = await c.env.DB.prepare(`
-      UPDATE leads 
-      SET servizio = COALESCE(tipoServizio, 'eCura PRO'),
-          piano = CASE 
-              WHEN note LIKE '%Piano: AVANZATO%' OR note LIKE '%AVANZATO%' THEN 'AVANZATO'
-              ELSE 'BASE'
-          END
-      WHERE 1=1
-    `).run()
+    // Step 3: Verifica nuovamente le colonne
+    const tableInfoAfter = await c.env.DB.prepare('PRAGMA table_info(leads)').all()
+    const columnsAfter = tableInfoAfter.results.map((col: any) => col.name)
+    const hasPianoAfter = columnsAfter.includes('piano')
+    const hasServizioAfter = columnsAfter.includes('servizio')
+    
+    console.log(`📊 Colonne dopo ALTER: piano=${hasPianoAfter}, servizio=${hasServizioAfter}`)
 
-    console.log(`✅ Migrati ${migrateResult.meta?.changes || 0} lead`)
+    // Step 4: Migra dati esistenti SOLO se le colonne esistono
+    let migrateResult = { meta: { changes: 0 } }
+    
+    if (hasPianoAfter && hasServizioAfter) {
+      try {
+        migrateResult = await c.env.DB.prepare(`
+          UPDATE leads 
+          SET servizio = COALESCE(tipoServizio, 'eCura PRO'),
+              piano = CASE 
+                  WHEN note LIKE '%Piano: AVANZATO%' OR note LIKE '%AVANZATO%' THEN 'AVANZATO'
+                  ELSE 'BASE'
+              END
+          WHERE 1=1
+        `).run()
+        console.log(`✅ Migrati ${migrateResult.meta?.changes || 0} lead`)
+      } catch (err) {
+        console.error('❌ Errore migrazione dati:', err)
+      }
+    } else {
+      console.warn('⚠️ Colonne non presenti, skip migrazione dati')
+    }
 
-    // Step 4: Verifica risultato
+    // Step 5: Verifica risultato
     const stats = await c.env.DB.prepare(`
       SELECT 
         COUNT(*) as total_leads,
@@ -8105,11 +8138,25 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
     `).first()
 
     return c.json({
-      success: true,
-      message: '✅ Migration 0006 completata con successo!',
+      success: hasPianoAfter && hasServizioAfter,
+      message: (hasPianoAfter && hasServizioAfter) 
+        ? '✅ Migration 0006 completata con successo!' 
+        : '⚠️ Migration parziale o fallita',
+      debug: {
+        columnsBefore: columns,
+        columnsAfter: columnsAfter,
+        hasPianoBefore: hasPiano,
+        hasServizioBefore: hasServizio,
+        hasPianoAfter: hasPianoAfter,
+        hasServizioAfter: hasServizioAfter,
+        pianoAdded,
+        servizioAdded,
+        pianoError,
+        servizioError
+      },
       columnsAdded: {
-        piano: !hasPiano,
-        servizio: !hasServizio
+        piano: pianoAdded,
+        servizio: servizioAdded
       },
       migrated: migrateResult.meta?.changes || 0,
       stats
