@@ -2598,10 +2598,10 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             document.getElementById('editLeadId').value = lead.id;
-            document.getElementById('editNome').value = lead.nomeRichiedente || '';
-            document.getElementById('editCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('editEmail').value = lead.emailRichiedente || lead.email || '';
-            document.getElementById('editTelefono').value = lead.telefonoRichiedente || lead.telefono || '';
+            document.getElementById('editNome').value = lead.nome || lead.nomeRichiedente || '';
+            document.getElementById('editCognome').value = lead.cognome || lead.cognomeRichiedente || '';
+            document.getElementById('editEmail').value = lead.email || lead.emailRichiedente || '';
+            document.getElementById('editTelefono').value = lead.telefono || lead.telefonoRichiedente || '';
             
             const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
             document.getElementById('editPiano').value = currentPiano;

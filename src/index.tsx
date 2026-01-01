@@ -5137,12 +5137,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   1️⃣ Ricerca per EMAIL: ${contratto.email_caregiver}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
+            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(email) = LOWER(?)'
           ).bind(contratto.email_caregiver).first()
           
           if (lead) {
             metodoTrovato = 'EMAIL'
-            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nome} ${lead.cognome}`)
           } else {
             console.log(`   ❌ Email non trovata nel database`)
           }
@@ -5153,12 +5153,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   2️⃣ Fallback COGNOME ASSISTITO: ${contratto.intestatario_cognome}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
+            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
           if (lead) {
             metodoTrovato = 'COGNOME_ASSISTITO'
-            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nomeRichiedente})`)
+            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nome})`)
           } else {
             console.log(`   ❌ Cognome assistito non trovato`)
           }
@@ -5169,12 +5169,12 @@ app.post('/api/setup-real-contracts', async (c) => {
           console.log(`   3️⃣ Ultimo tentativo COGNOME RICHIEDENTE: ${contratto.intestatario_cognome}`)
           
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+            'SELECT id, email, nome, cognome, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognome) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
           if (lead) {
             metodoTrovato = 'COGNOME_RICHIEDENTE'
-            console.log(`   ✅ Lead trovato via COGNOME RICHIEDENTE: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+            console.log(`   ✅ Lead trovato via COGNOME RICHIEDENTE: ${lead.nome} ${lead.cognome}`)
           }
         }
 
@@ -7091,12 +7091,12 @@ app.put('/api/leads/:id', async (c) => {
       'external_source_id', 'external_data'                     // ← ESTERNI
     ]
     
-    // Alias frontend → backend
+    // Alias frontend → backend (NOMI REALI DEL DATABASE!)
     const fieldAliases: Record<string, string> = {
-      'nome': 'nomeRichiedente',
-      'cognome': 'cognomeRichiedente',
-      'email': 'emailRichiedente',
-      'telefono': 'telefonoRichiedente'
+      'emailRichiedente': 'email',        // ← CAMPO REALE: email
+      'telefonoRichiedente': 'telefono',  // ← CAMPO REALE: telefono
+      'nomeRichiedente': 'nome',          // ← CAMPO REALE: nome
+      'cognomeRichiedente': 'cognome'     // ← CAMPO REALE: cognome
     }
     
     for (const [key, value] of Object.entries(data)) {
@@ -7144,12 +7144,12 @@ app.put('/api/leads/:id', async (c) => {
       const basicUpdates: string[] = []
       const basicBinds: any[] = []
       
-      // Solo campi che SICURAMENTE esistono
+      // Solo campi che SICURAMENTE esistono (NOMI REALI!)
       const basicFields: Record<string, string> = {
-        'nome': 'nomeRichiedente',
-        'cognome': 'cognomeRichiedente',
-        'email': 'emailRichiedente',
-        'telefono': 'telefonoRichiedente',
+        'nome': 'nome',
+        'cognome': 'cognome',
+        'email': 'email',
+        'telefono': 'telefono',
         'note': 'note',
         'status': 'status'
       }
