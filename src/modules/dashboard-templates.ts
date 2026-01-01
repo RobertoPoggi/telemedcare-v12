@@ -2642,7 +2642,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             // Mostra servizio e piano dal DB (se esistono i campi)
-            const servizio = lead.servizio || 'PRO';
+            const servizio = lead.servizio || 'eCura PRO';
             const piano = lead.piano || lead.tipoServizio || 'BASE';
             
             document.getElementById('viewLeadId').textContent = lead.id;
@@ -2650,7 +2650,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
             document.getElementById('viewEmail').textContent = lead.email || '-';
             document.getElementById('viewTelefono').textContent = lead.telefono || '-';
-            document.getElementById('viewServizio').textContent = 'eCura ' + servizio;
+            document.getElementById('viewServizio').textContent = servizio;
             document.getElementById('viewPiano').textContent = piano;
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
@@ -2675,8 +2675,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             const currentPiano = lead.piano || lead.tipoServizio || 'BASE';
             document.getElementById('editPiano').value = currentPiano;
             
-            // Usa campo servizio dal DB (se esiste), altrimenti default PRO
-            const currentServizio = lead.servizio || 'PRO';
+            // Usa campo servizio dal DB (se esiste), altrimenti default eCura PRO
+            const currentServizio = lead.servizio || 'eCura PRO';
             document.getElementById('editServizio').value = currentServizio;
             
             document.getElementById('editNote').value = lead.note || '';
@@ -3446,12 +3446,17 @@ export const data_dashboard = `<!DOCTYPE html>
             };
 
             // Conta lead PER SERVIZIO
-            // IMPORTANTE: La tabella leads NON HA campo 'servizio'!
-            // Tutti i lead sono eCura PRO (default)
-            // Se in futuro aggiungeremo FAMILY/PREMIUM, aggiungeremo un campo servizio
+            // Ora la tabella leads HA il campo 'servizio' (dopo migration 0006)
             leads.forEach(lead => {
-                // Per ora tutti i lead sono PRO
-                data.PRO.leads++;
+                // Normalizza servizio: rimuovi "eCura " prefix per matching
+                const servizio = (lead.servizio || 'eCura PRO').toUpperCase().replace(/^ECURA\s+/i, '');
+                
+                if (data[servizio]) {
+                    data[servizio].leads++;
+                } else {
+                    // Default a PRO se servizio sconosciuto
+                    data.PRO.leads++;
+                }
             });
 
             // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali (SOLO FIRMATI)

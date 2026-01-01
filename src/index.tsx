@@ -8073,7 +8073,7 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
     }
     
     if (!hasServizio) {
-      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN servizio TEXT DEFAULT 'PRO'`).run()
+      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN servizio TEXT DEFAULT 'eCura PRO'`).run()
       console.log('✅ Colonna servizio aggiunta')
     }
 
@@ -8086,7 +8086,7 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
           WHEN UPPER(tipoServizio) = 'BASE' THEN 'BASE'
           ELSE 'BASE'
       END,
-      servizio = 'PRO'
+      servizio = 'eCura PRO'
       WHERE 1=1
     `).run()
 
@@ -8098,9 +8098,9 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
         COUNT(*) as total_leads,
         SUM(CASE WHEN piano = 'BASE' THEN 1 ELSE 0 END) as piano_base,
         SUM(CASE WHEN piano = 'AVANZATO' THEN 1 ELSE 0 END) as piano_avanzato,
-        SUM(CASE WHEN servizio = 'PRO' THEN 1 ELSE 0 END) as servizio_pro,
-        SUM(CASE WHEN servizio = 'FAMILY' THEN 1 ELSE 0 END) as servizio_family,
-        SUM(CASE WHEN servizio = 'PREMIUM' THEN 1 ELSE 0 END) as servizio_premium
+        SUM(CASE WHEN servizio = 'eCura PRO' OR servizio = 'PRO' THEN 1 ELSE 0 END) as servizio_pro,
+        SUM(CASE WHEN servizio = 'eCura Family' OR servizio = 'FAMILY' THEN 1 ELSE 0 END) as servizio_family,
+        SUM(CASE WHEN servizio = 'eCura PREMIUM' OR servizio = 'PREMIUM' THEN 1 ELSE 0 END) as servizio_premium
       FROM leads
     `).first()
 
