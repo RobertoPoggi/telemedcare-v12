@@ -8077,16 +8077,16 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
       console.log('✅ Colonna servizio aggiunta')
     }
 
-    // Step 3: Migra dati esistenti da tipoServizio a piano
-    // IMPORTANT: Update ALL rows, not just NULL ones (columns might have default values)
+    // Step 3: Migra dati esistenti
+    // CORREZIONE: tipoServizio contiene IL SERVIZIO (es. "eCura PRO"), NON il piano!
+    // Piano va estratto dalle note
     const migrateResult = await c.env.DB.prepare(`
       UPDATE leads 
-      SET piano = CASE 
-          WHEN UPPER(tipoServizio) = 'AVANZATO' THEN 'AVANZATO'
-          WHEN UPPER(tipoServizio) = 'BASE' THEN 'BASE'
-          ELSE 'BASE'
-      END,
-      servizio = 'eCura PRO'
+      SET servizio = COALESCE(tipoServizio, 'eCura PRO'),
+          piano = CASE 
+              WHEN note LIKE '%Piano: AVANZATO%' OR note LIKE '%AVANZATO%' THEN 'AVANZATO'
+              ELSE 'BASE'
+          END
       WHERE 1=1
     `).run()
 

@@ -2329,15 +2329,13 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updatePlansBreakdown(leads) {
             const counts = { 'BASE': 0, 'AVANZATO': 0 };
             leads.forEach(l => {
-                // PRIORITY: piano > tipoServizio > note > default BASE
+                // PRIORITY: piano > note > default BASE
+                // NOTA: tipoServizio contiene il SERVIZIO (es. "eCura PRO"), NON il piano!
                 let plan = 'BASE'; // default
                 
                 if (l.piano) {
                     // Nuovo campo piano (dopo migration 0006)
                     plan = l.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
-                } else if (l.tipoServizio) {
-                    // Vecchio campo tipoServizio (prima della migration)
-                    plan = l.tipoServizio.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
                 } else if (l.note) {
                     // Fallback: cerca nelle note
                     plan = l.note.includes('Piano: AVANZATO') || l.note.includes('AVANZATO') ? 'AVANZATO' : 'BASE';
@@ -2441,12 +2439,11 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = leads.map(lead => {
-                // PRIORITY: piano > tipoServizio > note > default BASE
+                // PRIORITY: piano > note > default BASE
+                // NOTA: tipoServizio contiene il SERVIZIO, NON il piano!
                 let piano = 'BASE';
                 if (lead.piano) {
                     piano = lead.piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
-                } else if (lead.tipoServizio) {
-                    piano = lead.tipoServizio.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE';
                 } else if (lead.note && lead.note.includes('Piano: AVANZATO')) {
                     piano = 'AVANZATO';
                 }
@@ -2642,8 +2639,9 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             // Mostra servizio e piano dal DB (se esistono i campi)
-            const servizio = lead.servizio || 'eCura PRO';
-            const piano = lead.piano || lead.tipoServizio || 'BASE';
+            // NOTA: tipoServizio contiene il SERVIZIO, non il piano!
+            const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
+            const piano = lead.piano || 'BASE';  // Piano estratto dalle note durante migration
             
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
@@ -2671,12 +2669,13 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('editEmail').value = lead.email || '';
             document.getElementById('editTelefono').value = lead.telefono || '';
             
-            // Usa campo piano dal DB (se esiste), altrimenti fallback su tipoServizio
-            const currentPiano = lead.piano || lead.tipoServizio || 'BASE';
+            // Usa campo piano dal DB (se esiste), altrimenti BASE
+            // NOTA: tipoServizio contiene il SERVIZIO, non il piano!
+            const currentPiano = lead.piano || 'BASE';
             document.getElementById('editPiano').value = currentPiano;
             
-            // Usa campo servizio dal DB (se esiste), altrimenti default eCura PRO
-            const currentServizio = lead.servizio || 'eCura PRO';
+            // Usa campo servizio dal DB, con fallback su tipoServizio
+            const currentServizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
             document.getElementById('editServizio').value = currentServizio;
             
             document.getElementById('editNote').value = lead.note || '';
