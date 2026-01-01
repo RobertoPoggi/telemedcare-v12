@@ -2375,16 +2375,37 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('📊 Total leads:', leads.length);
             console.log('📊 Sample lead fields:', leads[0] ? Object.keys(leads[0]).filter(k => k.includes('fonte') || k.includes('canal') || k.includes('source')) : []);
             
+            // Debug: Cerca lead con fonte che inizia con WEB
+            const webLeads = leads.filter(l => {
+                const fonte = (l.canaleAcquisizione || l.fonte || l.canale || '').toLowerCase();
+                return fonte.includes('web') && !fonte.includes('doubleyou');
+            });
+            console.log('📊 Lead con "web" nella fonte:', webLeads.length, webLeads.map(l => ({ id: l.id, nome: l.nomeRichiedente + ' ' + l.cognomeRichiedente, fonte: l.fonte })));
+            
             // Mostra i canali reali aggregati
-            // Web: Website, EXCEL_IMPORT, Excel, Landing Page
+            // Web: Website, EXCEL_IMPORT, Excel, Landing Page, Web, website, WEB
             // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
             // Networking: Networking, NETWORKING, Network
             // Email: EMAIL, Email
             // Telefono: TELEFONO, Telefono, Phone
             
-            const webCount = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0) + (channels['Web'] || 0) + (channels['Landing Page V12.0-Cloudflare'] || 0) + (channels['Landing Page'] || 0);
-            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0) + (channels['IRBEMA'] || 0);
-            const networkingCount = (channels['Networking'] || 0) + (channels['NETWORKING'] || 0) + (channels['Network'] || 0);
+            const webCount = (channels['Website'] || 0) + 
+                            (channels['EXCEL_IMPORT'] || 0) + 
+                            (channels['Excel'] || 0) + 
+                            (channels['Web'] || 0) + 
+                            (channels['website'] || 0) + 
+                            (channels['WEB'] || 0) + 
+                            (channels['Landing Page V12.0-Cloudflare'] || 0) + 
+                            (channels['Landing Page'] || 0);
+            const partnerCount = (channels['Irbema'] || 0) + 
+                                (channels['AON'] || 0) + 
+                                (channels['DoubleYou'] || 0) + 
+                                (channels['CONTRATTO_PDF'] || 0) + 
+                                (channels['Partner'] || 0) + 
+                                (channels['IRBEMA'] || 0);
+            const networkingCount = (channels['Networking'] || 0) + 
+                                   (channels['NETWORKING'] || 0) + 
+                                   (channels['Network'] || 0);
             const emailCount = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
             const phoneCount = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0) + (channels['Phone'] || 0);
             const nonSpecificato = channels['Non specificato'] || 0;
@@ -2606,17 +2627,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            // TASK #4 FIX: Determina servizio (priorità: lead.servizio > lead.tipoServizio > default PRO)
-            // Normalizza: rimuovi "eCura" se già presente
-            let servizio = lead.servizio || lead.tipoServizio || 'PRO';
-            servizio = servizio.replace(/^eCura\s+/i, ''); // Rimuovi "eCura" all'inizio (case insensitive)
+            // Mostra servizio così com'è dal DB
+            const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
             
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
             document.getElementById('viewEmail').textContent = lead.email || '-';
             document.getElementById('viewTelefono').textContent = lead.telefono || '-';
-            document.getElementById('viewServizio').textContent = 'eCura ' + servizio;
+            document.getElementById('viewServizio').textContent = servizio;
             document.getElementById('viewPiano').textContent = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
