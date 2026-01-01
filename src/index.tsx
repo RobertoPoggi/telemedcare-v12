@@ -7099,35 +7099,17 @@ app.put('/api/leads/:id', async (c) => {
       'nomeAssistito': 'nomeAssistito',
       'cognomeAssistito': 'cognomeAssistito',
       'pacchetto': 'pacchetto',
+      'piano': 'piano',                        // ← CAMPO DEDICATO!
+      'servizio': 'tipoServizio',             // ← CAMPO DEDICATO! (nel DB si chiama tipoServizio)
+      'tipoServizio': 'tipoServizio',
       'vuoleBrochure': 'vuoleBrochure',
       'vuoleManuale': 'vuoleManuale',
       'vuoleContratto': 'vuoleContratto',
       'status': 'status',
       'note': 'note',
       'fonte': 'fonte',
-      'priority': 'priority'
-    }
-    
-    // Gestione speciale per piano e servizio (salvati in note)
-    let currentNote = data.note || ''
-    
-    if (data.piano) {
-      // Rimuovi vecchio piano dalle note
-      currentNote = currentNote.replace(/Piano:\s*(BASE|AVANZATO)\s*/gi, '')
-      // Aggiungi nuovo piano
-      currentNote = `Piano: ${data.piano}\n${currentNote}`.trim()
-    }
-    
-    if (data.servizio) {
-      // Rimuovi vecchio servizio dalle note
-      currentNote = currentNote.replace(/Servizio:\s*[^\n]+\n?/gi, '')
-      // Aggiungi nuovo servizio
-      currentNote = `Servizio: ${data.servizio}\n${currentNote}`.trim()
-    }
-    
-    // Sovrascrivi note se piano o servizio sono stati modificati
-    if (data.piano || data.servizio) {
-      data.note = currentNote
+      'priority': 'priority',
+      'canaleAcquisizione': 'canaleAcquisizione'
     }
     
     for (const [key, dbColumn] of Object.entries(fieldMap)) {
@@ -11879,6 +11861,30 @@ app.get('/admin/test-contratti', (c) => {
 
 </body>
 </html>`)
+})
+
+// 🔍 DEBUG ENDPOINT - Schema tabella leads
+app.get('/api/debug/leads-schema', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const schema = await c.env.DB.prepare('PRAGMA table_info(leads)').all()
+    
+    return c.json({ 
+      success: true, 
+      columns: schema.results,
+      count: schema.results?.length || 0
+    })
+  } catch (error) {
+    console.error('❌ Errore schema leads:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero schema',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
 })
 
 // 🔍 DEBUG ENDPOINT - Lista email leads nel database
