@@ -7084,8 +7084,12 @@ app.put('/api/leads/:id', async (c) => {
     const updates: string[] = []
     const binds: any[] = []
     
-    // Campi da ESCLUDERE (non modificabili)
-    const excludeFields = ['id', 'created_at', 'timestamp']
+    // Campi da ESCLUDERE (non modificabili o non esistenti)
+    const excludeFields = [
+      'id', 'created_at', 'timestamp', 
+      'consensoPrivacy', 'consensoMarketing', 'consensoTerze',  // ← NON ESISTONO!
+      'external_source_id', 'external_data'                     // ← ESTERNI
+    ]
     
     // Alias frontend → backend
     const fieldAliases: Record<string, string> = {
@@ -7097,6 +7101,12 @@ app.put('/api/leads/:id', async (c) => {
     
     for (const [key, value] of Object.entries(data)) {
       if (excludeFields.includes(key) || value === undefined) {
+        continue
+      }
+      
+      // Salta email vuote (il DB richiede emailRichiedente NOT NULL)
+      if (key === 'email' && value === '') {
+        console.log('⚠️  Skipping empty email field')
         continue
       }
       

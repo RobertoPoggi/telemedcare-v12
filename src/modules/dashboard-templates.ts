@@ -2600,8 +2600,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('editLeadId').value = lead.id;
             document.getElementById('editNome').value = lead.nomeRichiedente || '';
             document.getElementById('editCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('editEmail').value = lead.email || '';
-            document.getElementById('editTelefono').value = lead.telefono || '';
+            document.getElementById('editEmail').value = lead.emailRichiedente || lead.email || '';
+            document.getElementById('editTelefono').value = lead.telefonoRichiedente || lead.telefono || '';
             
             const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
             document.getElementById('editPiano').value = currentPiano;
