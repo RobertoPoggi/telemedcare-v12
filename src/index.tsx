@@ -5126,62 +5126,69 @@ app.post('/api/setup-real-contracts', async (c) => {
     for (const contratto of contratti_da_creare) {
       try {
         console.log(`\n🔍 Contratto ${contratto.codice}:`)
+        console.log(`   📧 Email caregiver: ${contratto.email_caregiver}`)
+        console.log(`   👤 Intestatario: ${contratto.intestatario_nome} ${contratto.intestatario_cognome}`)
         
-        // STEP 1: Cerca per EMAIL (se disponibile)
         let lead = null
         let metodoTrovato = ''
         
+        // STEP 1: Cerca per EMAIL caregiver (se disponibile)
         if (contratto.email_caregiver) {
-          console.log(`   1️⃣ Tentativo ricerca per EMAIL: ${contratto.email_caregiver}`)
+          console.log(`   1️⃣ Ricerca per EMAIL: ${contratto.email_caregiver}`)
           
-          // Prova con emailRichiedente (schema SQL standard)
           lead = await c.env.DB.prepare(
-            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
+            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(emailRichiedente) = LOWER(?)'
           ).bind(contratto.email_caregiver).first()
-          
-          // Se non trovato, prova con campo "email" (possibile alias)
-          if (!lead) {
-            lead = await c.env.DB.prepare(
-              'SELECT id, email, nomeRichiedente, cognomeRichiedente FROM leads WHERE LOWER(email) = LOWER(?)'
-            ).bind(contratto.email_caregiver).first()
-          }
           
           if (lead) {
             metodoTrovato = 'EMAIL'
-            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email || lead.emailRichiedente})`)
+            console.log(`   ✅ Lead trovato via EMAIL: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
           } else {
-            console.log(`   ❌ Lead NON trovato per email: ${contratto.email_caregiver}`)
+            console.log(`   ❌ Email non trovata nel database`)
           }
         }
         
         // STEP 2: Fallback - Cerca per COGNOME ASSISTITO (intestatario)
         if (!lead && contratto.intestatario_cognome) {
-          console.log(`   2️⃣ Fallback ricerca per COGNOME ASSISTITO: ${contratto.intestatario_cognome}`)
+          console.log(`   2️⃣ Fallback COGNOME ASSISTITO: ${contratto.intestatario_cognome}`)
           
-          // Cerca nel campo cognomeAssistito (lo schema corretto)
           lead = await c.env.DB.prepare(
             'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeAssistito) = LOWER(?) LIMIT 1'
           ).bind(contratto.intestatario_cognome).first()
           
           if (lead) {
             metodoTrovato = 'COGNOME_ASSISTITO'
-            console.log(`   ✅ Lead trovato via COGNOME ASSISTITO: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nomeRichiedente} ${lead.cognomeRichiedente})`)
+            console.log(`   ✅ Lead trovato via COGNOME: ${lead.nomeAssistito} ${lead.cognomeAssistito} (caregiver: ${lead.nomeRichiedente})`)
           } else {
-            console.log(`   ❌ Lead NON trovato per cognome assistito: ${contratto.intestatario_cognome}`)
+            console.log(`   ❌ Cognome assistito non trovato`)
+          }
+        }
+        
+        // STEP 3: Ultimo tentativo - Cerca per COGNOME RICHIEDENTE
+        if (!lead && contratto.intestatario_cognome) {
+          console.log(`   3️⃣ Ultimo tentativo COGNOME RICHIEDENTE: ${contratto.intestatario_cognome}`)
+          
+          lead = await c.env.DB.prepare(
+            'SELECT id, emailRichiedente AS email, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito FROM leads WHERE LOWER(cognomeRichiedente) = LOWER(?) LIMIT 1'
+          ).bind(contratto.intestatario_cognome).first()
+          
+          if (lead) {
+            metodoTrovato = 'COGNOME_RICHIEDENTE'
+            console.log(`   ✅ Lead trovato via COGNOME RICHIEDENTE: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
           }
         }
 
-        // STEP 3: Se ancora non trovato → errore
+        // STEP 4: Se ancora non trovato → SALTA questo contratto ma continua con gli altri
         if (!lead) {
-          const errorMsg = `Lead non trovato per email: ${contratto.email_caregiver} né per cognome: ${contratto.intestatario_cognome}`
-          console.log(`   ❌ ${contratto.codice}: ${errorMsg}`)
+          const errorMsg = `Lead non trovato - email: ${contratto.email_caregiver || 'N/A'}, cognome: ${contratto.intestatario_cognome || 'N/A'}`
+          console.log(`   ⚠️  SKIP ${contratto.codice}: ${errorMsg}`)
           risultati.push({
             codice: contratto.codice,
             success: false,
             error: errorMsg
           })
           errori++
-          continue
+          continue  // ← CONTINUA con il prossimo contratto!
         }
         
         console.log(`   🎯 Lead associato: ${lead.id} (trovato via ${metodoTrovato})`)
