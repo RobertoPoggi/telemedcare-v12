@@ -8078,6 +8078,7 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
     }
 
     // Step 3: Migra dati esistenti da tipoServizio a piano
+    // IMPORTANT: Update ALL rows, not just NULL ones (columns might have default values)
     const migrateResult = await c.env.DB.prepare(`
       UPDATE leads 
       SET piano = CASE 
@@ -8086,7 +8087,7 @@ app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
           ELSE 'BASE'
       END,
       servizio = 'PRO'
-      WHERE piano IS NULL OR servizio IS NULL
+      WHERE 1=1
     `).run()
 
     console.log(`✅ Migrati ${migrateResult.meta?.changes || 0} lead`)
