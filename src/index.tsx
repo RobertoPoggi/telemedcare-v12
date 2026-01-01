@@ -7074,6 +7074,7 @@ app.put('/api/leads/:id', async (c) => {
   
   try {
     const data = await c.req.json()
+    console.log(`📝 UPDATE Lead ${id}:`, JSON.stringify(data, null, 2))
     
     if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
@@ -7085,6 +7086,12 @@ app.put('/api/leads/:id', async (c) => {
     
     // Map field names to DB columns (basato su schema SQL)
     const fieldMap: Record<string, string> = {
+      // Alias frontend → backend
+      'nome': 'nomeRichiedente',              // ← FIX CRUD!
+      'cognome': 'cognomeRichiedente',        // ← FIX CRUD!
+      'email': 'emailRichiedente',            // ← FIX CRUD!
+      'telefono': 'telefonoRichiedente',      // ← FIX CRUD!
+      // Nomi completi (backwards compatibility)
       'nomeRichiedente': 'nomeRichiedente',
       'cognomeRichiedente': 'cognomeRichiedente',
       'emailRichiedente': 'emailRichiedente',
@@ -7101,6 +7108,28 @@ app.put('/api/leads/:id', async (c) => {
       'priority': 'priority'
     }
     
+    // Gestione speciale per piano e servizio (salvati in note)
+    let currentNote = data.note || ''
+    
+    if (data.piano) {
+      // Rimuovi vecchio piano dalle note
+      currentNote = currentNote.replace(/Piano:\s*(BASE|AVANZATO)\s*/gi, '')
+      // Aggiungi nuovo piano
+      currentNote = `Piano: ${data.piano}\n${currentNote}`.trim()
+    }
+    
+    if (data.servizio) {
+      // Rimuovi vecchio servizio dalle note
+      currentNote = currentNote.replace(/Servizio:\s*[^\n]+\n?/gi, '')
+      // Aggiungi nuovo servizio
+      currentNote = `Servizio: ${data.servizio}\n${currentNote}`.trim()
+    }
+    
+    // Sovrascrivi note se piano o servizio sono stati modificati
+    if (data.piano || data.servizio) {
+      data.note = currentNote
+    }
+    
     for (const [key, dbColumn] of Object.entries(fieldMap)) {
       if (data[key] !== undefined) {
         updates.push(`${dbColumn} = ?`)
@@ -7109,6 +7138,7 @@ app.put('/api/leads/:id', async (c) => {
     }
     
     if (updates.length === 0) {
+      console.log('⚠️  Nessun campo valido da aggiornare')
       return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
     }
     
@@ -7120,13 +7150,22 @@ app.put('/api/leads/:id', async (c) => {
     binds.push(id)
     
     const query = `UPDATE leads SET ${updates.join(', ')} WHERE id = ?`
+    console.log(`🔍 Query SQL:`, query)
+    console.log(`🔍 Binds:`, binds)
     
-    await c.env.DB.prepare(query).bind(...binds).run()
+    const result = await c.env.DB.prepare(query).bind(...binds).run()
+    console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
     
     return c.json({ success: true, message: 'Lead aggiornato con successo' })
   } catch (error) {
     console.error('❌ Errore aggiornamento lead:', error)
-    return c.json({ success: false, error: 'Errore aggiornamento lead', details: error instanceof Error ? error.message : String(error) }, 500)
+    console.error('❌ Error type:', typeof error)
+    console.error('❌ Error details:', error instanceof Error ? error.message : String(error))
+    return c.json({ 
+      success: false, 
+      error: 'Errore aggiornamento lead', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, 500)
   }
 })
 
