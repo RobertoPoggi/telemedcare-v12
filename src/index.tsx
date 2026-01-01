@@ -7122,10 +7122,58 @@ app.put('/api/leads/:id', async (c) => {
     console.log(`🔍 Query SQL:`, query)
     console.log(`🔍 Binds:`, binds)
     
-    const result = await c.env.DB.prepare(query).bind(...binds).run()
-    console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
-    
-    return c.json({ success: true, message: 'Lead aggiornato con successo' })
+    try {
+      const result = await c.env.DB.prepare(query).bind(...binds).run()
+      console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
+      
+      return c.json({ success: true, message: 'Lead aggiornato con successo' })
+    } catch (sqlError) {
+      // Se errore SQL (campo non esistente), riprova con solo campi base
+      console.error('⚠️  Errore SQL, riprovo con campi base:', sqlError)
+      
+      const basicUpdates: string[] = []
+      const basicBinds: any[] = []
+      
+      // Solo campi che SICURAMENTE esistono
+      const basicFields: Record<string, string> = {
+        'nome': 'nomeRichiedente',
+        'cognome': 'cognomeRichiedente',
+        'email': 'emailRichiedente',
+        'telefono': 'telefonoRichiedente',
+        'note': 'note',
+        'status': 'status'
+      }
+      
+      for (const [frontendKey, dbColumn] of Object.entries(basicFields)) {
+        if (data[frontendKey] !== undefined) {
+          basicUpdates.push(`${dbColumn} = ?`)
+          basicBinds.push(data[frontendKey])
+        } else if (data[dbColumn] !== undefined) {
+          basicUpdates.push(`${dbColumn} = ?`)
+          basicBinds.push(data[dbColumn])
+        }
+      }
+      
+      if (basicUpdates.length === 0) {
+        throw sqlError // Re-throw l'errore originale
+      }
+      
+      basicUpdates.push('updated_at = ?')
+      basicBinds.push(new Date().toISOString())
+      basicBinds.push(id)
+      
+      const basicQuery = `UPDATE leads SET ${basicUpdates.join(', ')} WHERE id = ?`
+      console.log(`🔄 Retry con query base:`, basicQuery)
+      
+      const retryResult = await c.env.DB.prepare(basicQuery).bind(...basicBinds).run()
+      console.log(`✅ Lead aggiornato (retry):`, id, '- Rows affected:', retryResult.meta?.changes || 0)
+      
+      return c.json({ 
+        success: true, 
+        message: 'Lead aggiornato (alcuni campi ignorati)',
+        warning: 'Alcuni campi non sono stati salvati perché non esistono nel database'
+      })
+    }
   } catch (error) {
     console.error('❌ Errore aggiornamento lead:', error)
     console.error('❌ Error type:', typeof error)
