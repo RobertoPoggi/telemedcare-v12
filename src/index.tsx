@@ -7076,47 +7076,34 @@ app.put('/api/leads/:id', async (c) => {
     const data = await c.req.json()
     console.log(`📝 UPDATE Lead ${id}:`, JSON.stringify(data, null, 2))
     
-    if (!c.env?.DB) { // Fallback se DB non disponibile
+    if (!c.env?.DB) {
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
     }
     
-    // Build dynamic UPDATE query based on provided fields
+    // Build dynamic UPDATE query - ACCETTA TUTTI I CAMPI
     const updates: string[] = []
     const binds: any[] = []
     
-    // Map field names to DB columns (basato su schema SQL)
-    const fieldMap: Record<string, string> = {
-      // Alias frontend → backend
-      'nome': 'nomeRichiedente',              // ← FIX CRUD!
-      'cognome': 'cognomeRichiedente',        // ← FIX CRUD!
-      'email': 'emailRichiedente',            // ← FIX CRUD!
-      'telefono': 'telefonoRichiedente',      // ← FIX CRUD!
-      // Nomi completi (backwards compatibility)
-      'nomeRichiedente': 'nomeRichiedente',
-      'cognomeRichiedente': 'cognomeRichiedente',
-      'emailRichiedente': 'emailRichiedente',
-      'telefonoRichiedente': 'telefonoRichiedente',
-      'nomeAssistito': 'nomeAssistito',
-      'cognomeAssistito': 'cognomeAssistito',
-      'pacchetto': 'pacchetto',
-      'piano': 'piano',                        // ← CAMPO DEDICATO!
-      'servizio': 'tipoServizio',             // ← CAMPO DEDICATO! (nel DB si chiama tipoServizio)
-      'tipoServizio': 'tipoServizio',
-      'vuoleBrochure': 'vuoleBrochure',
-      'vuoleManuale': 'vuoleManuale',
-      'vuoleContratto': 'vuoleContratto',
-      'status': 'status',
-      'note': 'note',
-      'fonte': 'fonte',
-      'priority': 'priority',
-      'canaleAcquisizione': 'canaleAcquisizione'
+    // Campi da ESCLUDERE (non modificabili)
+    const excludeFields = ['id', 'created_at', 'timestamp']
+    
+    // Alias frontend → backend
+    const fieldAliases: Record<string, string> = {
+      'nome': 'nomeRichiedente',
+      'cognome': 'cognomeRichiedente',
+      'email': 'emailRichiedente',
+      'telefono': 'telefonoRichiedente'
     }
     
-    for (const [key, dbColumn] of Object.entries(fieldMap)) {
-      if (data[key] !== undefined) {
-        updates.push(`${dbColumn} = ?`)
-        binds.push(data[key])
+    for (const [key, value] of Object.entries(data)) {
+      if (excludeFields.includes(key) || value === undefined) {
+        continue
       }
+      
+      // Usa alias se esiste, altrimenti usa il nome originale
+      const dbColumn = fieldAliases[key] || key
+      updates.push(`${dbColumn} = ?`)
+      binds.push(value)
     }
     
     if (updates.length === 0) {
