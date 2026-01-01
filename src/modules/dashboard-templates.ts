@@ -4315,7 +4315,7 @@ export const workflow_manager = `<!DOCTYPE html>
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: ' + leadId + '\n\nFunzionalità in sviluppo...');
+            alert('Dettagli workflow per Lead: ' + leadId + '\\n\\nFunzionalità in sviluppo...');
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
@@ -4430,17 +4430,15 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
-                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '' + ' ' + (lead.cognomeRichiedente || '' + '
-                    
-📧 Email: ' + (lead.email || 'N/A' + '
-📞 Telefono: ' + (lead.telefono || 'N/A' + '
-🏥 Servizio: ' + (lead.servizio || 'eCura PRO' + '
-📋 Piano: ' + piano + ' (' + prezzo + '/anno)
-📅 Creato: ' + (new Date(lead.created_at).toLocaleDateString('it-IT') + '
-📍 Stato: ' + (getWorkflowStatus(lead).text + '
-🔄 Step: ' + (getWorkflowStep(lead).text + '
-                    
-📝 Note: ' + (lead.note || 'Nessuna nota' );
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\\n\\n' +
+                    '📧 Email: ' + (lead.email || 'N/A') + '\\n' +
+                    '📞 Telefono: ' + (lead.telefono || 'N/A') + '\\n' +
+                    '🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\\n' +
+                    '📋 Piano: ' + piano + ' (' + prezzo + '/anno)' + '\\n' +
+                    '📅 Creato: ' + new Date(lead.created_at).toLocaleDateString('it-IT') + '\\n' +
+                    '📍 Stato: ' + getWorkflowStatus(lead).text + '\\n' +
+                    '🔄 Step: ' + getWorkflowStep(lead).text + '\\n\\n' +
+                    '📝 Note: ' + (lead.note || 'Nessuna nota'));
                     break;
                     
                 case 'contract':

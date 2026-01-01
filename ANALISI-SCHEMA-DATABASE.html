@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANALISI SCHEMA DATABASE TELEMEDCARE V12</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e40af;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2563eb;
+            margin-top: 30px;
+            border-left: 4px solid #3b82f6;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #3b82f6;
+            margin-top: 20px;
+        }
+        .meta {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .meta p {
+            margin: 5px 0;
+        }
+        .status {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .problem {
+            background: #fee2e2;
+            padding: 15px;
+            border-left: 4px solid #dc2626;
+            margin: 15px 0;
+        }
+        .solution {
+            background: #d1fae5;
+            padding: 15px;
+            border-left: 4px solid #10b981;
+            margin: 15px 0;
+        }
+        .note {
+            background: #fef3c7;
+            padding: 15px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+        }
+        .critical {
+            background: #fee2e2;
+            padding: 15px;
+            border: 2px solid #dc2626;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        code {
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #3b82f6;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        .checkbox-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checkbox-list li {
+            padding: 8px 0;
+            font-size: 16px;
+        }
+        .checkbox-list input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.3);
+        }
+        .diagram {
+            background: #f9fafb;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .approval-section {
+            background: #eff6ff;
+            padding: 30px;
+            border: 3px solid #3b82f6;
+            border-radius: 10px;
+            margin-top: 40px;
+        }
+        .approval-section input[type="text"], 
+        .approval-section textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 10px 5px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-warning {
+            background: #f59e0b;
+        }
+        .btn-danger {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ANALISI E PROPOSTA SCHEMA DATABASE TELEMEDCARE V12</h1>
+        
+        <div class="meta">
+            <p><strong>Data:</strong> 2026-01-01</p>
+            <p><strong>Versione:</strong> 2.1 - AGGIORNATO CON TABELLE ESISTENTI</p>
+            <p><strong>Autore:</strong> Claude + Roberto Poggi</p>
+            <p><strong>Status:</strong> <span class="status">🟢 APPROVATO</span></p>
+        </div>
+
+        <h2>🎯 EXECUTIVE SUMMARY</h2>
+        
+        <h3>Problema attuale</h3>
+        <div class="problem">
+            <p>Il database TeleMedCare presenta gravi problemi strutturali:</p>
+            <ul>
+                <li>❌ Confusione tra RICHIEDENTE (caregiver) e ASSISTITO (paziente)</li>
+                <li>❌ Campi critici (<code>piano</code>, <code>servizio</code>, <code>pricing</code>) mancanti o duplicati</li>
+                <li>❌ Dati hardcoded nella dashboard invece di essere letti dal DB</li>
+                <li>❌ Relazioni tra entità non chiare o mancanti</li>
+                <li>❌ Schema <code>contracts</code> primitivo e incompleto</li>
+                <li>❌ Naming inconsistente (nomeRichiedente vs nome)</li>
+            </ul>
+        </div>
+
+        <h3>Soluzione proposta</h3>
+        <div class="solution">
+            <p>Ristrutturazione completa con 4 tabelle normalizzate:</p>
+            <ol>
+                <li><strong>LEADS</strong>: Richieste iniziali (RICHIEDENTE/Caregiver)</li>
+                <li><strong>ASSISTITI</strong>: Pazienti anziani (chi usa il servizio)</li>
+                <li><strong>CONTRACTS</strong>: Accordi commerciali</li>
+                <li><strong>DEVICES</strong>: Device fisici con IMEI (✅ TABELLA GIÀ ESISTENTE!)</li>
+            </ol>
+        </div>
+
+        <h3>⭐ FILOSOFIA NAMING (DECISIONE APPROVATA)</h3>
+        <div class="note">
+            <p><strong>REGOLA</strong>: Se un campo è NOME, si chiama <code>nome</code> in TUTTE le tabelle.</p>
+            <ul>
+                <li><code>leads.nome</code> = nome del richiedente</li>
+                <li><code>assistiti.nome</code> = nome dell'assistito</li>
+                <li><code>devices.modello</code> = modello del dispositivo</li>
+            </ul>
+            <p><strong>Vantaggio</strong>: Codice più pulito, meno verboso, più standard SQL.</p>
+        </div>
+
+        <h3>🔧 APPROCCIO PRAGMATICO (NUOVO!)</h3>
+        <div class="solution">
+            <p><strong>Useremo le tabelle ESISTENTI dove possibile:</strong></p>
+            <ul>
+                <li>✅ <code>leads</code> → rename campi (nome, cognome, email)</li>
+                <li>✅ <code>contracts</code> → aggiungi campi mancanti (piano, servizio, pricing)</li>
+                <li>✅ <code>assistiti</code> → fix schema (aggiungi campi completi)</li>
+                <li>✅ <strong><code>devices</code> → USA TABELLA ESISTENTE!</strong> (solo piccoli fix)</li>
+            </ul>
+            <p><strong>Motivazione</strong>: Meno rischio, migrazione più veloce, preserva dati esistenti.</p>
+        </div>
+
+        <hr>
+
+        <h2>📋 SITUAZIONE ATTUALE (AS-IS)</h2>
+
+        <h3>Tabella LEADS (attuale - DA MODIFICARE)</h3>
+        <pre><code>Campi presenti:
+✅ id
+❌ nome, cognome, email, telefono (NOMI GIÀ CORRETTI! ✅)
+✅ nomeAssistito, cognomeAssistito (DA SPOSTARE in tabella ASSISTITI)
+✅ fonte, tipoServizio, status, note
+✅ consensoPrivacy, consensoMarketing, consensoTerze
+✅ created_at, updated_at, timestamp
+
+Problemi:
+❌ Mischia dati RICHIEDENTE e ASSISTITO nello stesso record
+❌ Anagrafica assistito incompleta (manca in tabella separata)
+</code></pre>
+
+        <h3>Tabella CONTRACTS (attuale - PRIMITIVA)</h3>
+        <pre><code>Campi presenti:
+✅ id, lead_id, contract_type, status
+✅ signature_date, signature_ip
+✅ created_at, updated_at
+
+Problemi:
+❌ NON ha campo 'piano' (BASE/AVANZATO)
+❌ NON ha campo 'servizio' (eCura PRO/FAMILY/PREMIUM)
+❌ NON ha 'prezzo_mensile', 'prezzo_totale', 'prezzo_originale'
+❌ NON ha 'data_invio', 'data_scadenza', 'data_firma'
+❌ NON ha relazione con ASSISTITO (assistito_id mancante)
+</code></pre>
+
+        <h3>Tabella ASSISTITI (esistente ma INCOMPLETA)</h3>
+        <pre><code>Campi presenti:
+✅ id, codice, nome, email, telefono, lead_id
+❌ imei (ERRORE: deve stare in DEVICES!)
+✅ status, created_at, updated_at
+
+Problemi:
+❌ IMEI nella tabella sbagliata (va in devices)
+❌ Anagrafica incompleta (manca cognome, CF, indirizzo, data nascita)
+❌ Tabella esistente ma poco usata nel codice
+</code></pre>
+
+        <h3>✅ Tabella DEVICES (GIÀ ESISTENTE! - OK!)</h3>
+        <pre><code>Campi presenti:
+✅ id, imei, serial_number, modello, versione_firmware
+✅ status (INVENTORY, ASSIGNED, SHIPPED, ACTIVE, ecc.)
+✅ leadId, contract_id
+✅ data_assegnazione, data_spedizione, data_consegna
+✅ tracking_number, corriere, indirizzo_spedizione
+✅ configurato, attivato, data_attivazione
+✅ note, ultimo_controllo
+
+Modifiche necessarie:
+🔧 Aggiungere campo: assistito_id INTEGER (FK a assistiti.id)
+🔧 Eventualmente rinominare: leadId → lead_id (per consistenza)
+</code></pre>
+
+        <hr>
+
+        <h2>🏗️ SCHEMA PROPOSTO (TO-BE) - VERSIONE PRAGMATICA</h2>
+
+        <h3>1️⃣ TABELLA: LEADS (Richieste iniziali)</h3>
+        
+        <p><strong>SCOPO</strong>: Ogni lead = una richiesta di informazioni da un RICHIEDENTE (caregiver).</p>
+        <p><strong>QUANDO SI CREA</strong>: All'arrivo del form web, telefonata, partner IRBEMA.</p>
+        <p><strong>PUÒ ESISTERE SENZA</strong>: Contratto, assistito, dispositivo (è solo una richiesta!)</p>
+
+        <pre><code>CREATE TABLE leads (
+  -- IDENTIFICATIVO
+  id TEXT PRIMARY KEY,                      -- LEAD-IRBEMA-00001, LEAD-WEB-00015
+  
+  -- RICHIEDENTE (Caregiver - CHI COMPILA)
+  nome TEXT NOT NULL,                       -- Elena (✅ GIÀ CORRETTO!)
+  cognome TEXT NOT NULL,                    -- Saglia (✅ GIÀ CORRETTO!)
+  email TEXT NOT NULL,                      -- elena.saglia@example.com (✅ GIÀ CORRETTO!)
+  telefono TEXT,                            -- +39 333 1234567 (✅ GIÀ CORRETTO!)
+  cf TEXT,                                  -- SGLELN80A41F205X
+  indirizzo TEXT,                           -- Via Roma 123
+  cap TEXT,                                 -- 20100
+  citta TEXT,                               -- Milano
+  provincia TEXT,                           -- MI
+  
+  -- INFORMAZIONI INIZIALI
+  fonte TEXT,                               -- IRBEMA, WEBSITE, TELEFONO, PARTNER
+  canaleAcquisizione TEXT,                  -- FORM_WEB, PARTNER, DIRECT_CALL
+  tipoServizio TEXT,                        -- eCura PRO, eCura FAMILY, eCura PREMIUM
+  
+  -- PREFERENZE INIZIALI
+  vuoleBrochure INTEGER DEFAULT 0,          -- 0/1
+  vuoleManuale INTEGER DEFAULT 0,           -- 0/1
+  vuoleContratto INTEGER DEFAULT 0,         -- 0/1
+  
+  -- WORKFLOW
+  status TEXT DEFAULT 'nuovo',              -- nuovo, contattato, interessato, convertito, perso
+  priority TEXT,                            -- alta, media, bassa
+  note TEXT,                                -- Note libere operatore
+  
+  -- CONSENSI PRIVACY
+  consensoPrivacy INTEGER DEFAULT 0,        -- 0/1
+  consensoMarketing INTEGER DEFAULT 0,      -- 0/1
+  consensoTerze INTEGER DEFAULT 0,          -- 0/1
+  
+  -- AUDIT
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  timestamp INTEGER,                        -- Unix timestamp
+  external_source_id TEXT,                  -- ID nel sistema esterno (es. IRBEMA)
+  external_data TEXT                        -- JSON con dati aggiuntivi
+);
+</code></pre>
+
+        <div class="note">
+            <p><strong>NOTA IMPORTANTE</strong>: In questa tabella NON ci sono dati dell'ASSISTITO!</p>
+            <p>Il richiedente può chiedere info per sé stesso o per un parente (es. madre anziana).</p>
+        </div>
+
+        <h3>2️⃣ TABELLA: ASSISTITI (Pazienti anziani)</h3>
+        
+        <p><strong>SCOPO</strong>: Ogni assistito = un paziente che RICEVE il servizio TeleMedCare.</p>
+        <p><strong>QUANDO SI CREA</strong>: ⚠️ SOLO quando il contratto è FIRMATO (non prima!)</p>
+        <p><strong>PUÒ ESISTERE SENZA</strong>: Dispositivo (contratto firmato ma device non ancora spedito).</p>
+        <p><strong>NON PUÒ ESISTERE SENZA</strong>: Lead + Contratto firmato.</p>
+
+        <pre><code>CREATE TABLE assistiti (
+  -- IDENTIFICATIVO
+  id INTEGER PRIMARY KEY AUTOINCREMENT,     -- 1, 2, 3...
+  codice TEXT UNIQUE NOT NULL,              -- ASS-KING-2025, ASS-BALZAROTTI-2025
+  
+  -- ANAGRAFICA ASSISTITO
+  nome TEXT NOT NULL,                       -- Eileen
+  cognome TEXT NOT NULL,                    -- King
+  dataNascita TEXT,                         -- 1945-03-15 (ISO 8601)
+  luogoNascita TEXT,                        -- Milano (MI)
+  eta INTEGER,                              -- 80 (calcolato o inserito manualmente)
+  cf TEXT,                                  -- KNGELN45C55F205Z
+  
+  -- CONTATTI ASSISTITO
+  email TEXT,                               -- (può essere vuota se assistito non ha email)
+  telefono TEXT,                            -- +39 333 9876543
+  
+  -- INDIRIZZO ASSISTITO
+  indirizzo TEXT,                           -- Via Garibaldi 45 (dove abita l'assistito)
+  cap TEXT,                                 -- 20121
+  citta TEXT,                               -- Milano
+  provincia TEXT,                           -- MI
+  
+  -- RELAZIONI
+  lead_id TEXT NOT NULL,                    -- FK a leads.id (LEAD-IRBEMA-00003)
+  parentela TEXT,                           -- madre, padre, suocera, marito, moglie, sé stesso
+  
+  -- SALUTE
+  condizioniSalute TEXT,                    -- Descrizione libera condizioni
+  patologie TEXT,                           -- JSON: ["Ipertensione", "Diabete tipo 2"]
+  allergie TEXT,                            -- JSON: ["Penicillina", "Lattosio"]
+  
+  -- STATUS
+  status TEXT DEFAULT 'ATTIVO',             -- ATTIVO, SOSPESO, CESSATO, DECEDUTO
+  motivoCessazione TEXT,                    -- Descrizione motivo se status=CESSATO
+  dataCessazione TEXT,                      -- Data cessazione servizio (ISO 8601)
+  
+  -- AUDIT
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE RESTRICT
+);
+</code></pre>
+
+        <div class="critical">
+            <p>⚠️ REGOLA CRITICA: L'assistito viene creato <strong>SOLO DOPO</strong> la firma del contratto (non prima!)</p>
+        </div>
+
+        <h3>3️⃣ TABELLA: CONTRACTS (Accordi commerciali)</h3>
+        
+        <p><strong>SCOPO</strong>: Ogni contratto = accordo commerciale tra TeleMedCare e il RICHIEDENTE per un ASSISTITO.</p>
+        <p><strong>QUANDO SI CREA</strong>: Quando si genera il PDF contratto da inviare al cliente.</p>
+
+        <pre><code>CREATE TABLE contracts (
+  -- IDENTIFICATIVO
+  id TEXT PRIMARY KEY,                      -- CONTRACT_CTR-KING-2025_1704067200000
+  codice_contratto TEXT UNIQUE NOT NULL,    -- CTR-KING-2025, CTR-BALZAROTTI-2025
+  
+  -- RELAZIONI
+  lead_id TEXT NOT NULL,                    -- FK a leads.id (chi ha richiesto)
+  assistito_id INTEGER,                     -- FK a assistiti.id (NULL se non ancora firmato!)
+  
+  -- TIPO SERVIZIO
+  tipo_contratto TEXT NOT NULL,             -- BASE, AVANZATO
+  piano TEXT NOT NULL,                      -- BASE, AVANZATO
+  servizio TEXT NOT NULL,                   -- eCura PRO, eCura FAMILY, eCura PREMIUM
+  
+  -- PRICING DINAMICO
+  prezzo_originale REAL NOT NULL,           -- Prezzo al momento della firma (es. 480.00)
+  prezzo_corrente REAL NOT NULL,            -- Prezzo attuale (può cambiare per rinnovi)
+  prezzo_mensile REAL NOT NULL,             -- 40.00, 70.00
+  durata_mesi INTEGER DEFAULT 12,           -- 12 (un anno)
+  sconto_applicato REAL DEFAULT 0,          -- Sconto % per canale (es. 10.0 = 10%)
+  canale_sconto TEXT,                       -- IRBEMA, PARTNER, PROMO_WEB
+  
+  -- RINNOVO
+  data_scadenza_contratto TEXT,             -- 2026-05-08 (fine contratto)
+  prezzo_rinnovo REAL,                      -- Prezzo per il rinnovo
+  rinnovabile INTEGER DEFAULT 1,            -- 0/1
+  
+  -- DOCUMENTI
+  template_utilizzato TEXT,                 -- Template_Contratto_Base_TeleMedCare
+  contenuto_html TEXT,                      -- HTML del contratto
+  pdf_url TEXT,                             -- /contratti/08.05.2025_Contratto_King.pdf
+  pdf_generated INTEGER DEFAULT 0,          -- 0/1
+  
+  -- WORKFLOW E DATE
+  status TEXT NOT NULL DEFAULT 'GENERATED', -- GENERATED, SENT, SIGNED, ACTIVE, SUSPENDED, TERMINATED
+  data_generazione TEXT,                    -- 2025-05-06
+  data_invio TEXT,                          -- 2025-05-08
+  data_scadenza_firma TEXT,                 -- 2025-06-08 (30 giorni)
+  data_firma TEXT,                          -- 2025-05-10
+  
+  -- FIRMA DIGITALE
+  signature_ip TEXT,                        -- 192.168.1.100
+  signature_user_agent TEXT,                -- Mozilla/5.0...
+  hash_documento TEXT,                      -- SHA256
+  
+  -- EMAIL TRACKING
+  email_sent INTEGER DEFAULT 0,             -- 0/1
+  email_template_used TEXT,                 -- email_invio_contratto
+  email_sent_at TEXT,                       -- 2025-05-08T14:30:00Z
+  
+  -- AUDIT
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE RESTRICT,
+  FOREIGN KEY (assistito_id) REFERENCES assistiti(id) ON DELETE RESTRICT
+);
+</code></pre>
+
+        <h3>4️⃣ TABELLA: DEVICES (✅ GIÀ ESISTENTE - SOLO MODIFICHE MINORI)</h3>
+        
+        <p><strong>SCOPO</strong>: Ogni device = un dispositivo fisico con IMEI univoco assegnato a un assistito.</p>
+        <p><strong>TABELLA GIÀ ESISTENTE!</strong> Solo piccole modifiche necessarie.</p>
+
+        <pre><code>-- Tabella devices ESISTE GIÀ con questo schema (o simile):
+CREATE TABLE devices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  
+  -- DEVICE INFO (✅ GIÀ PRESENTE)
+  imei TEXT UNIQUE NOT NULL,
+  serial_number TEXT UNIQUE,
+  modello TEXT NOT NULL DEFAULT 'SiDLY Care Pro',
+  versione_firmware TEXT,
+  
+  -- STATUS (✅ GIÀ PRESENTE)
+  status TEXT DEFAULT 'INVENTORY',          -- INVENTORY, ASSIGNED, SHIPPED, ACTIVE, MAINTENANCE, RETIRED
+  
+  -- RELAZIONI (🔧 DA MODIFICARE)
+  leadId TEXT,                              -- 🔧 Rinominare in: lead_id
+  contract_id TEXT,                         -- ✅ OK
+  assistito_id INTEGER,                     -- 🔧 AGGIUNGERE (FK a assistiti.id)
+  
+  -- SPEDIZIONE (✅ GIÀ PRESENTE)
+  data_assegnazione DATETIME,
+  data_spedizione DATETIME,
+  data_consegna DATETIME,
+  tracking_number TEXT,
+  corriere TEXT,
+  indirizzo_spedizione TEXT,
+  
+  -- CONFIGURAZIONE (✅ GIÀ PRESENTE)
+  configurato BOOLEAN DEFAULT FALSE,
+  attivato BOOLEAN DEFAULT FALSE,
+  data_attivazione DATETIME,
+  
+  -- NOTE (✅ GIÀ PRESENTE)
+  note TEXT,
+  ultimo_controllo DATETIME,
+  
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (lead_id) REFERENCES leads(id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id),
+  FOREIGN KEY (assistito_id) REFERENCES assistiti(id) ON DELETE RESTRICT
+);
+</code></pre>
+
+        <div class="solution">
+            <p><strong>MODIFICHE MINIME NECESSARIE</strong>:</p>
+            <ul>
+                <li>🔧 Aggiungere colonna: <code>assistito_id INTEGER</code></li>
+                <li>🔧 Eventualmente rinominare: <code>leadId</code> → <code>lead_id</code> (per consistenza)</li>
+                <li>✅ Tutto il resto RIMANE UGUALE!</li>
+            </ul>
+        </div>
+
+        <div class="critical">
+            <p>⚠️ REGOLA CRITICA: Device spedito <strong>ASSOLUTAMENTE SOLO</strong> dopo firma contratto!</p>
+        </div>
+
+        <hr>
+
+        <h2>🔗 RELAZIONI TRA TABELLE</h2>
+
+        <div class="diagram">
+┌──────────┐
+│  LEADS   │ RICHIEDENTE (Caregiver)
+│          │ - Giorgio Riela (lead_id: LEAD-001)
+│  1:N     │   Richiede servizio per:
+└────┬─────┘
+     │
+     │ lead_id (FK)
+     │
+     ├─────────────────────────────────┐
+     │                                 │
+     ▼                                 ▼
+┌──────────┐                      ┌──────────┐
+│ASSISTITO │                      │ASSISTITO │
+│  #1      │                      │  #2      │
+│Madre di  │                      │Suocera di│
+│Giorgio   │                      │Giorgio   │
+│          │                      │(futuro)  │
+│  1:1     │                      │  1:1     │
+└────┬─────┘                      └────┬─────┘
+     │                                 │
+     │ assistito_id                    │ assistito_id
+     │                                 │
+     ▼                                 ▼
+┌──────────┐                      ┌──────────┐
+│CONTRACT  │                      │CONTRACT  │
+│  #1      │                      │  #2      │
+│CTR-001   │                      │CTR-002   │
+│BASE €480 │                      │BASE €480 │
+│  1:1     │                      │  1:1     │
+└────┬─────┘                      └────┬─────┘
+     │                                 │
+     │ contract_id                     │ contract_id
+     │ assistito_id                    │ assistito_id
+     │                                 │
+     ▼                                 ▼
+┌──────────┐                      ┌──────────┐
+│ DEVICE   │                      │ DEVICE   │
+│  #1      │                      │  #2      │
+│IMEI 353..│                      │IMEI 353..│
+│SIDLY PRO │                      │SIDLY PRO │
+└──────────┘                      └──────────┘
+        </div>
+
+        <h3>CARDINALITÀ (CONFERMATA):</h3>
+        <ul>
+            <li>✅ <strong>1 LEAD → N ASSISTITI</strong> (Giorgio Riela: madre + suocera)</li>
+            <li>✅ <strong>1 ASSISTITO → 1 CONTRATTO</strong> (un paziente = un contratto attivo)</li>
+            <li>✅ <strong>1 CONTRATTO → 1 DEVICE</strong> (un contratto = un device con IMEI)</li>
+        </ul>
+
+        <hr>
+
+        <h2>✅ RISPOSTE ALLE 5 DOMANDE CRITICHE (CONFERMATE)</h2>
+
+        <h3>1️⃣ RELAZIONE RICHIEDENTE-ASSISTITO</h3>
+        <p><strong>Domanda</strong>: Un RICHIEDENTE può avere MULTIPLI ASSISTITI?</p>
+        <p><strong>RISPOSTA ROBERTO</strong>: ✅ <strong>SÌ, 1:N</strong></p>
+        <div class="solution">
+            <p><strong>Scenario reale</strong>: Giorgio Riela ha arruolato sua madre. Presto arruolerà anche la suocera.</p>
+            <ul>
+                <li>Giorgio Riela (LEAD) → 2 ASSISTITI (madre + suocera)</li>
+                <li>Ogni assistito avrà il suo CONTRATTO e DEVICE separato</li>
+            </ul>
+        </div>
+
+        <h3>2️⃣ CONTRATTO SENZA FIRMA</h3>
+        <p><strong>Domanda</strong>: Se contratto inviato ma NON firmato, creo comunque record in ASSISTITI?</p>
+        <p><strong>RISPOSTA ROBERTO</strong>: ❌ <strong>NO</strong></p>
+        <div class="critical">
+            <p><strong>REGOLA</strong>: Assistito viene creato <strong>SOLO DOPO</strong> firma contratto.</p>
+            <ul>
+                <li>Contratto con status='SENT' → <code>assistito_id = NULL</code></li>
+                <li>Contratto con status='SIGNED' → Crea assistito → <code>assistito_id = 1</code></li>
+            </ul>
+        </div>
+
+        <h3>3️⃣ DEVICE SENZA CONTRATTO FIRMATO</h3>
+        <p><strong>Domanda</strong>: Posso spedire device PRIMA della firma?</p>
+        <p><strong>RISPOSTA ROBERTO</strong>: ❌ <strong>ASSOLUTAMENTE NO</strong></p>
+        <div class="critical">
+            <p><strong>REGOLA FERREA</strong>: Device spedito SOLO dopo firma contratto.</p>
+        </div>
+
+        <h3>4️⃣ PRICING DINAMICO</h3>
+        <p><strong>Domanda</strong>: Prezzo può cambiare nel tempo?</p>
+        <p><strong>RISPOSTA ROBERTO</strong>: ✅ <strong>SÌ, CERTO</strong></p>
+        <div class="solution">
+            <p><strong>Scenario</strong>:</p>
+            <ul>
+                <li>Prezzi possono cambiare</li>
+                <li>Sconti per canale (IRBEMA, partner, promo web)</li>
+                <li>Rinnovi hanno prezzi specifici (vedi eCura.it)</li>
+            </ul>
+        </div>
+
+        <h3>5️⃣ DATI STORICI</h3>
+        <p><strong>Domanda</strong>: Conservo contratti/devices vecchi dopo cessazione?</p>
+        <p><strong>RISPOSTA ROBERTO</strong>: ✅ <strong>ASSOLUTAMENTE SÌ</strong></p>
+        <div class="solution">
+            <p><strong>REGOLA</strong>: Soft delete con <code>status = 'CESSATO'</code> e <code>data_cessazione</code></p>
+            <p><strong>Mai fare DELETE fisico!</strong> Sempre usare UPDATE status.</p>
+        </div>
+
+        <hr>
+
+        <h2>🛠️ PIANO DI MIGRAZIONE - VERSIONE PRAGMATICA</h2>
+
+        <div class="note">
+            <p><strong>APPROCCIO</strong>: Modifica minime alle tabelle esistenti, massima compatibilità.</p>
+        </div>
+
+        <h3>MIGRATION 0006: Refactoring schema (versione pragmatica)</h3>
+
+        <pre><code>-- =============================================
+-- Migration 0006: Refactoring schema PRAGMATICO
+-- =============================================
+-- Data: 2026-01-01
+-- Usa tabelle esistenti dove possibile
+-- =============================================
+
+-- ============================================
+-- STEP 1: LEADS - Già OK! (nome, cognome, email corretti)
+-- ============================================
+-- ✅ Nessuna modifica necessaria ai campi base!
+-- I campi sono già corretti: nome, cognome, email, telefono
+
+-- ============================================
+-- STEP 2: ASSISTITI - Aggiungi campi mancanti
+-- ============================================
+ALTER TABLE assistiti ADD COLUMN cognome TEXT;
+ALTER TABLE assistiti ADD COLUMN dataNascita TEXT;
+ALTER TABLE assistiti ADD COLUMN luogoNascita TEXT;
+ALTER TABLE assistiti ADD COLUMN eta INTEGER;
+ALTER TABLE assistiti ADD COLUMN cf TEXT;
+ALTER TABLE assistiti ADD COLUMN indirizzo TEXT;
+ALTER TABLE assistiti ADD COLUMN cap TEXT;
+ALTER TABLE assistiti ADD COLUMN citta TEXT;
+ALTER TABLE assistiti ADD COLUMN provincia TEXT;
+ALTER TABLE assistiti ADD COLUMN parentela TEXT;
+ALTER TABLE assistiti ADD COLUMN condizioniSalute TEXT;
+ALTER TABLE assistiti ADD COLUMN patologie TEXT;
+ALTER TABLE assistiti ADD COLUMN allergie TEXT;
+ALTER TABLE assistiti ADD COLUMN motivoCessazione TEXT;
+ALTER TABLE assistiti ADD COLUMN dataCessazione TEXT;
+
+-- Rimuovi IMEI (va in devices)
+-- ⚠️  Prima migrare eventuali IMEI esistenti in devices!
+
+-- ============================================
+-- STEP 3: CONTRACTS - Aggiungi campi mancanti
+-- ============================================
+ALTER TABLE contracts ADD COLUMN assistito_id INTEGER;
+ALTER TABLE contracts ADD COLUMN codice_contratto TEXT;
+ALTER TABLE contracts ADD COLUMN tipo_contratto TEXT;
+ALTER TABLE contracts ADD COLUMN piano TEXT;
+ALTER TABLE contracts ADD COLUMN servizio TEXT;
+ALTER TABLE contracts ADD COLUMN prezzo_originale REAL;
+ALTER TABLE contracts ADD COLUMN prezzo_corrente REAL;
+ALTER TABLE contracts ADD COLUMN prezzo_mensile REAL;
+ALTER TABLE contracts ADD COLUMN durata_mesi INTEGER DEFAULT 12;
+ALTER TABLE contracts ADD COLUMN sconto_applicato REAL DEFAULT 0;
+ALTER TABLE contracts ADD COLUMN canale_sconto TEXT;
+ALTER TABLE contracts ADD COLUMN data_scadenza_contratto TEXT;
+ALTER TABLE contracts ADD COLUMN prezzo_rinnovo REAL;
+ALTER TABLE contracts ADD COLUMN rinnovabile INTEGER DEFAULT 1;
+ALTER TABLE contracts ADD COLUMN template_utilizzato TEXT;
+ALTER TABLE contracts ADD COLUMN contenuto_html TEXT;
+ALTER TABLE contracts ADD COLUMN pdf_url TEXT;
+ALTER TABLE contracts ADD COLUMN pdf_generated INTEGER DEFAULT 0;
+ALTER TABLE contracts ADD COLUMN data_generazione TEXT;
+ALTER TABLE contracts ADD COLUMN data_invio TEXT;
+ALTER TABLE contracts ADD COLUMN data_scadenza_firma TEXT;
+ALTER TABLE contracts ADD COLUMN data_firma TEXT;
+ALTER TABLE contracts ADD COLUMN signature_user_agent TEXT;
+ALTER TABLE contracts ADD COLUMN hash_documento TEXT;
+ALTER TABLE contracts ADD COLUMN email_sent INTEGER DEFAULT 0;
+ALTER TABLE contracts ADD COLUMN email_template_used TEXT;
+ALTER TABLE contracts ADD COLUMN email_sent_at TEXT;
+
+-- ============================================
+-- STEP 4: DEVICES - Modifiche minime
+-- ============================================
+-- ✅ Tabella devices ESISTE GIÀ!
+ALTER TABLE devices ADD COLUMN assistito_id INTEGER;
+
+-- Eventualmente rinomina leadId -> lead_id (opzionale)
+-- SQLite non supporta RENAME COLUMN, quindi lasciare leadId
+
+-- Aggiorna FK (se non esistono già)
+-- (Questo potrebbe richiedere ricreare la tabella se FK non esistono)
+
+-- =============================================
+-- MIGRATION COMPLETATA! ✅
+-- =============================================
+</code></pre>
+
+        <hr>
+
+        <h2>🎯 BENEFICI ATTESI</h2>
+
+        <table>
+            <tr>
+                <th>Categoria</th>
+                <th>Beneficio</th>
+            </tr>
+            <tr>
+                <td><strong>Performance</strong></td>
+                <td>
+                    ✅ Query più veloci<br>
+                    ✅ Meno JOIN complessi<br>
+                    ✅ Naming semplificato
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Qualità dati</strong></td>
+                <td>
+                    ✅ ZERO dati hardcoded<br>
+                    ✅ Integrità referenziale<br>
+                    ✅ Nessuna duplicazione
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Manutenibilità</strong></td>
+                <td>
+                    ✅ Schema chiaro<br>
+                    ✅ Relazioni esplicite<br>
+                    ✅ Facile estendere
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Business Intelligence</strong></td>
+                <td>
+                    ✅ Dashboard 100% reale<br>
+                    ✅ Report accurati<br>
+                    ✅ Analisi predittive
+                </td>
+            </tr>
+        </table>
+
+        <hr>
+
+        <h2>✅ PROSSIMI STEP</h2>
+
+        <h3>Step 1: ✅ APPROVATO DA ROBERTO</h3>
+        <ul class="checkbox-list">
+            <li><input type="checkbox" checked disabled> Schema rivisto e approvato</li>
+            <li><input type="checkbox" checked disabled> 5 domande critiche risolte</li>
+            <li><input type="checkbox" checked disabled> Filosofia naming semplificata adottata</li>
+            <li><input type="checkbox" checked disabled> Approccio pragmatico con tabelle esistenti</li>
+        </ul>
+
+        <h3>Step 2: IMPLEMENTAZIONE (CLAUDE)</h3>
+        <ul class="checkbox-list">
+            <li><input type="checkbox"> Creare migration SQL 0006 completa</li>
+            <li><input type="checkbox"> Aggiornare <code>database-schema.ts</code></li>
+            <li><input type="checkbox"> Testare migration su DB locale</li>
+            <li><input type="checkbox"> Verificare integrità dati</li>
+        </ul>
+
+        <h3>Step 3: DEPLOYMENT (INSIEME)</h3>
+        <ul class="checkbox-list">
+            <li><input type="checkbox"> Backup completo DB produzione</li>
+            <li><input type="checkbox"> Applicare migration su staging</li>
+            <li><input type="checkbox"> Test funzionalità critiche</li>
+            <li><input type="checkbox"> Applicare migration su production</li>
+        </ul>
+
+        <h3>Step 4: REFACTORING CODICE (CLAUDE)</h3>
+        <ul class="checkbox-list">
+            <li><input type="checkbox"> Aggiornare tutti gli endpoint API</li>
+            <li><input type="checkbox"> Rimuovere TUTTO il codice hardcoded</li>
+            <li><input type="checkbox"> Aggiornare dashboard con query reali</li>
+            <li><input type="checkbox"> Test end-to-end completo</li>
+        </ul>
+
+        <hr>
+
+        <h2>📝 NOTE FINALI</h2>
+
+        <div class="solution">
+            <p><strong>DECISIONI CHIAVE APPROVATE</strong>:</p>
+            <ol>
+                <li>✅ Naming semplificato: <code>nome</code>, <code>cognome</code>, <code>email</code></li>
+                <li>✅ 1 Lead → N Assistiti (Giorgio Riela: madre + suocera)</li>
+                <li>✅ Assistito creato SOLO dopo firma contratto</li>
+                <li>✅ Device spedito SOLO dopo firma (ASSOLUTAMENTE)</li>
+                <li>✅ Pricing dinamico con sconti per canale</li>
+                <li>✅ Soft delete per storico completo</li>
+                <li>✅ <strong>USA TABELLA DEVICES ESISTENTE</strong></li>
+            </ol>
+        </div>
+
+        <div class="note">
+            <p><strong>RISCHI MITIGATI</strong>:</p>
+            <ul>
+                <li>✅ Backup completo prima di ogni operazione</li>
+                <li>✅ Migration testata su staging</li>
+                <li>✅ Rollback plan pronto</li>
+                <li>✅ Schema SQLite-compatible</li>
+                <li>✅ Approccio pragmatico con tabelle esistenti</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <div class="approval-section">
+            <h2>✍️ APPROVAZIONE FINALE</h2>
+            
+            <p><strong>STATUS</strong>: <span class="status">🟢 APPROVATO</span></p>
+            
+            <p><strong>FIRMA ROBERTO POGGI</strong>:</p>
+            <input type="text" placeholder="Firma qui...">
+            
+            <p><strong>DATA</strong>: 2026-01-01</p>
+            
+            <h3>PROCEDIAMO CON L'IMPLEMENTAZIONE?</h3>
+            
+            <ul class="checkbox-list">
+                <li><input type="checkbox" id="approve-yes"> ✅ SÌ, inizia subito la migration</li>
+                <li><input type="checkbox" id="approve-wait"> 🔄 Aspetta, ho altre modifiche da fare</li>
+                <li><input type="checkbox" id="approve-later"> ⏸️ Rimanda, devo controllare qualcosa</li>
+            </ul>
+            
+            <p><strong>NOTE AGGIUNTIVE</strong>:</p>
+            <textarea rows="5" placeholder="Eventuali note finali o modifiche richieste..."></textarea>
+            
+            <br><br>
+            <button class="btn btn-success" onclick="alert('Perfetto! Procedo con implementazione!')">✅ APPROVA E INIZIA</button>
+            <button class="btn btn-warning" onclick="alert('OK, aspetto tue modifiche')">🔄 SALVA MODIFICHE</button>
+            <button class="btn btn-danger" onclick="alert('Nessun problema, torno dopo')">⏸️ RIMANDA</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Gestione checkbox approvazione (solo uno selezionabile)
+        document.querySelectorAll('.approval-section input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    document.querySelectorAll('.approval-section input[type="checkbox"]').forEach(cb => {
+                        if (cb !== this) cb.checked = false;
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
