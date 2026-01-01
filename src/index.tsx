@@ -7120,7 +7120,8 @@ app.put('/api/leads/:id', async (c) => {
       telefono: 'telefono',
       status: 'status',
       note: 'note',
-      piano: 'tipoServizio'  // Piano → tipoServizio (BASE/AVANZATO)
+      piano: 'piano',           // Piano → piano (nuovo campo dopo migration 0006)
+      servizio: 'servizio'      // Servizio → servizio (nuovo campo dopo migration 0006)
     }
     
     // Aggiungi solo i campi presenti nel payload
@@ -8042,6 +8043,81 @@ app.post('/api/fix-ecura-duplication', async (c) => {
     return c.json({
       success: false,
       error: 'Errore fix duplicazione eCura',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// Migration 0006: Aggiungi piano e servizio alla tabella leads
+app.post('/api/migrations/0006-add-piano-servizio', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Migration 0006: Aggiungi piano e servizio alla tabella leads...')
+
+    // Step 1: Verifica se le colonne esistono già
+    const tableInfo = await c.env.DB.prepare('PRAGMA table_info(leads)').all()
+    const columns = tableInfo.results.map((col: any) => col.name)
+    
+    const hasPiano = columns.includes('piano')
+    const hasServizio = columns.includes('servizio')
+    
+    console.log(`📊 Colonne esistenti: piano=${hasPiano}, servizio=${hasServizio}`)
+
+    // Step 2: Aggiungi colonne se non esistono
+    if (!hasPiano) {
+      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN piano TEXT DEFAULT 'BASE'`).run()
+      console.log('✅ Colonna piano aggiunta')
+    }
+    
+    if (!hasServizio) {
+      await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN servizio TEXT DEFAULT 'PRO'`).run()
+      console.log('✅ Colonna servizio aggiunta')
+    }
+
+    // Step 3: Migra dati esistenti da tipoServizio a piano
+    const migrateResult = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET piano = CASE 
+          WHEN UPPER(tipoServizio) = 'AVANZATO' THEN 'AVANZATO'
+          WHEN UPPER(tipoServizio) = 'BASE' THEN 'BASE'
+          ELSE 'BASE'
+      END,
+      servizio = 'PRO'
+      WHERE piano IS NULL OR servizio IS NULL
+    `).run()
+
+    console.log(`✅ Migrati ${migrateResult.meta?.changes || 0} lead`)
+
+    // Step 4: Verifica risultato
+    const stats = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(*) as total_leads,
+        SUM(CASE WHEN piano = 'BASE' THEN 1 ELSE 0 END) as piano_base,
+        SUM(CASE WHEN piano = 'AVANZATO' THEN 1 ELSE 0 END) as piano_avanzato,
+        SUM(CASE WHEN servizio = 'PRO' THEN 1 ELSE 0 END) as servizio_pro,
+        SUM(CASE WHEN servizio = 'FAMILY' THEN 1 ELSE 0 END) as servizio_family,
+        SUM(CASE WHEN servizio = 'PREMIUM' THEN 1 ELSE 0 END) as servizio_premium
+      FROM leads
+    `).first()
+
+    return c.json({
+      success: true,
+      message: '✅ Migration 0006 completata con successo!',
+      columnsAdded: {
+        piano: !hasPiano,
+        servizio: !hasServizio
+      },
+      migrated: migrateResult.meta?.changes || 0,
+      stats
+    })
+  } catch (error) {
+    console.error('❌ Errore migration 0006:', error)
+    return c.json({
+      success: false,
+      error: 'Errore migration 0006',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }

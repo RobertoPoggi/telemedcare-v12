@@ -2627,16 +2627,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            // Mostra servizio così com'è dal DB
-            const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
+            // Mostra servizio e piano dal DB (se esistono i campi)
+            const servizio = lead.servizio || 'PRO';
+            const piano = lead.piano || lead.tipoServizio || 'BASE';
             
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
             document.getElementById('viewEmail').textContent = lead.email || '-';
             document.getElementById('viewTelefono').textContent = lead.telefono || '-';
-            document.getElementById('viewServizio').textContent = servizio;
-            document.getElementById('viewPiano').textContent = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+            document.getElementById('viewServizio').textContent = 'eCura ' + servizio;
+            document.getElementById('viewPiano').textContent = piano;
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             
@@ -2656,15 +2657,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('editEmail').value = lead.email || '';
             document.getElementById('editTelefono').value = lead.telefono || '';
             
-            const currentPiano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+            // Usa campo piano dal DB (se esiste), altrimenti fallback su tipoServizio
+            const currentPiano = lead.piano || lead.tipoServizio || 'BASE';
             document.getElementById('editPiano').value = currentPiano;
             
-            // Estrai servizio dalle note o usa default PRO
-            let currentServizio = 'PRO';
-            if (lead.note) {
-                if (lead.note.includes('Servizio: FAMILY') || lead.note.includes('eCura FAMILY')) currentServizio = 'FAMILY';
-                else if (lead.note.includes('Servizio: PREMIUM') || lead.note.includes('eCura PREMIUM')) currentServizio = 'PREMIUM';
-            }
+            // Usa campo servizio dal DB (se esiste), altrimenti default PRO
+            const currentServizio = lead.servizio || 'PRO';
             document.getElementById('editServizio').value = currentServizio;
             
             document.getElementById('editNote').value = lead.note || '';
