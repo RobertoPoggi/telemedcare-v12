@@ -2420,9 +2420,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
                 const hasContract = ['LEAD-CONTRATTO-001', 'LEAD-CONTRATTO-002', 'LEAD-CONTRATTO-003', 'LEAD-EXCEL-065'].includes(lead.id);
                 
-                // Normalizza servizio: rimuovi "eCura" se già presente
-                let servizio = lead.servizio || lead.tipoServizio || 'PRO';
-                servizio = servizio.replace(/^eCura\s+/i, '');
+                // Mostra servizio così com'è dal DB (già con "eCura" se presente)
+                const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -2442,7 +2441,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                eCura \${servizio}
+                                \${servizio}
                             </span>
                         </td>
                         <td class="py-3">
@@ -3494,10 +3493,8 @@ export const data_dashboard = `<!DOCTYPE html>
                 const piano = (contract.piano || 'BASE').toUpperCase();
                 const prezzo = contract.prezzo_totale || (piano === 'AVANZATO' ? '840' : '480');
                 
-                // Normalizza servizio: rimuovi "eCura" se già presente, poi aggiungilo
-                let servizio = contract.servizio || 'PRO';
-                servizio = servizio.replace(/^eCura\s+/i, '');
-                servizio = 'eCura ' + servizio;
+                // Mostra servizio così com'è dal DB
+                const servizio = contract.servizio || 'eCura PRO';
                 
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
                 
@@ -4279,10 +4276,8 @@ export const workflow_manager = `<!DOCTYPE html>
                 const step = getWorkflowStep(lead);
                 const date = new Date(lead.created_at).toLocaleString('it-IT');
                 
-                // Normalizza servizio
-                let servizio = lead.servizio || lead.tipoServizio || 'PRO';
-                servizio = servizio.replace(/^eCura\s+/i, '');
-                servizio = 'eCura ' + servizio;
+                // Mostra servizio così com'è dal DB
+                const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -4507,10 +4502,8 @@ export const workflow_manager = `<!DOCTYPE html>
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
                     
-                    // Normalizza servizio
-                    let servizio = lead.servizio || lead.tipoServizio || 'PRO';
-                    servizio = servizio.replace(/^eCura\s+/i, '');
-                    servizio = 'eCura ' + servizio;
+                    // Mostra servizio così com'è dal DB
+                    const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                     
                     alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\\n\\n' +
                     '📧 Email: ' + (lead.email || 'N/A') + '\\n' +
