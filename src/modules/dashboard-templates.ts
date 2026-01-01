@@ -2249,15 +2249,27 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 // Calcola statistiche reali
                 const totalLeads = allLeads.length;
-                const converted = allLeads.filter(l => l.status === 'CONTRACT_SIGNED' || l.status === 'CONVERTED').length;
-                const conversionRate = totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) + '%' : '0%';
                 
-                // Calcola revenue totale dai contratti reali (non assumere tutto BASE)
+                // Calcola revenue totale SOLO dai contratti FIRMATI
                 const contrattiResponse = await fetch('/api/contratti');
                 const contrattiData = await contrattiResponse.json();
                 const contratti = contrattiData.contracts || contrattiData.contratti || contrattiData.data || [];
+                
+                // TASK #1-2 FIX: Filtra solo contratti SIGNED o ACTIVE
+                const contrattiFirmati = contratti.filter(c => 
+                    c.status === 'SIGNED' || 
+                    c.status === 'ACTIVE' || 
+                    c.status === 'signed' || 
+                    c.status === 'active'
+                );
+                
+                // Calcola il tasso di conversione: contratti firmati / total leads
+                const converted = contrattiFirmati.length;
+                const conversionRate = totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) + '%' : '0%';
+                
+                // Calcola revenue totale SOLO dai contratti firmati
                 let totalValue = 0;
-                contratti.forEach(c => {
+                contrattiFirmati.forEach(c => {
                     if (c.prezzo_totale) totalValue += parseFloat(c.prezzo_totale);
                 });
                 const today = new Date().toISOString().split('T')[0];
@@ -2349,28 +2361,38 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updateChannelsBreakdown(leads) {
             const channels = {};
             leads.forEach(l => {
+                // TASK #3 FIX: Priorità corretta dei campi
                 const ch = l.canaleAcquisizione || l.fonte || l.canale || 'Non specificato';
                 channels[ch] = (channels[ch] || 0) + 1;
             });
             
             // Debug: mostra tutti i canali trovati
             console.log('📊 Canali rilevati:', channels);
+            console.log('📊 Total leads:', leads.length);
+            console.log('📊 Sample lead fields:', leads[0] ? Object.keys(leads[0]).filter(k => k.includes('fonte') || k.includes('canal') || k.includes('source')) : []);
             
             // Mostra i canali reali aggregati
-            // Web: Website, EXCEL_IMPORT, Excel
+            // Web: Website, EXCEL_IMPORT, Excel, Landing Page
             // Email: EMAIL, Email
             // Telefono: TELEFONO, Telefono, Phone
             // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
             
-            const webCount = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0) + (channels['Web'] || 0);
+            const webCount = (channels['Website'] || 0) + (channels['EXCEL_IMPORT'] || 0) + (channels['Excel'] || 0) + (channels['Web'] || 0) + (channels['Landing Page V12.0-Cloudflare'] || 0) + (channels['Landing Page'] || 0);
             const emailCount = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
             const phoneCount = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0) + (channels['Phone'] || 0);
-            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0);
+            const partnerCount = (channels['Irbema'] || 0) + (channels['AON'] || 0) + (channels['DoubleYou'] || 0) + (channels['CONTRATTO_PDF'] || 0) + (channels['Partner'] || 0) + (channels['IRBEMA'] || 0);
+            const nonSpecificato = channels['Non specificato'] || 0;
             
             document.getElementById('channelWeb').textContent = webCount;
             document.getElementById('channelEmail').textContent = emailCount;
             document.getElementById('channelPhone').textContent = phoneCount;
             document.getElementById('channelPartner').textContent = partnerCount;
+            
+            // Se tutto è zero, mostra messaggio debug
+            if (webCount === 0 && emailCount === 0 && phoneCount === 0 && partnerCount === 0) {
+                console.warn('⚠️ ATTENZIONE: Tutti i canali sono zero! Verifica che il campo "fonte" sia popolato nel DB.');
+                console.warn('⚠️ Leads senza fonte:', nonSpecificato);
+            }
         }
 
         function renderLeadsTable(leads) {
@@ -2574,8 +2596,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            // Determina servizio (priorità: lead.servizio > lead.tipoServizio > default PRO)
-            const servizio = lead.servizio || lead.tipoServizio || 'PRO';
+            // TASK #4 FIX: Determina servizio (priorità: lead.servizio > lead.tipoServizio > default PRO)
+            // Normalizza: rimuovi "eCura" se già presente
+            let servizio = lead.servizio || lead.tipoServizio || 'PRO';
+            servizio = servizio.replace(/^eCura\s+/i, ''); // Rimuovi "eCura" all'inizio (case insensitive)
             
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
@@ -3373,25 +3397,45 @@ export const data_dashboard = `<!DOCTYPE html>
         }
 
         function analyzeByService(leads, contracts) {
-            // Tutti i 126 lead sono eCura PRO
+            // TASK #5-6 FIX: Calcola dinamicamente da dati reali (non hardcode)
             const data = {
                 FAMILY: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 },
-                PRO: { leads: leads.length, base: 0, avanzato: 0, contracts: contracts.length, revenue: 0 },
+                PRO: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 },
                 PREMIUM: { leads: 0, base: 0, avanzato: 0, contracts: 0, revenue: 0 }
             };
 
+            // Conta lead PER SERVIZIO dai dati reali
+            leads.forEach(lead => {
+                const servizio = (lead.servizio || lead.tipoServizio || 'PRO').toUpperCase().replace(/^ECURA\s+/i, '');
+                if (data[servizio]) {
+                    data[servizio].leads++;
+                }
+            });
+
             // Calcola revenue e conta BASE vs AVANZATO dai CONTRATTI reali (SOLO FIRMATI)
             contracts.forEach(contract => {
-                const isAvanzato = contract.piano === 'AVANZATO' || (contract.note && contract.note.includes('AVANZATO'));
-                if (isAvanzato) {
-                    data.PRO.avanzato++;
-                } else {
-                    data.PRO.base++;
-                }
+                // Determina servizio dal contratto o fallback a PRO
+                const servizio = (contract.servizio || 'PRO').toUpperCase().replace(/^ECURA\\s+/i, '');
                 
-                // Somma revenue SOLO se contratto FIRMATO
-                if (contract.status === 'SIGNED' && contract.prezzo_totale) {
-                    data.PRO.revenue += parseFloat(contract.prezzo_totale);
+                // TASK 6 FIX: Piano dal DB
+                const piano = (contract.piano || 'BASE').toUpperCase();
+                const isAvanzato = piano === 'AVANZATO';
+                
+                // Debug log contratti con piano
+                console.log('Contratto ' + contract.codice_contratto + ': piano=' + contract.piano + ', isAvanzato=' + isAvanzato);
+                
+                if (data[servizio]) {
+                    data[servizio].contracts++;
+                    if (isAvanzato) {
+                        data[servizio].avanzato++;
+                    } else {
+                        data[servizio].base++;
+                    }
+                    
+                    // Somma revenue SOLO se contratto FIRMATO
+                    if (contract.status === 'SIGNED' && contract.prezzo_totale) {
+                        data[servizio].revenue += parseFloat(contract.prezzo_totale);
+                    }
                 }
             });
 
@@ -3435,9 +3479,8 @@ export const data_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = contracts.map(contract => {
-                // Determina il piano dal contratto o dalle note del lead
-                const lead = leads.find(l => l.id === contract.lead_id);
-                const piano = contract.piano || (lead && lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                // TASK 6 FIX: Piano dal DB
+                const piano = (contract.piano || 'BASE').toUpperCase();
                 const prezzo = contract.prezzo_totale || (piano === 'AVANZATO' ? '840' : '480');
                 const servizio = contract.servizio || 'eCura PRO'; // Legge dal DB o default
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
