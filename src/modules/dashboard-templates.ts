@@ -2420,6 +2420,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
                 const hasContract = ['LEAD-CONTRATTO-001', 'LEAD-CONTRATTO-002', 'LEAD-CONTRATTO-003', 'LEAD-EXCEL-065'].includes(lead.id);
                 
+                // Normalizza servizio: rimuovi "eCura" se già presente
+                let servizio = lead.servizio || lead.tipoServizio || 'PRO';
+                servizio = servizio.replace(/^eCura\s+/i, '');
+                
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
@@ -2438,7 +2442,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                eCura PRO
+                                eCura \${servizio}
                             </span>
                         </td>
                         <td class="py-3">
@@ -3489,7 +3493,12 @@ export const data_dashboard = `<!DOCTYPE html>
                 // TASK 6 FIX: Piano dal DB
                 const piano = (contract.piano || 'BASE').toUpperCase();
                 const prezzo = contract.prezzo_totale || (piano === 'AVANZATO' ? '840' : '480');
-                const servizio = contract.servizio || 'eCura PRO'; // Legge dal DB o default
+                
+                // Normalizza servizio: rimuovi "eCura" se già presente, poi aggiungilo
+                let servizio = contract.servizio || 'PRO';
+                servizio = servizio.replace(/^eCura\s+/i, '');
+                servizio = 'eCura ' + servizio;
+                
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
                 
                 return \`
@@ -4270,6 +4279,11 @@ export const workflow_manager = `<!DOCTYPE html>
                 const step = getWorkflowStep(lead);
                 const date = new Date(lead.created_at).toLocaleString('it-IT');
                 
+                // Normalizza servizio
+                let servizio = lead.servizio || lead.tipoServizio || 'PRO';
+                servizio = servizio.replace(/^eCura\s+/i, '');
+                servizio = 'eCura ' + servizio;
+                
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
@@ -4291,7 +4305,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                \${lead.servizio || lead.tipoServizio || 'eCura PRO'}
+                                \${servizio}
                             </span>
                         </td>
                         <td class="py-3">
@@ -4492,10 +4506,16 @@ export const workflow_manager = `<!DOCTYPE html>
                     // Mostra dettagli completi del lead
                     const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
                     const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
+                    
+                    // Normalizza servizio
+                    let servizio = lead.servizio || lead.tipoServizio || 'PRO';
+                    servizio = servizio.replace(/^eCura\s+/i, '');
+                    servizio = 'eCura ' + servizio;
+                    
                     alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\\n\\n' +
                     '📧 Email: ' + (lead.email || 'N/A') + '\\n' +
                     '📞 Telefono: ' + (lead.telefono || 'N/A') + '\\n' +
-                    '🏥 Servizio: ' + (lead.servizio || 'eCura PRO') + '\\n' +
+                    '🏥 Servizio: ' + servizio + '\\n' +
                     '📋 Piano: ' + piano + ' (' + prezzo + '/anno)' + '\\n' +
                     '📅 Creato: ' + new Date(lead.created_at).toLocaleDateString('it-IT') + '\\n' +
                     '📍 Stato: ' + getWorkflowStatus(lead).text + '\\n' +
