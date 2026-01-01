@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
+// Import Database Schema (SINGLE SOURCE OF TRUTH)
+import { buildLeadUpdateQuery } from './database-schema'
+
 // Import TeleMedCare V12.0 Modular Enterprise System
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
@@ -7080,113 +7083,18 @@ app.put('/api/leads/:id', async (c) => {
       return c.json({ success: true, message: 'Lead aggiornato (mock)' })
     }
     
-    // Build dynamic UPDATE query - ACCETTA TUTTI I CAMPI
-    const updates: string[] = []
-    const binds: any[] = []
+    // USA LO SCHEMA UFFICIALE per generare la query
+    const { query, binds } = buildLeadUpdateQuery(data, id)
     
-    // Campi da ESCLUDERE (non modificabili o non esistenti)
-    const excludeFields = [
-      'id', 'created_at', 'timestamp', 
-      'consensoPrivacy', 'consensoMarketing', 'consensoTerze',  // ← NON ESISTONO!
-      'external_source_id', 'external_data'                     // ← ESTERNI
-    ]
-    
-    // Alias frontend → backend (NOMI REALI DEL DATABASE!)
-    const fieldAliases: Record<string, string> = {
-      'emailRichiedente': 'email',        // ← CAMPO REALE: email
-      'telefonoRichiedente': 'telefono',  // ← CAMPO REALE: telefono
-      'nomeRichiedente': 'nome',          // ← CAMPO REALE: nome
-      'cognomeRichiedente': 'cognome'     // ← CAMPO REALE: cognome
-    }
-    
-    for (const [key, value] of Object.entries(data)) {
-      if (excludeFields.includes(key) || value === undefined) {
-        continue
-      }
-      
-      // Salta email vuote (il DB richiede emailRichiedente NOT NULL)
-      if (key === 'email' && value === '') {
-        console.log('⚠️  Skipping empty email field')
-        continue
-      }
-      
-      // Usa alias se esiste, altrimenti usa il nome originale
-      const dbColumn = fieldAliases[key] || key
-      updates.push(`${dbColumn} = ?`)
-      binds.push(value)
-    }
-    
-    if (updates.length === 0) {
-      console.log('⚠️  Nessun campo valido da aggiornare')
-      return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
-    }
-    
-    // Add updated_at
-    updates.push('updated_at = ?')
-    binds.push(new Date().toISOString())
-    
-    // Add id for WHERE clause
-    binds.push(id)
-    
-    const query = `UPDATE leads SET ${updates.join(', ')} WHERE id = ?`
     console.log(`🔍 Query SQL:`, query)
     console.log(`🔍 Binds:`, binds)
     
-    try {
-      const result = await c.env.DB.prepare(query).bind(...binds).run()
-      console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
-      
-      return c.json({ success: true, message: 'Lead aggiornato con successo' })
-    } catch (sqlError) {
-      // Se errore SQL (campo non esistente), riprova con solo campi base
-      console.error('⚠️  Errore SQL, riprovo con campi base:', sqlError)
-      
-      const basicUpdates: string[] = []
-      const basicBinds: any[] = []
-      
-      // Solo campi che SICURAMENTE esistono (NOMI REALI!)
-      const basicFields: Record<string, string> = {
-        'nome': 'nome',
-        'cognome': 'cognome',
-        'email': 'email',
-        'telefono': 'telefono',
-        'note': 'note',
-        'status': 'status'
-      }
-      
-      for (const [frontendKey, dbColumn] of Object.entries(basicFields)) {
-        if (data[frontendKey] !== undefined) {
-          basicUpdates.push(`${dbColumn} = ?`)
-          basicBinds.push(data[frontendKey])
-        } else if (data[dbColumn] !== undefined) {
-          basicUpdates.push(`${dbColumn} = ?`)
-          basicBinds.push(data[dbColumn])
-        }
-      }
-      
-      if (basicUpdates.length === 0) {
-        throw sqlError // Re-throw l'errore originale
-      }
-      
-      basicUpdates.push('updated_at = ?')
-      basicBinds.push(new Date().toISOString())
-      basicBinds.push(id)
-      
-      const basicQuery = `UPDATE leads SET ${basicUpdates.join(', ')} WHERE id = ?`
-      console.log(`🔄 Retry con query base:`, basicQuery)
-      
-      const retryResult = await c.env.DB.prepare(basicQuery).bind(...basicBinds).run()
-      console.log(`✅ Lead aggiornato (retry):`, id, '- Rows affected:', retryResult.meta?.changes || 0)
-      
-      return c.json({ 
-        success: true, 
-        message: 'Lead aggiornato (alcuni campi ignorati)',
-        warning: 'Alcuni campi non sono stati salvati perché non esistono nel database'
-      })
-    }
+    const result = await c.env.DB.prepare(query).bind(...binds).run()
+    console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
+    
+    return c.json({ success: true, message: 'Lead aggiornato con successo' })
   } catch (error) {
     console.error('❌ Errore aggiornamento lead:', error)
-    console.error('❌ Error type:', typeof error)
     console.error('❌ Error details:', error instanceof Error ? error.message : String(error))
     return c.json({ 
       success: false, 
