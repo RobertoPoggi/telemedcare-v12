@@ -5,33 +5,28 @@
 
 import { D1Database } from '@cloudflare/workers-types'
 
-export interface EmailTemplate {
-  subject: string
-  html_content: string
-}
-
 /**
  * Load email template from D1 database
  */
 export async function loadEmailTemplate(
   templateName: string,
   db: D1Database
-): Promise<EmailTemplate> {
+): Promise<string> {
   if (!db) {
     throw new Error(`Database not available for template "${templateName}"`)
   }
 
   try {
     const result = await db
-      .prepare('SELECT subject, html_content FROM document_templates WHERE id = ? AND active = 1 LIMIT 1')
+      .prepare('SELECT html_content FROM document_templates WHERE name = ? AND active = 1 LIMIT 1')
       .bind(templateName)
-      .first<EmailTemplate>()
+      .first<{ html_content: string }>()
 
     if (!result) {
       throw new Error(`Template "${templateName}" not found`)
     }
 
-    return result
+    return result.html_content
   } catch (error) {
     console.error(`Error loading template "${templateName}":`, error)
     throw error

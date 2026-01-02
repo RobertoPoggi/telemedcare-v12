@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V12.0 / eCura - Brochure Manager
+ * TeleMedCare V11.0 / eCura - Brochure Manager
  * Gestisce la mappatura Servizio → Brochure e il caricamento dinamico dei PDF
  * 
  * MAPPATURA SERVIZI:
@@ -21,20 +21,20 @@ export interface BrochureInfo {
 export const BROCHURE_MAP: Record<string, BrochureInfo> = {
   'FAMILY': {
     servizio: 'FAMILY',
-    nomeDispositivo: 'SiDLY Care PRO',
-    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf', // ✅ File compresso 2.6 MB
-    descrizione: 'Dispositivo per monitoraggio familiare (SiDLY Care PRO)'
+    nomeDispositivo: 'Senium',
+    filename: 'Brochure_TeleMedCare.pdf', // TODO: Sostituire con Brochure_Senium.pdf quando disponibile
+    descrizione: 'Dispositivo per monitoraggio familiare'
   },
   'PRO': {
     servizio: 'PRO',
     nomeDispositivo: 'SiDLY Care PRO',
-    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf', // ✅ File compresso 2.6 MB
+    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ File reale caricato (12.9 MB)
     descrizione: 'Dispositivo professionale per assistenza avanzata (SiDLY Care PRO)'
   },
   'PREMIUM': {
     servizio: 'PREMIUM',
     nomeDispositivo: 'SiDLY Vital Care',
-    filename: 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf', // ✅ File compresso 1.7 MB
+    filename: 'Medica_GB_SiDLY_Vital_Care_ITA.pdf', // ✅ File reale caricato (11 MB)
     descrizione: 'Dispositivo premium per monitoraggio completo (SiDLY Vital Care)'
   }
 }
@@ -65,7 +65,7 @@ export async function loadBrochurePDF(
       return null
     }
 
-    const pdfUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
+    const pdfUrl = `${baseUrl}/documents/${brochureInfo.filename}`
     console.log(`📥 [BROCHURE] Servizio: ${servizio} → Dispositivo: ${brochureInfo.nomeDispositivo}`)
     console.log(`📥 [BROCHURE] Caricamento da: ${pdfUrl}`)
 
