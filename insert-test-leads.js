@@ -5,8 +5,12 @@
  * Uso: node insert-test-leads.js
  */
 
-const fs = require('fs');
-const path = require('path');
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const API_URL = 'https://telemedcare-v12.pages.dev/api/leads';
 
@@ -29,16 +33,17 @@ async function insertLead(leadData, index) {
     if (result.success) {
       console.log(`   ✅ Lead creato: ${result.id || result.leadId}`);
       
-      if (result.emails) {
+      if (result.emailAutomation || result.emails) {
+        const emails = result.emailAutomation || result.emails;
         console.log(`   📧 Email inviate:`);
-        if (result.emails.notifica?.sent) console.log(`      ✓ Notifica interno`);
-        if (result.emails.brochure?.sent) console.log(`      ✓ Brochure cliente`);
-        if (result.emails.contratto?.sent) console.log(`      ✓ Contratto cliente`);
+        if (emails.notifica?.sent) console.log(`      ✓ Notifica interno`);
+        if (emails.brochure?.sent) console.log(`      ✓ Brochure cliente`);
+        if (emails.contratto?.sent) console.log(`      ✓ Contratto cliente`);
         
         // Log errori
-        if (result.emails.notifica?.error) console.log(`      ⚠️ Notifica: ${result.emails.notifica.error}`);
-        if (result.emails.brochure?.error) console.log(`      ⚠️ Brochure: ${result.emails.brochure.error}`);
-        if (result.emails.contratto?.error) console.log(`      ⚠️ Contratto: ${result.emails.contratto.error}`);
+        if (emails.notifica?.error) console.log(`      ⚠️ Notifica: ${emails.notifica.error}`);
+        if (emails.brochure?.error) console.log(`      ⚠️ Brochure: ${emails.brochure.error}`);
+        if (emails.contratto?.error) console.log(`      ⚠️ Contratto: ${emails.contratto.error}`);
       }
       
       return true;
@@ -57,8 +62,8 @@ async function main() {
   console.log('================================\n');
   
   // Leggi file JSON
-  const testLeadsPath = path.join(__dirname, 'test-leads.json');
-  const leadsData = JSON.parse(fs.readFileSync(testLeadsPath, 'utf-8'));
+  const testLeadsPath = join(__dirname, 'test-leads.json');
+  const leadsData = JSON.parse(readFileSync(testLeadsPath, 'utf-8'));
   
   console.log(`📋 Trovati ${leadsData.length} lead da inserire`);
   console.log(`🎯 Target: ${API_URL}\n`);
