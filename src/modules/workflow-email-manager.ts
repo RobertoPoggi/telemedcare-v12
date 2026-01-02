@@ -114,13 +114,17 @@ export async function inviaEmailNotificaInfo(
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
       VERSIONE_SISTEMA: 'TeleMedCare V11.0',
       
-      // Nuovi placeholder per richieste del lead
+      // Placeholder per richieste del lead (semplici + formattati)
+      VUOLE_CONTRATTO: vuoleContratto ? 'SÌ' : 'NO',
+      VUOLE_BROCHURE: vuoleBrochure ? 'SÌ' : 'NO',
+      VUOLE_MANUALE: vuoleManuale ? 'SÌ' : 'NO',
       VUOLE_CONTRATTO_TEXT: vuoleContratto ? '✅ SI' : '❌ NO',
       VUOLE_CONTRATTO_COLOR: vuoleContratto ? '#198754' : '#dc3545',
       VUOLE_BROCHURE_TEXT: vuoleBrochure ? '✅ SI' : '❌ NO',
       VUOLE_BROCHURE_COLOR: vuoleBrochure ? '#198754' : '#dc3545',
       VUOLE_MANUALE_TEXT: vuoleManuale ? '✅ SI' : '❌ NO',
       VUOLE_MANUALE_COLOR: vuoleManuale ? '#198754' : '#dc3545',
+      URGENZA: leadData.urgenzaRisposta || 'NORMALE',
       AZIONE_SUGGERITA: azioneSuggerita
     }
 
