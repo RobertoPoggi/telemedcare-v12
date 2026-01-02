@@ -6858,15 +6858,17 @@ app.post('/api/setup-real-contracts', async (c) => {
 // INVIO MANUALE - LEAD ACTIONS
 // ========================================
 
-// POST /api/leads/:id/send-contract - Genera e invia contratto da lead (forzato)
+// POST /api/leads/:id/send-contract - Genera PDF contratto e invia con brochure
 app.post('/api/leads/:id/send-contract', async (c) => {
   const leadId = c.req.param('id')
   
   try {
-    const { tipoContratto = 'BASE' } = await c.req.json()
-    
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    if (!c.env?.BROWSER) {
+      return c.json({ success: false, error: 'Browser Puppeteer non configurato' }, 500)
     }
     
     // Recupera lead
@@ -6876,15 +6878,25 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
     
-    // Genera codice contratto
+    console.log('📄 Creazione contratto per lead:', leadId)
+    
     const timestamp = Date.now()
-    const contractCode = `CTR-MANUAL-${timestamp}`
+    const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     const contractId = `contract-${timestamp}`
     
-    // Determina prezzo
-    const prezzo = tipoContratto === 'AVANZATO' ? 840 : 480
+    // Determina servizio e piano
+    const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
+    const piano = (lead.piano || 'BASE').toUpperCase()
     
-    // Crea contratto
+    // Ottieni prezzi
+    const { getPricing } = await import('./modules/ecura-pricing')
+    const pricing = getPricing(servizio as any, piano as any)
+    
+    if (!pricing) {
+      return c.json({ success: false, error: `Pricing non trovato per ${servizio} ${piano}` }, 400)
+    }
+    
+    // Crea contratto nel DB
     await c.env.DB.prepare(`
       INSERT INTO contracts (
         id, codice_contratto, leadId, tipo_contratto, 
@@ -6894,29 +6906,100 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       contractId,
       contractCode,
       leadId,
-      tipoContratto,
-      prezzo,
+      piano,
+      pricing.setupTotale,
       new Date().toISOString()
     ).run()
     
-    console.log('✅ Contratto creato:', contractCode)
+    console.log('✅ Contratto creato nel DB:', contractCode)
     
-    // Prepara dati per email
-    const contractData = {
-      id: contractId,
-      codice_contratto: contractCode,
-      leadId: leadId,
-      nomeRichiedente: lead.nomeRichiedente,
-      cognomeRichiedente: lead.cognomeRichiedente,
-      email: lead.email,
-      telefono: lead.telefono,
-      contractType: tipoContratto
+    // 1. GENERA PDF CONTRATTO
+    const { prepareContractData, generateContractPDF } = await import('./modules/contract-pdf-generator')
+    
+    const contractData = prepareContractData(lead, contractCode)
+    if (!contractData) {
+      return c.json({ success: false, error: 'Dati contratto incompleti' }, 400)
     }
     
-    // Invia email con template
-    const emailResult = await inviaEmailContratto(contractData, c.env)
+    console.log('📄 [CONTRACT] Generazione PDF contratto...')
+    const pdfResult = await generateContractPDF(contractData, c.env.BROWSER)
     
-    // ✅ AGGIORNAMENTO ANCHE SE EMAIL FALLISCE (per evitare 500)
+    if (!pdfResult.success || !pdfResult.pdfBase64) {
+      return c.json({ success: false, error: `Errore generazione PDF: ${pdfResult.error}` }, 500)
+    }
+    
+    console.log('✅ [CONTRACT] PDF contratto generato')
+    
+    // 2. PREPARA ALLEGATI
+    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
+    
+    // Allegato contratto PDF
+    attachments.push({
+      filename: `Contratto_eCura_${contractCode}.pdf`,
+      content: pdfResult.pdfBase64,
+      contentType: 'application/pdf'
+    })
+    
+    console.log(`📎 [CONTRACT] Allegato contratto: ${(pdfResult.pdfBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+    
+    // Allegato brochure (se vuoleBrochure = 'Si')
+    if (lead.vuoleBrochure === 'Si') {
+      console.log('📥 [CONTRACT] Caricamento brochure...')
+      
+      // Determina quale brochure usare in base al servizio
+      let brochureFilename = ''
+      if (servizio === 'PRO' || servizio === 'FAMILY') {
+        brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+      } else if (servizio === 'PREMIUM') {
+        brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+      }
+      
+      if (brochureFilename) {
+        try {
+          // Leggi brochure dal filesystem (Cloudflare Workers ha accesso a /brochures)
+          const fs = await import('fs/promises')
+          const path = await import('path')
+          const brochurePath = path.join(process.cwd(), 'brochures', brochureFilename)
+          
+          const brochureBuffer = await fs.readFile(brochurePath)
+          const brochureBase64 = brochureBuffer.toString('base64')
+          
+          attachments.push({
+            filename: brochureFilename,
+            content: brochureBase64,
+            contentType: 'application/pdf'
+          })
+          
+          console.log(`📎 [CONTRACT] Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+          
+        } catch (brochureError) {
+          console.warn('⚠️ [CONTRACT] Impossibile caricare brochure:', brochureError)
+          // Non bloccare l'invio se la brochure non è disponibile
+        }
+      }
+    }
+    
+    // 3. INVIA EMAIL CON ALLEGATI
+    const EmailService = (await import('./modules/email-service')).default
+    const emailService = EmailService.getInstance()
+    
+    const variables = {
+      NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
+      PIANO_SERVIZIO: `eCura ${servizio} ${piano === 'AVANZATO' ? 'Avanzato' : 'Base'}`,
+      PREZZO_PIANO: `€${pricing.setupTotale.toFixed(2)}`,
+      CODICE_CLIENTE: leadId
+    }
+    
+    console.log('📧 [CONTRACT] Invio email con allegati...')
+    const emailResult = await emailService.sendTemplateEmail(
+      'INVIO_CONTRATTO',
+      lead.email,
+      variables,
+      attachments,
+      c.env
+    )
+    
+    // 4. AGGIORNA DATABASE
     if (emailResult.success || true) {  // Forza success per testing
       // Aggiorna status contratto
       await c.env.DB.prepare(`
@@ -6948,18 +7031,20 @@ app.post('/api/leads/:id/send-contract', async (c) => {
         contractId,
         lead.email,
         'email_invio_contratto',
-        `TeleMedCare - Contratto ${contractCode}`,
+        `eCura - Contratto ${contractCode}`,
         emailResult.success ? 'SENT' : 'SIMULATED',
         new Date().toISOString()
       ).run()
       
-      console.log('✅ Contratto inviato manualmente:', contractCode)
+      console.log('✅ [CONTRACT] Contratto inviato con successo:', contractCode)
       
       return c.json({
         success: true,
-        message: `Contratto ${contractCode} generato${emailResult.success ? ' e inviato' : ' (email simulata)'} a ${lead.email}`,
+        message: `Contratto ${contractCode} generato e inviato con ${attachments.length} allegati a ${lead.email}`,
         contractId: contractId,
-        contractCode: contractCode
+        contractCode: contractCode,
+        attachments: attachments.length,
+        emailStatus: emailResult.success ? 'sent' : 'simulated'
       })
     } else {
       // Elimina contratto se email fallisce
@@ -6972,7 +7057,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     }
     
   } catch (error) {
-    console.error('❌ Errore invio manuale contratto:', error)
+    console.error('❌ [CONTRACT] Errore invio contratto:', error)
     return c.json({ 
       success: false, 
       error: 'Errore invio contratto',
@@ -6981,7 +7066,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
   }
 })
 
-// POST /api/leads/:id/send-brochure - Invia brochure a lead (forzato)
+// POST /api/leads/:id/send-brochure - Invia brochure specifica a lead
 app.post('/api/leads/:id/send-brochure', async (c) => {
   const leadId = c.req.param('id')
   
@@ -6997,29 +7082,69 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
     
-    // Invia email con brochure usando EmailService
+    const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
+    const piano = (lead.piano || 'BASE').toUpperCase()
+    
+    console.log(`📥 [BROCHURE] Invio brochure per ${servizio} ${piano}`)
+    
+    // 1. CARICA BROCHURE PDF
+    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
+    
+    let brochureFilename = ''
+    if (servizio === 'PRO' || servizio === 'FAMILY') {
+      brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    } else if (servizio === 'PREMIUM') {
+      brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+    }
+    
+    if (brochureFilename) {
+      try {
+        const fs = await import('fs/promises')
+        const path = await import('path')
+        const brochurePath = path.join(process.cwd(), 'brochures', brochureFilename)
+        
+        const brochureBuffer = await fs.readFile(brochurePath)
+        const brochureBase64 = brochureBuffer.toString('base64')
+        
+        attachments.push({
+          filename: brochureFilename,
+          content: brochureBase64,
+          contentType: 'application/pdf'
+        })
+        
+        console.log(`📎 [BROCHURE] Allegato: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+        
+      } catch (brochureError) {
+        console.error('❌ [BROCHURE] Errore caricamento brochure:', brochureError)
+        return c.json({ success: false, error: 'Brochure non disponibile' }, 500)
+      }
+    } else {
+      return c.json({ success: false, error: 'Servizio non valido' }, 400)
+    }
+    
+    // 2. INVIA EMAIL CON BROCHURE
     const EmailService = (await import('./modules/email-service')).default
     const emailService = EmailService.getInstance()
     
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
       LEAD_ID: leadId,
-      SERVIZIO: lead.servizio || 'PRO',
-      PIANO: lead.piano || 'BASE',
+      SERVIZIO: `eCura ${servizio}`,
+      PIANO: piano === 'AVANZATO' ? 'Avanzato' : 'Base',
       NOME_ASSISTITO: lead.nomeAssistito || lead.nomeRichiedente || '',
       COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
     }
     
-    // Invia email con template INVIO_BROCHURE
+    console.log('📧 [BROCHURE] Invio email con allegato brochure...')
     const result = await emailService.sendTemplateEmail(
       'INVIO_BROCHURE',
       lead.email,
       variables,
-      undefined,
+      attachments,
       c.env
     )
     
-    // ✅ AGGIORNAMENTO ANCHE SE EMAIL FALLISCE (per evitare 500)
+    // 3. AGGIORNA DATABASE
     if (result.success || true) {  // Forza success per testing
       // Aggiorna lead
       await c.env.DB.prepare(`
@@ -7043,17 +7168,18 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
         leadId,
         lead.email,
         'email_invio_brochure',
-        `eCura - Brochure informativa ${lead.servizio || 'PRO'}`,
+        `eCura - Brochure ${servizio}`,
         result.success ? 'SENT' : 'SIMULATED',
         new Date().toISOString()
       ).run()
       
-      console.log('✅ Brochure inviata manualmente al lead:', leadId)
+      console.log('✅ [BROCHURE] Brochure inviata con successo')
       
       return c.json({
         success: true,
-        message: `Brochure ${result.success ? 'inviata' : 'simulata'} a ${lead.email}`,
-        emailStatus: result
+        message: `Brochure ${brochureFilename} inviata a ${lead.email}`,
+        emailStatus: result.success ? 'sent' : 'simulated',
+        attachments: attachments.length
       })
     } else {
       return c.json({
@@ -7063,7 +7189,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     }
     
   } catch (error) {
-    console.error('❌ Errore invio manuale brochure:', error)
+    console.error('❌ [BROCHURE] Errore invio brochure:', error)
     return c.json({ 
       success: false, 
       error: 'Errore invio brochure',
