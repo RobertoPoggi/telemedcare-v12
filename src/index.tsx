@@ -6956,21 +6956,26 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       
       if (brochureFilename) {
         try {
-          // Leggi brochure dal filesystem (Cloudflare Workers ha accesso a /brochures)
-          const fs = await import('fs/promises')
-          const path = await import('path')
-          const brochurePath = path.join(process.cwd(), 'brochures', brochureFilename)
+          // Carica brochure da asset pubblici (Cloudflare Pages)
+          const brochureUrl = `/brochures/${brochureFilename}`
+          console.log(`📥 [CONTRACT] Fetch brochure da: ${brochureUrl}`)
           
-          const brochureBuffer = await fs.readFile(brochurePath)
-          const brochureBase64 = brochureBuffer.toString('base64')
+          const response = await fetch(new URL(brochureUrl, c.req.url).toString())
           
-          attachments.push({
-            filename: brochureFilename,
-            content: brochureBase64,
-            contentType: 'application/pdf'
-          })
-          
-          console.log(`📎 [CONTRACT] Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer()
+            const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
+            
+            attachments.push({
+              filename: brochureFilename,
+              content: brochureBase64,
+              contentType: 'application/pdf'
+            })
+            
+            console.log(`📎 [CONTRACT] Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+          } else {
+            console.warn(`⚠️ [CONTRACT] Brochure non trovata: ${response.status}`)
+          }
           
         } catch (brochureError) {
           console.warn('⚠️ [CONTRACT] Impossibile caricare brochure:', brochureError)
@@ -7099,20 +7104,27 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     if (brochureFilename) {
       try {
-        const fs = await import('fs/promises')
-        const path = await import('path')
-        const brochurePath = path.join(process.cwd(), 'brochures', brochureFilename)
+        // Carica brochure da asset pubblici (Cloudflare Pages)
+        const brochureUrl = `/brochures/${brochureFilename}`
+        console.log(`📥 [BROCHURE] Fetch brochure da: ${brochureUrl}`)
         
-        const brochureBuffer = await fs.readFile(brochurePath)
-        const brochureBase64 = brochureBuffer.toString('base64')
+        const response = await fetch(new URL(brochureUrl, c.req.url).toString())
         
-        attachments.push({
-          filename: brochureFilename,
-          content: brochureBase64,
-          contentType: 'application/pdf'
-        })
-        
-        console.log(`📎 [BROCHURE] Allegato: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer()
+          const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
+          
+          attachments.push({
+            filename: brochureFilename,
+            content: brochureBase64,
+            contentType: 'application/pdf'
+          })
+          
+          console.log(`📎 [BROCHURE] Allegato: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+        } else {
+          console.error('❌ [BROCHURE] Brochure non trovata:', response.status)
+          return c.json({ success: false, error: `Brochure non disponibile (${response.status})` }, 500)
+        }
         
       } catch (brochureError) {
         console.error('❌ [BROCHURE] Errore caricamento brochure:', brochureError)
