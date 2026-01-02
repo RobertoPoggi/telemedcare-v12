@@ -2961,9 +2961,278 @@ export const leads_dashboard = `<!DOCTYPE html>
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
     </script>
 
-    <!-- MODAL: NEW LEAD -->
-    <div id="newLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+    <!-- MODAL: NEW LEAD - Form Stile eCura.it -->
+    <div id="newLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[95vh] overflow-hidden">
+            
+            <!-- HEADER -->
+            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)" class="text-white px-8 py-6 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-1">Richiedi il tuo servizio eCura</h2>
+                        <p class="text-blue-100 text-sm">Compila il form per ricevere brochure e contratto personalizzato</p>
+                    </div>
+                    <button onclick="closeModal('newLeadModal')" class="text-white hover:text-gray-200 text-3xl leading-none">&times;</button>
+                </div>
+            </div>
+            
+            <!-- FORM CONTENT -->
+            <div class="p-8 overflow-y-auto" style="max-height: calc(95vh - 180px)">
+                <form id="newLeadForm" class="space-y-8">
+                    
+                    <!-- STEP 1: CHI SEI -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-l-4 border-blue-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                            <span class="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                            Chi sei?
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4 ml-11">I tuoi dati di contatto</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome *</label>
+                                <input type="text" id="newNome" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Mario">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome *</label>
+                                <input type="text" id="newCognome" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Rossi">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
+                                <input type="email" id="newEmail" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="mario.rossi@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Telefono *</label>
+                                <input type="tel" id="newTelefono" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="+39 333 1234567">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PER CHI È IL SERVIZIO -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border-l-4 border-green-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                            <span class="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                            Per chi è il servizio?
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4 ml-11">Dati anagrafici completi dell'assistito</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome Assistito *</label>
+                                <input type="text" id="newNomeAssistito" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Giuseppe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome Assistito *</label>
+                                <input type="text" id="newCognomeAssistito" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Rossi">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Luogo di Nascita *</label>
+                                <input type="text" id="newLuogoNascita" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Milano">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita *</label>
+                                <input type="text" id="newDataNascita" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="15/03/1950">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo *</label>
+                                <input type="text" id="newIndirizzoAssistito" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Via Roma 123">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP *</label>
+                                <input type="text" id="newCapAssistito" required maxlength="5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="20121">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città *</label>
+                                <input type="text" id="newCittaAssistito" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Milano">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia *</label>
+                                <input type="text" id="newProvinciaAssistito" required maxlength="2"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
+                                    placeholder="MI">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale *</label>
+                                <input type="text" id="newCodiceFiscale" required maxlength="16"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
+                                    placeholder="RSSGPP50C15F205X">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: QUALE SERVIZIO VUOI -->
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border-l-4 border-purple-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                            <span class="bg-purple-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+                            Quale servizio vuoi?
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4 ml-11">Scegli il servizio e il piano più adatto</p>
+                        
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Servizio eCura *</label>
+                                <select id="newServizio" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
+                                    <option value="">Seleziona servizio...</option>
+                                    <option value="eCura Family">eCura Family - Monitoraggio Base</option>
+                                    <option value="eCura PRO" selected>eCura PRO - Monitoraggio Avanzato</option>
+                                    <option value="eCura PREMIUM">eCura PREMIUM - Assistenza Completa h24</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Piano *</label>
+                                <select id="newPiano" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
+                                    <option value="BASE">Piano BASE - €480/anno</option>
+                                    <option value="AVANZATO">Piano AVANZATO - €840/anno</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Come ci hai conosciuto? *</label>
+                                <select id="newCanale" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
+                                    <option value="">Seleziona...</option>
+                                    <option value="Website">Sito Web eCura.it</option>
+                                    <option value="Partner">Tramite Partner</option>
+                                    <option value="Networking">Networking / Passaparola</option>
+                                    <option value="Phone">Chiamata Telefonica</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Irbema">Irbema</option>
+                                    <option value="AON">AON</option>
+                                    <option value="Test" selected>Test</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: PREFERENZE -->
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-6 border-l-4 border-amber-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                            <span class="bg-amber-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+                            Cosa vuoi ricevere?
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4 ml-11">Documenti e informazioni</p>
+                        
+                        <div class="space-y-3">
+                            <label class="flex items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-amber-400 cursor-pointer transition">
+                                <input type="checkbox" id="newVuoleBrochure" checked 
+                                    class="mr-4 w-6 h-6 text-amber-600 border-2 border-gray-300 rounded focus:ring-amber-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">📚 Brochure Informativa</div>
+                                    <div class="text-sm text-gray-600">Ricevi via email la brochure con tutti i dettagli del servizio</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-amber-400 cursor-pointer transition">
+                                <input type="checkbox" id="newVuoleContratto" checked 
+                                    class="mr-4 w-6 h-6 text-amber-600 border-2 border-gray-300 rounded focus:ring-amber-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">📋 Contratto Personalizzato</div>
+                                    <div class="text-sm text-gray-600">Ricevi il contratto precompilato con i tuoi dati</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-amber-400 cursor-pointer transition">
+                                <input type="checkbox" id="newVuoleManuale" 
+                                    class="mr-4 w-6 h-6 text-amber-600 border-2 border-gray-300 rounded focus:ring-amber-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">📖 Manuale Utente</div>
+                                    <div class="text-sm text-gray-600">Guida all'utilizzo del dispositivo e dei servizi</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: CONSENSI -->
+                    <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border-l-4 border-gray-400">
+                        <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
+                            <span class="bg-gray-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">5</span>
+                            Privacy e Consensi
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-4 ml-11">Informativa sul trattamento dei dati personali</p>
+                        
+                        <div class="space-y-3">
+                            <label class="flex items-start p-4 bg-white rounded-lg border-2 border-green-200 cursor-pointer">
+                                <input type="checkbox" id="newConsensoPrivacy" checked required 
+                                    class="mr-4 mt-1 w-6 h-6 text-green-600 border-2 border-gray-300 rounded focus:ring-green-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">✅ Consenso Privacy *</div>
+                                    <div class="text-sm text-gray-600">Acconsento al trattamento dei miei dati personali secondo la <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a> (obbligatorio)</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-start p-4 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition">
+                                <input type="checkbox" id="newConsensoMarketing" 
+                                    class="mr-4 mt-1 w-6 h-6 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">📬 Comunicazioni Marketing</div>
+                                    <div class="text-sm text-gray-600">Acconsento alla ricezione di comunicazioni commerciali e promozionali (facoltativo)</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-start p-4 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition">
+                                <input type="checkbox" id="newConsensoTerze" 
+                                    class="mr-4 mt-1 w-6 h-6 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-800">🤝 Comunicazione a Terze Parti</div>
+                                    <div class="text-sm text-gray-600">Acconsento alla comunicazione dei miei dati a partner selezionati (facoltativo)</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- NOTE OPZIONALI -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">💬 Note Aggiuntive (opzionale)</label>
+                        <textarea id="newNote" rows="3" 
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            placeholder="Eventuali note o richieste particolari..."></textarea>
+                    </div>
+
+                </form>
+            </div>
+            
+            <!-- FOOTER BUTTONS -->
+            <div class="bg-gray-50 px-8 py-6 rounded-b-xl border-t flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    <span class="text-red-600">*</span> Campi obbligatori
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('newLeadModal')" 
+                        class="px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold">
+                        ❌ Annulla
+                    </button>
+                    <button type="button" onclick="saveNewLead()" 
+                        class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold shadow-lg">
+                        ✉️ Invia Richiesta
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
                 <h3 class="text-xl font-bold">➕ Nuovo Lead</h3>
                 <button onclick="closeModal('newLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
