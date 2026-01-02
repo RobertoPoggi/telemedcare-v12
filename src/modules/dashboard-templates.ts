@@ -2759,24 +2759,61 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         async function saveNewLead() {
-            const canale = document.getElementById('newCanale').value;
-            const piano = document.getElementById('newPiano').value;
-            const noteExtra = document.getElementById('newNote').value;
-            
             const formData = {
+                // Dati richiedente
                 nomeRichiedente: document.getElementById('newNome').value,
                 cognomeRichiedente: document.getElementById('newCognome').value,
                 email: document.getElementById('newEmail').value,
                 telefono: document.getElementById('newTelefono').value,
-                tipoServizio: document.getElementById('newServizio').value,
-                note: 'Canale: ' + canale + ' | Piano: ' + piano + (noteExtra ? ' | ' + noteExtra : '')
+                
+                // Dati assistito
+                nomeAssistito: document.getElementById('newNomeAssistito').value,
+                cognomeAssistito: document.getElementById('newCognomeAssistito').value,
+                luogoNascita: document.getElementById('newLuogoNascita').value,
+                dataNascita: document.getElementById('newDataNascita').value,
+                indirizzoAssistito: document.getElementById('newIndirizzoAssistito').value,
+                capAssistito: document.getElementById('newCapAssistito').value,
+                cittaAssistito: document.getElementById('newCittaAssistito').value,
+                provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
+                codiceFiscaleAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
+                
+                // Servizio e Piano
+                servizio: document.getElementById('newServizio').value,
+                piano: document.getElementById('newPiano').value,
+                canale: document.getElementById('newCanale').value,
+                fonte: document.getElementById('newCanale').value,
+                
+                // Preferenze
+                vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
+                vuoleContratto: document.getElementById('newVuoleContratto').checked ? 'Si' : 'No',
+                vuoleManuale: document.getElementById('newVuoleManuale').checked ? 'Si' : 'No',
+                
+                // Consensi
+                consensoPrivacy: document.getElementById('newConsensoPrivacy').checked,
+                consensoMarketing: document.getElementById('newConsensoMarketing').checked ? 'Si' : 'No',
+                consensoTerze: document.getElementById('newConsensoTerze').checked ? 'Si' : 'No',
+                
+                // Note
+                note: document.getElementById('newNote').value
             };
             
-            // Validation
+            // Validation campi obbligatori
             if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
-                alert('⚠️ Compila tutti i campi obbligatori');
+                alert('⚠️ Compila tutti i campi obbligatori del Richiedente');
                 return;
             }
+            
+            if (!formData.nomeAssistito || !formData.cognomeAssistito) {
+                alert('⚠️ Compila tutti i campi obbligatori dell\'Assistito');
+                return;
+            }
+            
+            if (!formData.consensoPrivacy) {
+                alert('⚠️ Il consenso Privacy è obbligatorio');
+                return;
+            }
+            
+            console.log('📤 Invio dati lead:', formData);
             
             try {
                 const response = await fetch('/api/leads', {
@@ -2788,13 +2825,23 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Lead creato con successo!\\n\\nID: ' + result.leadId || result.id);
+                    let message = '✅ Lead creato con successo!\\n\\nID: ' + (result.id || result.leadId);
+                    
+                    // Mostra email inviate
+                    if (result.emails) {
+                        message += '\\n\\n📧 Email inviate:';
+                        if (result.emails.notifica) message += '\\n  ✓ Notifica nuovo lead';
+                        if (result.emails.brochure) message += '\\n  ✓ Brochure al cliente';
+                        if (result.emails.contratto) message += '\\n  ✓ Contratto al cliente';
+                    }
+                    
+                    alert(message);
                     closeModal('newLeadModal');
                     document.getElementById('newLeadForm').reset();
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
-                    alert('❌ Errore: ' + result.error || 'Errore sconosciuto');
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
                 console.error('❌ Errore creazione lead:', error);
@@ -2921,9 +2968,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <h3 class="text-xl font-bold">➕ Nuovo Lead</h3>
                 <button onclick="closeModal('newLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
-            <div class="p-6">
+            <div class="p-6 max-h-[80vh] overflow-y-auto">
                 <form id="newLeadForm">
-                    <div class="grid grid-cols-2 gap-4">
+                    
+                    <!-- DATI RICHIEDENTE -->
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">📋 Dati Richiedente</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                             <input type="text" id="newNome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -2940,28 +2990,59 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Telefono *</label>
                             <input type="tel" id="newTelefono" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
+                    </div>
+
+                    <!-- DATI ASSISTITO -->
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">👤 Dati Assistito</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nome Assistito *</label>
+                            <input type="text" id="newNomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cognome Assistito *</label>
+                            <input type="text" id="newCognomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Luogo di Nascita *</label>
+                            <input type="text" id="newLuogoNascita" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="es. Milano">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Data di Nascita *</label>
+                            <input type="text" id="newDataNascita" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="DD/MM/YYYY">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzo *</label>
+                            <input type="text" id="newIndirizzoAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Via/Piazza e numero civico">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">CAP *</label>
+                            <input type="text" id="newCapAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="20121">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Città *</label>
+                            <input type="text" id="newCittaAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Milano">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Provincia *</label>
+                            <input type="text" id="newProvinciaAssistito" required maxlength="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="MI" style="text-transform: uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Codice Fiscale *</label>
+                            <input type="text" id="newCodiceFiscale" required maxlength="16" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="RSSMRA50C15F205X" style="text-transform: uppercase">
+                        </div>
+                    </div>
+
+                    <!-- SERVIZIO E PIANO -->
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">🎯 Servizio e Piano</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Servizio *</label>
                             <select id="newServizio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">Seleziona servizio...</option>
-                                <option value="FAMILY">eCura FAMILY</option>
-                                <option value="PRO" selected>eCura PRO</option>
-                                <option value="PREMIUM">eCura PREMIUM</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Canale Acquisizione *</label>
-                            <select id="newCanale" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Seleziona canale...</option>
-                                <option value="Excel">Excel Import</option>
-                                <option value="Irbema">Irbema</option>
-                                <option value="AON">AON</option>
-                                <option value="DoubleYou">Double You</option>
-                                <option value="Website">Website Diretto</option>
-                                <option value="Partner">Partner Esterno</option>
-                                <option value="Phone">Telefonico</option>
-                                <option value="Email">Email Diretto</option>
-                                <option value="Test">Test</option>
+                                <option value="eCura Family">eCura Family</option>
+                                <option value="eCura PRO" selected>eCura PRO</option>
+                                <option value="eCura PREMIUM">eCura PREMIUM</option>
                             </select>
                         </div>
                         <div>
@@ -2971,12 +3052,64 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="AVANZATO">AVANZATO - €840/anno</option>
                             </select>
                         </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
-                            <textarea id="newNote" rows="4" placeholder="Note aggiuntive sul lead..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Canale Acquisizione *</label>
+                            <select id="newCanale" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Seleziona canale...</option>
+                                <option value="Website">Website Diretto</option>
+                                <option value="Partner">Partner</option>
+                                <option value="Networking">Networking</option>
+                                <option value="Phone">Telefonico</option>
+                                <option value="Email">Email</option>
+                                <option value="Irbema">Irbema</option>
+                                <option value="AON">AON</option>
+                                <option value="DoubleYou">Double You</option>
+                                <option value="Test" selected>Test</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="mt-6 flex justify-end gap-3">
+
+                    <!-- PREFERENZE -->
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">✉️ Preferenze Comunicazione</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="newVuoleBrochure" checked class="mr-3 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label class="text-sm font-medium text-gray-700">📚 Vuole Brochure</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="newVuoleContratto" checked class="mr-3 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label class="text-sm font-medium text-gray-700">📋 Vuole Contratto</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="newVuoleManuale" class="mr-3 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label class="text-sm font-medium text-gray-700">📖 Vuole Manuale</label>
+                        </div>
+                    </div>
+
+                    <!-- CONSENSI -->
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">✅ Consensi Privacy</h4>
+                    <div class="grid grid-cols-1 gap-3 mb-6">
+                        <div class="flex items-start">
+                            <input type="checkbox" id="newConsensoPrivacy" checked required class="mr-3 mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                            <label class="text-sm text-gray-700">Acconsento al trattamento dei dati personali secondo la Privacy Policy *</label>
+                        </div>
+                        <div class="flex items-start">
+                            <input type="checkbox" id="newConsensoMarketing" class="mr-3 mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                            <label class="text-sm text-gray-700">Acconsento alla ricezione di comunicazioni commerciali e promozionali</label>
+                        </div>
+                        <div class="flex items-start">
+                            <input type="checkbox" id="newConsensoTerze" class="mr-3 mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                            <label class="text-sm text-gray-700">Acconsento alla comunicazione dei dati a terze parti</label>
+                        </div>
+                    </div>
+
+                    <!-- NOTE -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">📝 Note</label>
+                        <textarea id="newNote" rows="3" placeholder="Note aggiuntive sul lead..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
                         <button type="button" onclick="closeModal('newLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                             Annulla
                         </button>
