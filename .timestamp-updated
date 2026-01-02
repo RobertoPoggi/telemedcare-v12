@@ -1,0 +1,14 @@
+# Timestamp Filesystem Aggiornati
+
+Data: 02 Gennaio 2026 - 09:54
+
+File aggiornati con timestamp corretto:
+- migrations/0007_add_email_documenti_template.sql
+- migrations/README_MIGRATIONS.md
+- FIX_MIGRATIONS_URGENTE.md
+- TIMESTAMP_FIX_COMPLETATO.md
+- verify-db-state.sh
+- apply-migrations.sh
+- test-single-lead.js
+
+Tutti ora mostrano: Jan 2 09:54
