@@ -183,6 +183,9 @@ export async function inviaEmailDocumentiInformativi(
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
+      NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
+      COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+      LEAD_ID: leadData.id,
       TIPO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'Base' : 'Avanzato',
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',

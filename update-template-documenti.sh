@@ -1,8 +1,8 @@
 #!/bin/bash
-# Update email template in D1 database from local HTML file
+# Update email_documenti_informativi template
 
-TEMPLATE_ID="email_notifica_info"
-TEMPLATE_FILE="templates/email_notifica_info.html"
+TEMPLATE_ID="email_documenti_informativi"
+TEMPLATE_FILE="templates/email_documenti_informativi.html"
 
 if [ ! -f "$TEMPLATE_FILE" ]; then
     echo "❌ Template file not found: $TEMPLATE_FILE"
@@ -22,4 +22,4 @@ curl -X POST "https://telemedcare-v12.pages.dev/api/admin/update-template/$TEMPL
   | python3 -m json.tool
 
 echo ""
-echo "✅ Template aggiornato!"
+echo "✅ Template documenti aggiornato!"
