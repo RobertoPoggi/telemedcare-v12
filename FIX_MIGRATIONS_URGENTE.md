@@ -1,75 +1,85 @@
-# 🔧 FIX URGENTE - Migrations Database Mancanti
+# 🔧 FIX URGENTE - Verificare e Applicare Migrations Database
 
-## ❌ PROBLEMA IDENTIFICATO:
+## ⚠️ ATTENZIONE - NOME DATABASE CORRETTO:
 
-Il sistema del 25 dicembre **funzionava** perché aveva la tabella `document_templates` popolata con i template email nel database D1.
+**Database**: `telemedcare-leads` ✅  
+~~NON `telemedcare-v12-db`~~ ❌
 
-**Attualmente su Cloudflare D1 MANCA**:
-- ❌ Tabella `document_templates`
-- ❌ Template `email_notifica_info`
-- ❌ Template `email_documenti_informativi`
-- ❌ Template `email_invio_contratto`
+## 🔍 PASSO 1: VERIFICA STATO ATTUALE (SENZA MODIFICARE NULLA)
 
-## 📋 MIGRATIONS DA ESEGUIRE:
+Prima di fare QUALSIASI modifica, **verifica cosa c'è già**:
 
-Le seguenti migrations **DEVONO essere eseguite** su Cloudflare D1:
-
-1. `migrations/0001_clean_schema.sql` o `0001_initial_schema.sql`
-2. `migrations/0002_add_missing_tables.sql` ✅ **CREA document_templates**
-3. `migrations/0003_add_proformas_table.sql`
-4. `migrations/0004_create_assistiti_table.sql`
-5. `migrations/0005_fix_contracts_schema.sql`
-6. `migrations/0006_add_piano_and_servizio_to_leads.sql` ✅ Già applicata
-7. `migrations/0007_add_email_documenti_template.sql` ✅ **NUOVO - Template brochure**
-
-## 🚀 COME APPLICARE LE MIGRATIONS:
-
-### Opzione 1: Via Cloudflare Dashboard (CONSIGLIATO)
+### Via Cloudflare Dashboard:
 
 1. Vai su: https://dash.cloudflare.com/
 2. Workers & Pages → D1
-3. Seleziona database: `telemedcare-v12-db`
+3. Seleziona: **`telemedcare-leads`**
 4. Console → Execute SQL
 
-Esegui **UNO PER UNO** questi comandi:
+**Esegui questi comandi di VERIFICA (READ-ONLY)**:
 
 ```sql
--- 1. Verifica tabelle esistenti
+-- 1. Lista TUTTE le tabelle
 SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;
 
--- 2. Se document_templates NON esiste, esegui migrations/0002_add_missing_tables.sql
--- Copia-incolla TUTTO il contenuto del file 0002
+-- 2. Conta i lead esistenti
+SELECT COUNT(*) as total_leads FROM leads;
 
--- 3. Verifica template creati
-SELECT id, name FROM document_templates;
+-- 3. Verifica se esiste document_templates
+SELECT COUNT(*) as exists 
+FROM sqlite_master 
+WHERE type='table' AND name='document_templates';
 
--- 4. Se manca email_documenti_informativi, esegui migration 0007
--- Copia-incolla il contenuto di 0007_add_email_documenti_template.sql
+-- 4. Se document_templates esiste, lista i template
+SELECT id, name, type, active FROM document_templates ORDER BY id;
 ```
 
-### Opzione 2: Via Wrangler CLI (richiede setup)
+## 📊 RISULTATI ATTESI:
 
-Se hai Wrangler configurato:
-
-```bash
-# Lista databases
-npx wrangler d1 list
-
-# Esegui migration singola
-npx wrangler d1 execute telemedcare-v12-db --file=migrations/0002_add_missing_tables.sql --remote
-
-# Esegui migration 0007
-npx wrangler d1 execute telemedcare-v12-db --file=migrations/0007_add_email_documenti_template.sql --remote
-
-# Verifica
-npx wrangler d1 execute telemedcare-v12-db --command="SELECT id, name FROM document_templates;" --remote
+### Scenario A: document_templates NON ESISTE
 ```
+Risultato query 3: exists = 0
+```
+→ **DEVI applicare migration 0002**
 
-## ✅ VERIFICA POST-MIGRATION:
+### Scenario B: document_templates ESISTE ma mancano template
+```
+Risultato query 4: 
+- email_notifica_info ✅
+- email_invio_contratto ✅
+- email_documenti_informativi ❌ MANCA
+```
+→ **DEVI applicare solo migration 0007**
 
-Dopo aver applicato le migrations, verifica che esistano questi 3 template:
+### Scenario C: Tutti i template ci sono
+```
+Risultato query 4:
+- email_notifica_info ✅
+- email_invio_contratto ✅
+- email_documenti_informativi ✅
+```
+→ **NON serve fare nulla!** Il problema è altrove.
+
+## 🚀 PASSO 2: APPLICARE MIGRATIONS (SOLO SE NECESSARIO)
+
+### Se Scenario A (tabella non esiste):
+
+Esegui **SOLO questa migration**:
+- Copia il contenuto di `migrations/0002_add_missing_tables.sql`
+- Incollalo nella console D1
+- Execute
+
+### Se Scenario B (manca template documenti):
+
+Esegui **SOLO questa migration**:
+- Copia il contenuto di `migrations/0007_add_email_documenti_template.sql`  
+- Incollalo nella console D1
+- Execute
+
+## ✅ PASSO 3: VERIFICA POST-MIGRATION
 
 ```sql
+-- Verifica che i 3 template siano presenti
 SELECT id, name, active FROM document_templates WHERE id IN (
   'email_notifica_info',
   'email_documenti_informativi', 
@@ -77,39 +87,48 @@ SELECT id, name, active FROM document_templates WHERE id IN (
 );
 ```
 
-Dovrebbe tornare **3 righe**.
+Dovrebbe tornare **3 righe** tutte con `active = 1`.
 
-## 🧪 TEST FUNZIONAMENTO:
+## 🧪 PASSO 4: TEST FUNZIONAMENTO
 
-Dopo le migrations, testa con:
+Dopo le migrations (se necessarie), testa:
 
 ```bash
 node test-single-lead.js
 ```
 
-Dovresti vedere:
+Output atteso:
 ```
 ✅ Lead creato: LEAD-MANUAL-...
 
 📧 EMAIL:
    Notifica interno: ✅ INVIATA
    Brochure cliente: ✅ INVIATA
-   Contratto cliente: ✅ INVIATA  (o ❌ se Puppeteer non configurato)
+   Contratto cliente: ⚠️ FALLITA (Browser Puppeteer non configurato)
 ```
 
-## 📝 NOTE IMPORTANTI:
+## 🎯 RIEPILOGO FIX APPLICATI:
 
-1. **Browser Puppeteer**: Il contratto PDF richiede Browser Rendering configurato in Cloudflare
-   - Se NON configurato → contratto fallisce
-   - Notifica e brochure **funzionano comunque**
-
-2. **Brochure PDF**: Ora usa file compressi senza spazi
+1. ✅ Brochure PDF rinominate senza spazi
    - `Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf` (2.6 MB)
    - `Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf` (1.7 MB)
 
-3. **Template hardcoded**: ❌ **MAI usare**! Sistema usa DB come il 25 dicembre
+2. ✅ Corretti import workflow-email-manager
+   - `inviaEmailNotificaInfo()` → notifica
+   - `inviaEmailDocumentiInformativi()` → brochure
+   - `inviaEmailContratto()` → contratto
+
+3. ✅ Creata migration 0007 per template mancante
+
+## ⚠️ IMPORTANTE:
+
+- **NON eseguire migrations se non necessarie**
+- **VERIFICA SEMPRE prima** cosa c'è nel database
+- **Database**: `telemedcare-leads` (NON altri nomi)
+- **Approccio**: CHIRURGICO - modifica solo ciò che serve
 
 ---
 
-**Creato**: 02 Gennaio 2026 - 09:30
-**Priorità**: 🔴 CRITICA - Sistema bloccato senza migrations
+**Aggiornato**: 02 Gennaio 2026 - 09:30  
+**Database**: `telemedcare-leads`  
+**Priorità**: 🔴 CRITICA
