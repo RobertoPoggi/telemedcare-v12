@@ -7003,8 +7003,11 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-      PIANO_SERVIZIO: 'eCura PRO',
-      DISPOSITIVO: 'SiDLY CARE PRO'
+      LEAD_ID: leadId,
+      SERVIZIO: lead.servizio || 'PRO',
+      PIANO: lead.piano || 'BASE',
+      NOME_ASSISTITO: lead.nomeAssistito || lead.nomeRichiedente || '',
+      COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
     }
     
     // Invia email con template INVIO_BROCHURE
@@ -7040,7 +7043,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
         leadId,
         lead.email,
         'email_invio_brochure',
-        'TeleMedCare - Brochure Informativa',
+        `eCura - Brochure informativa ${lead.servizio || 'PRO'}`,
         result.success ? 'SENT' : 'SIMULATED',
         new Date().toISOString()
       ).run()
@@ -10213,6 +10216,69 @@ app.post('/api/email/preview', async (c) => {
             Grazie per aver scelto TeleMedCare.<br>
             Per assistenza: support@telemedcare.it | +39 800 123 456
           </p>
+        </div>
+      `,
+      'INVIO_BROCHURE': `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: white;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">eCura</h1>
+            <p style="color: #6b7280; margin: 5px 0;">La tecnologia che Le salva salute e vita</p>
+            <div style="font-size: 14px; color: #64748b;">
+              <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale
+            </div>
+          </div>
+          
+          <h2 style="color: #1f2937;">📚 Ecco la documentazione richiesta</h2>
+          
+          <p>Gentile <strong>${variables.NOME_CLIENTE || '{{NOME_CLIENTE}}'}</strong>,</p>
+          
+          <p>Grazie per l'interesse mostrato verso i nostri servizi <strong>eCura ${variables.SERVIZIO || 'PRO'}</strong>. Come richiesto, Le inviamo la documentazione informativa completa.</p>
+          
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+            <h3 style="margin-top: 0; color: #1e40af;">📋 Riepilogo della Sua richiesta</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li><strong>Codice pratica:</strong> ${variables.LEAD_ID || '{{LEAD_ID}}'}</li>
+              <li><strong>Servizio:</strong> eCura ${variables.SERVIZIO || 'PRO'}</li>
+              <li><strong>Piano:</strong> ${variables.PIANO || 'BASE'}</li>
+              <li><strong>Assistito:</strong> ${variables.NOME_ASSISTITO || '{{NOME_ASSISTITO}}'} ${variables.COGNOME_ASSISTITO || '{{COGNOME_ASSISTITO}}'}</li>
+            </ul>
+          </div>
+          
+          <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #10b981;">
+            <h3 style="margin-top: 0; color: #047857;">📄 Documentazione Allegata</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li><strong>Brochure eCura ${variables.SERVIZIO || 'PRO'}</strong> - Panoramica completa del servizio</li>
+              <li><strong>Scheda Tecnica Dispositivo</strong> - Caratteristiche e certificazioni</li>
+              <li><strong>Listino Prezzi</strong> - Dettaglio costi e piani disponibili</li>
+            </ul>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #92400e;">💰 Vantaggi Economici e Fiscali</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+              <li><strong>✅ Detrazione Fiscale 19%</strong> - Servizio detraibile come spesa sanitaria</li>
+              <li><strong>✅ Possibili Rimborsi INPS</strong> - Per ISEE sotto €6.000 + Legge 104</li>
+            </ul>
+          </div>
+          
+          <p>Il nostro servizio è pensato per garantire sicurezza, tranquillità e assistenza continua. Siamo a disposizione per qualsiasi chiarimento.</p>
+          
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+            <h3 style="margin-top: 0; color: #475569;">📞 Contatti</h3>
+            <p style="margin: 5px 0;"><strong>E-MAIL:</strong> <a href="mailto:info@medicagb.it" style="color: #2563eb;">info@medicagb.it</a></p>
+            <p style="margin: 5px 0;"><strong>Telefono commerciale:</strong> 335 7301206</p>
+            <p style="margin: 5px 0;"><strong>Telefono tecnico:</strong> 331 64 32 390</p>
+          </div>
+          
+          <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
+          
+          <p><strong>Cordiali saluti,</strong><br>Il Team eCura<br><em>Medica GB S.r.l.</em></p>
+          
+          <div style="background: #1f2937; color: white; padding: 20px; text-align: center; font-size: 14px; margin-top: 30px; border-radius: 8px;">
+            <p style="margin: 5px 0;"><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+            <p style="margin: 5px 0;">Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+            <p style="margin: 5px 0;">P.IVA: 12435130963 | <a href="mailto:info@medicagb.it" style="color: #60a5fa;">info@medicagb.it</a> | www.medicagb.it</p>
+          </div>
         </div>
       `,
       'INVIO_PROFORMA': `

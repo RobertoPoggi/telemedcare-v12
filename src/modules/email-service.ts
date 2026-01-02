@@ -103,9 +103,17 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   DOCUMENTI_INFORMATIVI: {
     id: 'documenti_informativi',
     name: 'Invio Documenti Informativi',
-    subject: '📋 TeleMedCare - Documentazione richiesta per {{NOME_CLIENTE}}',
+    subject: '📋 eCura - Documentazione richiesta per {{NOME_CLIENTE}}',
     htmlPath: '/templates/email/email_documenti_informativi.html',
     variables: ['NOME_CLIENTE', 'EMAIL_CLIENTE', 'DOCUMENTI_RICHIESTI', 'SERVIZIO_INTERESSE', 'TIMESTAMP_RICHIESTA'],
+    category: 'workflow'
+  },
+  INVIO_BROCHURE: {
+    id: 'invio_brochure',
+    name: 'Invio Brochure',
+    subject: '📚 eCura - Brochure informativa {{SERVIZIO}}',
+    htmlPath: '/templates/email/email_invio_brochure.html',
+    variables: ['NOME_CLIENTE', 'LEAD_ID', 'SERVIZIO', 'PIANO', 'NOME_ASSISTITO', 'COGNOME_ASSISTITO'],
     category: 'workflow'
   }
 }
