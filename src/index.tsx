@@ -3997,6 +3997,25 @@ app.post('/api/admin/test-email', async (c) => {
   }
 });
 
+// 🔍 ENDPOINT DEBUG: Mostra environment variables
+app.get('/api/admin/debug-env', async (c) => {
+  try {
+    return c.json({
+      environment: c.env.ENVIRONMENT || 'not set',
+      hasDB: !!c.env.DB,
+      hasResendKey: !!c.env.RESEND_API_KEY,
+      hasSendgridKey: !!c.env.SENDGRID_API_KEY,
+      resendKeyPreview: c.env.RESEND_API_KEY ? `${c.env.RESEND_API_KEY.substring(0, 15)}...` : 'NOT SET',
+      sendgridKeyPreview: c.env.SENDGRID_API_KEY ? `${c.env.SENDGRID_API_KEY.substring(0, 15)}...` : 'NOT SET',
+      allEnvKeys: Object.keys(c.env || {}).filter(k => !k.includes('SECRET') && !k.includes('KEY'))
+    });
+  } catch (error) {
+    return c.json({
+      error: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 // 🔍 ENDPOINT DEBUG: Test diretto Resend API
 app.get('/api/admin/debug-resend', async (c) => {
   try {
