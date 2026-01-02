@@ -7719,7 +7719,7 @@ app.post('/api/leads', async (c) => {
         try {
           // Prepara documentUrls per brochure
           const documentUrls: { brochure?: string; manuale?: string } = {}
-          if (leadData.vuoleBrochure === 'Si') {
+          if (leadData.vuoleBrochure) {
             // Determina brochure in base al servizio
             const servizio = leadData.servizio || 'eCura PRO'
             if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
@@ -7727,6 +7727,9 @@ app.post('/api/leads', async (c) => {
             } else if (servizio.includes('PREMIUM')) {
               documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
             }
+          }
+          if (leadData.vuoleManuale) {
+            documentUrls.manuale = '/documents/Manuale_SiDLY.pdf'
           }
           
           const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, documentUrls, c.env.DB)
@@ -7742,7 +7745,7 @@ app.post('/api/leads', async (c) => {
       }
       
       // 3. CONTRATTO (se richiesto)
-      if (leadData.vuoleContratto === 'Si') {
+      if (leadData.vuoleContratto) {
         try {
           // Crea contractData
           const contractData = {
