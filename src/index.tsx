@@ -3997,6 +3997,74 @@ app.post('/api/admin/test-email', async (c) => {
   }
 });
 
+// 🔍 ENDPOINT DEBUG: Test diretto Resend API
+app.get('/api/admin/debug-resend', async (c) => {
+  try {
+    const resendKey = c.env.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2';
+    
+    console.log('🔍 [DEBUG RESEND] Testing Resend API...');
+    console.log('🔑 API Key presente:', resendKey ? 'SI' : 'NO');
+    console.log('🔑 API Key preview:', resendKey ? `${resendKey.substring(0, 10)}...` : 'NONE');
+    
+    // Test diretto API Resend
+    const payload = {
+      from: 'TeleMedCare <info@telemedcare.it>',
+      to: ['rpoggi55@gmail.com'],
+      subject: '🔍 Debug Test - Resend diretto da Cloudflare',
+      html: `
+        <h1>Debug Test</h1>
+        <p>Questa email è stata inviata direttamente da Cloudflare Workers usando Resend.</p>
+        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+        <p><strong>API Key usata:</strong> ${resendKey.substring(0, 15)}...</p>
+        <p><strong>Environment:</strong> ${c.env.ENVIRONMENT || 'production'}</p>
+      `
+    };
+    
+    console.log('📤 [DEBUG RESEND] Sending request to Resend API...');
+    
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    const responseText = await response.text();
+    console.log('📥 [DEBUG RESEND] Response status:', response.status);
+    console.log('📥 [DEBUG RESEND] Response body:', responseText);
+    
+    if (!response.ok) {
+      return c.json({
+        success: false,
+        status: response.status,
+        error: responseText,
+        apiKey: `${resendKey.substring(0, 15)}...`,
+        message: 'Resend API returned error'
+      }, response.status);
+    }
+    
+    const result = JSON.parse(responseText);
+    
+    return c.json({
+      success: true,
+      messageId: result.id,
+      status: response.status,
+      apiKey: `${resendKey.substring(0, 15)}...`,
+      message: 'Email inviata con successo! Controlla rpoggi55@gmail.com'
+    });
+    
+  } catch (error) {
+    console.error('❌ [DEBUG RESEND] Errore:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 500);
+  }
+});
+
 app.post('/api/admin/reset-and-regenerate', async (c) => {
   try {
     if (!c.env.DB) {
