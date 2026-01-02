@@ -71,7 +71,7 @@ export async function inviaEmailNotificaInfo(
     const emailService = new EmailService(env)
     
     // Carica template email_notifica_info
-    const template = await loadEmailTemplate('email_notifica_info', db)
+    const templateObj = await loadEmailTemplate('email_notifica_info', db)
     
     // Prepara i dati per il template
     const now = new Date()
@@ -125,15 +125,15 @@ export async function inviaEmailNotificaInfo(
     }
 
     // Renderizza template con i dati
-    const emailHtml = renderTemplate(template, templateData)
+    const emailHtml = renderTemplate(templateObj.html_content, templateData)
+    const emailSubject = renderTemplate(templateObj.subject, templateData)
 
     // Invia email a info@telemedcare.it
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
       from: 'info@telemedcare.it',
-      subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
-      html: emailHtml,
-      text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.emailRichiedente}`
+      subject: emailSubject,
+      html: emailHtml
     })
 
     if (sendResult.success) {
