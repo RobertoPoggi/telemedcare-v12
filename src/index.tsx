@@ -7443,60 +7443,90 @@ app.post('/api/leads', async (c) => {
         emailResults.notifica.error = error instanceof Error ? error.message : String(error)
       }
       
-      // 2. EMAIL BROCHURE (se richiesta) - USA ENDPOINT ESISTENTE
+      // 2. EMAIL BROCHURE CON PDF (se richiesta)
       if (data.vuoleBrochure === 'Si') {
         try {
-          // Simula richiesta interna all'endpoint /api/leads/:id/send-brochure
-          const brochureRequest = new Request(`http://localhost/api/leads/${leadId}/send-brochure`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          })
-          
-          const brochureContext = {
-            req: brochureRequest,
-            env: c.env,
-            executionCtx: c.executionCtx
-          }
-          
-          // Chiama l'handler direttamente
           const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
           
           if (lead) {
-            const brochureVariables = {
-              NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-              LEAD_ID: leadId,
-              SERVIZIO: lead.servizio || 'PRO',
-              PIANO: lead.piano || 'BASE',
-              NOME_ASSISTITO: lead.nomeAssistito || lead.nomeRichiedente || '',
-              COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
+            // Determina servizio
+            const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
+            
+            // Determina quale brochure usare
+            let brochureFilename = ''
+            if (servizio === 'PRO' || servizio === 'FAMILY') {
+              brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+            } else if (servizio === 'PREMIUM') {
+              brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
             }
             
-            const brochureResult = await emailService.sendTemplateEmail(
-              'INVIO_BROCHURE',
-              lead.email,
-              brochureVariables,
-              undefined,
-              c.env
-            )
-            
-            emailResults.brochure.sent = brochureResult.success
-            if (!brochureResult.success) emailResults.brochure.error = brochureResult.error
-            
-            // Update lead status
-            if (brochureResult.success) {
-              await c.env.DB.prepare(`
-                UPDATE leads SET 
-                  vuoleBrochure = 'Si',
-                  status = CASE 
-                    WHEN status = 'NEW' THEN 'BROCHURE_SENT'
-                    ELSE status
-                  END,
-                  updated_at = ?
-                WHERE id = ?
-              `).bind(new Date().toISOString(), leadId).run()
+            if (brochureFilename) {
+              try {
+                // Carica brochure da asset pubblici
+                const brochureUrl = `/brochures/${brochureFilename}`
+                console.log(`📥 Caricamento brochure: ${brochureUrl}`)
+                
+                const response = await fetch(new URL(brochureUrl, c.req.url).toString())
+                
+                if (response.ok) {
+                  const arrayBuffer = await response.arrayBuffer()
+                  const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
+                  
+                  const attachments = [{
+                    filename: brochureFilename,
+                    content: brochureBase64,
+                    contentType: 'application/pdf'
+                  }]
+                  
+                  console.log(`📎 Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+                  
+                  // Prepara variabili email
+                  const brochureVariables = {
+                    NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
+                    LEAD_ID: leadId,
+                    SERVIZIO: servizio,
+                    PIANO: lead.piano || 'BASE',
+                    NOME_ASSISTITO: lead.nomeAssistito || lead.nomeRichiedente || '',
+                    COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
+                  }
+                  
+                  const brochureResult = await emailService.sendTemplateEmail(
+                    'INVIO_BROCHURE',
+                    lead.email,
+                    brochureVariables,
+                    attachments,
+                    c.env
+                  )
+                  
+                  emailResults.brochure.sent = brochureResult.success
+                  if (!brochureResult.success) emailResults.brochure.error = brochureResult.error
+                  
+                  // Update lead status
+                  if (brochureResult.success) {
+                    await c.env.DB.prepare(`
+                      UPDATE leads SET 
+                        vuoleBrochure = 'Si',
+                        status = CASE 
+                          WHEN status = 'NEW' THEN 'BROCHURE_SENT'
+                          ELSE status
+                        END,
+                        updated_at = ?
+                      WHERE id = ?
+                    `).bind(new Date().toISOString(), leadId).run()
+                    
+                    console.log('✅ Email brochure inviata con allegato PDF')
+                  }
+                } else {
+                  emailResults.brochure.error = `Brochure non disponibile: ${response.status}`
+                  console.warn(`⚠️ Brochure non trovata: ${response.status}`)
+                }
+              } catch (brochureError) {
+                emailResults.brochure.error = brochureError instanceof Error ? brochureError.message : String(brochureError)
+                console.error('❌ Errore caricamento brochure:', brochureError)
+              }
+            } else {
+              emailResults.brochure.error = 'Servizio non mappato a brochure'
             }
-            
-            console.log('📚 Email brochure:', brochureResult.success ? '✅ Inviata' : '❌ Fallita')
           }
         } catch (error) {
           console.error('❌ Errore invio brochure:', error)
@@ -7504,78 +7534,152 @@ app.post('/api/leads', async (c) => {
         }
       }
       
-      // 3. EMAIL CONTRATTO (se richiesto) - USA ENDPOINT ESISTENTE
+      // 3. EMAIL CONTRATTO CON PDF (se richiesto) - CON PUPPETEER E BROCHURE
       if (data.vuoleContratto === 'Si') {
         try {
-          // Determina tipo contratto dal piano
-          const tipoContratto = (data.piano && data.piano.toUpperCase() === 'AVANZATO') ? 'AVANZATO' : 'BASE'
-          
-          // Recupera lead
-          const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-          
-          if (lead) {
-            // Genera codice contratto
-            const timestamp = Date.now()
-            const contractCode = `CTR-AUTO-${timestamp}`
-            const contractId = `contract-${timestamp}`
+          // Verifica Browser Puppeteer
+          if (!c.env?.BROWSER) {
+            console.warn('⚠️ Browser Puppeteer non configurato - skip contratto PDF')
+            emailResults.contratto.error = 'Browser Puppeteer non configurato'
+          } else {
+            const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
             
-            // Determina prezzo
-            const prezzo = tipoContratto === 'AVANZATO' ? 840 : 480
-            
-            // Crea contratto
-            await c.env.DB.prepare(`
-              INSERT INTO contracts (
-                id, codice_contratto, leadId, tipo_contratto, 
-                prezzo_totale, status, created_at
-              ) VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
-            `).bind(
-              contractId,
-              contractCode,
-              leadId,
-              tipoContratto,
-              prezzo,
-              new Date().toISOString()
-            ).run()
-            
-            // Prepara dati per email
-            const contractData = {
-              id: contractId,
-              codice_contratto: contractCode,
-              leadId: leadId,
-              nomeRichiedente: lead.nomeRichiedente,
-              cognomeRichiedente: lead.cognomeRichiedente,
-              email: lead.email,
-              telefono: lead.telefono,
-              contractType: tipoContratto
-            }
-            
-            // Invia email con template
-            const contrattoResult = await inviaEmailContratto(contractData, c.env)
-            
-            emailResults.contratto.sent = contrattoResult.success
-            if (!contrattoResult.success) emailResults.contratto.error = contrattoResult.error
-            
-            // Update contract e lead status
-            if (contrattoResult.success) {
-              await c.env.DB.prepare(`
-                UPDATE contracts SET 
-                  status = 'SENT',
-                  data_invio = ?,
-                  email_sent = true,
-                  email_template_used = 'email_invio_contratto'
-                WHERE id = ?
-              `).bind(new Date().toISOString(), contractId).run()
+            if (lead) {
+              const timestamp = Date.now()
+              const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+              const contractId = `contract-${timestamp}`
               
-              await c.env.DB.prepare(`
-                UPDATE leads SET 
-                  status = 'CONTRACT_SENT',
-                  vuoleContratto = 'Si',
-                  updated_at = ?
-                WHERE id = ?
-              `).bind(new Date().toISOString(), leadId).run()
+              // Determina servizio e piano
+              const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
+              const piano = (lead.piano || 'BASE').toUpperCase()
+              
+              // Ottieni prezzi
+              const { getPricing } = await import('./modules/ecura-pricing')
+              const pricing = getPricing(servizio as any, piano as any)
+              
+              if (pricing) {
+                // Crea contratto nel DB
+                await c.env.DB.prepare(`
+                  INSERT INTO contracts (
+                    id, codice_contratto, leadId, tipo_contratto, 
+                    prezzo_totale, status, created_at
+                  ) VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
+                `).bind(
+                  contractId,
+                  contractCode,
+                  leadId,
+                  piano,
+                  pricing.setupTotale,
+                  new Date().toISOString()
+                ).run()
+                
+                console.log('📄 Generazione PDF contratto...')
+                
+                // 1. GENERA PDF CONTRATTO
+                const { prepareContractData, generateContractPDF } = await import('./modules/contract-pdf-generator')
+                
+                const contractData = prepareContractData(lead, contractCode)
+                if (contractData) {
+                  const pdfResult = await generateContractPDF(contractData, c.env.BROWSER)
+                  
+                  if (pdfResult.success && pdfResult.pdfBase64) {
+                    // 2. PREPARA ALLEGATI
+                    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
+                    
+                    // Allegato contratto PDF
+                    attachments.push({
+                      filename: `Contratto_eCura_${contractCode}.pdf`,
+                      content: pdfResult.pdfBase64,
+                      contentType: 'application/pdf'
+                    })
+                    
+                    console.log(`📎 Allegato contratto: ${(pdfResult.pdfBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+                    
+                    // Allegato brochure (se vuoleBrochure = 'Si')
+                    if (lead.vuoleBrochure === 'Si') {
+                      let brochureFilename = ''
+                      if (servizio === 'PRO' || servizio === 'FAMILY') {
+                        brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+                      } else if (servizio === 'PREMIUM') {
+                        brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+                      }
+                      
+                      if (brochureFilename) {
+                        try {
+                          const brochureUrl = `/brochures/${brochureFilename}`
+                          const response = await fetch(new URL(brochureUrl, c.req.url).toString())
+                          
+                          if (response.ok) {
+                            const arrayBuffer = await response.arrayBuffer()
+                            const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
+                            
+                            attachments.push({
+                              filename: brochureFilename,
+                              content: brochureBase64,
+                              contentType: 'application/pdf'
+                            })
+                            
+                            console.log(`📎 Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
+                          }
+                        } catch (brochureError) {
+                          console.warn('⚠️ Impossibile caricare brochure:', brochureError)
+                        }
+                      }
+                    }
+                    
+                    // 3. INVIA EMAIL CON ALLEGATI
+                    const EmailService = (await import('./modules/email-service')).default
+                    const emailService = EmailService.getInstance()
+                    
+                    const variables = {
+                      NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
+                      PIANO_SERVIZIO: `eCura ${servizio} ${piano === 'AVANZATO' ? 'Avanzato' : 'Base'}`,
+                      PREZZO_PIANO: `€${pricing.setupTotale.toFixed(2)}`,
+                      CODICE_CLIENTE: leadId
+                    }
+                    
+                    const contrattoResult = await emailService.sendTemplateEmail(
+                      'INVIO_CONTRATTO',
+                      lead.email,
+                      variables,
+                      attachments,
+                      c.env
+                    )
+                    
+                    emailResults.contratto.sent = contrattoResult.success
+                    if (!contrattoResult.success) emailResults.contratto.error = contrattoResult.error
+                    
+                    // 4. AGGIORNA DATABASE
+                    if (contrattoResult.success) {
+                      await c.env.DB.prepare(`
+                        UPDATE contracts SET 
+                          status = 'SENT',
+                          data_invio = ?,
+                          email_sent = true,
+                          email_template_used = 'email_invio_contratto'
+                        WHERE id = ?
+                      `).bind(new Date().toISOString(), contractId).run()
+                      
+                      await c.env.DB.prepare(`
+                        UPDATE leads SET 
+                          status = 'CONTRACT_SENT',
+                          vuoleContratto = 'Si',
+                          updated_at = ?
+                        WHERE id = ?
+                      `).bind(new Date().toISOString(), leadId).run()
+                      
+                      console.log('✅ Email contratto inviata con', attachments.length, 'allegati')
+                    }
+                  } else {
+                    emailResults.contratto.error = 'Errore generazione PDF: ' + pdfResult.error
+                  }
+                } else {
+                  emailResults.contratto.error = 'Dati contratto incompleti'
+                }
+              } else {
+                emailResults.contratto.error = `Pricing non trovato per ${servizio} ${piano}`
+              }
             }
-            
-            console.log('📋 Email contratto:', contrattoResult.success ? '✅ Inviata' : '❌ Fallita')
           }
         } catch (error) {
           console.error('❌ Errore invio contratto:', error)
