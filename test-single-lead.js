@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-
 /**
- * Test singolo lead per verificare email
+ * =====================================================
+ * Script: Test Singolo Lead - Verifica Email
+ * =====================================================
+ * Data Creazione: 02 Gennaio 2026 - 09:35
+ * Scopo: Testa creazione lead e invio email
+ * Database: telemedcare-leads
+ * API: https://telemedcare-v12.pages.dev/api/leads
+ * =====================================================
  */
 
 import { readFileSync } from 'fs';

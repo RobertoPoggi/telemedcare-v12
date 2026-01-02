@@ -1,7 +1,13 @@
--- Migration 0007: Aggiunge template email_documenti_informativi
--- Data: 2026-01-02
+-- =====================================================
+-- Migration 0007: Template email_documenti_informativi
+-- =====================================================
+-- Data Creazione: 02 Gennaio 2026 - 09:35
+-- Autore: Sistema Automatico
+-- Scopo: Aggiunge template email per invio brochure/documenti
+-- Database: telemedcare-leads
+-- =====================================================
 
-INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active) VALUES
+INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active, created_at, updated_at) VALUES
 ('email_documenti_informativi', 'Invio Documenti Informativi', 'email',
  '📚 eCura - Documenti informativi {{SERVIZIO}}',
  '<!DOCTYPE html>
@@ -50,4 +56,7 @@ INSERT INTO document_templates (id, name, type, subject, html_content, variables
 </body>
 </html>',
  '["NOME_CLIENTE", "SERVIZIO", "PIANO", "LEAD_ID"]',
- 'workflow', 1);
+ 'workflow', 
+ 1,
+ '2026-01-02 09:35:00',
+ '2026-01-02 09:35:00');

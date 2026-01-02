@@ -1,10 +1,16 @@
 #!/bin/bash
-
-# Script SICURO per verificare stato database SENZA modificare nulla
+# =====================================================
+# Script: Verifica Stato Database (READ-ONLY)
+# =====================================================
+# Data Creazione: 02 Gennaio 2026 - 09:35
 # Database: telemedcare-leads
+# Scopo: Verifica tabelle e template SENZA modificare
+# SICURO: Solo query SELECT, nessuna modifica
+# =====================================================
 
 echo "🔍 VERIFICA STATO DATABASE (READ-ONLY)"
 echo "Database: telemedcare-leads"
+echo "Data: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
 echo ""
 

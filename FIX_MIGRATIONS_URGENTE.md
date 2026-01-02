@@ -1,5 +1,16 @@
 # 🔧 FIX URGENTE - Verificare e Applicare Migrations Database
 
+```
+=====================================================
+DOCUMENTO: Istruzioni Migrations Database
+=====================================================
+Data Creazione: 02 Gennaio 2026 - 09:35
+Ultima Modifica: 02 Gennaio 2026 - 09:35
+Database: telemedcare-leads
+Priorità: 🔴 CRITICA
+=====================================================
+```
+
 ## ⚠️ ATTENZIONE - NOME DATABASE CORRETTO:
 
 **Database**: `telemedcare-leads` ✅  
