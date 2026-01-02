@@ -7233,14 +7233,14 @@ app.post('/api/leads', async (c) => {
     const leadId = `LEAD-MANUAL-${Date.now()}`
     const timestamp = new Date().toISOString()
     
-    // Inserisci nuovo lead
+    // Inserisci nuovo lead con nuovi campi piano e servizio
     await c.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, tipoServizio, 
+        nomeAssistito, cognomeAssistito, tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
         note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -7250,6 +7250,8 @@ app.post('/api/leads', async (c) => {
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
       data.tipoServizio || 'eCura PRO',
+      data.servizio || 'eCura PRO',
+      data.piano || 'BASE',
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
@@ -7262,6 +7264,139 @@ app.post('/api/leads', async (c) => {
     
     console.log('✅ Lead creato:', leadId)
     
+    // ============================================
+    // AUTOMAZIONE EMAIL
+    // ============================================
+    const emailResults = {
+      notifica: { sent: false, error: null },
+      brochure: { sent: false, error: null },
+      contratto: { sent: false, error: null }
+    }
+    
+    try {
+      const EmailService = (await import('./modules/email-service')).default
+      const emailService = EmailService.getInstance()
+      
+      // 1. EMAIL NOTIFICA NUOVO LEAD (sempre)
+      try {
+        const notificaVariables = {
+          NOME_CLIENTE: data.nomeRichiedente,
+          EMAIL_CLIENTE: data.email,
+          TELEFONO_CLIENTE: data.telefono || 'Non fornito',
+          SERVIZIO_RICHIESTO: data.servizio || 'eCura PRO',
+          TIMESTAMP_LEAD: new Date().toLocaleString('it-IT'),
+          LEAD_ID: leadId
+        }
+        
+        const notificaResult = await emailService.sendTemplateEmail(
+          'NOTIFICA_INFO',
+          'info@medicagb.it',  // Email interna per notifiche
+          notificaVariables,
+          undefined,
+          c.env
+        )
+        
+        emailResults.notifica.sent = notificaResult.success
+        if (!notificaResult.success) emailResults.notifica.error = notificaResult.error
+        
+        console.log('📧 Email notifica nuovo lead:', notificaResult.success ? '✅ Inviata' : '❌ Fallita')
+      } catch (error) {
+        console.error('❌ Errore invio notifica:', error)
+        emailResults.notifica.error = error instanceof Error ? error.message : String(error)
+      }
+      
+      // 2. EMAIL BROCHURE (se richiesta)
+      if (data.vuoleBrochure === 'Si') {
+        try {
+          const brochureVariables = {
+            NOME_CLIENTE: data.nomeRichiedente,
+            LEAD_ID: leadId,
+            SERVIZIO: data.servizio || 'PRO',
+            PIANO: data.piano || 'BASE',
+            NOME_ASSISTITO: data.nomeAssistito || data.nomeRichiedente,
+            COGNOME_ASSISTITO: data.cognomeAssistito || data.cognomeRichiedente
+          }
+          
+          const brochureResult = await emailService.sendTemplateEmail(
+            'INVIO_BROCHURE',
+            data.email,
+            brochureVariables,
+            undefined,
+            c.env
+          )
+          
+          emailResults.brochure.sent = brochureResult.success
+          if (!brochureResult.success) emailResults.brochure.error = brochureResult.error
+          
+          // Log email
+          await c.env.DB.prepare(`
+            INSERT INTO email_logs (
+              leadId, recipient_email, template_used, 
+              subject, status, provider_used, sent_at
+            ) VALUES (?, ?, ?, ?, ?, 'RESEND', ?)
+          `).bind(
+            leadId,
+            data.email,
+            'email_invio_brochure',
+            `eCura - Brochure informativa ${data.servizio || 'PRO'}`,
+            brochureResult.success ? 'SENT' : 'FAILED',
+            new Date().toISOString()
+          ).run()
+          
+          console.log('📚 Email brochure:', brochureResult.success ? '✅ Inviata' : '❌ Fallita')
+        } catch (error) {
+          console.error('❌ Errore invio brochure:', error)
+          emailResults.brochure.error = error instanceof Error ? error.message : String(error)
+        }
+      }
+      
+      // 3. EMAIL CONTRATTO (se richiesto)
+      if (data.vuoleContratto === 'Si') {
+        try {
+          const contrattoVariables = {
+            NOME_CLIENTE: data.nomeRichiedente,
+            PIANO_SERVIZIO: `${data.servizio || 'eCura PRO'} - ${data.piano || 'BASE'}`,
+            PREZZO_PIANO: data.piano === 'AVANZATO' ? '€840/anno' : '€480/anno',
+            CODICE_CLIENTE: leadId
+          }
+          
+          const contrattoResult = await emailService.sendTemplateEmail(
+            'INVIO_CONTRATTO',
+            data.email,
+            contrattoVariables,
+            undefined,
+            c.env
+          )
+          
+          emailResults.contratto.sent = contrattoResult.success
+          if (!contrattoResult.success) emailResults.contratto.error = contrattoResult.error
+          
+          // Log email
+          await c.env.DB.prepare(`
+            INSERT INTO email_logs (
+              leadId, recipient_email, template_used, 
+              subject, status, provider_used, sent_at
+            ) VALUES (?, ?, ?, ?, ?, 'RESEND', ?)
+          `).bind(
+            leadId,
+            data.email,
+            'email_invio_contratto',
+            'eCura - Il tuo contratto è pronto!',
+            contrattoResult.success ? 'SENT' : 'FAILED',
+            new Date().toISOString()
+          ).run()
+          
+          console.log('📋 Email contratto:', contrattoResult.success ? '✅ Inviata' : '❌ Fallita')
+        } catch (error) {
+          console.error('❌ Errore invio contratto:', error)
+          emailResults.contratto.error = error instanceof Error ? error.message : String(error)
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Errore generale automazione email:', error)
+    }
+    
     return c.json({ 
       success: true, 
       message: 'Lead creato con successo',
@@ -7271,7 +7406,8 @@ app.post('/api/leads', async (c) => {
         nomeRichiedente: data.nomeRichiedente,
         cognomeRichiedente: data.cognomeRichiedente,
         email: data.email
-      }
+      },
+      emailAutomation: emailResults
     })
   } catch (error) {
     console.error('❌ Errore creazione lead:', error)
