@@ -138,7 +138,16 @@ export async function inviaEmailNotificaInfo(
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      VERSIONE_SISTEMA: 'TeleMedCare V11.0'
+      TIMESTAMP_LEAD: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
+      VERSIONE_SISTEMA: 'TeleMedCare V11.0',
+      
+      // ALIAS per template DB sbagliato (da fixare)
+      NOME_CLIENTE: leadData.nomeRichiedente,
+      COGNOME_CLIENTE: leadData.cognomeRichiedente,
+      EMAIL_CLIENTE: leadData.emailRichiedente,
+      TELEFONO_CLIENTE: leadData.telefonoRichiedente || 'Non fornito',
+      SERVIZIO_RICHIESTO: `eCura ${leadData.servizio || 'PRO'} - ${leadData.pacchetto}`,
+      NOTE: leadData.note || 'Nessuna'
     }
 
     // Renderizza template con i dati
