@@ -3999,6 +3999,48 @@ app.post('/api/admin/test-email', async (c) => {
   }
 });
 
+// 🔄 ENDPOINT: Aggiorna template dal file HTML
+app.post('/api/admin/update-template/:templateId', async (c) => {
+  try {
+    const templateId = c.req.param('templateId')
+    const { html_content } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    if (!html_content) {
+      return c.json({ success: false, error: 'html_content richiesto' }, 400)
+    }
+    
+    console.log(`📝 Aggiornamento template: ${templateId} (${html_content.length} chars)`)
+    
+    // Aggiorna il template nel database
+    const result = await c.env.DB.prepare(`
+      UPDATE document_templates 
+      SET html_content = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(html_content, templateId).run()
+    
+    console.log(`✅ Template ${templateId} aggiornato`)
+    
+    return c.json({
+      success: true,
+      templateId,
+      updated: true,
+      changes: result.meta.changes
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore aggiornamento template:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔍 ENDPOINT DEBUG: Mostra environment variables
 app.get('/api/admin/debug-env', async (c) => {
   try {
