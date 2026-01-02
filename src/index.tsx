@@ -6949,9 +6949,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // Determina quale brochure usare in base al servizio
       let brochureFilename = ''
       if (servizio === 'PRO' || servizio === 'FAMILY') {
-        brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+        brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
       } else if (servizio === 'PREMIUM') {
-        brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+        brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
       }
       
       if (brochureFilename) {
@@ -7097,9 +7097,9 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     let brochureFilename = ''
     if (servizio === 'PRO' || servizio === 'FAMILY') {
-      brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+      brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
     } else if (servizio === 'PREMIUM') {
-      brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+      brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
     }
     
     if (brochureFilename) {
@@ -7371,17 +7371,14 @@ app.post('/api/leads', async (c) => {
     const leadId = `LEAD-MANUAL-${Date.now()}`
     const timestamp = new Date().toISOString()
     
-    // Inserisci nuovo lead con nuovi campi piano e servizio
+    // Inserisci nuovo lead (solo campi esistenti nel DB)
     await c.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, luogoNascita, dataNascita,
-        indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
-        codiceFiscaleAssistito, tipoServizio, servizio, piano,
+        nomeAssistito, cognomeAssistito, tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
-        consensoPrivacy, consensoMarketing, consensoTerze,
         note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -7390,23 +7387,13 @@ app.post('/api/leads', async (c) => {
       data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
-      data.luogoNascita || '',
-      data.dataNascita || '',
-      data.indirizzoAssistito || '',
-      data.capAssistito || '',
-      data.cittaAssistito || '',
-      data.provinciaAssistito || '',
-      data.codiceFiscaleAssistito || '',
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
       data.piano || 'BASE',
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      data.consensoPrivacy ? 'Si' : 'No',
-      data.consensoMarketing || 'No',
-      data.consensoTerze || 'No',
-      data.note || `Lead inserito via dashboard | Canale: ${data.canale || 'Dashboard'}`,
+      `${data.note || 'Lead dashboard'} | Canale: ${data.canale || 'Dashboard'} | CF: ${data.codiceFiscaleAssistito || 'N/A'} | Indirizzo: ${data.indirizzoAssistito || 'N/A'} ${data.capAssistito || ''} ${data.cittaAssistito || ''} ${data.provinciaAssistito || ''}`,
       data.fonte || data.canale || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
@@ -7449,7 +7436,7 @@ app.post('/api/leads', async (c) => {
       }
       
       // Usa workflow-email-manager del 25 dicembre
-      const { inviaEmailNotificaInfo, inviaDocumentiInformativi, generaEInviaContratto } = 
+      const { inviaEmailNotificaInfo, inviaEmailDocumentiInformativi, inviaEmailContratto } = 
         await import('./modules/workflow-email-manager')
       
       // 1. EMAIL NOTIFICA INTERNO (sempre)
@@ -7468,7 +7455,7 @@ app.post('/api/leads', async (c) => {
       // 2. DOCUMENTI INFORMATIVI (brochure/manuale)
       if (leadData.vuoleBrochure || leadData.vuoleManuale) {
         try {
-          const docResult = await inviaDocumentiInformativi(leadData, c.env, c.env.DB)
+          const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, c.env.DB)
           emailResults.brochure.sent = docResult.success
           if (!docResult.success) {
             emailResults.brochure.error = docResult.errors.join(', ')
@@ -7483,7 +7470,7 @@ app.post('/api/leads', async (c) => {
       // 3. CONTRATTO (se richiesto)
       if (leadData.vuoleContratto) {
         try {
-          const contrattoResult = await generaEInviaContratto(leadData, c.env, c.env.DB)
+          const contrattoResult = await inviaEmailContratto(leadData, c.env, c.env.DB)
           emailResults.contratto.sent = contrattoResult.success
           if (!contrattoResult.success) {
             emailResults.contratto.error = contrattoResult.errors.join(', ')
