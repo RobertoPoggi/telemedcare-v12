@@ -2799,17 +2799,17 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             // Validation campi obbligatori
             if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
-                alert('⚠️ Compila tutti i campi obbligatori del Richiedente');
+                alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
                 return;
             }
             
             if (!formData.nomeAssistito || !formData.cognomeAssistito) {
-                alert('⚠️ Compila tutti i campi obbligatori dell\'Assistito');
+                alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
                 return;
             }
             
             if (!formData.consensoPrivacy) {
-                alert('⚠️ Il consenso Privacy è obbligatorio');
+                alert("⚠️ Il consenso Privacy è obbligatorio");
                 return;
             }
             
@@ -2825,14 +2825,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    let message = '✅ Lead creato con successo!\\n\\nID: ' + (result.id || result.leadId);
+                    let message = "✅ Lead creato con successo!\\n\\nID: " + (result.id || result.leadId);
                     
                     // Mostra email inviate
                     if (result.emails) {
-                        message += '\\n\\n📧 Email inviate:';
-                        if (result.emails.notifica) message += '\\n  ✓ Notifica nuovo lead';
-                        if (result.emails.brochure) message += '\\n  ✓ Brochure al cliente';
-                        if (result.emails.contratto) message += '\\n  ✓ Contratto al cliente';
+                        message += "\\n\\n📧 Email inviate:";
+                        if (result.emails.notifica) message += "\\n  ✓ Notifica nuovo lead";
+                        if (result.emails.brochure) message += "\\n  ✓ Brochure al cliente";
+                        if (result.emails.contratto) message += "\\n  ✓ Contratto al cliente";
                     }
                     
                     alert(message);
@@ -2841,11 +2841,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                     // Ricarica la pagina per aggiornare i dati
                     window.location.reload();
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    alert("❌ Errore: " + (result.error || "Errore sconosciuto"));
                 }
             } catch (error) {
-                console.error('❌ Errore creazione lead:', error);
-                alert('❌ Errore di comunicazione: ' + error.message);
+                console.error("❌ Errore creazione lead:", error);
+                alert("❌ Errore di comunicazione: " + error.message);
             }
         }
         
