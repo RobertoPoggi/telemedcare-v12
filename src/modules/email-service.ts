@@ -1,6 +1,6 @@
 /**
  * EMAIL_SERVICE.TS - Servizio Email con Template Engine
- * TeleMedCare V12.0-Cloudflare - Sistema Modulare
+ * TeleMedCare V11.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Template engine con sostituzioni variabili {{VARIABLE}}
@@ -103,17 +103,9 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   DOCUMENTI_INFORMATIVI: {
     id: 'documenti_informativi',
     name: 'Invio Documenti Informativi',
-    subject: '📋 eCura - Documentazione richiesta per {{NOME_CLIENTE}}',
+    subject: '📋 TeleMedCare - Documentazione richiesta per {{NOME_CLIENTE}}',
     htmlPath: '/templates/email/email_documenti_informativi.html',
     variables: ['NOME_CLIENTE', 'EMAIL_CLIENTE', 'DOCUMENTI_RICHIESTI', 'SERVIZIO_INTERESSE', 'TIMESTAMP_RICHIESTA'],
-    category: 'workflow'
-  },
-  INVIO_BROCHURE: {
-    id: 'invio_brochure',
-    name: 'Invio Brochure',
-    subject: '📚 eCura - Brochure informativa {{SERVIZIO}}',
-    htmlPath: '/templates/email/email_invio_brochure.html',
-    variables: ['NOME_CLIENTE', 'LEAD_ID', 'SERVIZIO', 'PIANO', 'NOME_ASSISTITO', 'COGNOME_ASSISTITO'],
     category: 'workflow'
   }
 }
@@ -421,7 +413,7 @@ export class EmailService {
 <li><strong>Inviare documentazione</strong> personalizzata</li>
 <li><strong>Programmare demo</strong> se richiesta</li>
 </ol>
-<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema TeleMedCare V12.0</p>
+<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema TeleMedCare V11.0</p>
 </div></div></body></html>`
 
       case 'email_documenti_informativi':
@@ -449,7 +441,7 @@ export class EmailService {
 <li><strong>Includere case studies</strong> pertinenti</li>
 <li><strong>Programmare follow-up</strong> a 3-5 giorni</li>
 </ol>
-<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema TeleMedCare V12.0</p>
+<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema TeleMedCare V11.0</p>
 </div></div></body></html>`
 
       default:
@@ -518,7 +510,7 @@ export class EmailService {
    */
   private async sendWithSendGrid(emailData: EmailData, env?: any): Promise<EmailResult> {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
-    const apiKey = env?.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY
+    const apiKey = env?.SENDGRID_API_KEY || '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'
     
     console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
@@ -573,13 +565,9 @@ export class EmailService {
    */
   private async sendWithResend(emailData: EmailData, env?: any): Promise<EmailResult> {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
-    const apiKey = env?.RESEND_API_KEY
+    const apiKey = env?.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2'
     
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY not configured in environment variables')
-    }
-    
-    console.log('📧 Resend: Using API key:', `${apiKey.substring(0, 15)}...`)
+    console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
     const fromEmail = emailData.from || 'noreply@telemedcare.it'
     const payload = {
