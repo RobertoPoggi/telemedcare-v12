@@ -469,8 +469,10 @@ app.use('*', async (c, next) => {
 // Enable CORS for API routes
 app.use('/api/*', cors())
 
-// Serve static files (commentato per debug locale - funziona solo in produzione Cloudflare)
-// app.use('/static/*', serveStatic({ root: './public' }))
+// Serve static files 
+app.use('/assets/*', serveStatic({ root: './' }))
+app.use('/brochures/*', serveStatic({ root: './' }))
+app.use('/documents/*', serveStatic({ root: './' }))
 
 // ========== FORM ACQUISIZIONE LEAD (VECCHIA HOMEPAGE) - Ora su /form-lead ==========
 app.get('/form-lead', (c) => {
