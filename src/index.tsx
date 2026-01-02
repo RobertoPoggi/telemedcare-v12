@@ -3952,6 +3952,51 @@ app.post('/api/admin/run-migrations', async (c) => {
   }
 });
 
+// 🧪 ENDPOINT TEST: Verifica invio email
+app.post('/api/admin/test-email', async (c) => {
+  try {
+    const { to } = await c.req.json().catch(() => ({ to: 'rpoggi55@gmail.com' }));
+    
+    console.log(`📧 [TEST EMAIL] Invio email di test a: ${to}`);
+    
+    const emailService = new EmailService(c.env);
+    
+    const result = await emailService.sendEmail({
+      to,
+      from: 'info@telemedcare.it',
+      subject: '🧪 Test Email - TeleMedCare',
+      html: `
+        <h1>Test Email</h1>
+        <p>Questa è un'email di test inviata da TeleMedCare il ${new Date().toISOString()}</p>
+        <p><strong>API Keys disponibili:</strong></p>
+        <ul>
+          <li>SENDGRID_API_KEY: ${c.env.SENDGRID_API_KEY ? '✅ Configurata' : '❌ Mancante'}</li>
+          <li>RESEND_API_KEY: ${c.env.RESEND_API_KEY ? '✅ Configurata' : '❌ Mancante (usando fallback)'}</li>
+        </ul>
+      `,
+      text: 'Test email'
+    });
+    
+    return c.json({
+      success: result.success,
+      messageId: result.messageId,
+      timestamp: result.timestamp,
+      error: result.error,
+      config: {
+        sendgrid: c.env.SENDGRID_API_KEY ? 'configured' : 'missing',
+        resend: c.env.RESEND_API_KEY ? 'configured' : 'fallback'
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ [TEST EMAIL] Errore:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 app.post('/api/admin/reset-and-regenerate', async (c) => {
   try {
     if (!c.env.DB) {
