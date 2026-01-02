@@ -177,7 +177,7 @@ export async function inviaEmailDocumentiInformativi(
     const emailService = new EmailService(env)
     
     // Carica template email_documenti_informativi
-    const template = await loadEmailTemplate('email_documenti_informativi', db)
+    const templateObj = await loadEmailTemplate('email_documenti_informativi', db)
     
     // Prepara i dati per il template
     const servizioNome = leadData.servizio || 'eCura PRO'
@@ -193,8 +193,14 @@ export async function inviaEmailDocumentiInformativi(
       DOCUMENTI_ALLEGATI: documentiList.length > 0 ? documentiList.join('<br>') : 'Nessun documento richiesto'
     }
 
-    // Renderizza template
-    const emailHtml = renderTemplate(template, templateData)
+    // Renderizza template HTML e subject
+    const emailHtml = renderTemplate(templateObj.html_content, templateData)
+    const emailSubject = renderTemplate(templateObj.subject, templateData)
+    
+    console.log(`📧 [WORKFLOW DEBUG] Template HTML length: ${templateObj.html_content.length} chars`)
+    console.log(`📧 [WORKFLOW DEBUG] Template data:`, templateData)
+    console.log(`📧 [WORKFLOW DEBUG] Rendered HTML length: ${emailHtml.length} chars`)
+    console.log(`📧 [WORKFLOW DEBUG] Subject: ${emailSubject}`)
 
     // Prepara allegati PDF usando documentUrls passati dall'endpoint
     const attachments: Array<{ filename: string; content: string; contentType: string }> = []
@@ -289,7 +295,7 @@ export async function inviaEmailDocumentiInformativi(
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
       from: 'info@telemedcare.it',
-      subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
+      subject: emailSubject,
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined
     })
