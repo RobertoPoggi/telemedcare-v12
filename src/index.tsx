@@ -7583,7 +7583,19 @@ app.post('/api/leads', async (c) => {
       // 2. DOCUMENTI INFORMATIVI (brochure/manuale)
       if (leadData.vuoleBrochure || leadData.vuoleManuale) {
         try {
-          const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, c.env.DB)
+          // Prepara documentUrls per brochure
+          const documentUrls: { brochure?: string; manuale?: string } = {}
+          if (leadData.vuoleBrochure === 'Si') {
+            // Determina brochure in base al servizio
+            const servizio = leadData.servizio || 'eCura PRO'
+            if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+            } else if (servizio.includes('PREMIUM')) {
+              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+            }
+          }
+          
+          const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, documentUrls, c.env.DB)
           emailResults.brochure.sent = docResult.success
           if (!docResult.success) {
             emailResults.brochure.error = docResult.errors.join(', ')
@@ -7596,9 +7608,28 @@ app.post('/api/leads', async (c) => {
       }
       
       // 3. CONTRATTO (se richiesto)
-      if (leadData.vuoleContratto) {
+      if (leadData.vuoleContratto === 'Si') {
         try {
-          const contrattoResult = await inviaEmailContratto(leadData, c.env, c.env.DB)
+          // Crea contractData
+          const contractData = {
+            contractId: `contract-${Date.now()}`,
+            contractCode: `TMC-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            contractPdfUrl: '', // Non disponibile senza Puppeteer
+            tipoServizio: leadData.servizio || 'eCura PRO',
+            prezzoBase: (leadData.piano === 'AVANZATO' || leadData.piano === 'PRO') ? 840 : 480,
+            prezzoIvaInclusa: (leadData.piano === 'AVANZATO' || leadData.piano === 'PRO') ? 1024.80 : 585.60
+          }
+          
+          // Prepara documentUrls per eventuale brochure
+          const documentUrls: { brochure?: string; manuale?: string } = {}
+          const servizio = leadData.servizio || 'eCura PRO'
+          if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+          } else if (servizio.includes('PREMIUM')) {
+            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+          }
+          
+          const contrattoResult = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
           emailResults.contratto.sent = contrattoResult.success
           if (!contrattoResult.success) {
             emailResults.contratto.error = contrattoResult.errors.join(', ')
