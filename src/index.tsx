@@ -7375,10 +7375,13 @@ app.post('/api/leads', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, tipoServizio, servizio, piano,
+        nomeAssistito, cognomeAssistito, luogoNascita, dataNascita,
+        indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+        codiceFiscaleAssistito, tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
+        consensoPrivacy, consensoMarketing, consensoTerze,
         note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -7387,14 +7390,24 @@ app.post('/api/leads', async (c) => {
       data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
-      data.tipoServizio || 'eCura PRO',
+      data.luogoNascita || '',
+      data.dataNascita || '',
+      data.indirizzoAssistito || '',
+      data.capAssistito || '',
+      data.cittaAssistito || '',
+      data.provinciaAssistito || '',
+      data.codiceFiscaleAssistito || '',
+      data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
       data.piano || 'BASE',
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      `${data.note || 'Lead inserito manualmente via dashboard'} | Canale: ${data.canale || 'Dashboard Manuale'}`,
-      data.fonte || 'MANUAL_ENTRY',
+      data.consensoPrivacy ? 'Si' : 'No',
+      data.consensoMarketing || 'No',
+      data.consensoTerze || 'No',
+      data.note || `Lead inserito via dashboard | Canale: ${data.canale || 'Dashboard'}`,
+      data.fonte || data.canale || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
       timestamp
@@ -7403,7 +7416,7 @@ app.post('/api/leads', async (c) => {
     console.log('✅ Lead creato:', leadId)
     
     // ============================================
-    // AUTOMAZIONE EMAIL - Usa endpoint esistenti
+    // AUTOMAZIONE EMAIL - USA WORKFLOW DEL 25 DICEMBRE
     // ============================================
     const emailResults = {
       notifica: { sent: false, error: null },
@@ -7412,277 +7425,72 @@ app.post('/api/leads', async (c) => {
     }
     
     try {
-      const EmailService = (await import('./modules/email-service')).default
-      const emailService = EmailService.getInstance()
+      // Prepara leadData per workflow (formato del 25 dicembre)
+      const leadData = {
+        id: leadId,
+        nomeRichiedente: data.nomeRichiedente,
+        cognomeRichiedente: data.cognomeRichiedente,
+        emailRichiedente: data.email,
+        telefonoRichiedente: data.telefono || '',
+        nomeAssistito: data.nomeAssistito || data.nomeRichiedente,
+        cognomeAssistito: data.cognomeAssistito || data.cognomeRichiedente,
+        pacchetto: data.piano || 'BASE', // BASE o AVANZATO
+        servizio: (data.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase(), // FAMILY, PRO, PREMIUM
+        vuoleBrochure: data.vuoleBrochure === 'Si',
+        vuoleManuale: data.vuoleManuale === 'Si',
+        vuoleContratto: data.vuoleContratto === 'Si',
+        cfRichiedente: data.codiceFiscaleRichiedente || '',
+        indirizzoRichiedente: data.indirizzoRichiedente || '',
+        cfAssistito: data.codiceFiscaleAssistito || '',
+        indirizzoAssistito: data.indirizzoAssistito || '',
+        dataNascitaAssistito: data.dataNascita || '',
+        luogoNascitaAssistito: data.luogoNascita || '',
+        note: data.note || ''
+      }
       
-      // 1. EMAIL NOTIFICA NUOVO LEAD (sempre)
+      // Usa workflow-email-manager del 25 dicembre
+      const { inviaEmailNotificaInfo, inviaDocumentiInformativi, generaEInviaContratto } = 
+        await import('./modules/workflow-email-manager')
+      
+      // 1. EMAIL NOTIFICA INTERNO (sempre)
       try {
-        const notificaVariables = {
-          NOME_CLIENTE: data.nomeRichiedente,
-          EMAIL_CLIENTE: data.email,
-          TELEFONO_CLIENTE: data.telefono || 'Non fornito',
-          SERVIZIO_RICHIESTO: data.servizio || 'eCura PRO',
-          TIMESTAMP_LEAD: new Date().toLocaleString('it-IT'),
-          LEAD_ID: leadId
-        }
-        
-        const notificaResult = await emailService.sendTemplateEmail(
-          'NOTIFICA_INFO',
-          'info@medicagb.it',  // Email interna per notifiche
-          notificaVariables,
-          undefined,
-          c.env
-        )
-        
+        const notificaResult = await inviaEmailNotificaInfo(leadData, c.env, c.env.DB)
         emailResults.notifica.sent = notificaResult.success
-        if (!notificaResult.success) emailResults.notifica.error = notificaResult.error
-        
-        console.log('📧 Email notifica nuovo lead:', notificaResult.success ? '✅ Inviata' : '❌ Fallita')
+        if (!notificaResult.success) {
+          emailResults.notifica.error = notificaResult.errors.join(', ')
+        }
+        console.log('📧 [WORKFLOW] Notifica interno:', notificaResult.success ? '✅' : '❌')
       } catch (error) {
-        console.error('❌ Errore invio notifica:', error)
+        console.error('❌ Errore notifica:', error)
         emailResults.notifica.error = error instanceof Error ? error.message : String(error)
       }
       
-      // 2. EMAIL BROCHURE CON PDF (se richiesta)
-      if (data.vuoleBrochure === 'Si') {
+      // 2. DOCUMENTI INFORMATIVI (brochure/manuale)
+      if (leadData.vuoleBrochure || leadData.vuoleManuale) {
         try {
-          const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-          
-          if (lead) {
-            // Determina servizio
-            const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
-            
-            // Determina quale brochure usare
-            let brochureFilename = ''
-            if (servizio === 'PRO' || servizio === 'FAMILY') {
-              brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-            } else if (servizio === 'PREMIUM') {
-              brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-            }
-            
-            if (brochureFilename) {
-              try {
-                // Carica brochure da asset pubblici
-                const brochureUrl = `/brochures/${brochureFilename}`
-                console.log(`📥 Caricamento brochure: ${brochureUrl}`)
-                
-                const response = await fetch(new URL(brochureUrl, c.req.url).toString())
-                
-                if (response.ok) {
-                  const arrayBuffer = await response.arrayBuffer()
-                  const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
-                  
-                  const attachments = [{
-                    filename: brochureFilename,
-                    content: brochureBase64,
-                    contentType: 'application/pdf'
-                  }]
-                  
-                  console.log(`📎 Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-                  
-                  // Prepara variabili email
-                  const brochureVariables = {
-                    NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-                    LEAD_ID: leadId,
-                    SERVIZIO: servizio,
-                    PIANO: lead.piano || 'BASE',
-                    NOME_ASSISTITO: lead.nomeAssistito || lead.nomeRichiedente || '',
-                    COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
-                  }
-                  
-                  const brochureResult = await emailService.sendTemplateEmail(
-                    'INVIO_BROCHURE',
-                    lead.email,
-                    brochureVariables,
-                    attachments,
-                    c.env
-                  )
-                  
-                  emailResults.brochure.sent = brochureResult.success
-                  if (!brochureResult.success) emailResults.brochure.error = brochureResult.error
-                  
-                  // Update lead status
-                  if (brochureResult.success) {
-                    await c.env.DB.prepare(`
-                      UPDATE leads SET 
-                        vuoleBrochure = 'Si',
-                        status = CASE 
-                          WHEN status = 'NEW' THEN 'BROCHURE_SENT'
-                          ELSE status
-                        END,
-                        updated_at = ?
-                      WHERE id = ?
-                    `).bind(new Date().toISOString(), leadId).run()
-                    
-                    console.log('✅ Email brochure inviata con allegato PDF')
-                  }
-                } else {
-                  emailResults.brochure.error = `Brochure non disponibile: ${response.status}`
-                  console.warn(`⚠️ Brochure non trovata: ${response.status}`)
-                }
-              } catch (brochureError) {
-                emailResults.brochure.error = brochureError instanceof Error ? brochureError.message : String(brochureError)
-                console.error('❌ Errore caricamento brochure:', brochureError)
-              }
-            } else {
-              emailResults.brochure.error = 'Servizio non mappato a brochure'
-            }
+          const docResult = await inviaDocumentiInformativi(leadData, c.env, c.env.DB)
+          emailResults.brochure.sent = docResult.success
+          if (!docResult.success) {
+            emailResults.brochure.error = docResult.errors.join(', ')
           }
+          console.log('📚 [WORKFLOW] Documenti informativi:', docResult.success ? '✅' : '❌')
         } catch (error) {
-          console.error('❌ Errore invio brochure:', error)
+          console.error('❌ Errore documenti:', error)
           emailResults.brochure.error = error instanceof Error ? error.message : String(error)
         }
       }
       
-      // 3. EMAIL CONTRATTO CON PDF (se richiesto) - CON PUPPETEER E BROCHURE
-      if (data.vuoleContratto === 'Si') {
+      // 3. CONTRATTO (se richiesto)
+      if (leadData.vuoleContratto) {
         try {
-          // Verifica Browser Puppeteer
-          if (!c.env?.BROWSER) {
-            console.warn('⚠️ Browser Puppeteer non configurato - skip contratto PDF')
-            emailResults.contratto.error = 'Browser Puppeteer non configurato'
-          } else {
-            const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-            
-            if (lead) {
-              const timestamp = Date.now()
-              const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-              const contractId = `contract-${timestamp}`
-              
-              // Determina servizio e piano
-              const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
-              const piano = (lead.piano || 'BASE').toUpperCase()
-              
-              // Ottieni prezzi
-              const { getPricing } = await import('./modules/ecura-pricing')
-              const pricing = getPricing(servizio as any, piano as any)
-              
-              if (pricing) {
-                // Crea contratto nel DB
-                await c.env.DB.prepare(`
-                  INSERT INTO contracts (
-                    id, codice_contratto, leadId, tipo_contratto, 
-                    prezzo_totale, status, created_at
-                  ) VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
-                `).bind(
-                  contractId,
-                  contractCode,
-                  leadId,
-                  piano,
-                  pricing.setupTotale,
-                  new Date().toISOString()
-                ).run()
-                
-                console.log('📄 Generazione PDF contratto...')
-                
-                // 1. GENERA PDF CONTRATTO
-                const { prepareContractData, generateContractPDF } = await import('./modules/contract-pdf-generator')
-                
-                const contractData = prepareContractData(lead, contractCode)
-                if (contractData) {
-                  const pdfResult = await generateContractPDF(contractData, c.env.BROWSER)
-                  
-                  if (pdfResult.success && pdfResult.pdfBase64) {
-                    // 2. PREPARA ALLEGATI
-                    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
-                    
-                    // Allegato contratto PDF
-                    attachments.push({
-                      filename: `Contratto_eCura_${contractCode}.pdf`,
-                      content: pdfResult.pdfBase64,
-                      contentType: 'application/pdf'
-                    })
-                    
-                    console.log(`📎 Allegato contratto: ${(pdfResult.pdfBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-                    
-                    // Allegato brochure (se vuoleBrochure = 'Si')
-                    if (lead.vuoleBrochure === 'Si') {
-                      let brochureFilename = ''
-                      if (servizio === 'PRO' || servizio === 'FAMILY') {
-                        brochureFilename = 'Medica GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-                      } else if (servizio === 'PREMIUM') {
-                        brochureFilename = 'Medica GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-                      }
-                      
-                      if (brochureFilename) {
-                        try {
-                          const brochureUrl = `/brochures/${brochureFilename}`
-                          const response = await fetch(new URL(brochureUrl, c.req.url).toString())
-                          
-                          if (response.ok) {
-                            const arrayBuffer = await response.arrayBuffer()
-                            const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
-                            
-                            attachments.push({
-                              filename: brochureFilename,
-                              content: brochureBase64,
-                              contentType: 'application/pdf'
-                            })
-                            
-                            console.log(`📎 Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-                          }
-                        } catch (brochureError) {
-                          console.warn('⚠️ Impossibile caricare brochure:', brochureError)
-                        }
-                      }
-                    }
-                    
-                    // 3. INVIA EMAIL CON ALLEGATI
-                    const EmailService = (await import('./modules/email-service')).default
-                    const emailService = EmailService.getInstance()
-                    
-                    const variables = {
-                      NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-                      PIANO_SERVIZIO: `eCura ${servizio} ${piano === 'AVANZATO' ? 'Avanzato' : 'Base'}`,
-                      PREZZO_PIANO: `€${pricing.setupTotale.toFixed(2)}`,
-                      CODICE_CLIENTE: leadId
-                    }
-                    
-                    const contrattoResult = await emailService.sendTemplateEmail(
-                      'INVIO_CONTRATTO',
-                      lead.email,
-                      variables,
-                      attachments,
-                      c.env
-                    )
-                    
-                    emailResults.contratto.sent = contrattoResult.success
-                    if (!contrattoResult.success) emailResults.contratto.error = contrattoResult.error
-                    
-                    // 4. AGGIORNA DATABASE
-                    if (contrattoResult.success) {
-                      await c.env.DB.prepare(`
-                        UPDATE contracts SET 
-                          status = 'SENT',
-                          data_invio = ?,
-                          email_sent = true,
-                          email_template_used = 'email_invio_contratto'
-                        WHERE id = ?
-                      `).bind(new Date().toISOString(), contractId).run()
-                      
-                      await c.env.DB.prepare(`
-                        UPDATE leads SET 
-                          status = 'CONTRACT_SENT',
-                          vuoleContratto = 'Si',
-                          updated_at = ?
-                        WHERE id = ?
-                      `).bind(new Date().toISOString(), leadId).run()
-                      
-                      console.log('✅ Email contratto inviata con', attachments.length, 'allegati')
-                    }
-                  } else {
-                    emailResults.contratto.error = 'Errore generazione PDF: ' + pdfResult.error
-                  }
-                } else {
-                  emailResults.contratto.error = 'Dati contratto incompleti'
-                }
-              } else {
-                emailResults.contratto.error = `Pricing non trovato per ${servizio} ${piano}`
-              }
-            }
+          const contrattoResult = await generaEInviaContratto(leadData, c.env, c.env.DB)
+          emailResults.contratto.sent = contrattoResult.success
+          if (!contrattoResult.success) {
+            emailResults.contratto.error = contrattoResult.errors.join(', ')
           }
+          console.log('📋 [WORKFLOW] Contratto:', contrattoResult.success ? '✅' : '❌')
         } catch (error) {
-          console.error('❌ Errore invio contratto:', error)
+          console.error('❌ Errore contratto:', error)
           emailResults.contratto.error = error instanceof Error ? error.message : String(error)
         }
       }
@@ -7695,12 +7503,14 @@ app.post('/api/leads', async (c) => {
       success: true, 
       message: 'Lead creato con successo',
       id: leadId,
+      leadId: leadId,
       lead: {
         id: leadId,
         nomeRichiedente: data.nomeRichiedente,
         cognomeRichiedente: data.cognomeRichiedente,
         email: data.email
       },
+      emails: emailResults,
       emailAutomation: emailResults
     })
   } catch (error) {
