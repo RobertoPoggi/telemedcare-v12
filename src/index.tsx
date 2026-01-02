@@ -3999,7 +3999,48 @@ app.post('/api/admin/test-email', async (c) => {
   }
 });
 
-// 🔄 ENDPOINT: Aggiorna template dal file HTML
+// 🔄 ENDPOINT: Aggiorna template dal file HTML (con templateId in body)
+app.post('/api/admin/update-template', async (c) => {
+  try {
+    const { templateId, htmlContent } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    if (!templateId || !htmlContent) {
+      return c.json({ success: false, error: 'templateId e htmlContent richiesti' }, 400)
+    }
+    
+    console.log(`📝 Aggiornamento template: ${templateId} (${htmlContent.length} chars)`)
+    
+    // Aggiorna il template nel database
+    const result = await c.env.DB.prepare(`
+      UPDATE document_templates 
+      SET html_content = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(htmlContent, templateId).run()
+    
+    console.log(`✅ Template ${templateId} aggiornato (changes: ${result.meta.changes})`)
+    
+    return c.json({
+      success: true,
+      templateId,
+      updated: true,
+      changes: result.meta.changes
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore aggiornamento template:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// 🔄 ENDPOINT: Aggiorna template dal file HTML (con templateId come URL param)
 app.post('/api/admin/update-template/:templateId', async (c) => {
   try {
     const templateId = c.req.param('templateId')
