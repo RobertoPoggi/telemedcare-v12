@@ -180,101 +180,45 @@ export async function inviaEmailDocumentiInformativi(
     const template = await loadEmailTemplate('email_documenti_informativi', db)
     
     // Prepara i dati per il template
+    const servizioNome = leadData.servizio || 'eCura PRO'
+    const pianoNome = leadData.piano || 'BASE'
+    const documentiList: string[] = []
+    if (leadData.vuoleBrochure === 'Si') documentiList.push('📄 Brochure informativa')
+    if (leadData.vuoleManuale === 'Si') documentiList.push('📘 Manuale d\'uso')
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      TIPO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'Base' : 'Avanzato',
-      DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
-      PACCHETTO: leadData.pacchetto || 'BASE',
-      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno'
+      PIANO_SERVIZIO: `${servizioNome} - ${pianoNome}`,
+      DOCUMENTI_ALLEGATI: documentiList.length > 0 ? documentiList.join('<br>') : 'Nessun documento richiesto'
     }
 
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati PDF
+    // Prepara allegati PDF usando documentUrls passati dall'endpoint
     const attachments: Array<{ filename: string; content: string; contentType: string }> = []
     
     try {
-      // In Cloudflare Workers, usiamo fetch per leggere file statici da public/
-      // In locale usa localhost, in produzione usa il dominio pubblico
-      const baseUrl = env.PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8788')
+      // Usa GitHub raw per i PDF (più affidabile di Cloudflare Workers static)
+      const githubRawBase = 'https://raw.githubusercontent.com/RobertoPoggi/telemedcare-v12/main/public'
       
-      if (leadData.vuoleBrochure) {
-        console.log(`📄 [WORKFLOW] Caricamento brochure per servizio: ${leadData.servizio || 'DEFAULT'}`)
-        
-        // Se il lead ha un servizio specificato (da eCura), usa brochure specifica
-        // Altrimenti usa la brochure generica TeleMedCare
-        const servizio = leadData.servizio || 'DEFAULT'
+      if (leadData.vuoleBrochure === 'Si' && documentUrls.brochure) {
+        console.log(`📄 [WORKFLOW] Caricamento brochure da GitHub: ${documentUrls.brochure}`)
         
         try {
-          let pdfData = null
+          // Estrai filename dal path
+          const filename = documentUrls.brochure.split('/').pop() || 'brochure.pdf'
+          const fullUrl = `${githubRawBase}${documentUrls.brochure}`
           
-          if (servizio !== 'DEFAULT' && (servizio === 'FAMILY' || servizio === 'PRO' || servizio === 'PREMIUM')) {
-            // Carica brochure specifica dal brochure-manager
-            console.log(`📥 [WORKFLOW] Caricamento brochure specifica per ${servizio}`)
-            pdfData = await loadBrochurePDF(servizio, baseUrl)
-            
-            if (pdfData) {
-              console.log(`✅ [WORKFLOW] Brochure ${servizio} caricata: ${(pdfData.size / 1024).toFixed(2)} KB`)
-            } else {
-              console.warn(`⚠️ [WORKFLOW] Brochure ${servizio} non trovata, fallback su brochure generica`)
-            }
-          }
-          
-          // Fallback su brochure generica se necessario
-          if (!pdfData) {
-            console.log(`📄 [WORKFLOW] Caricamento brochure generica TeleMedCare`)
-            const brochureUrl = `${baseUrl}/documents/Brochure_TeleMedCare.pdf`
-            const response = await fetch(brochureUrl)
-            
-            if (response.ok) {
-              const arrayBuffer = await response.arrayBuffer()
-              const uint8Array = new Uint8Array(arrayBuffer)
-              let binaryString = ''
-              const chunkSize = 8192
-              for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
-                binaryString += String.fromCharCode.apply(null, Array.from(chunk))
-              }
-              const base64Content = btoa(binaryString)
-              
-              pdfData = {
-                filename: 'Brochure_TeleMedCare.pdf',
-                content: base64Content,
-                size: arrayBuffer.byteLength
-              }
-              console.log(`✅ [WORKFLOW] Brochure generica caricata: ${(pdfData.size / 1024).toFixed(2)} KB`)
-            }
-          }
-          
-          // Aggiungi PDF agli allegati se caricato
-          if (pdfData) {
-            attachments.push({
-              filename: pdfData.filename,
-              content: pdfData.content,
-              contentType: 'application/pdf'
-            })
-            console.log(`✅ [WORKFLOW] Brochure aggiunta agli allegati`)
-          }
-          
-        } catch (err) {
-          console.error(`❌ [WORKFLOW] Errore caricamento brochure:`, err)
-          console.error(`❌ [WORKFLOW] Stack trace:`, err.stack)
-        }
-      }
-      
-      if (leadData.vuoleManuale) {
-        console.log(`📄 [WORKFLOW] Caricamento manuale da public/documents/`)
-        try {
-          const manualeUrl = `${baseUrl}/documents/Manuale_SiDLY.pdf`
-          const response = await fetch(manualeUrl)
+          console.log(`📥 [WORKFLOW] Fetch da: ${fullUrl}`)
+          const response = await fetch(fullUrl)
           
           if (response.ok) {
             const arrayBuffer = await response.arrayBuffer()
-            console.log(`📥 [WORKFLOW] Manuale ArrayBuffer ricevuto: ${arrayBuffer.byteLength} bytes`)
+            console.log(`📥 [WORKFLOW] PDF ricevuto: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
             
-            // Convert ArrayBuffer to base64 in chunks to avoid stack overflow
+            // Convert ArrayBuffer to base64
             const uint8Array = new Uint8Array(arrayBuffer)
             let binaryString = ''
             const chunkSize = 8192
@@ -285,11 +229,45 @@ export async function inviaEmailDocumentiInformativi(
             const base64Content = btoa(binaryString)
             
             attachments.push({
-              filename: 'Manuale_SiDLY.pdf',
+              filename,
               content: base64Content,
               contentType: 'application/pdf'
             })
-            console.log(`✅ [WORKFLOW] Manuale caricato: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
+            console.log(`✅ [WORKFLOW] Brochure allegata: ${filename}`)
+          } else {
+            console.warn(`⚠️ [WORKFLOW] Brochure non trovata: ${response.status}`)
+            result.errors.push(`Brochure non disponibile (HTTP ${response.status})`)
+          }
+        } catch (err) {
+          console.error(`❌ [WORKFLOW] Errore caricamento brochure:`, err)
+          result.errors.push(`Errore caricamento brochure: ${err.message}`)
+        }
+      }
+      
+      if (leadData.vuoleManuale === 'Si' && documentUrls.manuale) {
+        console.log(`📄 [WORKFLOW] Caricamento manuale da GitHub`)
+        try {
+          const filename = documentUrls.manuale.split('/').pop() || 'manuale.pdf'
+          const fullUrl = `${githubRawBase}${documentUrls.manuale}`
+          const response = await fetch(fullUrl)
+          
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer()
+            const uint8Array = new Uint8Array(arrayBuffer)
+            let binaryString = ''
+            const chunkSize = 8192
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+              const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+            }
+            const base64Content = btoa(binaryString)
+            
+            attachments.push({
+              filename,
+              content: base64Content,
+              contentType: 'application/pdf'
+            })
+            console.log(`✅ [WORKFLOW] Manuale allegato: ${filename}`)
           } else {
             console.warn(`⚠️ [WORKFLOW] Manuale non trovato: ${response.status}`)
           }
