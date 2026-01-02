@@ -3824,6 +3824,134 @@ app.post('/api/admin/cleanup-test-leads', async (c) => {
   }
 });
 
+// 🔧 ENDPOINT TEMPORANEO: Esegui migrations mancanti su D1
+app.post('/api/admin/run-migrations', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ error: 'Database non configurato' }, 500);
+    }
+
+    console.log('🔧 [MIGRATIONS] Inizio esecuzione migrations');
+    const results = [];
+
+    // 1. Verifica se document_templates esiste
+    const tableCheck = await c.env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='document_templates'"
+    ).first();
+
+    if (!tableCheck) {
+      console.log('📋 [MIGRATIONS] Tabella document_templates NON esiste. Creazione in corso...');
+      
+      // Crea tabella document_templates
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS document_templates (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          subject TEXT,
+          html_content TEXT NOT NULL,
+          variables TEXT,
+          category TEXT,
+          active INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      results.push('✅ Tabella document_templates creata');
+
+      // Crea indici
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_document_templates_type ON document_templates(type)').run();
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_document_templates_category ON document_templates(category)').run();
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_document_templates_active ON document_templates(active)').run();
+      results.push('✅ Indici creati');
+
+      // Inserisci template email_notifica_info
+      await c.env.DB.prepare(`
+        INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        'email_notifica_info',
+        'Notifica Nuovo Lead',
+        'email',
+        'Nuovo Lead Ricevuto: {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}',
+        '<!DOCTYPE html><html><body><h2>Nuovo Lead Ricevuto</h2><p><strong>Cliente:</strong> {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</p><p><strong>Email:</strong> {{EMAIL_CLIENTE}}</p><p><strong>Telefono:</strong> {{TELEFONO_CLIENTE}}</p><p><strong>Servizio:</strong> {{SERVIZIO_RICHIESTO}}</p><p><strong>ID Lead:</strong> {{LEAD_ID}}</p><p><strong>Data:</strong> {{TIMESTAMP_LEAD}}</p><p><strong>Note:</strong> {{NOTE}}</p></body></html>',
+        '["NOME_CLIENTE","COGNOME_CLIENTE","EMAIL_CLIENTE","TELEFONO_CLIENTE","SERVIZIO_RICHIESTO","LEAD_ID","TIMESTAMP_LEAD","NOTE"]',
+        'notification',
+        1
+      ).run();
+      results.push('✅ Template email_notifica_info inserito');
+
+      // Inserisci template email_invio_contratto
+      await c.env.DB.prepare(`
+        INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        'email_invio_contratto',
+        'Invio Contratto',
+        'email',
+        'eCura - Il tuo contratto è pronto',
+        '<!DOCTYPE html><html><body><h2>Ciao {{NOME_CLIENTE}},</h2><p>Il contratto per il servizio <strong>{{PIANO_SERVIZIO}}</strong> è allegato a questa email.</p><p><strong>Importo:</strong> {{PREZZO_PIANO}}</p><p><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</p><p>Cordiali saluti,<br>Team eCura</p></body></html>',
+        '["NOME_CLIENTE","PIANO_SERVIZIO","PREZZO_PIANO","CODICE_CLIENTE"]',
+        'contract',
+        1
+      ).run();
+      results.push('✅ Template email_invio_contratto inserito');
+    } else {
+      results.push('ℹ️ Tabella document_templates già esistente');
+    }
+
+    // 2. Verifica se esiste template email_documenti_informativi
+    const docTemplateCheck = await c.env.DB.prepare(
+      "SELECT id FROM document_templates WHERE id = 'email_documenti_informativi'"
+    ).first();
+
+    if (!docTemplateCheck) {
+      console.log('📧 [MIGRATIONS] Template email_documenti_informativi mancante. Inserimento...');
+      
+      await c.env.DB.prepare(`
+        INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        'email_documenti_informativi',
+        'Invio Documenti Informativi',
+        'email',
+        'eCura - Documentazione richiesta',
+        '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Documentazione eCura</title></head><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="color: white; margin: 0; font-size: 28px;">Documentazione eCura</h1></div><div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;"><p style="font-size: 16px; margin-bottom: 20px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p><p style="font-size: 16px; margin-bottom: 20px;">Come da Lei richiesto, alleghiamo la documentazione informativa relativa al servizio <strong>{{PIANO_SERVIZIO}}</strong>.</p><div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #666;"><strong>Documenti allegati:</strong><br>{{DOCUMENTI_ALLEGATI}}</p></div><p style="font-size: 16px; margin-bottom: 20px;">Per qualsiasi domanda o chiarimento, non esiti a contattarci.</p><p style="font-size: 16px; margin-bottom: 10px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p></div><div style="text-align: center; padding: 20px; font-size: 12px; color: #666;"><p style="margin: 5px 0;">eCura by TeleMedCare</p><p style="margin: 5px 0;">info@telemedcare.it</p></div></body></html>',
+        '["NOME_CLIENTE", "COGNOME_CLIENTE", "PIANO_SERVIZIO", "DOCUMENTI_ALLEGATI"]',
+        'informative',
+        1,
+        '2026-01-02 09:35:00',
+        '2026-01-02 09:35:00'
+      ).run();
+      results.push('✅ Template email_documenti_informativi inserito');
+    } else {
+      results.push('ℹ️ Template email_documenti_informativi già esistente');
+    }
+
+    // 3. Verifica finale
+    const finalCheck = await c.env.DB.prepare(
+      'SELECT id, name, category, created_at FROM document_templates ORDER BY created_at DESC'
+    ).all();
+
+    console.log('✅ [MIGRATIONS] Completate con successo!');
+    
+    return c.json({
+      success: true,
+      message: 'Migrations eseguite con successo',
+      results,
+      templates: finalCheck.results
+    });
+
+  } catch (error) {
+    console.error('❌ [MIGRATIONS] Errore:', error);
+    return c.json({
+      success: false,
+      error: 'Errore durante esecuzione migrations',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 app.post('/api/admin/reset-and-regenerate', async (c) => {
   try {
     if (!c.env.DB) {
