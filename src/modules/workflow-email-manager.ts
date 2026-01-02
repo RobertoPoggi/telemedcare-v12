@@ -1,5 +1,5 @@
 /**
- * eCura V12.0 - Workflow Email Manager
+ * TeleMedCare V11.0 - Workflow Email Manager
  * Gestisce il flusso completo delle email secondo il processo corretto:
  * 
  * FLUSSO CORRETTO:
@@ -13,31 +13,48 @@
  */
 
 import EmailService from './email-service'
-import { loadEmailTemplate, renderTemplate } from './template-loader-clean'
+import { loadEmailTemplate, renderTemplate } from './template-loader-helper'
 import { D1Database } from '@cloudflare/workers-types'
-import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
-import { formatServiceName } from './ecura-pricing'
 
 export interface LeadData {
   id: string
+  // DATI RICHIEDENTE (intestatario contratto)
   nomeRichiedente: string
   cognomeRichiedente: string
   emailRichiedente: string
   telefonoRichiedente?: string
+  cfRichiedente?: string
+  indirizzoRichiedente?: string
+  capRichiedente?: string
+  cittaRichiedente?: string
+  provinciaRichiedente?: string
+  luogoNascitaRichiedente?: string
+  dataNascitaRichiedente?: string
+  // DATI ASSISTITO (chi riceve il servizio)
   nomeAssistito?: string
   cognomeAssistito?: string
-  etaAssistito?: number
+  etaAssistito?: number | string
+  cfAssistito?: string
+  indirizzoAssistito?: string
+  capAssistito?: string
+  cittaAssistito?: string
+  provinciaAssistito?: string
+  dataNascitaAssistito?: string
+  luogoNascitaAssistito?: string
+  telefonoAssistito?: string
+  emailAssistito?: string
+  // SERVIZIO RICHIESTO
   pacchetto: string // 'BASE' o 'AVANZATO'
-  servizio?: string // 'FAMILY' | 'PRO' | 'PREMIUM' (nuovo campo eCura)
   vuoleBrochure: boolean
   vuoleManuale: boolean
   vuoleContratto: boolean
-  cfRichiedente?: string
-  indirizzoRichiedente?: string
-  cfAssistito?: string
-  indirizzoAssistito?: string
-  dataNascitaAssistito?: string
-  luogoNascitaAssistito?: string
+  intestazioneContratto?: string // 'richiedente' o 'assistito' - chi è l'intestatario del contratto
+  // ALTRI DATI
+  fonte?: string
+  condizioniSalute?: string
+  preferenzaContatto?: string
+  urgenzaRisposta?: string
+  giorniRisposta?: number
   note?: string
 }
 
@@ -71,33 +88,24 @@ export async function inviaEmailNotificaInfo(
     const emailService = new EmailService(env)
     
     // Carica template email_notifica_info
-    const templateObj = await loadEmailTemplate('email_notifica_info', db)
+    const template = await loadEmailTemplate('email_notifica_info', db)
     
-    // Prepara i dati per il template
+    // Prepara i dati per il template - TUTTI I CAMPI RICHIESTI
     const now = new Date()
-    
-    // Determina cosa ha richiesto il lead
-    const vuoleContratto = leadData.vuoleContratto || false
-    const vuoleBrochure = leadData.vuoleBrochure || false
-    const vuoleManuale = leadData.vuoleManuale || false
-    
-    // Genera testo azione suggerita basata sulle richieste
-    let azioneSuggerita = ''
-    if (vuoleContratto) {
-      azioneSuggerita = 'Il cliente ha richiesto il CONTRATTO. Procedere con la preparazione e invio del contratto pre-compilato.'
-    } else if (vuoleBrochure || vuoleManuale) {
-      azioneSuggerita = 'Il cliente ha richiesto solo DOCUMENTAZIONE INFORMATIVA. È stata inviata automaticamente email con documenti.'
-    } else {
-      azioneSuggerita = 'Contattare il cliente entro 24 ore per verificare le sue esigenze e procedere con l\'attivazione del servizio TeleMedCare.'
-    }
-    
     const templateData = {
+      // DATI RICHIEDENTE
       NOME_RICHIEDENTE: leadData.nomeRichiedente,
       COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
       EMAIL_RICHIEDENTE: leadData.emailRichiedente,
       TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || 'Non fornito',
       CF_RICHIEDENTE: leadData.cfRichiedente || 'Non fornito',
       INDIRIZZO_RICHIEDENTE: leadData.indirizzoRichiedente || 'Non fornito',
+      CAP_RICHIEDENTE: leadData.capRichiedente || 'Non fornito',
+      CITTA_RICHIEDENTE: leadData.cittaRichiedente || 'Non fornita',
+      PROVINCIA_RICHIEDENTE: leadData.provinciaRichiedente || 'Non fornita',
+      LUOGO_NASCITA_RICHIEDENTE: leadData.luogoNascitaRichiedente || 'Non fornito',
+      DATA_NASCITA_RICHIEDENTE: leadData.dataNascitaRichiedente || 'Non fornita',
+      // DATI ASSISTITO
       NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
       COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
       ETA_ASSISTITO: leadData.etaAssistito?.toString() || 'Non fornita',
@@ -105,35 +113,44 @@ export async function inviaEmailNotificaInfo(
       LUOGO_NASCITA_ASSISTITO: leadData.luogoNascitaAssistito || 'Non fornito',
       CF_ASSISTITO: leadData.cfAssistito || 'Non fornito',
       INDIRIZZO_ASSISTITO: leadData.indirizzoAssistito || 'Non fornito',
-      CONDIZIONI_SALUTE: leadData.note || 'Non specificate',
-      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
-      PIANO_SERVIZIO: formatServiceName(leadData.servizio || 'PRO', leadData.pacchetto),
+      CAP_ASSISTITO: leadData.capAssistito || 'Non fornito',
+      CITTA_ASSISTITO: leadData.cittaAssistito || 'Non fornita',
+      PROVINCIA_ASSISTITO: leadData.provinciaAssistito || 'Non fornita',
+      TELEFONO_ASSISTITO: leadData.telefonoAssistito || 'Non fornito',
+      EMAIL_ASSISTITO: leadData.emailAssistito || 'Non fornita',
+      // SERVIZIO E RICHIESTE
+      PIANO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
+      TIPO_SERVIZIO: leadData.pacchetto,
       PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
+      VUOLE_CONTRATTO: leadData.vuoleContratto ? 'SÌ' : 'NO',
+      INTESTAZIONE_CONTRATTO: leadData.intestazioneContratto || 'Non specificata',
+      VUOLE_BROCHURE: leadData.vuoleBrochure ? 'SÌ' : 'NO',
+      VUOLE_MANUALE: leadData.vuoleManuale ? 'SÌ' : 'NO',
+      // CONDIZIONI E NOTE (CRITICI!)
+      CONDIZIONI_SALUTE: leadData.condizioniSalute || 'Non specificate',
+      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
+      PREFERENZA_CONTATTO: leadData.preferenzaContatto || 'Non specificata',
+      URGENZA_RISPOSTA: leadData.urgenzaRisposta || 'Non specificata',
+      GIORNI_RISPOSTA: leadData.giorniRisposta?.toString() || 'Non specificati',
+      // DATI SISTEMA
+      LEAD_ID: leadData.id,  // 🆔 FIX: Lead ID per template
+      FONTE: leadData.fonte || 'LANDING_PAGE',
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      VERSIONE_SISTEMA: 'TeleMedCare V12.0',
-      
-      // Nuovi placeholder per richieste del lead
-      VUOLE_CONTRATTO_TEXT: vuoleContratto ? '✅ SI' : '❌ NO',
-      VUOLE_CONTRATTO_COLOR: vuoleContratto ? '#198754' : '#dc3545',
-      VUOLE_BROCHURE_TEXT: vuoleBrochure ? '✅ SI' : '❌ NO',
-      VUOLE_BROCHURE_COLOR: vuoleBrochure ? '#198754' : '#dc3545',
-      VUOLE_MANUALE_TEXT: vuoleManuale ? '✅ SI' : '❌ NO',
-      VUOLE_MANUALE_COLOR: vuoleManuale ? '#198754' : '#dc3545',
-      AZIONE_SUGGERITA: azioneSuggerita
+      VERSIONE_SISTEMA: 'TeleMedCare V11.0'
     }
 
     // Renderizza template con i dati
-    const emailHtml = renderTemplate(templateObj.html_content, templateData)
-    const emailSubject = renderTemplate(templateObj.subject, templateData)
+    const emailHtml = renderTemplate(template, templateData)
 
     // Invia email a info@telemedcare.it
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: 'info@telemedcare.it',
-      subject: emailSubject,
-      html: emailHtml
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
+      subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
+      html: emailHtml,
+      text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.emailRichiedente}`
     })
 
     if (sendResult.success) {
@@ -149,6 +166,74 @@ export async function inviaEmailNotificaInfo(
   } catch (error) {
     result.errors.push(`Eccezione invio email notifica: ${error.message}`)
     console.error(`❌ [WORKFLOW] Eccezione STEP 1:`, error)
+  }
+
+  return result
+}
+
+/**
+ * STEP 1B: Invia email di conferma immediata al richiedente dopo form submission
+ */
+export async function inviaEmailConfermaRichiedente(
+  leadData: LeadData,
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult> {
+  const result: WorkflowEmailResult = {
+    success: false,
+    step: 'conferma_richiedente',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    console.log(`📧 [WORKFLOW] STEP 1B: Invio conferma ricezione a ${leadData.emailRichiedente}`)
+
+    const emailService = new EmailService(env)
+    
+    // Carica template email_benvenuto_lead
+    const template = await loadEmailTemplate('email_benvenuto_lead', db)
+    
+    // Prepara i dati per il template
+    const templateData = {
+      NOME_RICHIEDENTE: leadData.nomeRichiedente,
+      COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
+      EMAIL_RICHIEDENTE: leadData.emailRichiedente,
+      TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || 'Non fornito',
+      NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
+      COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
+      ETA_ASSISTITO: leadData.etaAssistito?.toString() || 'Non fornita',
+      PIANO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
+      TIPO_SERVIZIO: leadData.pacchetto,
+      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
+      NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
+      DATA_RICHIESTA: new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })
+    }
+
+    // Renderizza template
+    const emailHtml = renderTemplate(template, templateData)
+
+    // Invia email al richiedente
+    const sendResult = await emailService.sendEmail({
+      to: leadData.emailRichiedente,
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
+      subject: `Richiesta ricevuta - TeleMedCare ${leadData.pacchetto}`,
+      html: emailHtml
+    })
+
+    if (sendResult.success) {
+      result.success = true
+      result.emailsSent.push(`email_benvenuto_lead -> ${leadData.emailRichiedente}`)
+      result.messageIds = [sendResult.messageId]
+      console.log(`✅ [WORKFLOW] Email conferma richiedente inviata: ${sendResult.messageId}`)
+    } else {
+      result.errors.push(`Errore invio email conferma: ${sendResult.error}`)
+      console.error(`❌ [WORKFLOW] Errore email conferma richiedente:`, sendResult.error)
+    }
+
+  } catch (error) {
+    result.errors.push(`Eccezione invio email conferma: ${error.message}`)
+    console.error(`❌ [WORKFLOW] Eccezione STEP 1B:`, error)
   }
 
   return result
@@ -177,125 +262,51 @@ export async function inviaEmailDocumentiInformativi(
     const emailService = new EmailService(env)
     
     // Carica template email_documenti_informativi
-    const templateObj = await loadEmailTemplate('email_documenti_informativi', db)
+    const template = await loadEmailTemplate('email_documenti_informativi', db)
+    
+    // Genera HTML dinamico per i documenti allegati
+    let brochureHtml = ''
+    let manualeHtml = ''
+    
+    if (leadData.vuoleBrochure && documentUrls.brochure) {
+      brochureHtml = '<div class="document-item"><strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi e del dispositivo SiDLY Care Pro</div>'
+    }
+    
+    if (leadData.vuoleManuale && documentUrls.manuale) {
+      manualeHtml = '<div class="document-item"><strong>Manuale Utente SiDLY Care Pro</strong> - Guida completa all\'installazione e utilizzo del dispositivo</div>'
+    }
     
     // Prepara i dati per il template
-    const servizioNome = leadData.servizio || 'eCura PRO'
-    const pianoNome = leadData.piano || 'BASE'
-    const documentiList: string[] = []
-    if (leadData.vuoleBrochure === 'Si') documentiList.push('📄 Brochure informativa')
-    if (leadData.vuoleManuale === 'Si') documentiList.push('📘 Manuale d\'uso')
-    
     const templateData = {
-      NOME_CLIENTE: leadData.nomeRichiedente,
-      COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: `${servizioNome} - ${pianoNome}`,
-      DOCUMENTI_ALLEGATI: documentiList.length > 0 ? documentiList.join('<br>') : 'Nessun documento richiesto'
+      NOME_CLIENTE: leadData.nomeRichiedente || '',
+      COGNOME_CLIENTE: leadData.cognomeRichiedente || '',
+      BROCHURE_HTML: brochureHtml,
+      MANUALE_HTML: manualeHtml
     }
 
-    // Renderizza template HTML e subject
-    const emailHtml = renderTemplate(templateObj.html_content, templateData)
-    const emailSubject = renderTemplate(templateObj.subject, templateData)
-    
-    console.log(`📧 [WORKFLOW DEBUG] Template HTML length: ${templateObj.html_content.length} chars`)
-    console.log(`📧 [WORKFLOW DEBUG] Template data:`, templateData)
-    console.log(`📧 [WORKFLOW DEBUG] Rendered HTML length: ${emailHtml.length} chars`)
-    console.log(`📧 [WORKFLOW DEBUG] Subject: ${emailSubject}`)
+    // Renderizza template
+    const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati PDF usando documentUrls passati dall'endpoint
-    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
-    
-    try {
-      // Usa GitHub raw per i PDF (più affidabile di Cloudflare Workers static)
-      const githubRawBase = 'https://raw.githubusercontent.com/RobertoPoggi/telemedcare-v12/main/public'
-      
-      if (leadData.vuoleBrochure === 'Si' && documentUrls.brochure) {
-        console.log(`📄 [WORKFLOW] Caricamento brochure da GitHub: ${documentUrls.brochure}`)
-        
-        try {
-          // Estrai filename dal path
-          const filename = documentUrls.brochure.split('/').pop() || 'brochure.pdf'
-          const fullUrl = `${githubRawBase}${documentUrls.brochure}`
-          
-          console.log(`📥 [WORKFLOW] Fetch da: ${fullUrl}`)
-          const response = await fetch(fullUrl)
-          
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer()
-            console.log(`📥 [WORKFLOW] PDF ricevuto: ${(arrayBuffer.byteLength / 1024).toFixed(2)} KB`)
-            
-            // Convert ArrayBuffer to base64
-            const uint8Array = new Uint8Array(arrayBuffer)
-            let binaryString = ''
-            const chunkSize = 8192
-            for (let i = 0; i < uint8Array.length; i += chunkSize) {
-              const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
-              binaryString += String.fromCharCode.apply(null, Array.from(chunk))
-            }
-            const base64Content = btoa(binaryString)
-            
-            attachments.push({
-              filename,
-              content: base64Content,
-              contentType: 'application/pdf'
-            })
-            console.log(`✅ [WORKFLOW] Brochure allegata: ${filename}`)
-          } else {
-            console.warn(`⚠️ [WORKFLOW] Brochure non trovata: ${response.status}`)
-            result.errors.push(`Brochure non disponibile (HTTP ${response.status})`)
-          }
-        } catch (err) {
-          console.error(`❌ [WORKFLOW] Errore caricamento brochure:`, err)
-          result.errors.push(`Errore caricamento brochure: ${err.message}`)
-        }
-      }
-      
-      if (leadData.vuoleManuale === 'Si' && documentUrls.manuale) {
-        console.log(`📄 [WORKFLOW] Caricamento manuale da GitHub`)
-        try {
-          const filename = documentUrls.manuale.split('/').pop() || 'manuale.pdf'
-          const fullUrl = `${githubRawBase}${documentUrls.manuale}`
-          const response = await fetch(fullUrl)
-          
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer()
-            const uint8Array = new Uint8Array(arrayBuffer)
-            let binaryString = ''
-            const chunkSize = 8192
-            for (let i = 0; i < uint8Array.length; i += chunkSize) {
-              const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length))
-              binaryString += String.fromCharCode.apply(null, Array.from(chunk))
-            }
-            const base64Content = btoa(binaryString)
-            
-            attachments.push({
-              filename,
-              content: base64Content,
-              contentType: 'application/pdf'
-            })
-            console.log(`✅ [WORKFLOW] Manuale allegato: ${filename}`)
-          } else {
-            console.warn(`⚠️ [WORKFLOW] Manuale non trovato: ${response.status}`)
-          }
-        } catch (err) {
-          console.error(`❌ [WORKFLOW] Errore caricamento manuale:`, err)
-        }
-      }
-      
-    } catch (error) {
-      console.warn(`⚠️ [WORKFLOW] Errore preparazione allegati:`, error)
-      // Continua senza allegati
+    // Prepara allegati
+    const attachments = []
+    if (leadData.vuoleBrochure && documentUrls.brochure) {
+      attachments.push({
+        filename: 'Brochure_TeleMedCare.pdf',
+        path: documentUrls.brochure
+      })
     }
-    
-    console.log(`📄 [WORKFLOW] Documenti richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
-    console.log(`📄 [WORKFLOW] URLs documenti:`, documentUrls)
-    console.log(`📄 [WORKFLOW] Allegati preparati: ${attachments.length}`)
+    if (leadData.vuoleManuale && documentUrls.manuale) {
+      attachments.push({
+        filename: 'Manuale_Utente_SiDLY.pdf',
+        path: documentUrls.manuale
+      })
+    }
 
-    // Invia email da info@telemedcare.it (richiesta documentazione informativa)
+    // Invia email con allegati
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: 'info@telemedcare.it',
-      subject: emailSubject,
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
+      subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined
     })
@@ -327,6 +338,7 @@ export async function inviaEmailContratto(
     contractId: string
     contractCode: string
     contractPdfUrl: string
+    contractPdfBuffer?: Buffer  // 📎 PDF buffer for attachment
     tipoServizio: string
     prezzoBase: number
     prezzoIvaInclusa: number
@@ -350,16 +362,45 @@ export async function inviaEmailContratto(
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
+    // Genera HTML dinamico per la lista allegati e testo introduttivo
+    const allegatiLista: string[] = ['📄 <strong>Contratto TeleMedCare</strong> (da firmare digitalmente)']
+    const hasBrochure = leadData.vuoleBrochure && documentUrls.brochure
+    const hasManuale = leadData.vuoleManuale && documentUrls.manuale
+    
+    if (hasBrochure) {
+      allegatiLista.push('📘 <strong>Brochure TeleMedCare</strong> - Panoramica completa dei servizi')
+    }
+    
+    if (hasManuale) {
+      allegatiLista.push('📖 <strong>Manuale Utente SiDLY Care Pro</strong> - Guida completa all\'uso del dispositivo')
+    }
+    
+    // Testo dinamico per il corpo email (frasi complete)
+    let testoDocumentiAggiuntivi = ''
+    if (hasBrochure && hasManuale) {
+      testoDocumentiAggiuntivi = ', il manuale d\'uso del dispositivo e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi'
+    } else if (hasBrochure) {
+      testoDocumentiAggiuntivi = ' e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi'
+    } else if (hasManuale) {
+      testoDocumentiAggiuntivi = ' e il manuale d\'uso del dispositivo'
+    }
+    
+    // Lista HTML formattata per il riquadro
+    const allegatiHtml = allegatiLista.map(item => `• ${item}`).join('<br>')
+    
     // Prepara i dati per il template
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(contractData.servizio || 'PRO', contractData.tipoServizio),
+      TIPO_SERVIZIO: contractData.tipoServizio, // BASE o ADVANCED (come nel template)
+      PIANO_SERVIZIO: contractData.tipoServizio === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
       PREZZO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}`,
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${env.PUBLIC_URL || 'https://telemedcare.it'}/firma-contratto?contractId=${contractData.contractId}`,
-      DATA_INVIO: new Date().toLocaleDateString('it-IT')
+      DATA_INVIO: new Date().toLocaleDateString('it-IT'),
+      TESTO_DOCUMENTI_AGGIUNTIVI: testoDocumentiAggiuntivi,
+      ALLEGATI_LISTA: allegatiHtml
     }
 
     // Renderizza template
@@ -368,32 +409,47 @@ export async function inviaEmailContratto(
     // Prepara allegati: Contratto + Brochure + Manuale
     const attachments = []
     
-    // Contratto (OBBLIGATORIO)
-    attachments.push({
-      filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
-      path: contractData.contractPdfUrl
-    })
+    // Contratto (OBBLIGATORIO) - usa buffer PDF se disponibile, altrimenti path
+    if (contractData.contractPdfBuffer) {
+      console.log(`📎 [WORKFLOW] Allegando contratto da buffer PDF (${contractData.contractPdfBuffer.length} bytes)`)
+      attachments.push({
+        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
+        content: contractData.contractPdfBuffer.toString('base64'),
+        contentType: 'application/pdf'
+      })
+    } else {
+      console.warn(`⚠️ [WORKFLOW] Buffer PDF non disponibile, uso path: ${contractData.contractPdfUrl}`)
+      attachments.push({
+        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
+        path: contractData.contractPdfUrl
+      })
+    }
     
-    // Brochure (se richiesta)
+    // 📎 Brochure (se richiesta) - RIPRISTINO LOGICA 12:22 FUNZIONANTE
+    // EmailService.prepareAttachments() gestisce fetch con porta 8787
     if (leadData.vuoleBrochure && documentUrls.brochure) {
       attachments.push({
         filename: 'Brochure_TeleMedCare.pdf',
-        path: documentUrls.brochure
+        path: documentUrls.brochure,  // ← PATH, EmailService fa fetch!
+        contentType: 'application/pdf'
       })
     }
     
-    // Manuale (se richiesto)
+    // 📎 Manuale (se richiesto) - RIPRISTINO LOGICA 12:22 FUNZIONANTE
     if (leadData.vuoleManuale && documentUrls.manuale) {
       attachments.push({
         filename: 'Manuale_Utente_SiDLY.pdf',
-        path: documentUrls.manuale
+        path: documentUrls.manuale,  // ← PATH, EmailService fa fetch!
+        contentType: 'application/pdf'
       })
     }
+    
+    console.log(`📎 [WORKFLOW] Totale allegati preparati: ${attachments.length}`)
 
     // Invia email con allegati
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: 'info@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`,
       html: emailHtml,
       attachments: attachments
@@ -453,7 +509,7 @@ export async function inviaEmailProforma(
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(proformaData.servizio || 'PRO', proformaData.tipoServizio),
+      PIANO_SERVIZIO: proformaData.tipoServizio === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
       NUMERO_PROFORMA: proformaData.numeroProforma,
       IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2)}`,
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
@@ -475,7 +531,7 @@ export async function inviaEmailProforma(
     // Invia email con allegato
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
-      from: 'info@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
       html: emailHtml,
       attachments: attachments
@@ -526,7 +582,7 @@ export async function inviaEmailBenvenuto(
     const templateData = {
       NOME_CLIENTE: clientData.nomeRichiedente,
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
+      PIANO_SERVIZIO: clientData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
       CODICE_CLIENTE: clientData.codiceCliente,
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || 'https://telemedcare.it'}/configurazione?clientId=${clientData.codiceCliente}`,
@@ -539,7 +595,7 @@ export async function inviaEmailBenvenuto(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.emailRichiedente,
-      from: 'info@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `🎉 Benvenuto/a in TeleMedCare, ${clientData.nomeRichiedente}!`,
       html: emailHtml
     })
@@ -604,7 +660,7 @@ export async function inviaEmailConfigurazione(
     // Invia email a info@
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: 'info@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `📋 Nuova Configurazione Cliente: ${clientData.nomeRichiedente} ${clientData.cognomeRichiedente}`,
       html: emailHtml
     })
@@ -660,8 +716,8 @@ export async function inviaEmailConfermaAttivazione(
       NOME_CLIENTE: clientData.nomeRichiedente,
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
       CODICE_CLIENTE: clientData.codiceCliente,
-      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      MODELLO_DISPOSITIVO: deviceData.modello || 'SiDLY Care Pro V12.0',
+      PIANO_SERVIZIO: clientData.pacchetto === 'BASE' ? 'TeleMedCare Base' : 'TeleMedCare Avanzato',
+      MODELLO_DISPOSITIVO: deviceData.modello || 'SiDLY Care Pro V11.0',
       IMEI_DISPOSITIVO: deviceData.imei,
       NUMERO_SIM: deviceData.numeroSim || 'Da configurare',
       DATA_ATTIVAZIONE: new Date(deviceData.dataAssociazione).toLocaleDateString('it-IT'),
@@ -674,7 +730,7 @@ export async function inviaEmailConfermaAttivazione(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.emailRichiedente,
-      from: 'info@telemedcare.it',
+      from: env.EMAIL_FROM || 'info@telemedcare.it',
       subject: `✅ TeleMedCare - Servizio Attivato!`,
       html: emailHtml
     })
@@ -699,6 +755,7 @@ export async function inviaEmailConfermaAttivazione(
 
 export default {
   inviaEmailNotificaInfo,
+  inviaEmailConfermaRichiedente,
   inviaEmailDocumentiInformativi,
   inviaEmailContratto,
   inviaEmailProforma,
