@@ -18,7 +18,7 @@ export async function loadEmailTemplate(
 
   try {
     const result = await db
-      .prepare('SELECT html_content FROM document_templates WHERE name = ? AND active = 1 LIMIT 1')
+      .prepare('SELECT html_content FROM document_templates WHERE id = ? AND active = 1 LIMIT 1')
       .bind(templateName)
       .first<{ html_content: string }>()
 
