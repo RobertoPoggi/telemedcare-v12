@@ -385,14 +385,14 @@ export async function inviaEmailContratto(
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
     // Prepara i dati per il template
-    const servizioNome = leadData.servizio || contractData.tipoServizio || 'eCura PRO'
-    const pianoNome = contractData.tipoServizio || 'AVANZATO'
+    const servizioNome = contractData.servizio || leadData.servizio || 'eCura PRO' // eCura PRO, eCura FAMILY, eCura PREMIUM
+    const pianoNome = contractData.tipoServizio || 'BASE' // BASE o AVANZATO
     const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(leadData.servizio || 'PRO', contractData.tipoServizio),
+      PIANO_SERVIZIO: formatServiceName(servizioNome.replace('eCura ', ''), pianoNome),
       SERVIZIO: servizioNome,
       PIANO: pianoNome,
       DISPOSITIVO: dispositivo,

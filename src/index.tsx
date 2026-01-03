@@ -7560,6 +7560,8 @@ app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
   
   try {
+    console.log(`📋 GET /api/leads/${id}`)
+    
     if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({
         id: parseInt(id),
@@ -7573,13 +7575,18 @@ app.get('/api/leads/:id', async (c) => {
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first()
     
     if (!lead) {
+      console.log(`❌ Lead ${id} non trovato`)
       return c.json({ error: 'Lead non trovato' }, 404)
     }
     
+    console.log(`✅ Lead ${id} recuperato`)
     return c.json(lead)
   } catch (error) {
     console.error('❌ Errore recupero lead:', error)
-    return c.json({ error: 'Errore recupero lead' }, 500)
+    return c.json({ 
+      error: 'Errore recupero lead', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, 500)
   }
 })
 
@@ -7836,9 +7843,10 @@ app.post('/api/leads', async (c) => {
             contractId: `contract-${Date.now()}`,
             contractCode: `TMC-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
             contractPdfUrl: '', // Non disponibile senza Puppeteer
-            tipoServizio: leadData.servizio || 'eCura PRO',
-            prezzoBase: (leadData.piano === 'AVANZATO' || leadData.piano === 'PRO') ? 840 : 480,
-            prezzoIvaInclusa: (leadData.piano === 'AVANZATO' || leadData.piano === 'PRO') ? 1024.80 : 585.60
+            tipoServizio: leadData.pacchetto || 'BASE', // BASE o AVANZATO
+            servizio: leadData.servizio || 'eCura PRO', // eCura PRO, eCura FAMILY, eCura PREMIUM
+            prezzoBase: leadData.pacchetto === 'AVANZATO' ? 840 : 480,
+            prezzoIvaInclusa: leadData.pacchetto === 'AVANZATO' ? 1024.80 : 585.60
           }
           
           // Prepara documentUrls per eventuale brochure
@@ -7906,16 +7914,21 @@ app.delete('/api/leads/:id', async (c) => {
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
     
-    // Verifica se il lead ha contratti associati
-    const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
-      .bind(id).first() as any
-    
-    if (contratti && contratti.count > 0) {
-      return c.json({ 
-        success: false, 
-        error: 'Impossibile eliminare: lead ha contratti associati',
-        hasContracts: true
-      }, 400)
+    // Verifica se il lead ha contratti associati (opzionale - tabella potrebbe non esistere)
+    try {
+      const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+        .bind(id).first() as any
+      
+      if (contratti && contratti.count > 0) {
+        return c.json({ 
+          success: false, 
+          error: 'Impossibile eliminare: lead ha contratti associati',
+          hasContracts: true
+        }, 400)
+      }
+    } catch (contractCheckError) {
+      console.warn('⚠️ Tabella contratti non trovata, skip controllo:', contractCheckError)
+      // Continua comunque con l'eliminazione
     }
     
     // Elimina il lead
