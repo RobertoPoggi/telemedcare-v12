@@ -3854,20 +3854,21 @@ app.get('/api/admin/leads-dashboard', async (c) => {
     const leadsCountResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first();
     const leadsTotali = leadsCountResult?.count || 0;
 
-    // Canali unici
+    // Canali unici (usa colonna 'fonte')
     const channelsResult = await c.env.DB.prepare(`
-      SELECT DISTINCT canale_origine as canale, COUNT(*) as count 
+      SELECT fonte as canale, COUNT(*) as count 
       FROM leads 
-      WHERE canale_origine IS NOT NULL AND canale_origine != ''
-      GROUP BY canale_origine
+      WHERE fonte IS NOT NULL AND fonte != ''
+      GROUP BY fonte
+      ORDER BY count DESC
     `).all();
     
     const channels = channelsResult.results || [];
 
     // Partners unici (se esiste la colonna)
     const partnersResult = await c.env.DB.prepare(`
-      SELECT COUNT(DISTINCT canale_origine) as count FROM leads 
-      WHERE canale_origine LIKE '%Partner%' OR canale_origine LIKE '%Affiliato%'
+      SELECT COUNT(DISTINCT fonte) as count FROM leads 
+      WHERE fonte LIKE '%Partner%' OR fonte LIKE '%Affiliato%'
     `).first();
     const partnersCount = partnersResult?.count || 0;
 
