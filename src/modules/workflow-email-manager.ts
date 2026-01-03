@@ -407,14 +407,19 @@ export async function inviaEmailContratto(
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati: Contratto + Brochure + Manuale
+    // Prepara allegati: Brochure + Manuale (Contratto PDF non disponibile senza Puppeteer)
     const attachments = []
     
-    // Contratto (OBBLIGATORIO)
-    attachments.push({
-      filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
-      path: contractData.contractPdfUrl
-    })
+    // NOTA: Il PDF del contratto non è disponibile in questa versione
+    // Il cliente riceverà il link per firmare il contratto online nel template email
+    
+    // Contratto PDF (solo se disponibile)
+    if (contractData.contractPdfUrl && contractData.contractPdfUrl !== '') {
+      attachments.push({
+        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
+        path: contractData.contractPdfUrl
+      })
+    }
     
     // Brochure (se richiesta)
     if (leadData.vuoleBrochure && documentUrls.brochure) {

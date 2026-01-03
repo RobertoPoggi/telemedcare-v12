@@ -22,19 +22,19 @@ export const BROCHURE_MAP: Record<string, BrochureInfo> = {
   'FAMILY': {
     servizio: 'FAMILY',
     nomeDispositivo: 'Senium',
-    filename: 'Brochure_TeleMedCare.pdf', // TODO: Sostituire con Brochure_Senium.pdf quando disponibile
+    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf', // Usa PRO per FAMILY
     descrizione: 'Dispositivo per monitoraggio familiare'
   },
   'PRO': {
     servizio: 'PRO',
     nomeDispositivo: 'SiDLY Care PRO',
-    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ File reale caricato (12.9 MB)
+    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf',
     descrizione: 'Dispositivo professionale per assistenza avanzata (SiDLY Care PRO)'
   },
   'PREMIUM': {
     servizio: 'PREMIUM',
     nomeDispositivo: 'SiDLY Vital Care',
-    filename: 'Medica_GB_SiDLY_Vital_Care_ITA.pdf', // ✅ File reale caricato (11 MB)
+    filename: 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf',
     descrizione: 'Dispositivo premium per monitoraggio completo (SiDLY Vital Care)'
   }
 }
@@ -65,7 +65,7 @@ export async function loadBrochurePDF(
       return null
     }
 
-    const pdfUrl = `${baseUrl}/documents/${brochureInfo.filename}`
+    const pdfUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
     console.log(`📥 [BROCHURE] Servizio: ${servizio} → Dispositivo: ${brochureInfo.nomeDispositivo}`)
     console.log(`📥 [BROCHURE] Caricamento da: ${pdfUrl}`)
 
