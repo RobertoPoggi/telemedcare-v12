@@ -221,9 +221,11 @@ export async function inviaEmailDocumentiInformativi(
       if (leadData.vuoleBrochure) {
         console.log(`📄 [WORKFLOW] Caricamento brochure per servizio: ${leadData.servizio || 'DEFAULT'}`)
         
-        // Se il lead ha un servizio specificato (da eCura), usa brochure specifica
-        // Altrimenti usa la brochure generica TeleMedCare
-        const servizio = leadData.servizio || 'DEFAULT'
+        // Normalizza il nome del servizio: "eCura PRO" → "PRO"
+        const servizioRaw = leadData.servizio || 'DEFAULT'
+        const servizio = servizioRaw.replace(/^eCura\s+/i, '').trim()
+        
+        console.log(`📄 [WORKFLOW] Servizio normalizzato: "${servizioRaw}" → "${servizio}"`)
         
         try {
           let pdfData = null
@@ -429,8 +431,13 @@ export async function inviaEmailContratto(
         // Determina il baseUrl
         const baseUrl = env?.PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8787')
         
+        // Normalizza il nome del servizio: "eCura PRO" → "PRO"
+        const servizioRaw = leadData.servizio || 'PRO'
+        const servizio = servizioRaw.replace(/^eCura\s+/i, '').trim()
+        
+        console.log(`📎 [CONTRATTO] Servizio normalizzato: "${servizioRaw}" → "${servizio}"`)
+        
         // Carica la brochure con loadBrochurePDF
-        const servizio = leadData.servizio || 'PRO'
         const brochurePDF = await loadBrochurePDF(servizio, baseUrl)
         
         if (brochurePDF) {

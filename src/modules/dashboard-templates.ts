@@ -2392,26 +2392,61 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Email: EMAIL, Email
             // Telefono: TELEFONO, Telefono, Phone
             
-            const webCount = (channels['Website'] || 0) + 
-                            (channels['EXCEL_IMPORT'] || 0) + 
-                            (channels['Excel'] || 0) + 
-                            (channels['Web'] || 0) + 
-                            (channels['website'] || 0) + 
-                            (channels['WEB'] || 0) + 
-                            (channels['Landing Page V12.0-Cloudflare'] || 0) + 
-                            (channels['Landing Page'] || 0);
-            const partnerCount = (channels['Irbema'] || 0) + 
-                                (channels['AON'] || 0) + 
-                                (channels['DoubleYou'] || 0) + 
-                                (channels['CONTRATTO_PDF'] || 0) + 
-                                (channels['Partner'] || 0) + 
-                                (channels['IRBEMA'] || 0);
-            const networkingCount = (channels['Networking'] || 0) + 
-                                   (channels['NETWORKING'] || 0) + 
-                                   (channels['Network'] || 0);
-            const emailCount = (channels['EMAIL'] || 0) + (channels['Email'] || 0);
-            const phoneCount = (channels['TELEFONO'] || 0) + (channels['Telefono'] || 0) + (channels['Phone'] || 0);
-            const nonSpecificato = channels['Non specificato'] || 0;
+            // Aggregazione intelligente dei canali
+            let webCount = 0;
+            let partnerCount = 0;
+            let networkingCount = 0;
+            let emailCount = 0;
+            let phoneCount = 0;
+            let nonSpecificato = 0;
+            
+            // Itera su tutti i canali e classifica in base al contenuto
+            Object.keys(channels).forEach(channel => {
+                const channelLower = channel.toLowerCase();
+                const count = channels[channel];
+                
+                // Partner: IRBEMA, AON, DoubleYou, Partner
+                if (channelLower.includes('irbema') || 
+                    channelLower.includes('aon') || 
+                    channelLower.includes('doubleyou') || 
+                    channelLower.includes('partner') ||
+                    channelLower.includes('affiliato') ||
+                    channelLower.includes('contratto_pdf')) {
+                    partnerCount += count;
+                }
+                // Web: Website, WEB, Landing, Test, Dashboard, Excel
+                else if (channelLower.includes('web') || 
+                         channelLower.includes('landing') || 
+                         channelLower.includes('website') ||
+                         channelLower.includes('test') ||
+                         channelLower.includes('dashboard') ||
+                         channelLower.includes('manual') ||
+                         channelLower.includes('excel')) {
+                    webCount += count;
+                }
+                // Networking: NETWORKING, Network
+                else if (channelLower.includes('network')) {
+                    networkingCount += count;
+                }
+                // Email: EMAIL, Email
+                else if (channelLower.includes('email') || channelLower.includes('mail')) {
+                    emailCount += count;
+                }
+                // Telefono: TELEFONO, Phone
+                else if (channelLower.includes('telefono') || 
+                         channelLower.includes('phone') || 
+                         channelLower.includes('tel')) {
+                    phoneCount += count;
+                }
+                // Non specificato
+                else if (channelLower === 'non specificato' || channel === '') {
+                    nonSpecificato += count;
+                }
+                // Altro → aggiungi a Web (canale generico)
+                else {
+                    webCount += count;
+                }
+            });
             
             document.getElementById('channelWeb').textContent = webCount;
             document.getElementById('channelPartner').textContent = partnerCount;
@@ -2450,7 +2485,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 const prezzo = (piano === 'AVANZATO') ? '840' : '480';
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
-                const hasContract = ['LEAD-CONTRATTO-001', 'LEAD-CONTRATTO-002', 'LEAD-CONTRATTO-003', 'LEAD-EXCEL-065'].includes(lead.id);
+                // Usa il campo vuoleContratto dal lead
+                const hasContract = lead.vuoleContratto === 'Si' || lead.vuoleContratto === true;
                 
                 // Mostra servizio così com'è dal DB (già con "eCura" se presente)
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
