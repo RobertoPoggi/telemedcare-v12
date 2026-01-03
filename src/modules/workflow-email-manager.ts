@@ -421,12 +421,31 @@ export async function inviaEmailContratto(
       })
     }
     
-    // Brochure (se richiesta)
+    // Brochure (se richiesta) - CARICA E CONVERTI IN BASE64
     if (leadData.vuoleBrochure && documentUrls.brochure) {
-      attachments.push({
-        filename: 'Brochure_TeleMedCare.pdf',
-        path: documentUrls.brochure
-      })
+      try {
+        console.log(`📎 [CONTRATTO] Caricamento brochure: ${documentUrls.brochure}`)
+        
+        // Determina il baseUrl
+        const baseUrl = env?.PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8787')
+        
+        // Carica la brochure con loadBrochurePDF
+        const servizio = leadData.servizio || 'PRO'
+        const brochurePDF = await loadBrochurePDF(servizio, baseUrl)
+        
+        if (brochurePDF) {
+          attachments.push({
+            filename: brochurePDF.filename,
+            content: brochurePDF.content,
+            contentType: 'application/pdf'
+          })
+          console.log(`✅ [CONTRATTO] Brochure allegata: ${brochurePDF.filename} (${brochurePDF.size} bytes)`)
+        } else {
+          console.warn(`⚠️ [CONTRATTO] Brochure non trovata per servizio ${servizio}`)
+        }
+      } catch (error) {
+        console.error(`❌ [CONTRATTO] Errore caricamento brochure:`, error)
+      }
     }
     
     // Manuale (se richiesto)
