@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Email Documenti Informativi - Medica GB</title>
+<title>Template Proforma Unificato Telemedcare - Medica GB</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
@@ -200,50 +200,60 @@ p {margin: 18px 0; line-height: 1.9;}
 <div class="email-container">
 <div class="header">
 <h1>eCura by Medica GB S.r.l.</h1>
-<div class="tagline">eCura, Sicuri, Vicini, Ovunque</div>
+<div class="tagline">La tecnologia che Le salva salute e vita</div>
 </div>
 <div class="content">
-<p>La tecnologia che Le salva salute e vita Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
-<p class="greeting">Gentile {{NOME_CLIENTE}},</p>
-<p class="greeting">Grazie per l'interesse mostrato verso i nostri servizi {{SERVIZI}} {{PIANO}}. Come richiesto, abbiamo preparato per Lei la documentazione informativa completa.</p>
-<p>Il nostro servizio è pensato per {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} e rappresenta una soluzione innovativa per la gestione della salute a distanza.</p>
-<div class="section">
-<h3>📋 Riepilogo della Sua richiesta</h3>
+<p>FATTURA PROFORMA</p>
+<p>N°: {{NUMERO_PROFORMA}} Data: {{DATA_EMISSIONE}} Valida fino al: {{DATA_SCADENZA}}</p>
+<p>DESTINATARIO</p>
+<p>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</p>
+<p>{{INDIRIZZO_CLIENTE}}</p>
+<p>{{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}})</p>
+<p>Codice Fiscale: {{CF_CLIENTE}}</p>
+<p>Email: {{EMAIL_CLIENTE}}</p>
+<p>Telefono: {{TELEFONO_CLIENTE}}</p>
+<div class="warning-box">
+<h4>⚠️ NOTA IMPORTANTE</h4>
+</div>
+<p>Questa è una FATTURA PROFORMA valida per 30 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
+<p>DETTAGLI SERVIZIO</p>
+<p>Servizio TeleAssistenza {{SERVIZIO}} {{PIANO}}</p>
+<p>Durata: 12 mesi</p>
+<p>Include: Dispositivo {{DISPOSITIVO}}, Configurazione, Piattaforma Web/APP, SIM dati{{SERVIZI_AGGIUNTIVI}}</p>
+<p>Quantità: 1</p>
+<div class="price-highlight">Prezzo Unitario: € {{PREZZO_SERVIZIO_PIANO}} (Incluso IVA)</div>
+<div class="price-highlight">Totale: € {{PREZZO_SERVIZIO_PIANO}} (Incluso IVA)</div>
+<p>TOTALI</p>
+<div class="price-highlight">Imponibile: € {{PREZZO_SERVIZIO_PIANO}} (Incluso IVA)</div>
+<div class="price-highlight">IVA (22%): € {{IMPORTO_IVA}}</div>
+<div class="price-highlight">TOTALE DA PAGARE: € {{PREZZO_TOTALE}} (Incluso IVA)</div>
+<p>MODALITÀ DI PAGAMENTO</p>
+<p>Il pagamento può essere effettuato tramite:</p>
+<div class="steps">
+<div class="step">BONIFICO BANCARIO</div>
+</div>
+<p>Beneficiario: Medica GB S.r.l.</p>
+<p>IBAN: IT97L0503401727000000003519</p>
+<p>Banca: Banca Popolare di Milano</p>
+<p>Causale: Proforma {{NUMERO_PROFORMA}} - {{SERVIZIO}} {{PIANO}}</p>
+<div class="steps">
+<div class="step">CARTA DI CREDITO/DEBITO</div>
+</div>
+<p>Pagamento sicuro online tramite il link fornito nell'email di conferma</p>
+<div class="warning-box">
+<h4>⚠️ IMPORTANTE</h4>
 </div>
 <div class="steps">
-<div class="step">Codice pratica: {{LEAD_ID}}</div>
-<div class="step">Data richiesta: {{DATA_RICHIESTA}}</div>
-<div class="info-box">
-<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Servizio e Piano:</strong> {{SERVIZIO}} {{PIANO}}</div>
-<div class="step">Assistito: {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</div>
+<div class="step">Il pagamento deve essere effettuato entro la data di scadenza indicata</div>
+<div class="step">La fattura fiscale definitiva verrà emessa al ricevimento del pagamento</div>
+<div class="step">Il servizio verrà attivato entro 2 giorni lavorativi dal pagamento</div>
+<div class="step">Cosa succede dopo il pagamento?</div>
+<div class="step">Riceverai la fattura fiscale definitiva via email</div>
+<div class="step">Ti invieremo il dispositivo {{DISPOSITIVO}}entro 10 giorni lavorativi</div>
+<div class="step">Riceverai le istruzioni per la configurazione e l'attivazione</div>
+<div class="step">Il nostro team ti contatterà per programmare l'attivazione del servizio</div>
 </div>
-</div>
-<div class="section">
-<h3>📄 Documentazione Allegata</h3>
-</div>
-<p>Brochure {{DISPOSITIVO}}</p>
-<div class="steps">
-<div class="step">Panoramica del dispositivo</div>
-<div class="step">Caratteristiche tecniche</div>
-<div class="success-box">
-<h4>✅ Servizio {{SERVIZIO}} {{PIANO}} Selezionato</h4>
-</div>
-</div>
-<div class="info-box">
-<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Investimento:</strong> {{PREZZO_SERVIZIO_PIANO}}</div>
-</div>
-<p>Il pacchetto {{SERVIZIO}} {{PIANO}} è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto di TeleAssistenza completo e personalizzato.</p>
-<div class="contact-box">
-<h3>📞 Contatti</h3>
-<div class="contact-item">E-MAIL: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></div>
-<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
-<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
-</div>
-<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
-<p>Cordiali saluti, Il Team eCura</p>
-<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148 P.IVA: <a href="tel:+3912435130963">+39 124 3513 0963</a> | <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it</p>
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale www.medicagb.it | www.ecura.it Tel: +39 02 1234567 | Email: <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
 </div>
 <div class="footer">
 <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>

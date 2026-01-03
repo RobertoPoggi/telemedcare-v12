@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presenta un Amico e Ricevi 50€ - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa;}
+@media print {body {background-color: white; margin: 0; padding: 0;} .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;} .header, .content, .footer {page-break-inside: avoid;} * {page-break-after: avoid !important; page-break-before: avoid !important;}}
+.email-container {background: white; max-width: 800px; margin: 20px auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+.header {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+.info-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+.benefits-box {background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+.cta-button {display: inline-block; background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 5px; font-weight: 500; margin: 20px 0; text-align: center; transition: transform 0.2s;}
+.cta-button:hover {transform: translateY(-2px);}
+.testimonial {background: #f0f8ff; border-left: 4px solid #0066CC; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+.footer {background: #2c3e50; color: white; padding: 25px 30px; text-align: center; border-radius: 0 0 10px 10px;}
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+.comparison-table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+.comparison-table th {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 15px; text-align: left; font-weight: 500;}
+.comparison-table td {padding: 15px; border-bottom: 1px solid #e0e0e0;}
+.comparison-table tr:hover {background: #f8f9fa;}
+.highlight-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.success-box {background: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 5px; color: #155724;}
+.warning-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px; color: #856404;}
+.error-box {background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 5px; color: #721c24;}
+.steps {margin: 25px 0;}
+.step {background: #f0f8ff; padding: 20px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #0066CC;}
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+.price-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 30px; border-radius: 8px; margin: 25px 0; text-align: center;}
+.price-box .old-price {text-decoration: line-through; opacity: 0.7; font-size: 18px;}
+.price-box .new-price {font-size: 48px; font-weight: 700; margin: 15px 0;}
+.price-box .discount {background: #28a745; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 15px 0;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>🎁 Presenta un Amico</h1>
+<p class="tagline">Tu ricevi 50€, il tuo amico riceve 50€ di sconto!</p>
+</div>
+
+<div class="content">
+<p class="greeting">Ciao {{NOME_CLIENTE}},</p>
+
+<p>Sei soddisfatto del servizio {{SERVIZIO}}? Fantastico! Ora puoi <strong>condividere la tranquillità</strong> con amici e familiari e ricevere un <strong>premio di 50€</strong> per ogni persona che attiviun servizio.</p>
+
+<div class="price-box">
+<h3 style="color: white; margin-bottom: 20px;">💰 Ecco Come Funziona</h3>
+<div style="font-size: 72px; margin: 20px 0;">50€</div>
+<p style="font-size: 20px; margin: 15px 0;"><strong>per TE</strong> come ringraziamento</p>
+<p style="font-size: 20px; margin: 15px 0;">+</p>
+<p style="font-size: 20px; margin: 15px 0;"><strong>50€ di sconto</strong> per il tuo amico</p>
+<p style="margin-top: 25px; opacity: 0.9;">Win-Win per tutti!</p>
+</div>
+
+<div class="section">
+<h3>📋 Come Partecipare (Semplicissimo!)</h3>
+<div class="steps">
+<div class="step">
+<h4>1️⃣ Condividi il Tuo Link Personale</h4>
+<p>Il tuo codice referral univoco:</p>
+<p style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 18px; text-align: center; border: 2px dashed #0066CC; margin: 15px 0;">
+<strong>{{CODICE_REFERRAL}}</strong>
+</p>
+<p>Link da condividere: <a href="#" style="color: #0066CC;">https://medicagb.it/ref/{{CODICE_REFERRAL}}</a></p>
+</div>
+
+<div class="step">
+<h4>2️⃣ Il Tuo Amico Attiva il Servizio</h4>
+<p>Quando il tuo amico/familiare si iscrive usando il tuo codice, riceve automaticamente <strong>50€ di sconto</strong> sul primo anno.</p>
+</div>
+
+<div class="step">
+<h4>3️⃣ Tu Ricevi il Premio</h4>
+<p>Dopo 30 giorni dall'attivazione del servizio, ricevi <strong>50€</strong> come:</p>
+<p>• Buono sconto sul rinnovo</p>
+<p>• Bonifico bancario</p>
+<p>• Buono Amazon (a tua scelta!)</p>
+</div>
+</div>
+</div>
+
+<div class="info-box">
+<h3>✨ Vantaggi del Programma Referral</h3>
+<div class="info-item">🎁 <strong>Nessun limite:</strong> Presenta quanti amici vuoi (50€ per ognuno!)</div>
+<div class="info-item">👨‍👩‍👧 <strong>Aiuta i tuoi cari:</strong> Condividi la sicurezza con chi ami</div>
+<div class="info-item">💳 <strong>Premi reali:</strong> Scegli tra sconto, bonifico o buono Amazon</div>
+<div class="info-item">📊 <strong>Tracking semplice:</strong> Vedi quanti amici hanno usato il tuo codice</div>
+<div class="info-item">⏰ <strong>Sempre attivo:</strong> Il programma non ha scadenza!</div>
+</div>
+
+<div class="benefits-box">
+<h3>🚀 Modi per Condividere il Tuo Codice</h3>
+<div class="benefit-item"><strong>WhatsApp/SMS:</strong> Inoltra questo messaggio ai tuoi contatti</div>
+<div class="benefit-item"><strong>Facebook:</strong> Condividi il link sulla tua bacheca</div>
+<div class="benefit-item"><strong>Email:</strong> Scrivi ai tuoi amici che potrebbero essere interessati</div>
+<div class="benefit-item"><strong>Passaparola:</strong> Consegna un volantino personalizzato (te lo inviamo per posta!)</div>
+</div>
+
+<div class="highlight-box">
+<h4 style="color: #856404; margin-bottom: 15px;">💬 Messaggio Pronto da Condividere</h4>
+<p style="background: white; padding: 15px; border-radius: 5px; font-style: italic; border: 1px solid #dee2e6;">
+"Ciao! Ti consiglio TeleMedCare per la teleassistenza h24. Io mi trovo benissimo e con il mio codice <strong>{{CODICE_REFERRAL}}</strong> ricevi 50€ di sconto! Info: https://medicagb.it/ref/{{CODICE_REFERRAL}}"
+</p>
+<p style="text-align: center; margin-top: 15px;">
+<a href="#" class="cta-button" style="background: #25D366;">📱 Condividi su WhatsApp</a>
+</p>
+</div>
+
+<div class="testimonial">
+<p><em>"Ho presentato 3 amici e ho ricevuto 150€ in buoni Amazon. Il programma funziona davvero! E i miei amici sono contentissimi del servizio."</em></p>
+<p class="testimonial-author">— Angela T., Napoli (7 referral attivi)</p>
+</div>
+
+<div class="section">
+<h3>📊 Il Tuo Dashboard Referral</h3>
+<p>Controlla quanti amici hanno usato il tuo codice:</p>
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Metrica</th>
+<th>Valore</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amici invitati</td>
+<td><strong>{{NUMERO_INVITI}}</strong></td>
+</tr>
+<tr>
+<td>Attivazioni completate</td>
+<td><strong>{{NUMERO_ATTIVAZIONI}}</strong></td>
+</tr>
+<tr>
+<td>Premi guadagnati</td>
+<td><strong>€{{TOTALE_PREMI}}</strong></td>
+</tr>
+<tr>
+<td>Prossimo premio in arrivo</td>
+<td><strong>€{{PROSSIMO_PREMIO}}</strong> (tra {{GIORNI_MANCANTI}} giorni)</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="#" class="cta-button">🎁 Condividi il Codice Ora</a>
+<a href="#" class="cta-button" style="background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);">📊 Vedi Dashboard</a>
+</div>
+
+<p>Grazie per aiutarci a diffondere la sicurezza e la tranquillità a sempre più famiglie italiane!</p>
+
+<p style="margin-top: 30px;"><strong>Un abbraccio,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Hai Domande sul Programma?</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:referral@medicagb.it">referral@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+<p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">*Il premio viene erogato dopo 30 giorni dall'attivazione del servizio da parte del referral. Offerta valida solo per nuovi clienti. Massimo 1 codice referral per cliente.</p>
+</div>
+</div>
+</body>
+</html>

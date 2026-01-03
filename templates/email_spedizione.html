@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Email Documenti Informativi - Medica GB</title>
+<title>Email Spedizione - Medica GB</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
@@ -200,50 +200,47 @@ p {margin: 18px 0; line-height: 1.9;}
 <div class="email-container">
 <div class="header">
 <h1>eCura by Medica GB S.r.l.</h1>
-<div class="tagline">eCura, Sicuri, Vicini, Ovunque</div>
+<div class="tagline">La tecnologia che Le salva salute e vita</div>
 </div>
 <div class="content">
-<p>La tecnologia che Le salva salute e vita Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<div class="section">
+<h3>📦 Pacco Spedito!</h3>
+</div>
+<p>Il tuo dispositivo {{DISPOSITIVO}} è in viaggio</p>
 <p class="greeting">Gentile {{NOME_CLIENTE}},</p>
-<p class="greeting">Grazie per l'interesse mostrato verso i nostri servizi {{SERVIZI}} {{PIANO}}. Come richiesto, abbiamo preparato per Lei la documentazione informativa completa.</p>
-<p>Il nostro servizio è pensato per {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} e rappresenta una soluzione innovativa per la gestione della salute a distanza.</p>
+<p class="greeting">Ottime notizie! Il tuo ordine #{{NUMERO_ORDINE}} è stato spedito e sarà presto nelle tue mani.</p>
 <div class="section">
-<h3>📋 Riepilogo della Sua richiesta</h3>
+<h3>📍 Codice di Tracking</h3>
+</div>
+<p>{{CODICE_TRACKING}}</p>
+<p>Usa questo codice per seguire la spedizione in tempo reale</p>
+<div class="section">
+<h3>🚚 Tempi di Consegna Stimati</h3>
 </div>
 <div class="steps">
-<div class="step">Codice pratica: {{LEAD_ID}}</div>
-<div class="step">Data richiesta: {{DATA_RICHIESTA}}</div>
-<div class="info-box">
-<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Servizio e Piano:</strong> {{SERVIZIO}} {{PIANO}}</div>
-<div class="step">Assistito: {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</div>
-</div>
+<div class="step">Elaborazione - Completata il {{DATA_SPEDIZIONE}}</div>
+<div class="step">In Transito - Attualmente in corso</div>
+<div class="step">Consegna - Prevista per il {{DATA_CONSEGNA_STIMATA}}</div>
 </div>
 <div class="section">
-<h3>📄 Documentazione Allegata</h3>
-</div>
-<p>Brochure {{DISPOSITIVO}}</p>
-<div class="steps">
-<div class="step">Panoramica del dispositivo</div>
-<div class="step">Caratteristiche tecniche</div>
-<div class="success-box">
-<h4>✅ Servizio {{SERVIZIO}} {{PIANO}} Selezionato</h4>
-</div>
+<h3>📋 Dettagli Spedizione</h3>
 </div>
 <div class="info-box">
 <h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Investimento:</strong> {{PREZZO_SERVIZIO_PIANO}}</div>
+<div class="info-item"><strong>Corriere:</strong> {{NOME_CORRIERE}}</div>
+<div class="info-item"><strong>Servizio:</strong> {{TIPO_SERVIZIO}}</div>
+<div class="info-item"><strong>Tempo stimato:</strong> {{TEMPO_CONSEGNA}}</div>
+<div class="info-item"><strong>Destinazione:</strong> {{CITTA_DESTINAZIONE}}</div>
+<div class="info-item"><strong>📱 Cosa fare quando ricevi il pacco? 1. Verifica il contenuto:</strong> Controlla che tutto sia in ordine 2. Conserva la confezione: Potrebbe servire per eventuali resi 3. Attiva il dispositivo: Segui la guida rapida inclusa 4. Registra la garanzia: Online sul nostro portale</div>
 </div>
-<p>Il pacchetto {{SERVIZIO}} {{PIANO}} è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto di TeleAssistenza completo e personalizzato.</p>
-<div class="contact-box">
-<h3>📞 Contatti</h3>
-<div class="contact-item">E-MAIL: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></div>
-<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
-<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
+<div class="warning-box">
+<h4>⚠️ Importante</h4>
 </div>
-<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
-<p>Cordiali saluti, Il Team eCura</p>
-<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148 P.IVA: <a href="tel:+3912435130963">+39 124 3513 0963</a> | <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it</p>
+<p>Assicurati di essere presente all'indirizzo di consegna nel giorno previsto. In caso di assenza, il corriere lascerà un avviso per un secondo tentativo.</p>
+<div class="section">
+<h3>🎯 Hai domande? Il nostro team è qui per aiutarti: • Email: <a href="mailto:spedizioni@telemedcare.it">spedizioni@telemedcare.it</a> • Telefono servizio spedizioni: +39 02 1234 5678 • WhatsApp: <a href="tel:+393341234567">+39 334 123 4567</a></h3>
+</div>
+<p>TeleMedCare V12.0 - La tua salute, sempre connessa © 2024 Medica GB S.r.l. | Corso G. Garibaldi, 34 - 20121 Milano | P.IVA: <a href="tel:+3912345678901">+39 123 4567 8901</a></p>
 </div>
 <div class="footer">
 <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>

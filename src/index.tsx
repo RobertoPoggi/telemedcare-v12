@@ -7767,7 +7767,7 @@ app.post('/api/leads', async (c) => {
         nomeAssistito: data.nomeAssistito || data.nomeRichiedente,
         cognomeAssistito: data.cognomeAssistito || data.cognomeRichiedente,
         pacchetto: data.piano || 'BASE', // BASE o AVANZATO
-        servizio: (data.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase(), // FAMILY, PRO, PREMIUM
+        servizio: data.servizio || 'eCura PRO', // Mantieni 'eCura' nel nome
         vuoleBrochure: data.vuoleBrochure === 'Si',
         vuoleManuale: data.vuoleManuale === 'Si',
         vuoleContratto: data.vuoleContratto === 'Si',
@@ -7777,6 +7777,7 @@ app.post('/api/leads', async (c) => {
         indirizzoAssistito: data.indirizzoAssistito || '',
         dataNascitaAssistito: data.dataNascita || '',
         luogoNascitaAssistito: data.luogoNascita || '',
+        condizioniSalute: data.condizioniSalute || '',
         note: data.note || ''
       }
       
@@ -7797,8 +7798,8 @@ app.post('/api/leads', async (c) => {
         emailResults.notifica.error = error instanceof Error ? error.message : String(error)
       }
       
-      // 2. DOCUMENTI INFORMATIVI (brochure/manuale)
-      if (leadData.vuoleBrochure || leadData.vuoleManuale) {
+      // 2. DOCUMENTI INFORMATIVI (brochure/manuale) - SOLO SE NON VUOLE CONTRATTO
+      if ((leadData.vuoleBrochure || leadData.vuoleManuale) && !leadData.vuoleContratto) {
         try {
           // Prepara documentUrls per brochure
           const documentUrls: { brochure?: string; manuale?: string } = {}

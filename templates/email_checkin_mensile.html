@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Come Sta Andando? Report Mensile - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+@media print {
+    body {background-color: white; margin: 0; padding: 0;}
+    .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;}
+    .header, .content, .footer {page-break-inside: avoid;}
+    * {page-break-after: avoid !important; page-break-before: avoid !important;}
+}
+
+.email-container {
+    background: white;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.info-box {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+
+.cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    margin: 20px 0;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.cta-button:hover {transform: translateY(-2px);}
+
+.testimonial {
+    background: #f0f8ff;
+    border-left: 4px solid #0066CC;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+
+.contact-box {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 25px 30px;
+    text-align: center;
+    border-radius: 0 0 10px 10px;
+}
+
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+
+.rating-stars {
+    font-size: 32px;
+    color: #FFD700;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.comparison-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.comparison-table tr:hover {background: #f8f9fa;}
+
+.highlight-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.success-box {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #155724;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #856404;
+}
+
+.steps {margin: 25px 0;}
+.step {
+    background: #f0f8ff;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 5px;
+    border-left: 4px solid #0066CC;
+}
+
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>📊 Il Tuo Report Mensile</h1>
+<p class="tagline">{{MESE}} {{ANNO}} - Come sta andando con {{DISPOSITIVO}}?</p>
+</div>
+
+<div class="content">
+<p class="greeting">Ciao {{NOME_CLIENTE}},</p>
+
+<p>È passato un altro mese con il servizio {{SERVIZIO}} {{PIANO}}! Ecco un riepilogo delle attività e alcuni consigli utili per sfruttare al meglio il tuo dispositivo.</p>
+
+<div class="info-box">
+<h3>📈 Report Utilizzo - {{MESE}} {{ANNO}}</h3>
+<div class="info-item"><strong>Attivazioni Totali:</strong> {{NUMERO_ATTIVAZIONI}}</div>
+<div class="info-item"><strong>Tempo Medio di Risposta:</strong> {{TEMPO_RISPOSTA}} secondi</div>
+<div class="info-item"><strong>Emergenze Gestite:</strong> {{NUMERO_EMERGENZE}}</div>
+<div class="info-item"><strong>Uptime Dispositivo:</strong> {{UPTIME}}%</div>
+<div class="info-item"><strong>Livello Batteria Medio:</strong> {{BATTERIA}}%</div>
+</div>
+
+<div class="success-box">
+<h4 style="color: #155724; margin-bottom: 15px;">✅ Tutto OK!</h4>
+<p>Il tuo dispositivo funziona perfettamente e il servizio è attivo h24. La centrale operativa è sempre pronta a rispondere!</p>
+</div>
+
+<div class="section">
+<h3>💡 Tips & Tricks del Mese</h3>
+<div class="steps">
+<div class="step">
+<h4>🔋 Controlla la Batteria</h4>
+<p>Ricordati di ricaricare il dispositivo quando la spia rossa lampeggia (circa ogni 3-4 giorni). Serve solo 1 ora per carica completa.</p>
+</div>
+<div class="step">
+<h4>🧼 Pulizia del Dispositivo</h4>
+<p>È impermeabile! Puoi lavarlo sotto l'acqua corrente con sapone neutro. Evita detergenti aggressivi.</p>
+</div>
+<div class="step">
+<h4>🏃 Test Periodico</h4>
+<p>Fai un test di prova ogni 2 settimane premendo il pulsante SOS e dicendo all'operatore "È solo un test". Così verifichi che tutto funzioni.</p>
+</div>
+<div class="step">
+<h4>📱 App Mobile Aggiornata</h4>
+<p>Hai già scaricato l'app TeleMedCare? Puoi controllare lo storico, modificare i contatti d'emergenza e molto altro!</p>
+</div>
+</div>
+</div>
+
+<div class="benefits-box">
+<h3>🎁 Novità e Offerte per Te</h3>
+<div class="benefit-item">Nuovo servizio: Videochiamate con operatori disponibile da questo mese</div>
+<div class="benefit-item">Sconto 15% su dispositivi aggiuntivi per altri familiari</div>
+<div class="benefit-item">Webinar gratuito: "Vivere in sicurezza dopo gli 80 anni" - {{DATA_WEBINAR}}</div>
+</div>
+
+<div class="highlight-box">
+<h4 style="color: #856404; margin-bottom: 15px;">❓ Hai Bisogno di Aiuto?</h4>
+<p>Se hai domande, dubbi o problemi tecnici, il nostro team è sempre disponibile:</p>
+<p><strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a> (Lun-Dom 8:00-20:00)</p>
+<p><strong>Centrale Operativa H24:</strong> 800 XXX XXX (numero verde)</p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="#" class="cta-button">📞 Prenota Assistenza</a>
+<a href="#" class="cta-button" style="background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);">📱 Scarica l'App</a>
+</div>
+
+<p>Grazie per aver scelto Medica GB. La tua sicurezza è il nostro impegno quotidiano!</p>
+
+<p style="margin-top: 30px;"><strong>A presto,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>🔧 <strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+</div>
+</div>
+</body>
+</html>

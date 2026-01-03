@@ -1,5 +1,5 @@
 /**
- * eCura V11.0 - Workflow Email Manager
+ * eCura V12.0 - Workflow Email Manager
  * Gestisce il flusso completo delle email secondo il processo corretto:
  * 
  * FLUSSO CORRETTO:
@@ -105,14 +105,16 @@ export async function inviaEmailNotificaInfo(
       LUOGO_NASCITA_ASSISTITO: leadData.luogoNascitaAssistito || 'Non fornito',
       CF_ASSISTITO: leadData.cfAssistito || 'Non fornito',
       INDIRIZZO_ASSISTITO: leadData.indirizzoAssistito || 'Non fornito',
-      CONDIZIONI_SALUTE: leadData.note || 'Non specificate',
+      CONDIZIONI_SALUTE: leadData.condizioniSalute || leadData.note || 'Non specificate',
       NOTE_AGGIUNTIVE: leadData.note || 'Nessuna',
       PIANO_SERVIZIO: formatServiceName(leadData.servizio || 'PRO', leadData.pacchetto),
+      SERVIZIO: leadData.servizio || 'eCura PRO',
+      PIANO: leadData.pacchetto || 'BASE',
       PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      VERSIONE_SISTEMA: 'TeleMedCare V11.0',
+      VERSIONE_SISTEMA: 'TeleMedCare V12.0',
       
       // Placeholder per richieste del lead (semplici + formattati)
       VUOLE_CONTRATTO: vuoleContratto ? 'SÌ' : 'NO',

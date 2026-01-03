@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Tua Opinione è Importante - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+@media print {
+    body {background-color: white; margin: 0; padding: 0;}
+    .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;}
+    .header, .content, .footer {page-break-inside: avoid;}
+    * {page-break-after: avoid !important; page-break-before: avoid !important;}
+}
+
+.email-container {
+    background: white;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.info-box {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+
+.cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    margin: 20px 0;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.cta-button:hover {transform: translateY(-2px);}
+
+.testimonial {
+    background: #f0f8ff;
+    border-left: 4px solid #0066CC;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+
+.contact-box {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 25px 30px;
+    text-align: center;
+    border-radius: 0 0 10px 10px;
+}
+
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+
+.rating-stars {
+    font-size: 32px;
+    color: #FFD700;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.comparison-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.comparison-table tr:hover {background: #f8f9fa;}
+
+.highlight-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.success-box {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #155724;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #856404;
+}
+
+.steps {margin: 25px 0;}
+.step {
+    background: #f0f8ff;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 5px;
+    border-left: 4px solid #0066CC;
+}
+
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>💬 Come Ti Trovi con {{SERVIZIO}}?</h1>
+<p class="tagline">Aiutaci a migliorare: la tua opinione vale!</p>
+</div>
+
+<div class="content">
+<p class="greeting">Ciao {{NOME_CLIENTE}},</p>
+
+<p>Sono passati <strong>30 giorni</strong> da quando hai attivato il servizio {{SERVIZIO}} {{PIANO}}. Vorremmo sapere come ti trovi e se c'è qualcosa che possiamo migliorare.</p>
+
+<p>Bastano solo <strong>2 minuti</strong> per aiutarci a offrirti un servizio sempre migliore!</p>
+
+<div class="info-box">
+<h3>⭐ Valuta la Tua Esperienza</h3>
+<p style="text-align: center; margin: 25px 0;">
+<span style="font-size: 20px;">Quanto sei soddisfatto del servizio?</span>
+</p>
+<div class="rating-stars">
+⭐ ⭐ ⭐ ⭐ ⭐
+</div>
+<p style="text-align: center;">
+<a href="#" class="cta-button">Lascia la Tua Recensione</a>
+</p>
+</div>
+
+<div class="section">
+<h3>📋 Breve Questionario</h3>
+<p><strong>1. Facilità d'uso del dispositivo {{DISPOSITIVO}}</strong></p>
+<p>□ Molto facile &nbsp; □ Facile &nbsp; □ Nella norma &nbsp; □ Difficile &nbsp; □ Molto difficile</p>
+
+<p style="margin-top: 25px;"><strong>2. Qualità dell'assistenza ricevuta</strong></p>
+<p>□ Eccellente &nbsp; □ Buona &nbsp; □ Sufficiente &nbsp; □ Scarsa &nbsp; □ Pessima</p>
+
+<p style="margin-top: 25px;"><strong>3. Cortesia e professionalità operatori</strong></p>
+<p>□ Eccellente &nbsp; □ Buona &nbsp; □ Sufficiente &nbsp; □ Scarsa &nbsp; □ Pessima</p>
+
+<p style="margin-top: 25px;"><strong>4. Cosa possiamo migliorare?</strong></p>
+<p style="background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
+(Scrivi qui i tuoi suggerimenti...)
+</p>
+
+<p style="margin-top: 25px;"><strong>5. Consiglieresti TeleMedCare a un amico/familiare?</strong></p>
+<p>□ Sì, assolutamente &nbsp; □ Probabilmente sì &nbsp; □ Non so &nbsp; □ Probabilmente no &nbsp; □ No</p>
+</div>
+
+<div class="benefits-box">
+<h3>🎁 Grazie per il Tuo Tempo!</h3>
+<p>Come ringraziamento per aver completato il questionario, riceverai:</p>
+<div class="benefit-item"><strong>1 mese di servizio GRATIS</strong> (valore 29€)</div>
+<div class="benefit-item">Accesso prioritario al supporto tecnico</div>
+<div class="benefit-item">Anteprima nuovi servizi in arrivo</div>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="#" class="cta-button">📝 Compila il Questionario (2 min)</a>
+</div>
+
+<p>La tua opinione è fondamentale per aiutarci a crescere e offrire un servizio sempre migliore alle famiglie italiane.</p>
+
+<p style="margin-top: 30px;"><strong>Grazie di cuore,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Hai Bisogno di Supporto?</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>🔧 <strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+</div>
+</div>
+</body>
+</html>

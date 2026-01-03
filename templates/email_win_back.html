@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ci Manchi! Torna con Sconto Speciale - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa;}
+@media print {body {background-color: white; margin: 0; padding: 0;} .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;} .header, .content, .footer {page-break-inside: avoid;} * {page-break-after: avoid !important; page-break-before: avoid !important;}}
+.email-container {background: white; max-width: 800px; margin: 20px auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+.header {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+.info-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+.benefits-box {background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+.cta-button {display: inline-block; background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 5px; font-weight: 500; margin: 20px 0; text-align: center; transition: transform 0.2s;}
+.cta-button:hover {transform: translateY(-2px);}
+.testimonial {background: #f0f8ff; border-left: 4px solid #0066CC; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+.footer {background: #2c3e50; color: white; padding: 25px 30px; text-align: center; border-radius: 0 0 10px 10px;}
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+.comparison-table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+.comparison-table th {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 15px; text-align: left; font-weight: 500;}
+.comparison-table td {padding: 15px; border-bottom: 1px solid #e0e0e0;}
+.comparison-table tr:hover {background: #f8f9fa;}
+.highlight-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.success-box {background: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 5px; color: #155724;}
+.warning-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px; color: #856404;}
+.error-box {background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 5px; color: #721c24;}
+.steps {margin: 25px 0;}
+.step {background: #f0f8ff; padding: 20px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #0066CC;}
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+.price-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 30px; border-radius: 8px; margin: 25px 0; text-align: center;}
+.price-box .old-price {text-decoration: line-through; opacity: 0.7; font-size: 18px;}
+.price-box .new-price {font-size: 48px; font-weight: 700; margin: 15px 0;}
+.price-box .discount {background: #28a745; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 15px 0;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>💙 Ci Manchi!</h1>
+<p class="tagline">Torna e ricevi 3 mesi al 50% di sconto</p>
+</div>
+
+<div class="content">
+<p class="greeting">Ciao {{NOME_CLIENTE}},</p>
+
+<p>È passato del tempo da quando hai utilizzato il servizio {{SERVIZIO}} {{PIANO}} e <strong>ci manchi davvero</strong>! Speriamo che tu e i tuoi cari stiate bene.</p>
+
+<p>Abbiamo notato che il tuo contratto è scaduto il <strong>{{DATA_SCADENZA}}</strong> e vorremmo offrirti un'opportunità speciale per tornare con noi.</p>
+
+<div class="price-box">
+<h3 style="color: white; margin-bottom: 20px;">🎁 OFFERTA WIN-BACK ESCLUSIVA</h3>
+<div style="font-size: 64px; margin: 20px 0; font-weight: 700;">50%</div>
+<p style="font-size: 24px; margin: 15px 0;"><strong>di SCONTO sui primi 3 mesi</strong></p>
+<p style="margin-top: 25px; opacity: 0.9;">Valida solo per te, solo per i prossimi 15 giorni!</p>
+<p class="old-price" style="margin-top: 20px;">Prezzo normale: €{{PREZZO_NORMALE}}/mese</p>
+<p style="font-size: 36px; margin: 15px 0; font-weight: 700;">€{{PREZZO_SCONTATO}}/mese (Incluso IVA)</p>
+<p style="opacity: 0.9;">per i primi 3 mesi, poi €{{PREZZO_NORMALE}}/mese</p>
+</div>
+
+<div class="section">
+<h3>✨ Cosa È Cambiato da Quando Sei Andato Via</h3>
+<div class="steps">
+<div class="step">
+<h4>🆕 Nuovo Dispositivo 2.0</h4>
+<p>Batteria che dura 7 giorni (prima 3-4 giorni), più leggero del 30%, resistente all'acqua fino a 1 metro.</p>
+</div>
+<div class="step">
+<h4>📱 App Riprogettata</h4>
+<p>Interfaccia completamente rinnovata, più semplice e intuitiva. Disponibile anche per tablet!</p>
+</div>
+<div class="step">
+<h4>🎥 Videochiamate Introdotte</h4>
+<p>Ora puoi vedere il volto dell'operatore durante le chiamate (disponibile su Piano Premium).</p>
+</div>
+<div class="step">
+<h4>⚡ Tempi di Risposta Dimezzati</h4>
+<p>Media di risposta: 8 secondi (prima 15 secondi). Centrale operativa potenziata con più operatori.</p>
+</div>
+<div class="step">
+<h4>🏥 Partnership con Telemedicina</h4>
+<p>Ora incluso: 3 consulti al mese con medici specialisti (solo Piano Premium).</p>
+</div>
+</div>
+</div>
+
+<div class="testimonial">
+<p><em>"Ero scettico sul tornare, ma con lo sconto del 50% ho detto 'perché no?'. Il nuovo dispositivo è fantastico, molto più comodo e la batteria dura tantissimo. Sono contento di essere tornato!"</em></p>
+<p class="testimonial-author">— Filippo D., Firenze (tornato dopo 6 mesi)</p>
+</div>
+
+<div class="benefits-box">
+<h3>💚 Perché Tornare con TeleMedCare</h3>
+<div class="benefit-item">La tranquillità che solo noi possiamo offrire h24/7</div>
+<div class="benefit-item">Nessuna installazione necessaria: ti inviamo il dispositivo pronto all'uso</div>
+<div class="benefit-item">Rimborsi INPS sempre attivi (fino a 950€ per ISEE sotto €6.000)</div>
+<div class="benefit-item">Oltre 10.000 famiglie italiane si affidano a noi ogni giorno</div>
+<div class="benefit-item">Puoi disdire quando vuoi, nessun vincolo nascosto</div>
+</div>
+
+<div class="highlight-box">
+<h4 style="color: #856404; margin-bottom: 15px;">⏰ Offerta a Tempo Limitato</h4>
+<p>Questa offerta speciale è valida solo fino al <strong>{{DATA_SCADENZA_OFFERTA}}</strong></p>
+<p>Dopo questa data, il prezzo tornerà a €{{PREZZO_NORMALE}}/mese (Incluso IVA)</p>
+<p style="margin-top: 15px;"><strong>Non perdere questa occasione!</strong></p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="tel:+393357301206" class="cta-button">📞 Riattiva Ora con Sconto 50%</a>
+<a href="#" class="cta-button" style="background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);">📧 Contattami Via Email</a>
+</div>
+
+<p>Se hai avuto problemi o dubbi in passato, parliamone! Siamo qui per ascoltarti e trovare insieme la soluzione migliore. Chiamaci senza impegno.</p>
+
+<div class="section">
+<h3>❓ Domande Frequenti</h3>
+<p><strong>Posso usare lo stesso dispositivo di prima?</strong><br>
+Sì, se funziona ancora! Oppure ti inviamo il nuovo modello 2.0 senza costi aggiuntivi.</p>
+
+<p style="margin-top: 20px;"><strong>Lo sconto del 50% quanto dura?</strong><br>
+3 mesi, poi il prezzo torna a €{{PREZZO_NORMALE}}/mese. Puoi disdire prima senza penali.</p>
+
+<p style="margin-top: 20px;"><strong>Ci sono costi nascosti?</strong><br>
+Assolutamente no. Prezzo finale €{{PREZZO_SCONTATO}}/mese (Incluso IVA) per i primi 3 mesi, tutto incluso.</p>
+
+<p style="margin-top: 20px;"><strong>Posso cambiare piano?</strong><br>
+Sì, puoi passare da Base a Premium in qualsiasi momento.</p>
+</div>
+
+<p style="margin-top: 40px;">Ci farebbe davvero piacere riaverti con noi. La tua sicurezza è sempre stata la nostra priorità.</p>
+
+<p style="margin-top: 30px;"><strong>Ti aspettiamo,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:winback@medicagb.it">winback@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+<p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">*Offerta valida per clienti che hanno cessato il servizio da almeno 30 giorni. Sconto del 50% applicato solo sui primi 3 mesi. Dal 4° mese, prezzo standard.</p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passa al Piano Premium - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa;}
+@media print {body {background-color: white; margin: 0; padding: 0;} .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;} .header, .content, .footer {page-break-inside: avoid;} * {page-break-after: avoid !important; page-break-before: avoid !important;}}
+.email-container {background: white; max-width: 800px; margin: 20px auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+.header {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+.info-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+.benefits-box {background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+.cta-button {display: inline-block; background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 5px; font-weight: 500; margin: 20px 0; text-align: center; transition: transform 0.2s;}
+.cta-button:hover {transform: translateY(-2px);}
+.testimonial {background: #f0f8ff; border-left: 4px solid #0066CC; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+.footer {background: #2c3e50; color: white; padding: 25px 30px; text-align: center; border-radius: 0 0 10px 10px;}
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+.comparison-table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+.comparison-table th {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 15px; text-align: left; font-weight: 500;}
+.comparison-table td {padding: 15px; border-bottom: 1px solid #e0e0e0;}
+.comparison-table tr:hover {background: #f8f9fa;}
+.highlight-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.success-box {background: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 5px; color: #155724;}
+.warning-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px; color: #856404;}
+.error-box {background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 5px; color: #721c24;}
+.steps {margin: 25px 0;}
+.step {background: #f0f8ff; padding: 20px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #0066CC;}
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+.price-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 30px; border-radius: 8px; margin: 25px 0; text-align: center;}
+.price-box .old-price {text-decoration: line-through; opacity: 0.7; font-size: 18px;}
+.price-box .new-price {font-size: 48px; font-weight: 700; margin: 15px 0;}
+.price-box .discount {background: #28a745; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 15px 0;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>⬆️ Potenzia il Tuo Servizio</h1>
+<p class="tagline">Scopri i vantaggi esclusivi del Piano Premium</p>
+</div>
+
+<div class="content">
+<p class="greeting">Ciao {{NOME_CLIENTE}},</p>
+
+<p>Hai attualmente il piano <strong>{{PIANO}}</strong> e siamo felici che tu stia utilizzando il servizio {{SERVIZIO}}. Oggi vogliamo offrirti l'opportunità di <strong>passare al livello successivo</strong> con vantaggi esclusivi!</p>
+
+<div class="info-box">
+<h3>🎯 Piano Attuale: {{PIANO}}</h3>
+<div class="info-item">✓ Dispositivo {{DISPOSITIVO}}</div>
+<div class="info-item">✓ Centrale operativa h24</div>
+<div class="info-item">✓ Assistenza telefonica</div>
+<div class="info-item">Prezzo: €{{PREZZO_ATTUALE}} (Incluso IVA)</div>
+</div>
+
+<div class="section">
+<h3>📊 Confronto Piani</h3>
+<table class="comparison-table">
+<thead>
+<tr>
+<th>Servizio</th>
+<th>Piano Base</th>
+<th>Piano Premium 🌟</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Centrale Operativa</strong></td>
+<td>✅ h24/7</td>
+<td>✅ h24/7</td>
+</tr>
+<tr>
+<td><strong>Dispositivo Indossabile</strong></td>
+<td>✅ Standard</td>
+<td>✅ Advanced (GPS integrato)</td>
+</tr>
+<tr>
+<td><strong>App per Familiari</strong></td>
+<td>✅ Base</td>
+<td>✅ Premium (notifiche real-time)</td>
+</tr>
+<tr>
+<td><strong>Videochiamate con Operatori</strong></td>
+<td>❌</td>
+<td>✅ Incluse</td>
+</tr>
+<tr>
+<td><strong>Monitoraggio Parametri Vitali</strong></td>
+<td>❌</td>
+<td>✅ Battito, pressione, ossigeno</td>
+</tr>
+<tr>
+<td><strong>Telemedicina</strong></td>
+<td>❌</td>
+<td>✅ 3 consulti/mese con medico</td>
+</tr>
+<tr>
+<td><strong>Report Sanitario Mensile</strong></td>
+<td>❌</td>
+<td>✅ Inviato a te e al medico</td>
+</tr>
+<tr>
+<td><strong>Assistenza Prioritaria</strong></td>
+<td>Standard</td>
+<td>✅ Priorità massima</td>
+</tr>
+<tr>
+<td><strong>Prezzo Annuale</strong></td>
+<td>€{{PREZZO_ATTUALE}}</td>
+<td><strong>€{{PREZZO_PREMIUM}}</strong> (Incluso IVA)</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="price-box">
+<h3 style="color: white; margin-bottom: 20px;">🎁 OFFERTA ESCLUSIVA PER TE</h3>
+<p class="old-price">Prezzo normale: €{{PREZZO_PREMIUM_NORMALE}}</p>
+<p class="new-price">€{{PREZZO_PREMIUM_SCONTATO}}</p>
+<p class="discount">RISPARMIA 20% - Solo per clienti fedeli!</p>
+<p style="margin-top: 20px;">Upgrade ora e paga solo la differenza rispetto al tuo piano attuale</p>
+</div>
+
+<div class="benefits-box">
+<h3>💎 Vantaggi Esclusivi del Piano Premium</h3>
+<div class="benefit-item"><strong>Dispositivo GPS:</strong> Localizzazione in tempo reale (ideale per persone con Alzheimer)</div>
+<div class="benefit-item"><strong>Videochiamate:</strong> Parla faccia a faccia con gli operatori, più rassicurante</div>
+<div class="benefit-item"><strong>Monitoraggio Salute:</strong> Parametri vitali controllati automaticamente</div>
+<div class="benefit-item"><strong>Telemedicina:</strong> 3 consulti al mese con medici specialisti (valore 150€)</div>
+<div class="benefit-item"><strong>Report Sanitario:</strong> Condividi i dati con il tuo medico di famiglia</div>
+<div class="benefit-item"><strong>Zero Attese:</strong> Assistenza prioritaria con tempi di risposta dimezzati</div>
+</div>
+
+<div class="testimonial">
+<p><em>"Sono passato al Premium per le videochiamate. Mia madre è transerenissima quando vede il volto dell'operatore! Il monitoraggio battito cardiaco ha già rilevato un'aritmia che il medico sta ora curando. Ne vale assolutamente la pena."</em></p>
+<p class="testimonial-author">— Roberto F., Roma (cliente Premium da 8 mesi)</p>
+</div>
+
+<div class="highlight-box">
+<h4 style="color: #856404; margin-bottom: 15px;">⏰ Offerta Limitata</h4>
+<p>Sconto del <strong>20%</strong> valido solo fino al <strong>{{DATA_SCADENZA_OFFERTA}}</strong></p>
+<p>Dopo questa data, il prezzo tornerà a €{{PREZZO_PREMIUM_NORMALE}} (Incluso IVA)</p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="tel:+393357301206" class="cta-button">📞 Passa al Premium Ora</a>
+<a href="#" class="cta-button" style="background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);">📧 Richiedi Info</a>
+</div>
+
+<p>Hai domande sull'upgrade? Il nostro team commerciale è a tua disposizione per spiegarti tutti i dettagli senza impegno.</p>
+
+<p style="margin-top: 30px;"><strong>Cordiali saluti,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>🔧 <strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+</div>
+</div>
+</body>
+</html>

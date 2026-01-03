@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importante: Disservizio Temporaneo - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa;}
+@media print {body {background-color: white; margin: 0; padding: 0;} .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;} .header, .content, .footer {page-break-inside: avoid;} * {page-break-after: avoid !important; page-break-before: avoid !important;}}
+.email-container {background: white; max-width: 800px; margin: 20px auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+.header {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+.info-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+.benefits-box {background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%); color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+.cta-button {display: inline-block; background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 5px; font-weight: 500; margin: 20px 0; text-align: center; transition: transform 0.2s;}
+.cta-button:hover {transform: translateY(-2px);}
+.testimonial {background: #f0f8ff; border-left: 4px solid #0066CC; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+.footer {background: #2c3e50; color: white; padding: 25px 30px; text-align: center; border-radius: 0 0 10px 10px;}
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+.comparison-table {width: 100%; border-collapse: collapse; margin: 25px 0;}
+.comparison-table th {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 15px; text-align: left; font-weight: 500;}
+.comparison-table td {padding: 15px; border-bottom: 1px solid #e0e0e0;}
+.comparison-table tr:hover {background: #f8f9fa;}
+.highlight-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px;}
+.success-box {background: #d4edda; border-left: 4px solid #28a745; padding: 20px; margin: 25px 0; border-radius: 5px; color: #155724;}
+.warning-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 5px; color: #856404;}
+.error-box {background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; margin: 25px 0; border-radius: 5px; color: #721c24;}
+.steps {margin: 25px 0;}
+.step {background: #f0f8ff; padding: 20px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #0066CC;}
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+.price-box {background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%); color: white; padding: 30px; border-radius: 8px; margin: 25px 0; text-align: center;}
+.price-box .old-price {text-decoration: line-through; opacity: 0.7; font-size: 18px;}
+.price-box .new-price {font-size: 48px; font-weight: 700; margin: 15px 0;}
+.price-box .discount {background: #28a745; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 15px 0;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+<h1>⚠️ Comunicazione Importante</h1>
+<p class="tagline">Aggiornamento sul servizio {{SERVIZIO}}</p>
+</div>
+
+<div class="content">
+<p class="greeting">Gentile {{NOME_CLIENTE}},</p>
+
+<p>Ti scriviamo per informarti di un <strong>disservizio temporaneo</strong> che ha interessato il servizio {{SERVIZIO}} {{PIANO}}.</p>
+
+<div class="error-box">
+<h4 style="color: #721c24; margin-bottom: 15px;">🔴 Problema Rilevato</h4>
+<p><strong>Tipo di problema:</strong> {{TIPO_PROBLEMA}}</p>
+<p><strong>Data e ora inizio:</strong> {{DATA_INIZIO_PROBLEMA}}</p>
+<p><strong>Servizi interessati:</strong> {{SERVIZI_INTERESSATI}}</p>
+<p><strong>Numero utenti coinvolti:</strong> {{NUMERO_UTENTI}}</p>
+</div>
+
+<p>Ci scusiamo sinceramente per l'inconveniente. La tua sicurezza è la nostra priorità assoluta e stiamo facendo tutto il possibile per ripristinare il servizio al 100%.</p>
+
+<div class="section">
+<h3>🔧 Cosa È Successo</h3>
+<p>{{DESCRIZIONE_PROBLEMA}}</p>
+<p style="margin-top: 20px;"><em>Esempio: A causa di un aggiornamento software della centrale operativa, alcuni dispositivi hanno temporaneamente perso la connessione con i nostri server. Il problema è stato rilevato alle ore 14:30 del {{DATA_PROBLEMA}} e il nostro team tecnico è immediatamente intervenuto.</em></p>
+</div>
+
+<div class="success-box">
+<h4 style="color: #155724; margin-bottom: 15px;">✅ Azioni Intraprese</h4>
+<div class="steps">
+<div class="step" style="background: white; border-left-color: #28a745;">
+<h4 style="color: #28a745;">1️⃣ Rilevamento Immediato</h4>
+<p>Il nostro sistema di monitoraggio ha rilevato il problema in tempo reale e ha allertato il team tecnico.</p>
+</div>
+<div class="step" style="background: white; border-left-color: #28a745;">
+<h4 style="color: #28a745;">2️⃣ Intervento d'Emergenza</h4>
+<p>Team tecnico attivato in modalità emergenza, rollback dell'aggiornamento e ripristino della versione precedente stabile.</p>
+</div>
+<div class="step" style="background: white; border-left-color: #28a745;">
+<h4 style="color: #28a745;">3️⃣ Verifica Dispositivi</h4>
+<p>Abbiamo testato tutti i {{NUMERO_UTENTI}} dispositivi coinvolti per garantire il corretto funzionamento.</p>
+</div>
+<div class="step" style="background: white; border-left-color: #28a745;">
+<h4 style="color: #28a745;">4️⃣ Comunicazione Trasparente</h4>
+<p>Ti stiamo informando personalmente via email e SMS per massima trasparenza.</p>
+</div>
+</div>
+</div>
+
+<div class="info-box" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+<h3>✅ Stato Attuale del Servizio</h3>
+<div class="info-item"><strong>Stato:</strong> {{STATO_SERVIZIO}} (es: "Completamente ripristinato" o "Ripristino in corso")</div>
+<div class="info-item"><strong>Percentuale operatività:</strong> {{PERCENTUALE_OPERATIVITA}}%</div>
+<div class="info-item"><strong>Tempo di risoluzione:</strong> {{TEMPO_RISOLUZIONE}}</div>
+<div class="info-item"><strong>Prossimo aggiornamento:</strong> {{DATA_PROSSIMO_AGGIORNAMENTO}}</div>
+</div>
+
+<div class="section">
+<h3>🛡️ Misure Preventive Implementate</h3>
+<p>Per evitare che questo problema si ripresenti in futuro, abbiamo implementato:</p>
+<div class="benefit-item" style="color: #333;">Protocollo di test più rigoroso per gli aggiornamenti software</div>
+<div class="benefit-item" style="color: #333;">Sistema di rollback automatico in caso di anomalie</div>
+<div class="benefit-item" style="color: #333;">Monitoraggio real-time potenziato con alert immediati</div>
+<div class="benefit-item" style="color: #333;">Team tecnico h24 in reperibilità per emergenze</div>
+</div>
+
+<div class="warning-box">
+<h4 style="color: #856404; margin-bottom: 15px;">🔍 Cosa Devi Fare Tu</h4>
+<p><strong>Verifica che il tuo dispositivo funzioni correttamente:</strong></p>
+<p>1. Controlla che il LED sia verde fisso o lampeggiante<br>
+2. Fai un test di prova chiamando il supporto tecnico: <a href="tel:+393316432390">+39 331 643 2390</a><br>
+3. Se il dispositivo non funziona, contattaci immediatamente</p>
+</div>
+
+<div class="price-box" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+<h3 style="color: white; margin-bottom: 20px;">💚 Il Nostro Impegno verso di Te</h3>
+<p style="font-size: 20px; margin: 20px 0;">Come scusa per il disagio, ti offriamo:</p>
+<div style="font-size: 48px; margin: 20px 0; font-weight: 700;">{{COMPENSAZIONE}}</div>
+<p style="font-size: 18px; margin: 15px 0;"><strong>{{DESCRIZIONE_COMPENSAZIONE}}</strong></p>
+<p style="margin-top: 25px; opacity: 0.9; font-size: 16px;">Esempio: "1 mese di servizio GRATUITO (valore €29)" o "Estensione contratto di 15 giorni senza costi aggiuntivi"</p>
+</div>
+
+<p style="margin-top: 30px;">La compensazione verrà applicata automaticamente sul tuo prossimo rinnovo. Non devi fare nulla.</p>
+
+<div class="testimonial">
+<p><em>"Ho apprezzato molto la trasparenza di Medica GB. Mi hanno avvisato subito del problema, lo hanno risolto in poche ore e mi hanno anche dato un mese gratis. Questo è servizio clienti!"</em></p>
+<p class="testimonial-author">— Marco S., Padova</p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="tel:+393316432390" class="cta-button" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">🔧 Supporto Tecnico Immediato</a>
+<a href="#" class="cta-button" style="background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);">📊 Vedi Stato Servizio Real-Time</a>
+</div>
+
+<p>Ancora una volta, ci scusiamo per il disagio. La tua fiducia è il nostro bene più prezioso e faremo tutto il possibile per meritarla ogni giorno.</p>
+
+<p style="margin-top: 30px;"><strong>Con sincera scusa,</strong><br>
+Il Team Medica GB</p>
+
+<p style="margin-top: 20px; font-style: italic; color: #6c757d;">P.S. Se hai domande o vuoi maggiori dettagli tecnici, siamo a tua disposizione al numero <a href="tel:+393316432390">+39 331 643 2390</a></p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Contatti Emergenza</h3>
+<p>🔧 <strong>Supporto Tecnico H24:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p>📞 <strong>Ufficio Clienti:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>📧 <strong>Email Prioritaria:</strong> <a href="mailto:emergenza@medicagb.it">emergenza@medicagb.it</a></p>
+<p>💬 <strong>Chat Live:</strong> www.medicagb.it/chat</p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+</div>
+</div>
+</body>
+</html>

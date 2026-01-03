@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitora l'Assistenza da Remoto - Medica GB</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+@media print {
+    body {background-color: white; margin: 0; padding: 0;}
+    .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;}
+    .header, .content, .footer {page-break-inside: avoid;}
+    * {page-break-after: avoid !important; page-break-before: avoid !important;}
+}
+
+.email-container {
+    background: white;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.info-box {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+
+.section {margin: 35px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.benefits-box h3 {color: white; margin-bottom: 20px;}
+.benefit-item {margin: 15px 0; padding-left: 30px; position: relative; color: white; line-height: 1.8;}
+.benefit-item:before {content: "✓"; position: absolute; left: 0; font-weight: bold; font-size: 20px; color: white;}
+
+.cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    margin: 20px 0;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.cta-button:hover {transform: translateY(-2px);}
+
+.testimonial {
+    background: #f0f8ff;
+    border-left: 4px solid #0066CC;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.testimonial-author {font-weight: 500; color: #0066CC; margin-top: 10px;}
+
+.contact-box {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.contact-box h3 {color: white; margin-bottom: 15px;}
+.contact-box p {margin: 12px 0; color: white;}
+.contact-box a {color: #00A86B; text-decoration: none;}
+.contact-box a:hover {text-decoration: underline;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 25px 30px;
+    text-align: center;
+    border-radius: 0 0 10px 10px;
+}
+
+.footer p {margin: 10px 0; font-size: 14px; color: #ecf0f1;}
+.footer a {color: #00A86B; text-decoration: none;}
+
+.rating-stars {
+    font-size: 32px;
+    color: #FFD700;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+}
+
+.comparison-table th {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.comparison-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.comparison-table tr:hover {background: #f8f9fa;}
+
+.highlight-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+}
+
+.success-box {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #155724;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: 5px;
+    color: #856404;
+}
+
+.steps {margin: 25px 0;}
+.step {
+    background: #f0f8ff;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 5px;
+    border-left: 4px solid #0066CC;
+}
+
+.step h4 {color: #0066CC; margin-bottom: 10px;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>👨‍👩‍👧 La Sicurezza di {{NOME_ASSISTITO}} è Garantita</h1>
+<p class="tagline">Monitora l'assistenza in tempo reale, sempre e ovunque</p>
+</div>
+
+<div class="content">
+<p class="greeting">Gentile {{NOME_FAMILIARE}},</p>
+
+<p>Sappiamo quanto sia importante per te avere la certezza che {{NOME_ASSISTITO}} sia al sicuro, anche quando non puoi essere presente.</p>
+
+<p>Il servizio {{SERVIZIO}} {{PIANO}} che hai attivato include strumenti dedicati per <strong>monitorare l'assistenza da remoto</strong> e ricevere notifiche immediate in caso di necessità.</p>
+
+<div class="info-box">
+<h3>📱 App per Familiari - Sempre Connesso</h3>
+<div class="info-item"><strong>Notifiche in Tempo Reale:</strong> Ricevi un SMS/notifica ogni volta che {{NOME_ASSISTITO}} attiva il dispositivo</div>
+<div class="info-item"><strong>Storico Attivazioni:</strong> Visualizza tutte le chiamate effettuate e la durata</div>
+<div class="info-item"><strong>Contatto Diretto:</strong> Chiama {{NOME_ASSISTITO}} direttamente dal dispositivo</div>
+<div class="info-item"><strong>Report Mensile:</strong> Riepilogo dettagliato dell'utilizzo del servizio</div>
+</div>
+
+<div class="section">
+<h3>🔐 Come Configurare l'App Familiari</h3>
+<div class="steps">
+<div class="step">
+<h4>1️⃣ Scarica l'App</h4>
+<p>Disponibile su App Store e Google Play: cerca "TeleMedCare Familiari"</p>
+</div>
+<div class="step">
+<h4>2️⃣ Inserisci i Tuoi Dati</h4>
+<p>Codice Cliente: <strong>{{CODICE_CLIENTE}}</strong><br>
+Email: <strong>{{EMAIL_FAMILIARE}}</strong></p>
+</div>
+<div class="step">
+<h4>3️⃣ Attiva le Notifiche</h4>
+<p>Autorizza le notifiche push per essere sempre aggiornato in tempo reale</p>
+</div>
+<div class="step">
+<h4>4️⃣ Aggiungi Altri Familiari</h4>
+<p>Puoi invitare fino a 5 familiari a ricevere le notifiche</p>
+</div>
+</div>
+</div>
+
+<div class="benefits-box">
+<h3>💚 Rassicurazione per Te e Autonomia per {{NOME_ASSISTITO}}</h3>
+<div class="benefit-item">Non dovrai più chiamare continuamente per verificare che sia tutto ok</div>
+<div class="benefit-item">{{NOME_ASSISTITO}} può restare a casa propria, nel suo ambiente familiare</div>
+<div class="benefit-item">In caso di emergenza, ricevi subito la notifica e puoi intervenire</div>
+<div class="benefit-item">Gli operatori sanitari sono sempre disponibili h24, anche di notte</div>
+<div class="benefit-item">Puoi controllare lo storico anche quando sei in viaggio o al lavoro</div>
+</div>
+
+<div class="testimonial">
+<p><em>"Lavoro tutto il giorno e mio padre vive da solo. Con l'app TeleMedCare so sempre che va tutto bene. La notifica arriva subito e posso chiamare sia lui che la centrale operativa. È una tranquillità enorme."</em></p>
+<p class="testimonial-author">— Claudia M., Bologna (figlia di assistito)</p>
+</div>
+
+<div class="highlight-box">
+<h4 style="color: #856404; margin-bottom: 15px;">📞 Numeri Utili per Emergenze</h4>
+<p><strong>Centrale Operativa H24:</strong> 800 XXX XXX (numero verde gratuito)</p>
+<p><strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p><strong>Assistenza Familiari:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+</div>
+
+<div style="text-align: center; margin: 40px 0;">
+<a href="#" class="cta-button">📱 Scarica l'App Familiari</a>
+</div>
+
+<p>Se hai domande o difficoltà con l'app, il nostro team è a tua disposizione. Non esitare a contattarci!</p>
+
+<p style="margin-top: 30px;"><strong>Un abbraccio,</strong><br>
+Il Team Medica GB</p>
+</div>
+
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<p>📞 <strong>Telefono Commerciale:</strong> <a href="tel:+393357301206">+39 335 730 1206</a></p>
+<p>🔧 <strong>Supporto Tecnico:</strong> <a href="tel:+393316432390">+39 331 643 2390</a></p>
+<p>📧 <strong>Email:</strong> <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+
+<div class="footer">
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p><a href="http://www.medicagb.it">www.medicagb.it</a> | <a href="http://www.ecura.it">www.ecura.it</a></p>
+</div>
+</div>
+</body>
+</html>

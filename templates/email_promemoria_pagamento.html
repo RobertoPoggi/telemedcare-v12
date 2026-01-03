@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Email Documenti Informativi - Medica GB</title>
+<title>Email Promemoria Pagamento - Medica GB</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
@@ -200,50 +200,40 @@ p {margin: 18px 0; line-height: 1.9;}
 <div class="email-container">
 <div class="header">
 <h1>eCura by Medica GB S.r.l.</h1>
-<div class="tagline">eCura, Sicuri, Vicini, Ovunque</div>
+<div class="tagline">La tecnologia che Le salva salute e vita</div>
 </div>
 <div class="content">
-<p>La tecnologia che Le salva salute e vita Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<div class="section">
+<h3>💳 Promemoria Pagamento</h3>
+</div>
+<p>Il tuo ordine è in attesa di pagamento</p>
 <p class="greeting">Gentile {{NOME_CLIENTE}},</p>
-<p class="greeting">Grazie per l'interesse mostrato verso i nostri servizi {{SERVIZI}} {{PIANO}}. Come richiesto, abbiamo preparato per Lei la documentazione informativa completa.</p>
-<p>Il nostro servizio è pensato per {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} e rappresenta una soluzione innovativa per la gestione della salute a distanza.</p>
-<div class="section">
-<h3>📋 Riepilogo della Sua richiesta</h3>
-</div>
-<div class="steps">
-<div class="step">Codice pratica: {{LEAD_ID}}</div>
-<div class="step">Data richiesta: {{DATA_RICHIESTA}}</div>
-<div class="info-box">
-<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Servizio e Piano:</strong> {{SERVIZIO}} {{PIANO}}</div>
-<div class="step">Assistito: {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</div>
-</div>
-</div>
-<div class="section">
-<h3>📄 Documentazione Allegata</h3>
-</div>
-<p>Brochure {{DISPOSITIVO}}</p>
-<div class="steps">
-<div class="step">Panoramica del dispositivo</div>
-<div class="step">Caratteristiche tecniche</div>
-<div class="success-box">
-<h4>✅ Servizio {{SERVIZIO}} {{PIANO}} Selezionato</h4>
-</div>
+<p class="greeting">Ti ricordiamo che il pagamento per il suo ordine #{{NUMERO_ORDINE}} è ancora in sospeso.</p>
+<div class="benefits-box">
+<h3>💰 Importo da Pagare</h3>
+<div class="benefit-item">€ {{IMPORTO_DOVUTO}} (Incluso IVA)</div>
 </div>
 <div class="info-box">
 <h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
-<div class="info-item"><strong>Investimento:</strong> {{PREZZO_SERVIZIO_PIANO}}</div>
+<div class="info-item"><strong>Scadenza:</strong> {{DATA_SCADENZA}}</div>
 </div>
-<p>Il pacchetto {{SERVIZIO}} {{PIANO}} è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto di TeleAssistenza completo e personalizzato.</p>
-<div class="contact-box">
-<h3>📞 Contatti</h3>
-<div class="contact-item">E-MAIL: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></div>
-<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
-<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
+<div class="section">
+<h3>📋 Dettagli Ordine</h3>
 </div>
-<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
-<p>Cordiali saluti, Il Team eCura</p>
-<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148 P.IVA: <a href="tel:+3912435130963">+39 124 3513 0963</a> | <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it</p>
+<div class="info-box">
+<h3>Dettagli Ordine</h3>
+<div class="info-item"><strong>Data Ordine:</strong> {{DATA_ORDINE}}</div>
+<div class="info-item"><strong>Dispositivo:</strong> {{NOME_DISPOSITIVO}}</div>
+<div class="info-item"><strong>Metodo Pagamento:</strong> {{METODO_PAGAMENTO}}</div>
+</div>
+<div class="warning-box">
+<h4>⚠️ Importante</h4>
+</div>
+<p>Se il pagamento non sarà completato entro la data di scadenza, l'ordine verrà automaticamente annullato.</p>
+<div class="section">
+<h3>💳 Metodi di Pagamento Accettati: • Carta di Credito/Debito (Visa, Mastercard, American Express) • PayPal • Bonifico Bancario • Apple Pay / Google Pay</h3>
+</div>
+<p>Servizi eCura - La tua salute, sempre connessa © 2026 Medica GB S.r.l.</p>
 </div>
 <div class="footer">
 <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
