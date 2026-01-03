@@ -184,6 +184,10 @@ export async function inviaEmailDocumentiInformativi(
     const template = await loadEmailTemplate('email_documenti_informativi', db)
     
     // Prepara i dati per il template
+    const servizioNome = leadData.servizio || 'eCura'
+    const pianoNome = (leadData.pacchetto === 'BASE' || leadData.pacchetto === 'base') ? 'BASE' : 'AVANZATO'
+    const dispositivo = (servizioNome === 'PREMIUM' || servizioNome === 'premium') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
@@ -191,9 +195,14 @@ export async function inviaEmailDocumentiInformativi(
       COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,
       LEAD_ID: leadData.id,
       TIPO_SERVIZIO: leadData.pacchetto === 'BASE' ? 'Base' : 'Avanzato',
+      SERVIZIO: servizioNome,
+      SERVIZI: servizioNome,
+      PIANO: pianoNome,
+      DISPOSITIVO: dispositivo,
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',
-      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno'
+      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno',
+      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno'
     }
 
     // Renderizza template
@@ -374,11 +383,19 @@ export async function inviaEmailContratto(
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
     // Prepara i dati per il template
+    const servizioNome = leadData.servizio || contractData.tipoServizio || 'eCura PRO'
+    const pianoNome = contractData.tipoServizio || 'AVANZATO'
+    const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(contractData.servizio || 'PRO', contractData.tipoServizio),
+      PIANO_SERVIZIO: formatServiceName(leadData.servizio || 'PRO', contractData.tipoServizio),
+      SERVIZIO: servizioNome,
+      PIANO: pianoNome,
+      DISPOSITIVO: dispositivo,
       PREZZO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}`,
+      PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}/anno`,
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${env.PUBLIC_URL || 'https://telemedcare.it'}/firma-contratto?contractId=${contractData.contractId}`,

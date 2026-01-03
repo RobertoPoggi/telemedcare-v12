@@ -1,425 +1,105 @@
 <!DOCTYPE html>
-<html lang="it" data-theme="light">
+<html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Template Email TeleMedCare - Medica GB S.r.l.</title>
-<link href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Notifica Info - eCura</title>
 <style>
-      body {
-        max-width: 880px;
-        margin: 0 auto;
-        padding: 32px 80px;
-        position: relative;
-        box-sizing: border-box;
-        font-family: 'Inter', Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        background-color: #ffffff;
-      }
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 
-      .template-section {
-        margin-bottom: 60px;
-        border-bottom: 2px solid #e0e0e0;
-        padding-bottom: 40px;
-      }
-
-      .template-title {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white;
-        padding: 20px;
-        margin: 0 -20px 30px -20px;
-        border-radius: 8px;
-        font-size: 20px;
-        font-weight: 600;
-      }
-
-      .email-container {
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-        margin: 20px 0;
-      }
-
-      .email-header {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        color: white;
-        padding: 30px 25px;
-        text-align: center;
-      }
-
-      .email-content {
-        padding: 30px 25px;
-      }
-
-      .contact-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .highlight-box {
-        background: #ecfdf5;
-        border: 2px solid #22c55e;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .warning-box {
-        background: #fef3c7;
-        border: 2px solid #f59e0b;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .info-box {
-        background: #f0f9ff;
-        border-left: 4px solid #3b82f6;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .comparison-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        background: white;
-        border: 1px solid #e0e0e0;
-      }
-
-      .comparison-table th {
-        background: #3b82f6;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        font-weight: bold;
-      }
-
-      .comparison-table td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e5e7eb;
-        vertical-align: top;
-      }
-
-      .comparison-table tr:nth-child(even) {
-        background: #f8faff;
-      }
-
-      .footer-standard {
-        background: #1f2937;
-        color: white;
-        padding: 20px;
-        text-align: center;
-        font-size: 14px;
-      }
-    </style>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Open%20Sans:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Noto%20Sans%20JP:wght@400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&amp;display=swap" rel="stylesheet"/></head>
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;}
+.email-container {background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;}
+.header {background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 20px; font-weight: 400;}
+.info-box {background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 8px; margin: 25px 0;}
+.info-box h3 {margin-top: 0; font-size: 20px; font-weight: 500;}
+.info-item {margin: 10px 0; font-size: 16px; font-weight: 400;}
+.info-item strong {display: inline-block; min-width: 140px; font-weight: 500;}
+.section {margin: 30px 0;}
+.section h3 {color: #FF6B35; font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #FF6B35; padding-bottom: 10px; font-weight: 500;}
+.steps {background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #FF6B35;}
+.step {margin: 15px 0; padding-left: 30px; position: relative; font-weight: 400;}
+.step:before {content: '✓'; position: absolute; left: 0; color: #28a745; font-weight: bold; font-size: 20px;}
+.benefits-box {background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 25px; border-radius: 8px; margin: 25px 0;}
+.benefits-box h3 {margin-top: 0; color: white; font-weight: 500;}
+.benefit-item {margin: 12px 0; padding-left: 25px; position: relative; font-weight: 400;}
+.benefit-item:before {content: '💰'; position: absolute; left: 0;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {margin-top: 0; color: white; font-size: 20px; font-weight: 500;}
+.contact-item {margin: 12px 0; font-size: 16px; font-weight: 400;}
+.contact-item a {color: #FF6B35; text-decoration: none;}
+.footer {background: #2c3e50; color: white; padding: 30px; text-align: center; font-size: 14px;}
+.footer p {margin: 8px 0; font-weight: 400;}
+.footer a {color: #FF6B35; text-decoration: none;}
+.placeholder {background: #fff3cd; border: 1px dashed #ffc107; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; color: #856404; font-weight: 500;}
+.warning-box {background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 4px; margin: 20px 0;}
+.price-highlight {font-size: 28px; font-weight: 700; color: #FF6B35; margin: 20px 0; text-align: center;}
+</style>
+</head>
 <body>
-
-
 <div class="email-container">
-<div class="email-header" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%)">
-<h3 style="margin: 0; font-size: 24px">🆕 Nuovo Lead TeleMedCare</h3>
-<p style="margin: 10px 0 0 0">Sistema di Notifica Automatica</p>
-<div style="
-              background-color: rgba(255, 255, 255, 0.2);
-              padding: 12px 20px;
-              margin-top: 15px;
-              border-radius: 6px;
-              font-size: 14px;
-            ">
-<strong>Richiesta ricevuta:</strong> {{DATA_RICHIESTA}} alle {{ORA_RICHIESTA}}
-          </div>
+<div class="header">
+<h1>eCura by Medica GB S.r.l.</h1>
+<div class="tagline">La tecnologia che Le salva salute e vita</div>
 </div>
-<div class="email-content">
-<div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">👤 Dati Richiedente</h4>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Nome
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{NOME_RICHIEDENTE}}</div>
+<div class="content">
+<div class="section">
+<h3>🆕 Nuovo Lead TeleMedCare</h3>
 </div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Cognome
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{COGNOME_RICHIEDENTE}}</div>
+<p>Sistema di Notifica Automatica
+Richiesta ricevuta: <span class="placeholder">{{DATA_RICHIESTA}}</span> alle <span class="placeholder">{{ORA_RICHIESTA}}</span></p>
+<div class="section">
+<h3>👤 DATI RICHIEDENTE</h3>
 </div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Email
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{EMAIL_RICHIEDENTE}}</div>
+<p>Nome: <span class="placeholder">{{NOME_RICHIEDENTE}}</span></p>
+<p>Cognome: <span class="placeholder">{{COGNOME_RICHIEDENTE}}</span></p>
+<p>Email: <span class="placeholder">{{EMAIL_RICHIEDENTE}}</span></p>
+<p>Telefono: <span class="placeholder">{{TELEFONO_RICHIEDENTE}}</span></p>
+<div class="section">
+<h3>👥 DATI ASSISTITO</h3>
 </div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Telefono
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{TELEFONO_RICHIEDENTE}}</div>
+<p>Nome: <span class="placeholder">{{NOME_ASSISTITO}}</span></p>
+<p>Cognome: <span class="placeholder">{{COGNOME_ASSISTITO}}</span></p>
+<p>Condizioni di Salute: <span class="placeholder">{{CONDIZIONI_SALUTE}}</span></p>
+<div class="section">
+<h3>📋 SERVIZIO RICHIESTO</h3>
 </div>
+<div class="info-box">
+<h3>Dettagli Servizio</h3>
+<div class="info-item"><strong>Servizio:</strong> <span class="placeholder">{{SERVIZIO}}</span></div>
+<div class="info-item"><strong>Piano:</strong> <span class="placeholder">{{PIANO}}</span></div>
 </div>
+<div class="section">
+<h3>📄 DOCUMENTI RICHIESTI</h3>
 </div>
-<div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">👥 Dati Assistito</h4>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px">
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Nome
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{NOME_ASSISTITO}}</div>
+<p>Contratto: <span class="placeholder">{{VUOLE_CONTRATTO}}</span></p>
+<p>Brochure: <span class="placeholder">{{VUOLE_BROCHURE}}</span></p>
+<p>Manuale: <span class="placeholder">{{VUOLE_MANUALE}}</span></p>
+<div class="warning-box">
+<h4>⚠️ Urgenza Richiesta</h4>
 </div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Cognome
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{COGNOME_ASSISTITO}}</div>
-</div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                  grid-column: 1 / -1;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Condizioni di Salute
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{CONDIZIONI_SALUTE}}</div>
-</div>
-</div>
-</div>
-<div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">📋 Servizio Richiesto</h4>
-<div style="
-                background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-                border: 2px solid #52b788;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 15px 0;
-              ">
-<div style="font-size: 16px; font-weight: 700; color: #1a472a; margin-bottom: 10px">
-                Piano {{PIANO_SERVIZIO}}
-              </div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
-<div style="
-                    background-color: #f8f9fa;
-                    padding: 12px 15px;
-                    border-left: 4px solid #52b788;
-                    border-radius: 4px;
-                  ">
-<div style="
-                      font-size: 13px;
-                      color: #666;
-                      font-weight: 500;
-                      text-transform: uppercase;
-                      letter-spacing: 0.5px;
-                      margin-bottom: 4px;
-                    ">
-                    Pacchetto
-                  </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{PIANO_SERVIZIO}}</div>
-</div>
-<div style="
-                    background-color: #f8f9fa;
-                    padding: 12px 15px;
-                    border-left: 4px solid #52b788;
-                    border-radius: 4px;
-                  ">
-<div style="
-                      font-size: 13px;
-                      color: #666;
-                      font-weight: 500;
-                      text-transform: uppercase;
-                      letter-spacing: 0.5px;
-                      margin-bottom: 4px;
-                    ">
-                    Prezzo
-                  </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{PREZZO_PIANO}}</div>
-</div>
-</div>
-</div>
-</div>
-<div style="margin-bottom: 30px">
-<h4 style="color: #2d6a4f; border-bottom: 2px solid #52b788; padding-bottom: 8px">📄 Documenti e Servizi Richiesti</h4>
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px">
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Contratto
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_CONTRATTO}}</div>
-</div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Brochure
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_BROCHURE}}</div>
-</div>
-<div style="
-                  background-color: #f8f9fa;
-                  padding: 12px 15px;
-                  border-left: 4px solid #52b788;
-                  border-radius: 4px;
-                ">
-<div style="
-                    font-size: 13px;
-                    color: #666;
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
-                  ">
-                  Manuale
-                </div>
-<div style="font-size: 15px; color: #333; font-weight: 600">{{VUOLE_MANUALE}}</div>
-</div>
-</div>
-</div>
-<div style="
-              background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
-              border: 2px solid #ffc107;
-              border-radius: 8px;
-              padding: 20px;
-              margin: 20px 0;
-              text-align: center;
-            ">
-<h4 style="color: #856404; margin-bottom: 10px">⚠️ Urgenza Richiesta</h4>
-<p style="color: #664d03; margin: 0; font-weight: 600; font-size: 16px">
-              {{URGENZA}}
-            </p>
-</div>
+<p><span class="placeholder">{{URGENZA}}</span></p>
 <div class="contact-box">
-<h4 style="color: #475569; margin-top: 0">📞 Contatti</h4>
-<p><strong>E-MAIL COMMERCIALE:</strong> commerciale@telemedcare.it</p>
-<p><strong>Telefono commerciale:</strong> 335 7301206</p>
-<p><strong>E-MAIL TECNICO:</strong> tecnico@telemedcare.it</p>
-<p><strong>Telefono tecnico:</strong> 331 64 32 390</p>
+<h3>📞 Contatti</h3>
+<div class="contact-item">E-MAIL COMMERCIALE: <a href="mailto:commerciale@telemedcare.it">commerciale@telemedcare.it</a></div>
+<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 7301206</a></div>
+<div class="contact-item">E-MAIL TECNICO: <a href="mailto:tecnico@telemedcare.it">tecnico@telemedcare.it</a></div>
+<div class="contact-item">Telefono tecnico: 331 64 32 390</div>
+<div class="contact-item">Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale
+<a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it | www.ecura.it
+Generato automaticamente da TeleMedCare <span class="placeholder">{{VERSIONE_SISTEMA}}</span>
+il <span class="placeholder">{{DATA_RICHIESTA}}</span> alle <span class="placeholder">{{ORA_RICHIESTA}}</span></div>
 </div>
 </div>
-<div style="background-color: #f8f9fa; padding: 20px; font-size: 13px; color: #666; border-top: 1px solid #e0e0e0">
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px">
-<div>
-<strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br/>
-              info@telemedcare.it | www.medicagb.it | www.telemedcare.it
-            </div>
-<div style="text-align: right">
-<small>Generato automaticamente da TeleMedCare {{VERSIONE_SISTEMA}}<br/>il {{DATA_RICHIESTA}} alle
-                {{ORA_RICHIESTA}}</small>
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a></p>
 </div>
 </div>
-</div>
-</div>
-</div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</body>
 </html>
