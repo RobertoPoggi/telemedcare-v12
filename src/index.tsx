@@ -7864,14 +7864,38 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// GET /firma-contratto?contractId=xxx - Serve pagina firma standalone (bypassa router dashboard)
+// GET /firma-contratto?contractId=xxx - Serve pagina firma standalone
+// NOTA: Usa contract-signature.html per evitare conflitti con router dashboard
 app.get('/firma-contratto', async (c) => {
-  // Redirect al file sign-contract.html che NON viene intercettato dal router dashboard
   const contractId = c.req.query('contractId')
   if (contractId) {
-    return c.redirect(`/sign-contract.html?contractId=${contractId}`)
+    // Cloudflare Pages rimuove .html automaticamente, quindi usiamo l'URL senza estensione
+    return c.redirect(`/contract-signature?contractId=${contractId}`, 302)
   }
-  return c.redirect('/sign-contract.html')
+  return c.redirect('/contract-signature', 302)
+})
+
+// GET /contract-signature - Endpoint che serve il file HTML direttamente
+app.get('/contract-signature', async (c) => {
+  const contractId = c.req.query('contractId')
+  
+  // Leggi il file HTML dalla cartella public (disponibile in dist dopo build)
+  try {
+    const html = await fetch(`${c.req.url.replace(/\/contract-signature.*/, '')}/contract-signature.html`).then(r => r.text())
+    return c.html(html)
+  } catch (e) {
+    return c.html(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Errore</title></head>
+        <body>
+          <h1>❌ Errore</h1>
+          <p>Impossibile caricare la pagina di firma.</p>
+          <p>ContractId: ${contractId || 'non specificato'}</p>
+        </body>
+      </html>
+    `, 500)
+  }
 })
 
 // POST /api/contracts/sign - Salva firma digitale
