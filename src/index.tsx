@@ -8124,6 +8124,65 @@ app.get('/firma-contratto', async (c) => {
   `)
 })
 
+// GET /dashboard-live - Dashboard operativa servita dal Worker (bypassa Cloudflare Pages cache)
+app.get('/dashboard-live', async (c) => {
+  try {
+    // Carica il file dashboard.html direttamente da dist
+    const baseUrl = new URL(c.req.url).origin
+    const dashboardUrl = `${baseUrl}/dashboard.html`
+    const response = await fetch(dashboardUrl)
+    
+    if (!response.ok) {
+      return c.html(`
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+          <meta charset="UTF-8">
+          <title>Errore</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+            h1 { color: #e74c3c; }
+          </style>
+        </head>
+        <body>
+          <h1>❌ Errore Caricamento Dashboard</h1>
+          <p>Impossibile caricare la dashboard.</p>
+          <p><a href="/dashboard.html">Prova la versione statica</a></p>
+          <p style="color: #999; font-size: 12px;">URL tentato: ${dashboardUrl}</p>
+        </body>
+        </html>
+      `, 500)
+    }
+    
+    const html = await response.text()
+    
+    // Aggiungi header per disabilitare cache
+    return new Response(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore dashboard-live:', error)
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore</title>
+      </head>
+      <body>
+        <h1>❌ Errore</h1>
+        <p>Errore interno: ${error instanceof Error ? error.message : 'Unknown'}</p>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
   try {

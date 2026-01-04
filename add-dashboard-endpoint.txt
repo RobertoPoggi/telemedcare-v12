@@ -1,0 +1,48 @@
+// GET /dashboard-live - Dashboard operativa servita dal Worker (bypassa Cloudflare Pages cache)
+app.get('/dashboard-live', async (c) => {
+  try {
+    // Carica il file dashboard.html dal public/dist
+    const dashboardUrl = new URL('/dashboard.html', c.req.url).toString()
+    const response = await fetch(dashboardUrl)
+    
+    if (!response.ok) {
+      return c.html(`
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+          <meta charset="UTF-8">
+          <title>Errore</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+            h1 { color: #e74c3c; }
+          </style>
+        </head>
+        <body>
+          <h1>❌ Errore Caricamento Dashboard</h1>
+          <p>Impossibile caricare la dashboard.</p>
+          <p><a href="/dashboard.html">Prova la versione statica</a></p>
+        </body>
+        </html>
+      `, 500)
+    }
+    
+    const html = await response.text()
+    return c.html(html)
+  } catch (error) {
+    console.error('❌ Errore dashboard-live:', error)
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore</title>
+      </head>
+      <body>
+        <h1>❌ Errore</h1>
+        <p>Errore interno: ${error instanceof Error ? error.message : 'Unknown'}</p>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
