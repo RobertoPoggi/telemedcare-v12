@@ -471,9 +471,45 @@ app.use('/api/*', cors())
 
 // Serve static files 
 app.use('/assets/*', serveStatic({ root: './' }))
-app.use('/brochures/*', serveStatic({ root: './' }))
 app.use('/documents/*', serveStatic({ root: './' }))
 
+// Endpoint per servire brochure PDF (usa ASSETS binding di Cloudflare Pages)
+app.get('/brochures/:filename', async (c) => {
+  const filename = c.req.param('filename')
+  
+  try {
+    // In Cloudflare Pages, ASSETS è un binding che serve i file statici dalla build
+    if (c.env?.ASSETS) {
+      console.log(`📥 Richiesta brochure: ${filename} via ASSETS binding`)
+      const assetUrl = new URL(`/brochures/${filename}`, c.req.url)
+      const response = await c.env.ASSETS.fetch(assetUrl)
+      
+      if (response.ok) {
+        console.log(`✅ Brochure trovata: ${filename}`)
+        return new Response(response.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `inline; filename="${filename}"`,
+            'Cache-Control': 'public, max-age=31536000'
+          }
+        })
+      } else {
+        console.error(`❌ ASSETS non trova: /brochures/${filename} (status: ${response.status})`)
+      }
+    } else {
+      console.warn(`⚠️ ASSETS binding non disponibile per ${filename}`)
+    }
+    
+    // Fallback: prova a leggere dal filesystem locale (dev mode)
+    console.log(`🔄 Fallback: tentativo lettura locale per ${filename}`)
+    return c.text(`Brochure non disponibile: ${filename}. Assicurati che il file esista in public/brochures/`, 404)
+    
+  } catch (error) {
+    console.error(`❌ Errore servizio brochure ${filename}:`, error)
+    return c.text(`Errore interno: ${error instanceof Error ? error.message : String(error)}`, 500)
+  }
+})
 // ========== FORM ACQUISIZIONE LEAD (VECCHIA HOMEPAGE) - Ora su /form-lead ==========
 app.get('/form-lead', (c) => {
   return c.html(`
