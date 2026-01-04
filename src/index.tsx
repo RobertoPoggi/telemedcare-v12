@@ -8095,10 +8095,18 @@ app.get('/firma-contratto', async (c) => {
                         alert('✅ Contratto firmato con successo!\\n\\nRiceverai una copia via email a breve.');
                         window.location.href = '/';
                     } else {
-                        throw new Error(result.error || 'Errore sconosciuto');
+                        // Mostra errore dettagliato
+                        let errorMsg = 'Errore durante la firma del contratto:\\n\\n';
+                        errorMsg += result.error || 'Errore sconosciuto';
+                        if (result.error === 'Contratto già firmato') {
+                            errorMsg += '\\n\\nQuesto contratto è già stato firmato in precedenza.';
+                        } else if (result.error === 'Contratto non trovato') {
+                            errorMsg += '\\n\\nID contratto non valido o scaduto.';
+                        }
+                        throw new Error(errorMsg);
                     }
                 } catch (error) {
-                    alert('❌ Errore durante la firma: ' + error.message);
+                    alert('❌ ' + error.message);
                     signButton.disabled = false;
                     signButton.textContent = '✅ Firma e Invia Contratto';
                 }

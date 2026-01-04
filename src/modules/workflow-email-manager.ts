@@ -26,8 +26,9 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const pianoNome = contractData.tipoServizio || 'BASE'
   const dispositivo = servizioNome.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
   
-  const importoPrimoAnno = `€${contractData.prezzoBase.toFixed(2)}`
-  const importoAnniSuccessivi = `€${(contractData.prezzoBase * 0.5).toFixed(2)}`
+  // Prezzi corretti secondo www.eCura.it
+  const importoPrimoAnno = contractData.prezzoBase // 480 BASE o 840 AVANZATO
+  const importoAnniSuccessivi = pianoNome === 'AVANZATO' ? 600 : 360 // Rinnovo: 600€ AVANZATO, 360€ BASE
   
   const dataContratto = new Date().toLocaleDateString('it-IT', { 
     day: '2-digit', 
@@ -35,130 +36,252 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     year: 'numeric' 
   })
   
+  const dataInizioServizio = new Date().toLocaleDateString('it-IT')
+  const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
+  
+  // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Contratto ${servizioNome} - ${contractData.contractCode}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto eCura - ${contractData.contractCode}</title>
     <style>
-        @page { size: A4; margin: 2cm; }
-        body { font-family: 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1 { text-align: center; color: #667eea; font-size: 20pt; margin-bottom: 30px; }
-        h2 { color: #667eea; font-size: 14pt; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
-        p { margin: 10px 0; text-align: justify; }
-        ul { margin: 10px 0; padding-left: 30px; }
-        .highlight { background-color: #fff9e6; padding: 15px; border-left: 4px solid #ff9800; margin: 20px 0; }
-        .table-info { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .table-info td { padding: 8px; border: 1px solid #ddd; }
-        .table-info td:first-child { font-weight: bold; background: #f8f9fa; width: 40%; }
-        .firma-section { margin-top: 50px; display: flex; justify-content: space-between; }
-        .firma-box { width: 45%; }
-        .firma-box p { margin: 5px 0; }
-        .firma-line { border-top: 1px solid #333; margin-top: 30px; padding-top: 5px; text-align: center; font-size: 9pt; }
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+        
+        h2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        
+        .party {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #0066cc;
+        }
+        
+        .breviter {
+            font-style: italic;
+            margin-top: 10px;
+        }
+        
+        .premises {
+            margin: 20px 0;
+        }
+        
+        .premises ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .premises li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .premises li:before {
+            content: "-";
+            position: absolute;
+            left: 0;
+        }
+        
+        .feature-list {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px 4px;
+            font-weight: bold;
+        }
+        
+        .payment-details {
+            background-color: #f5f5f5;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+        }
+        
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .signature-block {
+            width: 45%;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            text-align: center;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #0066cc;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .signature-section {
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>CONTRATTO DI SERVIZIO<br>${servizioNome} - Piano ${pianoNome}</h1>
+    <h1>SCRITTURA PRIVATA</h1>
     
-    <h2>📋 Dati Cliente</h2>
-    <table class="table-info">
-        <tr>
-            <td>Nome e Cognome</td>
-            <td>${leadData.nomeAssistito || leadData.nomeRichiedente} ${leadData.cognomeAssistito || leadData.cognomeRichiedente}</td>
-        </tr>
-        <tr>
-            <td>Email</td>
-            <td>${leadData.emailRichiedente}</td>
-        </tr>
-        <tr>
-            <td>Telefono</td>
-            <td>${leadData.telefonoRichiedente || 'N/A'}</td>
-        </tr>
-        <tr>
-            <td>Codice Contratto</td>
-            <td><strong>${contractData.contractCode}</strong></td>
-        </tr>
-        <tr>
-            <td>Data Contratto</td>
-            <td>${dataContratto}</td>
-        </tr>
-    </table>
+    <p>Con la presente scrittura privata da valere a tutti gli effetti e conseguenze di legge tra:</p>
     
-    <h2>📦 Servizio Acquistato</h2>
-    <div class="highlight">
-        <p><strong>Servizio:</strong> ${servizioNome}</p>
-        <p><strong>Piano:</strong> ${pianoNome}</p>
-        <p><strong>Dispositivo Incluso:</strong> ${dispositivo}</p>
-        <p><strong>Prezzo Primo Anno:</strong> ${importoPrimoAnno} + IVA 22%</p>
-        <p><strong>Prezzo Anni Successivi:</strong> ${importoAnniSuccessivi} + IVA 22%</p>
+    <div class="party">
+        <p><strong>Medica GB S.r.l.</strong>, con sede in Corso Giuseppe Garibaldi, 34 – 20121 Milano e con Partita IVA e registro imprese 12435130963, in persona dell'Amministratore Stefania Rocca</p>
+        <p class="breviter">(breviter Medica GB)</p>
     </div>
     
-    <h2>📄 Condizioni del Servizio</h2>
+    <p style="text-align: center; font-weight: bold;">e</p>
     
-    <p><strong>1. OGGETTO DEL CONTRATTO</strong></p>
-    <p>Il presente contratto ha per oggetto la fornitura del servizio di TeleAssistenza Domiciliare "${servizioNome}" con piano "${pianoNome}", che include:</p>
+    <div class="party">
+        <p>Sig./Sig.ra <span class="highlight">${leadData.nomeAssistito || leadData.nomeRichiedente}</span> <span class="highlight">${leadData.cognomeAssistito || leadData.cognomeRichiedente}</span> nato/a a <span class="highlight">N/A</span> il <span class="highlight">N/A</span>, residente e domiciliato/a in <span class="highlight">N/A</span> - <span class="highlight">N/A</span> <span class="highlight">N/A</span> (<span class="highlight">N/A</span>) e con codice fiscale <span class="highlight">N/A</span>.</p>
+        
+        <p><strong>Riferimenti:</strong><br>
+        telefono <span class="highlight">${leadData.telefonoRichiedente || 'N/A'}</span> – e-mail <span class="highlight">${leadData.emailRichiedente}</span></p>
+        
+        <p class="breviter">(breviter Il Cliente)</p>
+    </div>
+    
+    <div class="premises">
+        <p><strong>premesso che</strong></p>
+        <ul>
+            <li>Medica GB eroga servizi di assistenza domiciliare con tecnologie innovative, servizi di diagnostica a domicilio, esami strumentali, telemedicina, teleassistenza, telemonitoraggio e riabilitazione a domicilio.</li>
+            <li>Medica GB si avvale della consulenza di Medici, Terapisti, Infermieri e Operatori Socio Sanitari per erogare i servizi sopra descritti;</li>
+        </ul>
+        <p><strong>Tanto premesso,</strong></p>
+        <p style="text-align: center; font-weight: bold;">si conviene e stabilisce quanto segue</p>
+    </div>
+    
+    <h2>Premessa</h2>
+    <p>La premessa che precede costituisce parte integrante del presente Contratto.</p>
+    
+    <h2>Oggetto del Contratto</h2>
+    <p>L'oggetto del presente Contratto è l'erogazione del Servizio <span class="highlight">${servizioNome}</span> mediante l'utilizzo del Dispositivo <span class="highlight">${dispositivo}</span> e con il supporto del Piano <span class="highlight">${pianoNome}</span>.</p>
+    
+    <p>Le funzioni del dispositivo <span class="highlight">${dispositivo}</span> sono le seguenti:</p>
+    
+    <div class="feature-list">
+        <p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma i contatti dei familiari oltre a quelli della Centrale Operativa ove prevista; dopo l'invio dell'allarme i familiari e/o la Centrale Operativa (piano avanzato) ricevono una chiamata dal dispositivo e possono parlare con l'assistito; in qualsiasi momento i familiari e/o la Centrale Operativa (piano avanzato) possono contattare l'assistito tramite il dispositivo.</p>
+        
+        <p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta, ai Care Givers e Famigliari (Piano Base) e alla Centrale Operativa (Piano Avanzato) e invia una notifica tramite sms ai familiari e, nel piano avanzato anche alla Centrale Operativa. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
+        
+        <p><strong>Posizione GPS e GPS-assistito:</strong> consente di localizzare l'assistito quando viene inviato l'allarme. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing).</p>
+        
+        <p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari e/o Centrale Operativa (ove prevista) tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>
+        
+        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS per circa 3 secondi è possibile effettuare una chiamata vocale ai care giver / famigliari (piano base) o alla Centrale Operativa (piano avanzato) e inviare una notifica di emergenza (geolocalizzata) ai familiari o alla Centrale Operativa stessa.</p>
+        
+        <p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione dispositivo, messa in carica del dispositivo, segnalazione di batteria scarica, ecc.</p>
+        
+        <p><strong>Promemoria per l'assunzione dei farmaci:</strong> un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>
+    </div>
+    
+    <h2>Durata del Servizio</h2>
+    <p>Il Servizio di TeleAssistenza <span class="highlight">${servizioNome}</span> ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>.</p>
+    <p>Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
+    
+    <h2>Tariffa del Servizio</h2>
+    <p>La tariffa annuale per il primo anno di attivazione del Servizio <span class="highlight">${servizioNome}</span> è pari a Euro <span class="highlight">${importoPrimoAnno},00</span> + IVA 22% e include:</p>
+    
     <ul>
-        <li>Dispositivo ${dispositivo} in comodato d'uso</li>
-        <li>Configurazione del Dispositivo e del Processo di Comunicazione</li>
-        <li>Piattaforma Web e APP di TeleAssistenza per 12 mesi</li>
-        <li>SIM per trasmissione dati e comunicazione vocale per 12 mesi</li>
-        <li>Assistenza tecnica e supporto</li>
+        <li>Dispositivo <span class="highlight">${dispositivo}</span></li>
+        <li>Configurazione del Dispositivo e del Processo di Comunicazione con la Centrale Operativa (ove previsto) e/o uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        <li>Piano <span class="highlight">${pianoNome}</span></li>
     </ul>
     
-    <p><strong>2. DURATA</strong></p>
-    <p>Il contratto ha durata annuale con rinnovo tacito. Il Cliente può recedere con preavviso di 60 giorni prima della scadenza annuale.</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio <span class="highlight">${servizioNome}</span> sarà pari a Euro <span class="highlight">${importoAnniSuccessivi},00</span> + IVA 22% con inclusi:</p>
     
-    <p><strong>3. TARIFFE</strong></p>
-    <p>La tariffa annuale del primo anno per il Servizio ${servizioNome} è <strong>${importoPrimoAnno} + IVA 22%</strong>, e include:</p>
     <ul>
-        <li>Dispositivo ${dispositivo}</li>
-        <li>Configurazione del Dispositivo</li>
-        <li>Piattaforma Web e APP di TeleAssistenza per 12 mesi</li>
-        <li>SIM dati e voce per 12 mesi</li>
-        <li>Piano ${pianoNome}</li>
+        <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        <li>Piano <span class="highlight">${pianoNome}</span></li>
     </ul>
     
-    <p>Per i successivi anni, la tariffa annuale sarà <strong>${importoAnniSuccessivi} + IVA 22%</strong>.</p>
+    <h2>Metodo di pagamento</h2>
+    <p>Medica GB emetterà fattura anticipata di 12 mesi all'attivazione del Servizio e il Cliente procederà al pagamento a ricevimento della fattura stessa tramite bonifico bancario</p>
     
-    <p><strong>4. PAGAMENTO</strong></p>
-    <p>Il pagamento avviene tramite <strong>fattura anticipata di 12 mesi</strong> all'attivazione del servizio.</p>
-    <p><strong>Modalità:</strong> Bonifico bancario intestato a Medica GB S.r.l.</p>
-    <p><strong>IBAN:</strong> IT97L0503401727000000003519</p>
-    <p><strong>Causale:</strong> Servizio ${servizioNome} ${pianoNome} con Dispositivo ${dispositivo}</p>
+    <div class="payment-details">
+        <p><strong>Intestato a:</strong> Medica GB S.r.l.</p>
+        <p><strong>Causale:</strong> Servizio ${servizioNome} ${pianoNome} con Dispositivo ${dispositivo}</p>
+        <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
+    </div>
     
-    <p><strong>5. PRIVACY E TRATTAMENTO DATI</strong></p>
-    <p>Il Cliente acconsente al trattamento dei propri dati personali secondo il GDPR (Regolamento UE 2016/679). I dati saranno utilizzati esclusivamente per l'erogazione del servizio.</p>
+    <h2>Riservatezza ed esclusiva</h2>
+    <p>Il Cliente e Medica GB si impegnano reciprocamente a non divulgare o, comunque, non utilizzare, se non per motivi attinenti all'esercizio del presente contratto, tutte le informazioni di cui venissero a conoscenza nello svolgimento del Servizio.</p>
+    <p>Il Cliente si impegna a contattare Medica GB per tutte le modifiche e proroghe del presente contratto.</p>
     
-    <p><strong>6. RECESSO</strong></p>
-    <p>Il Cliente può recedere dal contratto con preavviso scritto di 60 giorni prima della scadenza annuale, inviando comunicazione a info@telemedcare.it.</p>
+    <h2>Foro competente</h2>
+    <p>Ogni eventuale contestazione o controversia che dovesse insorgere tra le parti in relazione all'interpretazione, alla validità ed esecuzione del presente contratto, sarà definita alla cognizione esclusiva del Foro di Milano.</p>
     
-    <p><strong>7. FORO COMPETENTE</strong></p>
-    <p>Per qualsiasi controversia è competente il Foro di Milano.</p>
+    <div class="signature-section">
+        <div>
+            <p>Milano, lì <span class="highlight">${dataContratto}</span></p>
+        </div>
+    </div>
     
-    <div class="firma-section">
-        <div class="firma-box">
+    <div class="signature-section">
+        <div class="signature-block">
             <p><strong>Medica GB S.r.l.</strong></p>
-            <p>Corso Giuseppe Garibaldi, 34</p>
-            <p>20121 Milano</p>
-            <p>P.IVA: 12435130963</p>
-            <div class="firma-line">Firma Legale Rappresentante</div>
         </div>
-        <div class="firma-box">
+        <div class="signature-block">
             <p><strong>Il Cliente</strong></p>
-            <p>${leadData.nomeAssistito || leadData.nomeRichiedente} ${leadData.cognomeAssistito || leadData.cognomeRichiedente}</p>
-            <p>${leadData.emailRichiedente}</p>
-            <p>&nbsp;</p>
-            <div class="firma-line">Firma Digitale</div>
         </div>
     </div>
     
-    <p style="margin-top: 50px; text-align: center; font-size: 10pt; color: #666;">
-        <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
-        Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148<br>
-        P.IVA: 12435130963 | REA: MI-2661409<br>
-        www.medicagb.it | www.ecura.it | www.telemedcare.it | info@medicagb.it
-    </p>
+    <div class="footer">
+        <p><strong>Medica GB S.r.l.</strong></p>
+        <p>Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
+        <p>PEC: [email protected]</p>
+        <p>E-mail: [email protected]</p>
+        <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
+        <p>www.medicagb.it www.ecura.it</p>
+    </div>
 </body>
 </html>
   `.trim()
