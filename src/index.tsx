@@ -7914,31 +7914,10 @@ app.get('/firma-contratto', async (c) => {
       `)
     }
     
-    // Carica template contratto
-    const fs = await import('fs/promises')
-    let template = await fs.readFile('templates/contracts/contratto_firma_digitale.html', 'utf-8')
-    
-    // Sostituisci placeholder
-    const replacements = {
-      CONTRACT_ID: contract.id,
-      CODICE_CONTRATTO: contract.contract_code || contract.id,
-      DATA_CONTRATTO: new Date().toLocaleDateString('it-IT'),
-      SERVIZIO: contract.servizio || 'PRO',
-      PIANO: contract.piano || 'BASE',
-      NOME_CLIENTE: contract.client_name || '',
-      COGNOME_CLIENTE: contract.client_surname || '',
-      EMAIL_CLIENTE: contract.client_email || '',
-      TELEFONO_CLIENTE: contract.client_phone || '',
-      DISPOSITIVO: (contract.servizio || 'PRO').includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO',
-      PREZZO_TOTALE: `€${(contract.price || 585.60).toFixed(2)}`,
-      PREZZO_RINNOVO: `€${(contract.renewal_price || 480).toFixed(2)}`
-    }
-    
-    Object.keys(replacements).forEach(key => {
-      template = template.replace(new RegExp(`{{${key}}}`, 'g'), replacements[key])
-    })
-    
-    return c.html(template)
+    // Restituisci HTML che carica i dati contratto via API
+    // Il file public/firma-contratto.html viene servito automaticamente
+    // e chiama /api/contracts/:id per ottenere i dati
+    return c.redirect(`/firma-contratto.html?contractId=${contractId}`)
     
   } catch (error) {
     console.error('❌ Errore visualizzazione contratto:', error)
