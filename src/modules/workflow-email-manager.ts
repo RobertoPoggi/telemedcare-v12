@@ -531,11 +531,18 @@ export async function inviaEmailContratto(
     // ============================================
     // STEP 1: Crea record contratto nel DB
     // ============================================
+    console.log(`📊 [CONTRATTO] DB disponibile: ${!!db}`)
+    console.log(`📊 [CONTRATTO] Contract ID: ${contractData.contractId}`)
+    console.log(`📊 [CONTRATTO] Lead ID: ${leadData.id}`)
+    
     if (db) {
       try {
+        console.log(`📋 [CONTRATTO] Generazione HTML contratto...`)
         // Genera HTML contratto completo
         const contractHtml = await generateContractHtml(leadData, contractData)
+        console.log(`📋 [CONTRATTO] HTML generato (${contractHtml.length} chars)`)
         
+        console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
         // Salva contratto nel DB
         await db.prepare(`
           INSERT INTO contracts (
@@ -566,8 +573,11 @@ export async function inviaEmailContratto(
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)
       } catch (dbError) {
         console.error('❌ [CONTRATTO] Errore salvataggio DB:', dbError)
+        console.error('❌ [CONTRATTO] Stack:', (dbError as Error)?.stack)
         // Continua comunque con l'invio email
       }
+    } else {
+      console.warn(`⚠️  [CONTRATTO] DB non disponibile - contratto NON salvato!`)
     }
     
     // ============================================
