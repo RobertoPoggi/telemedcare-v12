@@ -7869,10 +7869,10 @@ app.post('/api/leads/:id/convert', async (c) => {
 app.get('/firma-contratto', async (c) => {
   const contractId = c.req.query('contractId')
   if (contractId) {
-    // Cloudflare Pages rimuove .html automaticamente, quindi usiamo l'URL senza estensione
-    return c.redirect(`/contract-signature?contractId=${contractId}`, 302)
+    // Redirect diretto al file .html (escluso da _routes.json)
+    return c.redirect(`/contract-signature.html?contractId=${contractId}`, 302)
   }
-  return c.redirect('/contract-signature', 302)
+  return c.redirect('/contract-signature.html', 302)
 })
 
 // GET /contract-signature - Endpoint che serve il file HTML direttamente

@@ -4,7 +4,9 @@
   "exclude": [
     "/admin-docs.html",
     "/admin-environments.html",
+    "/app/*",
     "/assets/*",
+    "/contract-signature.html",
     "/contratti/*",
     "/crud-functions.js",
     "/dashboard.html",
@@ -17,7 +19,6 @@
     "/setup-contracts.html",
     "/setup-contracts-sql.html",
     "/setup-contracts-client.js",
-    "/sign-contract.html",
     "/static/*",
     "/templates/*",
     "/workflow-manager.html"
