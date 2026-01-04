@@ -10804,7 +10804,11 @@ app.post('/api/assistiti/force-fix-eileen', async (c) => {
 // POINT 10 FIX - API per statistiche Data Dashboard
 app.get('/api/data/stats', async (c) => {
   try {
+    console.log('📊 [STATS] Inizio calcolo statistiche...')
+    console.log('📊 [STATS] DB disponibile?', !!c.env?.DB)
+    
     if (!c.env?.DB) { // Fallback se DB non disponibile
+      console.warn('⚠️  [STATS] DB non disponibile - usando fallback')
       return c.json({
         success: true,
         totalLeads: 25,
@@ -10816,7 +10820,8 @@ app.get('/api/data/stats', async (c) => {
         activationsToday: 4,
         emailsMonth: 45,
         topService: 'eCura PRO',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        fallback: true
       })
     }
     
@@ -10864,15 +10869,20 @@ app.get('/api/data/stats', async (c) => {
     thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
     const thirtyDaysAgoISO = thirtyDaysAgo.toISOString()
     
+    console.log('📊 [STATS] Data 30 giorni fa:', thirtyDaysAgoISO)
+    
     // Totale leads
     const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    console.log('📊 [STATS] Total leads:', totalLeads?.count)
     
     // Email inviate ultimi 30 giorni (conta leads con vuoleBrochure o vuoleContratto = 'Si')
+    console.log('📊 [STATS] Query emailsMonth...')
     const emailsMonth = await c.env.DB.prepare(`
       SELECT COUNT(*) as count FROM leads 
       WHERE created_at >= ? 
       AND (vuoleBrochure = 'Si' OR vuoleContratto = 'Si' OR vuoleManuale = 'Si')
     `).bind(thirtyDaysAgoISO).first()
+    console.log('📊 [STATS] emailsMonth result:', emailsMonth?.count)
     
     // Servizio più richiesto (ultimi 30 giorni)
     const topService = await c.env.DB.prepare(`
