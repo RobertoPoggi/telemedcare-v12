@@ -6908,8 +6908,13 @@ app.get('/api/contratti/:id/download', async (c) => {
       return c.redirect(contratto.pdf_url)
     }
     
+    // Se esiste contenuto_html, mostralo come pagina HTML
+    if (contratto.contenuto_html) {
+      return c.html(contratto.contenuto_html)
+    }
+    
     // Altrimenti ritorna errore
-    return c.json({ error: 'PDF non disponibile per questo contratto' }, 404)
+    return c.json({ error: 'PDF e HTML non disponibili per questo contratto' }, 404)
   } catch (error) {
     console.error('❌ Errore download contratto:', error)
     return c.json({ error: 'Errore download contratto' }, 500)
@@ -10802,12 +10807,15 @@ app.get('/api/data/stats', async (c) => {
     if (!c.env?.DB) { // Fallback se DB non disponibile
       return c.json({
         success: true,
+        totalLeads: 25,
         leadsToday: 12,
         contractsToday: 8,
         proformaToday: 5,
         paymentsToday: 3,
         configurationsToday: 6,
         activationsToday: 4,
+        emailsMonth: 45,
+        topService: 'eCura PRO',
         timestamp: new Date().toISOString()
       })
     }
@@ -10848,23 +10856,57 @@ app.get('/api/data/stats', async (c) => {
       'SELECT COUNT(*) as count FROM leads WHERE created_at >= ? AND status IN ("ACTIVE", "ATTIVO")'
     ).bind(todayISO).first()
     
+    // ==== NUOVE METRICHE PER DASHBOARD OPERATIVA ====
+    
+    // Calcola data 30 giorni fa
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
+    const thirtyDaysAgoISO = thirtyDaysAgo.toISOString()
+    
+    // Totale leads
+    const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    
+    // Email inviate ultimi 30 giorni (conta leads con vuoleBrochure o vuoleContratto = 'Si')
+    const emailsMonth = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM leads 
+      WHERE created_at >= ? 
+      AND (vuoleBrochure = 'Si' OR vuoleContratto = 'Si' OR vuoleManuale = 'Si')
+    `).bind(thirtyDaysAgoISO).first()
+    
+    // Servizio più richiesto (ultimi 30 giorni)
+    const topService = await c.env.DB.prepare(`
+      SELECT servizio, COUNT(*) as count 
+      FROM leads 
+      WHERE created_at >= ? AND servizio IS NOT NULL
+      GROUP BY servizio 
+      ORDER BY count DESC 
+      LIMIT 1
+    `).bind(thirtyDaysAgoISO).first()
+    
     console.log('📊 Stats Oggi:', { 
       leadsToday: leadsToday?.count,
+      totalLeads: totalLeads?.count,
       contractsToday: contractsToday?.count,
       proformaToday: proformaToday?.count,
       paymentsToday: paymentsToday?.count,
       configurationsToday: configurationsToday?.count,
-      activationsToday: activationsToday?.count
+      activationsToday: activationsToday?.count,
+      emailsMonth: emailsMonth?.count,
+      topService: topService?.servizio
     })
     
     return c.json({
       success: true,
+      totalLeads: totalLeads?.count || 0,
       leadsToday: leadsToday?.count || 0,
       contractsToday: contractsToday?.count || 0,
       proformaToday: proformaToday?.count || 0,
       paymentsToday: paymentsToday?.count || 0,
       configurationsToday: configurationsToday?.count || 0,
       activationsToday: activationsToday?.count || 0,
+      emailsMonth: emailsMonth?.count || 0,
+      topService: topService?.servizio || 'N/A',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
@@ -10874,12 +10916,15 @@ app.get('/api/data/stats', async (c) => {
     // Fallback con dati demo
     return c.json({
       success: true,
+      totalLeads: 0,
       leadsToday: 0,
       contractsToday: 0,
       proformaToday: 0,
       paymentsToday: 0,
       configurationsToday: 0,
       activationsToday: 0,
+      emailsMonth: 0,
+      topService: 'N/A',
       timestamp: new Date().toISOString(),
       fallback: true
     })

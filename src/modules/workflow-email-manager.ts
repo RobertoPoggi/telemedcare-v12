@@ -674,11 +674,12 @@ export async function inviaEmailContratto(
           INSERT INTO contracts (
             id, leadId, codice_contratto, tipo_contratto, 
             template_utilizzato, contenuto_html, 
-            pdf_generated, email_sent, email_template_used,
+            pdf_generated, pdf_url, email_sent, email_template_used,
             status, servizio, piano, 
             prezzo_mensile, durata_mesi, prezzo_totale, 
+            data_invio, data_scadenza,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           contractData.contractId,
           leadData.id,
@@ -687,6 +688,7 @@ export async function inviaEmailContratto(
           'template_contratto_firma_digitale', // template_utilizzato (NOT NULL)
           contractHtml,
           0, // pdf_generated
+          '', // pdf_url (vuoto per ora, PDF richiede Puppeteer)
           1, // email_sent
           'email_invio_contratto', // email_template_used
           'PENDING',
@@ -695,8 +697,10 @@ export async function inviaEmailContratto(
           prezzoMensile, // prezzo_mensile (NOT NULL)
           durataMesi, // durata_mesi (NOT NULL)
           contractData.prezzoIvaInclusa,
-          new Date().toISOString(),
-          new Date().toISOString()
+          new Date().toISOString(), // data_invio
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // data_scadenza (+30 giorni)
+          new Date().toISOString(), // created_at
+          new Date().toISOString()  // updated_at
         ).run()
         
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)

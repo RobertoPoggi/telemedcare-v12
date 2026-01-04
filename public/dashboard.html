@@ -92,7 +92,7 @@
                     <div>
                         <p class="text-gray-600 text-sm mb-1">Email Inviate</p>
                         <p class="text-3xl font-bold text-purple-600" id="emailsSent">-</p>
-                        <p class="text-xs text-gray-500 mt-1">Ultimi 7 giorni</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
                     </div>
                     <i class="fas fa-envelope text-3xl text-purple-500"></i>
                 </div>
@@ -203,7 +203,7 @@
                 // Aggiorna KPI
                 document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
                 document.getElementById('contractsSent').textContent = stats.contractsToday || '0';
-                document.getElementById('emailsSent').textContent = stats.emailsWeek || '0';
+                document.getElementById('emailsSent').textContent = stats.emailsMonth || '0';
                 document.getElementById('topService').textContent = stats.topService || '-';
 
                 // Carica ultimi lead
@@ -227,8 +227,25 @@
                         const piano = lead.pacchetto || 'N/A';
                         const dispositivo = getDispositivoForService(servizio);
                         const prezzo = getPrezzoForService(servizio, piano);
-                        const statusClass = lead.contratto_inviato ? 'status-sent' : 'status-pending';
-                        const statusText = lead.contratto_inviato ? 'Inviato' : 'In attesa';
+                        // Determina lo stato basandosi su vuoleContratto, vuoleBrochure
+                        let statusText = 'In attesa';
+                        let statusClass = 'status-pending';
+                        
+                        if (lead.vuoleContratto === 'Si') {
+                            if (lead.vuoleBrochure === 'Si') {
+                                statusText = 'Inviata brochure + contratto';
+                                statusClass = 'status-sent';
+                            } else {
+                                statusText = 'Inviato contratto';
+                                statusClass = 'status-sent';
+                            }
+                        } else if (lead.vuoleBrochure === 'Si') {
+                            statusText = 'Inviata brochure';
+                            statusClass = 'status-sent';
+                        } else if (lead.vuoleManuale === 'Si') {
+                            statusText = 'Inviato manuale';
+                            statusClass = 'status-sent';
+                        }
                         const date = new Date(lead.created_at).toLocaleString('it-IT', {
                             day: '2-digit',
                             month: '2-digit',
