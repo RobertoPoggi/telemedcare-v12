@@ -7864,9 +7864,14 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// NOTA: /firma-contratto viene servito direttamente come file statico da Cloudflare Pages
-// Il file public/firma-contratto.html viene automaticamente servito all'URL /firma-contratto.html
-// Non serve un endpoint dedicato qui, il JavaScript nel file HTML caricherà i dati via API
+// GET /firma-contratto?contractId=xxx - Redirect a pagina firma statica
+app.get('/firma-contratto', async (c) => {
+  const contractId = c.req.query('contractId')
+  if (!contractId) {
+    return c.redirect('/firma-contratto.html')
+  }
+  return c.redirect(`/firma-contratto.html?contractId=${contractId}`)
+})
 
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
