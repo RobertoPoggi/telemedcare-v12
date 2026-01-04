@@ -8371,12 +8371,23 @@ app.post('/api/leads', async (c) => {
         emailResults.notifica.error = error instanceof Error ? error.message : String(error)
       }
       
-      // 2. DOCUMENTI INFORMATIVI (brochure/manuale) - Se richiesti
-      // NOTA: Inviati anche se richiede contratto (il contratto include già il link brochure)
-      if (leadData.vuoleBrochure || leadData.vuoleManuale) {
+      // 2. DOCUMENTI INFORMATIVI (brochure/manuale) - SOLO SE NON VUOLE CONTRATTO
+      // Se vuole contratto, la brochure viene inclusa nell'email contratto
+      if (!leadData.vuoleContratto && (leadData.vuoleBrochure || leadData.vuoleManuale || (!leadData.vuoleBrochure && !leadData.vuoleContratto))) {
+        // Caso 1: Solo brochure (vuoleBrochure=Si, vuoleContratto=No)
+        // Caso 4: Default - nessuno (vuoleBrochure=No, vuoleContratto=No) → invia brochure comunque
         try {
+          addDebugLog(`📚 [LEAD] Invio documenti informativi (no contratto)`)
+          
           // Prepara documentUrls per brochure
           const documentUrls: { brochure?: string; manuale?: string } = {}
+          
+          // Se non vuole né brochure né contratto, invia brochure di default
+          if (!leadData.vuoleBrochure && !leadData.vuoleContratto) {
+            addDebugLog(`📚 [LEAD] Default: invia brochure anche se non richiesta`)
+            leadData.vuoleBrochure = true
+          }
+          
           if (leadData.vuoleBrochure) {
             // Determina brochure in base al servizio
             const servizio = leadData.servizio || 'eCura PRO'
@@ -8394,12 +8405,20 @@ app.post('/api/leads', async (c) => {
           emailResults.brochure.sent = docResult.success
           if (!docResult.success) {
             emailResults.brochure.error = docResult.errors.join(', ')
+            addDebugLog(`❌ [LEAD] Errore documenti: ${emailResults.brochure.error}`)
+          } else {
+            addDebugLog(`✅ [LEAD] Documenti inviati`)
           }
           console.log('📚 [WORKFLOW] Documenti informativi:', docResult.success ? '✅' : '❌')
         } catch (error) {
           console.error('❌ Errore documenti:', error)
-          emailResults.brochure.error = error instanceof Error ? error.message : String(error)
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          emailResults.brochure.error = errorMsg
+          addDebugLog(`❌ [LEAD] Exception documenti: ${errorMsg}`)
         }
+      } else if (leadData.vuoleContratto) {
+        // Caso 2 e 3: Contratto (con o senza brochure)
+        addDebugLog(`📋 [LEAD] vuoleContratto=true → Skip documenti informativi (inclusi in email contratto)`)
       }
       
       // 3. CONTRATTO (se richiesto)
