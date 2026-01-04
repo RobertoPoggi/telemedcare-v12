@@ -419,18 +419,63 @@ export async function inviaEmailContratto(
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati: NOTA - Gli allegati PDF non sono supportati in Cloudflare Workers
-    // I link per download sono inclusi direttamente nel template email
+    // Prepara allegati: Brochure PDF usando ASSETS binding
     const attachments = []
     
     // NOTA: Il PDF del contratto non è disponibile senza Puppeteer
     // Il cliente riceverà il link per firmare il contratto online nel template email
     
-    // NOTA: La brochure è disponibile tramite link diretto nel template
-    // Non viene allegata per evitare problemi con file grandi in Cloudflare Workers
-    console.log(`📎 [CONTRATTO] Link brochure incluso nel template: ${linkBrochure}`)
+    // Brochure (se richiesta) - CARICA usando ASSETS binding
+    if (leadData.vuoleBrochure && env?.ASSETS) {
+      try {
+        console.log(`📎 [CONTRATTO] Caricamento brochure via ASSETS: ${linkBrochure}`)
+        
+        // Usa ASSETS binding per leggere il PDF
+        const brochureUrl = new URL(linkBrochure)
+        const assetResponse = await env.ASSETS.fetch(brochureUrl)
+        
+        if (assetResponse.ok) {
+          // Leggi il PDF come ArrayBuffer
+          const arrayBuffer = await assetResponse.arrayBuffer()
+          const sizeKB = (arrayBuffer.byteLength / 1024).toFixed(2)
+          console.log(`📥 [CONTRATTO] PDF caricato: ${sizeKB} KB`)
+          
+          // Converti in base64 (chunked per evitare stack overflow)
+          const uint8Array = new Uint8Array(arrayBuffer)
+          const chunkSize = 32768 // 32KB chunks
+          let binary = ''
+          
+          for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.slice(i, i + chunkSize)
+            binary += String.fromCharCode.apply(null, Array.from(chunk))
+          }
+          
+          const base64 = btoa(binary)
+          
+          // Aggiungi agli allegati
+          const filename = linkBrochure.split('/').pop() || 'Brochure_TeleMedCare.pdf'
+          attachments.push({
+            filename: filename,
+            content: base64,
+            contentType: 'application/pdf'
+          })
+          
+          console.log(`✅ [CONTRATTO] Brochure allegata: ${filename} (${sizeKB} KB, ${base64.length} chars base64)`)
+        } else {
+          console.warn(`⚠️ [CONTRATTO] ASSETS non trova brochure: ${linkBrochure} (status: ${assetResponse.status})`)
+        }
+      } catch (error) {
+        console.error(`❌ [CONTRATTO] Errore caricamento brochure:`, error)
+        // Non bloccare l'invio email se fallisce l'allegato - il link è comunque nel template
+      }
+    } else if (leadData.vuoleBrochure && !env?.ASSETS) {
+      console.warn(`⚠️ [CONTRATTO] ASSETS binding non disponibile, brochure disponibile solo via link`)
+    }
     
-    // Manuale (se richiesto) - Anche questo come link
+    // Link brochure sempre incluso nel template come fallback
+    console.log(`📎 [CONTRATTO] Link brochure nel template: ${linkBrochure}`)
+    
+    // Manuale (se richiesto) - Anche questo come link per ora
     if (leadData.vuoleManuale && documentUrls.manuale) {
       console.log(`📎 [CONTRATTO] Link manuale disponibile: ${documentUrls.manuale}`)
     }
