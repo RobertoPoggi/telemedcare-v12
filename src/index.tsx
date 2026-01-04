@@ -7864,15 +7864,251 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// GET /firma-contratto?contractId=xxx - Serve pagina firma standalone
-// NOTA: Redirect a contract-signature.html che è escluso da _routes.json
-// e viene servito STATICAMENTE da Cloudflare Pages (no Worker)
+// GET /firma-contratto?contractId=xxx - Pagina firma contratto inline
 app.get('/firma-contratto', async (c) => {
   const contractId = c.req.query('contractId')
-  if (contractId) {
-    return c.redirect(`/contract-signature.html?contractId=${contractId}`, 302)
+  
+  if (!contractId) {
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Errore</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+          h1 { color: #e74c3c; }
+        </style>
+      </head>
+      <body>
+        <h1>❌ Errore</h1>
+        <p>ID contratto mancante</p>
+        <p>Contatta <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> per assistenza.</p>
+      </body>
+      </html>
+    `, 400)
   }
-  return c.redirect('/contract-signature.html', 302)
+  
+  // Serve la pagina firma con un template semplificato
+  // Il JavaScript caricherà i dati del contratto via API
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Firma Contratto TeleMedCare</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+            .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+            .header h1 { font-size: 28px; margin-bottom: 10px; }
+            .content { padding: 40px; }
+            .loading { text-align: center; padding: 60px; color: #667eea; font-size: 18px; }
+            .error { background: #fee; border: 2px solid #e74c3c; color: #c0392b; padding: 20px; border-radius: 10px; margin: 20px 0; }
+            .contract-box { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 20px; margin: 20px 0; max-height: 400px; overflow-y: auto; }
+            .signature-box { border: 3px dashed #667eea; border-radius: 10px; margin: 30px 0; padding: 20px; background: #f8f9fa; }
+            canvas { border: 2px solid #667eea; border-radius: 8px; cursor: crosshair; display: block; width: 100%; max-width: 600px; margin: 0 auto; background: white; }
+            .button-group { display: flex; gap: 15px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+            button { padding: 15px 30px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+            .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+            .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4); }
+            .btn-secondary { background: #6c757d; color: white; }
+            .btn-secondary:hover { background: #5a6268; }
+            .checkbox-group { margin: 20px 0; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; }
+            label { display: flex; align-items: flex-start; cursor: pointer; }
+            input[type="checkbox"] { margin-right: 10px; margin-top: 3px; width: 20px; height: 20px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>✍️ Firma Digitale Contratto</h1>
+                <p>TeleMedCare - Servizio eCura</p>
+            </div>
+            
+            <div class="content">
+                <div id="loading" class="loading">
+                    ⏳ Caricamento contratto in corso...
+                </div>
+                
+                <div id="error" class="error" style="display:none;"></div>
+                
+                <div id="contractContent" style="display:none;">
+                    <div class="contract-info">
+                        <h2>📄 Dettagli Contratto</h2>
+                        <p><strong>Cliente:</strong> <span id="clientName"></span></p>
+                        <p><strong>Servizio:</strong> <span id="serviceName"></span></p>
+                        <p><strong>Piano:</strong> <span id="planName"></span></p>
+                        <p><strong>Dispositivo:</strong> <span id="deviceName"></span></p>
+                        <p><strong>Investimento:</strong> <span id="price"></span></p>
+                        <p><strong>Codice Contratto:</strong> <strong id="contractCode"></strong></p>
+                    </div>
+                    
+                    <div class="contract-box" id="contractHtml"></div>
+                    
+                    <div class="signature-box">
+                        <h3 style="margin-bottom: 15px;">✍️ Firma qui sotto con il mouse o il dito</h3>
+                        <canvas id="signatureCanvas" width="600" height="200"></canvas>
+                        <div class="button-group">
+                            <button type="button" class="btn-secondary" id="clearBtn">🗑️ Cancella Firma</button>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="consentCheckbox" required>
+                            <span>Dichiaro di aver letto e compreso il contratto. Confermo la mia firma digitale.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn-primary" id="signButton">✅ Firma e Invia Contratto</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            const contractId = new URLSearchParams(window.location.search).get('contractId');
+            
+            async function loadContract() {
+                if (!contractId) {
+                    showError('ID contratto mancante');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(\`/api/contracts/\${contractId}\`);
+                    if (!response.ok) throw new Error('Contratto non trovato');
+                    
+                    const contractData = await response.json();
+                    
+                    document.getElementById('clientName').textContent = \`\${contractData.nomeCliente || ''} \${contractData.cognomeCliente || ''}\`;
+                    document.getElementById('serviceName').textContent = contractData.servizio || 'eCura PRO';
+                    document.getElementById('planName').textContent = contractData.piano || 'AVANZATO';
+                    document.getElementById('deviceName').textContent = contractData.dispositivo || 'SiDLY Care PRO';
+                    document.getElementById('price').textContent = contractData.prezzo || '€1.024,80/anno';
+                    document.getElementById('contractCode').textContent = contractData.contractCode || '';
+                    document.getElementById('contractHtml').innerHTML = contractData.contractHtml || '<p>Contenuto contratto non disponibile</p>';
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('contractContent').style.display = 'block';
+                    
+                    initCanvas();
+                } catch (error) {
+                    showError('Errore caricamento contratto: ' + error.message);
+                }
+            }
+            
+            function showError(message) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = '❌ ' + message;
+                document.getElementById('error').style.display = 'block';
+            }
+            
+            let canvas, ctx, drawing = false;
+            
+            function initCanvas() {
+                canvas = document.getElementById('signatureCanvas');
+                ctx = canvas.getContext('2d');
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+                
+                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+                canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+                canvas.addEventListener('touchend', stopDrawing);
+                
+                document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+                document.getElementById('signButton').addEventListener('click', submitSignature);
+            }
+            
+            function startDrawing(e) {
+                drawing = true;
+                const rect = canvas.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+            
+            function draw(e) {
+                if (!drawing) return;
+                const rect = canvas.getBoundingClientRect();
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.stroke();
+            }
+            
+            function stopDrawing() {
+                drawing = false;
+            }
+            
+            function clearCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            function isCanvasEmpty() {
+                const blank = document.createElement('canvas');
+                blank.width = canvas.width;
+                blank.height = canvas.height;
+                return canvas.toDataURL() === blank.toDataURL();
+            }
+            
+            async function submitSignature() {
+                if (!document.getElementById('consentCheckbox').checked) {
+                    alert('Per favore, accetta il consenso prima di firmare');
+                    return;
+                }
+                
+                if (isCanvasEmpty()) {
+                    alert('Per favore, firma il contratto prima di inviare');
+                    return;
+                }
+                
+                const signButton = document.getElementById('signButton');
+                signButton.disabled = true;
+                signButton.textContent = '⏳ Invio firma in corso...';
+                
+                try {
+                    const signatureData = canvas.toDataURL('image/png');
+                    const response = await fetch('/api/contracts/sign', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contractId,
+                            signatureData,
+                            timestamp: new Date().toISOString(),
+                            userAgent: navigator.userAgent,
+                            screenResolution: \`\${screen.width}x\${screen.height}\`
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('✅ Contratto firmato con successo!\\n\\nRiceverai una copia via email a breve.');
+                        window.location.href = '/';
+                    } else {
+                        throw new Error(result.error || 'Errore sconosciuto');
+                    }
+                } catch (error) {
+                    alert('❌ Errore durante la firma: ' + error.message);
+                    signButton.disabled = false;
+                    signButton.textContent = '✅ Firma e Invia Contratto';
+                }
+            }
+            
+            loadContract();
+        </script>
+    </body>
+    </html>
+  `)
 })
 
 // POST /api/contracts/sign - Salva firma digitale
