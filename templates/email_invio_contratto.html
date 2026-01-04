@@ -204,7 +204,7 @@ p {margin: 18px 0; line-height: 1.9;}
 </div>
 <div class="content">
 <p class="greeting">Gentile {{NOME_CLIENTE}},</p>
-<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, Le inviamo in allegato il contratto per il servizio {{SERVIZIO}} {{PIANO}} e la brochure del {{DISPOSITIVO}} con le più importanti caratteristiche tecniche innovative.</p>
+<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, Le inviamo il contratto per il servizio {{SERVIZIO}} {{PIANO}} e la brochure del {{DISPOSITIVO}} con le più importanti caratteristiche tecniche innovative.</p>
 <div class="section">
 <h3>📋 Il Suo servizio {{SERVIZIO}} {{PIANO}}</h3>
 </div>
@@ -212,6 +212,16 @@ p {margin: 18px 0; line-height: 1.9;}
 <h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
 <div class="info-item"><strong>Investimento:</strong> {{PREZZO_SERVIZIO_PIANO}}</div>
 <div class="info-item"><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</div>
+</div>
+<div class="success-box" style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<h4 style="margin: 0 0 15px 0; color: #2e7d32;">📄 Documenti Allegati</h4>
+<p style="margin: 10px 0;">Scarichi la brochure del dispositivo {{DISPOSITIVO}}:</p>
+<div style="text-align: center; margin: 15px 0;">
+<a href="{{LINK_BROCHURE}}" style="display: inline-block; background: #2196F3; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+📥 Scarica Brochure {{DISPOSITIVO}}
+</a>
+</div>
+<p style="margin: 10px 0; font-size: 12px; color: #666;">Se il pulsante non funziona, copi e incolli questo link nel browser:<br><a href="{{LINK_BROCHURE}}" style="word-break: break-all;">{{LINK_BROCHURE}}</a></p>
 </div>
 <div class="section">
 <h3>⭐ Perché ha fatto la scelta giusta</h3>
@@ -223,10 +233,11 @@ p {margin: 18px 0; line-height: 1.9;}
 <div class="success-box">
 <h4>✅ Prossimi passi per l'attivazione</h4>
 </div>
-<div class="step">Legga attentamente il contratto allegato</div>
-<div class="step">Firmi in ogni pagina richiesta e nell'ultima pagina</div>
-<div class="step">Ci invii il contratto firmato via email o WhatsApp</div>
-<div class="step">Riceverà il dispositivo entro 10 giorni lavorativi</div>
+<div class="step">1. Scarichi e legga attentamente il contratto (il nostro team glielo invierà a breve)</div>
+<div class="step">2. Scarichi la brochure tecnica del dispositivo (pulsante sopra)</div>
+<div class="step">3. Firmi il contratto in ogni pagina richiesta e nell'ultima pagina</div>
+<div class="step">4. Ci invii il contratto firmato via email o WhatsApp</div>
+<div class="step">5. Riceverà il dispositivo entro 10 giorni lavorativi</div>
 </div>
 <div class="benefits-box">
 <h3>💰 Vantaggi Economici e Fiscali</h3>

@@ -391,6 +391,15 @@ export async function inviaEmailContratto(
     const pianoNome = contractData.tipoServizio || 'BASE' // BASE o AVANZATO
     const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
+    // Determina URL brochure per il link diretto
+    const baseUrl = env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
+    let brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    if (servizioNormalized === 'PREMIUM') {
+      brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+    }
+    const linkBrochure = `${baseUrl}/brochures/${brochureFilename}`
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
@@ -403,64 +412,27 @@ export async function inviaEmailContratto(
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${env.PUBLIC_URL || 'https://telemedcare.it'}/firma-contratto?contractId=${contractData.contractId}`,
+      LINK_BROCHURE: linkBrochure,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati: Brochure + Manuale (Contratto PDF non disponibile senza Puppeteer)
+    // Prepara allegati: NOTA - Gli allegati PDF non sono supportati in Cloudflare Workers
+    // I link per download sono inclusi direttamente nel template email
     const attachments = []
     
-    // NOTA: Il PDF del contratto non è disponibile in questa versione
+    // NOTA: Il PDF del contratto non è disponibile senza Puppeteer
     // Il cliente riceverà il link per firmare il contratto online nel template email
     
-    // Contratto PDF (solo se disponibile)
-    if (contractData.contractPdfUrl && contractData.contractPdfUrl !== '') {
-      attachments.push({
-        filename: `Contratto_TeleMedCare_${contractData.contractCode}.pdf`,
-        path: contractData.contractPdfUrl
-      })
-    }
+    // NOTA: La brochure è disponibile tramite link diretto nel template
+    // Non viene allegata per evitare problemi con file grandi in Cloudflare Workers
+    console.log(`📎 [CONTRATTO] Link brochure incluso nel template: ${linkBrochure}`)
     
-    // Brochure (se richiesta) - CARICA E CONVERTI IN BASE64
-    if (leadData.vuoleBrochure && documentUrls.brochure) {
-      try {
-        console.log(`📎 [CONTRATTO] Caricamento brochure: ${documentUrls.brochure}`)
-        
-        // Determina il baseUrl
-        const baseUrl = env?.PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8787')
-        
-        // Normalizza il nome del servizio: "eCura PRO" → "PRO"
-        const servizioRaw = leadData.servizio || 'PRO'
-        const servizio = servizioRaw.replace(/^eCura\s+/i, '').trim()
-        
-        console.log(`📎 [CONTRATTO] Servizio normalizzato: "${servizioRaw}" → "${servizio}"`)
-        
-        // Carica la brochure con loadBrochurePDF
-        const brochurePDF = await loadBrochurePDF(servizio, baseUrl)
-        
-        if (brochurePDF) {
-          attachments.push({
-            filename: brochurePDF.filename,
-            content: brochurePDF.content,
-            contentType: 'application/pdf'
-          })
-          console.log(`✅ [CONTRATTO] Brochure allegata: ${brochurePDF.filename} (${brochurePDF.size} bytes)`)
-        } else {
-          console.warn(`⚠️ [CONTRATTO] Brochure non trovata per servizio ${servizio}`)
-        }
-      } catch (error) {
-        console.error(`❌ [CONTRATTO] Errore caricamento brochure:`, error)
-      }
-    }
-    
-    // Manuale (se richiesto)
+    // Manuale (se richiesto) - Anche questo come link
     if (leadData.vuoleManuale && documentUrls.manuale) {
-      attachments.push({
-        filename: 'Manuale_Utente_SiDLY.pdf',
-        path: documentUrls.manuale
-      })
+      console.log(`📎 [CONTRATTO] Link manuale disponibile: ${documentUrls.manuale}`)
     }
 
     // Invia email con allegati
