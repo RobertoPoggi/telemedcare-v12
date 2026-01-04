@@ -7995,6 +7995,88 @@ app.post('/api/contracts/sign', async (c) => {
 })
 
 // ========================================
+// CRUD COMPLETO - CONTRACTS
+// ========================================
+
+// GET /api/contracts - Lista contratti (opzionale filtro per leadId)
+app.get('/api/contracts', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const leadId = c.req.query('leadId')
+    
+    let query = 'SELECT * FROM contracts'
+    const bindings = []
+    
+    if (leadId) {
+      query += ' WHERE lead_id = ?'
+      bindings.push(leadId)
+    }
+    
+    query += ' ORDER BY created_at DESC'
+    
+    const stmt = c.env.DB.prepare(query)
+    const result = bindings.length > 0 
+      ? await stmt.bind(...bindings).all() 
+      : await stmt.all()
+    
+    return c.json({ 
+      success: true, 
+      contracts: result.results || [] 
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero contratti:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero contratti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/contracts/:id - Dettaglio singolo contratto
+app.get('/api/contracts/:id', async (c) => {
+  try {
+    const contractId = c.req.param('id')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const contract = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?')
+      .bind(contractId).first() as any
+    
+    if (!contract) {
+      return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    }
+    
+    return c.json({
+      success: true,
+      ...contract,
+      nomeCliente: contract.nome_cliente,
+      cognomeCliente: contract.cognome_cliente,
+      emailCliente: contract.email_cliente,
+      contractCode: contract.contract_code,
+      contractHtml: contract.contract_html,
+      servizio: contract.servizio,
+      piano: contract.piano,
+      dispositivo: contract.dispositivo,
+      prezzo: `€${parseFloat(contract.prezzo_iva_inclusa || 0).toFixed(2)}/anno`,
+      status: contract.status
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ========================================
 // CRUD COMPLETO - LEADS
 // ========================================
 
