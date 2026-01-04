@@ -543,26 +543,31 @@ export async function inviaEmailContratto(
         console.log(`📋 [CONTRATTO] HTML generato (${contractHtml.length} chars)`)
         
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
-        // Salva contratto nel DB (usa schema esistente con camelCase)
+        // Salva contratto nel DB (usa schema esistente con tutti i campi richiesti)
         await db.prepare(`
           INSERT INTO contracts (
             id, leadId, codice_contratto, tipo_contratto, 
-            contenuto_html, status, created_at, 
-            servizio, piano, 
-            prezzo_totale, email_template_used
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            template_utilizzato, contenuto_html, 
+            pdf_generated, email_sent, email_template_used,
+            status, servizio, piano, 
+            prezzo_totale, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           contractData.contractId,
           leadData.id,
           contractData.contractCode,
           contractData.tipoServizio,
+          'template_contratto_firma_digitale', // template_utilizzato (NOT NULL)
           contractHtml,
+          0, // pdf_generated
+          1, // email_sent
+          'email_invio_contratto', // email_template_used
           'PENDING',
-          new Date().toISOString(),
           contractData.servizio,
           contractData.tipoServizio,
           contractData.prezzoIvaInclusa,
-          'email_invio_contratto'
+          new Date().toISOString(),
+          new Date().toISOString()
         ).run()
         
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)

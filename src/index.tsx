@@ -8075,13 +8075,17 @@ app.post('/api/debug/test-contract-save', async (c) => {
       leadId: `LEAD-TEST-${Date.now()}`,
       codice_contratto: `TEST-${Date.now()}`,
       tipo_contratto: 'BASE',
+      template_utilizzato: 'TEST_TEMPLATE',
       contenuto_html: '<html><body>TEST</body></html>',
       status: 'PENDING',
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       servizio: 'eCura PRO',
       piano: 'BASE',
       prezzo_totale: 585.60,
-      email_template_used: 'test'
+      email_template_used: 'test',
+      pdf_generated: 0,
+      email_sent: 1
     }
     
     console.log('🧪 [DEBUG] Tentativo salvataggio contratto test:', testData.id)
@@ -8089,22 +8093,27 @@ app.post('/api/debug/test-contract-save', async (c) => {
     const result = await c.env.DB.prepare(`
       INSERT INTO contracts (
         id, leadId, codice_contratto, tipo_contratto, 
-        contenuto_html, status, created_at, 
-        servizio, piano, 
-        prezzo_totale, email_template_used
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        template_utilizzato, contenuto_html, 
+        pdf_generated, email_sent, email_template_used,
+        status, servizio, piano, 
+        prezzo_totale, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       testData.id,
       testData.leadId,
       testData.codice_contratto,
       testData.tipo_contratto,
+      testData.template_utilizzato,
       testData.contenuto_html,
+      testData.pdf_generated,
+      testData.email_sent,
+      testData.email_template_used,
       testData.status,
-      testData.created_at,
       testData.servizio,
       testData.piano,
       testData.prezzo_totale,
-      testData.email_template_used
+      testData.created_at,
+      testData.updated_at
     ).run()
     
     console.log('✅ [DEBUG] Contratto salvato:', result)
