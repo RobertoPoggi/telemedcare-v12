@@ -7864,15 +7864,14 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// GET /firma-contratto?contractId=xxx - Serve pagina firma statica
+// GET /firma-contratto?contractId=xxx - Serve pagina firma standalone (bypassa router dashboard)
 app.get('/firma-contratto', async (c) => {
-  // Redirect al file HTML statico
-  // Il file firma.html caricherà i dati del contratto via JavaScript
+  // Redirect al file sign-contract.html che NON viene intercettato dal router dashboard
   const contractId = c.req.query('contractId')
   if (contractId) {
-    return c.redirect(`/firma.html?contractId=${contractId}`)
+    return c.redirect(`/sign-contract.html?contractId=${contractId}`)
   }
-  return c.redirect('/firma.html')
+  return c.redirect('/sign-contract.html')
 })
 
 // POST /api/contracts/sign - Salva firma digitale
