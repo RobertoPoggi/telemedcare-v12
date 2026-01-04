@@ -10,8 +10,6 @@
     "/dashboard.html",
     "/data-dashboard.html",
     "/documents/*",
-    "/firma-contratto.html",
-    "/firma.html",
     "/home.html",
     "/index.html",
     "/leads-dashboard.html",
@@ -19,6 +17,7 @@
     "/setup-contracts.html",
     "/setup-contracts-sql.html",
     "/setup-contracts-client.js",
+    "/sign-contract.html",
     "/static/*",
     "/templates/*",
     "/workflow-manager.html"
