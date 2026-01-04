@@ -8042,6 +8042,28 @@ app.post('/api/contracts/sign', async (c) => {
 // ========================================
 // DEBUG ENDPOINT - Test contract save
 // ========================================
+const debugLogs: string[] = []
+const MAX_DEBUG_LOGS = 100
+
+// Helper per aggiungere log debug
+function addDebugLog(message: string) {
+  const timestamp = new Date().toISOString()
+  debugLogs.unshift(`[${timestamp}] ${message}`)
+  if (debugLogs.length > MAX_DEBUG_LOGS) {
+    debugLogs.pop()
+  }
+  console.log(message) // Log anche in console normale
+}
+
+// GET /api/debug/logs - Visualizza ultimi log
+app.get('/api/debug/logs', async (c) => {
+  return c.json({
+    success: true,
+    logs: debugLogs,
+    count: debugLogs.length
+  })
+})
+
 app.post('/api/debug/test-contract-save', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -8260,6 +8282,15 @@ app.post('/api/leads', async (c) => {
     }
     
     try {
+      // DEBUG: Log i valori ricevuti
+      const debugInfo = {
+        vuoleBrochure: data.vuoleBrochure,
+        vuoleContratto: data.vuoleContratto,
+        vuoleManuale: data.vuoleManuale
+      }
+      addDebugLog(`🔍 [LEAD] Dati ricevuti: ${JSON.stringify(debugInfo)}`)
+      console.log('🔍 [DEBUG] Dati ricevuti:', debugInfo)
+      
       // Prepara leadData per workflow (formato del 25 dicembre)
       const leadData = {
         id: leadId,
@@ -8284,6 +8315,15 @@ app.post('/api/leads', async (c) => {
         note: data.note || ''
       }
       
+      // DEBUG: Log dopo mapping
+      const debugMapped = {
+        vuoleBrochure: leadData.vuoleBrochure,
+        vuoleContratto: leadData.vuoleContratto,
+        vuoleManuale: leadData.vuoleManuale
+      }
+      addDebugLog(`🔍 [LEAD] leadData mappato: ${JSON.stringify(debugMapped)}`)
+      console.log('🔍 [DEBUG] leadData mappato:', debugMapped)
+      
       // Usa workflow-email-manager del 25 dicembre
       const { inviaEmailNotificaInfo, inviaEmailDocumentiInformativi, inviaEmailContratto } = 
         await import('./modules/workflow-email-manager')
@@ -8301,8 +8341,9 @@ app.post('/api/leads', async (c) => {
         emailResults.notifica.error = error instanceof Error ? error.message : String(error)
       }
       
-      // 2. DOCUMENTI INFORMATIVI (brochure/manuale) - SOLO SE NON VUOLE CONTRATTO
-      if ((leadData.vuoleBrochure || leadData.vuoleManuale) && !leadData.vuoleContratto) {
+      // 2. DOCUMENTI INFORMATIVI (brochure/manuale) - Se richiesti
+      // NOTA: Inviati anche se richiede contratto (il contratto include già il link brochure)
+      if (leadData.vuoleBrochure || leadData.vuoleManuale) {
         try {
           // Prepara documentUrls per brochure
           const documentUrls: { brochure?: string; manuale?: string } = {}
@@ -8333,6 +8374,7 @@ app.post('/api/leads', async (c) => {
       
       // 3. CONTRATTO (se richiesto)
       if (leadData.vuoleContratto) {
+        addDebugLog(`📋 [LEAD] Contratto richiesto: SI - Procedura attiva`)
         try {
           // Crea contractData
           const contractData = {
@@ -8345,6 +8387,8 @@ app.post('/api/leads', async (c) => {
             prezzoIvaInclusa: leadData.pacchetto === 'AVANZATO' ? 1024.80 : 585.60
           }
           
+          addDebugLog(`📋 [LEAD] contractData creato: ${contractData.contractId}`)
+          
           // Prepara documentUrls per eventuale brochure
           const documentUrls: { brochure?: string; manuale?: string } = {}
           const servizio = leadData.servizio || 'eCura PRO'
@@ -8354,16 +8398,24 @@ app.post('/api/leads', async (c) => {
             documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
           }
           
+          addDebugLog(`📋 [LEAD] Chiamata inviaEmailContratto...`)
           const contrattoResult = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
           emailResults.contratto.sent = contrattoResult.success
           if (!contrattoResult.success) {
             emailResults.contratto.error = contrattoResult.errors.join(', ')
+            addDebugLog(`❌ [LEAD] Errore invio contratto: ${emailResults.contratto.error}`)
+          } else {
+            addDebugLog(`✅ [LEAD] Contratto inviato con successo`)
           }
           console.log('📋 [WORKFLOW] Contratto:', contrattoResult.success ? '✅' : '❌')
         } catch (error) {
           console.error('❌ Errore contratto:', error)
-          emailResults.contratto.error = error instanceof Error ? error.message : String(error)
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          emailResults.contratto.error = errorMsg
+          addDebugLog(`❌ [LEAD] Exception contratto: ${errorMsg}`)
         }
+      } else {
+        addDebugLog(`⚠️  [LEAD] Contratto NON richiesto - Skip`)
       }
       
     } catch (error) {
