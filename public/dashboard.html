@@ -188,12 +188,6 @@
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
-        // Carica dati iniziali
-        loadDashboardData();
-
-        // Auto-refresh ogni 30 secondi
-        refreshInterval = setInterval(loadDashboardData, 30000);
-
         async function loadDashboardData() {
             try {
                 // Carica tutti i lead (ultimi 100 per avere dati sufficienti)
@@ -325,6 +319,12 @@
                 `;
             }
         }
+
+        // Carica dati iniziali dopo che il DOM è pronto
+        loadDashboardData();
+
+        // Auto-refresh ogni 30 secondi
+        refreshInterval = setInterval(loadDashboardData, 30000);
 
         function refreshData() {
             const icon = document.getElementById('refreshIcon');
