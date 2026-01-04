@@ -8446,8 +8446,9 @@ app.post('/api/leads', async (c) => {
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
         nomeAssistito, cognomeAssistito, tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
+        consensoPrivacy, consensoMarketing, consensoTerze,
         note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -8462,6 +8463,9 @@ app.post('/api/leads', async (c) => {
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
+      data.consensoPrivacy !== undefined ? (data.consensoPrivacy ? 1 : 0) : 0,
+      data.consensoMarketing !== undefined ? (data.consensoMarketing ? 1 : 0) : 0,
+      data.consensoTerze !== undefined ? (data.consensoTerze ? 1 : 0) : 0,
       `${data.note || 'Lead dashboard'} | Canale: ${data.canale || 'Dashboard'} | CF: ${data.codiceFiscaleAssistito || 'N/A'} | Indirizzo: ${data.indirizzoAssistito || 'N/A'} ${data.capAssistito || ''} ${data.cittaAssistito || ''} ${data.provinciaAssistito || ''}`,
       data.fonte || data.canale || 'MANUAL_ENTRY',
       'NEW',

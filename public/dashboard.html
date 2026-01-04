@@ -196,20 +196,50 @@
 
         async function loadDashboardData() {
             try {
-                // Carica statistiche
-                const statsResponse = await fetch('/api/data/stats');
-                const stats = await statsResponse.json();
+                // Carica tutti i lead (ultimi 100 per avere dati sufficienti)
+                const leadsResponse = await fetch('/api/leads?limit=100');
+                const leadsData = await leadsResponse.json();
+                const allLeads = leadsData.leads || [];
+                
+                // Calcola statistiche lato client
+                const now = new Date();
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                
+                // Lead totali
+                const totalLeads = allLeads.length;
+                
+                // Email inviate ultimi 30 giorni
+                const emailsMonth = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    return leadDate >= thirtyDaysAgo && 
+                           (lead.vuoleBrochure === 'Si' || lead.vuoleContratto === 'Si' || lead.vuoleManuale === 'Si');
+                }).length;
+                
+                // Contratti inviati ultimi 30 giorni
+                const contractsMonth = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    return leadDate >= thirtyDaysAgo && lead.vuoleContratto === 'Si';
+                }).length;
+                
+                // Servizio più richiesto
+                const servicesCount = {};
+                allLeads.forEach(lead => {
+                    if (lead.servizio) {
+                        servicesCount[lead.servizio] = (servicesCount[lead.servizio] || 0) + 1;
+                    }
+                });
+                const topService = Object.keys(servicesCount).length > 0 
+                    ? Object.keys(servicesCount).reduce((a, b) => servicesCount[a] > servicesCount[b] ? a : b)
+                    : 'N/A';
                 
                 // Aggiorna KPI
-                document.getElementById('totalLeads').textContent = stats.totalLeads || '0';
-                document.getElementById('contractsSent').textContent = stats.contractsToday || '0';
-                document.getElementById('emailsSent').textContent = stats.emailsMonth || '0';
-                document.getElementById('topService').textContent = stats.topService || '-';
+                document.getElementById('totalLeads').textContent = totalLeads || '0';
+                document.getElementById('contractsSent').textContent = contractsMonth || '0';
+                document.getElementById('emailsSent').textContent = emailsMonth || '0';
+                document.getElementById('topService').textContent = topService || '-';
 
-                // Carica ultimi lead
-                const leadsResponse = await fetch('/api/leads?limit=10');
-                const leadsData = await leadsResponse.json();
-                const leads = leadsData.leads || [];
+                // Popola tabella con ultimi 10 lead
+                const leads = allLeads.slice(0, 10);
 
                 // Popola tabella lead
                 const tbody = document.getElementById('leadsTable');
