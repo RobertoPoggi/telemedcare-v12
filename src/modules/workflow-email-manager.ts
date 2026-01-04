@@ -543,31 +543,26 @@ export async function inviaEmailContratto(
         console.log(`📋 [CONTRATTO] HTML generato (${contractHtml.length} chars)`)
         
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
-        // Salva contratto nel DB
+        // Salva contratto nel DB (usa schema esistente con camelCase)
         await db.prepare(`
           INSERT INTO contracts (
-            id, lead_id, contract_code, contract_type, 
-            nome_cliente, cognome_cliente, email_cliente,
-            servizio, piano, dispositivo, 
-            prezzo_base, prezzo_iva_inclusa,
-            contract_html, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, leadId, codice_contratto, tipo_contratto, 
+            contenuto_html, status, created_at, 
+            servizio, piano, 
+            prezzo_totale, email_template_used
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           contractData.contractId,
           leadData.id,
           contractData.contractCode,
           contractData.tipoServizio,
-          leadData.nomeAssistito || leadData.nomeRichiedente,
-          leadData.cognomeAssistito || leadData.cognomeRichiedente,
-          leadData.emailRichiedente,
-          contractData.servizio,
-          contractData.tipoServizio,
-          (contractData.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-          contractData.prezzoBase,
-          contractData.prezzoIvaInclusa,
           contractHtml,
           'PENDING',
-          new Date().toISOString()
+          new Date().toISOString(),
+          contractData.servizio,
+          contractData.tipoServizio,
+          contractData.prezzoIvaInclusa,
+          'email_invio_contratto'
         ).run()
         
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)

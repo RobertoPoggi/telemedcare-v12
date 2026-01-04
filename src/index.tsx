@@ -8056,8 +8056,8 @@ app.get('/api/contracts', async (c) => {
     const bindings = []
     
     if (leadId) {
-      query += ' WHERE id LIKE ?'
-      bindings.push(`contract-${leadId}%`)
+      query += ' WHERE leadId = ?'
+      bindings.push(leadId)
     }
     
     query += ' ORDER BY created_at DESC LIMIT 50'
@@ -8099,19 +8099,21 @@ app.get('/api/contracts/:id', async (c) => {
       return c.json({ success: false, error: 'Contratto non trovato' }, 404)
     }
     
+    // Mappa schema DB esistente a formato API
     return c.json({
       success: true,
-      ...contract,
-      nomeCliente: contract.nome_cliente,
-      cognomeCliente: contract.cognome_cliente,
-      emailCliente: contract.email_cliente,
-      contractCode: contract.contract_code,
-      contractHtml: contract.contract_html,
-      servizio: contract.servizio,
-      piano: contract.piano,
-      dispositivo: contract.dispositivo,
-      prezzo: `€${parseFloat(contract.prezzo_iva_inclusa || 0).toFixed(2)}/anno`,
-      status: contract.status
+      id: contract.id,
+      leadId: contract.leadId,
+      nomeCliente: contract.nome_cliente || (contract.leadId ? 'Cliente' : 'N/A'),
+      cognomeCliente: contract.cognome_cliente || '',
+      emailCliente: contract.email_cliente || '',
+      contractCode: contract.codice_contratto || contract.id,
+      contractHtml: contract.contenuto_html || '',
+      servizio: contract.servizio || 'eCura PRO',
+      piano: contract.tipo_contratto || contract.piano || 'BASE',
+      dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
+      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)}/anno`,
+      status: contract.status || 'PENDING'
     })
   } catch (error) {
     console.error('❌ Errore recupero contratto:', error)
