@@ -3953,6 +3953,51 @@ app.post('/api/admin/run-migrations', async (c) => {
     console.log('🔧 [MIGRATIONS] Inizio esecuzione migrations');
     const results = [];
 
+    // 0. Crea tabella CONTRACTS (se non esiste)
+    const contractsCheck = await c.env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='contracts'"
+    ).first();
+
+    if (!contractsCheck) {
+      console.log('📋 [MIGRATIONS] Tabella contracts NON esiste. Creazione in corso...');
+      
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS contracts (
+          id TEXT PRIMARY KEY,
+          lead_id TEXT NOT NULL,
+          contract_code TEXT UNIQUE NOT NULL,
+          contract_type TEXT,
+          nome_cliente TEXT,
+          cognome_cliente TEXT,
+          email_cliente TEXT,
+          servizio TEXT,
+          piano TEXT,
+          dispositivo TEXT,
+          prezzo_base REAL,
+          prezzo_iva_inclusa REAL,
+          contract_html TEXT,
+          status TEXT DEFAULT 'PENDING',
+          signature_data TEXT,
+          signature_ip TEXT,
+          signature_timestamp TEXT,
+          signature_user_agent TEXT,
+          signature_screen_resolution TEXT,
+          signature_method TEXT DEFAULT 'inline',
+          signed_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      results.push('✅ Tabella contracts creata');
+
+      // Crea indici
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_lead_id ON contracts(lead_id)').run();
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status)').run();
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_code ON contracts(contract_code)').run();
+      results.push('✅ Indici contracts creati');
+    } else {
+      results.push('ℹ️ Tabella contracts già esistente');
+    }
+
     // 1. Verifica se document_templates esiste
     const tableCheck = await c.env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='document_templates'"
