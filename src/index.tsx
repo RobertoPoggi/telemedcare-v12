@@ -8040,6 +8040,75 @@ app.post('/api/contracts/sign', async (c) => {
 })
 
 // ========================================
+// DEBUG ENDPOINT - Test contract save
+// ========================================
+app.post('/api/debug/test-contract-save', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'DB non disponibile' }, 500)
+    }
+    
+    const testData = {
+      id: `contract-test-${Date.now()}`,
+      leadId: `LEAD-TEST-${Date.now()}`,
+      codice_contratto: `TEST-${Date.now()}`,
+      tipo_contratto: 'BASE',
+      contenuto_html: '<html><body>TEST</body></html>',
+      status: 'PENDING',
+      created_at: new Date().toISOString(),
+      servizio: 'eCura PRO',
+      piano: 'BASE',
+      prezzo_totale: 585.60,
+      email_template_used: 'test'
+    }
+    
+    console.log('🧪 [DEBUG] Tentativo salvataggio contratto test:', testData.id)
+    
+    const result = await c.env.DB.prepare(`
+      INSERT INTO contracts (
+        id, leadId, codice_contratto, tipo_contratto, 
+        contenuto_html, status, created_at, 
+        servizio, piano, 
+        prezzo_totale, email_template_used
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      testData.id,
+      testData.leadId,
+      testData.codice_contratto,
+      testData.tipo_contratto,
+      testData.contenuto_html,
+      testData.status,
+      testData.created_at,
+      testData.servizio,
+      testData.piano,
+      testData.prezzo_totale,
+      testData.email_template_used
+    ).run()
+    
+    console.log('✅ [DEBUG] Contratto salvato:', result)
+    
+    // Verifica se è stato salvato
+    const saved = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?')
+      .bind(testData.id).first()
+    
+    return c.json({
+      success: true,
+      message: 'Contratto test salvato',
+      testData,
+      insertResult: result,
+      savedContract: saved
+    })
+  } catch (error) {
+    console.error('❌ [DEBUG] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: (error as Error)?.stack
+    }, 500)
+  }
+})
+
+// ========================================
 // CRUD COMPLETO - CONTRACTS
 // ========================================
 
