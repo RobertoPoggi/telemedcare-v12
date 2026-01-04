@@ -7864,75 +7864,9 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// GET /firma-contratto?contractId=xxx - Visualizza contratto da firmare
-app.get('/firma-contratto', async (c) => {
-  const contractId = c.req.query('contractId')
-  
-  if (!contractId) {
-    return c.html(`
-      <html>
-        <body style="font-family: Arial; text-align: center; padding: 50px;">
-          <h1>❌ Errore</h1>
-          <p>ID contratto mancante. Verifica il link ricevuto via email.</p>
-        </body>
-      </html>
-    `, 400)
-  }
-  
-  try {
-    if (!c.env?.DB) {
-      return c.html('<h1>Database non configurato</h1>', 500)
-    }
-    
-    // Recupera contratto dal DB
-    const contract = await c.env.DB.prepare(`
-      SELECT * FROM contracts WHERE id = ?
-    `).bind(contractId).first() as any
-    
-    if (!contract) {
-      return c.html(`
-        <html>
-          <body style="font-family: Arial; text-align: center; padding: 50px;">
-            <h1>❌ Contratto non trovato</h1>
-            <p>Il contratto con ID "${contractId}" non esiste o è scaduto.</p>
-            <p>Contatta info@telemedcare.it per assistenza.</p>
-          </body>
-        </html>
-      `, 404)
-    }
-    
-    // Se già firmato
-    if (contract.status === 'SIGNED') {
-      return c.html(`
-        <html>
-          <body style="font-family: Arial; text-align: center; padding: 50px;">
-            <h1>✅ Contratto Già Firmato</h1>
-            <p>Questo contratto è stato firmato il ${new Date(contract.signed_at).toLocaleDateString('it-IT')}.</p>
-            <p>Hai ricevuto una copia via email.</p>
-          </body>
-        </html>
-      `)
-    }
-    
-    // Restituisci HTML che carica i dati contratto via API
-    // Il file public/firma-contratto.html viene servito automaticamente
-    // e chiama /api/contracts/:id per ottenere i dati
-    return c.redirect(`/firma-contratto.html?contractId=${contractId}`)
-    
-  } catch (error) {
-    console.error('❌ Errore visualizzazione contratto:', error)
-    return c.html(`
-      <html>
-        <body style="font-family: Arial; text-align: center; padding: 50px;">
-          <h1>❌ Errore</h1>
-          <p>Si è verificato un errore nel caricamento del contratto.</p>
-          <p>Riprova tra qualche minuto o contatta info@telemedcare.it</p>
-          <p style="color: #999; font-size: 12px;">Errore: ${error instanceof Error ? error.message : String(error)}</p>
-        </body>
-      </html>
-    `, 500)
-  }
-})
+// NOTA: /firma-contratto viene servito direttamente come file statico da Cloudflare Pages
+// Il file public/firma-contratto.html viene automaticamente servito all'URL /firma-contratto.html
+// Non serve un endpoint dedicato qui, il JavaScript nel file HTML caricherà i dati via API
 
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
