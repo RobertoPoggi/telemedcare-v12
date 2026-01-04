@@ -8070,9 +8070,25 @@ app.post('/api/debug/test-contract-save', async (c) => {
       return c.json({ success: false, error: 'DB non disponibile' }, 500)
     }
     
+    // Prima crea un lead di test
+    const leadId = `LEAD-TEST-${Date.now()}`
+    await c.env.DB.prepare(`
+      INSERT INTO leads (
+        id, nomeRichiedente, cognomeRichiedente, email, status, created_at, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      leadId,
+      'Test',
+      'Contract',
+      'test@example.com',
+      'NEW',
+      new Date().toISOString(),
+      new Date().toISOString()
+    ).run()
+    
     const testData = {
       id: `contract-test-${Date.now()}`,
-      leadId: `LEAD-TEST-${Date.now()}`,
+      leadId: leadId, // Usa il leadId appena creato
       codice_contratto: `TEST-${Date.now()}`,
       tipo_contratto: 'BASE',
       template_utilizzato: 'TEST_TEMPLATE',
