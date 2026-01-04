@@ -7816,6 +7816,185 @@ app.post('/api/leads/:id/convert', async (c) => {
 })
 
 // ========================================
+// FIRMA DIGITALE CONTRATTI
+// ========================================
+
+// GET /firma-contratto?contractId=xxx - Visualizza contratto da firmare
+app.get('/firma-contratto', async (c) => {
+  const contractId = c.req.query('contractId')
+  
+  if (!contractId) {
+    return c.html(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1>❌ Errore</h1>
+          <p>ID contratto mancante. Verifica il link ricevuto via email.</p>
+        </body>
+      </html>
+    `, 400)
+  }
+  
+  try {
+    if (!c.env?.DB) {
+      return c.html('<h1>Database non configurato</h1>', 500)
+    }
+    
+    // Recupera contratto dal DB
+    const contract = await c.env.DB.prepare(`
+      SELECT * FROM contracts WHERE id = ?
+    `).bind(contractId).first() as any
+    
+    if (!contract) {
+      return c.html(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>❌ Contratto non trovato</h1>
+            <p>Il contratto con ID "${contractId}" non esiste o è scaduto.</p>
+            <p>Contatta info@telemedcare.it per assistenza.</p>
+          </body>
+        </html>
+      `, 404)
+    }
+    
+    // Se già firmato
+    if (contract.status === 'SIGNED') {
+      return c.html(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>✅ Contratto Già Firmato</h1>
+            <p>Questo contratto è stato firmato il ${new Date(contract.signed_at).toLocaleDateString('it-IT')}.</p>
+            <p>Hai ricevuto una copia via email.</p>
+          </body>
+        </html>
+      `)
+    }
+    
+    // Carica template contratto
+    const fs = await import('fs/promises')
+    let template = await fs.readFile('templates/contracts/contratto_firma_digitale.html', 'utf-8')
+    
+    // Sostituisci placeholder
+    const replacements = {
+      CONTRACT_ID: contract.id,
+      CODICE_CONTRATTO: contract.contract_code || contract.id,
+      DATA_CONTRATTO: new Date().toLocaleDateString('it-IT'),
+      SERVIZIO: contract.servizio || 'PRO',
+      PIANO: contract.piano || 'BASE',
+      NOME_CLIENTE: contract.client_name || '',
+      COGNOME_CLIENTE: contract.client_surname || '',
+      EMAIL_CLIENTE: contract.client_email || '',
+      TELEFONO_CLIENTE: contract.client_phone || '',
+      DISPOSITIVO: (contract.servizio || 'PRO').includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO',
+      PREZZO_TOTALE: `€${(contract.price || 585.60).toFixed(2)}`,
+      PREZZO_RINNOVO: `€${(contract.renewal_price || 480).toFixed(2)}`
+    }
+    
+    Object.keys(replacements).forEach(key => {
+      template = template.replace(new RegExp(`{{${key}}}`, 'g'), replacements[key])
+    })
+    
+    return c.html(template)
+    
+  } catch (error) {
+    console.error('❌ Errore visualizzazione contratto:', error)
+    return c.html(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1>❌ Errore</h1>
+          <p>Si è verificato un errore nel caricamento del contratto.</p>
+          <p>Riprova tra qualche minuto o contatta info@telemedcare.it</p>
+          <p style="color: #999; font-size: 12px;">Errore: ${error instanceof Error ? error.message : String(error)}</p>
+        </body>
+      </html>
+    `, 500)
+  }
+})
+
+// POST /api/contracts/sign - Salva firma digitale
+app.post('/api/contracts/sign', async (c) => {
+  try {
+    const data = await c.req.json()
+    const { contractId, signatureData, timestamp, userAgent, screenResolution } = data
+    
+    if (!contractId || !signatureData) {
+      return c.json({ 
+        success: false, 
+        error: 'Dati firma mancanti' 
+      }, 400)
+    }
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera contratto
+    const contract = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?')
+      .bind(contractId).first() as any
+    
+    if (!contract) {
+      return c.json({ 
+        success: false, 
+        error: 'Contratto non trovato' 
+      }, 404)
+    }
+    
+    if (contract.status === 'SIGNED') {
+      return c.json({ 
+        success: false, 
+        error: 'Contratto già firmato' 
+      }, 400)
+    }
+    
+    // Ottieni IP del cliente
+    const ipAddress = c.req.header('cf-connecting-ip') || 
+                     c.req.header('x-forwarded-for') || 
+                     c.req.header('x-real-ip') || 
+                     'unknown'
+    
+    // Salva firma nel DB
+    await c.env.DB.prepare(`
+      UPDATE contracts 
+      SET status = 'SIGNED',
+          signature_data = ?,
+          signature_ip = ?,
+          signature_timestamp = ?,
+          signature_user_agent = ?,
+          signature_screen_resolution = ?,
+          signed_at = ?,
+          signature_method = 'inline'
+      WHERE id = ?
+    `).bind(
+      signatureData,
+      ipAddress,
+      timestamp || new Date().toISOString(),
+      userAgent || '',
+      screenResolution || '',
+      new Date().toISOString(),
+      contractId
+    ).run()
+    
+    console.log(`✅ Contratto firmato: ${contractId} da IP ${ipAddress}`)
+    
+    // TODO: Invia email conferma al cliente
+    // await sendContractConfirmationEmail(contract)
+    
+    return c.json({ 
+      success: true,
+      message: 'Contratto firmato con successo',
+      contractId: contractId
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore salvataggio firma:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore durante il salvataggio della firma',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ========================================
 // CRUD COMPLETO - LEADS
 // ========================================
 

@@ -18,6 +18,153 @@ import { D1Database } from '@cloudflare/workers-types'
 import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
 import { formatServiceName } from './ecura-pricing'
 
+/**
+ * Genera HTML completo del contratto con tutti i dati del cliente
+ */
+async function generateContractHtml(leadData: any, contractData: any): Promise<string> {
+  const servizioNome = contractData.servizio || 'eCura PRO'
+  const pianoNome = contractData.tipoServizio || 'BASE'
+  const dispositivo = servizioNome.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
+  
+  const importoPrimoAnno = `€${contractData.prezzoBase.toFixed(2)}`
+  const importoAnniSuccessivi = `€${(contractData.prezzoBase * 0.5).toFixed(2)}`
+  
+  const dataContratto = new Date().toLocaleDateString('it-IT', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric' 
+  })
+  
+  return `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Contratto ${servizioNome} - ${contractData.contractCode}</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #667eea; font-size: 20pt; margin-bottom: 30px; }
+        h2 { color: #667eea; font-size: 14pt; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+        p { margin: 10px 0; text-align: justify; }
+        ul { margin: 10px 0; padding-left: 30px; }
+        .highlight { background-color: #fff9e6; padding: 15px; border-left: 4px solid #ff9800; margin: 20px 0; }
+        .table-info { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .table-info td { padding: 8px; border: 1px solid #ddd; }
+        .table-info td:first-child { font-weight: bold; background: #f8f9fa; width: 40%; }
+        .firma-section { margin-top: 50px; display: flex; justify-content: space-between; }
+        .firma-box { width: 45%; }
+        .firma-box p { margin: 5px 0; }
+        .firma-line { border-top: 1px solid #333; margin-top: 30px; padding-top: 5px; text-align: center; font-size: 9pt; }
+    </style>
+</head>
+<body>
+    <h1>CONTRATTO DI SERVIZIO<br>${servizioNome} - Piano ${pianoNome}</h1>
+    
+    <h2>📋 Dati Cliente</h2>
+    <table class="table-info">
+        <tr>
+            <td>Nome e Cognome</td>
+            <td>${leadData.nomeAssistito || leadData.nomeRichiedente} ${leadData.cognomeAssistito || leadData.cognomeRichiedente}</td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td>${leadData.emailRichiedente}</td>
+        </tr>
+        <tr>
+            <td>Telefono</td>
+            <td>${leadData.telefonoRichiedente || 'N/A'}</td>
+        </tr>
+        <tr>
+            <td>Codice Contratto</td>
+            <td><strong>${contractData.contractCode}</strong></td>
+        </tr>
+        <tr>
+            <td>Data Contratto</td>
+            <td>${dataContratto}</td>
+        </tr>
+    </table>
+    
+    <h2>📦 Servizio Acquistato</h2>
+    <div class="highlight">
+        <p><strong>Servizio:</strong> ${servizioNome}</p>
+        <p><strong>Piano:</strong> ${pianoNome}</p>
+        <p><strong>Dispositivo Incluso:</strong> ${dispositivo}</p>
+        <p><strong>Prezzo Primo Anno:</strong> ${importoPrimoAnno} + IVA 22%</p>
+        <p><strong>Prezzo Anni Successivi:</strong> ${importoAnniSuccessivi} + IVA 22%</p>
+    </div>
+    
+    <h2>📄 Condizioni del Servizio</h2>
+    
+    <p><strong>1. OGGETTO DEL CONTRATTO</strong></p>
+    <p>Il presente contratto ha per oggetto la fornitura del servizio di TeleAssistenza Domiciliare "${servizioNome}" con piano "${pianoNome}", che include:</p>
+    <ul>
+        <li>Dispositivo ${dispositivo} in comodato d'uso</li>
+        <li>Configurazione del Dispositivo e del Processo di Comunicazione</li>
+        <li>Piattaforma Web e APP di TeleAssistenza per 12 mesi</li>
+        <li>SIM per trasmissione dati e comunicazione vocale per 12 mesi</li>
+        <li>Assistenza tecnica e supporto</li>
+    </ul>
+    
+    <p><strong>2. DURATA</strong></p>
+    <p>Il contratto ha durata annuale con rinnovo tacito. Il Cliente può recedere con preavviso di 60 giorni prima della scadenza annuale.</p>
+    
+    <p><strong>3. TARIFFE</strong></p>
+    <p>La tariffa annuale del primo anno per il Servizio ${servizioNome} è <strong>${importoPrimoAnno} + IVA 22%</strong>, e include:</p>
+    <ul>
+        <li>Dispositivo ${dispositivo}</li>
+        <li>Configurazione del Dispositivo</li>
+        <li>Piattaforma Web e APP di TeleAssistenza per 12 mesi</li>
+        <li>SIM dati e voce per 12 mesi</li>
+        <li>Piano ${pianoNome}</li>
+    </ul>
+    
+    <p>Per i successivi anni, la tariffa annuale sarà <strong>${importoAnniSuccessivi} + IVA 22%</strong>.</p>
+    
+    <p><strong>4. PAGAMENTO</strong></p>
+    <p>Il pagamento avviene tramite <strong>fattura anticipata di 12 mesi</strong> all'attivazione del servizio.</p>
+    <p><strong>Modalità:</strong> Bonifico bancario intestato a Medica GB S.r.l.</p>
+    <p><strong>IBAN:</strong> IT97L0503401727000000003519</p>
+    <p><strong>Causale:</strong> Servizio ${servizioNome} ${pianoNome} con Dispositivo ${dispositivo}</p>
+    
+    <p><strong>5. PRIVACY E TRATTAMENTO DATI</strong></p>
+    <p>Il Cliente acconsente al trattamento dei propri dati personali secondo il GDPR (Regolamento UE 2016/679). I dati saranno utilizzati esclusivamente per l'erogazione del servizio.</p>
+    
+    <p><strong>6. RECESSO</strong></p>
+    <p>Il Cliente può recedere dal contratto con preavviso scritto di 60 giorni prima della scadenza annuale, inviando comunicazione a info@telemedcare.it.</p>
+    
+    <p><strong>7. FORO COMPETENTE</strong></p>
+    <p>Per qualsiasi controversia è competente il Foro di Milano.</p>
+    
+    <div class="firma-section">
+        <div class="firma-box">
+            <p><strong>Medica GB S.r.l.</strong></p>
+            <p>Corso Giuseppe Garibaldi, 34</p>
+            <p>20121 Milano</p>
+            <p>P.IVA: 12435130963</p>
+            <div class="firma-line">Firma Legale Rappresentante</div>
+        </div>
+        <div class="firma-box">
+            <p><strong>Il Cliente</strong></p>
+            <p>${leadData.nomeAssistito || leadData.nomeRichiedente} ${leadData.cognomeAssistito || leadData.cognomeRichiedente}</p>
+            <p>${leadData.emailRichiedente}</p>
+            <p>&nbsp;</p>
+            <div class="firma-line">Firma Digitale</div>
+        </div>
+    </div>
+    
+    <p style="margin-top: 50px; text-align: center; font-size: 10pt; color: #666;">
+        <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
+        Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148<br>
+        P.IVA: 12435130963 | REA: MI-2661409<br>
+        www.medicagb.it | www.ecura.it | www.telemedcare.it | info@medicagb.it
+    </p>
+</body>
+</html>
+  `.trim()
+}
+
+
 export interface LeadData {
   id: string
   nomeRichiedente: string
@@ -381,6 +528,51 @@ export async function inviaEmailContratto(
   try {
     console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.emailRichiedente}`)
 
+    // ============================================
+    // STEP 1: Crea record contratto nel DB
+    // ============================================
+    if (db) {
+      try {
+        // Genera HTML contratto completo
+        const contractHtml = await generateContractHtml(leadData, contractData)
+        
+        // Salva contratto nel DB
+        await db.prepare(`
+          INSERT INTO contracts (
+            id, lead_id, contract_code, contract_type, 
+            nome_cliente, cognome_cliente, email_cliente,
+            servizio, piano, dispositivo, 
+            prezzo_base, prezzo_iva_inclusa,
+            contract_html, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          contractData.contractId,
+          leadData.id,
+          contractData.contractCode,
+          contractData.tipoServizio,
+          leadData.nomeAssistito || leadData.nomeRichiedente,
+          leadData.cognomeAssistito || leadData.cognomeRichiedente,
+          leadData.emailRichiedente,
+          contractData.servizio,
+          contractData.tipoServizio,
+          (contractData.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
+          contractData.prezzoBase,
+          contractData.prezzoIvaInclusa,
+          contractHtml,
+          'PENDING',
+          new Date().toISOString()
+        ).run()
+        
+        console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)
+      } catch (dbError) {
+        console.error('❌ [CONTRATTO] Errore salvataggio DB:', dbError)
+        // Continua comunque con l'invio email
+      }
+    }
+    
+    // ============================================
+    // STEP 2: Prepara e invia email con link firma
+    // ============================================
     const emailService = new EmailService(env)
     
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)

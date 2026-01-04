@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto eCura {{SERVIZIO}} {{PIANO}} - Firma Digitale</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+            max-width: 21cm;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .contract-container {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            margin: 20px 0;
+            text-transform: uppercase;
+            color: #2c3e50;
+        }
+        h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            text-decoration: underline;
+            color: #34495e;
+        }
+        p {
+            margin: 8px 0;
+            text-align: justify;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        .company-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        .signature-section {
+            margin-top: 50px;
+            padding: 30px;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            background: #ebf5fb;
+        }
+        .signature-canvas {
+            border: 2px solid #2c3e50;
+            background: white;
+            cursor: crosshair;
+            display: block;
+            margin: 20px auto;
+            touch-action: none;
+        }
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+        .btn-clear {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-clear:hover {
+            background: #c0392b;
+        }
+        .btn-sign {
+            background: #27ae60;
+            color: white;
+            font-size: 18px;
+            padding: 20px 40px;
+        }
+        .btn-sign:hover {
+            background: #229954;
+        }
+        .btn-sign:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        @media print {
+            .signature-section button {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="contract-container">
+        <div class="company-header">
+            <h1>CONTRATTO DI SERVIZIO eCura {{SERVIZIO}} {{PIANO}}</h1>
+            <p><strong>Codice Contratto:</strong> {{CODICE_CONTRATTO}}</p>
+            <p><strong>Data:</strong> {{DATA_CONTRATTO}}</p>
+        </div>
+
+        <h2>Tra</h2>
+        <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
+        Sede legale: Corso Giuseppe Garibaldi, 34 - 20121 Milano<br>
+        P.IVA: 12435130963 | REA: MI-2661409<br>
+        PEC: info@pec.medicagb.it | Email: info@medicagb.it</p>
+
+        <p>di seguito denominata "<strong>Medica GB</strong>"</p>
+
+        <h2>E</h2>
+        <p><strong>Il/La Sig./Sig.ra {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong><br>
+        Email: {{EMAIL_CLIENTE}}<br>
+        Telefono: {{TELEFONO_CLIENTE}}</p>
+
+        <p>di seguito denominato/a "<strong>Cliente</strong>"</p>
+
+        <h2>Premesso che</h2>
+        <p>• Medica GB è una Startup Innovativa a Vocazione Sociale specializzata in servizi di telemedicina e teleassistenza;<br>
+        • Il Cliente è interessato ad attivare il servizio eCura {{SERVIZIO}} con Piano {{PIANO}};<br>
+        • Le parti intendono regolare i termini e le condizioni del servizio.</p>
+
+        <h2>Si conviene e si stipula quanto segue</h2>
+
+        <h2>Oggetto del Contratto</h2>
+        <p>Medica GB si impegna a fornire al Cliente il servizio di teleassistenza e telemedicina denominato "<strong>eCura {{SERVIZIO}}</strong>" con "<strong>Piano {{PIANO}}</strong>", che include:</p>
+        <ul>
+            <li>Dispositivo medico certificato {{DISPOSITIVO}}</li>
+            <li>Piattaforma web e app di teleassistenza</li>
+            <li>SIM dati per trasmissione e comunicazione vocale</li>
+            <li>Configurazione iniziale del dispositivo</li>
+            <li>Assistenza tecnica per 12 mesi</li>
+        </ul>
+
+        <h2>Durata del Contratto</h2>
+        <p>Il presente contratto ha durata di <strong>12 (dodici) mesi</strong> dalla data di attivazione del servizio.</p>
+        <p>Il Contratto è rinnovabile tacitamente per ulteriori 12 mesi, salvo disdetta scritta da comunicarsi con almeno 30 giorni di anticipo rispetto alla scadenza.</p>
+
+        <h2>Tariffa del Servizio</h2>
+        <p>La tariffa annuale per il servizio eCura {{SERVIZIO}} Piano {{PIANO}} è pari a:</p>
+        <p><strong>Primo anno: {{PREZZO_TOTALE}} (IVA 22% inclusa)</strong></p>
+        <p>Include:</p>
+        <ul>
+            <li>Dispositivo {{DISPOSITIVO}}</li>
+            <li>Configurazione e setup iniziale</li>
+            <li>Piattaforma web e APP per 12 mesi</li>
+            <li>SIM dati e voce per 12 mesi</li>
+        </ul>
+
+        <p><strong>Anni successivi: {{PREZZO_RINNOVO}} (IVA 22% inclusa)</strong></p>
+        <p>Include:</p>
+        <ul>
+            <li>Piattaforma web e APP per 12 mesi</li>
+            <li>SIM dati e voce per 12 mesi</li>
+            <li>Assistenza tecnica</li>
+        </ul>
+
+        <h2>Metodo di Pagamento</h2>
+        <p>Medica GB emetterà fattura anticipata di 12 mesi all'attivazione del servizio.</p>
+        <p>Il Cliente procederà al pagamento tramite bonifico bancario:</p>
+        <p><strong>Intestato a:</strong> Medica GB S.r.l.<br>
+        <strong>Banca:</strong> Banca Popolare di Milano<br>
+        <strong>IBAN:</strong> IT97L0503401727000000003519<br>
+        <strong>Causale:</strong> Servizio eCura {{SERVIZIO}} {{PIANO}} - {{CODICE_CONTRATTO}}</p>
+
+        <h2>Riservatezza</h2>
+        <p>Le parti si impegnano reciprocamente a non divulgare informazioni riservate acquisite durante l'esecuzione del presente contratto, nel rispetto del GDPR (Regolamento UE 2016/679).</p>
+
+        <h2>Recesso</h2>
+        <p>Il Cliente ha diritto di recedere dal contratto entro 14 giorni dalla ricezione del dispositivo, senza necessità di fornire motivazioni.</p>
+
+        <h2>Foro Competente</h2>
+        <p>Per ogni controversia relativa al presente contratto è competente il Foro di Milano.</p>
+
+        <p style="margin-top: 40px;"><strong>Milano, {{DATA_CONTRATTO}}</strong></p>
+
+        <div class="info-box">
+            <p><strong>ℹ️ Informazioni sulla Firma Digitale</strong></p>
+            <p>Firmando digitalmente questo contratto, Lei accetta tutti i termini e condizioni sopra riportati.</p>
+            <p>La firma verrà registrata insieme a: data/ora, indirizzo IP e dispositivo utilizzato.</p>
+            <p>Questo documento ha valore di firma elettronica semplice ai sensi del Regolamento eIDAS (UE 910/2014).</p>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <h2 style="text-align: center; color: #3498db;">✍️ Apponi la Tua Firma</h2>
+        <p style="text-align: center;">Firma nel riquadro sottostante usando il mouse o il touch</p>
+        
+        <canvas id="signature-pad" class="signature-canvas" width="600" height="200"></canvas>
+        
+        <div class="button-group">
+            <button class="btn-clear" onclick="clearSignature()">🗑️ Cancella</button>
+            <button class="btn-sign" id="btn-sign" onclick="submitSignature()" disabled>
+                ✅ Firma e Invia Contratto
+            </button>
+        </div>
+        
+        <p style="text-align: center; margin-top: 20px; color: #7f8c8d;">
+            <small>Timestamp: <span id="timestamp"></span></small>
+        </p>
+    </div>
+
+    <div class="success-box" id="success-box">
+        <h2>✅ Contratto Firmato con Successo!</h2>
+        <p>Grazie per aver firmato il contratto.</p>
+        <p>Riceverai una email di conferma a breve.</p>
+        <p>Il dispositivo verrà spedito entro 10 giorni lavorativi.</p>
+    </div>
+
+    <script>
+        // Configurazione
+        const contractId = '{{CONTRACT_ID}}';
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        const btnSign = document.getElementById('btn-sign');
+        let isDrawing = false;
+        let hasSignature = false;
+
+        // Update timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('it-IT');
+
+        // Setup canvas
+        function setupCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+        }
+
+        setupCanvas();
+        window.addEventListener('resize', setupCanvas);
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            hasSignature = true;
+            btnSign.disabled = false;
+            const pos = getPosition(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getPosition(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches ? e.touches[0] : e;
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Clear signature
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+            btnSign.disabled = true;
+        }
+
+        // Submit signature
+        async function submitSignature() {
+            if (!hasSignature) {
+                alert('Per favore, apponi prima la tua firma.');
+                return;
+            }
+
+            btnSign.disabled = true;
+            btnSign.textContent = '⏳ Invio in corso...';
+
+            try {
+                const signatureData = canvas.toDataURL('image/png');
+                
+                const response = await fetch('/api/contracts/sign', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contractId: contractId,
+                        signatureData: signatureData,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent,
+                        screenResolution: `${window.screen.width}x${window.screen.height}`
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.querySelector('.contract-container').style.display = 'none';
+                    document.querySelector('.signature-section').style.display = 'none';
+                    document.getElementById('success-box').style.display = 'block';
+                    
+                    // Scroll to success message
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    alert('Errore durante la firma: ' + (result.error || 'Errore sconosciuto'));
+                    btnSign.disabled = false;
+                    btnSign.textContent = '✅ Firma e Invia Contratto';
+                }
+            } catch (error) {
+                console.error('Errore firma:', error);
+                alert('Errore di connessione. Riprova tra qualche istante.');
+                btnSign.disabled = false;
+                btnSign.textContent = '✅ Firma e Invia Contratto';
+            }
+        }
+    </script>
+</body>
+</html>
