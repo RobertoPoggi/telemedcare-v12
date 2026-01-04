@@ -7864,13 +7864,30 @@ app.post('/api/leads/:id/convert', async (c) => {
 // FIRMA DIGITALE CONTRATTI
 // ========================================
 
-// GET /firma-contratto?contractId=xxx - Redirect a pagina firma statica
+// GET /firma-contratto?contractId=xxx - Serve pagina firma statica
 app.get('/firma-contratto', async (c) => {
-  const contractId = c.req.query('contractId')
-  if (!contractId) {
-    return c.redirect('/firma-contratto.html')
+  // Cloudflare Pages asset serving: fetch the static file
+  const url = new URL(c.req.url)
+  url.pathname = '/firma-contratto.html'
+  
+  try {
+    // Use c.env.ASSETS (Cloudflare Pages asset binding) to fetch static files
+    const asset = await c.env.ASSETS.fetch(url.toString())
+    return new Response(asset.body, {
+      status: asset.status,
+      headers: asset.headers
+    })
+  } catch (error) {
+    console.error('Error serving static file:', error)
+    return c.html(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h1>❌ Errore</h1>
+          <p>Impossibile caricare la pagina. Riprova più tardi.</p>
+        </body>
+      </html>
+    `, 500)
   }
-  return c.redirect(`/firma-contratto.html?contractId=${contractId}`)
 })
 
 // POST /api/contracts/sign - Salva firma digitale
