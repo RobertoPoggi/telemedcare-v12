@@ -8011,16 +8011,18 @@ app.get('/api/contracts', async (c) => {
     const bindings = []
     
     if (leadId) {
-      query += ' WHERE lead_id = ?'
-      bindings.push(leadId)
+      query += ' WHERE id LIKE ?'
+      bindings.push(`contract-${leadId}%`)
     }
     
-    query += ' ORDER BY created_at DESC'
+    query += ' ORDER BY created_at DESC LIMIT 50'
     
     const stmt = c.env.DB.prepare(query)
     const result = bindings.length > 0 
       ? await stmt.bind(...bindings).all() 
       : await stmt.all()
+    
+    console.log(`📋 Contratti trovati: ${result.results?.length || 0}`)
     
     return c.json({ 
       success: true, 
