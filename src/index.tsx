@@ -8082,6 +8082,8 @@ app.post('/api/debug/test-contract-save', async (c) => {
       updated_at: new Date().toISOString(),
       servizio: 'eCura PRO',
       piano: 'BASE',
+      prezzo_mensile: 40,
+      durata_mesi: 12,
       prezzo_totale: 585.60,
       email_template_used: 'test',
       pdf_generated: 0,
@@ -8096,8 +8098,9 @@ app.post('/api/debug/test-contract-save', async (c) => {
         template_utilizzato, contenuto_html, 
         pdf_generated, email_sent, email_template_used,
         status, servizio, piano, 
-        prezzo_totale, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        prezzo_mensile, durata_mesi, prezzo_totale, 
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       testData.id,
       testData.leadId,
@@ -8111,6 +8114,8 @@ app.post('/api/debug/test-contract-save', async (c) => {
       testData.status,
       testData.servizio,
       testData.piano,
+      testData.prezzo_mensile,
+      testData.durata_mesi,
       testData.prezzo_totale,
       testData.created_at,
       testData.updated_at

@@ -543,15 +543,19 @@ export async function inviaEmailContratto(
         console.log(`📋 [CONTRATTO] HTML generato (${contractHtml.length} chars)`)
         
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
-        // Salva contratto nel DB (usa schema esistente con tutti i campi richiesti)
+        // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
+        const prezzoMensile = contractData.tipoServizio === 'AVANZATO' ? 70 : 40
+        const durataMesi = 12
+        
         await db.prepare(`
           INSERT INTO contracts (
             id, leadId, codice_contratto, tipo_contratto, 
             template_utilizzato, contenuto_html, 
             pdf_generated, email_sent, email_template_used,
             status, servizio, piano, 
-            prezzo_totale, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            prezzo_mensile, durata_mesi, prezzo_totale, 
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           contractData.contractId,
           leadData.id,
@@ -565,6 +569,8 @@ export async function inviaEmailContratto(
           'PENDING',
           contractData.servizio,
           contractData.tipoServizio,
+          prezzoMensile, // prezzo_mensile (NOT NULL)
+          durataMesi, // durata_mesi (NOT NULL)
           contractData.prezzoIvaInclusa,
           new Date().toISOString(),
           new Date().toISOString()
