@@ -8183,6 +8183,144 @@ app.get('/dashboard-live', async (c) => {
   }
 })
 
+// GET /test-email-debug - Test diagnostico email count inline
+app.get('/test-email-debug', async (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST Email Count - TeleMedCare</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 30px auto; padding: 20px; background: #f5f7fa; }
+        .container { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #667eea; margin-bottom: 20px; }
+        .result { padding: 20px; margin: 15px 0; border-radius: 8px; }
+        .success { background: #d4edda; border-left: 5px solid #28a745; }
+        .error { background: #f8d7da; border-left: 5px solid #dc3545; }
+        .info { background: #d1ecf1; border-left: 5px solid #17a2b8; }
+        .kpi { font-size: 64px; font-weight: bold; color: #667eea; text-align: center; margin: 20px 0; }
+        .kpi-label { text-align: center; color: #666; font-size: 18px; margin-bottom: 10px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; max-height: 400px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; }
+        .stat-value { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .stat-label { font-size: 14px; opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐛 Test Diagnostico Email Count</h1>
+        
+        <div id="status" class="result info">
+            ⏳ Caricamento in corso...
+        </div>
+        
+        <div id="stats"></div>
+        <div id="result"></div>
+        
+        <h3>📋 Log di Debug:</h3>
+        <pre id="logs"></pre>
+    </div>
+    
+    <script>
+        const logs = [];
+        
+        function log(msg) {
+            const time = new Date().toISOString().split('T')[1].split('.')[0];
+            logs.push(\`[\${time}] \${msg}\`);
+            console.log(msg);
+            document.getElementById('logs').textContent = logs.join('\\n');
+        }
+        
+        async function test() {
+            try {
+                log('🚀 START TEST');
+                log('📡 Fetch /api/leads?limit=100...');
+                
+                const res = await fetch('/api/leads?limit=100');
+                log(\`✅ Status: \${res.status}\`);
+                
+                const data = await res.json();
+                const leads = data.leads || [];
+                log(\`✅ Lead caricati: \${leads.length}\`);
+                
+                const now = new Date();
+                const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                log(\`📅 Cutoff: \${cutoff.toISOString()}\`);
+                
+                let emailCount = 0;
+                let contractCount = 0;
+                
+                leads.forEach(lead => {
+                    const date = new Date(lead.created_at || lead.timestamp);
+                    if (date >= cutoff) {
+                        if (lead.vuoleBrochure === 'Si' || lead.vuoleContratto === 'Si' || lead.vuoleManuale === 'Si') {
+                            emailCount++;
+                        }
+                        if (lead.vuoleContratto === 'Si') {
+                            contractCount++;
+                        }
+                    }
+                });
+                
+                log(\`📧 Email count: \${emailCount}\`);
+                log(\`📝 Contract count: \${contractCount}\`);
+                
+                document.getElementById('status').className = 'result success';
+                document.getElementById('status').innerHTML = '✅ Test completato!';
+                
+                document.getElementById('stats').innerHTML = \`
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Email Inviate</div>
+                            <div class="stat-value">\${emailCount}</div>
+                            <div class="stat-label">Ultimi 30 giorni</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Contratti Inviati</div>
+                            <div class="stat-value">\${contractCount}</div>
+                            <div class="stat-label">Ultimi 30 giorni</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Lead Totali</div>
+                            <div class="stat-value">\${leads.length}</div>
+                            <div class="stat-label">Database</div>
+                        </div>
+                    </div>
+                \`;
+                
+                document.getElementById('result').innerHTML = \`
+                    <div class="result success">
+                        <h3>✅ RISULTATO:</h3>
+                        <p><strong>Il calcolo JavaScript funziona correttamente!</strong></p>
+                        <p>Se la dashboard mostra 0, il problema è interferenza con altri script o errori nel caricamento.</p>
+                    </div>
+                \`;
+                
+                log('✅ DONE');
+                
+            } catch (err) {
+                log(\`❌ ERROR: \${err.message}\`);
+                document.getElementById('status').className = 'result error';
+                document.getElementById('status').innerHTML = \`❌ Errore: \${err.message}\`;
+                document.getElementById('result').innerHTML = \`
+                    <div class="result error">
+                        <h3>❌ ERRORE:</h3>
+                        <pre>\${err.stack}</pre>
+                    </div>
+                \`;
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>
+  `)
+})
+
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
   try {
