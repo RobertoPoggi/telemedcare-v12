@@ -190,17 +190,25 @@
 
         async function loadDashboardData() {
             try {
+                console.log('🚀 [DASHBOARD] START loadDashboardData');
+                
                 // Carica tutti i lead (ultimi 100 per avere dati sufficienti)
+                console.log('📡 [DASHBOARD] Fetching /api/leads?limit=100...');
                 const leadsResponse = await fetch('/api/leads?limit=100');
+                console.log('✅ [DASHBOARD] Response status:', leadsResponse.status);
+                
                 const leadsData = await leadsResponse.json();
                 const allLeads = leadsData.leads || [];
+                console.log('📊 [DASHBOARD] Leads loaded:', allLeads.length);
                 
                 // Calcola statistiche lato client
                 const now = new Date();
                 const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                console.log('📅 [DASHBOARD] Cutoff date:', thirtyDaysAgo.toISOString());
                 
                 // Lead totali
                 const totalLeads = allLeads.length;
+                console.log('📈 [DASHBOARD] Total leads:', totalLeads);
                 
                 // Email inviate ultimi 30 giorni
                 const emailsMonth = allLeads.filter(lead => {
@@ -208,12 +216,14 @@
                     return leadDate >= thirtyDaysAgo && 
                            (lead.vuoleBrochure === 'Si' || lead.vuoleContratto === 'Si' || lead.vuoleManuale === 'Si');
                 }).length;
+                console.log('📧 [DASHBOARD] Emails calculated:', emailsMonth);
                 
                 // Contratti inviati ultimi 30 giorni
                 const contractsMonth = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
                     return leadDate >= thirtyDaysAgo && lead.vuoleContratto === 'Si';
                 }).length;
+                console.log('📝 [DASHBOARD] Contracts calculated:', contractsMonth);
                 
                 // Servizio più richiesto
                 const servicesCount = {};
@@ -225,12 +235,32 @@
                 const topService = Object.keys(servicesCount).length > 0 
                     ? Object.keys(servicesCount).reduce((a, b) => servicesCount[a] > servicesCount[b] ? a : b)
                     : 'N/A';
+                console.log('⭐ [DASHBOARD] Top service:', topService);
                 
                 // Aggiorna KPI
-                document.getElementById('totalLeads').textContent = totalLeads || '0';
-                document.getElementById('contractsSent').textContent = contractsMonth || '0';
-                document.getElementById('emailsSent').textContent = emailsMonth || '0';
-                document.getElementById('topService').textContent = topService || '-';
+                console.log('🔄 [DASHBOARD] Updating DOM...');
+                const totalLeadsEl = document.getElementById('totalLeads');
+                const contractsSentEl = document.getElementById('contractsSent');
+                const emailsSentEl = document.getElementById('emailsSent');
+                const topServiceEl = document.getElementById('topService');
+                
+                console.log('🔍 [DASHBOARD] Elements found:', {
+                    totalLeads: !!totalLeadsEl,
+                    contractsSent: !!contractsSentEl,
+                    emailsSent: !!emailsSentEl,
+                    topService: !!topServiceEl
+                });
+                
+                if (totalLeadsEl) totalLeadsEl.textContent = totalLeads || '0';
+                if (contractsSentEl) contractsSentEl.textContent = contractsMonth || '0';
+                if (emailsSentEl) {
+                    console.log('💾 [DASHBOARD] Setting emailsSent to:', emailsMonth);
+                    emailsSentEl.textContent = emailsMonth || '0';
+                    console.log('✅ [DASHBOARD] emailsSent updated. New value:', emailsSentEl.textContent);
+                } else {
+                    console.error('❌ [DASHBOARD] emailsSent element NOT FOUND!');
+                }
+                if (topServiceEl) topServiceEl.textContent = topService || '-';
 
                 // Popola tabella con ultimi 10 lead
                 const leads = allLeads.slice(0, 10);
