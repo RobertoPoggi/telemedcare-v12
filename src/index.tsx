@@ -10551,6 +10551,48 @@ app.put('/api/assistiti/:id', async (c) => {
   }
 })
 
+// POST /api/setup-email-counter - Crea tabella stats con contatore email
+app.post('/api/setup-email-counter', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('📊 Setup email counter...')
+
+    // Crea tabella stats
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS stats (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        emails_sent_30days INTEGER DEFAULT 0,
+        last_reset_date TEXT DEFAULT (date('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `).run()
+
+    // Inserisci valore iniziale (32 email)
+    await c.env.DB.prepare(`
+      INSERT OR REPLACE INTO stats (id, emails_sent_30days, last_reset_date, updated_at)
+      VALUES (1, 32, date('now'), datetime('now'))
+    `).run()
+
+    console.log('✅ Email counter creato con valore 32')
+
+    return c.json({ 
+      success: true, 
+      message: 'Email counter inizializzato',
+      current_count: 32
+    })
+
+  } catch (error: any) {
+    console.error('❌ Errore setup email counter:', error)
+    return c.json({ 
+      success: false, 
+      error: error.message 
+    }, 500)
+  }
+})
+
 // POST /api/migrate-schema - Migrazione automatica schema database
 app.post('/api/migrate-schema', async (c) => {
   try {
@@ -11081,14 +11123,21 @@ app.get('/api/data/stats', async (c) => {
     const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
     console.log('📊 [STATS] Total leads:', totalLeads?.count)
     
-    // Email inviate ultimi 30 giorni (conta leads con vuoleBrochure o vuoleContratto = 'Si')
-    console.log('📊 [STATS] Query emailsMonth...')
-    const emailsMonth = await c.env.DB.prepare(`
-      SELECT COUNT(*) as count FROM leads 
-      WHERE created_at >= ? 
-      AND (vuoleBrochure = 'Si' OR vuoleContratto = 'Si' OR vuoleManuale = 'Si')
-    `).bind(thirtyDaysAgoISO).first()
-    console.log('📊 [STATS] emailsMonth result:', emailsMonth?.count)
+    // Email inviate ultimi 30 giorni - LEGGE DAL CONTATORE
+    console.log('📊 [STATS] Lettura contatore email...')
+    const emailCounter = await c.env.DB.prepare(`
+      SELECT emails_sent_30days, last_reset_date FROM stats WHERE id = 1
+    `).first()
+    
+    let emailsMonth = 0
+    if (emailCounter) {
+      emailsMonth = emailCounter.emails_sent_30days || 0
+      console.log('📊 [STATS] Email count dal DB:', emailsMonth)
+      console.log('📊 [STATS] Last reset:', emailCounter.last_reset_date)
+    } else {
+      console.warn('⚠️  [STATS] Contatore email non trovato - usa 0')
+    }
+    console.log('📊 [STATS] emailsMonth finale:', emailsMonth)
     
     // Servizio più richiesto (ultimi 30 giorni)
     const topService = await c.env.DB.prepare(`
@@ -11108,7 +11157,7 @@ app.get('/api/data/stats', async (c) => {
       paymentsToday: paymentsToday?.count,
       configurationsToday: configurationsToday?.count,
       activationsToday: activationsToday?.count,
-      emailsMonth: emailsMonth?.count,
+      emailsMonth: emailsMonth,
       topService: topService?.servizio
     })
     
@@ -11121,7 +11170,7 @@ app.get('/api/data/stats', async (c) => {
       paymentsToday: paymentsToday?.count || 0,
       configurationsToday: configurationsToday?.count || 0,
       activationsToday: activationsToday?.count || 0,
-      emailsMonth: emailsMonth?.count || 0,
+      emailsMonth: emailsMonth || 0,
       topService: topService?.servizio || 'N/A',
       timestamp: new Date().toISOString()
     })
