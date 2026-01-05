@@ -90,7 +90,7 @@
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-purple-500">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm mb-1">Email Inviate</p>
+                        <p class="text-gray-600 text-sm mb-1">Brochure Inviate</p>
                         <p class="text-3xl font-bold text-purple-600" id="emailsSent">-</p>
                         <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
                     </div>
@@ -210,13 +210,12 @@
                 const totalLeads = allLeads.length;
                 console.log('📈 [DASHBOARD] Total leads:', totalLeads);
                 
-                // Email inviate ultimi 30 giorni
-                const emailsMonth = allLeads.filter(lead => {
+                // Brochure inviate ultimi 30 giorni (SOLO vuoleBrochure = 'Si')
+                const brochuresMonth = allLeads.filter(lead => {
                     const leadDate = new Date(lead.created_at || lead.timestamp);
-                    return leadDate >= thirtyDaysAgo && 
-                           (lead.vuoleBrochure === 'Si' || lead.vuoleContratto === 'Si' || lead.vuoleManuale === 'Si');
+                    return leadDate >= thirtyDaysAgo && lead.vuoleBrochure === 'Si';
                 }).length;
-                console.log('📧 [DASHBOARD] Emails calculated:', emailsMonth);
+                console.log('📧 [DASHBOARD] Brochures calculated:', brochuresMonth);
                 
                 // Contratti inviati ultimi 30 giorni
                 const contractsMonth = allLeads.filter(lead => {
@@ -254,9 +253,9 @@
                 if (totalLeadsEl) totalLeadsEl.textContent = totalLeads || '0';
                 if (contractsSentEl) contractsSentEl.textContent = contractsMonth || '0';
                 if (emailsSentEl) {
-                    console.log('💾 [DASHBOARD] Setting emailsSent to:', emailsMonth);
-                    emailsSentEl.textContent = emailsMonth || '0';
-                    console.log('✅ [DASHBOARD] emailsSent updated. New value:', emailsSentEl.textContent);
+                    console.log('💾 [DASHBOARD] Setting brochures to:', brochuresMonth);
+                    emailsSentEl.textContent = brochuresMonth || '0';
+                    console.log('✅ [DASHBOARD] brochures updated. New value:', emailsSentEl.textContent);
                 } else {
                     console.error('❌ [DASHBOARD] emailsSent element NOT FOUND!');
                 }
