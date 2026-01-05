@@ -8677,14 +8677,34 @@ app.get('/api/contracts/:id', async (c) => {
       return c.json({ success: false, error: 'Contratto non trovato' }, 404)
     }
     
+    // Prendi i dati del lead se disponibili
+    let nomeCliente = 'Cliente'
+    let cognomeCliente = ''
+    let emailCliente = ''
+    
+    if (contract.leadId) {
+      try {
+        const lead = await c.env.DB.prepare('SELECT nomeRichiedente, cognomeRichiedente, email FROM leads WHERE id = ?')
+          .bind(contract.leadId).first() as any
+        
+        if (lead) {
+          nomeCliente = lead.nomeRichiedente || 'Cliente'
+          cognomeCliente = lead.cognomeRichiedente || ''
+          emailCliente = lead.email || ''
+        }
+      } catch (leadError) {
+        console.warn('⚠️  Errore caricamento lead:', leadError)
+      }
+    }
+    
     // Mappa schema DB esistente a formato API
     return c.json({
       success: true,
       id: contract.id,
       leadId: contract.leadId,
-      nomeCliente: contract.nome_cliente || (contract.leadId ? 'Cliente' : 'N/A'),
-      cognomeCliente: contract.cognome_cliente || '',
-      emailCliente: contract.email_cliente || '',
+      nomeCliente: nomeCliente,
+      cognomeCliente: cognomeCliente,
+      emailCliente: emailCliente,
       contractCode: contract.codice_contratto || contract.id,
       contractHtml: contract.contenuto_html || '',
       servizio: contract.servizio || 'eCura PRO',
