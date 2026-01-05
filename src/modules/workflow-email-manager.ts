@@ -39,6 +39,18 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataInizioServizio = new Date().toLocaleDateString('it-IT')
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
+  // Determina intestatario contratto (richiedente o assistito)
+  const useRichiedente = !leadData.intestatarioContratto || leadData.intestatarioContratto === 'richiedente'
+  const nomeIntestatario = useRichiedente ? leadData.nomeRichiedente : (leadData.nomeAssistito || leadData.nomeRichiedente)
+  const cognomeIntestatario = useRichiedente ? leadData.cognomeRichiedente : (leadData.cognomeAssistito || leadData.cognomeRichiedente)
+  const luogoNascitaIntestatario = leadData.luogoNascitaAssistito || 'N/A'
+  const dataNascitaIntestatario = leadData.dataNascitaAssistito || 'N/A'
+  const indirizzoIntestatario = leadData.indirizzoAssistito || 'N/A'
+  const capIntestatario = leadData.capAssistito || 'N/A'
+  const cittaIntestatario = leadData.cittaAssistito || 'N/A'
+  const provinciaIntestatario = leadData.provinciaAssistito || 'N/A'
+  const cfIntestatario = leadData.cfAssistito || 'N/A'
+  
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
 <!DOCTYPE html>
@@ -117,8 +129,8 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         }
         
         .highlight {
-            background-color: #ffffcc;
-            padding: 2px 4px;
+            background-color: transparent;
+            padding: 0;
             font-weight: bold;
         }
         
@@ -179,7 +191,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p style="text-align: center; font-weight: bold;">e</p>
     
     <div class="party">
-        <p>Sig./Sig.ra <span class="highlight">${leadData.nomeAssistito || leadData.nomeRichiedente}</span> <span class="highlight">${leadData.cognomeAssistito || leadData.cognomeRichiedente}</span> nato/a a <span class="highlight">N/A</span> il <span class="highlight">N/A</span>, residente e domiciliato/a in <span class="highlight">N/A</span> - <span class="highlight">N/A</span> <span class="highlight">N/A</span> (<span class="highlight">N/A</span>) e con codice fiscale <span class="highlight">N/A</span>.</p>
+        <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario}</span> <span class="highlight">${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario}</span> - <span class="highlight">${capIntestatario}</span> <span class="highlight">${cittaIntestatario}</span> (<span class="highlight">${provinciaIntestatario}</span>) e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
         
         <p><strong>Riferimenti:</strong><br>
         telefono <span class="highlight">${leadData.telefonoRichiedente || 'N/A'}</span> – e-mail <span class="highlight">${leadData.emailRichiedente}</span></p>

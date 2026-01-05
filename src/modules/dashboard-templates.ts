@@ -2813,6 +2813,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
                 codiceFiscaleAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
                 
+                // Intestatario contratto
+                intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
+                
                 // Servizio e Piano
                 servizio: document.getElementById('newServizio').value,
                 piano: document.getElementById('newPiano').value,
@@ -3114,6 +3117,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <input type="text" id="newCodiceFiscale" required maxlength="16"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
                                     placeholder="RSSGPP50C15F205X">
+                            </div>
+                        </div>
+                        
+                        <!-- INTESTATARIO CONTRATTO -->
+                        <div class="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-file-signature text-yellow-600 mr-2"></i>
+                                Intestatario Contratto *
+                            </label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="newIntestatarioRichiedente" name="intestatario" value="richiedente" checked
+                                        class="w-5 h-5 text-yellow-600 focus:ring-yellow-500 focus:ring-2">
+                                    <span class="ml-3 text-gray-700 font-medium">
+                                        📝 Richiedente
+                                        <span class="block text-xs text-gray-500">Il contratto sarà intestato a te</span>
+                                    </span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="newIntestatarioAssistito" name="intestatario" value="assistito"
+                                        class="w-5 h-5 text-yellow-600 focus:ring-yellow-500 focus:ring-2">
+                                    <span class="ml-3 text-gray-700 font-medium">
+                                        👴 Assistito
+                                        <span class="block text-xs text-gray-500">Il contratto sarà intestato all'assistito</span>
+                                    </span>
+                                </label>
                             </div>
                         </div>
                     </div>

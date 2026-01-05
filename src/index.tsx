@@ -7954,6 +7954,15 @@ app.get('/firma-contratto', async (c) => {
                     
                     <div class="contract-box" id="contractHtml"></div>
                     
+                    <div class="button-group" style="margin-top: 20px;">
+                        <button type="button" class="btn-secondary" onclick="printContract()">
+                            🖨️ Stampa Contratto
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="downloadContract()">
+                            📥 Scarica PDF
+                        </button>
+                    </div>
+                    
                     <div class="signature-box">
                         <h3 style="margin-bottom: 15px;">✍️ Firma qui sotto con il mouse o il dito</h3>
                         <canvas id="signatureCanvas" width="600" height="200"></canvas>
@@ -8115,6 +8124,45 @@ app.get('/firma-contratto', async (c) => {
                     signButton.disabled = false;
                     signButton.textContent = '✅ Firma e Invia Contratto';
                 }
+            }
+            
+            function printContract() {
+                const contractHtml = document.getElementById('contractHtml').innerHTML;
+                const contractCode = document.getElementById('contractCode').textContent;
+                const clientName = document.getElementById('clientName').textContent;
+                
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(\`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Contratto \${contractCode} - \${clientName}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+                            h1, h2 { color: #333; }
+                            .party { background: #f9f9f9; border-left: 4px solid #0066cc; padding: 15px; margin: 20px 0; }
+                            @media print { body { padding: 0; } }
+                        </style>
+                    </head>
+                    <body>
+                        \${contractHtml}
+                        <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #ccc;">
+                            <p style="text-align: center; color: #666; font-size: 12px;">
+                                Documento stampato da TeleMedCare - Contratto \${contractCode}<br>
+                                Cliente: \${clientName}<br>
+                                Data stampa: \${new Date().toLocaleString('it-IT')}
+                            </p>
+                        </div>
+                    </body>
+                    </html>
+                \`);
+                printWindow.document.close();
+                setTimeout(() => printWindow.print(), 250);
+            }
+            
+            function downloadContract() {
+                alert('📥 Funzionalità download PDF in arrivo!\\n\\nPer ora puoi stampare il contratto e salvarlo come PDF dal dialog di stampa.');
+                printContract();
             }
             
             loadContract();
@@ -8391,8 +8439,120 @@ app.post('/api/contracts/sign', async (c) => {
     
     console.log(`✅ Contratto firmato: ${contractId} da IP ${ipAddress}`)
     
-    // TODO: Invia email conferma al cliente
-    // await sendContractConfirmationEmail(contract)
+    // Recupera lead per inviare email
+    try {
+      const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+        .bind(contract.leadId).first() as any
+      
+      if (lead && c.env.RESEND_API_KEY) {
+        console.log(`📧 Invio email conferma firma a ${lead.email}`)
+        
+        // Genera HTML contratto con firma cliente + firma Medica GB
+        const contractHtmlWithSignatures = `
+          ${contract.contenuto_html}
+          <div style="margin-top: 60px; page-break-inside: avoid;">
+            <h2 style="text-align: center; margin-bottom: 40px;">Firme</h2>
+            <div style="display: flex; justify-content: space-between; gap: 40px;">
+              <div style="flex: 1; text-align: center;">
+                <p style="font-weight: bold; margin-bottom: 20px;">Il Cliente</p>
+                <img src="${signatureData}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                  Firma digitale apposta il ${new Date(timestamp).toLocaleString('it-IT')}<br>
+                  IP: ${ipAddress}
+                </p>
+              </div>
+              <div style="flex: 1; text-align: center;">
+                <p style="font-weight: bold; margin-bottom: 20px;">Per Medica GB S.r.l.</p>
+                <p style="margin-top: 80px; font-size: 14px;">
+                  <strong>Stefania Rocca</strong><br>
+                  Amministratore Delegato<br>
+                  Medica GB S.r.l.
+                </p>
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                  Firma depositata presso sede legale<br>
+                  Corso Giuseppe Garibaldi, 34 – 20121 Milano
+                </p>
+              </div>
+            </div>
+          </div>
+        `
+        
+        // Invia email con Resend
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+              .content { padding: 30px; }
+              .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>✅ Contratto Firmato con Successo</h1>
+              <p>TeleMedCare - Servizio eCura</p>
+            </div>
+            <div class="content">
+              <p>Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
+              
+              <p>Grazie per aver firmato il contratto <strong>${contract.codice_contratto}</strong>!</p>
+              
+              <p>In allegato trovi:</p>
+              <ul>
+                <li>📄 Copia del contratto firmato digitalmente</li>
+                <li>✍️ La tua firma digitale</li>
+                <li>🏢 Controfirma di Medica GB S.r.l.</li>
+              </ul>
+              
+              <p><strong>Dettagli Contratto:</strong></p>
+              <ul>
+                <li>Servizio: ${contract.servizio || 'eCura PRO'}</li>
+                <li>Piano: ${contract.piano || 'BASE'}</li>
+                <li>Investimento: €${contract.prezzo_totale || '585.60'}/anno</li>
+                <li>Data firma: ${new Date().toLocaleDateString('it-IT')}</li>
+              </ul>
+              
+              <p>Il tuo servizio eCura verrà attivato entro 24-48 ore. Riceverai una email con le istruzioni per configurare il dispositivo SiDLY.</p>
+              
+              <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+              
+              <p>Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+            </div>
+            <div class="footer">
+              <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
+              <p>P.IVA: 12435130963 | Email: info@telemedcare.it | Web: www.telemedcare.it</p>
+            </div>
+          </body>
+          </html>
+        `
+        
+        const resendResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'TeleMedCare <noreply@telemedcare.it>',
+            to: [lead.email],
+            cc: ['info@telemedcare.it'],
+            subject: `✅ Contratto Firmato - ${contract.codice_contratto}`,
+            html: emailHtml
+          })
+        })
+        
+        if (resendResponse.ok) {
+          console.log(`✅ Email conferma inviata a ${lead.email}`)
+        } else {
+          console.error(`❌ Errore invio email: ${await resendResponse.text()}`)
+        }
+      }
+    } catch (emailError) {
+      console.error('⚠️ Errore invio email (firma salvata comunque):', emailError)
+    }
     
     return c.json({ 
       success: true,

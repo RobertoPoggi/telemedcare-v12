@@ -1,87 +1,117 @@
 #!/bin/bash
+set -e
 
-echo "🧹 PULIZIA DATABASE - Rimozione Lead e Contratti di Test"
-echo "========================================================="
+echo "🗑️  PULIZIA COMPLETA DATI DI TEST"
+echo "============================================"
 echo ""
-echo "⚠️  ATTENZIONE: Questo script cancellerà:"
-echo "   - Tutti i lead LEAD-MANUAL-*"
-echo "   - Tutti i contratti contract-* (NON CONTRACT_CTR-* che sono produzione)"
+echo "Questo script cancella:"
+echo "  1) Lead LEAD-MANUAL-*"
+echo "  2) Contratti contract-176*"
 echo ""
-read -p "Vuoi procedere? (y/N): " -n 1 -r
+
+BASE_URL="https://telemedcare-v12.pages.dev"
+
+# ======================================
+# STEP 1: Conta Lead LEAD-MANUAL-*
+# ======================================
+echo "📊 STEP 1: Conteggio Lead di Test..."
+LEADS_TOTAL=$(curl -s "$BASE_URL/api/leads?limit=1000" | jq '[.leads[] | select(.id | startswith("LEAD-MANUAL-"))] | length')
+echo "   Lead LEAD-MANUAL-* trovati: $LEADS_TOTAL"
+
+# ======================================
+# STEP 2: Conta Contratti contract-176*
+# ======================================
 echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+echo "📊 STEP 2: Conteggio Contratti di Test..."
+CONTRACTS_TOTAL=$(curl -s "$BASE_URL/api/contratti?limit=1000" | jq '[.contratti[] | select(.id | startswith("contract-176"))] | length')
+echo "   Contratti contract-176* trovati: $CONTRACTS_TOTAL"
+
+# ======================================
+# STEP 3: Riepilogo e Conferma
+# ======================================
+echo ""
+echo "============================================"
+echo "📋 RIEPILOGO:"
+echo "   - Lead da cancellare: $LEADS_TOTAL"
+echo "   - Contratti da cancellare: $CONTRACTS_TOTAL"
+echo "============================================"
+
+if [ "$LEADS_TOTAL" -eq "0" ] && [ "$CONTRACTS_TOTAL" -eq "0" ]; then
+    echo "✅ Nessun dato di test da cancellare"
+    exit 0
+fi
+
+echo ""
+echo "⚠️  ATTENZIONE: Questa operazione è IRREVERSIBILE!"
+echo "Digita 'YES' per confermare la cancellazione:"
+read CONFIRM
+
+if [ "$CONFIRM" != "YES" ]; then
     echo "❌ Operazione annullata"
     exit 1
 fi
 
-echo ""
-
-# 1. Cancella tutti i lead MANUAL
-echo "📋 Step 1: Cancellazione lead di test (LEAD-MANUAL-*)..."
-LEADS_RESPONSE=$(curl -s "https://telemedcare-v12.pages.dev/api/leads")
-MANUAL_LEADS=$(echo "$LEADS_RESPONSE" | grep -o '"id":"LEAD-MANUAL-[0-9]*"' | cut -d'"' -f4)
-
-LEAD_COUNT=0
-for LEAD_ID in $MANUAL_LEADS; do
-    echo "   Cancellazione $LEAD_ID..."
-    DELETE_RESPONSE=$(curl -s -X DELETE "https://telemedcare-v12.pages.dev/api/leads/$LEAD_ID")
-    if echo "$DELETE_RESPONSE" | grep -q "success.*true"; then
-        echo "   ✅ $LEAD_ID cancellato"
-        LEAD_COUNT=$((LEAD_COUNT + 1))
-    else
-        echo "   ❌ Errore cancellazione $LEAD_ID: $DELETE_RESPONSE"
-    fi
-    sleep 0.5
-done
-
-echo ""
-echo "✅ Totale lead cancellati: $LEAD_COUNT"
-echo ""
-
-# 2. Cancella tutti i contratti di test (contract-* ma NON CONTRACT_CTR-*)
-echo "📋 Step 2: Cancellazione contratti di test (contract-*)..."
-echo "   (⚠️  Preservati CONTRACT_CTR-* che sono contratti produzione)"
-CONTRACTS_RESPONSE=$(curl -s "https://telemedcare-v12.pages.dev/api/contracts")
-# Filtra SOLO contract-* (minuscolo), esclude CONTRACT_CTR-*
-TEST_CONTRACTS=$(echo "$CONTRACTS_RESPONSE" | grep -o '"id":"contract-[0-9]*"' | cut -d'"' -f4)
-
-CONTRACT_COUNT=0
-for CONTRACT_ID in $TEST_CONTRACTS; do
-    # Double-check: skip se inizia con CONTRACT_CTR-
-    if [[ "$CONTRACT_ID" == CONTRACT_CTR-* ]]; then
-        echo "   ⏭️  Saltato $CONTRACT_ID (produzione)"
-        continue
-    fi
+# ======================================
+# STEP 4: Cancella Lead LEAD-MANUAL-*
+# ======================================
+if [ "$LEADS_TOTAL" -gt "0" ]; then
+    echo ""
+    echo "🗑️  STEP 4: Cancellazione Lead..."
     
-    echo "   Cancellazione $CONTRACT_ID..."
+    LEAD_IDS=$(curl -s "$BASE_URL/api/leads?limit=1000" | jq -r '.leads[] | select(.id | startswith("LEAD-MANUAL-")) | .id')
     
-    # Usa DELETE diretto sul DB (endpoint API potrebbe non esistere)
-    DELETE_SQL="DELETE FROM contracts WHERE id = '$CONTRACT_ID'"
-    # Nota: questo richiede un endpoint API di amministrazione per eseguire SQL
-    # Per ora usiamo un approccio simulato
+    LEADS_DELETED=0
+    for ID in $LEAD_IDS; do
+        if [ ! -z "$ID" ]; then
+            RES=$(curl -s -X DELETE "$BASE_URL/api/leads/$ID")
+            if echo "$RES" | grep -q "success.*true"; then
+                LEADS_DELETED=$((LEADS_DELETED + 1))
+                echo "  ✓ Lead cancellato: $ID"
+            else
+                echo "  ✗ Errore cancellazione lead: $ID"
+            fi
+        fi
+    done
     
-    echo "   ⚠️  Cancellazione manuale richiesta: $CONTRACT_ID"
-    echo "      SQL: DELETE FROM contracts WHERE id = '$CONTRACT_ID';"
-    CONTRACT_COUNT=$((CONTRACT_COUNT + 1))
-    
-    sleep 0.5
-done
+    echo ""
+    echo "   Lead cancellati: $LEADS_DELETED / $LEADS_TOTAL"
+fi
 
-echo ""
-echo "⚠️  Contratti da cancellare manualmente: $CONTRACT_COUNT"
-echo ""
+# ======================================
+# STEP 5: Cancella Contratti contract-176*
+# ======================================
+if [ "$CONTRACTS_TOTAL" -gt "0" ]; then
+    echo ""
+    echo "🗑️  STEP 5: Cancellazione Contratti..."
+    
+    CONTRACT_IDS=$(curl -s "$BASE_URL/api/contratti?limit=1000" | jq -r '.contratti[] | select(.id | startswith("contract-176")) | .id')
+    
+    CONTRACTS_DELETED=0
+    for ID in $CONTRACT_IDS; do
+        if [ ! -z "$ID" ]; then
+            RES=$(curl -s -X DELETE "$BASE_URL/api/contratti/$ID")
+            if echo "$RES" | grep -q "success.*true"; then
+                CONTRACTS_DELETED=$((CONTRACTS_DELETED + 1))
+                echo "  ✓ Contratto cancellato: $ID"
+            else
+                echo "  ✗ Errore cancellazione contratto: $ID"
+            fi
+        fi
+    done
+    
+    echo ""
+    echo "   Contratti cancellati: $CONTRACTS_DELETED / $CONTRACTS_TOTAL"
+fi
 
-echo "========================================================="
-echo "🎉 PULIZIA COMPLETATA"
-echo "   Lead cancellati: $LEAD_COUNT"
-echo "   Contratti da cancellare manualmente: $CONTRACT_COUNT"
+# ======================================
+# STEP 6: Riepilogo Finale
+# ======================================
 echo ""
-echo "📝 Per cancellare i contratti, esegui queste query nel DB:"
+echo "============================================"
+echo "✅ PULIZIA COMPLETATA"
+echo "============================================"
+echo "   Lead cancellati: ${LEADS_DELETED:-0} / $LEADS_TOTAL"
+echo "   Contratti cancellati: ${CONTRACTS_DELETED:-0} / $CONTRACTS_TOTAL"
 echo ""
-for CONTRACT_ID in $TEST_CONTRACTS; do
-    if [[ "$CONTRACT_ID" != CONTRACT_CTR-* ]]; then
-        echo "   DELETE FROM contracts WHERE id = '$CONTRACT_ID';"
-    fi
-done
+echo "✅ Pulizia dati di test completata con successo!"
 echo ""
-echo "========================================================="
