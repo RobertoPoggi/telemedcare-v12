@@ -485,8 +485,8 @@ export async function inviaEmailDocumentiInformativi(
       DISPOSITIVO: dispositivo,
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',
-      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno',
-      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60/anno' : '€1.024,80/anno'
+      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
+      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno'
     }
 
     // Renderizza template
@@ -708,7 +708,7 @@ export async function inviaEmailContratto(
           contractData.tipoServizio,
           prezzoMensile, // prezzo_mensile (NOT NULL)
           durataMesi, // durata_mesi (NOT NULL)
-          contractData.prezzoIvaInclusa,
+          contractData.prezzoBase, // prezzo_totale = prezzoBase (480 o 840), NON IVA inclusa
           new Date().toISOString(), // data_invio
           new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // data_scadenza (+30 giorni)
           new Date().toISOString(), // created_at
@@ -754,8 +754,8 @@ export async function inviaEmailContratto(
       SERVIZIO: servizioNome,
       PIANO: pianoNome,
       DISPOSITIVO: dispositivo,
-      PREZZO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}`,
-      PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoIvaInclusa.toFixed(2)}/anno`,
+      PREZZO_PIANO: `€${contractData.prezzoBase.toFixed(2)}`,
+      PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoBase.toFixed(2)}/anno`,
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${baseUrl}/firma-contratto?contractId=${contractData.contractId}`,
