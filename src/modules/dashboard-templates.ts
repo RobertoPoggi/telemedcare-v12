@@ -2699,61 +2699,60 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
             
-            document.getElementById('editLeadId').value = lead.id;
-            document.getElementById('editNome').value = lead.nomeRichiedente || '';
-            document.getElementById('editCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('editEmail').value = lead.email || '';
-            document.getElementById('editTelefono').value = lead.telefono || '';
+            // Usa lo stesso modal del nuovo lead, ma con dati pre-compilati
+            // Imposta flag edit mode
+            window.editingLeadId = leadId;
             
-            // Usa campo piano dal DB (se esiste), altrimenti BASE
-            // NOTA: tipoServizio contiene il SERVIZIO, non il piano!
-            const currentPiano = lead.piano || 'BASE';
-            document.getElementById('editPiano').value = currentPiano;
+            // Pre-compila TUTTI i campi
+            document.getElementById('newNome').value = lead.nomeRichiedente || '';
+            document.getElementById('newCognome').value = lead.cognomeRichiedente || '';
+            document.getElementById('newEmail').value = lead.email || '';
+            document.getElementById('newTelefono').value = lead.telefono || '';
             
-            // Usa campo servizio dal DB, con fallback su tipoServizio
-            const currentServizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
-            document.getElementById('editServizio').value = currentServizio;
+            document.getElementById('newNomeAssistito').value = lead.nomeAssistito || '';
+            document.getElementById('newCognomeAssistito').value = lead.cognomeAssistito || '';
+            document.getElementById('newLuogoNascita').value = lead.luogoNascitaAssistito || '';
+            document.getElementById('newDataNascita').value = lead.dataNascitaAssistito || '';
+            document.getElementById('newIndirizzoAssistito').value = lead.indirizzoAssistito || '';
+            document.getElementById('newCapAssistito').value = lead.capAssistito || '';
+            document.getElementById('newCittaAssistito').value = lead.cittaAssistito || '';
+            document.getElementById('newProvinciaAssistito').value = lead.provinciaAssistito || '';
+            document.getElementById('newCodiceFiscale').value = lead.codiceFiscaleAssistito || '';
+            document.getElementById('newCondizioniSalute').value = lead.condizioniSalute || '';
             
-            document.getElementById('editNote').value = lead.note || '';
+            // Intestatario contratto
+            const intestatario = lead.intestatarioContratto || 'richiedente';
+            if (intestatario === 'richiedente') {
+                document.getElementById('newIntestatarioRichiedente').checked = true;
+            } else {
+                document.getElementById('newIntestatarioAssistito').checked = true;
+            }
             
-            openModal('editLeadModal');
+            document.getElementById('newServizio').value = lead.servizio || 'eCura PRO';
+            updatePrices(); // Aggiorna prezzi in base al servizio
+            document.getElementById('newPiano').value = lead.piano || 'BASE';
+            document.getElementById('newCanale').value = lead.fonte || 'Website';
+            
+            document.getElementById('newVuoleBrochure').checked = (lead.vuoleBrochure === 'Si');
+            document.getElementById('newVuoleContratto').checked = (lead.vuoleContratto === 'Si');
+            document.getElementById('newVuoleManuale').checked = (lead.vuoleManuale === 'Si');
+            
+            document.getElementById('newConsensoPrivacy').checked = (lead.consensoPrivacy === 1);
+            document.getElementById('newConsensoMarketing').checked = (lead.consensoMarketing === 'Si');
+            document.getElementById('newConsensoTerze').checked = (lead.consensoTerze === 'Si');
+            
+            document.getElementById('newNote').value = lead.note || '';
+            
+            // Cambia titolo modal
+            const modalTitle = document.querySelector('#newLeadModal h2');
+            if (modalTitle) {
+                modalTitle.textContent = '✏️ Modifica Lead';
+            }
+            
+            openModal('newLeadModal');
         }
         
-        async function saveEditLead() {
-            const leadId = document.getElementById('editLeadId').value;
-            const piano = document.getElementById('editPiano').value;
-            const servizio = document.getElementById('editServizio').value;
-            
-            const formData = {
-                nome: document.getElementById('editNome').value,
-                cognome: document.getElementById('editCognome').value,
-                email: document.getElementById('editEmail').value,
-                telefono: document.getElementById('editTelefono').value,
-                piano: piano,
-                servizio: servizio,
-                note: document.getElementById('editNote').value
-            };
-            
-            try {
-                const response = await fetch(\`/api/leads/\${leadId}\`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('✅ Lead aggiornato con successo!');
-                    closeModal('editLeadModal');
-                    loadLeadsData();
-                } else {
-                    alert('❌ Errore: ' + result.error);
-                }
-            } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
-            }
-        }
+        // saveEditLead() rimossa - ora usa saveNewLead() con modalità edit
         
         async function deleteLead(leadId) {
             if (!confirm('⚠️ Sei sicuro di voler eliminare questo lead?\\n\\nQuesta operazione è irreversibile.')) {
@@ -2789,8 +2788,19 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         function openNewLeadModal() {
+            // Reset edit mode
+            window.editingLeadId = null;
+            
             // Reset form
             document.getElementById('newLeadForm').reset();
+            
+            // Reset titolo e modalità
+            document.getElementById('isEditMode').value = '';
+            const modalTitle = document.querySelector('#newLeadModal h2');
+            if (modalTitle) {
+                modalTitle.textContent = '🆕 Richiedi il tuo servizio eCura';
+            }
+            
             openModal('newLeadModal');
             // Aggiorna prezzi iniziali
             updatePrices();
@@ -2835,6 +2845,117 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         async function saveNewLead() {
+            const isEditMode = !!window.editingLeadId;
+            const leadId = window.editingLeadId;
+            
+            const formData = {
+                // Dati richiedente
+                nomeRichiedente: document.getElementById('newNome').value,
+                cognomeRichiedente: document.getElementById('newCognome').value,
+                email: document.getElementById('newEmail').value,
+                telefono: document.getElementById('newTelefono').value,
+                
+                // Dati assistito
+                nomeAssistito: document.getElementById('newNomeAssistito').value,
+                cognomeAssistito: document.getElementById('newCognomeAssistito').value,
+                luogoNascita: document.getElementById('newLuogoNascita').value,
+                dataNascita: document.getElementById('newDataNascita').value,
+                indirizzoAssistito: document.getElementById('newIndirizzoAssistito').value,
+                capAssistito: document.getElementById('newCapAssistito').value,
+                cittaAssistito: document.getElementById('newCittaAssistito').value,
+                provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
+                codiceFiscaleAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
+                
+                // Intestatario contratto
+                intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
+                
+                // Condizioni di salute
+                condizioniSalute: document.getElementById('newCondizioniSalute').value,
+                
+                // Servizio e Piano
+                servizio: document.getElementById('newServizio').value,
+                piano: document.getElementById('newPiano').value,
+                canale: document.getElementById('newCanale').value,
+                fonte: document.getElementById('newCanale').value,
+                
+                // Preferenze
+                vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
+                vuoleContratto: document.getElementById('newVuoleContratto').checked ? 'Si' : 'No',
+                vuoleManuale: document.getElementById('newVuoleManuale').checked ? 'Si' : 'No',
+                
+                // Consensi
+                consensoPrivacy: document.getElementById('newConsensoPrivacy').checked,
+                consensoMarketing: document.getElementById('newConsensoMarketing').checked ? 'Si' : 'No',
+                consensoTerze: document.getElementById('newConsensoTerze').checked ? 'Si' : 'No',
+                
+                // Note
+                note: document.getElementById('newNote').value
+            };
+            
+            // Validation campi obbligatori
+            if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
+                alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
+                return;
+            }
+            
+            if (!formData.nomeAssistito || !formData.cognomeAssistito) {
+                alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
+                return;
+            }
+            
+            if (!isEditMode && !formData.consensoPrivacy) {
+                alert("⚠️ Il consenso Privacy è obbligatorio");
+                return;
+            }
+            
+            console.log(isEditMode ? '📝 Aggiornamento lead:' : '📤 Invio dati lead:', formData);
+            
+            try {
+                const url = isEditMode ? '/api/leads/' + leadId : '/api/leads';
+                const method = isEditMode ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = isEditMode 
+                        ? "✅ Lead aggiornato con successo!" 
+                        : "✅ Lead creato con successo!\\n\\nID: " + (result.id || result.leadId);
+                    
+                    // Mostra email inviate solo per nuovo lead
+                    if (!isEditMode && result.emails) {
+                        message += "\\n\\n📧 Email inviate:";
+                        if (result.emails.notifica && result.emails.notifica.sent) message += "\\n  ✓ Notifica nuovo lead";
+                        if (result.emails.brochure && result.emails.brochure.sent) message += "\\n  ✓ Brochure al cliente";
+                        if (result.emails.contratto && result.emails.contratto.sent) message += "\\n  ✓ Contratto al cliente";
+                    }
+                    
+                    alert(message);
+                    closeModal('newLeadModal');
+                    document.getElementById('newLeadForm').reset();
+                    
+                    // Reset edit mode
+                    window.editingLeadId = null;
+                    const modalTitle = document.querySelector('#newLeadModal h2');
+                    if (modalTitle) {
+                        modalTitle.textContent = 'Richiedi il tuo servizio eCura';
+                    }
+                    
+                    // Ricarica la pagina per aggiornare i dati
+                    window.location.reload();
+                } else {
+                    alert("❌ Errore: " + (result.error || "Errore sconosciuto"));
+                }
+            } catch (error) {
+                console.error(isEditMode ? "❌ Errore aggiornamento lead:" : "❌ Errore creazione lead:", error);
+                alert("❌ Errore di comunicazione: " + error.message);
+            }
+        }
             const formData = {
                 // Dati richiedente
                 nomeRichiedente: document.getElementById('newNome').value,
@@ -3415,62 +3536,7 @@ export const leads_dashboard = `<!DOCTYPE html>
     </div>
 
     <!-- MODAL: EDIT LEAD -->
-    <div id="editLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
-            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-                <h3 class="text-xl font-bold">✏️ Modifica Lead</h3>
-                <button onclick="closeModal('editLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
-            </div>
-            <div class="p-6">
-                <input type="hidden" id="editLeadId">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-                        <input type="text" id="editNome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome *</label>
-                        <input type="text" id="editCognome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <input type="email" id="editEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono *</label>
-                        <input type="tel" id="editTelefono" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
-                        <select id="editPiano" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="BASE">BASE - €480/anno</option>
-                            <option value="AVANZATO">AVANZATO - €840/anno</option>
-                        </select>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
-                        <select id="editServizio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="FAMILY">eCura FAMILY</option>
-                            <option value="PRO" selected>eCura PRO</option>
-                            <option value="PREMIUM">eCura PREMIUM</option>
-                        </select>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
-                        <textarea id="editNote" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button onclick="closeModal('editLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
-                        Annulla
-                    </button>
-                    <button onclick="saveEditLead()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                        💾 Salva Modifiche
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- editLeadModal rimosso - ora usa newLeadModal anche per edit -->
 
 </body>
 </html>

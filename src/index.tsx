@@ -7668,14 +7668,46 @@ app.put('/api/leads/:id', async (c) => {
     
     // Mapping campi: frontend → DB
     const fieldMapping: Record<string, string> = {
+      // Dati richiedente
       nome: 'nomeRichiedente',
       cognome: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      status: 'status',
+      codiceFiscaleRichiedente: 'codiceFiscaleRichiedente',
+      indirizzoRichiedente: 'indirizzoRichiedente',
+      
+      // Dati assistito
+      nomeAssistito: 'nomeAssistito',
+      cognomeAssistito: 'cognomeAssistito',
+      luogoNascitaAssistito: 'luogoNascitaAssistito',
+      dataNascitaAssistito: 'dataNascitaAssistito',
+      indirizzoAssistito: 'indirizzoAssistito',
+      capAssistito: 'capAssistito',
+      cittaAssistito: 'cittaAssistito',
+      provinciaAssistito: 'provinciaAssistito',
+      codiceFiscaleAssistito: 'codiceFiscaleAssistito',
+      
+      // Servizio
+      servizio: 'servizio',
+      piano: 'piano',
+      canale: 'canale',
+      fonte: 'fonte',
+      
+      // Preferenze
+      vuoleBrochure: 'vuoleBrochure',
+      vuoleContratto: 'vuoleContratto',
+      vuoleManuale: 'vuoleManuale',
+      
+      // Consensi
+      consensoPrivacy: 'consensoPrivacy',
+      consensoMarketing: 'consensoMarketing',
+      consensoTerze: 'consensoTerze',
+      
+      // Altri
+      condizioniSalute: 'condizioniSalute',
+      intestatarioContratto: 'intestatarioContratto',
       note: 'note',
-      piano: 'piano',           // Piano → piano (nuovo campo dopo migration 0006)
-      servizio: 'servizio'      // Servizio → servizio (nuovo campo dopo migration 0006)
+      status: 'status'
     }
     
     // Aggiungi solo i campi presenti nel payload
