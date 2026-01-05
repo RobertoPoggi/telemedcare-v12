@@ -8126,6 +8126,10 @@ app.get('/firma-contratto', async (c) => {
 
 // GET /dashboard-live - Dashboard operativa servita dal Worker (bypassa Cloudflare Pages cache)
 app.get('/dashboard-live', async (c) => {
+  // REDIRECT TEMPORANEO: usa test-email-debug che funziona
+  return c.redirect('/test-email-debug')
+  
+  /* VERSIONE ORIGINALE (da ripristinare quando Cloudflare funziona)
   try {
     // Carica il file dashboard.html direttamente da dist
     const baseUrl = new URL(c.req.url).origin
@@ -8181,6 +8185,7 @@ app.get('/dashboard-live', async (c) => {
       </html>
     `, 500)
   }
+  */
 })
 
 // GET /test-email-debug - Test diagnostico email count inline
