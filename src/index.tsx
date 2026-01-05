@@ -10815,6 +10815,38 @@ app.post('/api/migrate-schema', async (c) => {
       migrations.push(`⚠️ Errore aggiornamento Eileen: ${e.message}`)
     }
 
+    // MIGRAZIONE 4-12: Aggiungi colonne mancanti alla tabella leads
+    const leadsColumns = [
+      { name: 'luogoNascitaAssistito', type: 'TEXT', default: null },
+      { name: 'dataNascitaAssistito', type: 'TEXT', default: null },
+      { name: 'indirizzoAssistito', type: 'TEXT', default: null },
+      { name: 'capAssistito', type: 'TEXT', default: null },
+      { name: 'cittaAssistito', type: 'TEXT', default: null },
+      { name: 'provinciaAssistito', type: 'TEXT', default: null },
+      { name: 'codiceFiscaleAssistito', type: 'TEXT', default: null },
+      { name: 'condizioniSalute', type: 'TEXT', default: null },
+      { name: 'intestatarioContratto', type: 'TEXT', default: "'richiedente'" }
+    ]
+
+    for (const col of leadsColumns) {
+      try {
+        const defaultClause = col.default ? `DEFAULT ${col.default}` : ''
+        await c.env.DB.prepare(`
+          ALTER TABLE leads 
+          ADD COLUMN ${col.name} ${col.type} ${defaultClause}
+        `).run()
+        migrations.push(`✅ Colonna ${col.name} aggiunta a leads`)
+        console.log(`✅ Colonna ${col.name} aggiunta a leads`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ Colonna ${col.name} già esiste`)
+          console.log(`ℹ️ Colonna ${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore colonna ${col.name}: ${e.message}`)
+        }
+      }
+    }
+
     return c.json({
       success: true,
       message: 'Migrazione schema completata',
