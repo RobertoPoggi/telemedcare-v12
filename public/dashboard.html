@@ -450,6 +450,18 @@
             `;
         }
     </script>
+    
+    <!-- FIX: Force update email count dopo 1 secondo (evita race condition) -->
+    <script>
+        setTimeout(() => {
+            // Se loadDashboardData non ha ancora aggiornato, forziamo
+            const emailsEl = document.getElementById('emailsSent');
+            if (emailsEl && emailsEl.textContent === '-') {
+                console.log('🔧 [FIX] Forcing email count update...');
+                loadDashboardData();
+            }
+        }, 1000);
+    </script>
 </body>
 </html>
 <!-- Deploy trigger: Sun Jan  4 20:29:44 UTC 2026 -->
