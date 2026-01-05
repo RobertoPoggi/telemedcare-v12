@@ -2792,6 +2792,46 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Reset form
             document.getElementById('newLeadForm').reset();
             openModal('newLeadModal');
+            // Aggiorna prezzi iniziali
+            updatePrices();
+        }
+        
+        function updatePrices() {
+            const servizio = document.getElementById('newServizio').value;
+            const pianoSelect = document.getElementById('newPiano');
+            const priceNote = document.getElementById('priceNote');
+            
+            // Prezzi per servizio (primo anno / rinnovo)
+            const prices = {
+                'eCura Family': {
+                    BASE: { primo: 420, rinnovo: 180 },
+                    AVANZATO: { primo: 720, rinnovo: 480 }
+                },
+                'eCura PRO': {
+                    BASE: { primo: 480, rinnovo: 200 },
+                    AVANZATO: { primo: 840, rinnovo: 600 }
+                },
+                'eCura PREMIUM': {
+                    BASE: { primo: 540, rinnovo: 240 },
+                    AVANZATO: { primo: 960, rinnovo: 720 }
+                }
+            };
+            
+            if (!servizio || !prices[servizio]) {
+                pianoSelect.innerHTML = '<option value="">Seleziona prima un servizio</option>';
+                priceNote.textContent = 'Seleziona un servizio per vedere i prezzi';
+                return;
+            }
+            
+            const servicePrices = prices[servizio];
+            const dispositivo = servizio.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO';
+            
+            pianoSelect.innerHTML = \`
+                <option value="BASE">Piano BASE - €\${servicePrices.BASE.primo}/anno (rinnovo €\${servicePrices.BASE.rinnovo}/anno)</option>
+                <option value="AVANZATO">Piano AVANZATO - €\${servicePrices.AVANZATO.primo}/anno (rinnovo €\${servicePrices.AVANZATO.rinnovo}/anno)</option>
+            \`;
+            
+            priceNote.textContent = \`I prezzi mostrati sono per il servizio \${servizio}. Include dispositivo \${dispositivo}.\`;
         }
         
         async function saveNewLead() {
@@ -2815,6 +2855,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 // Intestatario contratto
                 intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
+                
+                // Condizioni di salute
+                condizioniSalute: document.getElementById('newCondizioniSalute').value,
                 
                 // Servizio e Piano
                 servizio: document.getElementById('newServizio').value,
@@ -3120,6 +3163,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </div>
                         </div>
                         
+                        <!-- CONDIZIONI DI SALUTE -->
+                        <div class="mt-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-notes-medical text-green-600 mr-2"></i>
+                                Condizioni di salute
+                            </label>
+                            <textarea id="newCondizioniSalute" rows="3"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                placeholder="Descrivere eventuali patologie, allergie, limitazioni motorie o altre informazioni mediche rilevanti per il servizio..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Queste informazioni aiutano a personalizzare il servizio e garantire un'assistenza adeguata
+                            </p>
+                        </div>
+                        
                         <!-- INTESTATARIO CONTRATTO -->
                         <div class="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                             <label class="block text-sm font-semibold text-gray-700 mb-3">
@@ -3158,7 +3215,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Servizio eCura *</label>
-                                <select id="newServizio" required 
+                                <select id="newServizio" required onchange="updatePrices()"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona servizio...</option>
                                     <option value="eCura Family">eCura Family</option>
@@ -3170,9 +3227,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Piano *</label>
                                 <select id="newPiano" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
-                                    <option value="BASE">Piano BASE - €480/anno</option>
-                                    <option value="AVANZATO">Piano AVANZATO - €840/anno</option>
+                                    <option value="BASE">Piano BASE - €480/anno (rinnovo €200/anno)</option>
+                                    <option value="AVANZATO">Piano AVANZATO - €840/anno (rinnovo €600/anno)</option>
                                 </select>
+                                <p class="text-xs text-gray-500 mt-1" id="priceNote">
+                                    I prezzi mostrati sono per il servizio eCura PRO. Il prezzo include dispositivo SiDLY Care PRO.
+                                </p>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Come ci hai conosciuto? *</label>
@@ -3206,7 +3266,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     class="mr-4 w-6 h-6 text-amber-600 border-2 border-gray-300 rounded focus:ring-amber-500">
                                 <div class="flex-1">
                                     <div class="font-semibold text-gray-800">📚 Brochure Informativa</div>
-                                    <div class="text-sm text-gray-600">Ricevi via email la brochure con tutti i dettagli del servizio</div>
+                                    <div class="text-sm text-gray-600">Ricevi via email la brochure con tutte le caratteristiche del dispositivo associato al servizio scelto</div>
                                 </div>
                             </label>
                             

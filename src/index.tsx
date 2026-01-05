@@ -7370,7 +7370,7 @@ app.post('/api/setup-real-contracts', async (c) => {
 // INVIO MANUALE - LEAD ACTIONS
 // ========================================
 
-// POST /api/leads/:id/send-contract - Genera PDF contratto e invia con brochure
+// POST /api/leads/:id/send-contract - Genera contratto HTML e invia email
 app.post('/api/leads/:id/send-contract', async (c) => {
   const leadId = c.req.param('id')
   
@@ -7379,11 +7379,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    if (!c.env?.BROWSER) {
-      return c.json({ success: false, error: 'Browser Puppeteer non configurato' }, 500)
-    }
-    
-    // Recupera lead
+    // Recupera lead con TUTTI i campi
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
     
     if (!lead) {
@@ -7397,192 +7393,90 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const contractId = `contract-${timestamp}`
     
     // Determina servizio e piano
-    const servizio = (lead.servizio || 'eCura PRO').replace('eCura ', '').toUpperCase()
-    const piano = (lead.piano || 'BASE').toUpperCase()
+    const servizio = lead.servizio || 'eCura PRO'
+    const piano = lead.piano || 'BASE'
     
-    // Ottieni prezzi
-    const { getPricing } = await import('./modules/ecura-pricing')
-    const pricing = getPricing(servizio as any, piano as any)
-    
-    if (!pricing) {
-      return c.json({ success: false, error: `Pricing non trovato per ${servizio} ${piano}` }, 400)
+    // Prepara leadData per workflow
+    const leadData = {
+      id: leadId,
+      nomeRichiedente: lead.nomeRichiedente,
+      cognomeRichiedente: lead.cognomeRichiedente,
+      emailRichiedente: lead.email,
+      telefonoRichiedente: lead.telefono || '',
+      nomeAssistito: lead.nomeAssistito || lead.nomeRichiedente,
+      cognomeAssistito: lead.cognomeAssistito || lead.cognomeRichiedente,
+      luogoNascitaAssistito: lead.luogoNascitaAssistito || '',
+      dataNascitaAssistito: lead.dataNascitaAssistito || '',
+      indirizzoAssistito: lead.indirizzoAssistito || '',
+      capAssistito: lead.capAssistito || '',
+      cittaAssistito: lead.cittaAssistito || '',
+      provinciaAssistito: lead.provinciaAssistito || '',
+      cfAssistito: lead.codiceFiscaleAssistito || '',
+      condizioniSalute: lead.condizioniSalute || '',
+      pacchetto: piano,
+      servizio: servizio,
+      intestatarioContratto: lead.intestatarioContratto || 'richiedente',
+      vuoleBrochure: true,  // Include brochure con contratto
+      vuoleManuale: false,
+      vuoleContratto: true
     }
     
-    // Crea contratto nel DB
-    await c.env.DB.prepare(`
-      INSERT INTO contracts (
-        id, codice_contratto, leadId, tipo_contratto, 
-        prezzo_totale, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'DRAFT', ?)
-    `).bind(
-      contractId,
-      contractCode,
-      leadId,
-      piano,
-      pricing.setupTotale,
-      new Date().toISOString()
-    ).run()
-    
-    console.log('✅ Contratto creato nel DB:', contractCode)
-    
-    // 1. GENERA PDF CONTRATTO
-    const { prepareContractData, generateContractPDF } = await import('./modules/contract-pdf-generator')
-    
-    const contractData = prepareContractData(lead, contractCode)
-    if (!contractData) {
-      return c.json({ success: false, error: 'Dati contratto incompleti' }, 400)
+    // Prepara contractData
+    const contractData = {
+      contractId: contractId,
+      contractCode: contractCode,
+      contractPdfUrl: '',
+      tipoServizio: piano,
+      servizio: servizio,
+      prezzoBase: piano === 'AVANZATO' ? 840 : 480,
+      prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
     }
     
-    console.log('📄 [CONTRACT] Generazione PDF contratto...')
-    const pdfResult = await generateContractPDF(contractData, c.env.BROWSER)
+    // Usa workflow per inviare email contratto
+    const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
     
-    if (!pdfResult.success || !pdfResult.pdfBase64) {
-      return c.json({ success: false, error: `Errore generazione PDF: ${pdfResult.error}` }, 500)
+    const documentUrls: { brochure?: string; manuale?: string } = {}
+    if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    } else if (servizio.includes('PREMIUM')) {
+      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
     }
     
-    console.log('✅ [CONTRACT] PDF contratto generato')
+    const result = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
     
-    // 2. PREPARA ALLEGATI
-    const attachments: Array<{ filename: string; content: string; contentType: string }> = []
-    
-    // Allegato contratto PDF
-    attachments.push({
-      filename: `Contratto_eCura_${contractCode}.pdf`,
-      content: pdfResult.pdfBase64,
-      contentType: 'application/pdf'
-    })
-    
-    console.log(`📎 [CONTRACT] Allegato contratto: ${(pdfResult.pdfBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-    
-    // Allegato brochure (se vuoleBrochure = 'Si')
-    if (lead.vuoleBrochure === 'Si') {
-      console.log('📥 [CONTRACT] Caricamento brochure...')
-      
-      // Determina quale brochure usare in base al servizio
-      let brochureFilename = ''
-      if (servizio === 'PRO' || servizio === 'FAMILY') {
-        brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-      } else if (servizio === 'PREMIUM') {
-        brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-      }
-      
-      if (brochureFilename) {
-        try {
-          // Carica brochure da asset pubblici (Cloudflare Pages)
-          const brochureUrl = `/brochures/${brochureFilename}`
-          console.log(`📥 [CONTRACT] Fetch brochure da: ${brochureUrl}`)
-          
-          const response = await fetch(new URL(brochureUrl, c.req.url).toString())
-          
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer()
-            const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
-            
-            attachments.push({
-              filename: brochureFilename,
-              content: brochureBase64,
-              contentType: 'application/pdf'
-            })
-            
-            console.log(`📎 [CONTRACT] Allegato brochure: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-          } else {
-            console.warn(`⚠️ [CONTRACT] Brochure non trovata: ${response.status}`)
-          }
-          
-        } catch (brochureError) {
-          console.warn('⚠️ [CONTRACT] Impossibile caricare brochure:', brochureError)
-          // Non bloccare l'invio se la brochure non è disponibile
-        }
-      }
-    }
-    
-    // 3. INVIA EMAIL CON ALLEGATI
-    const EmailService = (await import('./modules/email-service')).default
-    const emailService = EmailService.getInstance()
-    
-    const variables = {
-      NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-      PIANO_SERVIZIO: `eCura ${servizio} ${piano === 'AVANZATO' ? 'Avanzato' : 'Base'}`,
-      PREZZO_PIANO: `€${pricing.setupTotale.toFixed(2)}`,
-      CODICE_CLIENTE: leadId
-    }
-    
-    console.log('📧 [CONTRACT] Invio email con allegati...')
-    const emailResult = await emailService.sendTemplateEmail(
-      'INVIO_CONTRATTO',
-      lead.email,
-      variables,
-      attachments,
-      c.env
-    )
-    
-    // 4. AGGIORNA DATABASE
-    if (emailResult.success || true) {  // Forza success per testing
-      // Aggiorna status contratto
-      await c.env.DB.prepare(`
-        UPDATE contracts SET 
-          status = 'SENT',
-          data_invio = ?,
-          email_sent = true,
-          email_template_used = 'email_invio_contratto'
-        WHERE id = ?
-      `).bind(new Date().toISOString(), contractId).run()
-      
-      // Aggiorna status lead
+    if (result.success) {
+      // Aggiorna lead
       await c.env.DB.prepare(`
         UPDATE leads SET 
-          status = 'CONTRACT_SENT',
           vuoleContratto = 'Si',
+          status = 'CONTRACT_SENT',
           updated_at = ?
         WHERE id = ?
       `).bind(new Date().toISOString(), leadId).run()
       
-      // Log email
-      await c.env.DB.prepare(`
-        INSERT INTO email_logs (
-          leadId, contract_id, recipient_email, template_used, 
-          subject, status, provider_used, sent_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'RESEND', ?)
-      `).bind(
-        leadId,
-        contractId,
-        lead.email,
-        'email_invio_contratto',
-        `eCura - Contratto ${contractCode}`,
-        emailResult.success ? 'SENT' : 'SIMULATED',
-        new Date().toISOString()
-      ).run()
-      
-      console.log('✅ [CONTRACT] Contratto inviato con successo:', contractCode)
-      
       return c.json({
         success: true,
-        message: `Contratto ${contractCode} generato e inviato con ${attachments.length} allegati a ${lead.email}`,
+        message: 'Contratto inviato con successo',
         contractId: contractId,
-        contractCode: contractCode,
-        attachments: attachments.length,
-        emailStatus: emailResult.success ? 'sent' : 'simulated'
+        contractCode: contractCode
       })
     } else {
-      // Elimina contratto se email fallisce
-      await c.env.DB.prepare('DELETE FROM contracts WHERE id = ?').bind(contractId).run()
-      
       return c.json({
         success: false,
-        error: 'Errore invio email: ' + emailResult.error
+        error: 'Errore invio contratto',
+        details: result.errors.join(', ')
       }, 500)
     }
     
   } catch (error) {
-    console.error('❌ [CONTRACT] Errore invio contratto:', error)
-    return c.json({ 
-      success: false, 
+    console.error('❌ Errore invio contratto:', error)
+    return c.json({
+      success: false,
       error: 'Errore invio contratto',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
 })
-
 // POST /api/leads/:id/send-brochure - Invia brochure specifica a lead
 app.post('/api/leads/:id/send-brochure', async (c) => {
   const leadId = c.req.param('id')
@@ -7669,7 +7563,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     )
     
     // 3. AGGIORNA DATABASE
-    if (result.success || true) {  // Forza success per testing
+    if (result.success) {
       // Aggiorna lead
       await c.env.DB.prepare(`
         UPDATE leads SET 
@@ -8802,15 +8696,20 @@ app.post('/api/leads', async (c) => {
     const leadId = `LEAD-MANUAL-${Date.now()}`
     const timestamp = new Date().toISOString()
     
-    // Inserisci nuovo lead (solo campi esistenti nel DB)
+    // Inserisci nuovo lead (con tutti i campi completi)
     await c.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, tipoServizio, servizio, piano,
+        nomeAssistito, cognomeAssistito, 
+        luogoNascitaAssistito, dataNascitaAssistito,
+        indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+        codiceFiscaleAssistito, condizioniSalute,
+        tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
         consensoPrivacy, consensoMarketing, consensoTerze,
+        intestatarioContratto,
         note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -8819,6 +8718,14 @@ app.post('/api/leads', async (c) => {
       data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
+      data.luogoNascita || null,
+      data.dataNascita || null,
+      data.indirizzoAssistito || null,
+      data.capAssistito || null,
+      data.cittaAssistito || null,
+      data.provinciaAssistito || null,
+      data.codiceFiscaleAssistito || null,
+      data.condizioniSalute || null,
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
       data.piano || 'BASE',
@@ -8828,7 +8735,8 @@ app.post('/api/leads', async (c) => {
       data.consensoPrivacy !== undefined ? (data.consensoPrivacy ? 1 : 0) : 0,
       data.consensoMarketing !== undefined ? (data.consensoMarketing ? 1 : 0) : 0,
       data.consensoTerze !== undefined ? (data.consensoTerze ? 1 : 0) : 0,
-      `${data.note || 'Lead dashboard'} | Canale: ${data.canale || 'Dashboard'} | CF: ${data.codiceFiscaleAssistito || 'N/A'} | Indirizzo: ${data.indirizzoAssistito || 'N/A'} ${data.capAssistito || ''} ${data.cittaAssistito || ''} ${data.provinciaAssistito || ''}`,
+      data.intestatarioContratto || 'richiedente',
+      data.note || '',
       data.fonte || data.canale || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
@@ -8856,7 +8764,7 @@ app.post('/api/leads', async (c) => {
       addDebugLog(`🔍 [LEAD] Dati ricevuti: ${JSON.stringify(debugInfo)}`)
       console.log('🔍 [DEBUG] Dati ricevuti:', debugInfo)
       
-      // Prepara leadData per workflow (formato del 25 dicembre)
+      // Prepara leadData per workflow (formato del 25 dicembre + nuovi campi)
       const leadData = {
         id: leadId,
         nomeRichiedente: data.nomeRichiedente,
@@ -8865,18 +8773,22 @@ app.post('/api/leads', async (c) => {
         telefonoRichiedente: data.telefono || '',
         nomeAssistito: data.nomeAssistito || data.nomeRichiedente,
         cognomeAssistito: data.cognomeAssistito || data.cognomeRichiedente,
+        luogoNascitaAssistito: data.luogoNascita || '',
+        dataNascitaAssistito: data.dataNascita || '',
+        indirizzoAssistito: data.indirizzoAssistito || '',
+        capAssistito: data.capAssistito || '',
+        cittaAssistito: data.cittaAssistito || '',
+        provinciaAssistito: data.provinciaAssistito || '',
+        cfAssistito: data.codiceFiscaleAssistito || '',
+        condizioniSalute: data.condizioniSalute || '',
         pacchetto: data.piano || 'BASE', // BASE o AVANZATO
         servizio: data.servizio || 'eCura PRO', // Mantieni 'eCura' nel nome
+        intestatarioContratto: data.intestatarioContratto || 'richiedente',
         vuoleBrochure: data.vuoleBrochure === 'Si',
         vuoleManuale: data.vuoleManuale === 'Si',
         vuoleContratto: data.vuoleContratto === 'Si',
         cfRichiedente: data.codiceFiscaleRichiedente || '',
         indirizzoRichiedente: data.indirizzoRichiedente || '',
-        cfAssistito: data.codiceFiscaleAssistito || '',
-        indirizzoAssistito: data.indirizzoAssistito || '',
-        dataNascitaAssistito: data.dataNascita || '',
-        luogoNascitaAssistito: data.luogoNascita || '',
-        condizioniSalute: data.condizioniSalute || '',
         note: data.note || ''
       }
       
