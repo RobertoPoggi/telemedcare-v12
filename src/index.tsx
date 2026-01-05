@@ -5,7 +5,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
 
-// Import TeleMedCare V12.0 Modular Enterprise System
+// Import TeleMedCare V12.1 Modular Enterprise System - Deploy 2026-01-05 20:05 (Fix Puppeteer + CRUD completo)
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
 import * as LeadChannels from './modules/lead-channels'
