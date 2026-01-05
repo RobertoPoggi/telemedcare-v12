@@ -28,7 +28,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   
   // Prezzi corretti secondo www.eCura.it
   const importoPrimoAnno = contractData.prezzoBase // 480 BASE o 840 AVANZATO
-  const importoAnniSuccessivi = pianoNome === 'AVANZATO' ? 600 : 360 // Rinnovo: 600€ AVANZATO, 360€ BASE
+  const importoAnniSuccessivi = pianoNome === 'AVANZATO' ? 600 : 200 // Rinnovo: 600€ AVANZATO, 200€ BASE
   
   const dataContratto = new Date().toLocaleDateString('it-IT', { 
     day: '2-digit', 
