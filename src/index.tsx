@@ -7555,7 +7555,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     console.log('📧 [BROCHURE] Invio email con allegato brochure...')
     const result = await emailService.sendTemplateEmail(
-      'INVIO_BROCHURE',
+      'DOCUMENTI_INFORMATIVI',
       lead.email,
       variables,
       attachments,
