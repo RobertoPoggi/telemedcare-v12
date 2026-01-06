@@ -8521,6 +8521,23 @@ app.get('/api/debug/logs', async (c) => {
   })
 })
 
+app.get('/api/debug/env', async (c) => {
+  return c.json({
+    success: true,
+    environment: {
+      RESEND_API_KEY: c.env.RESEND_API_KEY ? `${c.env.RESEND_API_KEY.substring(0, 10)}...` : 'NOT SET',
+      SENDGRID_API_KEY: c.env.SENDGRID_API_KEY ? `${c.env.SENDGRID_API_KEY.substring(0, 10)}...` : 'NOT SET',
+      EMAIL_FROM: c.env.EMAIL_FROM || 'NOT SET',
+      EMAIL_TO_INFO: c.env.EMAIL_TO_INFO || 'NOT SET',
+      JWT_SECRET: c.env.JWT_SECRET ? 'SET (hidden)' : 'NOT SET',
+      ENCRYPTION_KEY: c.env.ENCRYPTION_KEY ? 'SET (hidden)' : 'NOT SET',
+      DEBUG_MODE: c.env.DEBUG_MODE || 'NOT SET',
+      ENVIRONMENT: c.env.ENVIRONMENT || 'NOT SET',
+      DB: c.env.DB ? 'CONNECTED' : 'NOT CONNECTED'
+    }
+  })
+})
+
 app.post('/api/debug/test-contract-save', async (c) => {
   try {
     if (!c.env?.DB) {
