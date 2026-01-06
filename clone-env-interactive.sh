@@ -147,3 +147,33 @@ echo ""
 echo "=================================================================="
 echo "✅ Script completato con successo!"
 echo "=================================================================="
+
+echo ""
+echo "=================================================================="
+echo "📦 Step 5: Configurazione D1 Database Binding..."
+echo "=================================================================="
+echo ""
+
+echo "⚠️  IMPORTANTE: Le API di Cloudflare Pages NON supportano la configurazione"
+echo "    automatica dei D1 Bindings via API."
+echo ""
+echo "Devi configurarlo manualmente nel dashboard:"
+echo ""
+echo "1. Vai su: https://dash.cloudflare.com/$ACCOUNT_ID/pages/view/$PROJECT_NAME/settings/bindings"
+echo "2. Clicca '+ Add' → 'D1 database'"
+echo "3. Compila:"
+echo "   - Variable name: DB"
+echo "   - D1 database: telemedcare-leads"
+echo "   - Environment: Preview ✓"
+echo "4. Salva"
+echo ""
+echo "Database ID: e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
+echo ""
+
+read -p "Hai configurato il D1 binding? (y/N): " BINDING_DONE
+
+if [ "$BINDING_DONE" == "y" ] || [ "$BINDING_DONE" == "Y" ]; then
+    echo -e "${GREEN}✅ Perfetto! Il setup è completo.${NC}"
+else
+    echo -e "${YELLOW}⚠️  Ricordati di configurare il D1 binding prima di testare Preview${NC}"
+fi
