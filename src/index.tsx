@@ -8756,17 +8756,17 @@ app.post('/api/leads', async (c) => {
     // Inserisci nuovo lead (con tutti i campi completi)
     await c.env.DB.prepare(`
       INSERT INTO leads (
-        id, nomeRichiedente, cognomeRichiedente, email, telefono,
+        id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
         nomeAssistito, cognomeAssistito, 
         luogoNascitaAssistito, dataNascitaAssistito,
         indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
-        codiceFiscaleAssistito, condizioniSalute,
+        cfAssistito, condizioniSalute,
         tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
-        consensoPrivacy, consensoMarketing, consensoTerze,
-        intestatarioContratto,
-        note, fonte, status, created_at, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        gdprConsent,
+        intestazioneContratto,
+        note, fonte, status, timestamp, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -8790,8 +8790,6 @@ app.post('/api/leads', async (c) => {
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
       data.consensoPrivacy !== undefined ? (data.consensoPrivacy ? 1 : 0) : 0,
-      data.consensoMarketing !== undefined ? (data.consensoMarketing ? 1 : 0) : 0,
-      data.consensoTerze !== undefined ? (data.consensoTerze ? 1 : 0) : 0,
       data.intestatarioContratto || 'richiedente',
       data.note || '',
       data.fonte || data.canale || 'MANUAL_ENTRY',

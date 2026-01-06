@@ -64,14 +64,14 @@ export async function generateAndSendContract(
       cognomeAssistito: leadData.cognomeAssistito,
       etaAssistito: leadData.etaAssistito,
       
-      // Dati anagrafici completi (da leadData se presenti)
-      luogoNascita: (leadData as any).luogoNascita,
-      dataNascita: (leadData as any).dataNascita,
+      // Dati anagrafici completi (mapping corretto dai campi DB)
+      luogoNascita: (leadData as any).luogoNascitaAssistito || (leadData as any).luogoNascita,
+      dataNascita: (leadData as any).dataNascitaAssistito || (leadData as any).dataNascita,
       indirizzoAssistito: (leadData as any).indirizzoAssistito,
       capAssistito: (leadData as any).capAssistito,
       cittaAssistito: (leadData as any).cittaAssistito,
       provinciaAssistito: (leadData as any).provinciaAssistito,
-      codiceFiscaleAssistito: (leadData as any).codiceFiscaleAssistito,
+      codiceFiscaleAssistito: (leadData as any).cfAssistito || (leadData as any).codiceFiscaleAssistito,
       
       prezzoMensile: pricing.setupBase / 12,
       durataContratto: 12,

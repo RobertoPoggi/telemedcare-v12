@@ -2497,14 +2497,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.emailRichiedente || lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email) || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.emailRichiedente || lead.email) || '-'}
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono) || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefonoRichiedente || lead.telefono) || '-'}
                             </div>
                         </td>
                         <td class="py-3">
@@ -2682,8 +2682,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
-            document.getElementById('viewEmail').textContent = lead.email || '-';
-            document.getElementById('viewTelefono').textContent = lead.telefono || '-';
+            document.getElementById('viewEmail').textContent = lead.emailRichiedente || lead.email || '-';
+            document.getElementById('viewTelefono').textContent = lead.telefonoRichiedente || lead.telefono || '-';
             document.getElementById('viewServizio').textContent = servizio;
             document.getElementById('viewPiano').textContent = piano;
             document.getElementById('viewNote').textContent = lead.note || '-';
@@ -2706,8 +2706,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Pre-compila TUTTI i campi
             document.getElementById('newNome').value = lead.nomeRichiedente || '';
             document.getElementById('newCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('newEmail').value = lead.email || '';
-            document.getElementById('newTelefono').value = lead.telefono || '';
+            document.getElementById('newEmail').value = lead.emailRichiedente || lead.email || '';
+            document.getElementById('newTelefono').value = lead.telefonoRichiedente || lead.telefono || '';
             
             document.getElementById('newNomeAssistito').value = lead.nomeAssistito || '';
             document.getElementById('newCognomeAssistito').value = lead.cognomeAssistito || '';
@@ -2717,7 +2717,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newCapAssistito').value = lead.capAssistito || '';
             document.getElementById('newCittaAssistito').value = lead.cittaAssistito || '';
             document.getElementById('newProvinciaAssistito').value = lead.provinciaAssistito || '';
-            document.getElementById('newCodiceFiscale').value = lead.codiceFiscaleAssistito || '';
+            document.getElementById('newCodiceFiscale').value = lead.cfAssistito || lead.codiceFiscaleAssistito || '';
             document.getElementById('newCondizioniSalute').value = lead.condizioniSalute || '';
             
             // Intestatario contratto
@@ -2804,6 +2804,64 @@ export const leads_dashboard = `<!DOCTYPE html>
             openModal('newLeadModal');
             // Aggiorna prezzi iniziali
             updatePrices();
+            
+            // Aggiungi event listener per calcolo età automatico
+            const dataNascitaInput = document.getElementById('newDataNascita');
+            if (dataNascitaInput) {
+                dataNascitaInput.addEventListener('blur', calculateAge);
+                dataNascitaInput.addEventListener('change', calculateAge);
+            }
+        }
+        
+        function calculateAge() {
+            const dataNascitaInput = document.getElementById('newDataNascita');
+            const etaDisplay = document.getElementById('etaCalcolata');
+            
+            if (!dataNascitaInput || !dataNascitaInput.value) {
+                if (etaDisplay) etaDisplay.textContent = '';
+                return;
+            }
+            
+            // Parse data in formato DD/MM/YYYY
+            const dataNascitaValue = dataNascitaInput.value.trim();
+            const parts = dataNascitaValue.split('/');
+            
+            if (parts.length !== 3) {
+                if (etaDisplay) etaDisplay.textContent = 'Formato non valido (usa DD/MM/YYYY)';
+                return;
+            }
+            
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // I mesi in JS partono da 0
+            const year = parseInt(parts[2], 10);
+            
+            if (isNaN(day) || isNaN(month) || isNaN(year)) {
+                if (etaDisplay) etaDisplay.textContent = 'Data non valida';
+                return;
+            }
+            
+            const dataNascita = new Date(year, month, day);
+            const oggi = new Date();
+            
+            let eta = oggi.getFullYear() - dataNascita.getFullYear();
+            const meseOggi = oggi.getMonth();
+            const giornoOggi = oggi.getDate();
+            
+            // Aggiusta età se il compleanno non è ancora passato quest'anno
+            if (meseOggi < dataNascita.getMonth() || 
+                (meseOggi === dataNascita.getMonth() && giornoOggi < dataNascita.getDate())) {
+                eta--;
+            }
+            
+            if (eta < 0 || eta > 120) {
+                if (etaDisplay) etaDisplay.textContent = 'Età non valida';
+                return;
+            }
+            
+            if (etaDisplay) {
+                etaDisplay.textContent = `Età: ${eta} anni`;
+                etaDisplay.className = 'text-sm font-semibold text-green-600 mt-1';
+            }
         }
         
         function updatePrices() {
@@ -2811,19 +2869,19 @@ export const leads_dashboard = `<!DOCTYPE html>
             const pianoSelect = document.getElementById('newPiano');
             const priceNote = document.getElementById('priceNote');
             
-            // Prezzi per servizio (primo anno / rinnovo)
+            // Prezzi per servizio (primo anno / rinnovo) - AGGIORNATI da ecura.it
             const prices = {
                 'eCura Family': {
-                    BASE: { primo: 420, rinnovo: 180 },
-                    AVANZATO: { primo: 720, rinnovo: 480 }
+                    BASE: { primo: 390, rinnovo: 200 },
+                    AVANZATO: { primo: 690, rinnovo: 500 }
                 },
                 'eCura PRO': {
-                    BASE: { primo: 480, rinnovo: 200 },
+                    BASE: { primo: 480, rinnovo: 240 },
                     AVANZATO: { primo: 840, rinnovo: 600 }
                 },
                 'eCura PREMIUM': {
-                    BASE: { primo: 540, rinnovo: 240 },
-                    AVANZATO: { primo: 960, rinnovo: 720 }
+                    BASE: { primo: 590, rinnovo: 300 },
+                    AVANZATO: { primo: 990, rinnovo: 750 }
                 }
             };
             
@@ -3155,7 +3213,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita *</label>
                                 <input type="text" id="newDataNascita" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-                                    placeholder="15/03/1950">
+                                    placeholder="15/03/1950"
+                                    onblur="calculateAge()" onchange="calculateAge()">
+                                <div id="etaCalcolata" class="text-sm text-gray-500 mt-1"></div>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo *</label>
