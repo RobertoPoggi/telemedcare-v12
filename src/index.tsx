@@ -8781,7 +8781,7 @@ app.post('/api/leads', async (c) => {
       data.capAssistito ?? null,
       data.cittaAssistito ?? null,
       data.provinciaAssistito ?? null,
-      data.codiceFiscaleAssistito ?? null,
+      data.cfAssistito ?? data.codiceFiscaleAssistito ?? null,  // Fix: usa cfAssistito
       data.condizioniSalute || null,
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
@@ -8789,7 +8789,7 @@ app.post('/api/leads', async (c) => {
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      data.consensoPrivacy !== undefined ? (data.consensoPrivacy ? 1 : 0) : 0,
+      data.consensoPrivacy ? 1 : 0,  // Fix: semplificato
       data.intestatarioContratto || 'richiedente',
       data.note || '',
       data.fonte || data.canale || 'MANUAL_ENTRY',
