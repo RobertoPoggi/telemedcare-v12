@@ -8756,7 +8756,9 @@ app.post('/api/leads', async (c) => {
     // Inserisci nuovo lead (con tutti i campi completi)
     await c.env.DB.prepare(`
       INSERT INTO leads (
-        id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+        id, nomeRichiedente, cognomeRichiedente, 
+        email, telefono,
+        emailRichiedente, telefonoRichiedente,
         nomeAssistito, cognomeAssistito, 
         luogoNascitaAssistito, dataNascitaAssistito,
         indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
@@ -8766,13 +8768,15 @@ app.post('/api/leads', async (c) => {
         gdprConsent,
         intestazioneContratto,
         note, fonte, status, timestamp, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
       data.cognomeRichiedente,
-      data.email,
-      data.telefono || '',
+      data.email, // Per retrocompatibilità con schema DB
+      data.telefono || '', // Per retrocompatibilità con schema DB
+      data.email, // emailRichiedente
+      data.telefono || '', // telefonoRichiedente
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
       data.luogoNascitaAssistito ?? null,
