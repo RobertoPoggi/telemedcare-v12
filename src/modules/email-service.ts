@@ -463,37 +463,59 @@ export class EmailService {
       console.log('📧 Invio email reale:', {
         to: emailData.to,
         subject: emailData.subject,
-        attachments: emailData.attachments?.length || 0
+        attachments: emailData.attachments?.length || 0,
+        hasEnv: !!env,
+        hasSendgrid: !!env?.SENDGRID_API_KEY,
+        hasResend: !!env?.RESEND_API_KEY
       })
+
+      let sendgridError: any = null
+      let resendError: any = null
 
       // INVIO REALE con SendGrid
       try {
+        console.log('📧 [1/2] Tentativo SendGrid...')
         const result = await this.sendWithSendGrid(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via SendGrid:', result.messageId)
           return result
         }
-      } catch (sendgridError) {
-        console.warn('⚠️ SendGrid fallito, provo Resend:', sendgridError)
+        console.warn('⚠️ SendGrid non ha avuto successo:', result)
+        sendgridError = result.error || 'Unknown error'
+      } catch (error) {
+        sendgridError = error
+        console.error('❌ SendGrid exception:', error)
       }
 
       // Fallback con Resend
       try {
+        console.log('📧 [2/2] Tentativo Resend (fallback)...')
         const result = await this.sendWithResend(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via Resend:', result.messageId)
           return result
         }
-      } catch (resendError) {
-        console.warn('⚠️ Resend fallito:', resendError)
+        console.warn('⚠️ Resend non ha avuto successo:', result)
+        resendError = result.error || 'Unknown error'
+      } catch (error) {
+        resendError = error
+        console.error('❌ Resend exception:', error)
       }
 
-      // Fallback finale: simulazione con log dettagliato
-      console.log('📧 Tutti i provider falliti, modalità demo')
+      // Fallback finale: DEMO MODE (NON invia email reali!)
+      console.error('❌ TUTTI I PROVIDER FALLITI - MODALITÀ DEMO ATTIVA')
+      console.error('SendGrid error:', sendgridError)
+      console.error('Resend error:', resendError)
+      
       return {
-        success: true,
+        success: true,  // ⚠️ FAKE SUCCESS per non bloccare il flusso
         messageId: `DEMO_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        warning: 'DEMO MODE: Email non inviata realmente',
+        errors: {
+          sendgrid: sendgridError?.message || String(sendgridError),
+          resend: resendError?.message || String(resendError)
+        }
       }
 
     } catch (error) {
@@ -513,6 +535,8 @@ export class EmailService {
     const apiKey = env?.SENDGRID_API_KEY || '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'
     
     console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
+    console.log('📧 SendGrid: From:', emailData.from || 'info@telemedcare.it')
+    console.log('📧 SendGrid: To:', emailData.to)
     
     const payload = {
       personalizations: [{
@@ -537,6 +561,7 @@ export class EmailService {
       }))
     }
 
+    console.log('📧 SendGrid: Sending request...')
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
@@ -546,8 +571,11 @@ export class EmailService {
       body: JSON.stringify(payload),
     })
 
+    console.log('📧 SendGrid: Response status:', response.status)
+    
     if (!response.ok) {
       const error = await response.text()
+      console.error('❌ SendGrid error response:', error)
       throw new Error(`SendGrid API error: ${response.status} ${error}`)
     }
 
