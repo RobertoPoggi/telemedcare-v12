@@ -353,7 +353,7 @@ export async function inviaEmailNotificaInfo(
     const emailService = new EmailService(env)
     
     // Carica template email_notifica_info
-    const template = await loadEmailTemplate('email_notifica_info', db)
+    const template = await loadEmailTemplate('email_notifica_info', db, env)
     
     // Prepara i dati per il template
     const now = new Date()
@@ -465,7 +465,7 @@ export async function inviaEmailDocumentiInformativi(
     const emailService = new EmailService(env)
     
     // Carica template email_documenti_informativi
-    const template = await loadEmailTemplate('email_documenti_informativi', db)
+    const template = await loadEmailTemplate('email_documenti_informativi', db, env)
     
     // Prepara i dati per il template
     const servizioNome = leadData.servizio || 'eCura'
@@ -745,7 +745,7 @@ export async function inviaEmailContratto(
     const emailService = new EmailService(env)
     
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)
-    const template = await loadEmailTemplate('email_invio_contratto', db)
+    const template = await loadEmailTemplate('email_invio_contratto', db, env)
     
     // Prepara i dati per il template
     const servizioNome = contractData.servizio || leadData.servizio || 'eCura PRO' // eCura PRO, eCura FAMILY, eCura PREMIUM
@@ -898,7 +898,7 @@ export async function inviaEmailProforma(
     const emailService = new EmailService(env)
     
     // Carica template email_invio_proforma
-    const template = await loadEmailTemplate('email_invio_proforma', db)
+    const template = await loadEmailTemplate('email_invio_proforma', db, env)
     
     // Prepara i dati per il template
     const templateData = {
@@ -971,7 +971,7 @@ export async function inviaEmailBenvenuto(
     const emailService = new EmailService(env)
     
     // Carica template email_benvenuto
-    const template = await loadEmailTemplate('email_benvenuto', db)
+    const template = await loadEmailTemplate('email_benvenuto', db, env)
     
     // Prepara i dati per il template
     const templateData = {
@@ -1035,7 +1035,7 @@ export async function inviaEmailConfigurazione(
     const emailService = new EmailService(env)
     
     // Carica template email_configurazione (per info@)
-    const template = await loadEmailTemplate('email_configurazione', db)
+    const template = await loadEmailTemplate('email_configurazione', db, env)
     
     // Prepara i dati per il template
     const templateData = {
@@ -1104,7 +1104,7 @@ export async function inviaEmailConfermaAttivazione(
     const emailService = new EmailService(env)
     
     // Carica template email_conferma_attivazione
-    const template = await loadEmailTemplate('email_conferma_attivazione', db)
+    const template = await loadEmailTemplate('email_conferma_attivazione', db, env)
     
     // Prepara i dati per il template
     const templateData = {
