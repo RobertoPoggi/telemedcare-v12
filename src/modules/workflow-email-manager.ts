@@ -497,8 +497,10 @@ export async function inviaEmailDocumentiInformativi(
     
     try {
       // In Cloudflare Workers, usiamo fetch per leggere file statici da public/
-      // In locale usa localhost, in produzione usa il dominio pubblico
-      const baseUrl = env.PUBLIC_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8788')
+      // Determina baseUrl da env
+      const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+      
+      console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
       
       if (leadData.vuoleBrochure) {
         console.log(`📄 [WORKFLOW] Caricamento brochure per servizio: ${leadData.servizio || 'DEFAULT'}`)
