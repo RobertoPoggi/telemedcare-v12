@@ -2854,12 +2854,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
             
             if (eta < 0 || eta > 120) {
-                if (etaDisplay) etaDisplay.textContent = 'Età non valida';
+                if (etaDisplay) etaDisplay.textContent = 'Et\u00E0 non valida';
                 return;
             }
             
             if (etaDisplay) {
-                etaDisplay.textContent = `Età: ${eta} anni`;
+                etaDisplay.textContent = 'Et\u00E0: ' + eta + ' anni';
                 etaDisplay.className = 'text-sm font-semibold text-green-600 mt-1';
             }
         }
