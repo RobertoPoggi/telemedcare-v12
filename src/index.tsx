@@ -8732,6 +8732,11 @@ app.post('/api/leads', async (c) => {
   try {
     const data = await c.req.json()
     
+    // DEBUG: Log completo del payload ricevuto
+    console.log('🔍 [DEBUG POST /api/leads] Payload ricevuto:', JSON.stringify(data, null, 2))
+    console.log('🔍 [DEBUG] luogoNascitaAssistito:', data.luogoNascitaAssistito, 'type:', typeof data.luogoNascitaAssistito)
+    console.log('🔍 [DEBUG] dataNascitaAssistito:', data.dataNascitaAssistito, 'type:', typeof data.dataNascitaAssistito)
+    
     if (!c.env?.DB) {
       return c.json({ success: true, message: 'Lead creato (mock)', id: 'LEAD-MOCK-' + Date.now() })
     }
@@ -8770,13 +8775,13 @@ app.post('/api/leads', async (c) => {
       data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
-      data.luogoNascitaAssistito || null,
-      data.dataNascitaAssistito || null,
-      data.indirizzoAssistito || null,
-      data.capAssistito || null,
-      data.cittaAssistito || null,
-      data.provinciaAssistito || null,
-      data.codiceFiscaleAssistito || null,
+      data.luogoNascitaAssistito ?? null,
+      data.dataNascitaAssistito ?? null,
+      data.indirizzoAssistito ?? null,
+      data.capAssistito ?? null,
+      data.cittaAssistito ?? null,
+      data.provinciaAssistito ?? null,
+      data.codiceFiscaleAssistito ?? null,
       data.condizioniSalute || null,
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
