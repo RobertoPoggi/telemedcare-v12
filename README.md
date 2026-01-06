@@ -206,4 +206,4 @@ npx wrangler pages deploy dist --project-name telemedcare-v11
 
 ---
 **Sistema Modulare - Landing + Dashboard Separate**  
-*Aggiornato: $(date '+%Y-%m-%d %H:%M')*
+*Aggiornato: $(date '+%Y-%m-%d %H:%M')*# Rebuild trigger Tue Jan  6 17:39:03 UTC 2026
