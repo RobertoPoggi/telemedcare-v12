@@ -2858,8 +2858,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Dati assistito
                 nomeAssistito: document.getElementById('newNomeAssistito').value,
                 cognomeAssistito: document.getElementById('newCognomeAssistito').value,
-                luogoNascita: document.getElementById('newLuogoNascita').value,
-                dataNascita: document.getElementById('newDataNascita').value,
+                luogoNascitaAssistito: document.getElementById('newLuogoNascita').value,
+                dataNascitaAssistito: document.getElementById('newDataNascita').value,
                 indirizzoAssistito: document.getElementById('newIndirizzoAssistito').value,
                 capAssistito: document.getElementById('newCapAssistito').value,
                 cittaAssistito: document.getElementById('newCittaAssistito').value,
@@ -2966,8 +2966,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Dati assistito
                 nomeAssistito: document.getElementById('newNomeAssistito').value,
                 cognomeAssistito: document.getElementById('newCognomeAssistito').value,
-                luogoNascita: document.getElementById('newLuogoNascita').value,
-                dataNascita: document.getElementById('newDataNascita').value,
+                luogoNascitaAssistito: document.getElementById('newLuogoNascita').value,
+                dataNascitaAssistito: document.getElementById('newDataNascita').value,
                 indirizzoAssistito: document.getElementById('newIndirizzoAssistito').value,
                 capAssistito: document.getElementById('newCapAssistito').value,
                 cittaAssistito: document.getElementById('newCittaAssistito').value,
