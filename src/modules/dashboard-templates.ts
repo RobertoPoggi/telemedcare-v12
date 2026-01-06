@@ -3145,6 +3145,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             <!-- FORM CONTENT -->
             <div class="p-8 overflow-y-auto" style="max-height: calc(95vh - 180px)">
                 <form id="newLeadForm" class="space-y-8">
+                    <!-- Hidden field per gestire edit mode -->
+                    <input type="hidden" id="isEditMode" value="">
                     
                     <!-- STEP 1: CHI SEI -->
                     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-l-4 border-blue-500">
