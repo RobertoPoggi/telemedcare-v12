@@ -521,7 +521,7 @@ export class EmailService {
       }],
       from: {
         name: 'TeleMedCare',
-        email: emailData.from || 'noreply@telemedcare.it'
+        email: emailData.from || 'info@telemedcare.it'
       },
       content: [
         {
@@ -569,7 +569,7 @@ export class EmailService {
     
     console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
-    const fromEmail = emailData.from || 'noreply@telemedcare.it'
+    const fromEmail = emailData.from || 'info@telemedcare.it'
     const payload = {
       from: `TeleMedCare <${fromEmail}>`,
       to: [emailData.to],
