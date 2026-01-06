@@ -472,6 +472,17 @@ export async function inviaEmailDocumentiInformativi(
     const pianoNome = (leadData.pacchetto === 'BASE' || leadData.pacchetto === 'base') ? 'BASE' : 'AVANZATO'
     const dispositivo = (servizioNome === 'PREMIUM' || servizioNome === 'premium') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
+    // Determina l'URL della brochure in base al servizio
+    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+    
+    console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
+    
+    const brochureFilename = (servizioNome === 'PREMIUM' || servizioNome === 'premium') 
+      ? 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+      : 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    
+    const brochureUrl = `${baseUrl}/brochures/${brochureFilename}`
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
@@ -483,6 +494,7 @@ export async function inviaEmailDocumentiInformativi(
       SERVIZI: servizioNome,
       PIANO: pianoNome,
       DISPOSITIVO: dispositivo,
+      BROCHURE_URL: brochureUrl,
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',
       PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
@@ -608,16 +620,16 @@ export async function inviaEmailDocumentiInformativi(
     }
     
     console.log(`📄 [WORKFLOW] Documenti richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
-    console.log(`📄 [WORKFLOW] URLs documenti:`, documentUrls)
-    console.log(`📄 [WORKFLOW] Allegati preparati: ${attachments.length}`)
+    console.log(`📄 [WORKFLOW] Brochure URL: ${brochureUrl}`)
+    console.log(`📄 [WORKFLOW] Link download inclusi nel template email`)
 
     // Invia email da info@telemedcare.it (richiesta documentazione informativa)
+    // NOTA: Ora usiamo link download invece di allegati PDF
     const sendResult = await emailService.sendEmail({
       to: leadData.emailRichiedente,
       from: 'info@telemedcare.it',
       subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
-      html: emailHtml,
-      attachments: attachments.length > 0 ? attachments : undefined
+      html: emailHtml
     })
 
     if (sendResult.success) {
