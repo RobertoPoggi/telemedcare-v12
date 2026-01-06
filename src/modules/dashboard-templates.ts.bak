@@ -2956,6 +2956,101 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert("❌ Errore di comunicazione: " + error.message);
             }
         }
+            const formData = {
+                // Dati richiedente
+                nomeRichiedente: document.getElementById('newNome').value,
+                cognomeRichiedente: document.getElementById('newCognome').value,
+                email: document.getElementById('newEmail').value,
+                telefono: document.getElementById('newTelefono').value,
+                
+                // Dati assistito
+                nomeAssistito: document.getElementById('newNomeAssistito').value,
+                cognomeAssistito: document.getElementById('newCognomeAssistito').value,
+                luogoNascitaAssistito: document.getElementById('newLuogoNascita').value,
+                dataNascitaAssistito: document.getElementById('newDataNascita').value,
+                indirizzoAssistito: document.getElementById('newIndirizzoAssistito').value,
+                capAssistito: document.getElementById('newCapAssistito').value,
+                cittaAssistito: document.getElementById('newCittaAssistito').value,
+                provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
+                codiceFiscaleAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
+                
+                // Intestatario contratto
+                intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
+                
+                // Condizioni di salute
+                condizioniSalute: document.getElementById('newCondizioniSalute').value,
+                
+                // Servizio e Piano
+                servizio: document.getElementById('newServizio').value,
+                piano: document.getElementById('newPiano').value,
+                canale: document.getElementById('newCanale').value,
+                fonte: document.getElementById('newCanale').value,
+                
+                // Preferenze
+                vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
+                vuoleContratto: document.getElementById('newVuoleContratto').checked ? 'Si' : 'No',
+                vuoleManuale: document.getElementById('newVuoleManuale').checked ? 'Si' : 'No',
+                
+                // Consensi
+                consensoPrivacy: document.getElementById('newConsensoPrivacy').checked,
+                consensoMarketing: document.getElementById('newConsensoMarketing').checked ? 'Si' : 'No',
+                consensoTerze: document.getElementById('newConsensoTerze').checked ? 'Si' : 'No',
+                
+                // Note
+                note: document.getElementById('newNote').value
+            };
+            
+            // Validation campi obbligatori
+            if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
+                alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
+                return;
+            }
+            
+            if (!formData.nomeAssistito || !formData.cognomeAssistito) {
+                alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
+                return;
+            }
+            
+            if (!formData.consensoPrivacy) {
+                alert("⚠️ Il consenso Privacy è obbligatorio");
+                return;
+            }
+            
+            console.log('📤 Invio dati lead:', formData);
+            
+            try {
+                const response = await fetch('/api/leads', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = "✅ Lead creato con successo!\\n\\nID: " + (result.id || result.leadId);
+                    
+                    // Mostra email inviate
+                    if (result.emails) {
+                        message += "\\n\\n📧 Email inviate:";
+                        if (result.emails.notifica) message += "\\n  ✓ Notifica nuovo lead";
+                        if (result.emails.brochure) message += "\\n  ✓ Brochure al cliente";
+                        if (result.emails.contratto) message += "\\n  ✓ Contratto al cliente";
+                    }
+                    
+                    alert(message);
+                    closeModal('newLeadModal');
+                    document.getElementById('newLeadForm').reset();
+                    // Ricarica la pagina per aggiornare i dati
+                    window.location.reload();
+                } else {
+                    alert("❌ Errore: " + (result.error || "Errore sconosciuto"));
+                }
+            } catch (error) {
+                console.error("❌ Errore creazione lead:", error);
+                alert("❌ Errore di comunicazione: " + error.message);
+            }
+        }
         
         // ========== CRUD ASSISTITI ==========
         
