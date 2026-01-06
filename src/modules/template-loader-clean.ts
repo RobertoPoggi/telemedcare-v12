@@ -6,54 +6,33 @@
 import { D1Database } from '@cloudflare/workers-types'
 
 /**
- * Load email template from D1 database or fallback to file system
+ * Load email template from file system (public/templates/email/)
  */
 export async function loadEmailTemplate(
   templateName: string,
   db: D1Database,
   env?: any
 ): Promise<string> {
-  // Try loading from database first
-  if (db) {
-    try {
-      const result = await db
-        .prepare('SELECT html_content FROM document_templates WHERE id = ? AND active = 1 LIMIT 1')
-        .bind(templateName)
-        .first<{ html_content: string }>()
-
-      if (result && result.html_content) {
-        console.log(`📧 [TEMPLATE] Loaded "${templateName}" from database`)
-        return result.html_content
-      }
-    } catch (error) {
-      console.warn(`⚠️ [TEMPLATE] Database error for "${templateName}":`, error)
-      // Continue to file fallback
-    }
-  }
-
-  // Fallback: Load from file system (public/templates/email/)
-  console.log(`📂 [TEMPLATE] Loading "${templateName}" from file system (fallback)`)
+  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+  const templatePath = `/templates/email/${templateName}.html`
+  const templateUrl = `${baseUrl}${templatePath}`
+  
+  console.log(`📂 [TEMPLATE] Loading "${templateName}" from: ${templateUrl}`)
   
   try {
-    const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
-    const templatePath = `/templates/email/${templateName}.html`
-    const templateUrl = `${baseUrl}${templatePath}`
-    
-    console.log(`📥 [TEMPLATE] Fetching from: ${templateUrl}`)
-    
     const response = await fetch(templateUrl)
     
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new Error(`Template not found: HTTP ${response.status}`)
     }
     
     const html = await response.text()
-    console.log(`✅ [TEMPLATE] Loaded "${templateName}" from file (${html.length} chars)`)
+    console.log(`✅ [TEMPLATE] Loaded "${templateName}" (${html.length} chars)`)
     return html
     
   } catch (error) {
-    console.error(`❌ [TEMPLATE] Error loading template "${templateName}":`, error)
-    throw new Error(`Template "${templateName}" not found in database or file system`)
+    console.error(`❌ [TEMPLATE] Error loading "${templateName}":`, error)
+    throw new Error(`Template "${templateName}" not found at ${templateUrl}`)
   }
 }
 
