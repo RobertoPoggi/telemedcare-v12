@@ -692,11 +692,23 @@ export async function inviaEmailContratto(
         console.log(`📋 [CONTRATTO] HTML generato (${contractHtml.length} chars)`)
         
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
+        console.log(`💾 [CONTRATTO] DB type:`, typeof db, db ? 'Available' : 'NULL')
+        
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
         const prezzoMensile = contractData.tipoServizio === 'AVANZATO' ? 70 : 40
         const durataMesi = 12
         
-        await db.prepare(`
+        console.log(`💾 [CONTRATTO] Dati da salvare:`, {
+          id: contractData.contractId,
+          leadId: leadData.id,
+          codice_contratto: contractData.contractCode,
+          tipo_contratto: contractData.tipoServizio,
+          servizio: contractData.servizio,
+          piano: contractData.tipoServizio,
+          prezzo_totale: contractData.prezzoBase
+        })
+        
+        const insertResult = await db.prepare(`
           INSERT INTO contracts (
             id, leadId, codice_contratto, tipo_contratto, 
             template_utilizzato, contenuto_html, 
@@ -729,6 +741,7 @@ export async function inviaEmailContratto(
           new Date().toISOString()  // updated_at
         ).run()
         
+        console.log(`✅ [CONTRATTO] Insert result:`, insertResult)
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)
       } catch (dbError) {
         console.error('❌ [CONTRATTO] Errore salvataggio DB:', dbError)
