@@ -4,121 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuovo Lead TeleMedCare</title>
-    <style>
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8fafc;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px 8px 0 0;
-            margin: -30px -30px 20px -30px;
-            text-align: center;
-        }
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border-left: 4px solid #3b82f6;
-        }
-        .section h4 {
-            margin: 0 0 10px 0;
-            color: #1e40af;
-            font-weight: 600;
-        }
-        .field {
-            margin-bottom: 8px;
-        }
-        .label {
-            font-weight: 500;
-            color: #374151;
-        }
-        .value {
-            margin-left: 10px;
-            color: #1f2937;
-        }
-        .urgent {
-            background: #fef2f2;
-            border: 2px solid #f87171;
-            border-radius: 6px;
-            padding: 15px;
-            color: #991b1b;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>🔒 Nuovo Lead TeleMedCare</h2>
-            <p>Sistema di Notifica Automatica</p>
-            <p><strong>Richiesta ricevuta:</strong> {{DATA_RICHIESTA}} alle {{ORA_RICHIESTA}}</p>
-        </div>
-
-        <div class="section">
-            <h4>👤 Dati Richiedente</h4>
-            <div class="field">
-                <span class="label">Nome:</span>
-                <span class="value">{{NOME_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Cognome:</span>
-                <span class="value">{{COGNOME_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Email:</span>
-                <span class="value">{{EMAIL_RICHIEDENTE}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Telefono:</span>
-                <span class="value">{{TELEFONO_RICHIEDENTE}}</span>
-            </div>
-        </div>
-
-        <div class="section">
-            <h4>🏥 Dati Assistito</h4>
-            <div class="field">
-                <span class="label">Cognome:</span>
-                <span class="value">{{COGNOME_ASSISTITO}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Condizioni di Salute:</span>
-                <span class="value">{{CONDIZIONI_SALUTE}}</span>
-            </div>
-        </div>
-
-        <div class="section">
-            <h4>🎯 Servizio Richiesto</h4>
-            <div class="field">
-                <span class="label">Piano:</span>
-                <span class="value">{{PIANO_SERVIZIO}}</span>
-            </div>
-            <div class="field">
-                <span class="label">Pacchetto:</span>
-                <span class="value">{{PIANO_SERVIZIO}}</span>
-            </div>
-        </div>
-
-        <div class="urgent">
-            ⚡ Azione Richiesta: Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
-        </div>
-    </div>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f6f8">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;padding:20px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" border="0" style="background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+    
+    <!-- Header -->
+    <tr>
+        <td style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);color:white;padding:25px;text-align:center;border-radius:8px 8px 0 0">
+            <h2 style="margin:0 0 10px;font-size:22px">🆕 Nuovo Lead TeleMedCare</h2>
+            <p style="margin:0;font-size:14px;opacity:0.9">Sistema di Notifica Automatica</p>
+            <p style="margin:10px 0 0;font-size:13px"><strong>Richiesta ricevuta:</strong> {{DATA_RICHIESTA}} alle {{ORA_RICHIESTA}}</p>
+        </td>
+    </tr>
+    
+    <!-- Content -->
+    <tr>
+        <td style="padding:25px">
+            
+            <!-- Dati Richiedente -->
+            <table width="100%" cellpadding="12" cellspacing="0" border="0" style="background:#f8fafc;border-left:4px solid #3b82f6;border-radius:6px;margin-bottom:20px">
+                <tr><td>
+                    <h4 style="margin:0 0 12px;color:#1e40af;font-size:16px">👤 Dati Richiedente</h4>
+                    <p style="margin:5px 0;font-size:14px"><strong>Nome:</strong> {{NOME_RICHIEDENTE}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Cognome:</strong> {{COGNOME_RICHIEDENTE}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Email:</strong> <a href="mailto:{{EMAIL_RICHIEDENTE}}" style="color:#3b82f6">{{EMAIL_RICHIEDENTE}}</a></p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Telefono:</strong> <a href="tel:{{TELEFONO_RICHIEDENTE}}" style="color:#3b82f6">{{TELEFONO_RICHIEDENTE}}</a></p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Codice Fiscale:</strong> {{CF_RICHIEDENTE}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Indirizzo:</strong> {{INDIRIZZO_RICHIEDENTE}}</p>
+                </td></tr>
+            </table>
+            
+            <!-- Dati Assistito -->
+            <table width="100%" cellpadding="12" cellspacing="0" border="0" style="background:#f0f9ff;border-left:4px solid #10b981;border-radius:6px;margin-bottom:20px">
+                <tr><td>
+                    <h4 style="margin:0 0 12px;color:#047857;font-size:16px">🏥 Dati Assistito</h4>
+                    <p style="margin:5px 0;font-size:14px"><strong>Nome:</strong> {{NOME_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Cognome:</strong> {{COGNOME_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Età:</strong> {{ETA_ASSISTITO}} anni</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Data di Nascita:</strong> {{DATA_NASCITA_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Luogo di Nascita:</strong> {{LUOGO_NASCITA_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Codice Fiscale:</strong> {{CF_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Indirizzo:</strong> {{INDIRIZZO_ASSISTITO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Condizioni di Salute:</strong> {{CONDIZIONI_SALUTE}}</p>
+                </td></tr>
+            </table>
+            
+            <!-- Servizio Richiesto -->
+            <table width="100%" cellpadding="12" cellspacing="0" border="0" style="background:#fef3c7;border-left:4px solid #f59e0b;border-radius:6px;margin-bottom:20px">
+                <tr><td>
+                    <h4 style="margin:0 0 12px;color:#d97706;font-size:16px">🎯 Servizio Richiesto</h4>
+                    <p style="margin:5px 0;font-size:14px"><strong>Servizio:</strong> {{SERVIZIO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Piano:</strong> {{PIANO}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Prezzo:</strong> {{PREZZO_PIANO}}</p>
+                </td></tr>
+            </table>
+            
+            <!-- Richieste del Cliente -->
+            <table width="100%" cellpadding="12" cellspacing="0" border="0" style="background:#f3e8ff;border-left:4px solid #8b5cf6;border-radius:6px;margin-bottom:20px">
+                <tr><td>
+                    <h4 style="margin:0 0 12px;color:#6b21a8;font-size:16px">📄 Richieste del Cliente</h4>
+                    <p style="margin:5px 0;font-size:14px"><strong>Contratto:</strong> {{VUOLE_CONTRATTO_TEXT}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Brochure:</strong> {{VUOLE_BROCHURE_TEXT}}</p>
+                    <p style="margin:5px 0;font-size:14px"><strong>Manuale:</strong> {{VUOLE_MANUALE_TEXT}}</p>
+                </td></tr>
+            </table>
+            
+            <!-- Note Aggiuntive -->
+            <table width="100%" cellpadding="12" cellspacing="0" border="0" style="background:#fce7f3;border-left:4px solid #ec4899;border-radius:6px;margin-bottom:20px">
+                <tr><td>
+                    <h4 style="margin:0 0 12px;color:#9f1239;font-size:16px">📝 Note Aggiuntive</h4>
+                    <p style="margin:0;font-size:14px">{{NOTE_AGGIUNTIVE}}</p>
+                </td></tr>
+            </table>
+            
+            <!-- Azione Richiesta -->
+            <table width="100%" cellpadding="15" cellspacing="0" border="0" style="background:#fef2f2;border:2px solid #f87171;border-radius:6px;text-align:center">
+                <tr><td>
+                    <p style="margin:0;color:#991b1b;font-weight:bold;font-size:15px">⚡ {{AZIONE_SUGGERITA}}</p>
+                </td></tr>
+            </table>
+            
+        </td>
+    </tr>
+    
+    <!-- Footer -->
+    <tr>
+        <td style="background:#f8fafc;padding:20px;text-align:center;border-radius:0 0 8px 8px">
+            <p style="margin:0 0 5px;font-size:12px;color:#6b7280"><strong>TeleMedCare V12</strong> - Sistema Automatizzato</p>
+            <p style="margin:0;font-size:11px;color:#9ca3af">Notifica generata il {{TIMESTAMP_COMPLETO}}</p>
+        </td>
+    </tr>
+    
+</table>
+</td></tr>
+</table>
 </body>
 </html>
