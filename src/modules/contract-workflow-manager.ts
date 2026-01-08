@@ -120,7 +120,7 @@ export async function generateAndSendContract(
       if (!brochurePdf) {
         console.log(`📄 [CONTRACT_WORKFLOW] Caricamento brochure generica TeleMedCare`)
         try {
-          const brochureUrl = `${baseUrl}/documents/Brochure_TeleMedCare.pdf`
+          const brochureUrl = `${baseUrl}/brochures/Brochure_eCura.pdf`
           const response = await fetch(brochureUrl)
           
           if (response.ok) {
@@ -135,7 +135,7 @@ export async function generateAndSendContract(
             const base64Content = btoa(binaryString)
             
             brochurePdf = {
-              filename: 'Brochure_TeleMedCare.pdf',
+              filename: 'Brochure_eCura.pdf',
               content: base64Content,
               size: arrayBuffer.byteLength
             }

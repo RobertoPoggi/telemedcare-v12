@@ -17,6 +17,7 @@ import { loadEmailTemplate, renderTemplate } from './template-loader-clean'
 import { D1Database } from '@cloudflare/workers-types'
 import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
 import { formatServiceName } from './ecura-pricing'
+import { getMissingFields, isLeadComplete } from './lead-completion'
 
 /**
  * Genera HTML completo del contratto con tutti i dati del cliente
@@ -483,6 +484,59 @@ export async function inviaEmailDocumentiInformativi(
     
     const brochureUrl = `${baseUrl}/brochures/${brochureFilename}`
     
+    // ============================================
+    // VERIFICA COMPLETAMENTO LEAD
+    // ============================================
+    const { missing, available } = getMissingFields(leadData)
+    const completionRequired = missing.length > 0
+    
+    // Se lead incompleto, genera token e link completamento
+    let completionSection = ''
+    
+    if (completionRequired) {
+      // TODO: Implementare generazione token automatica
+      // Per ora generiamo un link placeholder
+      const completionLink = `${baseUrl}/completa-dati?leadId=${leadData.id}`
+      const tokenDays = 30
+      const expiryDate = new Date()
+      expiryDate.setDate(expiryDate.getDate() + tokenDays)
+      const tokenExpiry = expiryDate.toLocaleDateString('it-IT')
+      
+      // Costruisci lista campi mancanti
+      const missingFieldsHtml = missing.map(field => 
+        `<li style="color: #856404; font-weight: 500;">${field}</li>`
+      ).join('\n        ')
+      
+      completionSection = `
+<!-- SEZIONE COMPLETAMENTO DATI (lead incompleto) -->
+<div class="warning-box">
+    <h4>⚠️ Ultimi Dettagli Necessari</h4>
+    <p>Per procedere con l'attivazione del servizio, abbiamo bisogno di alcuni dati aggiuntivi:</p>
+    <ul style="margin: 15px 0; padding-left: 25px; line-height: 2;">
+        ${missingFieldsHtml}
+    </ul>
+    <p style="margin: 20px 0 10px 0; font-weight: 500;">Clicchi sul pulsante qui sotto per completare i dati in soli 2 minuti:</p>
+    <div style="text-align: center; margin: 25px 0;">
+        <a href="${completionLink}" 
+           style="display: inline-block; 
+                  background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); 
+                  color: white; 
+                  padding: 15px 40px; 
+                  text-decoration: none; 
+                  border-radius: 8px; 
+                  font-size: 18px; 
+                  font-weight: 600;
+                  box-shadow: 0 4px 8px rgba(0,102,204,0.3);">
+            📝 Completa i Dati Ora
+        </a>
+    </div>
+    <p style="font-size: 13px; color: #856404; margin: 15px 0;">
+        ⏰ Il link è valido per ${tokenDays} giorni (scadenza: ${tokenExpiry})
+    </p>
+</div>
+`
+    }
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
@@ -498,7 +552,10 @@ export async function inviaEmailDocumentiInformativi(
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',
       PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
-      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno'
+      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
+      
+      // Sezione completamento (HTML renderizzato)
+      COMPLETION_SECTION: completionSection
     }
 
     // Renderizza template
@@ -540,8 +597,8 @@ export async function inviaEmailDocumentiInformativi(
           
           // Fallback su brochure generica se necessario
           if (!pdfData) {
-            console.log(`📄 [WORKFLOW] Caricamento brochure generica TeleMedCare`)
-            const brochureUrl = `${baseUrl}/documents/Brochure_TeleMedCare.pdf`
+            console.log(`📄 [WORKFLOW] Caricamento brochure generica eCura`)
+            const brochureUrl = `${baseUrl}/brochures/Brochure_eCura.pdf`
             const response = await fetch(brochureUrl)
             
             if (response.ok) {
@@ -556,7 +613,7 @@ export async function inviaEmailDocumentiInformativi(
               const base64Content = btoa(binaryString)
               
               pdfData = {
-                filename: 'Brochure_TeleMedCare.pdf',
+                filename: 'Brochure_eCura.pdf',
                 content: base64Content,
                 size: arrayBuffer.byteLength
               }
@@ -827,7 +884,7 @@ export async function inviaEmailContratto(
           const base64 = btoa(binary)
           
           // Aggiungi agli allegati
-          const filename = linkBrochure.split('/').pop() || 'Brochure_TeleMedCare.pdf'
+          const filename = linkBrochure.split('/').pop() || 'Brochure_eCura.pdf'
           attachments.push({
             filename: filename,
             content: base64,

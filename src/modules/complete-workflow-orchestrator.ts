@@ -466,7 +466,7 @@ async function getDocumentUrls(leadData: LeadData): Promise<{ brochure?: string;
   const urls: { brochure?: string; manuale?: string } = {}
   
   if (leadData.vuoleBrochure) {
-    urls.brochure = '/public/documents/Brochure_TeleMedCare.pdf'
+    urls.brochure = '/public/brochures/Brochure_eCura.pdf'
   }
   
   if (leadData.vuoleManuale) {
