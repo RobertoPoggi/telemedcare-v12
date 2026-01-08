@@ -9223,6 +9223,301 @@ app.post('/api/db/migrate', async (c) => {
   }
 })
 
+// ========================================
+// HUBSPOT CRM INTEGRATION
+// ========================================
+
+// GET /api/hubspot/test - Test connessione HubSpot
+app.get('/api/hubspot/test', async (c) => {
+  try {
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({
+        success: false,
+        error: 'Credenziali HubSpot non configurate',
+        missing: {
+          accessToken: !accessToken,
+          portalId: !portalId
+        }
+      }, 500)
+    }
+    
+    const client = new HubSpotClient(accessToken, portalId)
+    const result = await client.testConnection()
+    
+    return c.json(result)
+  } catch (error) {
+    console.error('❌ Test HubSpot error:', error)
+    return c.json({
+      success: false,
+      message: `Errore test HubSpot: ${(error as Error).message}`
+    }, 500)
+  }
+})
+
+// GET /api/hubspot/contacts - Lista contatti HubSpot
+app.get('/api/hubspot/contacts', async (c) => {
+  try {
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    // Parametri query
+    const limit = parseInt(c.req.query('limit') || '100')
+    const after = c.req.query('after')
+    
+    console.log(`📊 [HUBSPOT] Fetching contacts (limit: ${limit})`)
+    
+    const response = await client.getContacts({ limit, after })
+    
+    console.log(`✅ [HUBSPOT] Trovati ${response.results.length} contatti (totale: ${response.total})`)
+    
+    return c.json({
+      success: true,
+      total: response.total,
+      count: response.results.length,
+      contacts: response.results,
+      paging: response.paging
+    })
+  } catch (error) {
+    console.error('❌ Get HubSpot contacts error:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
+// POST /api/hubspot/search - Cerca contatti con filtri
+app.post('/api/hubspot/search', async (c) => {
+  try {
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    
+    const body = await c.req.json()
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    console.log(`🔍 [HUBSPOT] Ricerca contatti con filtri:`, body)
+    
+    const response = await client.searchContacts(body)
+    
+    console.log(`✅ [HUBSPOT] Trovati ${response.results.length} contatti`)
+    
+    return c.json({
+      success: true,
+      total: response.total,
+      count: response.results.length,
+      contacts: response.results,
+      paging: response.paging
+    })
+  } catch (error) {
+    console.error('❌ Search HubSpot contacts error:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
+// GET /api/hubspot/contacts/recent - Contatti creati negli ultimi N giorni
+app.get('/api/hubspot/contacts/recent', async (c) => {
+  try {
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    
+    const days = parseInt(c.req.query('days') || '7')
+    const limit = parseInt(c.req.query('limit') || '100')
+    
+    const createdAfter = new Date()
+    createdAfter.setDate(createdAfter.getDate() - days)
+    
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    console.log(`📅 [HUBSPOT] Fetching contacts created after ${createdAfter.toISOString()}`)
+    
+    const response = await client.searchContacts({
+      createdAfter: createdAfter.toISOString(),
+      limit
+    })
+    
+    console.log(`✅ [HUBSPOT] Trovati ${response.results.length} contatti recenti`)
+    
+    return c.json({
+      success: true,
+      period: `Ultimi ${days} giorni`,
+      from: createdAfter.toISOString(),
+      total: response.total,
+      count: response.results.length,
+      contacts: response.results
+    })
+  } catch (error) {
+    console.error('❌ Get recent HubSpot contacts error:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
+// POST /api/hubspot/sync - Sincronizza contatti HubSpot → TeleMedCare
+app.post('/api/hubspot/sync', async (c) => {
+  try {
+    const { HubSpotClient, mapHubSpotContactToLead } = await import('./modules/hubspot-integration')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    
+    const body = await c.req.json()
+    const days = body.days || 7
+    const dryRun = body.dryRun || false
+    
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    const createdAfter = new Date()
+    createdAfter.setDate(createdAfter.getDate() - days)
+    
+    console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione ultimi ${days} giorni (dryRun: ${dryRun})`)
+    
+    const response = await client.searchContacts({
+      createdAfter: createdAfter.toISOString(),
+      limit: 100
+    })
+    
+    console.log(`📊 [HUBSPOT SYNC] Trovati ${response.results.length} contatti da sincronizzare`)
+    
+    const results = {
+      total: response.results.length,
+      created: 0,
+      skipped: 0,
+      errors: [] as any[]
+    }
+    
+    for (const contact of response.results) {
+      try {
+        // Verifica se esiste già (by email o external_source_id)
+        const existing = await c.env.DB.prepare(`
+          SELECT id FROM leads 
+          WHERE email = ? OR external_source_id = ?
+          LIMIT 1
+        `).bind(contact.properties.email, contact.id).first()
+        
+        if (existing) {
+          console.log(`⏭️  [HUBSPOT SYNC] Contact ${contact.id} già esistente, skip`)
+          results.skipped++
+          continue
+        }
+        
+        if (dryRun) {
+          console.log(`🔍 [DRY RUN] Contatto ${contact.id} sarebbe stato importato`)
+          results.created++
+          continue
+        }
+        
+        // Mappa contatto HubSpot → Lead TeleMedCare
+        const leadData = mapHubSpotContactToLead(contact)
+        
+        // Genera ID lead
+        const leadId = `LEAD-HUBSPOT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+        
+        // Inserisci nel database
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            nomeAssistito, cognomeAssistito,
+            servizio, piano, pacchetto, tipoServizio,
+            fonte, external_source_id, status, note,
+            vuoleContratto, vuoleBrochure, vuoleManuale,
+            consensoPrivacy, consensoMarketing, consensoTerze,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          leadData.nomeRichiedente,
+          leadData.cognomeRichiedente,
+          leadData.email,
+          leadData.telefono,
+          leadData.nomeAssistito,
+          leadData.cognomeAssistito,
+          leadData.servizio,
+          leadData.piano,
+          leadData.pacchetto,
+          leadData.tipoServizio,
+          leadData.fonte,
+          leadData.external_source_id,
+          leadData.status,
+          leadData.note,
+          leadData.vuoleContratto,
+          leadData.vuoleBrochure,
+          leadData.vuoleManuale,
+          leadData.consensoPrivacy ? 1 : 0,
+          leadData.consensoMarketing ? 1 : 0,
+          leadData.consensoTerze ? 1 : 0,
+          new Date().toISOString(),
+          new Date().toISOString()
+        ).run()
+        
+        console.log(`✅ [HUBSPOT SYNC] Lead creato: ${leadId} from HubSpot ${contact.id}`)
+        results.created++
+        
+      } catch (error) {
+        console.error(`❌ [HUBSPOT SYNC] Errore sync contact ${contact.id}:`, error)
+        results.errors.push({
+          contactId: contact.id,
+          email: contact.properties.email,
+          error: (error as Error).message
+        })
+      }
+    }
+    
+    console.log(`✅ [HUBSPOT SYNC] Completato: ${results.created} creati, ${results.skipped} skipped, ${results.errors.length} errori`)
+    
+    return c.json({
+      success: true,
+      message: dryRun ? 'Dry run completato (nessun dato salvato)' : 'Sincronizzazione completata',
+      period: `Ultimi ${days} giorni`,
+      dryRun,
+      results
+    })
+  } catch (error) {
+    console.error('❌ HubSpot sync error:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
 // POST /api/init-workflow-leads - Inizializza lead per workflow manager
 app.post('/api/init-workflow-leads', async (c) => {
   try {
