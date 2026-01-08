@@ -9518,6 +9518,331 @@ app.post('/api/hubspot/sync', async (c) => {
   }
 })
 
+
+// ========================================
+// LEAD COMPLETION SYSTEM
+// ========================================
+
+// GET /api/system/config - Ottieni configurazione sistema
+app.get('/api/system/config', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const { getSystemConfig } = await import('./modules/lead-completion')
+    const config = await getSystemConfig(c.env.DB)
+    
+    return c.json({ success: true, config })
+  } catch (error) {
+    console.error('❌ Get system config error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// POST /api/system/config - Aggiorna configurazione sistema
+app.post('/api/system/config', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const body = await c.req.json()
+    const { updateSystemConfig } = await import('./modules/lead-completion')
+    
+    // Aggiorna configurazione
+    for (const [key, value] of Object.entries(body)) {
+      await updateSystemConfig(c.env.DB, key as any, value as any)
+    }
+    
+    const { getSystemConfig } = await import('./modules/lead-completion')
+    const config = await getSystemConfig(c.env.DB)
+    
+    console.log('✅ System config updated:', config)
+    
+    return c.json({ success: true, config })
+  } catch (error) {
+    console.error('❌ Update system config error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// POST /api/leads/:leadId/request-completion - Richiedi completamento dati lead
+app.post('/api/leads/:leadId/request-completion', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const leadId = c.req.param('leadId')
+    
+    const {
+      createCompletionToken,
+      getMissingFields,
+      isLeadComplete,
+      getSystemConfig
+    } = await import('./modules/lead-completion')
+    
+    // Ottieni lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+      .bind(leadId).first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Verifica se il lead è già completo
+    if (isLeadComplete(lead)) {
+      return c.json({
+        success: false,
+        error: 'Lead già completo, nessun campo mancante'
+      }, 400)
+    }
+    
+    // Ottieni configurazione
+    const config = await getSystemConfig(c.env.DB)
+    
+    // Crea token
+    const token = await createCompletionToken(
+      c.env.DB,
+      leadId,
+      config.auto_completion_token_days
+    )
+    
+    // Genera URL completamento
+    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
+    
+    // Prepara dati per email
+    const { missing, available } = getMissingFields(lead)
+    
+    // Invia email (solo se richiesto o se auto_completion_enabled)
+    const sendEmail = c.req.query('sendEmail') === 'true' || config.auto_completion_enabled
+    
+    if (sendEmail) {
+      const { EmailService } = await import('./modules/email-service')
+      const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+      
+      const emailService = new EmailService(c.env)
+      const template = await loadEmailTemplate('email_richiesta_completamento', c.env.DB, c.env)
+      
+      // Prepara variabili template
+      const availableFieldsList = Object.entries(available).map(([label, value]) => ({
+        FIELD_LABEL: label,
+        FIELD_VALUE: value
+      }))
+      
+      const missingFieldsList = missing.map(field => ({ FIELD_NAME: field }))
+      
+      const templateData = {
+        NOME_CLIENTE: lead.nomeRichiedente,
+        COGNOME_CLIENTE: lead.cognomeRichiedente,
+        SERVIZIO: lead.servizio || lead.tipoServizio || 'eCura PRO',
+        PIANO: lead.piano || lead.pacchetto || 'BASE',
+        COMPLETION_URL: completionUrl,
+        EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
+        AVAILABLE_FIELDS: availableFieldsList,
+        MISSING_FIELDS: missingFieldsList
+      }
+      
+      const emailHtml = renderTemplate(template, templateData)
+      
+      try {
+        await emailService.sendEmail({
+          to: lead.email || lead.emailRichiedente,
+          from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+          subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
+          html: emailHtml,
+          text: `Gentile ${lead.nomeRichiedente}, completa i tuoi dati qui: ${completionUrl}`
+        })
+        
+        console.log(`✅ Email completamento inviata a ${lead.email}`)
+        
+        // Log email sent
+        const { logCompletionAction } = await import('./modules/lead-completion')
+        await logCompletionAction(c.env.DB, leadId, token.id, 'email_sent', `Email inviata a ${lead.email}`)
+        
+      } catch (emailError) {
+        console.error('❌ Errore invio email completamento:', emailError)
+      }
+    }
+    
+    return c.json({
+      success: true,
+      message: sendEmail ? 'Token creato e email inviata' : 'Token creato (email non inviata)',
+      token: {
+        id: token.id,
+        completionUrl,
+        expiresAt: token.expires_at,
+        expiresInDays: config.auto_completion_token_days
+      },
+      missingFields: missing,
+      availableFields: available
+    })
+    
+  } catch (error) {
+    console.error('❌ Request completion error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// GET /api/completion/validate/:token - Valida token e ottieni dati lead
+app.get('/api/completion/validate/:token', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const token = c.req.param('token')
+    
+    const { validateCompletionToken, getMissingFields } = await import('./modules/lead-completion')
+    
+    const validation = await validateCompletionToken(c.env.DB, token)
+    
+    if (!validation.valid) {
+      return c.json({
+        success: false,
+        error: validation.error
+      }, 400)
+    }
+    
+    // Ottieni dati lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+      .bind(validation.tokenData!.lead_id).first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    const { missing, available } = getMissingFields(lead)
+    
+    return c.json({
+      success: true,
+      lead: {
+        id: lead.id,
+        nomeRichiedente: lead.nomeRichiedente,
+        cognomeRichiedente: lead.cognomeRichiedente,
+        email: lead.email || lead.emailRichiedente,
+        telefono: lead.telefono,
+        servizio: lead.servizio || lead.tipoServizio,
+        piano: lead.piano || lead.pacchetto,
+        nomeAssistito: lead.nomeAssistito,
+        cognomeAssistito: lead.cognomeAssistito,
+        dataNascitaAssistito: lead.dataNascitaAssistito,
+        luogoNascitaAssistito: lead.luogoNascitaAssistito,
+        codiceFiscaleAssistito: lead.codiceFiscaleAssistito,
+        indirizzoAssistito: lead.indirizzoAssistito,
+        condizioniSalute: lead.condizioniSalute
+      },
+      missingFields: missing,
+      availableFields: available,
+      tokenId: validation.tokenData!.id
+    })
+    
+  } catch (error) {
+    console.error('❌ Validate completion token error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// POST /api/leads/complete - Completa dati lead
+app.post('/api/leads/complete', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const body = await c.req.json()
+    const { token, leadData } = body
+    
+    if (!token) {
+      return c.json({ success: false, error: 'Token mancante' }, 400)
+    }
+    
+    const { validateCompletionToken, markTokenAsCompleted } = await import('./modules/lead-completion')
+    
+    // Valida token
+    const validation = await validateCompletionToken(c.env.DB, token)
+    
+    if (!validation.valid) {
+      return c.json({ success: false, error: validation.error }, 400)
+    }
+    
+    const leadId = validation.tokenData!.lead_id
+    
+    // Aggiorna lead con i nuovi dati
+    await c.env.DB.prepare(`
+      UPDATE leads
+      SET 
+        telefono = COALESCE(?, telefono),
+        nomeAssistito = COALESCE(?, nomeAssistito),
+        cognomeAssistito = COALESCE(?, cognomeAssistito),
+        dataNascitaAssistito = COALESCE(?, dataNascitaAssistito),
+        luogoNascitaAssistito = COALESCE(?, luogoNascitaAssistito),
+        codiceFiscaleAssistito = COALESCE(?, codiceFiscaleAssistito),
+        indirizzoAssistito = COALESCE(?, indirizzoAssistito),
+        condizioniSalute = COALESCE(?, condizioniSalute),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      leadData.telefono,
+      leadData.nomeAssistito,
+      leadData.cognomeAssistito,
+      leadData.dataNascitaAssistito,
+      leadData.luogoNascitaAssistito,
+      leadData.codiceFiscaleAssistito,
+      leadData.indirizzoAssistito,
+      leadData.condizioniSalute,
+      leadId
+    ).run()
+    
+    // Marca token come completato
+    await markTokenAsCompleted(c.env.DB, validation.tokenData!.id)
+    
+    console.log(`✅ Lead ${leadId} completato con successo`)
+    
+    // Invia notifica a info@telemedcare.it
+    try {
+      const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+      
+      const { EmailService } = await import('./modules/email-service')
+      const emailService = new EmailService(c.env)
+      
+      await emailService.sendEmail({
+        to: c.env?.EMAIL_TO_INFO || 'info@telemedcare.it',
+        from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+        subject: `✅ Lead Completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`,
+        html: `
+          <h2>✅ Lead Completato con Successo</h2>
+          <p><strong>Lead ID:</strong> ${leadId}</p>
+          <p><strong>Nome:</strong> ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}</p>
+          <p><strong>Email:</strong> ${updatedLead.email}</p>
+          <p><strong>Telefono:</strong> ${updatedLead.telefono}</p>
+          <p><strong>Servizio:</strong> ${updatedLead.servizio} ${updatedLead.piano}</p>
+          <hr>
+          <p>Il lead ha completato i dati mancanti e ora è pronto per l'attivazione.</p>
+          <p><a href="https://telemedcare-v12.pages.dev/leads">Visualizza nella Dashboard</a></p>
+        `,
+        text: `Lead ${leadId} completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`
+      })
+      
+      console.log('✅ Notifica completamento inviata a info@telemedcare.it')
+    } catch (notifyError) {
+      console.error('⚠️ Errore invio notifica completamento:', notifyError)
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Dati completati con successo!',
+      leadId
+    })
+    
+  } catch (error) {
+    console.error('❌ Complete lead error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
 // POST /api/init-workflow-leads - Inizializza lead per workflow manager
 app.post('/api/init-workflow-leads', async (c) => {
   try {

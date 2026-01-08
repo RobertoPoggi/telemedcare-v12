@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Completa la tua richiesta - eCura by Medica GB</title>
+<style>
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f6f8;
+}
+
+.email-container {
+    background: white;
+    max-width: 600px;
+    margin: 20px auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.header .tagline {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+.content {
+    padding: 40px 30px;
+}
+
+.greeting {
+    font-size: 18px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.intro-text {
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+    color: #555;
+}
+
+.cta-box {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 30px 0;
+}
+
+.cta-box h3 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.cta-button {
+    display: inline-block;
+    background: white;
+    color: #10b981;
+    padding: 16px 40px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 18px;
+    margin: 10px 0;
+    transition: all 0.3s;
+}
+
+.cta-button:hover {
+    background: #f0f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.info-section {
+    background: #f8fafc;
+    border-left: 4px solid #0066CC;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 25px 0;
+}
+
+.info-section h4 {
+    color: #0066CC;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+}
+
+.info-list li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+    color: #555;
+    font-size: 15px;
+}
+
+.info-list li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.missing-section {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 6px;
+    margin: 25px 0;
+}
+
+.missing-section h4 {
+    color: #856404;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.missing-list {
+    list-style: none;
+    padding: 0;
+}
+
+.missing-list li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+    color: #856404;
+    font-size: 15px;
+}
+
+.missing-list li:before {
+    content: '❓';
+    position: absolute;
+    left: 0;
+    font-size: 16px;
+}
+
+.timer-box {
+    background: #fef2f2;
+    border: 2px solid #fca5a5;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 25px 0;
+}
+
+.timer-box p {
+    color: #991b1b;
+    font-size: 14px;
+    margin: 0;
+}
+
+.timer-box strong {
+    font-size: 16px;
+}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 10px;
+    margin: 30px 0;
+}
+
+.benefits-box h4 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.benefits-box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.benefits-box li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+    font-size: 15px;
+}
+
+.benefits-box li:before {
+    content: '💚';
+    position: absolute;
+    left: 0;
+}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.footer p {
+    margin: 8px 0;
+}
+
+.footer a {
+    color: #00A86B;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.link-fallback {
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 20px 0;
+    font-size: 13px;
+    color: #64748b;
+    word-break: break-all;
+}
+</style>
+</head>
+<body>
+<div class="email-container">
+
+<div class="header">
+<h1>📝 Completa la tua Richiesta</h1>
+<div class="tagline">eCura by Medica GB - Ancora pochi dati e siamo pronti!</div>
+</div>
+
+<div class="content">
+<p class="greeting">Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},</p>
+
+<p class="intro-text">
+Grazie per il tuo interesse verso i nostri servizi <strong>{{SERVIZIO}} {{PIANO}}</strong>. 
+Abbiamo ricevuto la tua richiesta e siamo entusiasti di poterti accompagnare in questo percorso!
+</p>
+
+<p class="intro-text">
+Per procedere con l'attivazione del servizio, ci servono alcune <strong>informazioni aggiuntive</strong>. 
+Abbiamo preparato un modulo semplice con i tuoi dati già pre-compilati: dovrai completare solo i campi mancanti. 
+<strong>Ci vorranno solo 2-3 minuti!</strong>
+</p>
+
+<div class="cta-box">
+<h3>👉 Completa i Tuoi Dati</h3>
+<a href="{{COMPLETION_URL}}" class="cta-button">Completa Ora la Richiesta</a>
+<p style="color: white; margin-top: 15px; font-size: 14px;">
+Link sicuro e personale - Valido per {{EXPIRES_IN_DAYS}} giorni
+</p>
+</div>
+
+<div class="info-section">
+<h4>✅ Dati già in nostro possesso:</h4>
+<ul class="info-list">
+{{#AVAILABLE_FIELDS}}
+<li>{{FIELD_LABEL}}: <strong>{{FIELD_VALUE}}</strong></li>
+{{/AVAILABLE_FIELDS}}
+</ul>
+</div>
+
+<div class="missing-section">
+<h4>❓ Informazioni che ci servono:</h4>
+<ul class="missing-list">
+{{#MISSING_FIELDS}}
+<li>{{FIELD_NAME}}</li>
+{{/MISSING_FIELDS}}
+</ul>
+</div>
+
+<div class="timer-box">
+<p>⏰ <strong>Attenzione:</strong> Questo link è valido per <strong>{{EXPIRES_IN_DAYS}} giorni</strong></p>
+<p style="margin-top: 5px; font-size: 13px;">Se scade, dovrai ricontattarci per ricevere un nuovo link.</p>
+</div>
+
+<div class="benefits-box">
+<h4>💚 Perché completare ora?</h4>
+<ul>
+<li>Attivazione più veloce del servizio</li>
+<li>Contratto personalizzato pronto in 24 ore</li>
+<li>Assistenza prioritaria dedicata</li>
+<li>Nessuna attesa: procediamo subito!</li>
+</ul>
+</div>
+
+<p style="margin-top: 30px; font-size: 15px; color: #555;">
+Se hai domande o preferisci completare i dati telefonicamente, 
+non esitare a contattarci:
+</p>
+
+<p style="margin: 15px 0; font-size: 15px;">
+📧 Email: <a href="mailto:info@telemedcare.it" style="color: #0066CC; text-decoration: none;">info@telemedcare.it</a><br>
+📞 Telefono commerciale: <a href="tel:+393357301206" style="color: #0066CC; text-decoration: none;">+39 335 730 1206</a><br>
+📱 Telefono tecnico: <a href="tel:+393316432390" style="color: #0066CC; text-decoration: none;">+39 331 643 2390</a>
+</p>
+
+<div class="link-fallback">
+<p style="margin-bottom: 8px; font-weight: 600; color: #475569;">
+Se il pulsante non funziona, copia e incolla questo link nel tuo browser:
+</p>
+<p style="color: #0066CC;">{{COMPLETION_URL}}</p>
+</div>
+
+<p style="margin-top: 30px; font-size: 15px; color: #2c3e50;">
+Grazie per la fiducia e a presto!<br>
+<strong>Il Team eCura</strong>
+</p>
+
+</div>
+
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a></p>
+</div>
+
+</div>
+</body>
+</html>
