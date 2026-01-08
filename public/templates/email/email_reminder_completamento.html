@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promemoria - Completa i tuoi dati TeleMedCare</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.email-container {
+    background: white;
+    max-width: 700px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+    border-radius: 10px 10px 0 0;
+}
+
+.header h1 {margin: 0; font-size: 28px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.urgent-box {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.urgent-box h2 {margin: 0 0 15px 0; font-size: 24px; font-weight: 600; color: white;}
+.urgent-box p {font-size: 16px; margin: 10px 0; font-weight: 400; color: white;}
+
+.missing-fields {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 30px 0;
+}
+
+.missing-fields h4 {color: #856404; margin: 0 0 15px 0; font-weight: 500;}
+.missing-fields ul {margin: 15px 0; padding-left: 25px; line-height: 2;}
+.missing-fields li {color: #856404; font-weight: 500;}
+
+.cta-button {
+    text-align: center;
+    margin: 35px 0;
+}
+
+.cta-button a {
+    display: inline-block;
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 18px 45px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,102,204,0.4);
+    transition: all 0.3s;
+}
+
+.cta-button a:hover {
+    box-shadow: 0 6px 15px rgba(0,102,204,0.6);
+    transform: translateY(-2px);
+}
+
+.info-box {
+    background: #e7f3ff;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 25px 0;
+    border-left: 4px solid #0066CC;
+}
+
+.info-box p {margin: 10px 0; color: #0d47a1; line-height: 1.8;}
+.info-box strong {font-weight: 600;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 30px;
+    text-align: center;
+    font-size: 14px;
+    border-radius: 0 0 10px 10px;
+}
+
+.footer p {margin: 12px 0; font-weight: 400; color: white; line-height: 1.6;}
+.footer a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.footer a:hover {text-decoration: underline;}
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>⏰ Promemoria TeleMedCare</h1>
+<div class="tagline">Completa i tuoi dati per attivare il servizio</div>
+</div>
+<div class="content">
+<p class="greeting">Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},</p>
+<p class="greeting">Le ricordiamo che la Sua richiesta di attivazione del servizio {{SERVIZIO}} {{PIANO}} è ancora in attesa di completamento.</p>
+
+<div class="urgent-box">
+    <h2>⏳ {{DAYS_REMAINING}} giorni rimasti</h2>
+    <p>Il link per completare i dati scade il <strong>{{TOKEN_EXPIRY}}</strong></p>
+    <p style="font-size: 14px; margin-top: 15px; opacity: 0.9;">Questo è il reminder numero {{REMINDER_COUNT}}</p>
+</div>
+
+<div class="missing-fields">
+    <h4>📋 Dati Mancanti ({{MISSING_FIELDS_COUNT}})</h4>
+    <p>Per procedere con l'attivazione, abbiamo bisogno di:</p>
+    <ul>
+        {{MISSING_FIELDS_HTML}}
+    </ul>
+</div>
+
+<div class="cta-button">
+    <a href="{{COMPLETION_LINK}}">📝 Completa i Dati Ora</a>
+</div>
+
+<div class="info-box">
+    <p><strong>⚡ Servizio Rapido:</strong> Il completamento richiede solo 2-3 minuti</p>
+    <p><strong>🔒 Sicuro:</strong> I Suoi dati sono protetti e crittografati</p>
+    <p><strong>📱 Facile:</strong> Form pre-compilato con i dati già in nostro possesso</p>
+    <p><strong>✅ Immediato:</strong> Attivazione entro 24 ore dal completamento</p>
+</div>
+
+<p style="margin: 30px 0 20px 0; line-height: 1.9;">Una volta completati i dati, provvederemo immediatamente all'attivazione del Suo servizio {{SERVIZIO}} {{PIANO}}.</p>
+
+<p class="greeting" style="margin-top: 30px;">Se ha domande o necessita di assistenza, non esiti a contattarci.</p>
+
+<p>Cordiali saluti,<br>Il Team eCura</p>
+
+</div>
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a> | <a href="https://www.telemedcare.it">www.telemedcare.it</a></p>
+<p>📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a> | ☎️ +39 335 730 1206 | +39 331 643 2390</p>
+<p style="font-size: 12px; margin-top: 20px; opacity: 0.7;">
+    Se non riconosce questa richiesta, ignori questa email.<br>
+    Lead ID: {{LEAD_ID}}
+</p>
+</div>
+</div>
+</body>
+</html>

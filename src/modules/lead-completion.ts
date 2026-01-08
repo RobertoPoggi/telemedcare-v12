@@ -362,6 +362,148 @@ export async function logCompletionAction(
   `).bind(logId, leadId, tokenId, action, details, now).run()
 }
 
+/**
+ * Invia email reminder per completamento dati
+ * 
+ * @param db - Database D1
+ * @param env - Environment variables
+ * @param tokenData - Token dati
+ * @param leadData - Lead dati
+ * @returns Promise<boolean> - true se email inviata con successo
+ */
+export async function sendReminderEmail(
+  db: D1Database,
+  env: any,
+  tokenData: LeadCompletionToken,
+  leadData: any
+): Promise<boolean> {
+  try {
+    // Importazione dinamica per evitare circular dependencies
+    const EmailService = (await import('./email-service')).default
+    const { loadEmailTemplate, renderTemplate } = await import('./template-loader-clean')
+    
+    const emailService = new EmailService(env)
+    
+    // Carica template reminder
+    const template = await loadEmailTemplate('email_reminder_completamento', db, env)
+    
+    // Prepara dati per il template
+    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai_developer.telemedcare-v12.pages.dev'
+    const completionLink = `${baseUrl}/completa-dati?token=${tokenData.token}`
+    
+    const { missing } = getMissingFields(leadData)
+    const missingFieldsHtml = missing.map(field => 
+      `<li style="color: #856404; font-weight: 500;">${field}</li>`
+    ).join('\n        ')
+    
+    const expiryDate = new Date(tokenData.expires_at)
+    const daysRemaining = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    
+    const templateData = {
+      NOME_CLIENTE: leadData.nomeRichiedente || 'Cliente',
+      COGNOME_CLIENTE: leadData.cognomeRichiedente || '',
+      LEAD_ID: leadData.id,
+      SERVIZIO: leadData.servizio || 'eCura',
+      PIANO: leadData.piano || 'BASE',
+      MISSING_FIELDS_HTML: missingFieldsHtml,
+      MISSING_FIELDS_COUNT: missing.length,
+      COMPLETION_LINK: completionLink,
+      DAYS_REMAINING: daysRemaining,
+      TOKEN_EXPIRY: expiryDate.toLocaleDateString('it-IT'),
+      REMINDER_COUNT: tokenData.reminder_count + 1
+    }
+    
+    const emailHtml = renderTemplate(template, templateData)
+    
+    // Invia email
+    const result = await emailService.sendEmail({
+      to: leadData.email,
+      subject: `⏰ Promemoria: Completa i tuoi dati TeleMedCare (${daysRemaining} giorni rimasti)`,
+      html: emailHtml,
+      tags: [
+        { name: 'tipo', value: 'reminder_completamento' },
+        { name: 'lead_id', value: leadData.id },
+        { name: 'reminder_count', value: String(tokenData.reminder_count + 1) }
+      ]
+    })
+    
+    if (result.success) {
+      // Registra reminder inviato
+      await recordReminderSent(db, tokenData.id)
+      console.log(`✅ [REMINDER] Email inviata a ${leadData.email} (reminder #${tokenData.reminder_count + 1})`)
+      return true
+    } else {
+      console.error(`❌ [REMINDER] Errore invio email:`, result.error)
+      return false
+    }
+  } catch (error) {
+    console.error(`❌ [REMINDER] Errore sendReminderEmail:`, error)
+    return false
+  }
+}
+
+/**
+ * Processo batch di invio reminder
+ * 
+ * @param db - Database D1
+ * @param env - Environment variables
+ * @returns Promise<{ success: number; failed: number; total: number }>
+ */
+export async function processReminders(
+  db: D1Database,
+  env: any
+): Promise<{ success: number; failed: number; total: number }> {
+  const config = await getSystemConfig(db)
+  
+  // Ottieni token che necessitano reminder
+  const tokens = await getTokensNeedingReminder(
+    db,
+    config.auto_completion_reminder_days,
+    config.auto_completion_max_reminders
+  )
+  
+  console.log(`📧 [REMINDER] Trovati ${tokens.length} token che necessitano reminder`)
+  
+  let success = 0
+  let failed = 0
+  
+  for (const token of tokens) {
+    try {
+      // Ottieni dati lead
+      const leadData = await db.prepare('SELECT * FROM leads WHERE id = ?')
+        .bind(token.lead_id)
+        .first()
+      
+      if (!leadData) {
+        console.warn(`⚠️ [REMINDER] Lead ${token.lead_id} non trovato`)
+        failed++
+        continue
+      }
+      
+      // Invia reminder
+      const sent = await sendReminderEmail(db, env, token, leadData)
+      
+      if (sent) {
+        success++
+      } else {
+        failed++
+      }
+      
+      // Pausa per evitare rate limiting
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    } catch (error) {
+      console.error(`❌ [REMINDER] Errore processando token ${token.id}:`, error)
+      failed++
+    }
+  }
+  
+  return {
+    success,
+    failed,
+    total: tokens.length
+  }
+}
+
 // ============================================
 // EXPORT
 // ============================================
@@ -379,5 +521,7 @@ export default {
   recordReminderSent,
   getTokenForLead,
   getTokensNeedingReminder,
-  logCompletionAction
+  logCompletionAction,
+  sendReminderEmail,
+  processReminders
 }

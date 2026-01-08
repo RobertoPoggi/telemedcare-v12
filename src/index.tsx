@@ -9843,6 +9843,79 @@ app.post('/api/leads/complete', async (c) => {
   }
 })
 
+// ============================================
+// CRON: REMINDER AUTOMATICI
+// ============================================
+
+// POST /api/cron/send-reminders - Invia reminder per lead incompleti
+app.post('/api/cron/send-reminders', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    const env = c.env
+    
+    if (!db) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔔 [CRON] Avvio processo reminder...')
+    
+    // Importa funzioni da lead-completion
+    const { processReminders } = await import('./modules/lead-completion')
+    
+    // Processa reminder
+    const result = await processReminders(db, env)
+    
+    console.log(`✅ [CRON] Processo reminder completato: ${result.success}/${result.total} successo, ${result.failed} falliti`)
+    
+    return c.json({
+      success: true,
+      message: 'Processo reminder completato',
+      stats: result
+    })
+    
+  } catch (error) {
+    console.error('❌ [CRON] Errore processo reminder:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// GET /api/cron/send-reminders - Test endpoint (richiede auth in production)
+app.get('/api/cron/send-reminders', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    const env = c.env
+    
+    // In production, verifica header authorization
+    const authHeader = c.req.header('Authorization')
+    const cronSecret = env.CRON_SECRET || 'test-secret-change-in-production'
+    
+    if (env.ENVIRONMENT === 'production' && authHeader !== `Bearer ${cronSecret}`) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    
+    if (!db) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔔 [CRON] Avvio processo reminder (GET)...')
+    
+    const { processReminders } = await import('./modules/lead-completion')
+    const result = await processReminders(db, env)
+    
+    console.log(`✅ [CRON] Processo reminder completato: ${result.success}/${result.total}`)
+    
+    return c.json({
+      success: true,
+      message: 'Processo reminder completato',
+      stats: result
+    })
+    
+  } catch (error) {
+    console.error('❌ [CRON] Errore processo reminder:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
 // POST /api/init-workflow-leads - Inizializza lead per workflow manager
 app.post('/api/init-workflow-leads', async (c) => {
   try {
