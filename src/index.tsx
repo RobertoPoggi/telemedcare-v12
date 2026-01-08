@@ -9865,6 +9865,16 @@ app.post('/api/cron/send-reminders', async (c) => {
     // Processa reminder
     const result = await processReminders(db, env)
     
+    // Se cron disabilitato dalla dashboard
+    if (result.disabled) {
+      console.log('⚠️ [CRON] Cron disabilitato - nessuna azione')
+      return c.json({
+        success: true,
+        message: 'Cron disabilitato dalla dashboard',
+        stats: result
+      }, 204)  // 204 No Content
+    }
+    
     console.log(`✅ [CRON] Processo reminder completato: ${result.success}/${result.total} successo, ${result.failed} falliti`)
     
     return c.json({
@@ -9901,6 +9911,16 @@ app.get('/api/cron/send-reminders', async (c) => {
     
     const { processReminders } = await import('./modules/lead-completion')
     const result = await processReminders(db, env)
+    
+    // Se cron disabilitato dalla dashboard
+    if (result.disabled) {
+      console.log('⚠️ [CRON] Cron disabilitato - nessuna azione')
+      return c.json({
+        success: true,
+        message: 'Cron disabilitato dalla dashboard',
+        stats: result
+      }, 204)
+    }
     
     console.log(`✅ [CRON] Processo reminder completato: ${result.success}/${result.total}`)
     

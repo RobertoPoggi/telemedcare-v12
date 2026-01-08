@@ -33,6 +33,7 @@ export interface SystemConfig {
   auto_completion_token_days: number
   auto_completion_reminder_days: number
   auto_completion_max_reminders: number
+  cron_enabled: boolean  // Interruttore ON/OFF per il cron reminder
 }
 
 export interface MissingFields {
@@ -150,7 +151,7 @@ export async function getSystemConfig(db: D1Database): Promise<SystemConfig> {
     const key = row.key
     const value = row.value
     
-    if (key === 'auto_completion_enabled') {
+    if (key === 'auto_completion_enabled' || key === 'cron_enabled') {
       config[key] = value === 'true'
     } else {
       config[key] = parseInt(value, 10)
@@ -161,7 +162,8 @@ export async function getSystemConfig(db: D1Database): Promise<SystemConfig> {
     auto_completion_enabled: config.auto_completion_enabled || false,
     auto_completion_token_days: config.auto_completion_token_days || 30,
     auto_completion_reminder_days: config.auto_completion_reminder_days || 3,
-    auto_completion_max_reminders: config.auto_completion_max_reminders || 2
+    auto_completion_max_reminders: config.auto_completion_max_reminders || 2,
+    cron_enabled: config.cron_enabled !== undefined ? config.cron_enabled : true  // Default: true
   }
 }
 
@@ -452,8 +454,23 @@ export async function sendReminderEmail(
 export async function processReminders(
   db: D1Database,
   env: any
-): Promise<{ success: number; failed: number; total: number }> {
+): Promise<{ success: number; failed: number; total: number; disabled?: boolean }> {
   const config = await getSystemConfig(db)
+  
+  // ============================================
+  // CONTROLLO INTERRUTTORE CRON
+  // ============================================
+  if (!config.cron_enabled) {
+    console.log('⚠️ [REMINDER] Cron disabilitato dalla dashboard - nessuna azione eseguita')
+    return {
+      success: 0,
+      failed: 0,
+      total: 0,
+      disabled: true
+    }
+  }
+  
+  console.log('✅ [REMINDER] Cron abilitato - avvio processo reminder')
   
   // Ottieni token che necessitano reminder
   const tokens = await getTokensNeedingReminder(
