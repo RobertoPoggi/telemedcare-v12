@@ -14,8 +14,11 @@
 # questo file è configurato per NON creare Workers funzionanti
 # (nome diverso dal progetto reale, nessun main script)
 
-# Configurazione Cloudflare Pages (NON Workers!)
-name = "telemedcare-v12-pages"
+# ============================================================================
+# CLOUDFLARE PAGES CONFIGURATION
+# ============================================================================
+name = "telemedcare-v12"
+pages_build_output_dir = "dist"
 compatibility_date = "2025-10-06"
 
 # ⚠️ NOTA: NO "main" parameter → Blocca deploy Workers
@@ -26,46 +29,39 @@ compatibility_date = "2025-10-06"
 [vars]
 EMAIL_FROM = "info@telemedcare.it"
 EMAIL_TO_INFO = "info@telemedcare.it"
+ENVIRONMENT = "production"
 
 # ============================================================================
-# D1 DATABASE BINDINGS - CLOUDFLARE PAGES
+# D1 DATABASE BINDINGS - PRODUCTION (DEFAULT)
 # ============================================================================
-# ⚠️ PROBLEMA: Cloudflare Pages NON supporta database diversi per prod/preview
-# 
-# SOLUZIONE: 2 bindings separati + selezione nel codice
-# - DB_PRODUCTION → telemedcare-leads (production)
-# - DB_PREVIEW → telemedcare-leads-preview (preview/test)
-# - DB → telemedcare-leads (FALLBACK legacy durante migrazione)
-# 
-# Il codice sceglie quale usare in base a ENVIRONMENT variable
-# ============================================================================
-
-# DATABASE LEGACY (FALLBACK temporaneo durante migrazione)
+# Database di default per local development e production
 [[d1_databases]]
 binding = "DB"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-# DATABASE PRODUCTION (nuovo sistema)
-[[d1_databases]]
-binding = "DB_PRODUCTION"
+# ============================================================================
+# PRODUCTION ENVIRONMENT
+# ============================================================================
+[env.production]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[[env.production.d1_databases]]
+binding = "DB"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-# DATABASE PREVIEW (nuovo sistema - per test e sviluppo)
-[[d1_databases]]
-binding = "DB_PREVIEW"
+# ============================================================================
+# PREVIEW ENVIRONMENT (Branch: genspark_ai_developer, etc.)
+# ============================================================================
+[env.preview]
+
+[env.preview.vars]
+ENVIRONMENT = "preview"
+
+[[env.preview.d1_databases]]
+binding = "DB"
 database_name = "telemedcare-leads-preview"
 database_id = "128fb147-b114-42d9-8c4d-500d70b8cb43"
-
-# ============================================================================
-# ENVIRONMENT VARIABLES
-# ============================================================================
-
-# Production environment
-[vars]
-ENVIRONMENT = "production"
-
-# Preview environment
-[preview.vars]
-ENVIRONMENT = "preview"

@@ -2,9 +2,6 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
-// Import Database Selector Middleware
-import { databaseSelector } from './middleware/database-selector'
-
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
 
@@ -43,9 +40,7 @@ import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 
 type Bindings = {
-  DB: D1Database  // Viene impostato dal middleware database-selector
-  DB_PRODUCTION: D1Database  // Database production
-  DB_PREVIEW: D1Database     // Database preview
+  DB: D1Database
   KV?: KVNamespace
   R2?: R2Bucket
   BROWSER?: any // Cloudflare Browser Rendering for PDF generation
@@ -402,10 +397,6 @@ async function inviaEmailLandingPagePersonalizzata(email: string, nome: string, 
 // are now replaced by WorkflowOrchestrator.processNewLead() which handles all these steps correctly
 
 const app = new Hono<{ Bindings: Bindings }>()
-
-// 🔵🟢 DATABASE SELECTOR MIDDLEWARE
-// Seleziona il database corretto (production o preview)
-app.use('*', databaseSelector)
 
 // 🔧 MIGRAZIONE AUTOMATICA DATABASE - Eseguita una sola volta all'avvio
 let migrationCompleted = false
