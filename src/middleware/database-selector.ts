@@ -7,6 +7,8 @@
  * 
  * Cloudflare Pages non supporta binding diversi per ambiente,
  * quindi usiamo 2 bindings e scegliamo nel codice.
+ * 
+ * FALLBACK: Se i nuovi bindings non sono configurati, usa il vecchio DB
  */
 
 import { Context, Next } from 'hono'
@@ -14,29 +16,29 @@ import { Context, Next } from 'hono'
 export async function databaseSelector(c: Context, next: Next) {
   const env = c.env.ENVIRONMENT || 'production'
   
-  // Seleziona il database corretto
-  if (env === 'preview') {
-    // Preview: usa DB_PREVIEW
-    if (!c.env.DB_PREVIEW) {
-      console.error('❌ DB_PREVIEW non configurato!')
-      return c.json({ 
-        success: false, 
-        error: 'Database preview non configurato' 
-      }, 500)
+  // Verifica se i nuovi bindings sono disponibili
+  const hasNewBindings = c.env.DB_PRODUCTION && c.env.DB_PREVIEW
+  
+  if (hasNewBindings) {
+    // NUOVO SISTEMA: Bindings separati
+    if (env === 'preview') {
+      c.env.DB = c.env.DB_PREVIEW
+      console.log('🔵 [PREVIEW] Using DB_PREVIEW (telemedcare-leads-preview)')
+    } else {
+      c.env.DB = c.env.DB_PRODUCTION
+      console.log('🟢 [PRODUCTION] Using DB_PRODUCTION (telemedcare-leads)')
     }
-    c.env.DB = c.env.DB_PREVIEW
-    console.log('🔵 [PREVIEW] Using DB_PREVIEW (telemedcare-leads-preview)')
   } else {
-    // Production: usa DB_PRODUCTION
-    if (!c.env.DB_PRODUCTION) {
-      console.error('❌ DB_PRODUCTION non configurato!')
+    // FALLBACK: Usa vecchio binding DB (temporaneo)
+    if (!c.env.DB) {
+      console.error('❌ Nessun database configurato!')
       return c.json({ 
         success: false, 
-        error: 'Database production non configurato' 
+        error: 'Database non configurato' 
       }, 500)
     }
-    c.env.DB = c.env.DB_PRODUCTION
-    console.log('🟢 [PRODUCTION] Using DB_PRODUCTION (telemedcare-leads)')
+    console.warn(`⚠️ [${env.toUpperCase()}] Using legacy DB binding (shared database)`)
+    console.warn('⚠️ I nuovi bindings DB_PRODUCTION e DB_PREVIEW non sono ancora attivi')
   }
   
   await next()
