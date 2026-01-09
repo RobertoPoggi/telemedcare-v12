@@ -14791,4 +14791,100 @@ app.get('/api/debug/leads-emails', async (c) => {
   }
 })
 
+// 🧹 CLEANUP ENDPOINT - Elimina dati test da Production
+// ⚠️ SOLO PRODUCTION - Non eseguire su Preview!
+app.post('/api/admin/cleanup-test-data', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Verifica ambiente (solo production)
+    const env = c.env.ENVIRONMENT || 'production'
+    console.log(`🧹 [CLEANUP] Ambiente: ${env}`)
+
+    // Conta lead da eliminare
+    const countResult = await c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM leads WHERE id LIKE 'LEAD-MANUAL-176%'`
+    ).first()
+    
+    const leadsToDelete = countResult?.count || 0
+    console.log(`🧹 [CLEANUP] Lead da eliminare: ${leadsToDelete}`)
+
+    if (leadsToDelete === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun lead da eliminare',
+        deleted: {
+          logs: 0,
+          tokens: 0,
+          contracts: 0,
+          leads: 0
+        }
+      })
+    }
+
+    // Esegui cleanup in transazione
+    const results = {
+      logs: 0,
+      tokens: 0,
+      contracts: 0,
+      leads: 0
+    }
+
+    // 1. Elimina log completamento
+    const deleteLogsResult = await c.env.DB.prepare(
+      `DELETE FROM lead_completion_log WHERE lead_id LIKE 'LEAD-MANUAL-176%'`
+    ).run()
+    results.logs = deleteLogsResult.meta.changes || 0
+    console.log(`🧹 [CLEANUP] Log eliminati: ${results.logs}`)
+
+    // 2. Elimina token completamento
+    const deleteTokensResult = await c.env.DB.prepare(
+      `DELETE FROM lead_completion_tokens WHERE lead_id LIKE 'LEAD-MANUAL-176%'`
+    ).run()
+    results.tokens = deleteTokensResult.meta.changes || 0
+    console.log(`🧹 [CLEANUP] Token eliminati: ${results.tokens}`)
+
+    // 3. Elimina contratti
+    const deleteContractsResult = await c.env.DB.prepare(
+      `DELETE FROM contracts WHERE id LIKE 'CONTRACT-176%'`
+    ).run()
+    results.contracts = deleteContractsResult.meta.changes || 0
+    console.log(`🧹 [CLEANUP] Contratti eliminati: ${results.contracts}`)
+
+    // 4. Elimina lead
+    const deleteLeadsResult = await c.env.DB.prepare(
+      `DELETE FROM leads WHERE id LIKE 'LEAD-MANUAL-176%'`
+    ).run()
+    results.leads = deleteLeadsResult.meta.changes || 0
+    console.log(`🧹 [CLEANUP] Lead eliminati: ${results.leads}`)
+
+    // Verifica finale
+    const verifyResult = await c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM leads WHERE id LIKE 'LEAD-MANUAL-176%'`
+    ).first()
+    
+    const remaining = verifyResult?.count || 0
+    console.log(`✅ [CLEANUP] Lead rimanenti: ${remaining}`)
+
+    return c.json({
+      success: true,
+      message: 'Cleanup completato con successo',
+      environment: env,
+      deleted: results,
+      verification: {
+        remaining_test_leads: remaining
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Errore cleanup:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 export default app
