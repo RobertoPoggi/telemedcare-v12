@@ -28,49 +28,37 @@ EMAIL_FROM = "info@telemedcare.it"
 EMAIL_TO_INFO = "info@telemedcare.it"
 
 # ============================================================================
-# D1 DATABASE BINDINGS
+# D1 DATABASE BINDINGS - CLOUDFLARE PAGES
 # ============================================================================
-# Production: telemedcare-leads (e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f)
-# Preview:    telemedcare-leads-preview (128fb147-b114-42d9-8c4d-500d70b8cb43)
+# ⚠️ IMPORTANTE: Cloudflare Pages usa una sintassi DIVERSA da Workers!
+# 
+# Per PAGES:
+# - [[d1_databases]] = Production branches (main, master)
+# - [[preview.d1_databases]] = Preview branches (tutti gli altri)
 #
-# ⚠️ ATTENZIONE: Il binding DEFAULT è stato RIMOSSO per sicurezza
-# ⚠️ Ogni ambiente DEVE avere il proprio binding esplicito
-# ⚠️ Se manca l'ambiente, il deploy FALLISCE (meglio che scrivere in production!)
-# For local development, use: npm run dev (uses --d1 flag)
+# NON usare [env.production] per Pages! Quella sintassi è per Workers!
 # ============================================================================
 
-# ❌ DATABASE DEFAULT RIMOSSO PER SICUREZZA!
-# Se il deploy non trova l'env corretto, fallisce invece di usare production
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "telemedcare-leads"
-# database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
-
-# ============================================================================
-# ENVIRONMENT-SPECIFIC CONFIGURATION
-# ============================================================================
-# Production: Database originale telemedcare-leads
-# Preview: Database clonato telemedcare-leads-preview (TEST ISOLATO)
-# Secrets (API keys) must be configured in Cloudflare Pages Dashboard
-
-[env.production]
-name = "telemedcare-v12"
-
-[env.production.vars]
-ENVIRONMENT = "production"
-
-[[env.production.d1_databases]]
+# DATABASE PRODUCTION (branch: main, master)
+[[d1_databases]]
 binding = "DB"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-[env.preview]
-name = "telemedcare-v12-preview"
-
-[env.preview.vars]
-ENVIRONMENT = "preview"
-
-[[env.preview.d1_databases]]
+# DATABASE PREVIEW (branch: genspark_ai_developer, feature/*, etc.)
+[[preview.d1_databases]]
 binding = "DB"
 database_name = "telemedcare-leads-preview"
 database_id = "128fb147-b114-42d9-8c4d-500d70b8cb43"
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+# Production environment indicator
+[vars]
+ENVIRONMENT = "production"
+
+# Preview environment indicator
+[preview.vars]
+ENVIRONMENT = "preview"
