@@ -34,6 +34,7 @@ export interface SystemConfig {
   auto_completion_reminder_days: number
   auto_completion_max_reminders: number
   cron_enabled: boolean  // Interruttore ON/OFF per il cron reminder
+  hubspot_sync_enabled: boolean  // Interruttore ON/OFF per sync HubSpot
 }
 
 export interface MissingFields {
@@ -151,7 +152,7 @@ export async function getSystemConfig(db: D1Database): Promise<SystemConfig> {
     const key = row.key
     const value = row.value
     
-    if (key === 'auto_completion_enabled' || key === 'cron_enabled') {
+    if (key === 'auto_completion_enabled' || key === 'cron_enabled' || key === 'hubspot_sync_enabled') {
       config[key] = value === 'true'
     } else {
       config[key] = parseInt(value, 10)
@@ -163,7 +164,8 @@ export async function getSystemConfig(db: D1Database): Promise<SystemConfig> {
     auto_completion_token_days: config.auto_completion_token_days || 30,
     auto_completion_reminder_days: config.auto_completion_reminder_days || 3,
     auto_completion_max_reminders: config.auto_completion_max_reminders || 2,
-    cron_enabled: config.cron_enabled !== undefined ? config.cron_enabled : true  // Default: true
+    cron_enabled: config.cron_enabled !== undefined ? config.cron_enabled : true,  // Default: true
+    hubspot_sync_enabled: config.hubspot_sync_enabled !== undefined ? config.hubspot_sync_enabled : false  // Default: false
   }
 }
 
