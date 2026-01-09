@@ -35,17 +35,24 @@ EMAIL_TO_INFO = "info@telemedcare.it"
 # SOLUZIONE: 2 bindings separati + selezione nel codice
 # - DB_PRODUCTION → telemedcare-leads (production)
 # - DB_PREVIEW → telemedcare-leads-preview (preview/test)
+# - DB → telemedcare-leads (FALLBACK legacy durante migrazione)
 # 
 # Il codice sceglie quale usare in base a ENVIRONMENT variable
 # ============================================================================
 
-# DATABASE PRODUCTION
+# DATABASE LEGACY (FALLBACK temporaneo durante migrazione)
+[[d1_databases]]
+binding = "DB"
+database_name = "telemedcare-leads"
+database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
+
+# DATABASE PRODUCTION (nuovo sistema)
 [[d1_databases]]
 binding = "DB_PRODUCTION"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-# DATABASE PREVIEW (per test e sviluppo)
+# DATABASE PREVIEW (nuovo sistema - per test e sviluppo)
 [[d1_databases]]
 binding = "DB_PREVIEW"
 database_name = "telemedcare-leads-preview"
