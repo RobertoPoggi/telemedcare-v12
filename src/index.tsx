@@ -15088,4 +15088,145 @@ app.post('/api/admin/cleanup-test-data', async (c) => {
   }
 })
 
+// ============================================================================
+// POST /api/import/irbema/force - FORCE import lead specifici da HubSpot
+// ============================================================================
+app.post('/api/import/irbema/force', async (c) => {
+  try {
+    console.log('🔄 [HUBSPOT FORCE] Inizio import FORZATO da HubSpot...')
+    
+    if (!c.env?.DB || !c.env?.HUBSPOT_ACCESS_TOKEN) {
+      return c.json({ success: false, error: 'Configurazione mancante' }, 500)
+    }
+
+    const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
+    const targetEmails = [
+      'amministrazione@europa92.it',
+      'morroni.mariacarla55@gmail.com',
+      'lailamoustafa.pia@gmail.com',
+      'lucio.cam51@gmail.com'
+    ]
+
+    let imported = 0
+    const errors: string[] = []
+
+    // Ottieni prossimo ID
+    const maxIdResult = await c.env.DB.prepare(
+      "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
+    ).first()
+    
+    let nextLeadNumber = 128
+    if (maxIdResult?.id) {
+      const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
+      if (match) {
+        nextLeadNumber = parseInt(match[1]) + 1
+      }
+    }
+
+    // Cerca ogni email su HubSpot
+    for (const email of targetEmails) {
+      try {
+        console.log(`🔍 [HUBSPOT FORCE] Ricerca: ${email}`)
+        
+        const searchUrl = `https://api.hubapi.com/crm/v3/objects/contacts/search`
+        const searchBody = {
+          filterGroups: [{
+            filters: [{
+              propertyName: 'email',
+              operator: 'EQ',
+              value: email
+            }]
+          }],
+          properties: ['firstname', 'lastname', 'email', 'phone', 'mobilephone', 'company', 'hs_lead_status', 'createdate']
+        }
+
+        const response = await fetch(searchUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(searchBody)
+        })
+
+        if (!response.ok) {
+          errors.push(`${email}: Errore API ${response.status}`)
+          continue
+        }
+
+        const data = await response.json()
+        
+        if (!data.results || data.results.length === 0) {
+          errors.push(`${email}: Non trovata su HubSpot`)
+          continue
+        }
+
+        const contact = data.results[0]
+        const props = contact.properties
+
+        // Verifica se esiste già
+        const existing = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE email = ? LIMIT 1'
+        ).bind(email).first()
+
+        if (existing) {
+          console.log(`⏭️ [HUBSPOT FORCE] Già esistente: ${email} → ${existing.id}`)
+          errors.push(`${email}: Già presente come ${existing.id}`)
+          continue
+        }
+
+        // Import forzato
+        const leadId = `LEAD-IRBEMA-${String(nextLeadNumber).padStart(5, '0')}`
+        nextLeadNumber++
+
+        const now = new Date().toISOString()
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            servizio, piano, fonte, status, vuoleBrochure, vuoleContratto,
+            note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          props.firstname || 'N/A',
+          props.lastname || 'N/A',
+          email,
+          props.phone || props.mobilephone || '',
+          'eCura PRO',
+          'BASE',
+          'IRBEMA',
+          'NEW',
+          'No',
+          'No',
+          `HubSpot ID: ${contact.id} | FORCED IMPORT`,
+          now,
+          now
+        ).run()
+
+        console.log(`✅ [HUBSPOT FORCE] Importato: ${leadId} - ${props.firstname} ${props.lastname}`)
+        imported++
+
+      } catch (error) {
+        console.error(`❌ [HUBSPOT FORCE] Errore ${email}:`, error)
+        errors.push(`${email}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Force import completato',
+      imported: imported,
+      errors: errors.length > 0 ? errors : undefined,
+      targetEmails: targetEmails
+    })
+
+  } catch (error) {
+    console.error('❌ [HUBSPOT FORCE] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 export default app
