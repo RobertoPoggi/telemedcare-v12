@@ -14892,48 +14892,4 @@ app.post('/api/admin/cleanup-test-data', async (c) => {
   }
 })
 
-// 🔍 DEBUG ENDPOINT - Verifica ambiente e database
-app.get('/api/debug/environment', async (c) => {
-  try {
-    const env = c.env.ENVIRONMENT || 'unknown'
-    const hasDB = !!c.env.DB
-    
-    // Prova a contare lead per verificare quale DB stiamo usando
-    let leadCount = 0
-    let dbInfo = 'N/A'
-    
-    if (hasDB) {
-      try {
-        const countResult = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
-        leadCount = countResult?.count || 0
-        
-        // Verifica se esiste il lead di test preview
-        const previewTestResult = await c.env.DB.prepare(
-          "SELECT COUNT(*) as count FROM leads WHERE fonte = 'TEST_FINAL_VERIFICATION'"
-        ).first()
-        const hasPreviewTest = (previewTestResult?.count || 0) > 0
-        
-        dbInfo = hasPreviewTest ? 'PRODUCTION database (ha test preview)' : 'PREVIEW database (pulito)'
-      } catch (e: any) {
-        dbInfo = 'Errore query: ' + e.message
-      }
-    }
-    
-    return c.json({
-      success: true,
-      environment: env,
-      hasDB: hasDB,
-      leadCount: leadCount,
-      databaseInfo: dbInfo,
-      note: 'Database selezionato automaticamente da .pages.yaml (production vs preview)'
-    })
-  } catch (error) {
-    console.error('❌ Errore debug environment:', error)
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }, 500)
-  }
-})
-
 export default app
