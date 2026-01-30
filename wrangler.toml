@@ -30,27 +30,16 @@ ENVIRONMENT = "production"
 # ============================================================================
 # D1 DATABASE BINDINGS
 # ============================================================================
-# Cloudflare Pages legge TUTTI i bindings e li rende disponibili
-# Il codice sceglie quale usare in base alla variabile ENVIRONMENT
+# ⚠️ IMPORTANTE: Cloudflare Pages usa .pages.yaml per i bindings D1
+# Questo file wrangler.toml è utilizzato solo da wrangler CLI per sviluppo locale
+# I bindings production/preview sono gestiti da .pages.yaml
 # ============================================================================
 
-# Binding LEGACY (per compatibilità con Dashboard)
+# Binding per sviluppo locale (wrangler pages dev)
 [[d1_databases]]
 binding = "DB"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
-
-# Binding PRODUCTION
-[[d1_databases]]
-binding = "DB_PRODUCTION"
-database_name = "telemedcare-leads"
-database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
-
-# Binding PREVIEW
-[[d1_databases]]
-binding = "DB_PREVIEW"
-database_name = "telemedcare-leads-preview"
-database_id = "128fb147-b114-42d9-8c4d-500d70b8cb43"
 
 # ============================================================================
 # ENVIRONMENTS

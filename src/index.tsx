@@ -43,9 +43,7 @@ import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 
 type Bindings = {
-  DB: D1Database // Database attivo (verrà assegnato da DB_PRODUCTION o DB_PREVIEW)
-  DB_PRODUCTION?: D1Database // Database Production
-  DB_PREVIEW?: D1Database // Database Preview
+  DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
   KV?: KVNamespace
   R2?: R2Bucket
   BROWSER?: any // Cloudflare Browser Rendering for PDF generation
@@ -409,24 +407,6 @@ const app = new Hono<{ Bindings: Bindings }>()
 let migrationCompleted = false
 
 app.use('*', async (c, next) => {
-  // 🔧 DATABASE SELECTOR - Seleziona il database corretto in base all'ambiente
-  const environment = c.env?.ENVIRONMENT || 'production'
-  
-  if (environment === 'preview' && c.env?.DB_PREVIEW) {
-    // Preview usa DB_PREVIEW
-    c.env.DB = c.env.DB_PREVIEW
-    console.log('📂 Using PREVIEW database (telemedcare-leads-preview)')
-  } else if (environment === 'production' && c.env?.DB_PRODUCTION) {
-    // Production usa DB_PRODUCTION
-    c.env.DB = c.env.DB_PRODUCTION
-    console.log('📂 Using PRODUCTION database (telemedcare-leads)')
-  } else if (c.env?.DB) {
-    // Fallback al binding legacy DB
-    console.log('⚠️ Using LEGACY DB binding (no environment-specific binding found)')
-  } else {
-    console.error('❌ NO DATABASE CONFIGURED!')
-  }
-  
   // Esegui migrazione solo se DB è disponibile e non è già stata fatta
   if (!migrationCompleted && c.env?.DB) {
     try {
@@ -14917,8 +14897,6 @@ app.get('/api/debug/environment', async (c) => {
   try {
     const env = c.env.ENVIRONMENT || 'unknown'
     const hasDB = !!c.env.DB
-    const hasDB_PRODUCTION = !!c.env.DB_PRODUCTION
-    const hasDB_PREVIEW = !!c.env.DB_PREVIEW
     
     // Prova a contare lead per verificare quale DB stiamo usando
     let leadCount = 0
@@ -14935,7 +14913,7 @@ app.get('/api/debug/environment', async (c) => {
         ).first()
         const hasPreviewTest = (previewTestResult?.count || 0) > 0
         
-        dbInfo = hasPreviewTest ? 'Probabilmente PRODUCTION (ha test preview)' : 'Probabilmente PREVIEW (pulito)'
+        dbInfo = hasPreviewTest ? 'PRODUCTION database (ha test preview)' : 'PREVIEW database (pulito)'
       } catch (e: any) {
         dbInfo = 'Errore query: ' + e.message
       }
@@ -14945,16 +14923,9 @@ app.get('/api/debug/environment', async (c) => {
       success: true,
       environment: env,
       hasDB: hasDB,
-      hasDB_PRODUCTION: hasDB_PRODUCTION,
-      hasDB_PREVIEW: hasDB_PREVIEW,
       leadCount: leadCount,
       databaseInfo: dbInfo,
-      allEnvVars: Object.keys(c.env).filter(k => !k.startsWith('DB')),
-      databaseBindings: {
-        DB: hasDB ? 'AVAILABLE' : 'MISSING',
-        DB_PRODUCTION: hasDB_PRODUCTION ? 'AVAILABLE' : 'MISSING',
-        DB_PREVIEW: hasDB_PREVIEW ? 'AVAILABLE' : 'MISSING'
-      }
+      note: 'Database selezionato automaticamente da .pages.yaml (production vs preview)'
     })
   } catch (error) {
     console.error('❌ Errore debug environment:', error)
