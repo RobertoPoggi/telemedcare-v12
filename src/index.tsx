@@ -14917,6 +14917,8 @@ app.get('/api/debug/environment', async (c) => {
   try {
     const env = c.env.ENVIRONMENT || 'unknown'
     const hasDB = !!c.env.DB
+    const hasDB_PRODUCTION = !!c.env.DB_PRODUCTION
+    const hasDB_PREVIEW = !!c.env.DB_PREVIEW
     
     // Prova a contare lead per verificare quale DB stiamo usando
     let leadCount = 0
@@ -14943,9 +14945,16 @@ app.get('/api/debug/environment', async (c) => {
       success: true,
       environment: env,
       hasDB: hasDB,
+      hasDB_PRODUCTION: hasDB_PRODUCTION,
+      hasDB_PREVIEW: hasDB_PREVIEW,
       leadCount: leadCount,
       databaseInfo: dbInfo,
-      allEnvVars: Object.keys(c.env).filter(k => !k.startsWith('DB'))
+      allEnvVars: Object.keys(c.env).filter(k => !k.startsWith('DB')),
+      databaseBindings: {
+        DB: hasDB ? 'AVAILABLE' : 'MISSING',
+        DB_PRODUCTION: hasDB_PRODUCTION ? 'AVAILABLE' : 'MISSING',
+        DB_PREVIEW: hasDB_PREVIEW ? 'AVAILABLE' : 'MISSING'
+      }
     })
   } catch (error) {
     console.error('❌ Errore debug environment:', error)
