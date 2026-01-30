@@ -1,8 +1,0 @@
-# Cloudflare Pages Configuration
-# https://developers.cloudflare.com/pages/platform/functions/bindings/
-
-d1_databases:
-  - binding: DB
-    database_name: telemedcare-leads
-    database_id: e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f
-    preview_database_id: 128fb147-b114-42d9-8c4d-500d70b8cb43
