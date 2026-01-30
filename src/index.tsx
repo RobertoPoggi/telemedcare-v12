@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
+// Import Database Selector Middleware
+import { databaseSelector } from './middleware/database-selector'
+
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
 
@@ -40,7 +43,9 @@ import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 
 type Bindings = {
-  DB: D1Database
+  DB: D1Database // Database attivo (verrà assegnato da DB_PRODUCTION o DB_PREVIEW)
+  DB_PRODUCTION?: D1Database // Database Production
+  DB_PREVIEW?: D1Database // Database Preview
   KV?: KVNamespace
   R2?: R2Bucket
   BROWSER?: any // Cloudflare Browser Rendering for PDF generation
@@ -49,6 +54,8 @@ type Bindings = {
   RESEND_API_KEY?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
+  // Environment
+  ENVIRONMENT?: string
   // Enterprise API Keys
   IRBEMA_API_KEY?: string
   AON_API_KEY?: string
@@ -402,6 +409,24 @@ const app = new Hono<{ Bindings: Bindings }>()
 let migrationCompleted = false
 
 app.use('*', async (c, next) => {
+  // 🔧 DATABASE SELECTOR - Seleziona il database corretto in base all'ambiente
+  const environment = c.env?.ENVIRONMENT || 'production'
+  
+  if (environment === 'preview' && c.env?.DB_PREVIEW) {
+    // Preview usa DB_PREVIEW
+    c.env.DB = c.env.DB_PREVIEW
+    console.log('📂 Using PREVIEW database (telemedcare-leads-preview)')
+  } else if (environment === 'production' && c.env?.DB_PRODUCTION) {
+    // Production usa DB_PRODUCTION
+    c.env.DB = c.env.DB_PRODUCTION
+    console.log('📂 Using PRODUCTION database (telemedcare-leads)')
+  } else if (c.env?.DB) {
+    // Fallback al binding legacy DB
+    console.log('⚠️ Using LEGACY DB binding (no environment-specific binding found)')
+  } else {
+    console.error('❌ NO DATABASE CONFIGURED!')
+  }
+  
   // Esegui migrazione solo se DB è disponibile e non è già stata fatta
   if (!migrationCompleted && c.env?.DB) {
     try {

@@ -21,47 +21,45 @@ name = "telemedcare-v12"
 pages_build_output_dir = "dist"
 compatibility_date = "2025-10-06"
 
-# ⚠️ NOTA: NO "main" parameter → Blocca deploy Workers
-# Se ci fosse: main = "dist/_worker.js" → creerebbe Workers!
-# Lasciando vuoto, wrangler deploy fallisce o crea Workers vuoti
-
-# Environment Variables (non-sensitive)
+# Environment Variables
 [vars]
 EMAIL_FROM = "info@telemedcare.it"
 EMAIL_TO_INFO = "info@telemedcare.it"
 ENVIRONMENT = "production"
 
 # ============================================================================
-# D1 DATABASE BINDINGS - PRODUCTION (DEFAULT)
+# D1 DATABASE BINDINGS
 # ============================================================================
-# Database di default per local development e production
+# Cloudflare Pages legge TUTTI i bindings e li rende disponibili
+# Il codice sceglie quale usare in base alla variabile ENVIRONMENT
+# ============================================================================
+
+# Binding LEGACY (per compatibilità con Dashboard)
 [[d1_databases]]
 binding = "DB"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-# ============================================================================
-# PRODUCTION ENVIRONMENT
-# ============================================================================
-[env.production]
-
-[env.production.vars]
-ENVIRONMENT = "production"
-
-[[env.production.d1_databases]]
-binding = "DB"
+# Binding PRODUCTION
+[[d1_databases]]
+binding = "DB_PRODUCTION"
 database_name = "telemedcare-leads"
 database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
-# ============================================================================
-# PREVIEW ENVIRONMENT (Branch: genspark_ai_developer, etc.)
-# ============================================================================
-[env.preview]
-
-[env.preview.vars]
-ENVIRONMENT = "preview"
-
-[[env.preview.d1_databases]]
-binding = "DB"
+# Binding PREVIEW
+[[d1_databases]]
+binding = "DB_PREVIEW"
 database_name = "telemedcare-leads-preview"
 database_id = "128fb147-b114-42d9-8c4d-500d70b8cb43"
+
+# ============================================================================
+# ENVIRONMENTS
+# ============================================================================
+
+[env.production]
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[env.preview]
+[env.preview.vars]
+ENVIRONMENT = "preview"
