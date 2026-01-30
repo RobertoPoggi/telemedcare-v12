@@ -1230,7 +1230,7 @@
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
-            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\nI lead già esistenti (stesso email) verranno saltati.')) {
+            if (!confirm('🔄 Import COMPLETO da HubSpot (IRBEMA)\n\nVuoi importare TUTTI i lead da HubSpot CRM?\n\nIl sistema scorrerà tutte le pagine di contatti.\nI lead già esistenti (stesso email) verranno saltati.\n\nQuesto può richiedere qualche secondo...')) {
                 return;
             }
             
@@ -1248,7 +1248,8 @@
                     alert(`✅ Import completato!\n\n` +
                           `• Lead importati: ${data.imported}\n` +
                           `• Lead saltati: ${data.skipped}\n` +
-                          `• Totale contatti: ${data.total}\n\n` +
+                          `• Totale contatti: ${data.total}\n` +
+                          `• Pagine processate: ${data.pages || 1}\n\n` +
                           (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.join('\n')}` : ''));
                     loadDashboardData(); // Ricarica dashboard
                 } else {
