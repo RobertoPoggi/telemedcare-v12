@@ -1230,7 +1230,38 @@
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
-            alert('🔄 Import da Irbema\n\nFunzionalità in sviluppo.\n\nEndpoint: POST /api/import/irbema\n\nQuesta funzionalità permetterà di importare lead dal partner Irbema.');
+            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\nI lead già esistenti (stesso email) verranno saltati.')) {
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Import in corso...';
+            
+            fetch('/api/import/irbema', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Import completato!\n\n` +
+                          `• Lead importati: ${data.imported}\n` +
+                          `• Lead saltati: ${data.skipped}\n` +
+                          `• Totale contatti: ${data.total}\n\n` +
+                          (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.join('\n')}` : ''));
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert('❌ Errore import:\n\n' + data.error + (data.details ? '\n\n' + data.details : ''));
+                }
+            })
+            .catch(error => {
+                alert('❌ Errore connessione:\n\n' + error.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-cloud-download-alt mr-2"></i>Irbema';
+            });
         }
 
         function importFromAON() {

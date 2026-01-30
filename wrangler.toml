@@ -26,6 +26,7 @@ compatibility_date = "2025-10-06"
 EMAIL_FROM = "info@telemedcare.it"
 EMAIL_TO_INFO = "info@telemedcare.it"
 ENVIRONMENT = "production"
+HUBSPOT_PORTAL_ID = "145726645"
 
 # ============================================================================
 # D1 DATABASE BINDINGS
@@ -48,7 +49,9 @@ database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 [env.production]
 [env.production.vars]
 ENVIRONMENT = "production"
+HUBSPOT_PORTAL_ID = "145726645"
 
 [env.preview]
 [env.preview.vars]
 ENVIRONMENT = "preview"
+HUBSPOT_PORTAL_ID = "145726645"

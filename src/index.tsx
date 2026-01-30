@@ -54,6 +54,9 @@ type Bindings = {
   EMAIL_TO_INFO?: string
   // Environment
   ENVIRONMENT?: string
+  // HubSpot / IRBEMA Integration
+  HUBSPOT_ACCESS_TOKEN?: string
+  HUBSPOT_PORTAL_ID?: string
   // Enterprise API Keys
   IRBEMA_API_KEY?: string
   AON_API_KEY?: string
@@ -10133,6 +10136,163 @@ app.post('/api/import/excel', async (c) => {
     return c.json({
       success: false,
       error: 'Errore durante l\'import del file Excel',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ============================================================================
+// POST /api/import/irbema - Import lead da HubSpot (IRBEMA)
+// ============================================================================
+app.post('/api/import/irbema', async (c) => {
+  try {
+    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA)...')
+    
+    // Verifica configurazione
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    if (!c.env?.HUBSPOT_ACCESS_TOKEN) {
+      return c.json({ 
+        success: false, 
+        error: 'Token HubSpot non configurato',
+        hint: 'Aggiungi HUBSPOT_ACCESS_TOKEN nelle variabili di ambiente'
+      }, 500)
+    }
+
+    const portalId = c.env.HUBSPOT_PORTAL_ID || '145726645'
+    const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
+
+    // Call HubSpot API per ottenere contatti
+    // Endpoint: https://api.hubapi.com/crm/v3/objects/contacts
+    const hubspotUrl = 'https://api.hubapi.com/crm/v3/objects/contacts'
+    const params = new URLSearchParams({
+      limit: '100',
+      properties: 'firstname,lastname,email,phone,mobilephone,company,hs_lead_status,createdate,notes'
+    })
+
+    console.log(`🌐 [HUBSPOT] Chiamata API: ${hubspotUrl}?${params}`)
+
+    const response = await fetch(`${hubspotUrl}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ [HUBSPOT] Errore API (${response.status}):`, errorText)
+      return c.json({ 
+        success: false, 
+        error: `Errore HubSpot API: ${response.status}`,
+        details: errorText
+      }, 500)
+    }
+
+    const data = await response.json()
+    console.log(`✅ [HUBSPOT] Ricevuti ${data.results?.length || 0} contatti`)
+
+    if (!data.results || data.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun nuovo contatto da importare',
+        imported: 0,
+        skipped: 0,
+        total: 0
+      })
+    }
+
+    // Importa contatti nel database
+    let imported = 0
+    let skipped = 0
+    const errors: string[] = []
+
+    for (const contact of data.results) {
+      try {
+        const props = contact.properties
+        
+        // Validazione campi obbligatori
+        if (!props.email && !props.phone && !props.mobilephone) {
+          console.warn(`⚠️ [HUBSPOT] Contatto senza email/telefono, skip: ${props.firstname} ${props.lastname}`)
+          skipped++
+          continue
+        }
+
+        // Genera ID lead
+        const leadId = `LEAD-IRBEMA-${String(imported + 1).padStart(5, '0')}`
+        
+        // Verifica se già esiste (per email o telefono)
+        const email = props.email || ''
+        const telefono = props.phone || props.mobilephone || ''
+        
+        if (email) {
+          const existing = await c.env.DB.prepare(
+            'SELECT id FROM leads WHERE email = ? LIMIT 1'
+          ).bind(email).first()
+          
+          if (existing) {
+            console.log(`⏭️ [HUBSPOT] Lead già esistente (email): ${email}`)
+            skipped++
+            continue
+          }
+        }
+
+        // Inserisci lead
+        const now = new Date().toISOString()
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            servizio, piano, fonte, status, vuoleBrochure, vuoleContratto,
+            note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          props.firstname || 'N/A',
+          props.lastname || 'N/A',
+          email,
+          telefono,
+          'eCura PRO', // Servizio default
+          'BASE',      // Piano default
+          'IRBEMA',    // Fonte
+          'NEW',       // Status
+          'No',        // vuoleBrochure
+          'No',        // vuoleContratto
+          `HubSpot ID: ${contact.id} | Created: ${props.createdate || ''} | Status: ${props.hs_lead_status || 'N/A'}`,
+          now,
+          now
+        ).run()
+
+        console.log(`✅ [HUBSPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname}`)
+        imported++
+
+      } catch (error) {
+        const contactName = `${contact.properties?.firstname} ${contact.properties?.lastname}`
+        console.error(`❌ [HUBSPOT] Errore importazione contatto ${contactName}:`, error)
+        errors.push(`${contactName}: ${error instanceof Error ? error.message : String(error)}`)
+        skipped++
+      }
+    }
+
+    console.log(`🎯 [HUBSPOT] Import completato: ${imported} importati, ${skipped} saltati`)
+
+    return c.json({
+      success: true,
+      message: 'Import HubSpot completato',
+      imported: imported,
+      skipped: skipped,
+      total: data.results.length,
+      errors: errors.length > 0 ? errors : undefined,
+      nextPage: data.paging?.next?.after || null
+    })
+
+  } catch (error) {
+    console.error('❌ [HUBSPOT] Errore generale import:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'import da HubSpot',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
