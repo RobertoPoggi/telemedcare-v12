@@ -10263,7 +10263,7 @@ app.post('/api/import/irbema', async (c) => {
           // Verifica se già esiste (per email)
           if (email) {
             const existing = await c.env.DB.prepare(
-              'SELECT id FROM leads WHERE email = ? LIMIT 1'
+              'SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1'
             ).bind(email).first()
             
             if (existing) {
@@ -10312,16 +10312,17 @@ app.post('/api/import/irbema', async (c) => {
           const now = new Date().toISOString()
           await c.env.DB.prepare(`
             INSERT INTO leads (
-              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente, cittaAssistito,
               servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
             props.lastname || 'N/A',
-            email,
-            telefono,
+            props.email || '',
+            props.mobilephone || '',
+            props.city || null,
             servizio,
             piano,
             servizio,    // tipoServizio (deprecated ma NOT NULL)
