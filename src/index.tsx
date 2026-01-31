@@ -8,6 +8,9 @@ import { databaseSelector } from './middleware/database-selector'
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
 
+// Import Lead Notifications Helper
+import { sendNewLeadNotification } from './utils/lead-notifications'
+
 // Import TeleMedCare V12.1 Modular Enterprise System - Deploy 2026-01-05 20:05 (Fix Puppeteer + CRUD completo)
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
@@ -10338,97 +10341,19 @@ app.post('/api/import/irbema', async (c) => {
           console.log(`✅ [HUBSPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname} | ${servizio} ${piano}`)
           totalImported++
 
-          // Invia notifica email a info@telemedcare.it
-          try {
-            const emailService = new EmailService(c.env)
-            
-            await emailService.sendEmail({
-              to: c.env?.EMAIL_TO_INFO || 'info@telemedcare.it',
-              from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
-              subject: `🆕 Nuovo Lead: ${props.firstname} ${props.lastname} - ${piano}`,
-              html: `
-                <!DOCTYPE html>
-                <html lang="it">
-                <head>
-                  <meta charset="UTF-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <title>Nuovo Lead TeleMedCare</title>
-                </head>
-                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                    <h1 style="color: white; margin: 0; font-size: 28px;">🆕 Nuovo Lead TeleMedCare</h1>
-                  </div>
-                  
-                  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-                    <p style="font-size: 16px; margin-bottom: 20px;"><strong>Richiesta ricevuta:</strong> ${now}</p>
-                    
-                    <h2 style="color: #667eea; margin-top: 30px;">👤 Dati Richiedente</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Nome:</td>
-                        <td style="padding: 10px;">${props.firstname} ${props.lastname}</td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Email:</td>
-                        <td style="padding: 10px;"><a href="mailto:${props.email}">${props.email}</a></td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Telefono:</td>
-                        <td style="padding: 10px;">${props.mobilephone || 'Non fornito'}</td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Città:</td>
-                        <td style="padding: 10px;">${props.city || 'Non fornita'}</td>
-                      </tr>
-                    </table>
-                    
-                    <h2 style="color: #667eea; margin-top: 30px;">📋 Dettagli Servizio</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Servizio:</td>
-                        <td style="padding: 10px;">${servizio}</td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Piano:</td>
-                        <td style="padding: 10px;">${piano}</td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Fonte:</td>
-                        <td style="padding: 10px;">IRBEMA</td>
-                      </tr>
-                      <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px; font-weight: bold;">Lead ID:</td>
-                        <td style="padding: 10px;"><code>${leadId}</code></td>
-                      </tr>
-                    </table>
-                    
-                    ${note ? `
-                    <h2 style="color: #667eea; margin-top: 30px;">📝 Note</h2>
-                    <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                      <p style="margin: 0; font-size: 14px; color: #666;">${note}</p>
-                    </div>
-                    ` : ''}
-                    
-                    <div style="margin-top: 30px; text-align: center;">
-                      <a href="https://telemedcare-v12.pages.dev/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visualizza nella Dashboard</a>
-                    </div>
-                  </div>
-                  
-                  <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
-                    <p style="margin: 5px 0;">TeleMedCare - Sistema di Gestione Lead</p>
-                    <p style="margin: 5px 0;">info@telemedcare.it</p>
-                  </div>
-                </body>
-                </html>
-              `,
-              text: `Nuovo Lead: ${props.firstname} ${props.lastname}\n\nEmail: ${props.email}\nTelefono: ${props.mobilephone || 'N/A'}\nCittà: ${props.city || 'N/A'}\nServizio: ${servizio} - ${piano}\nFonte: IRBEMA\nLead ID: ${leadId}`
-            })
-
-            console.log(`📧 [HUBSPOT] Notifica email inviata per ${leadId}`)
-          } catch (emailError) {
-            console.error(`⚠️ [HUBSPOT] Errore invio email per ${leadId}:`, emailError)
-            // Non bloccare l'import se l'email fallisce
-          }
+          // Invia notifica email automatica
+          await sendNewLeadNotification(leadId, {
+            nomeRichiedente: props.firstname || 'N/A',
+            cognomeRichiedente: props.lastname || '',
+            email: props.email || undefined,
+            telefono: props.mobilephone || undefined,
+            citta: props.city || undefined,
+            servizio,
+            piano,
+            fonte: 'IRBEMA',
+            note,
+            created_at: now
+          }, c.env)
 
         } catch (error) {
           const contactName = `${contact.properties?.firstname || 'N/A'} ${contact.properties?.lastname || ''}`
@@ -10621,97 +10546,19 @@ app.post('/api/import/irbema/manual', async (c) => {
         imported++
         nextNumber++
 
-        // Invia notifica email a info@telemedcare.it
-        try {
-          const emailService = new EmailService(c.env)
-          
-          await emailService.sendEmail({
-            to: c.env?.EMAIL_TO_INFO || 'info@telemedcare.it',
-            from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
-            subject: `🆕 Nuovo Lead: ${lead.nome} ${lead.cognome} - ${lead.piano || 'BASE'}`,
-            html: `
-              <!DOCTYPE html>
-              <html lang="it">
-              <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Nuovo Lead TeleMedCare</title>
-              </head>
-              <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                  <h1 style="color: white; margin: 0; font-size: 28px;">🆕 Nuovo Lead TeleMedCare</h1>
-                </div>
-                
-                <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-                  <p style="font-size: 16px; margin-bottom: 20px;"><strong>Richiesta ricevuta:</strong> ${now}</p>
-                  
-                  <h2 style="color: #667eea; margin-top: 30px;">👤 Dati Richiedente</h2>
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Nome:</td>
-                      <td style="padding: 10px;">${lead.nome} ${lead.cognome}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Email:</td>
-                      <td style="padding: 10px;"><a href="mailto:${lead.email}">${lead.email}</a></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Telefono:</td>
-                      <td style="padding: 10px;">${lead.telefono || 'Non fornito'}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Città:</td>
-                      <td style="padding: 10px;">${lead.citta || 'Non fornita'}</td>
-                    </tr>
-                  </table>
-                  
-                  <h2 style="color: #667eea; margin-top: 30px;">📋 Dettagli Servizio</h2>
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Servizio:</td>
-                      <td style="padding: 10px;">eCura PRO</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Piano:</td>
-                      <td style="padding: 10px;">BASE</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Fonte:</td>
-                      <td style="padding: 10px;">IRBEMA</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                      <td style="padding: 10px; font-weight: bold;">Lead ID:</td>
-                      <td style="padding: 10px;"><code>${leadId}</code></td>
-                    </tr>
-                  </table>
-                  
-                  ${lead.note ? `
-                  <h2 style="color: #667eea; margin-top: 30px;">📝 Note</h2>
-                  <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                    <p style="margin: 0; font-size: 14px; color: #666;">${lead.note}</p>
-                  </div>
-                  ` : ''}
-                  
-                  <div style="margin-top: 30px; text-align: center;">
-                    <a href="https://telemedcare-v12.pages.dev/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visualizza nella Dashboard</a>
-                  </div>
-                </div>
-                
-                <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
-                  <p style="margin: 5px 0;">TeleMedCare - Sistema di Gestione Lead</p>
-                  <p style="margin: 5px 0;">info@telemedcare.it</p>
-                </div>
-              </body>
-              </html>
-            `,
-            text: `Nuovo Lead: ${lead.nome} ${lead.cognome}\n\nEmail: ${lead.email}\nTelefono: ${lead.telefono || 'N/A'}\nCittà: ${lead.citta || 'N/A'}\nServizio: eCura PRO - BASE\nFonte: IRBEMA\nLead ID: ${leadId}`
-          })
-
-          console.log(`📧 [MANUAL] Notifica email inviata per ${leadId}`)
-        } catch (emailError) {
-          console.error(`⚠️ [MANUAL] Errore invio email per ${leadId}:`, emailError)
-          // Non bloccare l'import se l'email fallisce
-        }
+        // Invia notifica email automatica
+        await sendNewLeadNotification(leadId, {
+          nomeRichiedente: lead.nome,
+          cognomeRichiedente: lead.cognome,
+          email: lead.email,
+          telefono: lead.telefono || undefined,
+          citta: lead.citta || undefined,
+          servizio: 'eCura PRO',
+          piano: 'BASE',
+          fonte: 'IRBEMA',
+          note: lead.note,
+          created_at: now
+        }, c.env)
 
       } catch (error) {
         const msg = `Errore import ${lead.email}: ${error instanceof Error ? error.message : String(error)}`
