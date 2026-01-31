@@ -10702,6 +10702,165 @@ app.post('/api/import/irbema/renumber', async (c) => {
   }
 })
 
+// POST /api/import/irbema/send-notifications - Invia notifiche per i 9 lead importati
+app.post('/api/import/irbema/send-notifications', async (c) => {
+  try {
+    console.log('📧 [NOTIFY] Invio notifiche per lead IRBEMA 128-136...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Email dei 9 lead da notificare
+    const leadsToNotify = [
+      'amministrazione@europa92.it',
+      'morroni.mariacarla55@gmail.com',
+      'lailamoustafa.pia@gmail.com',
+      'lucio.cam51@gmail.com',
+      'elisa@cattarossi.it',
+      'giuliberard@gmail.com',
+      'tizianab953@gmail.com',
+      'fiorenza.farne1@gmail.com',
+      'sarottoanna@gmail.com'
+    ]
+
+    let sent = 0
+    let failed = 0
+    const results: any[] = []
+
+    for (const email of leadsToNotify) {
+      try {
+        // Ottieni lead dal DB
+        const lead = await c.env.DB.prepare(
+          'SELECT * FROM leads WHERE email = ? AND fonte = ? LIMIT 1'
+        ).bind(email, 'IRBEMA').first()
+
+        if (!lead) {
+          console.warn(`⚠️ [NOTIFY] Lead non trovato: ${email}`)
+          failed++
+          results.push({ email, status: 'NOT_FOUND' })
+          continue
+        }
+
+        // Invia notifica a info@telemedcare.it
+        const emailService = new EmailService(c.env)
+        
+        await emailService.sendEmail({
+          to: c.env?.EMAIL_TO_INFO || 'info@telemedcare.it',
+          from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+          subject: `🆕 Nuovo Lead: ${lead.nomeRichiedente} ${lead.cognomeRichiedente || ''} - ${lead.piano || 'BASE'}`,
+          html: `
+            <!DOCTYPE html>
+            <html lang="it">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Nuovo Lead TeleMedCare</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 28px;">🆕 Nuovo Lead TeleMedCare</h1>
+              </div>
+              
+              <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="font-size: 16px; margin-bottom: 20px;"><strong>Richiesta ricevuta:</strong> ${new Date(lead.created_at).toLocaleString('it-IT')}</p>
+                
+                <h2 style="color: #667eea; margin-top: 30px;">👤 Dati Richiedente</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Nome:</td>
+                    <td style="padding: 10px;">${lead.nomeRichiedente} ${lead.cognomeRichiedente || ''}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Email:</td>
+                    <td style="padding: 10px;"><a href="mailto:${lead.email}">${lead.email}</a></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Telefono:</td>
+                    <td style="padding: 10px;">${lead.telefono || 'Non fornito'}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Città:</td>
+                    <td style="padding: 10px;">${lead.cittaAssistito || 'Non fornita'}</td>
+                  </tr>
+                </table>
+                
+                <h2 style="color: #667eea; margin-top: 30px;">📋 Dettagli Servizio</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Servizio:</td>
+                    <td style="padding: 10px;">${lead.servizio || 'eCura PRO'}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Piano:</td>
+                    <td style="padding: 10px;">${lead.piano || 'BASE'}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Fonte:</td>
+                    <td style="padding: 10px;">${lead.fonte}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px; font-weight: bold;">Lead ID:</td>
+                    <td style="padding: 10px;"><code>${lead.id}</code></td>
+                  </tr>
+                </table>
+                
+                ${lead.note ? `
+                <h2 style="color: #667eea; margin-top: 30px;">📝 Note</h2>
+                <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
+                  <p style="margin: 0; font-size: 14px; color: #666;">${lead.note}</p>
+                </div>
+                ` : ''}
+                
+                <div style="margin-top: 30px; text-align: center;">
+                  <a href="https://telemedcare-v12.pages.dev/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visualizza nella Dashboard</a>
+                </div>
+              </div>
+              
+              <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
+                <p style="margin: 5px 0;">TeleMedCare - Sistema di Gestione Lead</p>
+                <p style="margin: 5px 0;">info@telemedcare.it</p>
+              </div>
+            </body>
+            </html>
+          `,
+          text: `Nuovo Lead: ${lead.nomeRichiedente} ${lead.cognomeRichiedente || ''}\n\nEmail: ${lead.email}\nTelefono: ${lead.telefono || 'N/A'}\nServizio: ${lead.servizio} - ${lead.piano}\nFonte: ${lead.fonte}\nLead ID: ${lead.id}`
+        })
+
+        console.log(`✅ [NOTIFY] Notifica inviata per ${lead.id} (${email})`)
+        sent++
+        results.push({ email, leadId: lead.id, status: 'SENT' })
+
+      } catch (error) {
+        console.error(`❌ [NOTIFY] Errore invio ${email}:`, error)
+        failed++
+        results.push({ 
+          email, 
+          status: 'FAILED', 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Invio notifiche completato',
+      sent,
+      failed,
+      total: leadsToNotify.length,
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ [NOTIFY] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'invio notifiche',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-assistiti - Popola database con assistiti reali
 
 // POST /api/fix-lead-associations - Corregge associazioni lead reali
