@@ -10151,7 +10151,7 @@ app.post('/api/import/excel', async (c) => {
 // ============================================================================
 app.post('/api/import/irbema', async (c) => {
   try {
-    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - TUTTI i contatti (nessun filtro data)...')
+    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo lead eCura (filtro URL: ecura.it)...')
     
     // Verifica configurazione
     if (!c.env?.DB) {
@@ -10168,8 +10168,8 @@ app.post('/api/import/irbema', async (c) => {
 
     const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
 
-    // NESSUN FILTRO DATA - Importa tutti i contatti
-    console.log(`📅 [HUBSPOT] Nessun filtro data applicato - importo TUTTI i contatti`)
+    // NESSUN FILTRO DATA - Usa filtro URL ecura.it
+    console.log(`📅 [HUBSPOT] Filtro attivo: solo lead da ecura.it`)
 
     // Statistiche import
     let totalImported = 0
@@ -10200,10 +10200,10 @@ app.post('/api/import/irbema', async (c) => {
       totalPages++
       console.log(`📄 [HUBSPOT] Caricamento pagina ${totalPages}${after ? ` (after: ${after})` : ''}...`)
 
-      // Costruisci URL con paginazione - SOLO campi necessari
+      // Costruisci URL con paginazione - SOLO campi necessari + URL per filtro eCura
       const params = new URLSearchParams({
         limit: '100',
-        properties: 'firstname,lastname,email,mobilephone,city,servizio_di_interesse,piano_desiderato,message,createdate'
+        properties: 'firstname,lastname,email,mobilephone,city,servizio_di_interesse,piano_desiderato,message,createdate,hs_analytics_first_url,hs_analytics_last_url'
       })
       if (after) {
         params.append('after', after)
@@ -10246,8 +10246,18 @@ app.post('/api/import/irbema', async (c) => {
         try {
           const props = contact.properties
           
-          // NESSUN FILTRO DATA - importa tutti i contatti
-          // (filtro data rimosso come richiesto)
+          // FILTRO URL: Solo lead che provengono da ecura.it
+          const firstUrl = props.hs_analytics_first_url || ''
+          const lastUrl = props.hs_analytics_last_url || ''
+          const isEcuraLead = firstUrl.includes('ecura.it') || lastUrl.includes('ecura.it')
+          
+          if (!isEcuraLead) {
+            console.log(`⏭️ [HUBSPOT] Skip: non proviene da ecura.it - ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'})`)
+            totalFiltered++
+            continue
+          }
+          
+          console.log(`✅ [HUBSPOT] Lead eCura trovato: ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'})`)
 
           // Validazione campi obbligatori
           if (!props.email && !props.mobilephone) {
