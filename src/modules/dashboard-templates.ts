@@ -2746,12 +2746,22 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Cambia titolo e sottotitolo modal per edit mode
             const modalTitle = document.querySelector('#newLeadModal h2');
             const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
+            const submitButton = document.getElementById('submitLeadButton');
+            
             if (modalTitle) {
                 modalTitle.textContent = '✏️ Modifica Lead';
             }
             if (modalSubtitle) {
                 modalSubtitle.textContent = 'Modifica i dati del lead esistente';
             }
+            if (submitButton) {
+                submitButton.innerHTML = '💾 Aggiorna Lead';
+            }
+            
+            // Rimuovi required dai campi in edit mode (puoi modificare solo alcuni campi)
+            document.querySelectorAll('#newLeadForm [required]').forEach(field => {
+                field.removeAttribute('required');
+            });
             
             openModal('newLeadModal');
         }
@@ -2795,12 +2805,25 @@ export const leads_dashboard = `<!DOCTYPE html>
                 window.editingLeadId = null;
                 const modalTitle = document.querySelector('#newLeadModal h2');
                 const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
+                const submitButton = document.getElementById('submitLeadButton');
+                
                 if (modalTitle) {
                     modalTitle.textContent = '🆕 Richiedi il tuo servizio eCura';
                 }
                 if (modalSubtitle) {
                     modalSubtitle.textContent = 'Compila il form per ricevere brochure e contratto personalizzato';
                 }
+                if (submitButton) {
+                    submitButton.innerHTML = '✉️ Invia Richiesta';
+                }
+                
+                // Ripristina i required
+                const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
+                    'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
+                requiredFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field) field.setAttribute('required', 'required');
+                });
             }
         }
         
@@ -2811,16 +2834,29 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Reset form
             document.getElementById('newLeadForm').reset();
             
-            // Reset titolo, sottotitolo e modalità
+            // Reset titolo, sottotitolo, pulsante e modalità
             document.getElementById('isEditMode').value = '';
             const modalTitle = document.querySelector('#newLeadModal h2');
             const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
+            const submitButton = document.getElementById('submitLeadButton');
+            
             if (modalTitle) {
                 modalTitle.textContent = '🆕 Richiedi il tuo servizio eCura';
             }
             if (modalSubtitle) {
                 modalSubtitle.textContent = 'Compila il form per ricevere brochure e contratto personalizzato';
             }
+            if (submitButton) {
+                submitButton.innerHTML = '✉️ Invia Richiesta';
+            }
+            
+            // Ripristina i required sui campi obbligatori
+            const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
+                'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) field.setAttribute('required', 'required');
+            });
             
             openModal('newLeadModal');
             // Aggiorna prezzi iniziali
@@ -3458,7 +3494,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         class="px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold">
                         ❌ Annulla
                     </button>
-                    <button type="button" onclick="saveNewLead()" 
+                    <button type="button" id="submitLeadButton" onclick="saveNewLead()" 
                         class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition font-semibold shadow-lg">
                         ✉️ Invia Richiesta
                     </button>
