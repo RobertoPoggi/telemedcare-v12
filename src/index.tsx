@@ -10562,6 +10562,79 @@ app.post('/api/import/irbema/manual', async (c) => {
   }
 })
 
+// POST /api/import/irbema/cleanup - Elimina lead IRBEMA >= 128 tranne i 9 specifici
+app.post('/api/import/irbema/cleanup', async (c) => {
+  try {
+    console.log('🧹 [CLEANUP] Pulizia lead IRBEMA >= 128 - mantengo solo i 9 specifici...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Email dei 9 lead specifici da mantenere (anche se >= 128)
+    const keepEmails = [
+      'amministrazione@europa92.it',      // LEAD-IRBEMA-00128
+      'morroni.mariacarla55@gmail.com',  // LEAD-IRBEMA-00129
+      'lailamoustafa.pia@gmail.com',     // LEAD-IRBEMA-00130
+      'lucio.cam51@gmail.com',           // LEAD-IRBEMA-00131
+      'elisa@cattarossi.it',             // LEAD-IRBEMA-00264
+      'giuliberard@gmail.com',           // LEAD-IRBEMA-00265
+      'tizianab953@gmail.com',           // LEAD-IRBEMA-00266
+      'fiorenza.farne1@gmail.com',       // LEAD-IRBEMA-00267
+      'sarottoanna@gmail.com'            // LEAD-IRBEMA-00268
+    ]
+
+    // Conta lead IRBEMA >= 128 prima della pulizia
+    const beforeCount = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM leads 
+      WHERE fonte = 'IRBEMA' 
+      AND (
+        id >= 'LEAD-IRBEMA-00128'
+        OR id LIKE 'LEAD-IRBEMA-001%'
+        OR id LIKE 'LEAD-IRBEMA-002%'
+        OR id LIKE 'LEAD-IRBEMA-003%'
+      )
+    `).first()
+
+    console.log(`📊 [CLEANUP] Lead IRBEMA >= 128 prima della pulizia: ${beforeCount?.count || 0}`)
+
+    // Elimina lead IRBEMA >= 128 TRANNE i 9 specifici
+    const placeholders = keepEmails.map(() => '?').join(',')
+    const deleteResult = await c.env.DB.prepare(`
+      DELETE FROM leads 
+      WHERE fonte = 'IRBEMA' 
+      AND (
+        CAST(SUBSTR(id, 14) AS INTEGER) >= 128
+      )
+      AND email NOT IN (${placeholders})
+    `).bind(...keepEmails).run()
+
+    // Conta lead IRBEMA dopo la pulizia
+    const afterTotalCount = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM leads WHERE fonte = 'IRBEMA'"
+    ).first()
+
+    console.log(`✅ [CLEANUP] Lead IRBEMA eliminati: ${deleteResult.meta.changes || 0}`)
+    console.log(`📊 [CLEANUP] Lead IRBEMA totali rimanenti: ${afterTotalCount?.count || 0}`)
+
+    return c.json({
+      success: true,
+      message: 'Cleanup completato - mantenuti lead < 128 + i 9 specifici',
+      before: beforeCount?.count || 0,
+      deleted: deleteResult.meta.changes || 0,
+      total_remaining: afterTotalCount?.count || 0
+    })
+
+  } catch (error) {
+    console.error('❌ [CLEANUP] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante il cleanup',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-assistiti - Popola database con assistiti reali
 
 // POST /api/fix-lead-associations - Corregge associazioni lead reali
