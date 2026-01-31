@@ -862,6 +862,38 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- Settings: Switch ON/OFF -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-cog mr-2 text-purple-600"></i>Impostazioni Sistema
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Switch Import Automatico -->
+                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800">Import Auto HubSpot</h4>
+                        <p class="text-xs text-gray-600 mt-1">Import automatico giornaliero da HubSpot</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-4">
+                        <input type="checkbox" id="switchHubspotAuto" class="sr-only peer" onchange="toggleSetting('hubspot_auto_import_enabled', this.checked)">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                
+                <!-- Switch Email Lead -->
+                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800">Email Automatiche Lead</h4>
+                        <p class="text-xs text-gray-600 mt-1">Email brochure, contratto, reminder ai lead</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-4">
+                        <input type="checkbox" id="switchLeadEmails" class="sr-only peer" onchange="toggleSetting('lead_email_notifications_enabled', this.checked)">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <!-- Elenco Assistiti -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
             <div class="flex items-center justify-between mb-4">
@@ -5219,9 +5251,67 @@ export const workflow_manager = `<!DOCTYPE html>
         });
         }
 
+        // ============================================
+        // SETTINGS: SWITCH ON/OFF
+        // ============================================
+        
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const settings = data.settings;
+                    
+                    // Update switch states
+                    if (settings.hubspot_auto_import_enabled) {
+                        document.getElementById('switchHubspotAuto').checked = settings.hubspot_auto_import_enabled.value === 'true';
+                    }
+                    if (settings.lead_email_notifications_enabled) {
+                        document.getElementById('switchLeadEmails').checked = settings.lead_email_notifications_enabled.value === 'true';
+                    }
+                }
+            } catch (error) {
+                console.error('Errore caricamento settings:', error);
+            }
+        }
+        
+        async function toggleSetting(key, value) {
+            try {
+                const response = await fetch('/api/settings/' + key, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: value ? 'true' : 'false' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Setting aggiornato:', key, value);
+                    // Show success feedback
+                    const switchEl = document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails');
+                    const parent = switchEl.closest('.p-4');
+                    parent.classList.add('ring-2', 'ring-green-400');
+                    setTimeout(() => {
+                        parent.classList.remove('ring-2', 'ring-green-400');
+                    }, 500);
+                } else {
+                    alert('Errore salvataggio: ' + result.error);
+                    // Revert switch
+                    document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails').checked = !value;
+                }
+            } catch (error) {
+                console.error('Errore aggiornamento setting:', error);
+                alert('Errore di comunicazione');
+                // Revert switch
+                document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails').checked = !value;
+            }
+        }
+
         // Load workflows on page load (chiamata dopo tutte le definizioni)
         window.addEventListener('DOMContentLoaded', () => {
             loadWorkflows();
+            loadSettings(); // Carica gli switch
         });
     </script>
 </body>
