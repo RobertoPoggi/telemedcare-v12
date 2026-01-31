@@ -48,11 +48,11 @@ export const SERVIZI_ECURA: Record<ServizioeCura, ServizioConfig> = {
   FAMILY: {
     nome: 'eCura FAMILY',
     nomeCompleto: 'eCura Family',  // Per template DOCX
-    dispositivo: 'Senium CARE',
+    dispositivo: 'SiDLY CARE PRO',
     dispositivoDescrizione: 'Dispositivo indossabile con sensori avanzati per il monitoraggio continuo della salute e localizzazione GPS',
     servizioDescrizione: 'Servizio di teleassistenza dedicato alla famiglia, con monitoraggio dei parametri vitali e supporto per anziani',
     caratteristiche: [
-      'Dispositivo Senium CARE in comodato d\'uso',
+      'Dispositivo SiDLY CARE PRO in comodato d\'uso',
       'Monitoraggio parametri vitali (frequenza cardiaca, pressione, temperatura)',
       'Localizzazione GPS per sicurezza e tranquillità',
       'App dedicata per familiari',

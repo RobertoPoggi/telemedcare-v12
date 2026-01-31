@@ -331,7 +331,7 @@ export const home = `<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="text-xs text-gray-500">
-                        <i class="fas fa-check mr-1"></i>Dispositivo Senium CARE<br>
+                        <i class="fas fa-check mr-1"></i>Dispositivo SiDLY CARE PRO<br>
                         <i class="fas fa-check mr-1"></i>Monitoraggio parametri vitali<br>
                         <i class="fas fa-check mr-1"></i>SIM e Piattaforma Web
                     </div>
@@ -1247,7 +1247,7 @@ export const dashboard = `<!DOCTYPE html>
 
         function getDispositivoForService(servizio) {
             const dispositivi = {
-                'FAMILY': 'Senium CARE',
+                'FAMILY': 'SiDLY CARE PRO',
                 'PRO': 'SiDLY CARE PRO',
                 'PREMIUM': 'SiDLY VITAL CARE'
             };
@@ -2014,7 +2014,7 @@ export const dashboard = `<!DOCTYPE html>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
                         <select id="editServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updatePrezziServizio()">
-                            <option value="eCura FAMILY">eCura FAMILY (Senium CARE)</option>
+                            <option value="eCura FAMILY">eCura FAMILY (SiDLY CARE PRO)</option>
                             <option value="eCura PRO">eCura PRO (SiDLY CARE PRO)</option>
                             <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
                         </select>
@@ -3778,7 +3778,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 <div class="border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="font-bold text-blue-600">eCura FAMILY</h4>
-                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Senium CARE</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">SiDLY CARE PRO</span>
                     </div>
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
@@ -4151,7 +4151,7 @@ export const data_dashboard = `<!DOCTYPE html>
 
         function getDispositivoForService(servizio) {
             const dispositivi = {
-                'FAMILY': 'Senium CARE',
+                'FAMILY': 'SiDLY CARE PRO',
                 'PRO': 'SiDLY CARE PRO',
                 'PREMIUM': 'SiDLY VITAL CARE'
             };
