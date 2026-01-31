@@ -10628,6 +10628,80 @@ app.post('/api/import/irbema/cleanup', async (c) => {
   }
 })
 
+// POST /api/import/irbema/renumber - Rinumera i 9 lead IRBEMA in sequenza
+app.post('/api/import/irbema/renumber', async (c) => {
+  try {
+    console.log('🔢 [RENUMBER] Rinumerazione lead IRBEMA dal 128 in poi...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Mappatura email -> nuovo ID sequenziale
+    const renumberMap = [
+      { email: 'amministrazione@europa92.it', newId: 'LEAD-IRBEMA-00128', nome: 'Michela Annunzi' },
+      { email: 'morroni.mariacarla55@gmail.com', newId: 'LEAD-IRBEMA-00129', nome: 'Maria Carla Morroni' },
+      { email: 'lailamoustafa.pia@gmail.com', newId: 'LEAD-IRBEMA-00130', nome: 'Laila Moustafa' },
+      { email: 'lucio.cam51@gmail.com', newId: 'LEAD-IRBEMA-00131', nome: 'Lucio Comazza' },
+      { email: 'elisa@cattarossi.it', newId: 'LEAD-IRBEMA-00132', nome: 'Elisa Cattarossi' },
+      { email: 'giuliberard@gmail.com', newId: 'LEAD-IRBEMA-00133', nome: 'Giuliana' },
+      { email: 'tizianab953@gmail.com', newId: 'LEAD-IRBEMA-00134', nome: 'Tiziana' },
+      { email: 'fiorenza.farne1@gmail.com', newId: 'LEAD-IRBEMA-00135', nome: 'Flavia Farmè' },
+      { email: 'sarottoanna@gmail.com', newId: 'LEAD-IRBEMA-00136', nome: 'Anna' }
+    ]
+
+    let updated = 0
+    const changes: any[] = []
+
+    for (const mapping of renumberMap) {
+      try {
+        // Trova il lead attuale per email
+        const current = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE email = ? AND fonte = ? LIMIT 1'
+        ).bind(mapping.email, 'IRBEMA').first()
+
+        if (current && current.id !== mapping.newId) {
+          // Aggiorna ID
+          await c.env.DB.prepare(
+            'UPDATE leads SET id = ? WHERE email = ? AND fonte = ?'
+          ).bind(mapping.newId, mapping.email, 'IRBEMA').run()
+
+          console.log(`✅ [RENUMBER] ${current.id} → ${mapping.newId} (${mapping.nome})`)
+          changes.push({
+            email: mapping.email,
+            oldId: current.id,
+            newId: mapping.newId,
+            nome: mapping.nome
+          })
+          updated++
+        } else if (current) {
+          console.log(`⏭️ [RENUMBER] ${mapping.newId} già corretto (${mapping.nome})`)
+        } else {
+          console.warn(`⚠️ [RENUMBER] Lead non trovato: ${mapping.email}`)
+        }
+
+      } catch (error) {
+        console.error(`❌ [RENUMBER] Errore ${mapping.email}:`, error)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Rinumerazione completata',
+      updated,
+      changes
+    })
+
+  } catch (error) {
+    console.error('❌ [RENUMBER] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante la rinumerazione',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-assistiti - Popola database con assistiti reali
 
 // POST /api/fix-lead-associations - Corregge associazioni lead reali
