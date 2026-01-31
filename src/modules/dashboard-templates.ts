@@ -3007,21 +3007,24 @@ export const leads_dashboard = `<!DOCTYPE html>
                 note: document.getElementById('newNote').value
             };
             
-            // Validation campi obbligatori
-            if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
-                alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
-                return;
+            // Validation campi obbligatori SOLO in modalità nuovo lead
+            if (!isEditMode) {
+                if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
+                    alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
+                    return;
+                }
+                
+                if (!formData.nomeAssistito || !formData.cognomeAssistito) {
+                    alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
+                    return;
+                }
+                
+                if (!formData.consensoPrivacy) {
+                    alert("⚠️ Il consenso Privacy è obbligatorio");
+                    return;
+                }
             }
-            
-            if (!formData.nomeAssistito || !formData.cognomeAssistito) {
-                alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
-                return;
-            }
-            
-            if (!isEditMode && !formData.consensoPrivacy) {
-                alert("⚠️ Il consenso Privacy è obbligatorio");
-                return;
-            }
+            // In modalità edit: nessuna validazione, puoi modificare quello che vuoi
             
             console.log(isEditMode ? '📝 Aggiornamento lead:' : '📤 Invio dati lead:', formData);
             
