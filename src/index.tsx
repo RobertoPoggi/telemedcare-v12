@@ -10502,10 +10502,10 @@ app.post('/api/import/irbema/manual', async (c) => {
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, 
-            telefono, cittaAssistito, servizio, piano, 
+            telefono, cittaAssistito, servizio, piano, tipoServizio,
             fonte, status, vuoleBrochure, vuoleContratto, note, 
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           lead.nome,
@@ -10515,6 +10515,7 @@ app.post('/api/import/irbema/manual', async (c) => {
           lead.citta || null,
           'eCura PRO',
           'BASE',
+          'BASE', // tipoServizio
           'IRBEMA',
           'NEW',
           'No',
