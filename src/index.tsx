@@ -10384,6 +10384,176 @@ app.post('/api/import/irbema', async (c) => {
   }
 })
 
+// POST /api/import/irbema/manual - Import manuale 9 lead specifici
+app.post('/api/import/irbema/manual', async (c) => {
+  try {
+    console.log('📝 [HUBSPOT] Import manuale 9 lead specifici...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Ottieni il prossimo ID disponibile
+    const maxIdResult = await c.env.DB.prepare(
+      "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
+    ).first()
+    
+    let nextNumber = 1
+    if (maxIdResult?.id) {
+      const match = String(maxIdResult.id).match(/LEAD-IRBEMA-(\d+)/)
+      if (match) nextNumber = parseInt(match[1]) + 1
+    }
+
+    const leadsToImport = [
+      {
+        nome: 'Michela',
+        cognome: 'Annunzi',
+        email: 'amministrazione@europa92.it',
+        telefono: '+393476735218',
+        citta: 'Modena',
+        note: 'Data HubSpot: 28/12/25 | Fonte: PRIVATO | 12/01/26 non interessata da non richiamare'
+      },
+      {
+        nome: 'Elisa',
+        cognome: 'Cattarossi',
+        email: 'elisa@cattarossi.it',
+        telefono: '',
+        citta: '',
+        note: 'Data HubSpot: 30/12/25 | Fonte: PRIVATO | 12/01/26 email inviata nessun contatto'
+      },
+      {
+        nome: 'Maria Carla',
+        cognome: 'Morroni',
+        email: 'morroni.mariacarla55@gmail.com',
+        telefono: '3314563888',
+        citta: 'Genova',
+        note: 'Data HubSpot: 11/01/25 | Fonte: PRIVATO | Informazioni più dettagliate | 12/01/26 nessuna risposta email inviata'
+      },
+      {
+        nome: 'Giuliana',
+        cognome: '',
+        email: 'giuliberard@gmail.com',
+        telefono: '',
+        citta: '',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | 19/01/2026 Inviata brochure con nuovi modelli'
+      },
+      {
+        nome: 'Laila',
+        cognome: 'Moustafa',
+        email: 'lailamoustafa.pia@gmail.com',
+        telefono: '3394863927',
+        citta: 'Lecce',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | Desidero preventivo di bracciale salvavita | 19/01/2026 nessuna risposta email inviata'
+      },
+      {
+        nome: 'Tiziana',
+        cognome: '',
+        email: 'tizianab953@gmail.com',
+        telefono: '',
+        citta: '',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | 19/01/2026 Inviata brochure con nuovi modelli'
+      },
+      {
+        nome: 'Flavia',
+        cognome: 'Farmè',
+        email: 'fiorenza.farne1@gmail.com',
+        telefono: '',
+        citta: '',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | 22/01/2026 inviata brochure con nuovi modelli'
+      },
+      {
+        nome: 'Lucio',
+        cognome: 'Comazza',
+        email: 'lucio.cam51@gmail.com',
+        telefono: '3884287850',
+        citta: 'Borgomanero',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | Sono interessato e vorrei qualche informazione in più | 26/01/2026 nessuna risposta email inviata'
+      },
+      {
+        nome: 'Anna',
+        cognome: '',
+        email: 'sarottoanna@gmail.com',
+        telefono: '',
+        citta: '',
+        note: 'Data HubSpot: 1900 | Fonte: PRIVATO | 26/01/2026 nessun contatto email inviata'
+      }
+    ]
+
+    let imported = 0
+    let skipped = 0
+    const errors: string[] = []
+
+    for (const lead of leadsToImport) {
+      try {
+        // Check duplicati
+        const existing = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1'
+        ).bind(lead.email).first()
+
+        if (existing) {
+          console.log(`⏭️ [MANUAL] Lead già esistente: ${lead.email}`)
+          skipped++
+          continue
+        }
+
+        const leadId = `LEAD-IRBEMA-${String(nextNumber).padStart(5, '0')}`
+        const now = new Date().toISOString()
+
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, 
+            telefonoRichiedente, cittaAssistito, servizio, piano, 
+            fonte, status, vuoleBrochure, vuoleContratto, note, 
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          lead.nome,
+          lead.cognome || null,
+          lead.email,
+          lead.telefono || null,
+          lead.citta || null,
+          'eCura PRO',
+          'BASE',
+          'IRBEMA',
+          'NEW',
+          'No',
+          'No',
+          lead.note,
+          now,
+          now
+        ).run()
+
+        console.log(`✅ [MANUAL] Importato: ${leadId} - ${lead.nome} ${lead.cognome} (${lead.email})`)
+        imported++
+        nextNumber++
+
+      } catch (error) {
+        const msg = `Errore import ${lead.email}: ${error instanceof Error ? error.message : String(error)}`
+        console.error(`❌ [MANUAL] ${msg}`)
+        errors.push(msg)
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Import manuale completato',
+      imported,
+      skipped,
+      total: leadsToImport.length,
+      errors: errors.length > 0 ? errors : undefined
+    })
+
+  } catch (error) {
+    console.error('❌ [MANUAL] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'import manuale',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/init-assistiti - Popola database con assistiti reali
 
 // POST /api/fix-lead-associations - Corregge associazioni lead reali
