@@ -1230,7 +1230,7 @@
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
-            if (!confirm('🔄 Import COMPLETO da HubSpot (IRBEMA)\n\nVuoi importare TUTTI i lead da HubSpot CRM?\n\nIl sistema scorrerà tutte le pagine di contatti.\nI lead già esistenti (stesso email) verranno saltati.\n\nQuesto può richiedere qualche secondo...')) {
+            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\n✅ Solo contatti creati dal 1 gennaio 2026\n✅ I lead già esistenti verranno saltati\n\nQuesto può richiedere qualche secondo...')) {
                 return;
             }
             
@@ -1247,10 +1247,11 @@
                 if (data.success) {
                     alert(`✅ Import completato!\n\n` +
                           `• Lead importati: ${data.imported}\n` +
-                          `• Lead saltati: ${data.skipped}\n` +
-                          `• Totale contatti: ${data.total}\n` +
+                          `• Lead saltati (duplicati): ${data.skipped}\n` +
+                          `• Lead filtrati (pre-2026): ${data.filtered || 0}\n` +
+                          `• Totale contatti elaborati: ${data.total}\n` +
                           `• Pagine processate: ${data.pages || 1}\n\n` +
-                          (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.join('\n')}` : ''));
+                          (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.slice(0, 5).join('\n')}${data.errors.length > 5 ? '\n... e altri ' + (data.errors.length - 5) + ' errori' : ''}` : ''));
                     loadDashboardData(); // Ricarica dashboard
                 } else {
                     alert('❌ Errore import:\n\n' + data.error + (data.details ? '\n\n' + data.details : ''));

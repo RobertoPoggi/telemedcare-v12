@@ -10143,11 +10143,11 @@ app.post('/api/import/excel', async (c) => {
 
 // ============================================================================
 // ============================================================================
-// POST /api/import/irbema - Import lead da HubSpot (IRBEMA) con PAGINAZIONE
+// POST /api/import/irbema - Import lead da HubSpot (IRBEMA) - Solo dal 1/1/2026
 // ============================================================================
 app.post('/api/import/irbema', async (c) => {
   try {
-    console.log('🔄 [HUBSPOT] Inizio import COMPLETO da HubSpot CRM (IRBEMA)...')
+    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo contatti dal 1/1/2026...')
     
     // Verifica configurazione
     if (!c.env?.DB) {
@@ -10162,13 +10162,17 @@ app.post('/api/import/irbema', async (c) => {
       }, 500)
     }
 
-    const portalId = c.env.HUBSPOT_PORTAL_ID || '145726645'
     const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
+
+    // Data filtro: 1 gennaio 2026 (timestamp in millisecondi)
+    const filterDate = new Date('2026-01-01T00:00:00Z').getTime()
+    console.log(`📅 [HUBSPOT] Filtro contatti creati dal: 2026-01-01 (${filterDate})`)
 
     // Statistiche import
     let totalImported = 0
     let totalSkipped = 0
     let totalContacts = 0
+    let totalFiltered = 0
     let totalPages = 0
     const errors: string[] = []
 
@@ -10193,10 +10197,10 @@ app.post('/api/import/irbema', async (c) => {
       totalPages++
       console.log(`📄 [HUBSPOT] Caricamento pagina ${totalPages}${after ? ` (after: ${after})` : ''}...`)
 
-      // Costruisci URL con paginazione
+      // Costruisci URL con paginazione - SOLO campi necessari
       const params = new URLSearchParams({
         limit: '100',
-        properties: 'firstname,lastname,email,phone,mobilephone,company,hs_lead_status,createdate,notes'
+        properties: 'firstname,lastname,email,mobilephone,city,servizio_di_interesse,piano_desiderato,message,createdate'
       })
       if (after) {
         params.append('after', after)
@@ -10239,15 +10243,22 @@ app.post('/api/import/irbema', async (c) => {
         try {
           const props = contact.properties
           
+          // FILTRO DATA: Solo contatti creati dal 1/1/2026
+          const createDate = props.createdate ? new Date(props.createdate).getTime() : 0
+          if (createDate < filterDate) {
+            totalFiltered++
+            continue
+          }
+
           // Validazione campi obbligatori
-          if (!props.email && !props.phone && !props.mobilephone) {
+          if (!props.email && !props.mobilephone) {
             console.warn(`⚠️ [HUBSPOT] Contatto senza email/telefono, skip: ${props.firstname || 'N/A'} ${props.lastname || ''}`)
             totalSkipped++
             continue
           }
 
           const email = props.email || ''
-          const telefono = props.phone || props.mobilephone || ''
+          const telefono = props.mobilephone || ''
           
           // Verifica se già esiste (per email)
           if (email) {
@@ -10260,6 +10271,37 @@ app.post('/api/import/irbema', async (c) => {
               totalSkipped++
               continue
             }
+          }
+
+          // Mapping servizio_di_interesse → servizio
+          let servizio = 'eCura PRO' // Default
+          if (props.servizio_di_interesse) {
+            const serviceLower = props.servizio_di_interesse.toLowerCase()
+            if (serviceLower.includes('family')) {
+              servizio = 'eCura FAMILY'
+            } else if (serviceLower.includes('premium') || serviceLower.includes('vital')) {
+              servizio = 'eCura PREMIUM'
+            } else if (serviceLower.includes('pro')) {
+              servizio = 'eCura PRO'
+            }
+          }
+
+          // Mapping piano_desiderato → piano
+          let piano = 'BASE' // Default
+          if (props.piano_desiderato) {
+            const planLower = props.piano_desiderato.toLowerCase()
+            if (planLower.includes('avanzato') || planLower.includes('advanced')) {
+              piano = 'AVANZATO'
+            }
+          }
+
+          // Costruisci note con città e messaggio
+          let note = `HubSpot ID: ${contact.id}`
+          if (props.city) {
+            note += ` | Città: ${props.city}`
+          }
+          if (props.message) {
+            note += ` | Messaggio: ${props.message}`
           }
 
           // Genera ID lead
@@ -10280,18 +10322,18 @@ app.post('/api/import/irbema', async (c) => {
             props.lastname || 'N/A',
             email,
             telefono,
-            'eCura PRO', // Servizio default
-            'BASE',      // Piano default
+            servizio,
+            piano,
             'IRBEMA',    // Fonte
             'NEW',       // Status
             'No',        // vuoleBrochure
             'No',        // vuoleContratto
-            `HubSpot ID: ${contact.id} | Created: ${props.createdate || ''} | Status: ${props.hs_lead_status || 'N/A'}`,
+            note,
             now,
             now
           ).run()
 
-          console.log(`✅ [HUBSPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname}`)
+          console.log(`✅ [HUBSPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname} | ${servizio} ${piano}`)
           totalImported++
 
         } catch (error) {
@@ -10312,13 +10354,19 @@ app.post('/api/import/irbema', async (c) => {
       }
     }
 
-    console.log(`🎯 [HUBSPOT] Import COMPLETO: ${totalImported} importati, ${totalSkipped} saltati, ${totalPages} pagine`)
+    console.log(`🎯 [HUBSPOT] Import COMPLETATO:`)
+    console.log(`   • Importati: ${totalImported}`)
+    console.log(`   • Saltati (duplicati): ${totalSkipped}`)
+    console.log(`   • Filtrati (pre-2026): ${totalFiltered}`)
+    console.log(`   • Totale elaborati: ${totalContacts}`)
+    console.log(`   • Pagine: ${totalPages}`)
 
     return c.json({
       success: true,
-      message: 'Import HubSpot completato',
+      message: 'Import HubSpot completato (solo contatti dal 1/1/2026)',
       imported: totalImported,
       skipped: totalSkipped,
+      filtered: totalFiltered,
       total: totalContacts,
       pages: totalPages,
       errors: errors.length > 0 ? errors : undefined
