@@ -9086,6 +9086,106 @@ app.delete('/api/leads/:id', async (c) => {
   }
 })
 
+// POST /api/leads/cleanup-wrong-imports - Cancella lead importati per errore
+app.post('/api/leads/cleanup-wrong-imports', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Parametri da query string
+    const minLeadId = c.req.query('minLeadId') || 'LEAD-IRBEMA-00146'
+    const hoursAgo = parseInt(c.req.query('hoursAgo') || '24')
+    
+    console.log(`🧹 Cleanup lead sbagliati: minLeadId >= ${minLeadId}, creati > ${hoursAgo}h fa`)
+    
+    // Calcola timestamp limite (24h fa)
+    const cutoffDate = new Date()
+    cutoffDate.setHours(cutoffDate.getHours() - hoursAgo)
+    const cutoffTimestamp = cutoffDate.toISOString()
+    
+    console.log(`⏰ Cancello lead creati PRIMA del: ${cutoffTimestamp}`)
+    
+    // Trova lead da cancellare
+    const leadsToDelete = await c.env.DB.prepare(`
+      SELECT id, email, emailRichiedente, nomeRichiedente, cognomeRichiedente, created_at
+      FROM leads 
+      WHERE id >= ? 
+        AND fonte = 'IRBEMA'
+        AND created_at < ?
+      ORDER BY id
+    `).bind(minLeadId, cutoffTimestamp).all()
+    
+    if (!leadsToDelete.results || leadsToDelete.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun lead da cancellare',
+        deleted: 0,
+        cutoffDate: cutoffTimestamp
+      })
+    }
+    
+    console.log(`🗑️ Trovati ${leadsToDelete.results.length} lead da cancellare`)
+    
+    const deletedIds: string[] = []
+    const errors: any[] = []
+    
+    // Cancella ogni lead
+    for (const lead of leadsToDelete.results as any[]) {
+      try {
+        // Verifica contratti associati
+        const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+          .bind(lead.id).first() as any
+        
+        if (contratti && contratti.count > 0) {
+          console.warn(`⚠️ Skip ${lead.id}: ha ${contratti.count} contratti associati`)
+          errors.push({
+            id: lead.id,
+            email: lead.email || lead.emailRichiedente,
+            error: 'Ha contratti associati'
+          })
+          continue
+        }
+        
+        // Cancella lead
+        await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(lead.id).run()
+        deletedIds.push(lead.id)
+        console.log(`✅ Cancellato: ${lead.id} - ${lead.email || lead.emailRichiedente}`)
+      } catch (error) {
+        console.error(`❌ Errore cancellazione ${lead.id}:`, error)
+        errors.push({
+          id: lead.id,
+          email: lead.email || lead.emailRichiedente,
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+    
+    console.log(`🎉 Cleanup completato: ${deletedIds.length} cancellati, ${errors.length} errori`)
+    
+    return c.json({
+      success: true,
+      message: `Cleanup completato: ${deletedIds.length} lead cancellati`,
+      deleted: deletedIds.length,
+      deletedIds: deletedIds,
+      errors: errors,
+      cutoffDate: cutoffTimestamp,
+      criteria: {
+        minLeadId: minLeadId,
+        hoursAgo: hoursAgo,
+        cutoffTimestamp: cutoffTimestamp
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore cleanup lead:', error)
+    return c.json({
+      success: false,
+      error: 'Errore cleanup lead',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ========================================
 // SETTINGS API
 // ========================================
