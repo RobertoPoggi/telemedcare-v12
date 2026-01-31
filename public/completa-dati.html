@@ -3,815 +3,447 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Completa la tua Richiesta - eCura by Medica GB</title>
+    <title>Completa i tuoi dati - eCura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/logo.png">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
         }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+        .step-indicator {
+            transition: all 0.3s ease;
         }
-        
-        .header {
-            background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+        .step-indicator.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 30px;
-            text-align: center;
         }
-        
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            font-size: 16px;
-            opacity: 0.95;
-        }
-        
-        .progress-bar {
-            background: #e5e7eb;
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 20px 30px;
-        }
-        
-        .progress-fill {
-            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-            height: 100%;
-            transition: width 0.3s ease;
-            border-radius: 4px;
-        }
-        
-        .progress-text {
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-            margin-top: 8px;
-        }
-        
-        .content {
-            padding: 40px 30px;
-        }
-        
-        .alert {
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            font-size: 14px;
-        }
-        
-        .alert-error {
-            background: #fee;
-            border: 2px solid #f87171;
-            color: #991b1b;
-        }
-        
-        .alert-success {
-            background: #d1fae5;
-            border: 2px solid #10b981;
-            color: #065f46;
-        }
-        
-        .alert-info {
-            background: #dbeafe;
-            border: 2px solid #3b82f6;
-            color: #1e40af;
-        }
-        
-        .section {
-            margin-bottom: 32px;
-            padding: 24px;
-            background: #f8fafc;
-            border-radius: 12px;
-            border-left: 4px solid #0066CC;
-        }
-        
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #0066CC;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-readonly {
-            border-left-color: #9ca3af;
-        }
-        
-        .section-readonly .section-title {
-            color: #6b7280;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .required {
-            color: #ef4444;
-            font-weight: bold;
-        }
-        
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 15px;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: #0066CC;
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-        }
-        
-        .form-input:disabled,
-        .form-select:disabled {
-            background: #f3f4f6;
-            color: #6b7280;
-            cursor: not-allowed;
-        }
-        
-        .form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        
-        .form-hint {
-            font-size: 13px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
-        
-        .radio-group {
-            display: flex;
-            gap: 20px;
-            margin-top: 8px;
-        }
-        
-        .radio-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 10px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .radio-label:hover {
-            border-color: #0066CC;
-            background: #f0f9ff;
-        }
-        
-        .radio-label input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        
-        .radio-label input[type="radio"]:checked + span {
-            font-weight: 600;
-            color: #0066CC;
-        }
-        
-        .conditional-fields {
-            margin-top: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            border: 2px solid #e5e7eb;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 16px;
-            background: #fef3c7;
-            border: 2px solid #fbbf24;
-            border-radius: 8px;
-            margin-top: 24px;
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-top: 2px;
-            cursor: pointer;
-        }
-        
-        .checkbox-group label {
-            flex: 1;
-            cursor: pointer;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .submit-section {
-            text-align: center;
-            margin-top: 40px;
-        }
-        
-        .btn-submit {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .step-indicator.completed {
+            background: #10b981;
             color: white;
-            padding: 18px 48px;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        
-        .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-        }
-        
-        .btn-submit:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .footer {
-            background: #f8fafc;
-            padding: 24px;
-            text-align: center;
-            font-size: 13px;
-            color: #6b7280;
-        }
-        
-        .expiry-notice {
-            background: #fef2f2;
-            border: 2px solid #fca5a5;
-            padding: 12px 16px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 24px;
-            font-size: 14px;
-            color: #991b1b;
-        }
-        
-        @media (max-width: 640px) {
-            body { padding: 0; }
-            .container { border-radius: 0; }
-            .content { padding: 24px 20px; }
-            .form-row { grid-template-columns: 1fr; }
-            .radio-group { flex-direction: column; }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📝 Completa la tua Richiesta</h1>
-            <p>eCura by Medica GB - Ancora pochi dati e siamo pronti!</p>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold">🏥 Completa i tuoi dati</h1>
+            <p class="text-blue-100 text-sm mt-2">Siamo quasi pronti per offrirti il servizio eCura personalizzato</p>
         </div>
-        
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
-        </div>
-        <div class="progress-text" id="progressText">Caricamento...</div>
-        
-        <div class="content">
-            <div id="alertContainer"></div>
-            
-            <div id="loadingState" style="text-align: center; padding: 60px 20px;">
-                <div class="loading" style="margin: 0 auto 20px;"></div>
-                <p style="color: #6b7280;">Caricamento dati in corso...</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step1Indicator" class="step-indicator active w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2">1</div>
+                    <span class="text-sm text-gray-600">Dati personali</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step2Indicator" class="step-indicator w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2 bg-gray-300">2</div>
+                    <span class="text-sm text-gray-600">Assistito</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step3Indicator" class="step-indicator w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2 bg-gray-300">3</div>
+                    <span class="text-sm text-gray-600">Servizio</span>
+                </div>
             </div>
-            
-            <form id="completionForm" style="display: none;">
-                <!-- Sezione Dati Già Disponibili -->
-                <div class="section section-readonly" id="availableSection">
-                    <div class="section-title">
-                        ✅ Dati già in nostro possesso
-                    </div>
-                    <div id="availableFieldsContainer"></div>
-                </div>
+        </div>
+
+        <!-- Form -->
+        <form id="completaForm" class="bg-white rounded-lg shadow-lg p-8">
+            <!-- Step 1: Dati Personali -->
+            <div id="step1" class="step-content">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Dati Personali</h2>
                 
-                <!-- Sezione Dati Richiedente -->
-                <div class="section" id="richiedenteSection">
-                    <div class="section-title">
-                        👤 Dati Richiedente
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="nome">
+                            Nome <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nome" name="nome" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Nome <span class="required">*</span></label>
-                            <input type="text" id="nomeRichiedente" class="form-input" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cognome <span class="required">*</span></label>
-                            <input type="text" id="cognomeRichiedente" class="form-input" disabled>
-                        </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cognome">
+                            Cognome <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cognome" name="cognome" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" id="email" class="form-input" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Telefono <span class="required">*</span></label>
-                            <input type="tel" id="telefono" class="form-input" placeholder="es: 3316432390">
-                        </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="telefono">
+                            Telefono <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel" id="telefono" name="telefono" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="+39 3XX XXX XXXX">
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">Codice Fiscale</label>
-                        <input type="text" id="cfRichiedente" class="form-input" placeholder="es: RSSMRA80A01H501X" maxlength="16" style="text-transform: uppercase;">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Indirizzo Completo</label>
-                        <input type="text" id="indirizzoRichiedente" class="form-input" placeholder="Via/Piazza, Numero, CAP, Città, Provincia">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="citta">
+                            Città <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="citta" name="citta" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                 </div>
-                
-                <!-- Sezione Dati Assistito -->
-                <div class="section" id="assistitoSection">
-                    <div class="section-title">
-                        🏥 Dati Assistito
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Nome Assistito <span class="required">*</span></label>
-                            <input type="text" id="nomeAssistito" class="form-input" placeholder="Nome">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cognome Assistito <span class="required">*</span></label>
-                            <input type="text" id="cognomeAssistito" class="form-input" placeholder="Cognome">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Data di Nascita <span class="required">*</span></label>
-                            <input type="date" id="dataNascitaAssistito" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Luogo di Nascita <span class="required">*</span></label>
-                            <input type="text" id="luogoNascitaAssistito" class="form-input" placeholder="Città di nascita">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Codice Fiscale Assistito <span class="required">*</span></label>
-                        <input type="text" id="codiceFiscaleAssistito" class="form-input" placeholder="es: RSSMRA80A01H501X" maxlength="16" style="text-transform: uppercase;">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Indirizzo Assistito <span class="required">*</span></label>
-                        <input type="text" id="indirizzoAssistito" class="form-input" placeholder="Via/Piazza e Numero">
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">CAP</label>
-                            <input type="text" id="capAssistito" class="form-input" placeholder="es: 20121" maxlength="5">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Città</label>
-                            <input type="text" id="cittaAssistito" class="form-input" placeholder="es: Milano">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Provincia</label>
-                        <input type="text" id="provinciaAssistito" class="form-input" placeholder="es: MI" maxlength="2" style="text-transform: uppercase;">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Condizioni di Salute <span class="required">*</span></label>
-                        <textarea id="condizioniSalute" class="form-textarea" placeholder="Descrivere le principali condizioni di salute e patologie..."></textarea>
-                        <div class="form-hint">Queste informazioni ci aiutano a configurare al meglio il servizio</div>
-                    </div>
-                </div>
-                
-                <!-- Sezione Servizio -->
-                <div class="section" id="servizioSection">
-                    <div class="section-title">
-                        🎯 Servizio Richiesto
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Servizio <span class="required">*</span></label>
-                        <select id="servizio" class="form-select">
-                            <option value="">Seleziona servizio...</option>
-                            <option value="eCura FAMILY">eCura FAMILY</option>
-                            <option value="eCura PRO">eCura PRO</option>
-                            <option value="eCura PREMIUM">eCura PREMIUM</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Piano <span class="required">*</span></label>
-                        <select id="piano" class="form-select">
-                            <option value="">Seleziona piano...</option>
-                            <option value="BASE">BASE</option>
-                            <option value="AVANZATO">AVANZATO</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Sezione Intestazione Contratto -->
-                <div class="section" id="contrattoSection">
-                    <div class="section-title">
-                        📄 Intestazione Contratto
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">A chi intestare il contratto? <span class="required">*</span></label>
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="intestatarioContratto" value="richiedente" checked>
-                                <span>Richiedente</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="intestatarioContratto" value="assistito">
-                                <span>Assistito</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="intestatarioContratto" value="altro">
-                                <span>Altro</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="altroIntestatarioFields" class="conditional-fields" style="display: none;">
-                        <h4 style="margin-bottom: 16px; color: #374151;">Dati Intestatario Contratto</h4>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Nome <span class="required">*</span></label>
-                                <input type="text" id="nomeIntestatario" class="form-input" placeholder="Nome">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Cognome <span class="required">*</span></label>
-                                <input type="text" id="cognomeIntestatario" class="form-input" placeholder="Cognome">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Codice Fiscale <span class="required">*</span></label>
-                            <input type="text" id="cfIntestatario" class="form-input" placeholder="es: RSSMRA80A01H501X" maxlength="16" style="text-transform: uppercase;">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Indirizzo <span class="required">*</span></label>
-                            <input type="text" id="indirizzoIntestatario" class="form-input" placeholder="Indirizzo completo">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sezione Note -->
-                <div class="section">
-                    <div class="section-title">
-                        📝 Note Aggiuntive
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Note (opzionale)</label>
-                        <textarea id="note" class="form-textarea" placeholder="Eventuali note, richieste speciali o informazioni aggiuntive..."></textarea>
-                    </div>
-                </div>
-                
-                <!-- Privacy Checkbox -->
-                <div class="checkbox-group">
-                    <input type="checkbox" id="consensoPrivacy" required>
-                    <label for="consensoPrivacy">
-                        <strong>Confermo di aver letto e accettato</strong> l'<a href="https://www.medicagb.it/privacy" target="_blank" style="color: #0066CC; text-decoration: underline;">Informativa Privacy</a> e autorizzo il trattamento dei miei dati personali per le finalità indicate. <span class="required">*</span>
-                    </label>
-                </div>
-                
-                <!-- Submit Button -->
-                <div class="submit-section">
-                    <button type="submit" class="btn-submit" id="submitBtn">
-                        <span id="submitText">✅ Completa Richiesta</span>
-                        <span id="submitLoading" style="display: none;">
-                            <span class="loading"></span> Invio in corso...
-                        </span>
+
+                <div class="flex justify-end mt-8">
+                    <button type="button" onclick="nextStep(2)"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        Avanti →
                     </button>
                 </div>
-            </form>
-            
-            <div id="successState" style="display: none; text-align: center; padding: 60px 20px;">
-                <div style="font-size: 72px; margin-bottom: 20px;">✅</div>
-                <h2 style="color: #059669; margin-bottom: 16px;">Grazie!</h2>
-                <p style="font-size: 18px; color: #374151; margin-bottom: 24px;">
-                    I tuoi dati sono stati completati con successo.
-                </p>
-                <p style="color: #6b7280; margin-bottom: 32px;">
-                    Il nostro team ti contatterà a breve per procedere con l'attivazione del servizio.
-                </p>
-                <div style="background: #f0f9ff; padding: 20px; border-radius: 12px; border-left: 4px solid #0066CC;">
-                    <p style="font-size: 14px; color: #1e40af; margin: 0;">
-                        <strong>📧 Email di conferma inviata</strong><br>
-                        Controlla la tua casella di posta per ulteriori dettagli.
-                    </p>
+            </div>
+
+            <!-- Step 2: Dati Assistito -->
+            <div id="step2" class="step-content hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">👤 Dati Assistito</h2>
+                
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="richiedenteAssistito" name="richiedenteAssistito"
+                            class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                            onchange="toggleAssistitoFields()">
+                        <span class="ml-2 text-gray-700">Il servizio è per me</span>
+                    </label>
+                </div>
+
+                <div id="assistitoFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="nomeAssistito">
+                            Nome Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nomeAssistito" name="nomeAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cognomeAssistito">
+                            Cognome Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cognomeAssistito" name="cognomeAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="dataNascita">
+                            Data di Nascita <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" id="dataNascita" name="dataNascita"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cittaAssistito">
+                            Città Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cittaAssistito" name="cittaAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button type="button" onclick="prevStep(1)"
+                        class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                        ← Indietro
+                    </button>
+                    <button type="button" onclick="nextStep(3)"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        Avanti →
+                    </button>
                 </div>
             </div>
+
+            <!-- Step 3: Scelta Servizio -->
+            <div id="step3" class="step-content hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">🎯 Scegli il Servizio</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- eCura PRO -->
+                    <div class="border-2 border-gray-300 rounded-lg p-6 hover:border-purple-500 cursor-pointer transition-colors"
+                        onclick="selectService('eCura PRO')">
+                        <input type="radio" name="servizio" value="eCura PRO" id="servizio-pro" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">eCura PRO</h3>
+                            <p class="text-gray-600 text-sm mb-4">Assistenza infermieristica completa</p>
+                            <p class="text-3xl font-bold text-purple-600">€ 199/mese</p>
+                        </div>
+                    </div>
+
+                    <!-- eCura PREMIUM -->
+                    <div class="border-2 border-gray-300 rounded-lg p-6 hover:border-purple-500 cursor-pointer transition-colors"
+                        onclick="selectService('eCura PREMIUM')">
+                        <input type="radio" name="servizio" value="eCura PREMIUM" id="servizio-premium" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">eCura PREMIUM</h3>
+                            <p class="text-gray-600 text-sm mb-4">Assistenza avanzata con telemedicina</p>
+                            <p class="text-3xl font-bold text-purple-600">€ 299/mese</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2" for="piano">
+                        Piano di Pagamento <span class="text-red-500">*</span>
+                    </label>
+                    <select id="piano" name="piano" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="">Seleziona un piano</option>
+                        <option value="BASE">BASE - Mensile</option>
+                        <option value="AVANZATO">AVANZATO - Trimestrale (sconto 5%)</option>
+                        <option value="PREMIUM">PREMIUM - Annuale (sconto 10%)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2" for="note">
+                        Note aggiuntive (opzionale)
+                    </label>
+                    <textarea id="note" name="note" rows="4"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Eventuali richieste o informazioni aggiuntive..."></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="consensoPrivacy" name="consensoPrivacy" required
+                            class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500">
+                        <span class="ml-2 text-gray-700">
+                            Accetto l'<a href="/privacy" target="_blank" class="text-purple-600 underline">informativa sulla privacy</a> <span class="text-red-500">*</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button type="button" onclick="prevStep(2)"
+                        class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                        ← Indietro
+                    </button>
+                    <button type="submit"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        ✉️ Invia Richiesta
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden mt-8 bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg">
+            <h3 class="font-bold text-lg mb-2">✅ Richiesta inviata con successo!</h3>
+            <p>Grazie per aver completato i tuoi dati. Ti contatteremo presto per finalizzare il servizio eCura.</p>
+            <p class="mt-2 text-sm">Riceverai una email di conferma all'indirizzo indicato.</p>
         </div>
-        
-        <div class="footer">
-            <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
-            <p>P.IVA: 12435130963 | REA: MI-2661409</p>
-            <p>Per assistenza: <a href="mailto:info@telemedcare.it" style="color: #0066CC;">info@telemedcare.it</a> | Tel: <a href="tel:+393316432390" style="color: #0066CC;">+39 331 643 2390</a></p>
-        </div>
-    </div>
-    
+    </main>
+
     <script>
-        // Configuration
-        const API_BASE = window.location.origin;
-        let tokenData = null;
-        let leadData = null;
-        let missingFields = [];
-        
-        // Get token from URL
+        let currentStep = 1;
+        let leadId = null;
+
+        // Get leadId from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (!token) {
-                showAlert('Token mancante. Verifica il link ricevuto via email.', 'error');
-                return;
-            }
-            
-            await loadLeadData();
-            setupEventListeners();
-        });
-        
-        // Load lead data
+        leadId = urlParams.get('leadId');
+
+        if (!leadId) {
+            alert('⚠️ Link non valido. Contatta il supporto.');
+            window.location.href = '/';
+        }
+
+        // Load existing lead data
         async function loadLeadData() {
             try {
-                const response = await fetch(`${API_BASE}/api/completion/validate/${token}`);
-                const data = await response.json();
+                const response = await fetch(`/api/leads/${leadId}`);
+                if (!response.ok) throw new Error('Lead non trovato');
                 
-                if (!data.success) {
-                    showAlert(data.error || 'Token non valido o scaduto.', 'error');
-                    document.getElementById('loadingState').style.display = 'none';
-                    return;
+                const lead = await response.json();
+                
+                // Pre-fill form with existing data
+                document.getElementById('nome').value = lead.nomeRichiedente || '';
+                document.getElementById('cognome').value = lead.cognomeRichiedente || '';
+                document.getElementById('telefono').value = lead.telefono || '';
+                document.getElementById('citta').value = lead.cittaRichiedente || '';
+                
+                if (lead.nomeAssistito) {
+                    document.getElementById('nomeAssistito').value = lead.nomeAssistito;
+                    document.getElementById('cognomeAssistito').value = lead.cognomeAssistito || '';
+                    document.getElementById('dataNascita').value = lead.dataNascitaAssistito || '';
+                    document.getElementById('cittaAssistito').value = lead.cittaAssistito || '';
                 }
                 
-                leadData = data.lead;
-                missingFields = data.missingFields || [];
-                tokenData = data;
-                
-                populateForm();
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('completionForm').style.display = 'block';
-                
-                updateProgress();
-                
+                if (lead.servizio) {
+                    selectService(lead.servizio);
+                }
+                if (lead.piano) {
+                    document.getElementById('piano').value = lead.piano;
+                }
+                if (lead.note) {
+                    document.getElementById('note').value = lead.note;
+                }
             } catch (error) {
-                console.error('Error loading data:', error);
-                showAlert('Errore nel caricamento dei dati. Riprova tra qualche istante.', 'error');
-                document.getElementById('loadingState').style.display = 'none';
+                console.error('Error loading lead:', error);
+                alert('⚠️ Errore caricamento dati. Riprova.');
             }
         }
-        
-        // Populate form
-        function populateForm() {
-            // Richiedente
-            setValue('nomeRichiedente', leadData.nomeRichiedente, true);
-            setValue('cognomeRichiedente', leadData.cognomeRichiedente, true);
-            setValue('email', leadData.email, true);
-            setValue('telefono', leadData.telefono);
-            setValue('cfRichiedente', leadData.cfRichiedente);
-            setValue('indirizzoRichiedente', leadData.indirizzoRichiedente);
-            
-            // Assistito
-            setValue('nomeAssistito', leadData.nomeAssistito);
-            setValue('cognomeAssistito', leadData.cognomeAssistito);
-            setValue('dataNascitaAssistito', leadData.dataNascitaAssistito);
-            setValue('luogoNascitaAssistito', leadData.luogoNascitaAssistito);
-            setValue('codiceFiscaleAssistito', leadData.codiceFiscaleAssistito);
-            setValue('indirizzoAssistito', leadData.indirizzoAssistito);
-            setValue('capAssistito', leadData.capAssistito);
-            setValue('cittaAssistito', leadData.cittaAssistito);
-            setValue('provinciaAssistito', leadData.provinciaAssistito);
-            setValue('condizioniSalute', leadData.condizioniSalute);
-            
-            // Servizio
-            setValue('servizio', leadData.servizio, !leadData.servizio);
-            setValue('piano', leadData.piano, !leadData.piano);
-            
-            // Show available fields
-            if (tokenData.availableFields && Object.keys(tokenData.availableFields).length > 0) {
-                const container = document.getElementById('availableFieldsContainer');
-                container.innerHTML = Object.entries(tokenData.availableFields)
-                    .map(([label, value]) => `
-                        <div style="padding: 12px; background: white; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between;">
-                            <span style="color: #6b7280; font-size: 14px;">${label}:</span>
-                            <span style="font-weight: 500; color: #111;">${value}</span>
-                        </div>
-                    `).join('');
-            } else {
-                document.getElementById('availableSection').style.display = 'none';
-            }
-        }
-        
-        // Set value helper
-        function setValue(id, value, disabled = false) {
-            const el = document.getElementById(id);
-            if (el && value) {
-                el.value = value;
-                if (disabled) {
-                    el.disabled = true;
-                }
-            }
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Intestatario contratto
-            document.querySelectorAll('input[name="intestatarioContratto"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const altroFields = document.getElementById('altroIntestatarioFields');
-                    altroFields.style.display = e.target.value === 'altro' ? 'block' : 'none';
-                });
-            });
-            
-            // Form inputs for progress
-            document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(input => {
-                if (!input.disabled) {
-                    input.addEventListener('input', updateProgress);
-                }
-            });
-            
-            // Form submit
-            document.getElementById('completionForm').addEventListener('submit', handleSubmit);
-        }
-        
-        // Update progress
-        function updateProgress() {
-            const requiredFields = document.querySelectorAll('.form-input:required:not([disabled]), .form-select:required, .form-textarea:required');
-            const filledFields = Array.from(requiredFields).filter(field => field.value.trim() !== '');
-            
-            const total = requiredFields.length;
-            const filled = filledFields.length;
-            const percentage = total > 0 ? Math.round((filled / total) * 100) : 0;
-            
-            document.getElementById('progressBar').style.width = percentage + '%';
-            document.getElementById('progressText').textContent = `Compilato: ${filled} su ${total} campi obbligatori (${percentage}%)`;
-        }
-        
-        // Handle submit
-        async function handleSubmit(e) {
-            e.preventDefault();
-            
-            // Validate privacy
-            if (!document.getElementById('consensoPrivacy').checked) {
-                showAlert('Devi accettare l\'informativa privacy per procedere.', 'error');
+
+        loadLeadData();
+
+        function nextStep(step) {
+            // Validate current step
+            if (!validateStep(currentStep)) {
                 return;
             }
-            
-            // Validate intestatario if "altro"
-            const intestatario = document.querySelector('input[name="intestatarioContratto"]:checked').value;
-            if (intestatario === 'altro') {
-                const required = ['nomeIntestatario', 'cognomeIntestatario', 'cfIntestatario', 'indirizzoIntestatario'];
-                const missing = required.filter(id => !document.getElementById(id).value.trim());
-                if (missing.length > 0) {
-                    showAlert('Compila tutti i campi obbligatori dell\'intestatario.', 'error');
-                    return;
+
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('active');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('completed');
+
+            // Show next step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('active');
+        }
+
+        function prevStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('active');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('completed');
+
+            // Show previous step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('active');
+        }
+
+        function validateStep(step) {
+            if (step === 1) {
+                const nome = document.getElementById('nome').value.trim();
+                const cognome = document.getElementById('cognome').value.trim();
+                const telefono = document.getElementById('telefono').value.trim();
+                const citta = document.getElementById('citta').value.trim();
+
+                if (!nome || !cognome || !telefono || !citta) {
+                    alert('⚠️ Compila tutti i campi obbligatori');
+                    return false;
+                }
+            } else if (step === 2) {
+                const richiedenteAssistito = document.getElementById('richiedenteAssistito').checked;
+                if (!richiedenteAssistito) {
+                    const nomeAssistito = document.getElementById('nomeAssistito').value.trim();
+                    const cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
+                    const dataNascita = document.getElementById('dataNascita').value;
+                    const cittaAssistito = document.getElementById('cittaAssistito').value.trim();
+
+                    if (!nomeAssistito || !cognomeAssistito || !dataNascita || !cittaAssistito) {
+                        alert('⚠️ Compila tutti i campi dell\'assistito');
+                        return false;
+                    }
                 }
             }
-            
-            // Disable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            document.getElementById('submitText').style.display = 'none';
-            document.getElementById('submitLoading').style.display = 'inline-block';
-            
-            // Collect data
+            return true;
+        }
+
+        function toggleAssistitoFields() {
+            const checked = document.getElementById('richiedenteAssistito').checked;
+            const fields = document.getElementById('assistitoFields');
+            const inputs = fields.querySelectorAll('input');
+
+            if (checked) {
+                fields.classList.add('hidden');
+                inputs.forEach(input => {
+                    input.removeAttribute('required');
+                    input.value = '';
+                });
+            } else {
+                fields.classList.remove('hidden');
+                inputs.forEach(input => input.setAttribute('required', 'required'));
+            }
+        }
+
+        function selectService(service) {
+            document.querySelectorAll('[name="servizio"]').forEach(radio => {
+                radio.checked = radio.value === service;
+                radio.parentElement.parentElement.classList.toggle('border-purple-500', radio.checked);
+                radio.parentElement.parentElement.classList.toggle('bg-purple-50', radio.checked);
+            });
+        }
+
+        // Form submission
+        document.getElementById('completaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateStep(3)) {
+                return;
+            }
+
+            const servizio = document.querySelector('[name="servizio"]:checked');
+            if (!servizio) {
+                alert('⚠️ Seleziona un servizio');
+                return;
+            }
+
+            const consensoPrivacy = document.getElementById('consensoPrivacy').checked;
+            if (!consensoPrivacy) {
+                alert('⚠️ Devi accettare l\'informativa sulla privacy');
+                return;
+            }
+
             const formData = {
-                token: token,
-                leadData: {
-                    telefono: document.getElementById('telefono').value.trim(),
-                    cfRichiedente: document.getElementById('cfRichiedente').value.trim().toUpperCase(),
-                    indirizzoRichiedente: document.getElementById('indirizzoRichiedente').value.trim(),
-                    nomeAssistito: document.getElementById('nomeAssistito').value.trim(),
-                    cognomeAssistito: document.getElementById('cognomeAssistito').value.trim(),
-                    dataNascitaAssistito: document.getElementById('dataNascitaAssistito').value,
-                    luogoNascitaAssistito: document.getElementById('luogoNascitaAssistito').value.trim(),
-                    codiceFiscaleAssistito: document.getElementById('codiceFiscaleAssistito').value.trim().toUpperCase(),
-                    indirizzoAssistito: document.getElementById('indirizzoAssistito').value.trim(),
-                    capAssistito: document.getElementById('capAssistito').value.trim(),
-                    cittaAssistito: document.getElementById('cittaAssistito').value.trim(),
-                    provinciaAssistito: document.getElementById('provinciaAssistito').value.trim().toUpperCase(),
-                    condizioniSalute: document.getElementById('condizioniSalute').value.trim(),
-                    servizio: document.getElementById('servizio').value,
-                    piano: document.getElementById('piano').value,
-                    intestatarioContratto: intestatario,
-                    note: document.getElementById('note').value.trim()
-                }
+                nomeRichiedente: document.getElementById('nome').value.trim(),
+                cognomeRichiedente: document.getElementById('cognome').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                cittaRichiedente: document.getElementById('citta').value.trim(),
+                servizio: servizio.value,
+                piano: document.getElementById('piano').value,
+                note: document.getElementById('note').value.trim(),
+                consensoPrivacy: 1,
+                status: 'COMPLETED'
             };
-            
-            // Add intestatario data if "altro"
-            if (intestatario === 'altro') {
-                formData.leadData.nomeIntestatario = document.getElementById('nomeIntestatario').value.trim();
-                formData.leadData.cognomeIntestatario = document.getElementById('cognomeIntestatario').value.trim();
-                formData.leadData.cfIntestatario = document.getElementById('cfIntestatario').value.trim().toUpperCase();
-                formData.leadData.indirizzoIntestatario = document.getElementById('indirizzoIntestatario').value.trim();
+
+            const richiedenteAssistito = document.getElementById('richiedenteAssistito').checked;
+            if (richiedenteAssistito) {
+                formData.nomeAssistito = formData.nomeRichiedente;
+                formData.cognomeAssistito = formData.cognomeRichiedente;
+                formData.dataNascitaAssistito = null;
+                formData.cittaAssistito = formData.cittaRichiedente;
+            } else {
+                formData.nomeAssistito = document.getElementById('nomeAssistito').value.trim();
+                formData.cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
+                formData.dataNascitaAssistito = document.getElementById('dataNascita').value;
+                formData.cittaAssistito = document.getElementById('cittaAssistito').value.trim();
             }
-            
+
             try {
-                const response = await fetch(`${API_BASE}/api/leads/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(`/api/leads/${leadId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(formData)
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.success) {
-                    document.getElementById('completionForm').style.display = 'none';
-                    document.getElementById('successState').style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    document.getElementById('completaForm').classList.add('hidden');
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    window.scrollTo(0, 0);
                 } else {
-                    showAlert(result.error || 'Errore durante il salvataggio. Riprova.', 'error');
-                    submitBtn.disabled = false;
-                    document.getElementById('submitText').style.display = 'inline-block';
-                    document.getElementById('submitLoading').style.display = 'none';
+                    alert(`❌ ${result.error || 'Errore aggiornamento dati'}`);
                 }
-                
             } catch (error) {
-                console.error('Submit error:', error);
-                showAlert('Errore di connessione. Verifica la tua connessione e riprova.', 'error');
-                submitBtn.disabled = false;
-                document.getElementById('submitText').style.display = 'inline-block';
-                document.getElementById('submitLoading').style.display = 'none';
+                console.error('Error:', error);
+                alert('❌ Errore di comunicazione con il server');
             }
-        }
-        
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const container = document.getElementById('alertContainer');
-            const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-info';
-            container.innerHTML = `
-                <div class="alert ${alertClass}">
-                    ${type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️'} ${message}
-                </div>
-            `;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        });
     </script>
 </body>
 </html>
