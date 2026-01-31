@@ -7702,7 +7702,7 @@ app.put('/api/leads/:id', async (c) => {
       // Servizio
       servizio: 'servizio',
       piano: 'piano',
-      canale: 'canale',
+      canale: 'fonte',  // Il form invia 'canale' ma il DB ha 'fonte'
       fonte: 'fonte',
       
       // Preferenze
