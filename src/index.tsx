@@ -10150,7 +10150,7 @@ app.post('/api/import/excel', async (c) => {
 // ============================================================================
 app.post('/api/import/irbema', async (c) => {
   try {
-    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo contatti dal 1/12/2025...')
+    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - TUTTI i contatti (nessun filtro data)...')
     
     // Verifica configurazione
     if (!c.env?.DB) {
@@ -10167,9 +10167,8 @@ app.post('/api/import/irbema', async (c) => {
 
     const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
 
-    // Data filtro: 1 dicembre 2025 (timestamp in millisecondi)
-    const filterDate = new Date('2025-12-01T00:00:00Z').getTime()
-    console.log(`📅 [HUBSPOT] Filtro contatti creati dal: 2025-12-01 (${filterDate})`)
+    // NESSUN FILTRO DATA - Importa tutti i contatti
+    console.log(`📅 [HUBSPOT] Nessun filtro data applicato - importo TUTTI i contatti`)
 
     // Statistiche import
     let totalImported = 0
@@ -10246,12 +10245,8 @@ app.post('/api/import/irbema', async (c) => {
         try {
           const props = contact.properties
           
-          // FILTRO DATA: Solo contatti creati dal 1/12/2025
-          const createDate = props.createdate ? new Date(props.createdate).getTime() : 0
-          if (createDate < filterDate) {
-            totalFiltered++
-            continue
-          }
+          // NESSUN FILTRO DATA - importa tutti i contatti
+          // (filtro data rimosso come richiesto)
 
           // Validazione campi obbligatori
           if (!props.email && !props.mobilephone) {
@@ -10266,8 +10261,8 @@ app.post('/api/import/irbema', async (c) => {
           // Verifica se già esiste (per email)
           if (email) {
             const existing = await c.env.DB.prepare(
-              'SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1'
-            ).bind(email).first()
+              'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
+            ).bind(email, email).first()
             
             if (existing) {
               console.log(`⏭️ [HUBSPOT] Lead già esistente (email): ${email}`)
@@ -10315,7 +10310,7 @@ app.post('/api/import/irbema', async (c) => {
           const now = new Date().toISOString()
           await c.env.DB.prepare(`
             INSERT INTO leads (
-              id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente, cittaAssistito,
+              id, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito,
               servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -10402,6 +10397,213 @@ app.post('/api/import/irbema', async (c) => {
 })
 
 // POST /api/import/irbema/manual - Import manuale 9 lead specifici
+// ==========================================
+// IMPORT SPOT: 9 LEAD SPECIFICI DA HUBSPOT
+// ==========================================
+app.post('/api/import/irbema/spot', async (c) => {
+  try {
+    console.log('🎯 [HUBSPOT SPOT] Import 9 lead specifici da HubSpot...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    if (!c.env?.HUBSPOT_ACCESS_TOKEN) {
+      return c.json({ 
+        success: false, 
+        error: 'Token HubSpot non configurato',
+        hint: 'Aggiungi HUBSPOT_ACCESS_TOKEN nelle variabili di ambiente'
+      }, 500)
+    }
+
+    const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
+
+    // Lista email da importare (richiesta spot)
+    const emailsToImport = [
+      'fossiandrea9@gmail.com',
+      'rosaria.serino@icloud.com',
+      'amercuri93@gmail.com',
+      'simo.parravicini@gmail.com',
+      'lillonocera@libero.it',
+      'alboloc@gmail.com',
+      'sperotto24@gmail.com',
+      'gianluigi1259@gmail.com',
+      'luk91677@gmail.com'
+    ]
+
+    // Ottieni il prossimo ID lead disponibile
+    const maxIdResult = await c.env.DB.prepare(
+      "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
+    ).first()
+    
+    let nextLeadNumber = 1
+    if (maxIdResult?.id) {
+      const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
+      if (match) nextLeadNumber = parseInt(match[1]) + 1
+    }
+
+    let imported = 0
+    let skipped = 0
+    const results = []
+
+    // Importa ogni lead
+    for (const email of emailsToImport) {
+      try {
+        console.log(`🔍 [SPOT] Cerco su HubSpot: ${email}`)
+        
+        // Cerca contatto su HubSpot per email
+        const searchResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filterGroups: [{
+              filters: [{
+                propertyName: 'email',
+                operator: 'EQ',
+                value: email
+              }]
+            }],
+            properties: [
+              'firstname', 'lastname', 'email', 'phone', 'mobilephone', 'city',
+              'createdate', 'servizio_di_interesse', 'piano_desiderato', 'message'
+            ],
+            limit: 1
+          })
+        })
+
+        if (!searchResponse.ok) {
+          console.error(`❌ [SPOT] Errore ricerca HubSpot per ${email}`)
+          skipped++
+          results.push({ email, status: 'ERROR', error: 'Errore ricerca HubSpot' })
+          continue
+        }
+
+        const searchData = await searchResponse.json()
+        
+        if (!searchData.results || searchData.results.length === 0) {
+          console.log(`⏭️ [SPOT] Contatto non trovato su HubSpot: ${email}`)
+          skipped++
+          results.push({ email, status: 'NOT_FOUND', error: 'Non trovato su HubSpot' })
+          continue
+        }
+
+        const contact = searchData.results[0]
+        const props = contact.properties
+
+        // Verifica se già esiste nel DB
+        const existing = await c.env.DB.prepare(
+          'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
+        ).bind(email, email).first()
+        
+        if (existing) {
+          console.log(`⏭️ [SPOT] Lead già esistente: ${email}`)
+          skipped++
+          results.push({ email, status: 'DUPLICATE', leadId: existing.id })
+          continue
+        }
+
+        // Mapping servizio_di_interesse → servizio
+        let servizio = 'eCura PRO' // Default
+        if (props.servizio_di_interesse) {
+          const serviceLower = props.servizio_di_interesse.toLowerCase()
+          if (serviceLower.includes('family')) servizio = 'eCura FAMILY'
+          else if (serviceLower.includes('premium')) servizio = 'eCura PREMIUM'
+        }
+
+        // Mapping piano_desiderato → piano
+        let piano = 'BASE' // Default
+        if (props.piano_desiderato?.toLowerCase().includes('avanzato')) {
+          piano = 'AVANZATO'
+        }
+
+        // Costruisci note
+        let note = `HubSpot ID: ${contact.id}`
+        if (props.city) note += ` | Città: ${props.city}`
+        if (props.message) note += ` | Messaggio: ${props.message}`
+
+        // Genera ID lead
+        const leadId = `LEAD-IRBEMA-${String(nextLeadNumber).padStart(5, '0')}`
+        nextLeadNumber++
+
+        // Inserisci lead
+        const now = new Date().toISOString()
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito,
+            servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
+            note, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          leadId,
+          props.firstname || 'N/A',
+          props.lastname || '(Cognome non fornito)',
+          email,
+          props.mobilephone || props.phone || null,
+          props.city || null,
+          servizio,
+          piano,
+          piano, // tipoServizio
+          'IRBEMA',
+          'NEW',
+          'No',
+          'No',
+          note,
+          now,
+          now
+        ).run()
+
+        console.log(`✅ [SPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname} (${email})`)
+        imported++
+        results.push({ email, status: 'IMPORTED', leadId, nome: props.firstname, cognome: props.lastname })
+
+        // Invia notifica email automatica
+        await sendNewLeadNotification(leadId, {
+          nomeRichiedente: props.firstname || 'N/A',
+          cognomeRichiedente: props.lastname || '(Cognome non fornito)',
+          email,
+          telefono: props.mobilephone || props.phone || undefined,
+          citta: props.city || undefined,
+          servizio,
+          piano,
+          fonte: 'IRBEMA',
+          note,
+          created_at: now
+        }, c.env)
+
+      } catch (error) {
+        console.error(`❌ [SPOT] Errore import ${email}:`, error)
+        skipped++
+        results.push({ 
+          email, 
+          status: 'ERROR', 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+      }
+    }
+
+    console.log(`🎯 [SPOT] Completato: ${imported} importati, ${skipped} saltati`)
+
+    return c.json({
+      success: true,
+      message: 'Import spot completato',
+      imported,
+      skipped,
+      total: emailsToImport.length,
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ [SPOT] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 app.post('/api/import/irbema/manual', async (c) => {
   try {
     console.log('📝 [HUBSPOT] Import manuale 9 lead specifici...')
