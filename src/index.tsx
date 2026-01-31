@@ -7679,9 +7679,9 @@ app.put('/api/leads/:id', async (c) => {
     
     // Mapping campi: frontend → DB
     const fieldMapping: Record<string, string> = {
-      // Dati richiedente
-      nome: 'nomeRichiedente',
-      cognome: 'cognomeRichiedente',
+      // Dati richiedente (il form invia già nomeRichiedente/cognomeRichiedente)
+      nomeRichiedente: 'nomeRichiedente',
+      cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
       codiceFiscaleRichiedente: 'codiceFiscaleRichiedente',
@@ -7697,6 +7697,7 @@ app.put('/api/leads/:id', async (c) => {
       cittaAssistito: 'cittaAssistito',
       provinciaAssistito: 'provinciaAssistito',
       codiceFiscaleAssistito: 'codiceFiscaleAssistito',
+      cfAssistito: 'cfAssistito', // Alias per codice fiscale
       
       // Servizio
       servizio: 'servizio',
