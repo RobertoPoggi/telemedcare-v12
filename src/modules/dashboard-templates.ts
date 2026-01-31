@@ -1908,8 +1908,32 @@ export const dashboard = `<!DOCTYPE html>
         }
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
-        function importFromIrbema() {
-            alert('🔄 Import da Irbema\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/irbema\\n\\nQuesta funzionalità permetterà di importare lead dal partner Irbema.');
+        async function importFromIrbema() {
+            if (!confirm('Vuoi importare i lead da Irbema (HubSpot)?\\n\\nQuesta operazione:\\n- Scaricherà i nuovi lead da HubSpot\\n- Filtrerà solo i lead da ecura.it\\n- Aggiornerà il database\\n\\nProcedi?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/import/irbema', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Import Irbema completato!\\n\\n' +
+                          'Lead importati: ' + result.totalImported + '\\n' +
+                          'Lead skippati: ' + result.totalSkipped + '\\n' +
+                          'Totale contatti: ' + result.totalContacts + '\\n' +
+                          'Pagine processate: ' + result.totalPages);
+                    loadAssistitiData(); // Ricarica la tabella
+                } else {
+                    alert('Errore import: ' + result.error);
+                }
+            } catch (error) {
+                alert('Errore di comunicazione: ' + error.message);
+            }
         }
 
         function importFromAON() {
