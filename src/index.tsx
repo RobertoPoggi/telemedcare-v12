@@ -10147,7 +10147,7 @@ app.post('/api/import/excel', async (c) => {
 // ============================================================================
 app.post('/api/import/irbema', async (c) => {
   try {
-    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo contatti dal 1/12/2025 con servizio_di_interesse...')
+    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo contatti dal 1/12/2025...')
     
     // Verifica configurazione
     if (!c.env?.DB) {
@@ -10246,13 +10246,6 @@ app.post('/api/import/irbema', async (c) => {
           // FILTRO DATA: Solo contatti creati dal 1/12/2025
           const createDate = props.createdate ? new Date(props.createdate).getTime() : 0
           if (createDate < filterDate) {
-            totalFiltered++
-            continue
-          }
-
-          // FILTRO SERVIZIO: Solo contatti con servizio_di_interesse compilato
-          if (!props.servizio_di_interesse) {
-            console.log(`⏭️ [HUBSPOT] Contatto senza servizio_di_interesse, skip: ${props.email || 'N/A'}`)
             totalFiltered++
             continue
           }
@@ -10372,7 +10365,7 @@ app.post('/api/import/irbema', async (c) => {
 
     return c.json({
       success: true,
-      message: 'Import HubSpot completato (contatti dal 1/12/2025 con servizio_di_interesse)',
+      message: 'Import HubSpot completato (contatti dal 1/12/2025)',
       imported: totalImported,
       skipped: totalSkipped,
       filtered: totalFiltered,
