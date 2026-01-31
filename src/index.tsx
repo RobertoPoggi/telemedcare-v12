@@ -9133,18 +9133,23 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
     // Cancella ogni lead
     for (const lead of leadsToDelete.results as any[]) {
       try {
-        // Verifica contratti associati
-        const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
-          .bind(lead.id).first() as any
-        
-        if (contratti && contratti.count > 0) {
-          console.warn(`⚠️ Skip ${lead.id}: ha ${contratti.count} contratti associati`)
-          errors.push({
-            id: lead.id,
-            email: lead.email || lead.emailRichiedente,
-            error: 'Ha contratti associati'
-          })
-          continue
+        // Verifica contratti associati (tabella potrebbe non esistere)
+        try {
+          const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+            .bind(lead.id).first() as any
+          
+          if (contratti && contratti.count > 0) {
+            console.warn(`⚠️ Skip ${lead.id}: ha ${contratti.count} contratti associati`)
+            errors.push({
+              id: lead.id,
+              email: lead.email || lead.emailRichiedente,
+              error: 'Ha contratti associati'
+            })
+            continue
+          }
+        } catch (contractCheckError) {
+          // Tabella contratti non esiste, procedi con la cancellazione
+          console.log(`ℹ️ Tabella contratti non trovata per ${lead.id}, procedo con cancellazione`)
         }
         
         // Cancella lead
