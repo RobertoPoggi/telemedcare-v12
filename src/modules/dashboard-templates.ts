@@ -2539,6 +2539,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Invia Brochure">
                                     <i class="fas fa-book"></i>
                                 </button>
+                                <button 
+                                    onclick="requestCompletion('\${lead.id}')" 
+                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
+                                    title="Richiedi Completamento">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
                             </div>
                         </td>
                         <td class="py-3">
@@ -2654,6 +2660,30 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 if (result.success) {
                     alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure');
+                    loadLeadsData(); // Ricarica i dati
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function requestCompletion(leadId) {
+            if (!confirm('Inviare email di richiesta completamento dati al lead?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/request-completion?sendEmail=true\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Email di completamento inviata con successo!\\nLink: ' + result.completionUrl + '\\nScadenza: ' + result.expiresAt);
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert('❌ Errore: ' + result.error);
