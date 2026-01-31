@@ -11,6 +11,9 @@ import { buildLeadUpdateQuery } from './database-schema'
 // Import Lead Notifications Helper
 import { sendNewLeadNotification } from './utils/lead-notifications'
 
+// Import Settings API
+import { getSettings, updateSetting, getSetting } from './modules/settings-api'
+
 // Import TeleMedCare V12.1 Modular Enterprise System - Deploy 2026-01-05 20:05 (Fix Puppeteer + CRUD completo)
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
@@ -9082,6 +9085,16 @@ app.delete('/api/leads/:id', async (c) => {
     }, 500)
   }
 })
+
+// ========================================
+// SETTINGS API
+// ========================================
+
+// GET /api/settings - Ottieni configurazioni
+app.get('/api/settings', getSettings)
+
+// PUT /api/settings/:key - Aggiorna setting
+app.put('/api/settings/:key', updateSetting)
 
 // ========================================
 // ENDPOINT INIZIALIZZAZIONE ASSISTITI REALI

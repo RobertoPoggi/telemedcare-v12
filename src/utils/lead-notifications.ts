@@ -3,6 +3,7 @@ import EmailService from '../modules/email-service'
 /**
  * Invia notifica email automatica per nuovo lead
  * Chiamare SEMPRE dopo la creazione di un nuovo lead
+ * Controlla il setting 'admin_email_notifications_enabled' prima di inviare
  */
 export async function sendNewLeadNotification(
   leadId: string,
@@ -21,6 +22,18 @@ export async function sendNewLeadNotification(
   env: any
 ): Promise<void> {
   try {
+    // Controlla se le notifiche admin sono abilitate
+    if (env?.DB) {
+      const setting = await env.DB.prepare(
+        'SELECT value FROM settings WHERE key = ?'
+      ).bind('admin_email_notifications_enabled').first()
+      
+      if (setting?.value !== 'true') {
+        console.log(`⏭️ [NOTIFICATION] Notifiche admin disabilitate, skip email per lead ${leadId}`)
+        return
+      }
+    }
+    
     const emailService = new EmailService(env)
     
     const nome = leadData.nomeRichiedente || 'N/A'
