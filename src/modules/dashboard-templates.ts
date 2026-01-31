@@ -319,7 +319,7 @@ export const home = `<!DOCTYPE html>
                         <h3 class="text-xl font-bold text-blue-600">eCura FAMILY</h3>
                         <i class="fas fa-home text-2xl text-blue-500"></i>
                     </div>
-                    <p class="text-sm text-gray-600 mb-4">Senium CARE - Monitoraggio base per la famiglia</p>
+                    <p class="text-sm text-gray-600 mb-4">SiDLY CARE PRO - Monitoraggio base per la famiglia</p>
                     <div class="space-y-2 mb-4">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">BASE:</span>
