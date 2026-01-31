@@ -10431,7 +10431,7 @@ app.post('/api/import/irbema/manual', async (c) => {
       },
       {
         nome: 'Giuliana',
-        cognome: '',
+        cognome: '(Cognome non fornito)',
         email: 'giuliberard@gmail.com',
         telefono: '',
         citta: '',
@@ -10447,7 +10447,7 @@ app.post('/api/import/irbema/manual', async (c) => {
       },
       {
         nome: 'Tiziana',
-        cognome: '',
+        cognome: '(Cognome non fornito)',
         email: 'tizianab953@gmail.com',
         telefono: '',
         citta: '',
@@ -10471,7 +10471,7 @@ app.post('/api/import/irbema/manual', async (c) => {
       },
       {
         nome: 'Anna',
-        cognome: '',
+        cognome: '(Cognome non fornito)',
         email: 'sarottoanna@gmail.com',
         telefono: '',
         citta: '',
@@ -10485,10 +10485,10 @@ app.post('/api/import/irbema/manual', async (c) => {
 
     for (const lead of leadsToImport) {
       try {
-        // Check duplicati
+        // Check duplicati (controllo su entrambi i campi email)
         const existing = await c.env.DB.prepare(
-          'SELECT id FROM leads WHERE emailRichiedente = ? LIMIT 1'
-        ).bind(lead.email).first()
+          'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
+        ).bind(lead.email, lead.email).first()
 
         if (existing) {
           console.log(`⏭️ [MANUAL] Lead già esistente: ${lead.email}`)
@@ -10501,15 +10501,15 @@ app.post('/api/import/irbema/manual', async (c) => {
 
         await c.env.DB.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, 
-            telefonoRichiedente, cittaAssistito, servizio, piano, 
+            id, nomeRichiedente, cognomeRichiedente, email, 
+            telefono, cittaAssistito, servizio, piano, 
             fonte, status, vuoleBrochure, vuoleContratto, note, 
             created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           lead.nome,
-          lead.cognome || null,
+          lead.cognome,
           lead.email,
           lead.telefono || null,
           lead.citta || null,
