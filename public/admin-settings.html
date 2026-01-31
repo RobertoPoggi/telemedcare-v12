@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostazioni - TeleMedCare Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard.html" class="text-white hover:text-gray-200">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </a>
+                    <h1 class="text-2xl font-bold">⚙️ Impostazioni Sistema</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 max-w-4xl">
+        <div id="loading" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-4"></i>
+            <p class="text-gray-600">Caricamento impostazioni...</p>
+        </div>
+
+        <div id="settingsContainer" class="hidden space-y-6">
+            <!-- Import HubSpot -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">
+                            <i class="fas fa-cloud-download-alt text-blue-600 mr-2"></i>
+                            Import Automatico HubSpot
+                        </h3>
+                        <p class="text-sm text-gray-600">
+                            Abilita l'importazione automatica giornaliera dei lead da HubSpot (filtrati per ecura.it)
+                        </p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-6">
+                        <input type="checkbox" id="hubspot_auto_import_enabled" class="sr-only peer" onchange="updateSetting('hubspot_auto_import_enabled', this.checked)">
+                        <div class="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Email Lead -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">
+                            <i class="fas fa-envelope text-green-600 mr-2"></i>
+                            Email Automatiche ai Lead
+                        </h3>
+                        <p class="text-sm text-gray-600">
+                            Abilita l'invio automatico di email ai lead (brochure, contratto, reminder, ecc.)
+                        </p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-6">
+                        <input type="checkbox" id="lead_email_notifications_enabled" class="sr-only peer" onchange="updateSetting('lead_email_notifications_enabled', this.checked)">
+                        <div class="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Email Admin -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">
+                            <i class="fas fa-bell text-purple-600 mr-2"></i>
+                            Notifiche Email Admin
+                        </h3>
+                        <p class="text-sm text-gray-600">
+                            Abilita l'invio di email di notifica agli admin (nuovo lead, firma contratto, ecc.)
+                        </p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer ml-6">
+                        <input type="checkbox" id="admin_email_notifications_enabled" class="sr-only peer" onchange="updateSetting('admin_email_notifications_enabled', this.checked)">
+                        <div class="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-8">
+                <h4 class="font-bold text-blue-900 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>Informazioni
+                </h4>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• Le modifiche vengono salvate automaticamente</li>
+                    <li>• Le impostazioni sono salvate nel database D1</li>
+                    <li>• Gli switch controllano il comportamento globale del sistema</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">Impostazione salvata!</span>
+        </div>
+    </main>
+
+    <script>
+        let settings = {};
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const data = await response.json();
+                
+                if (data.success) {
+                    settings = data.settings;
+                    updateUI();
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('settingsContainer').classList.remove('hidden');
+                } else {
+                    alert('Errore caricamento impostazioni: ' + data.error);
+                }
+            } catch (error) {
+                alert('Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        function updateUI() {
+            Object.keys(settings).forEach(key => {
+                const checkbox = document.getElementById(key);
+                if (checkbox) {
+                    checkbox.checked = settings[key].value === 'true';
+                }
+            });
+        }
+
+        async function updateSetting(key, value) {
+            try {
+                const response = await fetch(`/api/settings/${key}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: value ? 'true' : 'false' })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Impostazione salvata!');
+                    settings[key].value = value ? 'true' : 'false';
+                } else {
+                    alert('Errore salvataggio: ' + result.error);
+                    document.getElementById(key).checked = settings[key].value === 'true';
+                }
+            } catch (error) {
+                alert('Errore di comunicazione: ' + error.message);
+                document.getElementById(key).checked = settings[key].value === 'true';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
