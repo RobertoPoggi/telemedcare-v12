@@ -10313,9 +10313,9 @@ app.post('/api/import/irbema', async (c) => {
           await c.env.DB.prepare(`
             INSERT INTO leads (
               id, nomeRichiedente, cognomeRichiedente, email, telefono,
-              servizio, piano, fonte, status, vuoleBrochure, vuoleContratto,
+              servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
@@ -10324,6 +10324,7 @@ app.post('/api/import/irbema', async (c) => {
             telefono,
             servizio,
             piano,
+            servizio,    // tipoServizio (deprecated ma NOT NULL)
             'IRBEMA',    // Fonte
             'NEW',       // Status
             'No',        // vuoleBrochure
@@ -15231,9 +15232,9 @@ app.post('/api/import/irbema/force', async (c) => {
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            servizio, piano, fonte, status, vuoleBrochure, vuoleContratto,
+            servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
             note, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           props.firstname || 'N/A',
@@ -15242,6 +15243,7 @@ app.post('/api/import/irbema/force', async (c) => {
           props.phone || props.mobilephone || '',
           'eCura PRO',
           'BASE',
+          'eCura PRO',  // tipoServizio (deprecated ma NOT NULL)
           'IRBEMA',
           'NEW',
           'No',
