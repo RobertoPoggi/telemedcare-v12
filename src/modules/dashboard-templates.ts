@@ -2743,10 +2743,14 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             document.getElementById('newNote').value = lead.note || '';
             
-            // Cambia titolo modal
+            // Cambia titolo e sottotitolo modal per edit mode
             const modalTitle = document.querySelector('#newLeadModal h2');
+            const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
             if (modalTitle) {
                 modalTitle.textContent = '✏️ Modifica Lead';
+            }
+            if (modalSubtitle) {
+                modalSubtitle.textContent = 'Modifica i dati del lead esistente';
             }
             
             openModal('newLeadModal');
@@ -2785,6 +2789,19 @@ export const leads_dashboard = `<!DOCTYPE html>
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
             document.body.style.overflow = 'auto';
+            
+            // Reset edit mode quando si chiude il modal newLeadModal
+            if (modalId === 'newLeadModal') {
+                window.editingLeadId = null;
+                const modalTitle = document.querySelector('#newLeadModal h2');
+                const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
+                if (modalTitle) {
+                    modalTitle.textContent = '🆕 Richiedi il tuo servizio eCura';
+                }
+                if (modalSubtitle) {
+                    modalSubtitle.textContent = 'Compila il form per ricevere brochure e contratto personalizzato';
+                }
+            }
         }
         
         function openNewLeadModal() {
@@ -2794,11 +2811,15 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Reset form
             document.getElementById('newLeadForm').reset();
             
-            // Reset titolo e modalità
+            // Reset titolo, sottotitolo e modalità
             document.getElementById('isEditMode').value = '';
             const modalTitle = document.querySelector('#newLeadModal h2');
+            const modalSubtitle = document.querySelector('#newLeadModal .text-blue-100');
             if (modalTitle) {
                 modalTitle.textContent = '🆕 Richiedi il tuo servizio eCura';
+            }
+            if (modalSubtitle) {
+                modalSubtitle.textContent = 'Compila il form per ricevere brochure e contratto personalizzato';
             }
             
             openModal('newLeadModal');
