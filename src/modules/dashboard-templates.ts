@@ -3032,13 +3032,25 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const url = isEditMode ? '/api/leads/' + leadId : '/api/leads';
                 const method = isEditMode ? 'PUT' : 'POST';
                 
+                console.log('[REQUEST] ' + method + ' ' + url);
+                console.log('[PAYLOAD]', JSON.stringify(formData, null, 2));
+                
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
                 
+                console.log('[RESPONSE] Status: ' + response.status + ' ' + response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[ERROR] Response:', errorText);
+                    throw new Error('HTTP ' + response.status + ': ' + errorText.substring(0, 200));
+                }
+                
                 const result = await response.json();
+                console.log('[RESULT]', result);
                 
                 if (result.success) {
                     let message = isEditMode 
