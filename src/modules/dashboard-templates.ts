@@ -319,7 +319,7 @@ export const home = `<!DOCTYPE html>
                         <h3 class="text-xl font-bold text-blue-600">eCura FAMILY</h3>
                         <i class="fas fa-home text-2xl text-blue-500"></i>
                     </div>
-                    <p class="text-sm text-gray-600 mb-4">SiDLY CARE PRO - Monitoraggio base per la famiglia</p>
+                    <p class="text-sm text-gray-600 mb-4">Monitoraggio base per la famiglia</p>
                     <div class="space-y-2 mb-4">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">BASE:</span>
@@ -331,9 +331,8 @@ export const home = `<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="text-xs text-gray-500">
-                        <i class="fas fa-check mr-1"></i>Dispositivo SiDLY CARE PRO<br>
-                        <i class="fas fa-check mr-1"></i>Monitoraggio parametri vitali<br>
-                        <i class="fas fa-check mr-1"></i>SIM e Piattaforma Web
+                        <i class="fas fa-check mr-1"></i>Dispositivo SiDLY CARE<br>
+                        <i class="fas fa-check mr-1"></i>incluso SIM e APP per 12 mesi
                     </div>
                 </div>
 
