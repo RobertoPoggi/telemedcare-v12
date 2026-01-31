@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completa i tuoi dati - eCura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        .step-indicator.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6 shadow-lg">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold">🏥 Completa i tuoi dati</h1>
+            <p class="text-blue-100 text-sm mt-2">Siamo quasi pronti per offrirti il servizio eCura personalizzato</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step1Indicator" class="step-indicator active w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2">1</div>
+                    <span class="text-sm text-gray-600">Dati personali</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step2Indicator" class="step-indicator w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2 bg-gray-300">2</div>
+                    <span class="text-sm text-gray-600">Assistito</span>
+                </div>
+                <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div id="step3Indicator" class="step-indicator w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2 bg-gray-300">3</div>
+                    <span class="text-sm text-gray-600">Servizio</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form id="completaForm" class="bg-white rounded-lg shadow-lg p-8">
+            <!-- Step 1: Dati Personali -->
+            <div id="step1" class="step-content">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Dati Personali</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="nome">
+                            Nome <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nome" name="nome" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cognome">
+                            Cognome <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cognome" name="cognome" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="telefono">
+                            Telefono <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel" id="telefono" name="telefono" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="+39 3XX XXX XXXX">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="citta">
+                            Città <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="citta" name="citta" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="flex justify-end mt-8">
+                    <button type="button" onclick="nextStep(2)"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        Avanti →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Dati Assistito -->
+            <div id="step2" class="step-content hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">👤 Dati Assistito</h2>
+                
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="richiedenteAssistito" name="richiedenteAssistito"
+                            class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                            onchange="toggleAssistitoFields()">
+                        <span class="ml-2 text-gray-700">Il servizio è per me</span>
+                    </label>
+                </div>
+
+                <div id="assistitoFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="nomeAssistito">
+                            Nome Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nomeAssistito" name="nomeAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cognomeAssistito">
+                            Cognome Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cognomeAssistito" name="cognomeAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="dataNascita">
+                            Data di Nascita <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" id="dataNascita" name="dataNascita"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cittaAssistito">
+                            Città Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cittaAssistito" name="cittaAssistito"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button type="button" onclick="prevStep(1)"
+                        class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                        ← Indietro
+                    </button>
+                    <button type="button" onclick="nextStep(3)"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        Avanti →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Scelta Servizio -->
+            <div id="step3" class="step-content hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">🎯 Scegli il Servizio</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- eCura PRO -->
+                    <div class="border-2 border-gray-300 rounded-lg p-6 hover:border-purple-500 cursor-pointer transition-colors"
+                        onclick="selectService('eCura PRO')">
+                        <input type="radio" name="servizio" value="eCura PRO" id="servizio-pro" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">eCura PRO</h3>
+                            <p class="text-gray-600 text-sm mb-4">Assistenza infermieristica completa</p>
+                            <p class="text-3xl font-bold text-purple-600">€ 199/mese</p>
+                        </div>
+                    </div>
+
+                    <!-- eCura PREMIUM -->
+                    <div class="border-2 border-gray-300 rounded-lg p-6 hover:border-purple-500 cursor-pointer transition-colors"
+                        onclick="selectService('eCura PREMIUM')">
+                        <input type="radio" name="servizio" value="eCura PREMIUM" id="servizio-premium" class="hidden">
+                        <div class="text-center">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">eCura PREMIUM</h3>
+                            <p class="text-gray-600 text-sm mb-4">Assistenza avanzata con telemedicina</p>
+                            <p class="text-3xl font-bold text-purple-600">€ 299/mese</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2" for="piano">
+                        Piano di Pagamento <span class="text-red-500">*</span>
+                    </label>
+                    <select id="piano" name="piano" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="">Seleziona un piano</option>
+                        <option value="BASE">BASE - Mensile</option>
+                        <option value="AVANZATO">AVANZATO - Trimestrale (sconto 5%)</option>
+                        <option value="PREMIUM">PREMIUM - Annuale (sconto 10%)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2" for="note">
+                        Note aggiuntive (opzionale)
+                    </label>
+                    <textarea id="note" name="note" rows="4"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Eventuali richieste o informazioni aggiuntive..."></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="consensoPrivacy" name="consensoPrivacy" required
+                            class="w-5 h-5 text-purple-600 rounded focus:ring-purple-500">
+                        <span class="ml-2 text-gray-700">
+                            Accetto l'<a href="/privacy" target="_blank" class="text-purple-600 underline">informativa sulla privacy</a> <span class="text-red-500">*</span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button type="button" onclick="prevStep(2)"
+                        class="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
+                        ← Indietro
+                    </button>
+                    <button type="submit"
+                        class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
+                        ✉️ Invia Richiesta
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden mt-8 bg-green-100 border border-green-400 text-green-700 px-6 py-4 rounded-lg">
+            <h3 class="font-bold text-lg mb-2">✅ Richiesta inviata con successo!</h3>
+            <p>Grazie per aver completato i tuoi dati. Ti contatteremo presto per finalizzare il servizio eCura.</p>
+            <p class="mt-2 text-sm">Riceverai una email di conferma all'indirizzo indicato.</p>
+        </div>
+    </main>
+
+    <script>
+        let currentStep = 1;
+        let leadId = null;
+
+        // Get leadId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        leadId = urlParams.get('leadId');
+
+        if (!leadId) {
+            alert('⚠️ Link non valido. Contatta il supporto.');
+            window.location.href = '/';
+        }
+
+        // Load existing lead data
+        async function loadLeadData() {
+            try {
+                const response = await fetch(`/api/leads/${leadId}`);
+                if (!response.ok) throw new Error('Lead non trovato');
+                
+                const lead = await response.json();
+                
+                // Pre-fill form with existing data
+                document.getElementById('nome').value = lead.nomeRichiedente || '';
+                document.getElementById('cognome').value = lead.cognomeRichiedente || '';
+                document.getElementById('telefono').value = lead.telefono || '';
+                document.getElementById('citta').value = lead.cittaRichiedente || '';
+                
+                if (lead.nomeAssistito) {
+                    document.getElementById('nomeAssistito').value = lead.nomeAssistito;
+                    document.getElementById('cognomeAssistito').value = lead.cognomeAssistito || '';
+                    document.getElementById('dataNascita').value = lead.dataNascitaAssistito || '';
+                    document.getElementById('cittaAssistito').value = lead.cittaAssistito || '';
+                }
+                
+                if (lead.servizio) {
+                    selectService(lead.servizio);
+                }
+                if (lead.piano) {
+                    document.getElementById('piano').value = lead.piano;
+                }
+                if (lead.note) {
+                    document.getElementById('note').value = lead.note;
+                }
+            } catch (error) {
+                console.error('Error loading lead:', error);
+                alert('⚠️ Errore caricamento dati. Riprova.');
+            }
+        }
+
+        loadLeadData();
+
+        function nextStep(step) {
+            // Validate current step
+            if (!validateStep(currentStep)) {
+                return;
+            }
+
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('active');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('completed');
+
+            // Show next step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('active');
+        }
+
+        function prevStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('active');
+            document.getElementById(`step${currentStep}Indicator`).classList.remove('completed');
+
+            // Show previous step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            document.getElementById(`step${currentStep}Indicator`).classList.add('active');
+        }
+
+        function validateStep(step) {
+            if (step === 1) {
+                const nome = document.getElementById('nome').value.trim();
+                const cognome = document.getElementById('cognome').value.trim();
+                const telefono = document.getElementById('telefono').value.trim();
+                const citta = document.getElementById('citta').value.trim();
+
+                if (!nome || !cognome || !telefono || !citta) {
+                    alert('⚠️ Compila tutti i campi obbligatori');
+                    return false;
+                }
+            } else if (step === 2) {
+                const richiedenteAssistito = document.getElementById('richiedenteAssistito').checked;
+                if (!richiedenteAssistito) {
+                    const nomeAssistito = document.getElementById('nomeAssistito').value.trim();
+                    const cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
+                    const dataNascita = document.getElementById('dataNascita').value;
+                    const cittaAssistito = document.getElementById('cittaAssistito').value.trim();
+
+                    if (!nomeAssistito || !cognomeAssistito || !dataNascita || !cittaAssistito) {
+                        alert('⚠️ Compila tutti i campi dell\'assistito');
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function toggleAssistitoFields() {
+            const checked = document.getElementById('richiedenteAssistito').checked;
+            const fields = document.getElementById('assistitoFields');
+            const inputs = fields.querySelectorAll('input');
+
+            if (checked) {
+                fields.classList.add('hidden');
+                inputs.forEach(input => {
+                    input.removeAttribute('required');
+                    input.value = '';
+                });
+            } else {
+                fields.classList.remove('hidden');
+                inputs.forEach(input => input.setAttribute('required', 'required'));
+            }
+        }
+
+        function selectService(service) {
+            document.querySelectorAll('[name="servizio"]').forEach(radio => {
+                radio.checked = radio.value === service;
+                radio.parentElement.parentElement.classList.toggle('border-purple-500', radio.checked);
+                radio.parentElement.parentElement.classList.toggle('bg-purple-50', radio.checked);
+            });
+        }
+
+        // Form submission
+        document.getElementById('completaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateStep(3)) {
+                return;
+            }
+
+            const servizio = document.querySelector('[name="servizio"]:checked');
+            if (!servizio) {
+                alert('⚠️ Seleziona un servizio');
+                return;
+            }
+
+            const consensoPrivacy = document.getElementById('consensoPrivacy').checked;
+            if (!consensoPrivacy) {
+                alert('⚠️ Devi accettare l\'informativa sulla privacy');
+                return;
+            }
+
+            const formData = {
+                nomeRichiedente: document.getElementById('nome').value.trim(),
+                cognomeRichiedente: document.getElementById('cognome').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                cittaRichiedente: document.getElementById('citta').value.trim(),
+                servizio: servizio.value,
+                piano: document.getElementById('piano').value,
+                note: document.getElementById('note').value.trim(),
+                consensoPrivacy: 1,
+                status: 'COMPLETED'
+            };
+
+            const richiedenteAssistito = document.getElementById('richiedenteAssistito').checked;
+            if (richiedenteAssistito) {
+                formData.nomeAssistito = formData.nomeRichiedente;
+                formData.cognomeAssistito = formData.cognomeRichiedente;
+                formData.dataNascitaAssistito = null;
+                formData.cittaAssistito = formData.cittaRichiedente;
+            } else {
+                formData.nomeAssistito = document.getElementById('nomeAssistito').value.trim();
+                formData.cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
+                formData.dataNascitaAssistito = document.getElementById('dataNascita').value;
+                formData.cittaAssistito = document.getElementById('cittaAssistito').value.trim();
+            }
+
+            try {
+                const response = await fetch(`/api/leads/${leadId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('completaForm').classList.add('hidden');
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                } else {
+                    alert(`❌ ${result.error || 'Errore aggiornamento dati'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Errore di comunicazione con il server');
+            }
+        });
+    </script>
+</body>
+</html>

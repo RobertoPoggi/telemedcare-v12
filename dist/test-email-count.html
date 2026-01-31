@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST Email Count</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .result { padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { background: #d4edda; border: 2px solid #28a745; }
+        .error { background: #f8d7da; border: 2px solid #dc3545; }
+        .info { background: #d1ecf1; border: 2px solid #17a2b8; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .kpi { font-size: 48px; font-weight: bold; color: #667eea; }
+    </style>
+</head>
+<body>
+    <h1>🐛 TEST Email Count Dashboard</h1>
+    
+    <div id="status" class="result info">
+        ⏳ Caricamento in corso...
+    </div>
+    
+    <div id="result"></div>
+    
+    <h2>📊 Statistiche Calcolate:</h2>
+    <div id="stats"></div>
+    
+    <h2>📋 Log di Debug:</h2>
+    <pre id="logs"></pre>
+    
+    <script>
+        const logs = [];
+        
+        function log(message) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const logLine = `[${timestamp}] ${message}`;
+            logs.push(logLine);
+            console.log(message);
+            document.getElementById('logs').textContent = logs.join('\n');
+        }
+        
+        async function testEmailCount() {
+            try {
+                log('🚀 Inizio test...');
+                
+                // STEP 1: Carica lead
+                log('📡 Fetch /api/leads?limit=100...');
+                const response = await fetch('/api/leads?limit=100');
+                log(`✅ Response status: ${response.status}`);
+                
+                const data = await response.json();
+                log(`✅ JSON parsed: ${data.leads ? data.leads.length : 0} lead`);
+                
+                const allLeads = data.leads || [];
+                log(`📊 Lead caricati: ${allLeads.length}`);
+                
+                // STEP 2: Calcola 30 giorni fa
+                const now = new Date();
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                log(`📅 Ora: ${now.toISOString()}`);
+                log(`📅 30 giorni fa: ${thirtyDaysAgo.toISOString()}`);
+                
+                // STEP 3: Filtra lead
+                log('🔍 Inizio filtro lead...');
+                
+                const emailsMonth = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    const isRecent = leadDate >= thirtyDaysAgo;
+                    const hasEmail = lead.vuoleBrochure === 'Si' || lead.vuoleContratto === 'Si' || lead.vuoleManuale === 'Si';
+                    
+                    if (isRecent && hasEmail) {
+                        log(`  ✅ Include: ${lead.id} - ${leadDate.toISOString()}`);
+                    }
+                    
+                    return isRecent && hasEmail;
+                }).length;
+                
+                log(`📧 Email inviate (calcolate): ${emailsMonth}`);
+                
+                const contractsMonth = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    return leadDate >= thirtyDaysAgo && lead.vuoleContratto === 'Si';
+                }).length;
+                
+                log(`📝 Contratti inviati (calcolati): ${contractsMonth}`);
+                
+                // STEP 4: Mostra risultato
+                document.getElementById('status').className = 'result success';
+                document.getElementById('status').innerHTML = '✅ Test completato con successo!';
+                
+                document.getElementById('stats').innerHTML = `
+                    <div style="display: flex; gap: 30px; justify-content: space-around; margin: 20px 0;">
+                        <div style="text-align: center;">
+                            <div style="color: #666;">Email Inviate</div>
+                            <div class="kpi">${emailsMonth}</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #666;">Contratti Inviati</div>
+                            <div class="kpi">${contractsMonth}</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="color: #666;">Lead Totali</div>
+                            <div class="kpi">${allLeads.length}</div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="result success">
+                        <h3>✅ RISULTATO FINALE:</h3>
+                        <ul>
+                            <li><strong>Email Inviate (ultimi 30 giorni):</strong> ${emailsMonth}</li>
+                            <li><strong>Contratti Inviati (ultimi 30 giorni):</strong> ${contractsMonth}</li>
+                            <li><strong>Lead Totali:</strong> ${allLeads.length}</li>
+                        </ul>
+                        <p><strong>Conclusione:</strong> Il calcolo JavaScript funziona correttamente!</p>
+                        <p>Se la dashboard mostra 0, il problema è nel codice HTML o ci sono errori che impediscono l'esecuzione.</p>
+                    </div>
+                `;
+                
+                log('✅ Test completato!');
+                
+            } catch (error) {
+                log(`❌ ERRORE: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+                
+                document.getElementById('status').className = 'result error';
+                document.getElementById('status').innerHTML = `❌ Errore durante il test: ${error.message}`;
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="result error">
+                        <h3>❌ ERRORE:</h3>
+                        <p>${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Esegui test al caricamento
+        testEmailCount();
+    </script>
+</body>
+</html>

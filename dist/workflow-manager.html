@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Manager - TeleMedCare V11.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .step-active { border-color: #10b981; background: #d1fae5; }
+        .step-pending { border-color: #fbbf24; background: #fef3c7; }
+        .step-completed { border-color: #3b82f6; background: #dbeafe; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-diagram-project text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Workflow Manager</h1>
+                        <p class="text-red-100">Gestione completa ciclo Lead → Attivazione</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <button onclick="refreshWorkflows()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i>Aggiorna
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Workflow Steps Overview -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-sitemap text-red-500 mr-2"></i>
+                Stati Workflow TeleMedCare
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div class="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-user-plus text-3xl text-blue-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">1. Lead</h4>
+                    <p class="text-xs text-gray-600 mt-1">Acquisizione contatto</p>
+                </div>
+                <div class="border-2 border-green-200 bg-green-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-file-contract text-3xl text-green-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">2. Contratto</h4>
+                    <p class="text-xs text-gray-600 mt-1">Generazione PDF</p>
+                </div>
+                <div class="border-2 border-purple-200 bg-purple-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-signature text-3xl text-purple-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">3. Firma</h4>
+                    <p class="text-xs text-gray-600 mt-1">Firma elettronica</p>
+                </div>
+                <div class="border-2 border-yellow-200 bg-yellow-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-file-invoice text-3xl text-yellow-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">4. Proforma</h4>
+                    <p class="text-xs text-gray-600 mt-1">Generazione fattura</p>
+                </div>
+                <div class="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-credit-card text-3xl text-orange-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">5. Pagamento</h4>
+                    <p class="text-xs text-gray-600 mt-1">Conferma bonifico</p>
+                </div>
+                <div class="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg text-center">
+                    <i class="fas fa-check-circle text-3xl text-indigo-600 mb-2"></i>
+                    <h4 class="font-bold text-sm text-gray-800">6. Attivazione</h4>
+                    <p class="text-xs text-gray-600 mt-1">Servizio attivo</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lead in Progress -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-tasks text-orange-500 mr-2"></i>
+                    Lead in Lavorazione
+                </h3>
+                <div class="flex space-x-2">
+                    <select id="filterStatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti gli stati</option>
+                        <option value="NEW">Nuovo</option>
+                        <option value="CONTRACT_SENT">Contratto Inviato</option>
+                        <option value="CONTRACT_SIGNED">Contratto Firmato</option>
+                        <option value="PROFORMA_SENT">Proforma Inviata</option>
+                        <option value="PAID">Pagato</option>
+                        <option value="ACTIVE">Attivo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Stato</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Step Corrente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workflowTable">
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento workflow...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manual Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Firma Manuale -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border-2 border-purple-200">
+                <h4 class="text-lg font-bold text-purple-800 mb-4 flex items-center">
+                    <i class="fas fa-signature text-2xl mr-3"></i>
+                    Firma Manuale Contratto
+                </h4>
+                <p class="text-sm text-gray-700 mb-4">
+                    Usa questa funzione quando il contratto viene firmato manualmente (cartaceo) e vuoi registrarlo nel sistema.
+                </p>
+                <button onclick="openSignModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                    <i class="fas fa-pen mr-2"></i>Registra Firma Manuale
+                </button>
+            </div>
+
+            <!-- Pagamento Manuale -->
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border-2 border-orange-200">
+                <h4 class="text-lg font-bold text-orange-800 mb-4 flex items-center">
+                    <i class="fas fa-money-check text-2xl mr-3"></i>
+                    Pagamento Manuale Bonifico
+                </h4>
+                <p class="text-sm text-gray-700 mb-4">
+                    Registra un pagamento ricevuto tramite bonifico bancario per procedere con l'attivazione del servizio.
+                </p>
+                <button onclick="openPaymentModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                    <i class="fas fa-university mr-2"></i>Registra Pagamento Bonifico
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Firma Manuale -->
+    <div id="signModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="bg-purple-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-signature mr-3"></i>
+                    Registra Firma Manuale
+                </h3>
+            </div>
+            <form id="signForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Lead/Contratto ID *</label>
+                        <input type="text" id="signContractId" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                            placeholder="LEAD_xxx o CTR_xxx">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Firma Digitale</label>
+                        <input type="text" id="signDigital"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                            placeholder="Nome Cognome (manuale)">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Note</label>
+                        <textarea id="signNotes" rows="3"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                            placeholder="Es: Contratto firmato in sede il gg/mm/aaaa"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-3">
+                    <button type="button" onclick="closeSignModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition-colors">
+                        Annulla
+                    </button>
+                    <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Conferma
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Pagamento Manuale -->
+    <div id="paymentModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="bg-orange-600 text-white p-6 rounded-t-xl">
+                <h3 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-money-check mr-3"></i>
+                    Registra Pagamento Bonifico
+                </h3>
+            </div>
+            <form id="paymentForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Proforma ID *</label>
+                        <input type="text" id="paymentProformaId" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
+                            placeholder="PRF_xxx">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Importo (€) *</label>
+                        <input type="number" id="paymentAmount" required step="0.01"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
+                            placeholder="480.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction ID / CRO</label>
+                        <input type="text" id="paymentTransactionId"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
+                            placeholder="TRN123456 o CRO">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Note</label>
+                        <textarea id="paymentNotes" rows="3"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
+                            placeholder="Es: Bonifico ricevuto il gg/mm/aaaa"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-3">
+                    <button type="button" onclick="closePaymentModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition-colors">
+                        Annulla
+                    </button>
+                    <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                        <i class="fas fa-check mr-2"></i>Conferma
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allLeads = [];
+
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Load workflows on page load
+        loadWorkflows();
+
+        async function loadWorkflows() {
+            try {
+                const response = await fetch('/api/leads?limit=100');
+                const data = await response.json();
+                allLeads = data.leads || [];
+                renderWorkflowTable(allLeads);
+            } catch (error) {
+                console.error('Errore caricamento workflow:', error);
+                document.getElementById('workflowTable').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                            <p>Errore nel caricamento dei workflow</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderWorkflowTable(leads) {
+            const tbody = document.getElementById('workflowTable');
+            
+            if (leads.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-400">Nessun workflow in corso</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = leads.map(lead => {
+                const status = getWorkflowStatus(lead);
+                const step = getWorkflowStep(lead);
+                const date = new Date(lead.created_at).toLocaleString('it-IT');
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">${(lead.leadId || lead.id || '').substring(0, 25)}</code>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <div class="font-medium">${escapeHtml(lead.nomeRichiedente)} ${escapeHtml(lead.cognomeRichiedente)}</div>
+                            <div class="text-xs text-gray-500">${lead.emailRichiedente || ''}</div>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <div class="flex items-center text-gray-700">
+                                <i class="fas fa-phone text-xs mr-1 text-gray-400"></i>
+                                <span class="text-xs">${lead.telefonoRichiedente || '-'}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                ${lead.servizio || 'N/A'} ${lead.pacchetto || ''}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 ${status.class} text-xs rounded font-medium">
+                                ${status.text}
+                            </span>
+                        </td>
+                        <td class="py-3 text-sm">
+                            <div class="flex items-center">
+                                <i class="${step.icon} ${step.color} mr-2"></i>
+                                <span class="text-xs">${step.text}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${date}</td>
+                        <td class="py-3">
+                            <button onclick="viewWorkflowDetails('${(lead.leadId || lead.id)}')" 
+                                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded">
+                                <i class="fas fa-eye"></i> Dettagli
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getWorkflowStatus(lead) {
+            // Determina stato workflow
+            if (lead.status === 'ACTIVE') {
+                return { class: 'bg-green-100 text-green-700', text: 'ATTIVO' };
+            } else if (lead.contratto_inviato) {
+                return { class: 'bg-blue-100 text-blue-700', text: 'CONTRATTO INVIATO' };
+            } else {
+                return { class: 'bg-yellow-100 text-yellow-700', text: 'NUOVO' };
+            }
+        }
+
+        function getWorkflowStep(lead) {
+            // Determina step corrente
+            if (lead.status === 'ACTIVE') {
+                return { icon: 'fas fa-check-circle', color: 'text-green-600', text: '6. Attivato' };
+            } else if (lead.payment_confirmed) {
+                return { icon: 'fas fa-credit-card', color: 'text-orange-600', text: '5. Pagamento OK' };
+            } else if (lead.proforma_sent) {
+                return { icon: 'fas fa-file-invoice', color: 'text-yellow-600', text: '4. Proforma Inviata' };
+            } else if (lead.contract_signed) {
+                return { icon: 'fas fa-signature', color: 'text-purple-600', text: '3. Contratto Firmato' };
+            } else if (lead.contratto_inviato) {
+                return { icon: 'fas fa-file-contract', color: 'text-blue-600', text: '2. Contratto Inviato' };
+            } else {
+                return { icon: 'fas fa-user-plus', color: 'text-gray-600', text: '1. Lead Nuovo' };
+            }
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const filtered = allLeads.filter(lead => {
+                if (!statusFilter) return true;
+                return getWorkflowStatus(lead).text === statusFilter;
+            });
+            renderWorkflowTable(filtered);
+        }
+
+        function refreshWorkflows() {
+            loadWorkflows();
+        }
+
+        function viewWorkflowDetails(leadId) {
+            alert(`Dettagli workflow per Lead: ${leadId}\n\nFunzionalità in sviluppo...`);
+        }
+
+        // Modal functions
+        function openSignModal() {
+            document.getElementById('signModal').classList.add('active');
+        }
+
+        function closeSignModal() {
+            document.getElementById('signModal').classList.remove('active');
+            document.getElementById('signForm').reset();
+        }
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            document.getElementById('paymentForm').reset();
+        }
+
+        // Form submissions
+        document.getElementById('signForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const contractId = document.getElementById('signContractId').value;
+            const firmaDigitale = document.getElementById('signDigital').value || 'Firma Manuale';
+            const notes = document.getElementById('signNotes').value;
+            
+            try {
+                const response = await fetch('/api/contracts/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contractId,
+                        firmaDigitale: firmaDigitale + (notes ? ` - ${notes}` : ''),
+                        ipAddress: 'MANUAL_SIGNATURE',
+                        userAgent: 'Workflow Manager Dashboard'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Firma registrata con successo!\n\nProforma generata e inviata.');
+                    closeSignModal();
+                    refreshWorkflows();
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        });
+
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const proformaId = document.getElementById('paymentProformaId').value;
+            const importo = parseFloat(document.getElementById('paymentAmount').value);
+            const transactionId = document.getElementById('paymentTransactionId').value || 'MANUAL_PAYMENT';
+            const notes = document.getElementById('paymentNotes').value;
+            
+            try {
+                const response = await fetch('/api/payments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        proformaId,
+                        importo,
+                        metodoPagamento: 'bonifico_bancario',
+                        transactionId: transactionId + (notes ? ` - ${notes}` : ''),
+                        manual: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Pagamento registrato con successo!\n\nProcedura di attivazione avviata.');
+                    closePaymentModal();
+                    refreshWorkflows();
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
