@@ -3630,6 +3630,14 @@ app.post('/api/lead', async (c) => {
     const leadId = generateLeadId()
     const timestamp = new Date().toISOString()
 
+    // Importa utility per calcolo età
+    const { calcolaEta } = await import('./modules/lead-utils')
+    
+    // Calcola età se disponibile data nascita
+    const etaCalcolata = leadData.dataNascitaAssistito 
+      ? calcolaEta(leadData.dataNascitaAssistito) 
+      : null
+
     // Normalizza e pulisce i dati
     const normalizedLead = {
       id: leadId,
@@ -3643,7 +3651,7 @@ app.post('/api/lead', async (c) => {
       nomeAssistito: String(leadData.nomeAssistito || nome).trim(),
       cognomeAssistito: String(leadData.cognomeAssistito || '').trim(),
       dataNascitaAssistito: String(leadData.dataNascitaAssistito || '').trim(),
-      etaAssistito: String(eta || leadData.etaAssistito || '').trim(),
+      etaAssistito: String(eta || etaCalcolata || leadData.etaAssistito || '').trim(),
       parentelaAssistito: String(leadData.parentelaAssistito || '').trim(),
 
       // Servizio e Condizioni (supporta entrambi i formati)
@@ -16029,6 +16037,57 @@ app.post('/api/setup-contracts-table', async (c) => {
     })
   } catch (error) {
     console.error('Errore creazione tabella contracts:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ========== MIGRATION INTESTATARIO ENDPOINT ==========
+app.post('/api/setup-intestatario-fields', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const migrations = [
+      'ALTER TABLE leads ADD COLUMN cfIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN codiceFiscaleIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN indirizzoIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN capIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN cittaIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN provinciaIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN luogoNascitaIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN dataNascitaIntestatario TEXT',
+      'ALTER TABLE leads ADD COLUMN etaCalcolata INTEGER',
+      'CREATE INDEX IF NOT EXISTS idx_leads_cf_intestatario ON leads(cfIntestatario)',
+      'CREATE INDEX IF NOT EXISTS idx_leads_citta_intestatario ON leads(cittaIntestatario)'
+    ]
+    
+    const results = []
+    
+    for (const sql of migrations) {
+      try {
+        await c.env.DB.prepare(sql).run()
+        results.push({ sql, success: true })
+      } catch (error) {
+        // Ignora errori se colonna già esiste
+        if ((error as Error).message.includes('duplicate column')) {
+          results.push({ sql, success: true, note: 'already exists' })
+        } else {
+          results.push({ sql, success: false, error: (error as Error).message })
+        }
+      }
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Migration intestatario completata',
+      results
+    })
+  } catch (error) {
+    console.error('Errore migration intestatario:', error)
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : String(error)
