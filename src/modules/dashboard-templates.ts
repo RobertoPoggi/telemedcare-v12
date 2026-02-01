@@ -867,28 +867,24 @@ export const dashboard = `<!DOCTYPE html>
                 <i class="fas fa-cog mr-2 text-purple-600"></i>Impostazioni Sistema
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Switch Import Automatico -->
-                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-gray-800">Import Auto HubSpot</h4>
-                        <p class="text-xs text-gray-600 mt-1">Import automatico giornaliero da HubSpot</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer ml-4">
-                        <input type="checkbox" id="hubspotToggle" class="sr-only peer" onchange="toggleHubSpot(this.checked)">
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+                <!-- Import Automatico HubSpot -->
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔄 Import Auto HubSpot</h4>
+                    <p class="text-xs text-gray-600 mb-3">Import automatico giornaliero da HubSpot</p>
+                    <select id="selectHubspotAuto" class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updateSetting('hubspot_auto_import_enabled', this.value)">
+                        <option value="false">❌ OFF - Disattivato</option>
+                        <option value="true">✅ ON - Attivo</option>
+                    </select>
                 </div>
                 
-                <!-- Switch Email Lead -->
-                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-gray-800">Email Automatiche Lead</h4>
-                        <p class="text-xs text-gray-600 mt-1">Email brochure, contratto, reminder ai lead</p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer ml-4">
-                        <input type="checkbox" id="cronToggle" class="sr-only peer" onchange="toggleCron(this.checked)">
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                    </label>
+                <!-- Email Automatiche Lead -->
+                <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 class="font-semibold text-gray-800 mb-2">📧 Email Automatiche Lead</h4>
+                    <p class="text-xs text-gray-600 mb-3">Email brochure, contratto, reminder ai lead</p>
+                    <select id="selectLeadEmails" class="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500" onchange="updateSetting('lead_email_notifications_enabled', this.value)">
+                        <option value="false">❌ OFF - Disattivato</option>
+                        <option value="true">✅ ON - Attivo</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -5275,61 +5271,46 @@ export const workflow_manager = `<!DOCTYPE html>
             }
         }
         
-        // ⚙️ TOGGLE HUBSPOT AUTO IMPORT
-        async function toggleHubSpot(enabled) {
+        // ⚙️ UPDATE SETTING SEMPLICE
+        async function updateSetting(key, value) {
             try {
-                const response = await fetch('/api/settings/hubspot_auto_import_enabled', {
+                const response = await fetch('/api/settings/' + key, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+                    body: JSON.stringify({ value: value })
                 });
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    const statusEl = document.getElementById('hubspotSyncStatus');
-                    if (statusEl) {
-                        statusEl.textContent = enabled 
-                            ? 'Sincronizzazione attiva • Ultima: --' 
-                            : 'Sincronizzazione disattivata';
-                    }
-                    alert(enabled 
-                        ? '✅ Sync HubSpot ATTIVATA\\n\\nIl sistema importerà automaticamente i nuovi lead da HubSpot CRM (IRBEMA) in modo periodico.'
-                        : '⛔ Sync HubSpot DISATTIVATA\\n\\nL\\'import automatico è disattivato. Usa il pulsante "Irbema" per import manuali.');
-                    console.log('✅ HubSpot sync:', enabled ? 'ATTIVO' : 'DISATTIVO');
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Impostazione aggiornata con successo!');
+                    console.log('Setting aggiornato:', key, '=', value);
                 } else {
-                    throw new Error('Errore aggiornamento configurazione');
+                    alert('❌ Errore: ' + result.error);
                 }
             } catch (error) {
-                console.error('❌ Errore toggle HubSpot:', error);
-                alert('❌ Errore: Impossibile aggiornare la configurazione HubSpot.\\n\\n' + error.message);
-                // Ripristina lo stato del toggle
-                document.getElementById('hubspotToggle').checked = !enabled;
+                console.error('Errore aggiornamento setting:', error);
+                alert('❌ Errore di comunicazione');
             }
         }
         
-        // ⚙️ TOGGLE EMAIL AUTOMATICHE LEAD
-        async function toggleCron(enabled) {
+        // Load settings on page load
+        async function loadSettings() {
             try {
-                const response = await fetch('/api/settings/lead_email_notifications_enabled', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
-                });
+                const response = await fetch('/api/settings');
+                const result = await response.json();
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    alert(enabled 
-                        ? '✅ Email Automatica Benvenuto ATTIVATA\\n\\nIl sistema invierà automaticamente una email di benvenuto con brochure e link completamento dati a tutti i nuovi lead da qualsiasi canale (IRBEMA, AON, DoubleYou, Excel, ecc.).'
-                        : '⛔ Email Automatica Benvenuto DISATTIVATA\\n\\nNessuna email automatica verrà inviata ai nuovi lead. Dovrai inviarle manualmente dalla dashboard.');
-                    console.log('✅ Email automatica lead:', enabled ? 'ATTIVA' : 'DISATTIVA');
-                } else {
-                    throw new Error('Errore aggiornamento configurazione');
+                if (result.success) {
+                    result.settings.forEach(setting => {
+                        if (setting.key === 'hubspot_auto_import_enabled') {
+                            document.getElementById('selectHubspotAuto').value = setting.value;
+                        } else if (setting.key === 'lead_email_notifications_enabled') {
+                            document.getElementById('selectLeadEmails').value = setting.value;
+                        }
+                    });
                 }
             } catch (error) {
-                console.error('❌ Errore toggle cron:', error);
-                alert('❌ Errore: Impossibile aggiornare la configurazione del cron.\\n\\n' + error.message);
-                // Ripristina lo stato del toggle
-                document.getElementById('cronToggle').checked = !enabled;
+                console.error('Errore caricamento settings:', error);
             }
         }
 
