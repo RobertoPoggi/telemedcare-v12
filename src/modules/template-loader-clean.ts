@@ -58,6 +58,18 @@ export function renderTemplate(
         
         return value.map(item => {
           let itemRendered = sectionContent
+          
+          // Prima risolvi le sezioni condizionali booleane dentro l'item
+          for (const [itemKey, itemValue] of Object.entries(item)) {
+            // Se il valore è booleano o truthy/falsy, gestisci sezioni condizionali
+            const conditionRegex = new RegExp(`{{#${itemKey}}}([\\s\\S]*?){{/${itemKey}}}`, 'g')
+            itemRendered = itemRendered.replace(conditionRegex, (condMatch, condContent) => {
+              // Se il valore è truthy, mostra il contenuto, altrimenti rimuovilo
+              return itemValue ? condContent : ''
+            })
+          }
+          
+          // Poi sostituisci i placeholder semplici
           for (const [itemKey, itemValue] of Object.entries(item)) {
             const itemPlaceholder = `{{${itemKey}}}`
             const itemRegex = new RegExp(itemPlaceholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
