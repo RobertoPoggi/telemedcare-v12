@@ -7779,6 +7779,12 @@ app.post('/api/leads/:id/complete', async (c) => {
       cittaAssistito: 'cittaAssistito',
       cfAssistito: 'cfAssistito',
       indirizzoAssistito: 'indirizzoAssistito',
+      cfIntestatario: 'cfIntestatario',
+      codiceFiscaleIntestatario: 'codiceFiscaleIntestatario',
+      indirizzoIntestatario: 'indirizzoIntestatario',
+      capIntestatario: 'capIntestatario',
+      cittaIntestatario: 'cittaIntestatario',
+      provinciaIntestatario: 'provinciaIntestatario',
       servizio: 'servizio',
       piano: 'piano',
       note: 'note',
@@ -7811,119 +7817,19 @@ app.post('/api/leads/:id/complete', async (c) => {
     
     await c.env.DB.prepare(query).bind(...binds).run()
     
-    // Ritorna HTML di successo
-    return c.html(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dati salvati - eCura</title>
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-          }
-          .success-box {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-          }
-          .success-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-          }
-          h1 {
-            color: #10b981;
-            margin: 0 0 10px 0;
-          }
-          p {
-            color: #64748b;
-            line-height: 1.6;
-          }
-          .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="success-box">
-          <div class="success-icon">✅</div>
-          <h1>Dati salvati con successo!</h1>
-          <p>Grazie per aver completato i tuoi dati.</p>
-          <p>Il nostro team ti contatterà presto per finalizzare la tua richiesta.</p>
-          <a href="https://telemedcare.it" class="button">Torna al sito</a>
-        </div>
-      </body>
-      </html>
-    `)
+    // Ritorna JSON di successo
+    return c.json({
+      success: true,
+      message: 'Dati salvati con successo'
+    })
     
   } catch (error) {
     console.error('❌ Errore completamento lead:', error)
-    return c.html(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <title>Errore - eCura</title>
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f4f6f8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-          }
-          .error-box {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-          }
-          .error-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-          }
-          h1 {
-            color: #ef4444;
-            margin: 0 0 10px 0;
-          }
-          p {
-            color: #64748b;
-            line-height: 1.6;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="error-box">
-          <div class="error-icon">❌</div>
-          <h1>Errore salvataggio</h1>
-          <p>Si è verificato un errore. Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
-        </div>
-      </body>
-      </html>
-    `, 500)
+    return c.json({
+      success: false,
+      error: 'Errore salvataggio dati',
+      message: error instanceof Error ? error.message : String(error)
+    }, 500)
   }
 })
 
