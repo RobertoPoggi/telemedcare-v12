@@ -155,53 +155,20 @@
                 {{/AVAILABLE_FIELDS}}
             </div>
 
-            <!-- Form per dati mancanti -->
+            <!-- Link al form web -->
             <div class="data-section missing">
-                <h3>❌ Dati mancanti - Compila qui sotto:</h3>
+                <h3>❌ Dati mancanti:</h3>
+                <p style="margin: 10px 0; color: #64748b;">
+                    Abbiamo bisogno di alcuni dati aggiuntivi per completare la tua richiesta.
+                </p>
                 
-                <form action="{{API_ENDPOINT}}/api/leads/{{LEAD_ID}}/complete" method="POST" id="completaForm">
-                    <input type="hidden" name="source" value="email_form">
-                    
-                    {{#MISSING_FIELDS}}
-                    <div class="form-group">
-                        <label for="{{FIELD_ID}}">
-                            {{FIELD_LABEL}} <span class="required">*</span>
-                        </label>
-                        {{#IS_SELECT}}
-                        <select name="{{FIELD_NAME}}" id="{{FIELD_ID}}" required>
-                            <option value="">Seleziona...</option>
-                            {{#OPTIONS}}
-                            <option value="{{VALUE}}">{{LABEL}}</option>
-                            {{/OPTIONS}}
-                        </select>
-                        {{/IS_SELECT}}
-                        {{#IS_TEXTAREA}}
-                        <textarea name="{{FIELD_NAME}}" id="{{FIELD_ID}}" rows="3" placeholder="{{PLACEHOLDER}}"></textarea>
-                        {{/IS_TEXTAREA}}
-                        {{#IS_INPUT}}
-                        <input type="{{INPUT_TYPE}}" name="{{FIELD_NAME}}" id="{{FIELD_ID}}" placeholder="{{PLACEHOLDER}}" {{#IS_REQUIRED}}required{{/IS_REQUIRED}}>
-                        {{/IS_INPUT}}
-                    </div>
-                    {{/MISSING_FIELDS}}
-
-                    <!-- Note aggiuntive -->
-                    <div class="form-group">
-                        <label for="note">Note aggiuntive (facoltativo)</label>
-                        <textarea name="note" id="note" rows="3" placeholder="Eventuali richieste o informazioni aggiuntive..."></textarea>
-                    </div>
-
-                    <!-- Privacy -->
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; font-weight: normal;">
-                            <input type="checkbox" name="gdprConsent" value="1" required style="width: auto; margin-right: 8px;">
-                            Accetto l'informativa sulla privacy <span class="required">*</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="submit-button">
-                        ✉️ Conferma e Invia
-                    </button>
-                </form>
+                <a href="{{COMPLETION_URL}}" class="submit-button" style="display: inline-block; text-decoration: none; text-align: center;">
+                    📝 Completa i tuoi dati
+                </a>
+                
+                <p style="margin: 15px 0 0 0; font-size: 13px; color: #94a3b8;">
+                    Il link è valido per <strong>{{EXPIRES_IN_DAYS}} giorni</strong>
+                </p>
             </div>
 
             <div class="info-box">
@@ -223,19 +190,5 @@
             </p>
         </div>
     </div>
-
-    <script>
-        // Gestione invio form (opzionale - funziona anche senza JS)
-        const form = document.getElementById('completaForm')
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const submitBtn = form.querySelector('button[type="submit"]')
-                if (submitBtn) {
-                    submitBtn.textContent = '⏳ Invio in corso...'
-                    submitBtn.disabled = true
-                }
-            })
-        }
-    </script>
 </body>
 </html>
