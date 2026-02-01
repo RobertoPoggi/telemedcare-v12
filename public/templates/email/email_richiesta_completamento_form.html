@@ -159,8 +159,7 @@
             <div class="data-section missing">
                 <h3>❌ Dati mancanti - Compila qui sotto:</h3>
                 
-                <form action="{{API_ENDPOINT}}/api/leads/{{LEAD_ID}}" method="POST" id="completaForm">
-                    <input type="hidden" name="_method" value="PUT">
+                <form action="{{API_ENDPOINT}}/api/leads/{{LEAD_ID}}/complete" method="POST" id="completaForm">
                     <input type="hidden" name="source" value="email_form">
                     
                     {{#MISSING_FIELDS}}
@@ -226,33 +225,17 @@
     </div>
 
     <script>
-        // Gestione invio form via AJAX (se il client email supporta JavaScript)
-        document.getElementById('completaForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
-            
-            try {
-                const response = await fetch(this.action, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    alert('✅ Dati inviati con successo! Ti contatteremo presto.');
-                    this.innerHTML = '<div style="text-align: center; padding: 40px; color: #10b981;"><h2>✅ Grazie!</h2><p>I tuoi dati sono stati inviati correttamente.</p></div>';
-                } else {
-                    alert('❌ Errore invio. Riprova o contattaci via email.');
+        // Gestione invio form (opzionale - funziona anche senza JS)
+        const form = document.getElementById('completaForm')
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = form.querySelector('button[type="submit"]')
+                if (submitBtn) {
+                    submitBtn.textContent = '⏳ Invio in corso...'
+                    submitBtn.disabled = true
                 }
-            } catch (error) {
-                // Fallback: usa il submit normale del form
-                this.submit();
-            }
-        });
+            })
+        }
     </script>
 </body>
 </html>

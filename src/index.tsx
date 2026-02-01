@@ -7675,6 +7675,201 @@ app.get('/api/leads/:id', async (c) => {
   }
 })
 
+// POST /api/leads/:id/complete - Endpoint per completamento dati da form email
+app.post('/api/leads/:id/complete', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    // Supporta sia JSON che form-data
+    const contentType = c.req.header('content-type') || ''
+    let data: any
+    
+    if (contentType.includes('application/json')) {
+      data = await c.req.json()
+    } else {
+      // Form data da email
+      const formData = await c.req.formData()
+      data = {}
+      for (const [key, value] of formData.entries()) {
+        data[key] = value
+      }
+    }
+    
+    console.log(`📝 COMPLETE Lead ${id} da form email:`, JSON.stringify(data, null, 2))
+    
+    if (!c.env?.DB) {
+      return c.text('✅ Grazie! I tuoi dati sono stati salvati con successo. Ti contatteremo presto.', 200, {
+        'Content-Type': 'text/html; charset=utf-8'
+      })
+    }
+    
+    // Costruisci query UPDATE
+    const updateFields: string[] = []
+    const binds: any[] = []
+    
+    // Mapping campi form → DB
+    const fieldMapping: Record<string, string> = {
+      nomeRichiedente: 'nomeRichiedente',
+      cognomeRichiedente: 'cognomeRichiedente',
+      emailRichiedente: 'emailRichiedente',
+      telefonoRichiedente: 'telefonoRichiedente',
+      telefono: 'telefonoRichiedente',
+      cittaRichiedente: 'cittaRichiedente',
+      citta: 'cittaRichiedente',
+      nomeAssistito: 'nomeAssistito',
+      cognomeAssistito: 'cognomeAssistito',
+      dataNascitaAssistito: 'dataNascitaAssistito',
+      cittaAssistito: 'cittaAssistito',
+      cfAssistito: 'cfAssistito',
+      indirizzoAssistito: 'indirizzoAssistito',
+      servizio: 'servizio',
+      piano: 'piano',
+      note: 'note',
+      gdprConsent: 'gdprConsent'
+    }
+    
+    for (const [formField, dbField] of Object.entries(fieldMapping)) {
+      if (data[formField] !== undefined && data[formField] !== '') {
+        updateFields.push(`${dbField} = ?`)
+        
+        // Converti checkbox a boolean
+        if (formField === 'gdprConsent') {
+          binds.push(data[formField] === '1' || data[formField] === 'true' || data[formField] === true ? 1 : 0)
+        } else {
+          binds.push(data[formField])
+        }
+      }
+    }
+    
+    if (updateFields.length === 0) {
+      return c.text('❌ Nessun dato da aggiornare', 400)
+    }
+    
+    // Aggiorna lead
+    binds.push(id)
+    const query = `UPDATE leads SET ${updateFields.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+    
+    console.log('🔍 Query UPDATE:', query)
+    console.log('🔍 Binds:', binds)
+    
+    await c.env.DB.prepare(query).bind(...binds).run()
+    
+    // Ritorna HTML di successo
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dati salvati - eCura</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
+          .success-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          }
+          .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #10b981;
+            margin: 0 0 10px 0;
+          }
+          p {
+            color: #64748b;
+            line-height: 1.6;
+          }
+          .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="success-box">
+          <div class="success-icon">✅</div>
+          <h1>Dati salvati con successo!</h1>
+          <p>Grazie per aver completato i tuoi dati.</p>
+          <p>Il nostro team ti contatterà presto per finalizzare la tua richiesta.</p>
+          <a href="https://telemedcare.it" class="button">Torna al sito</a>
+        </div>
+      </body>
+      </html>
+    `)
+    
+  } catch (error) {
+    console.error('❌ Errore completamento lead:', error)
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore - eCura</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
+          .error-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #ef4444;
+            margin: 0 0 10px 0;
+          }
+          p {
+            color: #64748b;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="error-box">
+          <div class="error-icon">❌</div>
+          <h1>Errore salvataggio</h1>
+          <p>Si è verificato un errore. Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+        </div>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
 app.put('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
   

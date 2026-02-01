@@ -10298,7 +10298,114 @@ startxref
           leadId, recipient_email, template_used, 
           subject, status, provider_used, sent_at
         ) VALUES (?, ?, ?, ?, ?, 'RESEND', ?)
-      `).bind(t,o.email,"email_invio_brochure",`eCura - Brochure ${i}`,p.success?"SENT":"SIMULATED",new Date().toISOString()).run(),console.log("✅ [BROCHURE] Brochure inviata con successo"),a.json({success:!0,message:`Brochure ${l} inviata a ${o.email}`,emailStatus:p.success?"sent":"simulated",attachments:r.length})):a.json({success:!1,error:"Errore invio email: "+p.error},500)}catch(o){return console.error("❌ [BROCHURE] Errore invio brochure:",o),a.json({success:!1,error:"Errore invio brochure",details:o instanceof Error?o.message:String(o)},500)}});S.get("/api/leads/:id",async a=>{var e;const t=a.req.param("id");try{if(console.log(`📋 GET /api/leads/${t}`),!((e=a.env)!=null&&e.DB))return a.json({id:parseInt(t),name:`Lead Mock ${t}`,email:`lead${t}@example.com`,phone:`+39 123 456 7${t}${t}`,status:"new"});const o=await a.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(t).first();return o?(console.log(`✅ Lead ${t} recuperato`),a.json(o)):(console.log(`❌ Lead ${t} non trovato`),a.json({error:"Lead non trovato"},404))}catch(o){return console.error("❌ Errore recupero lead:",o),a.json({error:"Errore recupero lead",details:o instanceof Error?o.message:String(o)},500)}});S.put("/api/leads/:id",async a=>{var e,o;const t=a.req.param("id");try{const i=await a.req.json();if(console.log(`📝 UPDATE Lead ${t}:`,JSON.stringify(i,null,2)),!((e=a.env)!=null&&e.DB))return a.json({success:!0,message:"Lead aggiornato (mock)"});const s=[],r=[],l={nomeRichiedente:"nomeRichiedente",cognomeRichiedente:"cognomeRichiedente",email:"email",telefono:"telefono",codiceFiscaleRichiedente:"codiceFiscaleRichiedente",indirizzoRichiedente:"indirizzoRichiedente",nomeAssistito:"nomeAssistito",cognomeAssistito:"cognomeAssistito",luogoNascitaAssistito:"luogoNascitaAssistito",dataNascitaAssistito:"dataNascitaAssistito",indirizzoAssistito:"indirizzoAssistito",capAssistito:"capAssistito",cittaAssistito:"cittaAssistito",provinciaAssistito:"provinciaAssistito",codiceFiscaleAssistito:"codiceFiscaleAssistito",cfAssistito:"cfAssistito",servizio:"servizio",piano:"piano",canale:"fonte",fonte:"fonte",vuoleBrochure:"vuoleBrochure",vuoleContratto:"vuoleContratto",vuoleManuale:"vuoleManuale",consensoPrivacy:"consensoPrivacy",consensoMarketing:"consensoMarketing",consensoTerze:"consensoTerze",condizioniSalute:"condizioniSalute",intestatarioContratto:"intestatarioContratto",note:"note",status:"status"};for(const[u,p]of Object.entries(l))i[u]!==void 0&&(s.push(`${p} = ?`),r.push(i[u]));s.push("updated_at = ?"),r.push(new Date().toISOString()),r.push(t);const d=`UPDATE leads SET ${s.join(", ")} WHERE id = ?`;console.log("🔍 Query SQL:",d),console.log("🔍 Binds:",r);const c=await a.env.DB.prepare(d).bind(...r).run();return console.log("✅ Lead aggiornato:",t,"- Rows affected:",((o=c.meta)==null?void 0:o.changes)||0),a.json({success:!0,message:"Lead aggiornato con successo"})}catch(i){return console.error("❌ Errore aggiornamento lead:",i),console.error("❌ Error details:",i instanceof Error?i.message:String(i)),a.json({success:!1,error:"Errore aggiornamento lead",details:i instanceof Error?i.message:String(i)},500)}});S.post("/api/leads/:id/convert",async a=>{var e;const t=a.req.param("id");try{if(!((e=a.env)!=null&&e.DB))return a.json({success:!0,message:"Lead convertito (mock)"});const o=await a.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(t).first();if(!o)return a.json({error:"Lead non trovato"},404);const i=`ASS-${Date.now()}-${Math.random().toString(36).substr(2,9).toUpperCase()}`;return await a.env.DB.prepare(`
+      `).bind(t,o.email,"email_invio_brochure",`eCura - Brochure ${i}`,p.success?"SENT":"SIMULATED",new Date().toISOString()).run(),console.log("✅ [BROCHURE] Brochure inviata con successo"),a.json({success:!0,message:`Brochure ${l} inviata a ${o.email}`,emailStatus:p.success?"sent":"simulated",attachments:r.length})):a.json({success:!1,error:"Errore invio email: "+p.error},500)}catch(o){return console.error("❌ [BROCHURE] Errore invio brochure:",o),a.json({success:!1,error:"Errore invio brochure",details:o instanceof Error?o.message:String(o)},500)}});S.get("/api/leads/:id",async a=>{var e;const t=a.req.param("id");try{if(console.log(`📋 GET /api/leads/${t}`),!((e=a.env)!=null&&e.DB))return a.json({id:parseInt(t),name:`Lead Mock ${t}`,email:`lead${t}@example.com`,phone:`+39 123 456 7${t}${t}`,status:"new"});const o=await a.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(t).first();return o?(console.log(`✅ Lead ${t} recuperato`),a.json(o)):(console.log(`❌ Lead ${t} non trovato`),a.json({error:"Lead non trovato"},404))}catch(o){return console.error("❌ Errore recupero lead:",o),a.json({error:"Errore recupero lead",details:o instanceof Error?o.message:String(o)},500)}});S.post("/api/leads/:id/complete",async a=>{var e;const t=a.req.param("id");try{const o=a.req.header("content-type")||"";let i;if(o.includes("application/json"))i=await a.req.json();else{const c=await a.req.formData();i={};for(const[u,p]of c.entries())i[u]=p}if(console.log(`📝 COMPLETE Lead ${t} da form email:`,JSON.stringify(i,null,2)),!((e=a.env)!=null&&e.DB))return a.text("✅ Grazie! I tuoi dati sono stati salvati con successo. Ti contatteremo presto.",200,{"Content-Type":"text/html; charset=utf-8"});const s=[],r=[],l={nomeRichiedente:"nomeRichiedente",cognomeRichiedente:"cognomeRichiedente",emailRichiedente:"emailRichiedente",telefonoRichiedente:"telefonoRichiedente",telefono:"telefonoRichiedente",cittaRichiedente:"cittaRichiedente",citta:"cittaRichiedente",nomeAssistito:"nomeAssistito",cognomeAssistito:"cognomeAssistito",dataNascitaAssistito:"dataNascitaAssistito",cittaAssistito:"cittaAssistito",cfAssistito:"cfAssistito",indirizzoAssistito:"indirizzoAssistito",servizio:"servizio",piano:"piano",note:"note",gdprConsent:"gdprConsent"};for(const[c,u]of Object.entries(l))i[c]!==void 0&&i[c]!==""&&(s.push(`${u} = ?`),c==="gdprConsent"?r.push(i[c]==="1"||i[c]==="true"||i[c]===!0?1:0):r.push(i[c]));if(s.length===0)return a.text("❌ Nessun dato da aggiornare",400);r.push(t);const d=`UPDATE leads SET ${s.join(", ")}, updated_at = datetime('now') WHERE id = ?`;return console.log("🔍 Query UPDATE:",d),console.log("🔍 Binds:",r),await a.env.DB.prepare(d).bind(...r).run(),a.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dati salvati - eCura</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
+          .success-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          }
+          .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #10b981;
+            margin: 0 0 10px 0;
+          }
+          p {
+            color: #64748b;
+            line-height: 1.6;
+          }
+          .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="success-box">
+          <div class="success-icon">✅</div>
+          <h1>Dati salvati con successo!</h1>
+          <p>Grazie per aver completato i tuoi dati.</p>
+          <p>Il nostro team ti contatterà presto per finalizzare la tua richiesta.</p>
+          <a href="https://telemedcare.it" class="button">Torna al sito</a>
+        </div>
+      </body>
+      </html>
+    `)}catch(o){return console.error("❌ Errore completamento lead:",o),a.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore - eCura</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
+          .error-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+          }
+          h1 {
+            color: #ef4444;
+            margin: 0 0 10px 0;
+          }
+          p {
+            color: #64748b;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="error-box">
+          <div class="error-icon">❌</div>
+          <h1>Errore salvataggio</h1>
+          <p>Si è verificato un errore. Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+        </div>
+      </body>
+      </html>
+    `,500)}});S.put("/api/leads/:id",async a=>{var e,o;const t=a.req.param("id");try{const i=await a.req.json();if(console.log(`📝 UPDATE Lead ${t}:`,JSON.stringify(i,null,2)),!((e=a.env)!=null&&e.DB))return a.json({success:!0,message:"Lead aggiornato (mock)"});const s=[],r=[],l={nomeRichiedente:"nomeRichiedente",cognomeRichiedente:"cognomeRichiedente",email:"email",telefono:"telefono",codiceFiscaleRichiedente:"codiceFiscaleRichiedente",indirizzoRichiedente:"indirizzoRichiedente",nomeAssistito:"nomeAssistito",cognomeAssistito:"cognomeAssistito",luogoNascitaAssistito:"luogoNascitaAssistito",dataNascitaAssistito:"dataNascitaAssistito",indirizzoAssistito:"indirizzoAssistito",capAssistito:"capAssistito",cittaAssistito:"cittaAssistito",provinciaAssistito:"provinciaAssistito",codiceFiscaleAssistito:"codiceFiscaleAssistito",cfAssistito:"cfAssistito",servizio:"servizio",piano:"piano",canale:"fonte",fonte:"fonte",vuoleBrochure:"vuoleBrochure",vuoleContratto:"vuoleContratto",vuoleManuale:"vuoleManuale",consensoPrivacy:"consensoPrivacy",consensoMarketing:"consensoMarketing",consensoTerze:"consensoTerze",condizioniSalute:"condizioniSalute",intestatarioContratto:"intestatarioContratto",note:"note",status:"status"};for(const[u,p]of Object.entries(l))i[u]!==void 0&&(s.push(`${p} = ?`),r.push(i[u]));s.push("updated_at = ?"),r.push(new Date().toISOString()),r.push(t);const d=`UPDATE leads SET ${s.join(", ")} WHERE id = ?`;console.log("🔍 Query SQL:",d),console.log("🔍 Binds:",r);const c=await a.env.DB.prepare(d).bind(...r).run();return console.log("✅ Lead aggiornato:",t,"- Rows affected:",((o=c.meta)==null?void 0:o.changes)||0),a.json({success:!0,message:"Lead aggiornato con successo"})}catch(i){return console.error("❌ Errore aggiornamento lead:",i),console.error("❌ Error details:",i instanceof Error?i.message:String(i)),a.json({success:!1,error:"Errore aggiornamento lead",details:i instanceof Error?i.message:String(i)},500)}});S.post("/api/leads/:id/convert",async a=>{var e;const t=a.req.param("id");try{if(!((e=a.env)!=null&&e.DB))return a.json({success:!0,message:"Lead convertito (mock)"});const o=await a.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(t).first();if(!o)return a.json({error:"Lead non trovato"},404);const i=`ASS-${Date.now()}-${Math.random().toString(36).substr(2,9).toUpperCase()}`;return await a.env.DB.prepare(`
       INSERT INTO assistiti (codice, nome, email, telefono, status, lead_id, created_at)
       VALUES (?, ?, ?, ?, 'attivo', ?, ?)
     `).bind(i,o.name,o.email,o.phone,t,new Date().toISOString()).run(),await a.env.DB.prepare("UPDATE leads SET status = ? WHERE id = ?").bind("converted",t).run(),a.json({success:!0,message:"Lead convertito in assistito con successo",codice_assistito:i})}catch(o){return console.error("❌ Errore conversione lead:",o),a.json({error:"Errore conversione lead"},500)}});S.get("/firma-contratto",async a=>a.req.query("contractId")?a.html(`
