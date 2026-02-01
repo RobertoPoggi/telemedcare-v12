@@ -2556,7 +2556,7 @@ ${370+e.length}
                         <p class="text-xs text-gray-600 mt-1">Import automatico giornaliero da HubSpot</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer ml-4">
-                        <input type="checkbox" id="switchHubspotAuto" class="sr-only peer" onchange="toggleSetting('hubspot_auto_import_enabled', this.checked)">
+                        <input type="checkbox" id="hubspotToggle" class="sr-only peer" onchange="toggleHubSpot(this.checked)">
                         <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
@@ -2568,7 +2568,7 @@ ${370+e.length}
                         <p class="text-xs text-gray-600 mt-1">Email brochure, contratto, reminder ai lead</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer ml-4">
-                        <input type="checkbox" id="switchLeadEmails" class="sr-only peer" onchange="toggleSetting('lead_email_notifications_enabled', this.checked)">
+                        <input type="checkbox" id="cronToggle" class="sr-only peer" onchange="toggleCron(this.checked)">
                         <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                 </div>
@@ -6963,35 +6963,61 @@ PUT /api/contratti/\${contractId}\`);
             }
         }
         
-        async function toggleSetting(key, value) {
+        // ⚙️ TOGGLE HUBSPOT AUTO IMPORT
+        async function toggleHubSpot(enabled) {
             try {
-                const response = await fetch('/api/settings/' + key, {
+                const response = await fetch('/api/settings/hubspot_auto_import_enabled', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: value ? 'true' : 'false' })
+                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    console.log('Setting aggiornato:', key, value);
-                    // Show success feedback
-                    const switchEl = document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails');
-                    const parent = switchEl.closest('.p-4');
-                    parent.classList.add('ring-2', 'ring-green-400');
-                    setTimeout(() => {
-                        parent.classList.remove('ring-2', 'ring-green-400');
-                    }, 500);
+                if (response.ok) {
+                    const result = await response.json();
+                    const statusEl = document.getElementById('hubspotSyncStatus');
+                    if (statusEl) {
+                        statusEl.textContent = enabled 
+                            ? 'Sincronizzazione attiva • Ultima: --' 
+                            : 'Sincronizzazione disattivata';
+                    }
+                    alert(enabled 
+                        ? '✅ Sync HubSpot ATTIVATA\\n\\nIl sistema importerà automaticamente i nuovi lead da HubSpot CRM (IRBEMA) in modo periodico.'
+                        : '⛔ Sync HubSpot DISATTIVATA\\n\\nL\\'import automatico è disattivato. Usa il pulsante "Irbema" per import manuali.');
+                    console.log('✅ HubSpot sync:', enabled ? 'ATTIVO' : 'DISATTIVO');
                 } else {
-                    alert('Errore salvataggio: ' + result.error);
-                    // Revert switch
-                    document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails').checked = !value;
+                    throw new Error('Errore aggiornamento configurazione');
                 }
             } catch (error) {
-                console.error('Errore aggiornamento setting:', error);
-                alert('Errore di comunicazione');
-                // Revert switch
-                document.getElementById(key === 'hubspot_auto_import_enabled' ? 'switchHubspotAuto' : 'switchLeadEmails').checked = !value;
+                console.error('❌ Errore toggle HubSpot:', error);
+                alert('❌ Errore: Impossibile aggiornare la configurazione HubSpot.\\n\\n' + error.message);
+                // Ripristina lo stato del toggle
+                document.getElementById('hubspotToggle').checked = !enabled;
+            }
+        }
+        
+        // ⚙️ TOGGLE EMAIL AUTOMATICHE LEAD
+        async function toggleCron(enabled) {
+            try {
+                const response = await fetch('/api/settings/lead_email_notifications_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(enabled 
+                        ? '✅ Email Automatica Benvenuto ATTIVATA\\n\\nIl sistema invierà automaticamente una email di benvenuto con brochure e link completamento dati a tutti i nuovi lead da qualsiasi canale (IRBEMA, AON, DoubleYou, Excel, ecc.).'
+                        : '⛔ Email Automatica Benvenuto DISATTIVATA\\n\\nNessuna email automatica verrà inviata ai nuovi lead. Dovrai inviarle manualmente dalla dashboard.');
+                    console.log('✅ Email automatica lead:', enabled ? 'ATTIVA' : 'DISATTIVA');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle cron:', error);
+                alert('❌ Errore: Impossibile aggiornare la configurazione del cron.\\n\\n' + error.message);
+                // Ripristina lo stato del toggle
+                document.getElementById('cronToggle').checked = !enabled;
             }
         }
 
