@@ -10007,6 +10007,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
         LEAD_ID: leadId,
         API_ENDPOINT: baseUrl,
         COMPLETION_URL: completionUrl,
+        BROCHURE_URL: `${baseUrl}/assets/brochures/brochure-ecura.pdf`,
         EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
         AVAILABLE_FIELDS: availableFieldsList,
         MISSING_FIELDS: missingFieldsList
