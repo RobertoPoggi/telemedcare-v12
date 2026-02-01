@@ -2166,9 +2166,8 @@ app.get('/completa-dati-minimal.html', async (c) => {
   c.header('Content-Type', 'text/html; charset=utf-8')
   
   try {
-    const { loadHtmlFile } = await import('./modules/template-loader-clean')
-    const html = await loadHtmlFile('completa-dati-minimal.html', c.env)
-    return c.html(html)
+    const { completaDatiHtml } = await import('./templates/completa-dati-html')
+    return c.html(completaDatiHtml)
   } catch (error) {
     console.error('❌ Errore caricamento form completamento:', error)
     return c.html(`
