@@ -157,10 +157,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
                             <div class="text-6xl mb-4">✅</div>
                             <h2 class="text-2xl font-bold text-green-600 mb-2">Dati salvati con successo!</h2>
                             <p class="text-gray-600 mb-2">Grazie per aver completato i tuoi dati.</p>
-                            <p class="text-gray-600">Il nostro team ti contatterà presto.</p>
-                            <a href="https://telemedcare.it" class="inline-block mt-6 bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:opacity-90">
-                                Torna al sito
-                            </a>
+                            <p class="text-gray-600">Il nostro team ha ricevuto le tue informazioni e ti contatterà presto.</p>
                         </div>
                     \`;
                 } else {

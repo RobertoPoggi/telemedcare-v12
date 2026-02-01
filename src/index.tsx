@@ -7813,13 +7813,28 @@ app.post('/api/leads/:id/complete', async (c) => {
     
     console.log('🔍 Query UPDATE:', query)
     console.log('🔍 Binds:', binds)
+    console.log('🔍 Lead ID:', id)
     
-    await c.env.DB.prepare(query).bind(...binds).run()
+    const result = await c.env.DB.prepare(query).bind(...binds).run()
+    
+    console.log('🔍 Update result:', JSON.stringify(result))
+    console.log('🔍 Rows affected:', result.meta?.changes || 0)
+    
+    // Verifica se il lead è stato aggiornato
+    if (result.meta?.changes === 0) {
+      console.error('❌ Nessun lead aggiornato - ID non trovato:', id)
+      return c.json({
+        success: false,
+        error: 'Lead non trovato',
+        message: `Impossibile trovare il lead con ID: ${id}`
+      }, 404)
+    }
     
     // Ritorna JSON di successo
     return c.json({
       success: true,
-      message: 'Dati salvati con successo'
+      message: 'Dati salvati con successo',
+      updated: result.meta?.changes || 0
     })
     
   } catch (error) {
