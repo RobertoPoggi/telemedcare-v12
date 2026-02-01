@@ -9707,40 +9707,6 @@ app.post('/api/system/config', async (c) => {
   }
 })
 
-// GET /api/completa-dati - Serve form completamento dati (via API invece di file statico)
-app.get('/api/completa-dati', async (c) => {
-  try {
-    // Leggi il file HTML e serve come risposta
-    const fs = await import('fs/promises')
-    const path = await import('path')
-    const htmlPath = path.join(process.cwd(), 'public', 'completa-dati.html')
-    const html = await fs.readFile(htmlPath, 'utf-8')
-    
-    c.header('Content-Type', 'text/html; charset=UTF-8')
-    c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
-    return c.html(html)
-  } catch (error) {
-    console.error('Errore caricamento completa-dati:', error)
-    return c.html(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <title>Form Completamento - eCura</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-      </head>
-      <body class="bg-gray-100 p-8">
-        <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-          <h1 class="text-3xl font-bold text-red-600 mb-4">❌ Errore</h1>
-          <p class="text-gray-600 mb-4">Impossibile caricare il form di completamento dati.</p>
-          <p class="text-sm text-gray-500">Contattaci a <a href="mailto:info@telemedcare.it" class="text-purple-600 underline">info@telemedcare.it</a></p>
-        </div>
-      </body>
-      </html>
-    `, 500)
-  }
-})
-
 // POST /api/leads/:leadId/request-completion - Richiedi completamento dati lead
 app.post('/api/leads/:leadId/request-completion', async (c) => {
   try {
@@ -9798,22 +9764,76 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
       
       const emailService = new EmailService(c.env)
-      const template = await loadEmailTemplate('email_richiesta_completamento', c.env.DB, c.env)
+      const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
       
-      // Prepara variabili template
+      // Prepara lista campi disponibili
       const availableFieldsList = Object.entries(available).map(([label, value]) => ({
         FIELD_LABEL: label,
         FIELD_VALUE: value
       }))
       
-      const missingFieldsList = missing.map(field => ({ FIELD_NAME: field }))
+      // Prepara lista campi mancanti con metadati per il form
+      const fieldMetadata: Record<string, any> = {
+        'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+        'telefonoRichiedente': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+        'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+        'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+        'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
+        'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },
+        'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', placeholder: '', required: true },
+        'cittaAssistito': { label: 'Città Assistito', type: 'text', placeholder: 'Es. Roma', required: true },
+        'cfAssistito': { label: 'Codice Fiscale Assistito', type: 'text', placeholder: 'Es. RSSMRA85M01H501X', required: false },
+        'indirizzoAssistito': { label: 'Indirizzo Assistito', type: 'text', placeholder: 'Via, numero civico', required: false },
+        'servizio': { 
+          label: 'Servizio', 
+          type: 'select', 
+          required: true,
+          options: [
+            { value: 'eCura FAMILY', label: 'eCura FAMILY - Monitoraggio base' },
+            { value: 'eCura PRO', label: 'eCura PRO - Assistenza completa' },
+            { value: 'eCura PREMIUM', label: 'eCura PREMIUM - Assistenza avanzata' }
+          ]
+        },
+        'piano': { 
+          label: 'Piano', 
+          type: 'select', 
+          required: true,
+          options: [
+            { value: 'BASE', label: 'BASE - Mensile' },
+            { value: 'AVANZATO', label: 'AVANZATO - Trimestrale (sconto 5%)' }
+          ]
+        }
+      }
+      
+      const missingFieldsList = missing.map(fieldName => {
+        const meta = fieldMetadata[fieldName] || { 
+          label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1), 
+          type: 'text', 
+          placeholder: '',
+          required: false 
+        }
+        
+        return {
+          FIELD_ID: fieldName,
+          FIELD_NAME: fieldName,
+          FIELD_LABEL: meta.label,
+          INPUT_TYPE: meta.type,
+          PLACEHOLDER: meta.placeholder || '',
+          IS_REQUIRED: meta.required,
+          IS_INPUT: meta.type !== 'select' && meta.type !== 'textarea',
+          IS_SELECT: meta.type === 'select',
+          IS_TEXTAREA: meta.type === 'textarea',
+          OPTIONS: meta.options || []
+        }
+      })
       
       const templateData = {
         NOME_CLIENTE: lead.nomeRichiedente,
         COGNOME_CLIENTE: lead.cognomeRichiedente,
         SERVIZIO: lead.servizio || lead.tipoServizio || 'eCura PRO',
         PIANO: lead.piano || lead.pacchetto || 'BASE',
-        COMPLETION_URL: completionUrl,
+        LEAD_ID: leadId,
+        API_ENDPOINT: baseUrl,
         EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
         AVAILABLE_FIELDS: availableFieldsList,
         MISSING_FIELDS: missingFieldsList
@@ -9827,7 +9847,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
           from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml,
-          text: `Gentile ${lead.nomeRichiedente}, completa i tuoi dati qui: ${completionUrl}`
+          text: `Gentile ${lead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
         })
         
         console.log(`✅ Email completamento inviata a ${lead.email}`)

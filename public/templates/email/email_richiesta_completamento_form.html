@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completa i tuoi dati - eCura</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .data-section {
+            background: #f8f9fa;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .data-section.missing {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .data-section h3 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 16px;
+        }
+        .data-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        .data-item strong {
+            color: #475569;
+            margin-right: 8px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #475569;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .required {
+            color: #ef4444;
+        }
+        .submit-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .submit-button:hover {
+            opacity: 0.9;
+        }
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #1e40af;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📝 Completa i tuoi dati</h1>
+            <p>Siamo quasi pronti per attivare il tuo servizio eCura</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+            
+            <p>Grazie per il tuo interesse verso <strong>{{SERVIZIO}} {{PIANO}}</strong>. Abbiamo ricevuto la tua richiesta e per completare l'attivazione del servizio abbiamo bisogno di alcuni dati aggiuntivi.</p>
+
+            <!-- Dati Disponibili -->
+            <div class="data-section">
+                <h3>✅ Dati che abbiamo già:</h3>
+                {{#AVAILABLE_FIELDS}}
+                <div class="data-item">
+                    <strong>{{FIELD_LABEL}}:</strong> {{FIELD_VALUE}}
+                </div>
+                {{/AVAILABLE_FIELDS}}
+            </div>
+
+            <!-- Form per dati mancanti -->
+            <div class="data-section missing">
+                <h3>❌ Dati mancanti - Compila qui sotto:</h3>
+                
+                <form action="{{API_ENDPOINT}}/api/leads/{{LEAD_ID}}" method="POST" id="completaForm">
+                    <input type="hidden" name="_method" value="PUT">
+                    <input type="hidden" name="source" value="email_form">
+                    
+                    {{#MISSING_FIELDS}}
+                    <div class="form-group">
+                        <label for="{{FIELD_ID}}">
+                            {{FIELD_LABEL}} <span class="required">*</span>
+                        </label>
+                        {{#IS_SELECT}}
+                        <select name="{{FIELD_NAME}}" id="{{FIELD_ID}}" required>
+                            <option value="">Seleziona...</option>
+                            {{#OPTIONS}}
+                            <option value="{{VALUE}}">{{LABEL}}</option>
+                            {{/OPTIONS}}
+                        </select>
+                        {{/IS_SELECT}}
+                        {{#IS_TEXTAREA}}
+                        <textarea name="{{FIELD_NAME}}" id="{{FIELD_ID}}" rows="3" placeholder="{{PLACEHOLDER}}"></textarea>
+                        {{/IS_TEXTAREA}}
+                        {{#IS_INPUT}}
+                        <input type="{{INPUT_TYPE}}" name="{{FIELD_NAME}}" id="{{FIELD_ID}}" placeholder="{{PLACEHOLDER}}" {{#IS_REQUIRED}}required{{/IS_REQUIRED}}>
+                        {{/IS_INPUT}}
+                    </div>
+                    {{/MISSING_FIELDS}}
+
+                    <!-- Note aggiuntive -->
+                    <div class="form-group">
+                        <label for="note">Note aggiuntive (facoltativo)</label>
+                        <textarea name="note" id="note" rows="3" placeholder="Eventuali richieste o informazioni aggiuntive..."></textarea>
+                    </div>
+
+                    <!-- Privacy -->
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; font-weight: normal;">
+                            <input type="checkbox" name="gdprConsent" value="1" required style="width: auto; margin-right: 8px;">
+                            Accetto l'informativa sulla privacy <span class="required">*</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        ✉️ Conferma e Invia
+                    </button>
+                </form>
+            </div>
+
+            <div class="info-box">
+                <strong>⏰ Importante:</strong> Completa i dati entro <strong>{{EXPIRES_IN_DAYS}} giorni</strong> per non perdere la tua prenotazione.
+            </div>
+
+            <p style="color: #64748b; font-size: 14px; margin-top: 30px;">
+                Se hai difficoltà a compilare il form, rispondi a questa email o contattaci a 
+                <a href="mailto:info@telemedcare.it" style="color: #667eea;">info@telemedcare.it</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>eCura by Medica GB</strong></p>
+            <p>Assistenza domiciliare innovativa</p>
+            <p style="margin-top: 10px;">
+                <a href="https://telemedcare.it" style="color: #667eea; text-decoration: none;">www.telemedcare.it</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Gestione invio form via AJAX (se il client email supporta JavaScript)
+        document.getElementById('completaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch(this.action, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('✅ Dati inviati con successo! Ti contatteremo presto.');
+                    this.innerHTML = '<div style="text-align: center; padding: 40px; color: #10b981;"><h2>✅ Grazie!</h2><p>I tuoi dati sono stati inviati correttamente.</p></div>';
+                } else {
+                    alert('❌ Errore invio. Riprova o contattaci via email.');
+                }
+            } catch (error) {
+                // Fallback: usa il submit normale del form
+                this.submit();
+            }
+        });
+    </script>
+</body>
+</html>
