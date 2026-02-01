@@ -4426,10 +4426,15 @@ ${370+e.length}
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Email di completamento inviata con successo!\\nLink: ' + result.completionUrl + '\\nScadenza: ' + result.expiresAt);
+                    alert('✅ Email di completamento inviata con successo!\\nLink: ' + (result.token?.completionUrl || result.completionUrl) + '\\nScadenza: ' + (result.token?.expiresAt || result.expiresAt));
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + result.error);
+                    // Gestisci caso lead già completo
+                    if (result.error && result.error.includes('già completo')) {
+                        alert('ℹ️ Tutti i dati del lead sono già completi.\\n\\nNon è necessario inviare l\\'email di richiesta completamento.');
+                    } else {
+                        alert('❌ Errore: ' + result.error);
+                    }
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
