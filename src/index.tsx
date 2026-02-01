@@ -9707,6 +9707,40 @@ app.post('/api/system/config', async (c) => {
   }
 })
 
+// GET /api/completa-dati - Serve form completamento dati (via API invece di file statico)
+app.get('/api/completa-dati', async (c) => {
+  try {
+    // Leggi il file HTML e serve come risposta
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const htmlPath = path.join(process.cwd(), 'public', 'completa-dati.html')
+    const html = await fs.readFile(htmlPath, 'utf-8')
+    
+    c.header('Content-Type', 'text/html; charset=UTF-8')
+    c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return c.html(html)
+  } catch (error) {
+    console.error('Errore caricamento completa-dati:', error)
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Form Completamento - eCura</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-gray-100 p-8">
+        <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
+          <h1 class="text-3xl font-bold text-red-600 mb-4">❌ Errore</h1>
+          <p class="text-gray-600 mb-4">Impossibile caricare il form di completamento dati.</p>
+          <p class="text-sm text-gray-500">Contattaci a <a href="mailto:info@telemedcare.it" class="text-purple-600 underline">info@telemedcare.it</a></p>
+        </div>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
 // POST /api/leads/:leadId/request-completion - Richiedi completamento dati lead
 app.post('/api/leads/:leadId/request-completion', async (c) => {
   try {
@@ -9751,7 +9785,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
     
     // Genera URL completamento
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
-    const completionUrl = `${baseUrl}/completa-dati.html?token=${token.token}`
+    const completionUrl = `${baseUrl}/api/completa-dati?token=${token.token}`
     
     // Prepara dati per email
     const { missing, available } = getMissingFields(lead)
