@@ -15978,4 +15978,62 @@ app.post('/api/import/irbema/force', async (c) => {
   }
 })
 
+// ========== SETUP DATABASE ENDPOINT ==========
+// Endpoint temporaneo per creare tabella contracts
+app.post('/api/setup-contracts-table', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS contracts (
+        id TEXT PRIMARY KEY,
+        leadId TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'DRAFT',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        codice_contratto TEXT,
+        tipo_contratto TEXT,
+        template_utilizzato TEXT,
+        contenuto_html TEXT,
+        pdf_url TEXT,
+        pdf_generated INTEGER DEFAULT 0,
+        prezzo_mensile REAL,
+        durata_mesi INTEGER DEFAULT 12,
+        prezzo_totale REAL,
+        data_invio TEXT,
+        data_scadenza TEXT,
+        data_firma TEXT,
+        email_sent INTEGER DEFAULT 0,
+        email_template_used TEXT,
+        piano TEXT,
+        servizio TEXT,
+        firma_digitale TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        assistito_id INTEGER
+      )
+    `
+    
+    await c.env.DB.prepare(createTableSQL).run()
+    
+    // Crea indici
+    await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_leadId ON contracts(leadId)').run()
+    await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status)').run()
+    await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_codice ON contracts(codice_contratto)').run()
+    
+    return c.json({
+      success: true,
+      message: 'Tabella contracts creata con successo'
+    })
+  } catch (error) {
+    console.error('Errore creazione tabella contracts:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 export default app
