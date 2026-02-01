@@ -97,15 +97,12 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 const fields = [];
                 
                 if (!lead.telefonoRichiedente) fields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
-                if (!lead.cittaRichiedente) fields.push(createField('cittaRichiedente', 'Città', 'text', 'Es. Milano', false));
                 if (!lead.nomeAssistito) fields.push(createField('nomeAssistito', 'Nome Assistito', 'text', 'Nome', true));
                 if (!lead.cognomeAssistito) fields.push(createField('cognomeAssistito', 'Cognome Assistito', 'text', 'Cognome', true));
                 if (!lead.dataNascitaAssistito) fields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));
                 if (!lead.cittaAssistito) fields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', false));
                 if (!lead.cfAssistito) fields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA85M01H501X', true));
-                if (!lead.cfIntestatario) fields.push(createField('cfIntestatario', 'Codice Fiscale Intestatario', 'text', 'Es. RSSMRA85M01H501X', true));
                 if (!lead.indirizzoAssistito) fields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Via, numero civico', false));
-                if (!lead.indirizzoIntestatario) fields.push(createField('indirizzoIntestatario', 'Indirizzo Intestatario', 'text', 'Via, numero civico', false));
                 
                 if (fields.length === 0) {
                     showError('Tutti i dati sono già completi!');

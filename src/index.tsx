@@ -7765,26 +7765,20 @@ app.post('/api/leads/:id/complete', async (c) => {
     const binds: any[] = []
     
     // Mapping campi form → DB
+    // Usa SOLO campi che esistono sicuramente nel DB
     const fieldMapping: Record<string, string> = {
       nomeRichiedente: 'nomeRichiedente',
       cognomeRichiedente: 'cognomeRichiedente',
       emailRichiedente: 'emailRichiedente',
+      email: 'emailRichiedente',
       telefonoRichiedente: 'telefonoRichiedente',
       telefono: 'telefonoRichiedente',
-      cittaRichiedente: 'cittaRichiedente',
-      citta: 'cittaRichiedente',
       nomeAssistito: 'nomeAssistito',
       cognomeAssistito: 'cognomeAssistito',
       dataNascitaAssistito: 'dataNascitaAssistito',
       cittaAssistito: 'cittaAssistito',
       cfAssistito: 'cfAssistito',
       indirizzoAssistito: 'indirizzoAssistito',
-      cfIntestatario: 'cfIntestatario',
-      codiceFiscaleIntestatario: 'codiceFiscaleIntestatario',
-      indirizzoIntestatario: 'indirizzoIntestatario',
-      capIntestatario: 'capIntestatario',
-      cittaIntestatario: 'cittaIntestatario',
-      provinciaIntestatario: 'provinciaIntestatario',
       servizio: 'servizio',
       piano: 'piano',
       note: 'note',
