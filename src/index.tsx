@@ -2160,6 +2160,64 @@ app.get('/home', (c) => {
   return c.html(home)
 })
 
+// Route per form completamento dati lead
+app.get('/completa-dati-minimal.html', async (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('Content-Type', 'text/html; charset=utf-8')
+  
+  try {
+    const { loadHtmlFile } = await import('./modules/template-loader-clean')
+    const html = await loadHtmlFile('completa-dati-minimal.html', c.env)
+    return c.html(html)
+  } catch (error) {
+    console.error('❌ Errore caricamento form completamento:', error)
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Errore - eCura</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+          }
+          .error-box {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          h1 {
+            color: #ef4444;
+            margin: 0 0 10px 0;
+          }
+          p {
+            color: #64748b;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="error-box">
+          <h1>❌ Pagina non disponibile</h1>
+          <p>Impossibile caricare il form di completamento.</p>
+          <p>Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+        </div>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
 // Route per System Status
 app.get('/admin/system-status', (c) => {
   return c.html(`
