@@ -103,6 +103,9 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 if (!lead.cittaAssistito) fields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', false));
                 if (!lead.cfAssistito) fields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA85M01H501X', true));
                 if (!lead.indirizzoAssistito) fields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Via, numero civico', false));
+                if (!lead.cfIntestatario) fields.push(createField('cfIntestatario', 'Codice Fiscale Intestatario', 'text', 'Es. PGGRRT55S28D969O', true));
+                if (!lead.indirizzoIntestatario) fields.push(createField('indirizzoIntestatario', 'Indirizzo Intestatario', 'text', 'Via, numero civico', false));
+                if (!lead.cittaIntestatario) fields.push(createField('cittaIntestatario', 'Città Intestatario', 'text', 'Es. Genova', false));
                 
                 if (fields.length === 0) {
                     showError('Tutti i dati sono già completi!');
