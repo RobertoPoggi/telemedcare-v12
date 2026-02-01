@@ -2159,6 +2159,41 @@ app.get('/home', (c) => {
   return c.html(home)
 })
 
+// COMPLETA DATI PAGE - Form pubblico per completamento lead
+app.get('/completa-dati.html', async (c) => {
+  try {
+    // Carica il file HTML dal template loader
+    const { loadHtmlFile } = await import('./modules/template-loader-clean')
+    const html = await loadHtmlFile('completa-dati.html', c.env)
+    
+    c.header('Content-Type', 'text/html; charset=UTF-8')
+    c.header('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return c.html(html)
+  } catch (error) {
+    console.error('Errore caricamento completa-dati.html:', error)
+    
+    // Fallback: ritorna un messaggio di errore user-friendly
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>Completa Dati - eCura</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body class="bg-gray-100 p-8">
+        <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+          <h1 class="text-3xl font-bold text-red-600 mb-4">❌ Errore</h1>
+          <p class="text-gray-600 mb-4">Impossibile caricare il form di completamento dati.</p>
+          <p class="text-sm text-gray-500">Contattaci a <a href="mailto:info@telemedcare.it" class="text-purple-600 underline">info@telemedcare.it</a></p>
+          <p class="text-xs text-gray-400 mt-4">Errore: ${error instanceof Error ? error.message : String(error)}</p>
+        </div>
+      </body>
+      </html>
+    `, 500)
+  }
+})
+
 // Route per System Status
 app.get('/admin/system-status', (c) => {
   return c.html(`

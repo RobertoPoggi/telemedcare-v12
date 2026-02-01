@@ -82,3 +82,32 @@ export function renderTemplate(
 
   return rendered
 }
+
+/**
+ * Load HTML file from public directory
+ */
+export async function loadHtmlFile(
+  filename: string,
+  env?: any
+): Promise<string> {
+  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+  const fileUrl = `${baseUrl}/${filename}`
+  
+  console.log(`📂 [HTML] Loading "${filename}" from: ${fileUrl}`)
+  
+  try {
+    const response = await fetch(fileUrl)
+    
+    if (!response.ok) {
+      throw new Error(`HTML file not found: HTTP ${response.status}`)
+    }
+    
+    const html = await response.text()
+    console.log(`✅ [HTML] Loaded "${filename}" (${html.length} chars)`)
+    return html
+    
+  } catch (error) {
+    console.error(`❌ [HTML] Error loading "${filename}":`, error)
+    throw new Error(`HTML file "${filename}" not found at ${fileUrl}`)
+  }
+}
