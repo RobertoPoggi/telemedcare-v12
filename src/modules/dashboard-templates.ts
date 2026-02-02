@@ -866,7 +866,7 @@ export const dashboard = `<!DOCTYPE html>
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 <i class="fas fa-cog mr-2 text-purple-600"></i>Impostazioni Sistema
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Import Automatico HubSpot -->
                 <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 class="font-semibold text-gray-800 mb-2">🔄 Import Auto HubSpot</h4>
@@ -882,6 +882,16 @@ export const dashboard = `<!DOCTYPE html>
                     <h4 class="font-semibold text-gray-800 mb-2">📧 Email Automatiche Lead</h4>
                     <p class="text-xs text-gray-600 mb-3">Email brochure, contratto, reminder ai lead</p>
                     <select id="selectLeadEmails" class="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500" onchange="updateSetting('lead_email_notifications_enabled', this.value)">
+                        <option value="false">❌ OFF - Disattivato</option>
+                        <option value="true">✅ ON - Attivo</option>
+                    </select>
+                </div>
+
+                <!-- Reminder Automatici Completamento -->
+                <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <h4 class="font-semibold text-gray-800 mb-2">⏰ Reminder Completamento</h4>
+                    <p class="text-xs text-gray-600 mb-3">Reminder automatici per dati mancanti</p>
+                    <select id="selectCronEnabled" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="updateSetting('cron_enabled', this.value)">
                         <option value="false">❌ OFF - Disattivato</option>
                         <option value="true">✅ ON - Attivo</option>
                     </select>
@@ -5263,12 +5273,15 @@ export const workflow_manager = `<!DOCTYPE html>
                 if (data.success) {
                     const settings = data.settings;
                     
-                    // Update switch states
+                    // Update select states
                     if (settings.hubspot_auto_import_enabled) {
-                        document.getElementById('switchHubspotAuto').checked = settings.hubspot_auto_import_enabled.value === 'true';
+                        document.getElementById('selectHubspotAuto').value = settings.hubspot_auto_import_enabled.value;
                     }
                     if (settings.lead_email_notifications_enabled) {
-                        document.getElementById('switchLeadEmails').checked = settings.lead_email_notifications_enabled.value === 'true';
+                        document.getElementById('selectLeadEmails').value = settings.lead_email_notifications_enabled.value;
+                    }
+                    if (settings.cron_enabled) {
+                        document.getElementById('selectCronEnabled').value = settings.cron_enabled.value;
                     }
                 }
             } catch (error) {
