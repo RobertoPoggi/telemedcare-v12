@@ -178,10 +178,7 @@
             <div id="formContainer" style="display: none;">
                 <p class="greeting" id="greeting">Gentile Cliente,</p>
                 
-                <div class="info-section" id="availableData" style="display: none;">
-                    <h3>✅ Dati che abbiamo già:</h3>
-                    <div id="availableFields"></div>
-                </div>
+                <!-- Rimosso box verde "Dati disponibili" - ridondante -->
                 
                 <form id="completaForm" onsubmit="submitForm(event)">
                     <div id="missingFieldsContainer"></div>
@@ -241,21 +238,7 @@
                 const greeting = document.getElementById('greeting');
                 greeting.textContent = `Gentile ${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''},`;
                 
-                // Mostra dati disponibili
-                const availableData = document.getElementById('availableData');
-                const availableFields = document.getElementById('availableFields');
-                const available = [];
-                
-                if (lead.emailRichiedente) available.push(`Email: ${lead.emailRichiedente}`);
-                if (lead.servizio) available.push(`Servizio: ${lead.servizio}`);
-                if (lead.piano) available.push(`Piano: ${lead.piano}`);
-                
-                if (available.length > 0) {
-                    availableFields.innerHTML = available.map(item => 
-                        `<div class="data-item">• ${item}</div>`
-                    ).join('');
-                    availableData.style.display = 'block';
-                }
+                // Rimosso blocco "Dati disponibili" - ridondante
                 
                 // Genera campi mancanti
                 const missingContainer = document.getElementById('missingFieldsContainer');
@@ -263,10 +246,6 @@
                 
                 if (!lead.telefonoRichiedente) {
                     fields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
-                }
-                
-                if (!lead.cittaRichiedente) {
-                    fields.push(createField('cittaRichiedente', 'Città', 'text', 'Es. Milano', true));
                 }
                 
                 if (!lead.nomeAssistito) {
@@ -281,8 +260,24 @@
                     fields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));
                 }
                 
+                if (!lead.luogoNascitaAssistito) {
+                    fields.push(createField('luogoNascitaAssistito', 'Luogo Nascita Assistito', 'text', 'Es. Milano', true));
+                }
+                
+                if (!lead.cfAssistito) {
+                    fields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA80A01F205K', true));
+                }
+                
+                if (!lead.indirizzoAssistito) {
+                    fields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Es. Via Roma 123', true));
+                }
+                
                 if (!lead.cittaAssistito) {
                     fields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', true));
+                }
+                
+                if (!lead.condizioniSalute) {
+                    fields.push(createTextAreaField('condizioniSalute', 'Condizioni di Salute', 'Descrivi brevemente le condizioni di salute dell\'assistito...', true));
                 }
                 
                 if (fields.length === 0) {
@@ -309,6 +304,18 @@
                 <div class="form-group">
                     <label for="${name}">${label} ${req}</label>
                     <input type="${type}" id="${name}" name="${name}" placeholder="${placeholder}" ${reqAttr}>
+                </div>
+            `;
+        }
+        
+        function createTextAreaField(name, label, placeholder, required) {
+            const req = required ? '<span class="required">*</span>' : '';
+            const reqAttr = required ? 'required' : '';
+            
+            return `
+                <div class="form-group">
+                    <label for="${name}">${label} ${req}</label>
+                    <textarea id="${name}" name="${name}" placeholder="${placeholder}" rows="4" ${reqAttr}></textarea>
                 </div>
             `;
         }

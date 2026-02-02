@@ -25,10 +25,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
             <div id="formContainer" style="display: none;">
                 <p id="greeting" class="text-xl text-gray-800 mb-6">Gentile Cliente,</p>
                 
-                <div id="availableData" class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded" style="display: none;">
-                    <h3 class="font-bold text-blue-900 mb-2">✅ Dati che abbiamo già:</h3>
-                    <div id="availableFields"></div>
-                </div>
+                <!-- Box verde "Dati disponibili" RIMOSSO - ridondante -->
                 
                 <form id="completaForm" class="space-y-4">
                     <div id="missingFieldsContainer"></div>
@@ -80,18 +77,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 
                 document.getElementById('greeting').textContent = \`Gentile \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''},\`;
                 
-                const availableData = document.getElementById('availableData');
-                const availableFields = document.getElementById('availableFields');
-                const available = [];
-                
-                if (lead.emailRichiedente) available.push(\`Email: \${lead.emailRichiedente}\`);
-                if (lead.servizio) available.push(\`Servizio: \${lead.servizio}\`);
-                if (lead.piano) available.push(\`Piano: \${lead.piano}\`);
-                
-                if (available.length > 0) {
-                    availableFields.innerHTML = available.map(item => \`<div class="text-blue-900 text-sm py-1">• \${item}</div>\`).join('');
-                    availableData.style.display = 'block';
-                }
+                // Box "Dati disponibili" rimosso - ridondante
                 
                 const missingContainer = document.getElementById('missingFieldsContainer');
                 const fields = [];

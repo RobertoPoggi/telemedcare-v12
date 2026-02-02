@@ -7775,11 +7775,14 @@ app.post('/api/leads/:id/complete', async (c) => {
       nomeAssistito: 'nomeAssistito',
       cognomeAssistito: 'cognomeAssistito',
       dataNascitaAssistito: 'dataNascitaAssistito',
+      luogoNascitaAssistito: 'luogoNascitaAssistito',
       cittaAssistito: 'cittaAssistito',
-      cfAssistito: 'cfAssistito',
+      cfAssistito: 'cfAssistito',  // DB usa cfAssistito
+      codiceFiscaleAssistito: 'cfAssistito',  // Alias
       indirizzoAssistito: 'indirizzoAssistito',
+      condizioniSalute: 'condizioniSalute',  // Campo per trigger contratto
       cfIntestatario: 'cfIntestatario',
-      codiceFiscaleIntestatario: 'codiceFiscaleIntestatario',
+      codiceFiscaleIntestatario: 'cfIntestatario',  // Alias
       indirizzoIntestatario: 'indirizzoIntestatario',
       capIntestatario: 'capIntestatario',
       cittaIntestatario: 'cittaIntestatario',
@@ -9083,8 +9086,8 @@ app.post('/api/leads', async (c) => {
         cognomeRichiedente: data.cognomeRichiedente,
         emailRichiedente: data.email,
         telefonoRichiedente: data.telefono || '',
-        nomeAssistito: data.nomeAssistito || data.nomeRichiedente,
-        cognomeAssistito: data.cognomeAssistito || data.cognomeRichiedente,
+        nomeAssistito: data.nomeAssistito || '',
+        cognomeAssistito: data.cognomeAssistito || '',
         luogoNascitaAssistito: data.luogoNascitaAssistito || '',
         dataNascitaAssistito: data.dataNascitaAssistito || '',
         indirizzoAssistito: data.indirizzoAssistito || '',

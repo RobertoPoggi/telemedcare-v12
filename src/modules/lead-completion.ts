@@ -100,7 +100,7 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
     cognomeAssistito: 'Cognome Assistito',
     dataNascitaAssistito: 'Data di Nascita Assistito',
     luogoNascitaAssistito: 'Luogo di Nascita Assistito',
-    codiceFiscaleAssistito: 'Codice Fiscale Assistito',
+    cfAssistito: 'Codice Fiscale Assistito',  // DB usa cfAssistito, non codiceFiscaleAssistito
     indirizzoAssistito: 'Indirizzo Assistito',
     
     // Condizioni salute (importante per servizio)
