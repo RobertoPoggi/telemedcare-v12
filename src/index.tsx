@@ -9922,7 +9922,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
     )
     
     // Genera URL completamento
-    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    const baseUrl = c.env?.PUBLIC_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
     const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
     
     // Prepara dati per email
@@ -10189,7 +10189,7 @@ app.post('/api/leads/complete', async (c) => {
           <p><strong>Servizio:</strong> ${updatedLead.servizio} ${updatedLead.piano}</p>
           <hr>
           <p>Il lead ha completato i dati mancanti e ora è pronto per l'attivazione.</p>
-          <p><a href="https://telemedcare-v12.pages.dev/leads">Visualizza nella Dashboard</a></p>
+          <p><a href="https://genspark-ai-developer.telemedcare-v12.pages.dev/leads">Visualizza nella Dashboard</a></p>
         `,
         text: `Lead ${leadId} completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`
       })

@@ -102,7 +102,7 @@ export async function loadHtmlFile(
   filename: string,
   env?: any
 ): Promise<string> {
-  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
   const fileUrl = `${baseUrl}/${filename}`
   
   console.log(`📂 [HTML] Loading "${filename}" from: ${fileUrl}`)
