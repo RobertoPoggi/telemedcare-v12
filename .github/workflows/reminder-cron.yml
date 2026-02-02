@@ -16,7 +16,7 @@ jobs:
           echo "📅 Data: $(date -u)"
           
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://telemedcare-v12.pages.dev/api/cron/send-reminders" \
+            "https://genspark-ai-developer.telemedcare-v12.pages.dev/api/cron/send-reminders" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json")
           
