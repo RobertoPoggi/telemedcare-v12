@@ -9080,14 +9080,15 @@ app.post('/api/leads', async (c) => {
       console.log('🔍 [DEBUG] Dati ricevuti:', debugInfo)
       
       // Prepara leadData per workflow (formato del 25 dicembre + nuovi campi)
+      // FIX 2026-02-02: NON copiare dati richiedente nell'assistito
       const leadData = {
         id: leadId,
         nomeRichiedente: data.nomeRichiedente,
         cognomeRichiedente: data.cognomeRichiedente,
         emailRichiedente: data.email,
         telefonoRichiedente: data.telefono || '',
-        nomeAssistito: data.nomeAssistito || '',
-        cognomeAssistito: data.cognomeAssistito || '',
+        nomeAssistito: data.nomeAssistito || '',  // FIX: No fallback a richiedente
+        cognomeAssistito: data.cognomeAssistito || '',  // FIX: No fallback a richiedente
         luogoNascitaAssistito: data.luogoNascitaAssistito || '',
         dataNascitaAssistito: data.dataNascitaAssistito || '',
         indirizzoAssistito: data.indirizzoAssistito || '',
