@@ -10216,6 +10216,9 @@ app.post('/api/leads/complete', async (c) => {
 // ============================================
 
 // POST /api/cron/send-reminders - Invia reminder per lead incompleti
+// Cache per evitare esecuzioni multiple del CRON
+const cronExecutionCache = new Map<string, number>()
+
 app.post('/api/cron/send-reminders', async (c) => {
   try {
     const db = c.env.DB as D1Database
@@ -10224,6 +10227,34 @@ app.post('/api/cron/send-reminders', async (c) => {
     if (!db) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
+    
+    // Verifica Authorization header per sicurezza
+    const authHeader = c.req.header('Authorization')
+    const cronSecret = env.CRON_SECRET
+    
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      console.log('⚠️ [CRON] Tentativo non autorizzato')
+      return c.json({ success: false, error: 'Non autorizzato' }, 401)
+    }
+    
+    // Previeni esecuzioni multiple entro 1 ora
+    const now = Date.now()
+    const lastExecution = cronExecutionCache.get('send-reminders') || 0
+    const oneHour = 60 * 60 * 1000
+    
+    if (now - lastExecution < oneHour) {
+      const minutesAgo = Math.floor((now - lastExecution) / 1000 / 60)
+      console.log(`⚠️ [CRON] Esecuzione già avvenuta ${minutesAgo} minuti fa - skip`)
+      return c.json({
+        success: true,
+        message: 'Esecuzione recente già completata',
+        lastExecution: new Date(lastExecution).toISOString(),
+        minutesAgo
+      }, 429)  // 429 Too Many Requests
+    }
+    
+    // Registra esecuzione
+    cronExecutionCache.set('send-reminders', now)
     
     console.log('🔔 [CRON] Avvio processo reminder...')
     
