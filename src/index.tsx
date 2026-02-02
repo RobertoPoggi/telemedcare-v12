@@ -7830,6 +7830,45 @@ app.post('/api/leads/:id/complete', async (c) => {
       }, 404)
     }
     
+    // ✅ TRIGGER: Invio automatico contratto dopo completamento dati
+    try {
+      console.log('🔔 [COMPLETAMENTO] Verifico se inviare contratto automaticamente...')
+      
+      // Recupera lead aggiornato
+      const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+        .bind(id)
+        .first()
+      
+      if (updatedLead) {
+        // Importa funzioni workflow
+        const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
+        const { isLeadComplete } = await import('./modules/lead-completion')
+        
+        // Verifica se lead è completo
+        if (isLeadComplete(updatedLead)) {
+          console.log('✅ [COMPLETAMENTO] Lead completo → Invio contratto automatico')
+          
+          // Prepara dati per contratto
+          const contractResult = await inviaEmailContratto(
+            updatedLead,
+            c.env,
+            c.env.DB
+          )
+          
+          if (contractResult.success) {
+            console.log('✅ [COMPLETAMENTO] Contratto inviato con successo!')
+          } else {
+            console.error('❌ [COMPLETAMENTO] Errore invio contratto:', contractResult.errors)
+          }
+        } else {
+          console.log('ℹ️ [COMPLETAMENTO] Lead non ancora completo, contratto non inviato')
+        }
+      }
+    } catch (triggerError) {
+      // Non blocchiamo la risposta se il trigger fallisce
+      console.error('⚠️ [COMPLETAMENTO] Errore trigger contratto:', triggerError)
+    }
+    
     // Ritorna JSON di successo
     return c.json({
       success: true,
@@ -9121,15 +9160,12 @@ app.post('/api/leads', async (c) => {
             documentUrls.manuale = '/documents/Manuale_SiDLY.pdf'
           }
           
-          const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, documentUrls, c.env.DB)
-          emailResults.brochure.sent = docResult.success
-          if (!docResult.success) {
-            emailResults.brochure.error = docResult.errors.join(', ')
-            addDebugLog(`❌ [LEAD] Errore documenti: ${emailResults.brochure.error}`)
-          } else {
-            addDebugLog(`✅ [LEAD] Documenti inviati`)
-          }
-          console.log('📚 [WORKFLOW] Documenti informativi:', docResult.success ? '✅' : '❌')
+          // DISABILITATO: Email brochure ridondante - ora inclusa in email completamento dati
+          // const docResult = await inviaEmailDocumentiInformativi(leadData, c.env, documentUrls, c.env.DB)
+          // emailResults.brochure.sent = docResult.success
+          emailResults.brochure.sent = false // Skip email brochure separata
+          addDebugLog(`ℹ️ [LEAD] Email brochure separata disabilitata (inclusa in email completamento)`)
+          console.log('📚 [WORKFLOW] Email brochure separata: ⏭️ SKIPPED (inclusa in completamento dati)')
         } catch (error) {
           console.error('❌ Errore documenti:', error)
           const errorMsg = error instanceof Error ? error.message : String(error)
