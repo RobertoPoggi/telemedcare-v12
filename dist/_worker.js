@@ -10019,7 +10019,11 @@ PUT /api/contratti/\${contractId}\`);
       SET fonte = 'IRBEMA'
       WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '')
         AND id LIKE 'LEAD-IRBEMA-%'
-    `).run();return console.log(`✅ Fonte aggiornata per ${e.meta.changes} lead`),a.json({success:!0,message:"Fonte aggiornata da HUBSPOT a IRBEMA",leadsUpdated:e.meta.changes})}catch(e){return console.error("❌ Errore correzione fonte:",e),a.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.post("/api/admin/init-settings",async a=>{var t,e,o;try{if(!((t=a.env)!=null&&t.DB))return a.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Inizializzazione settings switch dashboard");const i=await a.env.DB.prepare(`
+    `).run();return console.log(`✅ Fonte aggiornata per ${e.meta.changes} lead`),a.json({success:!0,message:"Fonte aggiornata da HUBSPOT a IRBEMA",leadsUpdated:e.meta.changes})}catch(e){return console.error("❌ Errore correzione fonte:",e),a.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.post("/api/admin/fix-settings-values",async a=>{var t,e,o;try{if(!((t=a.env)!=null&&t.DB))return a.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Conversione valori settings: true/false → 1/0");const i=await a.env.DB.prepare(`
+      UPDATE settings SET value = '1' WHERE value IN ('true', 'True', 'TRUE')
+    `).run(),s=await a.env.DB.prepare(`
+      UPDATE settings SET value = '0' WHERE value IN ('false', 'False', 'FALSE')
+    `).run(),r=(((e=i.meta)==null?void 0:e.changes)||0)+(((o=s.meta)==null?void 0:o.changes)||0);return console.log(`✅ Convertiti ${r} valori`),a.json({success:!0,message:"Valori settings convertiti da true/false a 1/0",settingsUpdated:r})}catch(i){return console.error("❌ Errore conversione settings:",i),a.json({success:!1,error:i instanceof Error?i.message:String(i)},500)}});I.post("/api/admin/init-settings",async a=>{var t,e,o;try{if(!((t=a.env)!=null&&t.DB))return a.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Inizializzazione settings switch dashboard");const i=await a.env.DB.prepare(`
       INSERT OR IGNORE INTO settings (key, value, description, updated_at) VALUES 
         ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
         ('lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead', datetime('now')),

@@ -4410,6 +4410,42 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT ADMIN: Converti valori settings da 'true'/'false' a '1'/'0'
+app.post('/api/admin/fix-settings-values', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Conversione valori settings: true/false → 1/0')
+    
+    // Converti 'true' → '1' e 'false' → '0'
+    const resultTrue = await c.env.DB.prepare(`
+      UPDATE settings SET value = '1' WHERE value IN ('true', 'True', 'TRUE')
+    `).run()
+    
+    const resultFalse = await c.env.DB.prepare(`
+      UPDATE settings SET value = '0' WHERE value IN ('false', 'False', 'FALSE')
+    `).run()
+    
+    const totalUpdated = (resultTrue.meta?.changes || 0) + (resultFalse.meta?.changes || 0)
+    console.log(`✅ Convertiti ${totalUpdated} valori`)
+    
+    return c.json({
+      success: true,
+      message: 'Valori settings convertiti da true/false a 1/0',
+      settingsUpdated: totalUpdated
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore conversione settings:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔧 ENDPOINT: Inizializza settings per switch dashboard
 app.post('/api/admin/init-settings', async (c) => {
   try {
