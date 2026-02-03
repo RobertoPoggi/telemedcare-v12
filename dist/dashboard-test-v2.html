@@ -643,19 +643,24 @@
             // Analizza SOLO gli ASSISTITI ATTIVI per identificare il canale di provenienza
             const channelCounts = {};
             const channelColors = {
+                'Partner': 'bg-blue-500',
                 'Irbema': 'bg-blue-500',
                 'Excel': 'bg-green-500',
+                'Website': 'bg-indigo-600',
                 'Web': 'bg-indigo-600',
                 'Networking': 'bg-purple-500',
                 'AON': 'bg-orange-500',
-                'DoubleYou': 'bg-pink-500'
+                'DoubleYou': 'bg-pink-500',
+                'Telefono': 'bg-gray-500',
+                'Email': 'bg-red-500'
             };
             
             assistiti.forEach(assistito => {
-                let canale = 'Web'; // Default
+                let canale = 'Website'; // Default
                 
                 // Estrai info assistito - prova vari nomi campo
                 const leadId = (assistito.id || '').toString().toUpperCase();
+                const fonte = (assistito.fonte || '').toLowerCase().trim();
                 const emailRichiedente = (
                     assistito.emailRichiedente || 
                     assistito.email || 
@@ -664,45 +669,57 @@
                     ''
                 ).toLowerCase().trim();
                 const nomeCompleto = `${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} ${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}`.trim().toLowerCase();
-                const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
-                // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
-                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
-                if (nomeCompleto.includes('laura calvi') || 
-                    emailRichiedente.includes('stefania.rocca@medicagb.it')) {
+                // ✅ LOGICA CORRETTA: Usa campo FONTE
+                
+                // 1. PARTNER (IRBEMA) - Da HubSpot Form eCura
+                if (fonte.includes('hubspot') || fonte.includes('irbema') || leadId.includes('LEAD-IRBEMA')) {
+                    canale = 'Partner';
+                    console.log('✅ Partner (Irbema/HubSpot):', nomeCompleto, leadId);
+                }
+                // 2. NETWORKING - Laura Calvi o email stefania.rocca@medicagb.it
+                else if (nomeCompleto.includes('laura calvi') || 
+                         emailRichiedente.includes('stefania.rocca@medicagb.it') ||
+                         fonte.includes('networking')) {
                     canale = 'Networking';
                     console.log('✅ Networking:', nomeCompleto);
                 }
-                // PRIORITÀ 2: Tutti gli altri assistiti attivi = Irbema (da Excel colonna F: info@irbema.com)
-                // Lista verificata dall'Excel: Elena Saglia, Paolo Magri, Caterina D'Alterio, 
-                // Simona Pizzutto, Elisabetta Cattini, e gli assistiti attuali nel DB
-                else if (
-                    nomeCompleto.includes('elena') || nomeCompleto.includes('saglia') ||
-                    nomeCompleto.includes('paolo') || nomeCompleto.includes('magri') ||
-                    nomeCompleto.includes('caterina') || nomeCompleto.includes('alterio') ||
-                    nomeCompleto.includes('simona') || nomeCompleto.includes('pizzutto') ||
-                    nomeCompleto.includes('elisabetta') || nomeCompleto.includes('cattini') ||
-                    nomeCompleto.includes('giuliana') || nomeCompleto.includes('balzarotti') ||
-                    nomeCompleto.includes('rita') || nomeCompleto.includes('pennacchio') ||
-                    nomeCompleto.includes('maria') || nomeCompleto.includes('capone') ||
-                    nomeCompleto.includes('giuseppina') || nomeCompleto.includes('cozzi') ||
-                    nomeCompleto.includes('eileen') || nomeCompleto.includes('king')
-                ) {
-                    canale = 'Irbema';
-                    console.log('✅ Irbema:', nomeCompleto, '(da mappatura Excel)');
+                // 3. WEBSITE - Francesca Grati o form diretto
+                else if (nomeCompleto.includes('francesca grati') ||
+                         fonte.includes('website') ||
+                         fonte.includes('web') ||
+                         fonte.includes('form')) {
+                    canale = 'Website';
+                    console.log('✅ Website:', nomeCompleto);
                 }
-                // PRIORITÀ 3: Altri canali (Excel, AON, DoubleYou) - solo se campo canale popolato
-                else if (canaleField.includes('excel') || leadId.includes('LEAD-EXCEL')) {
+                // 4. EXCEL IMPORT
+                else if (fonte.includes('excel') || leadId.includes('LEAD-EXCEL')) {
                     canale = 'Excel';
-                } else if (canaleField.includes('aon')) {
+                    console.log('✅ Excel:', nomeCompleto);
+                }
+                // 5. AON
+                else if (fonte.includes('aon') || leadId.includes('LEAD-AON')) {
                     canale = 'AON';
-                } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
+                    console.log('✅ AON:', nomeCompleto);
+                }
+                // 6. DOUBLEYOU
+                else if (fonte.includes('doubleyou') || fonte.includes('double') || leadId.includes('LEAD-DOUBLEYOU')) {
                     canale = 'DoubleYou';
-                } else if (canaleField.includes('network')) {
-                    canale = 'Networking';
-                } else {
-                    // Se non riconosciuto, rimane Web (default)
-                    console.log('⚠️  Web (default):', nomeCompleto);
+                    console.log('✅ DoubleYou:', nomeCompleto);
+                }
+                // 7. TELEFONO
+                else if (fonte.includes('telefono') || fonte.includes('phone')) {
+                    canale = 'Telefono';
+                    console.log('✅ Telefono:', nomeCompleto);
+                }
+                // 8. EMAIL
+                else if (fonte.includes('email') || fonte.includes('e-mail')) {
+                    canale = 'Email';
+                    console.log('✅ Email:', nomeCompleto);
+                }
+                else {
+                    // Default: Website
+                    console.log('⚠️  Website (default):', nomeCompleto, '- fonte:', fonte || 'vuota');
                 }
                 
                 channelCounts[canale] = (channelCounts[canale] || 0) + 1;
