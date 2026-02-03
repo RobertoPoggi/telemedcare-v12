@@ -13273,34 +13273,12 @@ app.get('/api/data/stats', async (c) => {
   try {
     console.log('📊 [STATS] Inizio calcolo statistiche...')
     console.log('📊 [STATS] Env keys:', Object.keys(c.env || {}))
-    console.log('📊 [STATS] DB type:', typeof c.env?.DB)
-    console.log('📊 [STATS] DB disponibile?', !!c.env?.DB)
+    console.log('📊 [STATS] c.env.DB:', !!c.env?.DB)
     
-    // Provo ad accedere al DB direttamente senza il check
-    const db = c.env.DB || c.env.telemedcare_v12_db
+    // Accedi direttamente al DB senza check preliminare
+    const db = c.env.DB
     
-    if (!db) { // Fallback se DB non disponibile
-      console.error('❌ [STATS] DB NON DISPONIBILE')
-      console.error('❌ [STATS] c.env keys:', Object.keys(c.env || {}))
-      return c.json({
-        success: true,
-        totalLeads: 0,
-        leadsToday: 0,
-        contractsToday: 0,
-        proformaToday: 0,
-        paymentsToday: 0,
-        configurationsToday: 0,
-        activationsToday: 0,
-        emailsMonth: 0,
-        topService: 'N/A',
-        timestamp: new Date().toISOString(),
-        fallback: true,
-        error: 'DB not configured',
-        envKeys: Object.keys(c.env || {})
-      })
-    }
-    
-    console.log('✅ [STATS] DB trovato, procedo con le query')
+    console.log('✅ [STATS] DB reference obtained, procedo con le query')
     
     // Calcola data di oggi (inizio giornata UTC)
     const today = new Date()
