@@ -10014,7 +10014,8 @@ PUT /api/contratti/\${contractId}\`);
     `).bind(o,e).run();return console.log(`✅ Template ${e} aggiornato (changes: ${i.meta.changes})`),a.json({success:!0,templateId:e,updated:!0,changes:i.meta.changes})}catch(e){return console.error("❌ Errore aggiornamento template:",e),a.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.post("/api/admin/fix-fonte-irbema",async a=>{var t;try{if(!((t=a.env)!=null&&t.DB))return a.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Correzione fonte: HUBSPOT → IRBEMA");const e=await a.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'IRBEMA'
-      WHERE fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%'
+      WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '')
+        AND id LIKE 'LEAD-IRBEMA-%'
     `).run();return console.log(`✅ Fonte aggiornata per ${e.meta.changes} lead`),a.json({success:!0,message:"Fonte aggiornata da HUBSPOT a IRBEMA",leadsUpdated:e.meta.changes})}catch(e){return console.error("❌ Errore correzione fonte:",e),a.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.post("/api/admin/update-template/:templateId",async a=>{var t;try{const e=a.req.param("templateId"),{html_content:o}=await a.req.json();if(!((t=a.env)!=null&&t.DB))return a.json({success:!1,error:"Database non configurato"},500);if(!o)return a.json({success:!1,error:"html_content richiesto"},400);console.log(`📝 Aggiornamento template: ${e} (${o.length} chars)`);const i=await a.env.DB.prepare(`
       UPDATE document_templates 
       SET html_content = ?,

@@ -4385,11 +4385,12 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
     
     console.log('🔧 Correzione fonte: HUBSPOT → IRBEMA')
     
-    // Aggiorna tutti i lead con fonte HUBSPOT
+    // Aggiorna tutti i lead con fonte HUBSPOT o vuota (solo per LEAD-IRBEMA-xxxxx)
     const result = await c.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'IRBEMA'
-      WHERE fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%'
+      WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '')
+        AND id LIKE 'LEAD-IRBEMA-%'
     `).run()
     
     console.log(`✅ Fonte aggiornata per ${result.meta.changes} lead`)
