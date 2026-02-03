@@ -176,6 +176,8 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         cognomeRichiedente, 
         emailRichiedente, 
         telefonoRichiedente,
+        email,
+        telefono,
         cittaRichiedente,
         nomeAssistito, 
         cognomeAssistito, 
@@ -187,8 +189,8 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         fonte,
         note,
         status,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     const result = await db
@@ -198,7 +200,9 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         lead.nomeRichiedente,
         lead.cognomeRichiedente,
         lead.emailRichiedente,
-        lead.telefonoRichiedente || null,
+        lead.telefonoRichiedente || '',
+        lead.emailRichiedente, // Legacy field
+        lead.telefonoRichiedente || '', // Legacy field
         lead.cittaRichiedente || null,
         lead.nomeAssistito || null,
         lead.cognomeAssistito || null,
