@@ -53,6 +53,9 @@ export interface HubSpotWebhookPayload {
     richiedi_brochure?: 'true' | 'false' | boolean
     richiedi_contratto?: 'true' | 'false' | boolean
     
+    // Filtro fonte (campo NUR)
+    hs_object_source_detail_1?: string // "Form eCura" per lead da www.ecura.it
+    
     // Altro
     note?: string
     privacy_consent?: 'true' | 'false' | boolean
@@ -76,6 +79,12 @@ export function validateHubSpotPayload(payload: any): boolean {
   }
 
   const props = payload.properties || {}
+
+  // ✅ FILTRO: Accetta SOLO lead da "Form eCura" (www.ecura.it)
+  if (props.hs_object_source_detail_1 !== 'Form eCura') {
+    console.log(`⚠️ Lead ignorato: fonte "${props.hs_object_source_detail_1}" diversa da "Form eCura"`)
+    return false
+  }
 
   // Verifica campi obbligatori form
   if (!props.email) {
