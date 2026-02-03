@@ -13297,17 +13297,17 @@ app.get('/api/data/stats', async (c) => {
     
     // Contratti oggi (dalla tabella contratti)
     const contractsToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ?'
+      'SELECT COUNT(*) as count FROM contracts WHERE created_at >= ?'
     ).bind(todayISO).first()
     
     // Proforma oggi (contratti con status DRAFT o PENDING)
     const proformaToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ? AND status IN ("DRAFT", "PENDING")'
+      'SELECT COUNT(*) as count FROM contracts WHERE created_at >= ? AND status IN ("DRAFT", "PENDING")'
     ).bind(todayISO).first()
     
     // Pagamenti oggi (contratti con status PAID o PAGATO)
     const paymentsToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ? AND status IN ("PAID", "PAGATO")'
+      'SELECT COUNT(*) as count FROM contracts WHERE created_at >= ? AND status IN ("PAID", "PAGATO")'
     ).bind(todayISO).first()
     
     // Configurazioni oggi (leads con status CONFIG o IN_CONFIGURAZIONE)
