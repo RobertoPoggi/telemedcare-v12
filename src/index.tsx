@@ -4250,6 +4250,13 @@ app.post('/api/admin/add-signature-columns', async (c) => {
       results.push('ℹ️ Colonna signed_at già esistente');
     }
 
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_method TEXT DEFAULT \'inline\'').run();
+      results.push('✅ Colonna signature_method aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_method già esistente');
+    }
+
     // Crea indici
     try {
       await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_signed_at ON contracts(signed_at)').run();
