@@ -135,9 +135,9 @@
             <!-- Riga 3: Automazioni (Switch ON/OFF Sistema) -->
             <div class="border-t border-gray-200 pt-4">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-cogs mr-2 text-purple-600"></i>Automazioni Sistema
+                    <i class="fas fa-cogs mr-2 text-purple-600"></i>Automazioni Sistema <span id="switchCount" class="text-xs text-gray-500">(0/4)</span>
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                     <!-- Switch 1: Import Automatico Giornaliero HubSpot IRBEMA -->
                     <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
                         <div class="flex items-center justify-between">
@@ -1459,44 +1459,57 @@
         async function loadToggleStates() {
             try {
                 console.log('🔄 Caricamento stato toggle...');
-                const response = await fetch('/api/settings');
+                // Cache busting con timestamp
+                const response = await fetch('/api/settings?t=' + Date.now());
                 console.log('📡 Response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('📦 Data ricevuta:', data);
+                    console.log('📦 Data ricevuta completa:', JSON.stringify(data, null, 2));
                     
                     if (data.success && data.settings) {
                         // Aggiorna toggle Cron (Email Lead)
                         const cronToggle = document.getElementById('cronToggle');
                         if (cronToggle && data.settings.lead_email_notifications_enabled) {
-                            const isEnabled = data.settings.lead_email_notifications_enabled.value === 'true';
+                            const value = data.settings.lead_email_notifications_enabled.value;
+                            const isEnabled = value === 'true';
                             cronToggle.checked = isEnabled;
-                            console.log('✅ Toggle Email Lead:', isEnabled);
+                            console.log('✅ Toggle Email Lead:', isEnabled, '(raw:', value, ')');
+                        } else {
+                            console.warn('❌ cronToggle non trovato o dato mancante');
                         }
                         
                         // Aggiorna toggle HubSpot
                         const hubspotToggle = document.getElementById('hubspotToggle');
                         if (hubspotToggle && data.settings.hubspot_auto_import_enabled) {
-                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            const value = data.settings.hubspot_auto_import_enabled.value;
+                            const isEnabled = value === 'true';
                             hubspotToggle.checked = isEnabled;
-                            console.log('✅ Toggle HubSpot:', isEnabled);
+                            console.log('✅ Toggle HubSpot:', isEnabled, '(raw:', value, ')');
+                        } else {
+                            console.warn('❌ hubspotToggle non trovato o dato mancante');
                         }
                         
                         // Aggiorna toggle Admin
                         const adminToggle = document.getElementById('adminToggle');
                         if (adminToggle && data.settings.admin_email_notifications_enabled) {
-                            const isEnabled = data.settings.admin_email_notifications_enabled.value === 'true';
+                            const value = data.settings.admin_email_notifications_enabled.value;
+                            const isEnabled = value === 'true';
                             adminToggle.checked = isEnabled;
-                            console.log('✅ Toggle Admin:', isEnabled);
+                            console.log('✅ Toggle Admin:', isEnabled, '(raw:', value, ')');
+                        } else {
+                            console.warn('❌ adminToggle non trovato o dato mancante');
                         }
                         
                         // Aggiorna toggle Reminder
                         const reminderToggle = document.getElementById('reminderToggle');
                         if (reminderToggle && data.settings.reminder_completion_enabled) {
-                            const isEnabled = data.settings.reminder_completion_enabled.value === 'true';
+                            const value = data.settings.reminder_completion_enabled.value;
+                            const isEnabled = value === 'true';
                             reminderToggle.checked = isEnabled;
-                            console.log('✅ Toggle Reminder:', isEnabled);
+                            console.log('✅ Toggle Reminder:', isEnabled, '(raw:', value, ')');
+                        } else {
+                            console.warn('❌ reminderToggle non trovato o dato mancante');
                         }
                         
                         // Aggiorna stato HubSpot
@@ -1506,6 +1519,15 @@
                             statusEl.textContent = isEnabled
                                 ? 'Sincronizzazione attiva • Ultima: --'
                                 : 'Sincronizzazione disattivata';
+                        }
+                        
+                        // Conta switch attivi
+                        const activeCount = Object.values(data.settings).filter(s => s.value === 'true').length;
+                        const totalCount = Object.keys(data.settings).length;
+                        const switchCountEl = document.getElementById('switchCount');
+                        if (switchCountEl) {
+                            switchCountEl.textContent = `(${activeCount}/${totalCount} attivi)`;
+                            switchCountEl.className = activeCount > 0 ? 'text-xs text-green-600 font-semibold' : 'text-xs text-gray-500';
                         }
                         
                         console.log('✅ Toggle states loaded from /api/settings');
