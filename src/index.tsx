@@ -13410,8 +13410,9 @@ app.get('/api/data/stats', async (c) => {
   } catch (error) {
     console.error('❌ Errore statistiche data dashboard:', error)
     console.error('Error details:', error instanceof Error ? error.message : String(error))
+    console.error('Error stack:', error instanceof Error ? error.stack : 'no stack')
     
-    // Fallback con dati demo
+    // Fallback con errore dettagliato per debug
     return c.json({
       success: true,
       totalLeads: 0,
@@ -13424,7 +13425,9 @@ app.get('/api/data/stats', async (c) => {
       emailsMonth: 0,
       topService: 'N/A',
       timestamp: new Date().toISOString(),
-      fallback: true
+      fallback: true,
+      error: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined
     })
   }
 })
