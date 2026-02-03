@@ -149,6 +149,7 @@ export class HubSpotClient {
     createdBefore?: string
     email?: string
     hs_lead_status?: string
+    hs_object_source_detail_1?: string // Filtro fonte (es. "Form eCura")
     limit?: number
     properties?: string[]
   }): Promise<HubSpotSearchResponse> {
@@ -187,13 +188,23 @@ export class HubSpotClient {
       })
     }
     
+    // ✅ FILTRO FORM ECURA
+    if (filters.hs_object_source_detail_1) {
+      filtersArray.push({
+        propertyName: 'hs_object_source_detail_1',
+        operator: 'EQ',
+        value: filters.hs_object_source_detail_1
+      })
+    }
+    
     if (filtersArray.length > 0) {
       filterGroups.push({ filters: filtersArray })
     }
     
     const properties = filters.properties || [
       'firstname', 'lastname', 'email', 'phone', 'mobilephone',
-      'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate'
+      'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
+      'hs_object_source_detail_1' // Aggiungi questo campo alle properties
     ]
     
     const body = {

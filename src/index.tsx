@@ -9780,18 +9780,27 @@ app.post('/api/hubspot/sync', async (c) => {
     const body = await c.req.json()
     const days = body.days || 7
     const dryRun = body.dryRun || false
+    const onlyEcura = body.onlyEcura !== false // Default true
     
     const client = new HubSpotClient(accessToken, portalId)
     
     const createdAfter = new Date()
     createdAfter.setDate(createdAfter.getDate() - days)
     
-    console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione ultimi ${days} giorni (dryRun: ${dryRun})`)
+    console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione ultimi ${days} giorni (dryRun: ${dryRun}, onlyEcura: ${onlyEcura})`)
     
-    const response = await client.searchContacts({
+    // ✅ APPLICA FILTRO FORM ECURA
+    const searchFilters: any = {
       createdAfter: createdAfter.toISOString(),
       limit: 100
-    })
+    }
+    
+    if (onlyEcura) {
+      searchFilters.hs_object_source_detail_1 = 'Form eCura'
+      console.log('🔍 [HUBSPOT SYNC] Filtro attivo: solo lead da Form eCura')
+    }
+    
+    const response = await client.searchContacts(searchFilters)
     
     console.log(`📊 [HUBSPOT SYNC] Trovati ${response.results.length} contatti da sincronizzare`)
     
