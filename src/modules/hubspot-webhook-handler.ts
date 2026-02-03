@@ -214,7 +214,16 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
       )
       .run()
 
-    console.log(`✅ Lead ${lead.id} salvato nel database. Changes: ${result.meta?.changes || 0}`)
+    console.log(`✅ Lead ${lead.id} salvato nel database. Result:`, {
+      success: result.success,
+      meta: result.meta,
+      changes: result.meta?.changes || 0
+    })
+    
+    if (!result.success || (result.meta?.changes || 0) === 0) {
+      return { success: false, error: 'INSERT non ha modificato righe nel DB' }
+    }
+    
     return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
