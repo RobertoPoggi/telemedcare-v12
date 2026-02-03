@@ -9835,8 +9835,25 @@ app.post('/api/hubspot/sync', async (c) => {
         // Mappa contatto HubSpot → Lead TeleMedCare
         const leadData = mapHubSpotContactToLead(contact)
         
-        // Genera ID lead
-        const leadId = `LEAD-HUBSPOT-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+        // Genera ID lead sequenziale LEAD-IRBEMA-xxxxx
+        // Ottieni l'ultimo numero IRBEMA dal DB
+        const lastIrbemaLead = await c.env.DB.prepare(`
+          SELECT id FROM leads 
+          WHERE id LIKE 'LEAD-IRBEMA-%' 
+          ORDER BY id DESC 
+          LIMIT 1
+        `).first()
+        
+        let nextNumber = 146 // Default se non ci sono lead IRBEMA
+        if (lastIrbemaLead?.id) {
+          const match = lastIrbemaLead.id.match(/LEAD-IRBEMA-(\d+)/)
+          if (match) {
+            nextNumber = parseInt(match[1]) + 1
+          }
+        }
+        
+        const leadId = `LEAD-IRBEMA-${nextNumber.toString().padStart(5, '0')}`
+        console.log(`🆔 [HUBSPOT SYNC] Generato ID: ${leadId}`)
         
         // Inserisci nel database
         await c.env.DB.prepare(`
