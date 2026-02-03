@@ -6166,74 +6166,8 @@ app.post('/api/contracts/send', async (c) => {
   }
 })
 
-// POST /api/contracts/sign - Firma elettronica contratto
-app.post('/api/contracts/sign', async (c) => {
-  try {
-    const { contractId, firmaDigitale, ipAddress, userAgent } = await c.req.json()
-    
-    if (!c.env?.DB) {
-      return c.json({ success: false, error: 'Database non configurato' }, 500)
-    }
-    
-    // Verifica contratto
-    const contract = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ? AND status = ?').bind(contractId, 'SENT').first()
-    if (!contract) {
-      return c.json({ success: false, error: 'Contratto non valido o già firmato' }, 404)
-    }
-    
-    // Recupera lead data
-    const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(contract.leadId).first()
-    if (!leadData) {
-      return c.json({ success: false, error: 'Lead non trovato' }, 404)
-    }
-    
-    // ============================================
-    // 🔥 NEW WORKFLOW ORCHESTRATOR - STEP 2: Firma Contratto
-    // ============================================
-    const workflowContext: WorkflowOrchestrator.WorkflowContext & { contractId: string; signatureData: string } = {
-      db: c.env.DB,
-      env: c.env,
-      leadData: {
-        id: leadData.id,
-        nomeRichiedente: leadData.nomeRichiedente,
-        cognomeRichiedente: leadData.cognomeRichiedente,
-        emailRichiedente: leadData.email,
-        telefonoRichiedente: leadData.telefono,
-        nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
-        cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
-        etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
-        pacchetto: leadData.tipoServizio || 'BASE',
-        vuoleContratto: true,
-        vuoleBrochure: leadData.vuoleBrochure === 'Si',
-        vuoleManuale: leadData.vuoleManuale === 'Si',
-        fonte: leadData.fonte || 'LANDING_PAGE'
-      },
-      contractId,
-      signatureData: firmaDigitale
-    }
-    
-    // Esegui STEP 2: Processamento firma contratto
-    const result = await WorkflowOrchestrator.processContractSignature(workflowContext)
-    
-    if (result.success) {
-      return c.json({
-        success: true,
-        message: result.message,
-        data: result.data
-      })
-    } else {
-      return c.json({
-        success: false,
-        error: result.message,
-        errors: result.errors
-      }, 400)
-    }
-    
-  } catch (error) {
-    console.error('❌ Errore firma contratto:', error)
-    return c.json({ success: false, error: error.message }, 500)
-  }
-})
+// POST /api/contracts/sign - RIMOSSO ENDPOINT DUPLICATO
+// Endpoint corretto si trova alla riga ~8543
 
 // POST /api/proforma - Genera proforma da contratto firmato
 app.post('/api/proforma', async (c) => {
