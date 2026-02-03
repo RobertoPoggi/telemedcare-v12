@@ -307,6 +307,7 @@ export interface LeadData {
   cognomeRichiedente: string
   emailRichiedente: string
   telefonoRichiedente?: string
+  cittaRichiedente?: string
   nomeAssistito?: string
   cognomeAssistito?: string
   etaAssistito?: number
@@ -315,6 +316,7 @@ export interface LeadData {
   vuoleBrochure: boolean
   vuoleManuale: boolean
   vuoleContratto: boolean
+  fonte?: string
   cfRichiedente?: string
   indirizzoRichiedente?: string
   cfAssistito?: string
