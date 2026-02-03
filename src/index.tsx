@@ -6987,7 +6987,7 @@ app.get('/api/contratti/:id/view', async (c) => {
     
     const contratto = await c.env.DB.prepare(`
       SELECT c.*, l.name as cliente_nome, l.email as cliente_email
-      FROM contratti c 
+      FROM contracts c 
       LEFT JOIN leads l ON c.lead_id = l.id 
       WHERE c.id = ?
     `).bind(id).first()
@@ -9334,7 +9334,7 @@ app.delete('/api/leads/:id', async (c) => {
     
     // Verifica se il lead ha contratti associati (opzionale - tabella potrebbe non esistere)
     try {
-      const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+      const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contracts WHERE lead_id = ?')
         .bind(id).first() as any
       
       if (contratti && contratti.count > 0) {
@@ -9418,7 +9418,7 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
       try {
         // Verifica contratti associati (tabella potrebbe non esistere)
         try {
-          const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contratti WHERE lead_id = ?')
+          const contratti = await c.env.DB.prepare('SELECT COUNT(*) as count FROM contracts WHERE lead_id = ?')
             .bind(lead.id).first() as any
           
           if (contratti && contratti.count > 0) {
