@@ -4197,6 +4197,92 @@ app.post('/api/admin/run-migrations', async (c) => {
   }
 });
 
+// POST /api/admin/add-signature-columns - Aggiunge colonne firma a tabella contracts
+app.post('/api/admin/add-signature-columns', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ error: 'Database non configurato' }, 500);
+    }
+
+    console.log('🔧 [MIGRATION 0030] Aggiunta colonne firma digitale');
+    const results = [];
+
+    // Aggiungi colonne firma se non esistono
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_data TEXT').run();
+      results.push('✅ Colonna signature_data aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_data già esistente');
+    }
+
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_ip TEXT').run();
+      results.push('✅ Colonna signature_ip aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_ip già esistente');
+    }
+
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_timestamp TEXT').run();
+      results.push('✅ Colonna signature_timestamp aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_timestamp già esistente');
+    }
+
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_user_agent TEXT').run();
+      results.push('✅ Colonna signature_user_agent aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_user_agent già esistente');
+    }
+
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signature_screen_resolution TEXT').run();
+      results.push('✅ Colonna signature_screen_resolution aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signature_screen_resolution già esistente');
+    }
+
+    try {
+      await c.env.DB.prepare('ALTER TABLE contracts ADD COLUMN signed_at TEXT').run();
+      results.push('✅ Colonna signed_at aggiunta');
+    } catch (e) {
+      results.push('ℹ️ Colonna signed_at già esistente');
+    }
+
+    // Crea indici
+    try {
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_signed_at ON contracts(signed_at)').run();
+      results.push('✅ Indice idx_contracts_signed_at creato');
+    } catch (e) {
+      results.push('⚠️ Errore creazione indice idx_contracts_signed_at');
+    }
+
+    try {
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contracts_signature_timestamp ON contracts(signature_timestamp)').run();
+      results.push('✅ Indice idx_contracts_signature_timestamp creato');
+    } catch (e) {
+      results.push('⚠️ Errore creazione indice idx_contracts_signature_timestamp');
+    }
+
+    console.log('✅ [MIGRATION 0030] Completata');
+
+    return c.json({
+      success: true,
+      message: 'Migration 0030 completata',
+      results
+    });
+
+  } catch (error) {
+    console.error('❌ [MIGRATION 0030] Errore:', error);
+    return c.json({
+      success: false,
+      error: 'Errore durante migration 0030',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 // 🧪 ENDPOINT TEST: Verifica invio email
 app.post('/api/admin/test-email', async (c) => {
   try {
