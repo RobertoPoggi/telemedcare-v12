@@ -13276,8 +13276,12 @@ app.get('/api/data/stats', async (c) => {
     console.log('📊 [STATS] DB type:', typeof c.env?.DB)
     console.log('📊 [STATS] DB disponibile?', !!c.env?.DB)
     
-    if (!c.env?.DB) { // Fallback se DB non disponibile
-      console.error('❌ [STATS] DB NON DISPONIBILE - env:', c.env)
+    // Provo ad accedere al DB direttamente senza il check
+    const db = c.env.DB || c.env.telemedcare_v12_db
+    
+    if (!db) { // Fallback se DB non disponibile
+      console.error('❌ [STATS] DB NON DISPONIBILE')
+      console.error('❌ [STATS] c.env keys:', Object.keys(c.env || {}))
       return c.json({
         success: true,
         totalLeads: 0,
@@ -13291,9 +13295,12 @@ app.get('/api/data/stats', async (c) => {
         topService: 'N/A',
         timestamp: new Date().toISOString(),
         fallback: true,
-        error: 'DB not configured'
+        error: 'DB not configured',
+        envKeys: Object.keys(c.env || {})
       })
     }
+    
+    console.log('✅ [STATS] DB trovato, procedo con le query')
     
     // Calcola data di oggi (inizio giornata UTC)
     const today = new Date()
@@ -13303,36 +13310,36 @@ app.get('/api/data/stats', async (c) => {
     console.log('📊 [STATS] Data oggi (UTC 00:00):', todayISO)
     
     // Query reali per database D1
-    // Lead oggi
-    const leadsToday = await c.env.DB.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ?'
+    // Lead oggi - usa campo timestamp invece di created_at
+    const leadsToday = await db.prepare(
+      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ?'
     ).bind(todayISO).first()
     
     console.log('📊 [STATS] Lead oggi result:', leadsToday)
     
     // Contratti oggi (dalla tabella contratti)
-    const contractsToday = await c.env.DB.prepare(
+    const contractsToday = await db.prepare(
       'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ?'
     ).bind(todayISO).first()
     
     // Proforma oggi (contratti con status DRAFT o PENDING)
-    const proformaToday = await c.env.DB.prepare(
+    const proformaToday = await db.prepare(
       'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ? AND status IN ("DRAFT", "PENDING")'
     ).bind(todayISO).first()
     
     // Pagamenti oggi (contratti con status PAID o PAGATO)
-    const paymentsToday = await c.env.DB.prepare(
+    const paymentsToday = await db.prepare(
       'SELECT COUNT(*) as count FROM contratti WHERE created_at >= ? AND status IN ("PAID", "PAGATO")'
     ).bind(todayISO).first()
     
     // Configurazioni oggi (leads con status CONFIG o IN_CONFIGURAZIONE)
-    const configurationsToday = await c.env.DB.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ? AND status IN ("CONFIG", "IN_CONFIGURAZIONE")'
+    const configurationsToday = await db.prepare(
+      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ? AND status IN ("CONFIG", "IN_CONFIGURAZIONE")'
     ).bind(todayISO).first()
     
     // Attivazioni oggi (leads con status ACTIVE o ATTIVO)
-    const activationsToday = await c.env.DB.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ? AND status IN ("ACTIVE", "ATTIVO")'
+    const activationsToday = await db.prepare(
+      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ? AND status IN ("ACTIVE", "ATTIVO")'
     ).bind(todayISO).first()
     
     // ==== NUOVE METRICHE PER DASHBOARD OPERATIVA ====
@@ -13346,12 +13353,12 @@ app.get('/api/data/stats', async (c) => {
     console.log('📊 [STATS] Data 30 giorni fa:', thirtyDaysAgoISO)
     
     // Totale leads
-    const totalLeads = await c.env.DB.prepare('SELECT COUNT(*) as count FROM leads').first()
+    const totalLeads = await db.prepare('SELECT COUNT(*) as count FROM leads').first()
     console.log('📊 [STATS] Total leads:', totalLeads?.count)
     
     // Email inviate ultimi 30 giorni - LEGGE DAL CONTATORE
     console.log('📊 [STATS] Lettura contatore email...')
-    const emailCounter = await c.env.DB.prepare(`
+    const emailCounter = await db.prepare(`
       SELECT emails_sent_30days, last_reset_date FROM stats WHERE id = 1
     `).first()
     
@@ -13366,7 +13373,7 @@ app.get('/api/data/stats', async (c) => {
     console.log('📊 [STATS] emailsMonth finale:', emailsMonth)
     
     // Servizio più richiesto (ultimi 30 giorni)
-    const topService = await c.env.DB.prepare(`
+    const topService = await db.prepare(`
       SELECT servizio, COUNT(*) as count 
       FROM leads 
       WHERE created_at >= ? AND servizio IS NOT NULL
