@@ -268,6 +268,19 @@ export async function handleHubSpotWebhook(
 
     // 4. Salvataggio nel database
     const db: D1Database = env.DB || env.telemedcare_v12_db
+    
+    if (!db) {
+      console.error('❌ Database non configurato in env', { envKeys: Object.keys(env) })
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Database non configurato' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    console.log('✅ Database configurato, procedo al salvataggio')
     const saved = await saveLeadToDB(leadData, db)
     
     if (!saved) {
