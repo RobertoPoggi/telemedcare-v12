@@ -4410,30 +4410,30 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
-// 🔧 ENDPOINT ADMIN: Converti valori settings da 'true'/'false' a '1'/'0'
-app.post('/api/admin/fix-settings-values', async (c) => {
+// 🔧 ENDPOINT ADMIN: Converti valori settings da '1'/'0' a 'true'/'false'
+app.post('/api/admin/normalize-settings-values', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    console.log('🔧 Conversione valori settings: true/false → 1/0')
+    console.log('🔧 Normalizzazione valori settings: 1/0 → true/false')
     
-    // Converti 'true' → '1' e 'false' → '0'
+    // Converti '1' → 'true' e '0' → 'false'
     const resultTrue = await c.env.DB.prepare(`
-      UPDATE settings SET value = '1' WHERE value IN ('true', 'True', 'TRUE')
+      UPDATE settings SET value = 'true' WHERE value IN ('1', 1)
     `).run()
     
     const resultFalse = await c.env.DB.prepare(`
-      UPDATE settings SET value = '0' WHERE value IN ('false', 'False', 'FALSE')
+      UPDATE settings SET value = 'false' WHERE value IN ('0', 0)
     `).run()
     
     const totalUpdated = (resultTrue.meta?.changes || 0) + (resultFalse.meta?.changes || 0)
-    console.log(`✅ Convertiti ${totalUpdated} valori`)
+    console.log(`✅ Normalizzati ${totalUpdated} valori`)
     
     return c.json({
       success: true,
-      message: 'Valori settings convertiti da true/false a 1/0',
+      message: 'Valori settings normalizzati a true/false',
       settingsUpdated: totalUpdated
     })
     

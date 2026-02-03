@@ -14,9 +14,10 @@ export async function getSettings(c: Context) {
 
     // Inizializza i settings necessari nella tabella settings
     const defaultSettings = [
-      { key: 'hubspot_auto_import_enabled', value: '0', description: 'Abilita import automatico da HubSpot' },
-      { key: 'lead_email_notifications_enabled', value: '0', description: 'Abilita invio email automatiche ai lead' },
-      { key: 'admin_email_notifications_enabled', value: '1', description: 'Abilita notifiche email a info@telemedcare.it' }
+      { key: 'hubspot_auto_import_enabled', value: 'false', description: 'Abilita import automatico da HubSpot' },
+      { key: 'lead_email_notifications_enabled', value: 'false', description: 'Abilita invio email automatiche ai lead' },
+      { key: 'admin_email_notifications_enabled', value: 'true', description: 'Abilita notifiche email a info@telemedcare.it' },
+      { key: 'reminder_completion_enabled', value: 'false', description: 'Abilita reminder automatici completamento dati lead' }
     ]
 
     for (const setting of defaultSettings) {
@@ -77,8 +78,8 @@ export async function updateSetting(c: Context) {
       }, 404)
     }
 
-    // Aggiorna il valore (usa '1'/'0' per compatibilità SQLite)
-    const stringValue = value ? '1' : '0'
+    // Aggiorna il valore (usa 'true'/'false' come stringhe)
+    const stringValue = value ? 'true' : 'false'
     await c.env.DB.prepare(
       'UPDATE settings SET value = ?, updated_at = ? WHERE key = ?'
     ).bind(stringValue, new Date().toISOString(), key).run()
@@ -89,7 +90,7 @@ export async function updateSetting(c: Context) {
       success: true,
       message: 'Setting aggiornato',
       key,
-      value: stringValue === '1'
+      value: stringValue === 'true'
     })
   } catch (error) {
     console.error('❌ Errore update setting:', error)
@@ -107,9 +108,8 @@ export async function getSetting(db: any, key: string): Promise<boolean> {
       'SELECT value FROM settings WHERE key = ?'
     ).bind(key).first()
     
-    // Gestisci sia '1'/'0' che 'true'/'false' per retrocompatibilità
-    const value = result?.value
-    return value === '1' || value === 'true' || value === 1 || value === true
+    // Usa solo confronto con 'true' (stringa)
+    return result?.value === 'true'
   } catch (error) {
     console.error(`❌ Errore lettura setting ${key}:`, error)
     return false
