@@ -98,11 +98,13 @@ export function validateHubSpotPayload(payload: any): boolean {
     return false
   }
 
-  if (!props.servizio_ecura) {
-    console.error('❌ Servizio eCura non specificato')
+  // servizio_ecura opzionale (può essere derivato dal piano)
+  if (!props.servizio_ecura && !props.piano_ecura) {
+    console.error('❌ Né servizio né piano eCura specificati')
     return false
   }
 
+  console.log('✅ Validazione payload superata')
   return true
 }
 
@@ -218,9 +220,18 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
     console.error(`❌ Errore salvataggio lead nel DB:`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      leadId: lead.id
+      cause: error instanceof Error ? (error as any).cause : undefined,
+      leadId: lead.id,
+      leadData: {
+        nomeRichiedente: lead.nomeRichiedente,
+        cognomeRichiedente: lead.cognomeRichiedente,
+        emailRichiedente: lead.emailRichiedente,
+        pacchetto: lead.pacchetto
+      }
     })
-    return false
+    
+    // Re-throw per vedere l'errore completo
+    throw error
   }
 }
 
@@ -279,13 +290,26 @@ export async function handleHubSpotWebhook(
     }
     
     console.log('✅ Database configurato, procedo al salvataggio')
-    const saved = await saveLeadToDB(leadData, db)
     
-    if (!saved) {
+    try {
+      const saved = await saveLeadToDB(leadData, db)
+      
+      if (!saved) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Errore salvataggio database (saveLeadToDB returned false)' 
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+    } catch (saveError) {
+      console.error('❌ Eccezione durante salvataggio:', saveError)
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Errore salvataggio database' 
+          error: 'Errore salvataggio database',
+          details: saveError instanceof Error ? saveError.message : String(saveError)
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
