@@ -1230,7 +1230,7 @@
         window.importFromExcel = importFromExcel;  // Esponi globalmente
 
         function importFromIrbema() {
-            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\n✅ Solo contatti creati dal 1 gennaio 2026\n✅ I lead già esistenti verranno saltati\n\nQuesto può richiedere qualche secondo...')) {
+            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\n✅ Solo lead da Form eCura (filtro hs_object_source_detail_1)\n✅ I lead già esistenti verranno saltati\n✅ Import completo senza limite di data\n\nQuesto può richiedere qualche secondo...')) {
                 return;
             }
             
@@ -1238,20 +1238,28 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Import in corso...';
             
-            fetch('/api/import/irbema', {
+            // USA ENDPOINT HUBSPOT/SYNC CON PERIODO ESTESO (365 giorni = 1 anno)
+            fetch('/api/hubspot/sync', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    days: 365, // Import ultimi 365 giorni (tutto lo storico recente)
+                    dryRun: false,
+                    onlyEcura: true // Filtro Form eCura attivo
+                })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    const results = data.results || {};
                     alert(`✅ Import completato!\n\n` +
-                          `• Lead importati: ${data.imported}\n` +
-                          `• Lead saltati (duplicati): ${data.skipped}\n` +
-                          `• Lead filtrati (pre-2026): ${data.filtered || 0}\n` +
-                          `• Totale contatti elaborati: ${data.total}\n` +
-                          `• Pagine processate: ${data.pages || 1}\n\n` +
-                          (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.slice(0, 5).join('\n')}${data.errors.length > 5 ? '\n... e altri ' + (data.errors.length - 5) + ' errori' : ''}` : ''));
+                          `• Lead importati: ${results.created || 0}\n` +
+                          `• Lead saltati (già presenti): ${results.skipped || 0}\n` +
+                          `• Totale contatti Form eCura: ${results.total || 0}\n` +
+                          `• Periodo: ${data.period || 'Ultimi 365 giorni'}\n\n` +
+                          (results.errors && results.errors.length > 0 ? 
+                              `⚠️ Errori (${results.errors.length}):\n${results.errors.slice(0, 3).map(e => `• ${e.email || e.contactId}: ${e.error}`).join('\n')}${results.errors.length > 3 ? '\n... e altri ' + (results.errors.length - 3) + ' errori' : ''}` 
+                              : '✅ Nessun errore'));
                     loadDashboardData(); // Ricarica dashboard
                 } else {
                     alert('❌ Errore import:\n\n' + data.error + (data.details ? '\n\n' + data.details : ''));
@@ -1262,7 +1270,7 @@
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-cloud-download-alt mr-2"></i>Irbema';
+                btn.innerHTML = '<i class="fas fa-building mr-2"></i>Irbema';
             });
         }
 
