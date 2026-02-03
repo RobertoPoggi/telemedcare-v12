@@ -4410,6 +4410,40 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT: Inizializza settings per switch dashboard
+app.post('/api/admin/init-settings', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Inizializzazione settings switch dashboard')
+    
+    // Inserisci settings se non esistono
+    const result = await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO system_config (key, value, description, updated_at) VALUES 
+        ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
+        ('lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead', datetime('now')),
+        ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it', datetime('now'))
+    `).run()
+    
+    console.log(`✅ Settings inizializzati (changes: ${result.meta?.changes || 0})`)
+    
+    return c.json({
+      success: true,
+      message: 'Settings inizializzati correttamente',
+      settingsAdded: result.meta?.changes || 0
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore inizializzazione settings:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔄 ENDPOINT: Aggiorna template dal file HTML (con templateId come URL param)
 app.post('/api/admin/update-template/:templateId', async (c) => {
   try {
