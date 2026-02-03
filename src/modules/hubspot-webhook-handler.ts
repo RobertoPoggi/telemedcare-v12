@@ -160,7 +160,7 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
 /**
  * Salva il lead nel database D1
  */
-export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<boolean> {
+export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('💾 Tentativo salvataggio lead:', {
       id: lead.id,
@@ -215,10 +215,11 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
       .run()
 
     console.log(`✅ Lead ${lead.id} salvato nel database. Changes: ${result.meta?.changes || 0}`)
-    return true
+    return { success: true }
   } catch (error) {
-    console.error(`❌ Errore salvataggio lead nel DB:`, {
-      error: error instanceof Error ? error.message : String(error),
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorDetails = {
+      error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
       cause: error instanceof Error ? (error as any).cause : undefined,
       leadId: lead.id,
@@ -228,10 +229,10 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         emailRichiedente: lead.emailRichiedente,
         pacchetto: lead.pacchetto
       }
-    })
+    }
     
-    // Re-throw per vedere l'errore completo
-    throw error
+    console.error(`❌ Errore salvataggio lead nel DB:`, errorDetails)
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -291,25 +292,14 @@ export async function handleHubSpotWebhook(
     
     console.log('✅ Database configurato, procedo al salvataggio')
     
-    try {
-      const saved = await saveLeadToDB(leadData, db)
-      
-      if (!saved) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Errore salvataggio database (saveLeadToDB returned false)' 
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-    } catch (saveError) {
-      console.error('❌ Eccezione durante salvataggio:', saveError)
+    const saveResult = await saveLeadToDB(leadData, db)
+    
+    if (!saveResult.success) {
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Errore salvataggio database',
-          details: saveError instanceof Error ? saveError.message : String(saveError)
+          details: saveResult.error || 'Errore sconosciuto'
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
