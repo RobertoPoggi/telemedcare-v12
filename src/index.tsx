@@ -13310,9 +13310,9 @@ app.get('/api/data/stats', async (c) => {
     console.log('📊 [STATS] Data oggi (UTC 00:00):', todayISO)
     
     // Query reali per database D1
-    // Lead oggi - usa campo timestamp invece di created_at
+    // Lead oggi - usa created_at (formato ISO) non timestamp (formato SQLite)
     const leadsToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ?'
+      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ?'
     ).bind(todayISO).first()
     
     console.log('📊 [STATS] Lead oggi result:', leadsToday)
@@ -13334,12 +13334,12 @@ app.get('/api/data/stats', async (c) => {
     
     // Configurazioni oggi (leads con status CONFIG o IN_CONFIGURAZIONE)
     const configurationsToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ? AND status IN ("CONFIG", "IN_CONFIGURAZIONE")'
+      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ? AND status IN ("CONFIG", "IN_CONFIGURAZIONE")'
     ).bind(todayISO).first()
     
     // Attivazioni oggi (leads con status ACTIVE o ATTIVO)
     const activationsToday = await db.prepare(
-      'SELECT COUNT(*) as count FROM leads WHERE timestamp >= ? AND status IN ("ACTIVE", "ATTIVO")'
+      'SELECT COUNT(*) as count FROM leads WHERE created_at >= ? AND status IN ("ACTIVE", "ATTIVO")'
     ).bind(todayISO).first()
     
     // ==== NUOVE METRICHE PER DASHBOARD OPERATIVA ====
