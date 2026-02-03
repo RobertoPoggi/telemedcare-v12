@@ -4376,6 +4376,39 @@ app.post('/api/admin/update-template', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT: Correggi fonte da HUBSPOT a IRBEMA per tutti i lead da HubSpot
+app.post('/api/admin/fix-fonte-irbema', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Correzione fonte: HUBSPOT → IRBEMA')
+    
+    // Aggiorna tutti i lead con fonte HUBSPOT
+    const result = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET fonte = 'IRBEMA'
+      WHERE fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%'
+    `).run()
+    
+    console.log(`✅ Fonte aggiornata per ${result.meta.changes} lead`)
+    
+    return c.json({
+      success: true,
+      message: 'Fonte aggiornata da HUBSPOT a IRBEMA',
+      leadsUpdated: result.meta.changes
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore correzione fonte:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔄 ENDPOINT: Aggiorna template dal file HTML (con templateId come URL param)
 app.post('/api/admin/update-template/:templateId', async (c) => {
   try {

@@ -150,7 +150,7 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     vuoleContratto: vuoleContratto,
     
     // Fonte
-    fonte: 'HubSpot - Form ecura.it',
+    fonte: 'IRBEMA',
     
     // Note
     note: props.note || undefined
@@ -208,7 +208,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         lead.vuoleBrochure ? 1 : 0,
         lead.vuoleManuale ? 1 : 0,
         lead.vuoleContratto ? 1 : 0,
-        lead.fonte || 'HubSpot - Form ecura.it',
+        lead.fonte || 'IRBEMA',
         lead.note || null,
         'NEW'
       )
