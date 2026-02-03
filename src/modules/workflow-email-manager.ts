@@ -842,7 +842,7 @@ export async function inviaEmailContratto(
       PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoBase.toFixed(2)}/anno`,
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
-      LINK_FIRMA: `${baseUrl}/firma-contratto?contractId=${contractData.contractId}`,
+      LINK_FIRMA: `${baseUrl}/contract-signature.html?contractId=${contractData.contractId}`,
       LINK_BROCHURE: linkBrochure,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
