@@ -143,7 +143,7 @@
                 const response = await fetch(`/api/settings/${key}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: value ? 'true' : 'false' })
+                    body: JSON.stringify({ value: value })  // Passa boolean direttamente
                 });
 
                 const result = await response.json();
