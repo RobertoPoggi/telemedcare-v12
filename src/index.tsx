@@ -9843,12 +9843,12 @@ app.post('/api/hubspot/sync', async (c) => {
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
             nomeAssistito, cognomeAssistito,
-            servizio, piano, pacchetto, tipoServizio,
+            servizio, piano, tipoServizio,
             fonte, external_source_id, status, note,
             vuoleContratto, vuoleBrochure, vuoleManuale,
             consensoPrivacy, consensoMarketing, consensoTerze,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           leadData.nomeRichiedente,
@@ -9859,7 +9859,6 @@ app.post('/api/hubspot/sync', async (c) => {
           leadData.cognomeAssistito,
           leadData.servizio,
           leadData.piano,
-          leadData.pacchetto,
           leadData.tipoServizio,
           leadData.fonte,
           leadData.external_source_id,
