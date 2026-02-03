@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test 4 Switch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
+        <h1 class="text-2xl font-bold mb-4">Test 4 Switch <span id="count" class="text-sm text-gray-500"></span></h1>
+        <div id="switches" class="grid grid-cols-2 gap-4"></div>
+        <pre id="debug" class="mt-4 p-4 bg-gray-800 text-green-400 text-xs overflow-auto"></pre>
+    </div>
+    <script>
+        const log = (msg) => {
+            const d = document.getElementById('debug');
+            d.textContent += msg + '\n';
+            console.log(msg);
+        };
+        
+        async function loadSwitches() {
+            log('🔄 Caricamento switches...');
+            const response = await fetch('/api/settings?t=' + Date.now());
+            log('📡 Status: ' + response.status);
+            
+            const data = await response.json();
+            log('📦 Data: ' + JSON.stringify(data, null, 2));
+            
+            if (data.success && data.settings) {
+                const container = document.getElementById('switches');
+                const count = document.getElementById('count');
+                let html = '';
+                let active = 0;
+                
+                Object.entries(data.settings).forEach(([key, setting]) => {
+                    const isOn = setting.value === 'true';
+                    if (isOn) active++;
+                    
+                    html += `
+                        <div class="border rounded p-4 ${isOn ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}">
+                            <div class="font-semibold">${key}</div>
+                            <div class="text-sm text-gray-600">${setting.description}</div>
+                            <div class="mt-2">
+                                <span class="px-2 py-1 rounded text-xs ${isOn ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'}">
+                                    ${isOn ? 'ON' : 'OFF'} (${setting.value})
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    log(`✅ ${key}: ${setting.value} (${isOn ? 'ON' : 'OFF'})`);
+                });
+                
+                container.innerHTML = html;
+                count.textContent = `(${active}/${Object.keys(data.settings).length} attivi)`;
+                log(`✅ Renderizzati ${Object.keys(data.settings).length} switch, ${active} attivi`);
+            }
+        }
+        
+        loadSwitches();
+    </script>
+</body>
+</html>
