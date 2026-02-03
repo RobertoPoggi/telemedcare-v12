@@ -135,9 +135,9 @@
             <!-- Riga 3: Automazioni (Switch ON/OFF Sistema) -->
             <div class="border-t border-gray-200 pt-4">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-cogs mr-2 text-purple-600"></i>Automazioni Sistema
+                    <i class="fas fa-cogs mr-2 text-purple-600"></i>Automazioni Sistema <span id="switchCount" class="text-xs text-gray-500">(0/4)</span>
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                     <!-- Switch 1: Import Automatico Giornaliero HubSpot IRBEMA -->
                     <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
                         <div class="flex items-center justify-between">
@@ -164,6 +164,36 @@
                             <label class="relative inline-flex items-center cursor-pointer ml-4">
                                 <input type="checkbox" id="cronToggle" class="sr-only peer" onchange="toggleCron(this.checked)">
                                 <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Switch 3: Notifiche Email Admin -->
+                    <div class="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">🔔 Notifiche Email Admin</h5>
+                                <p class="text-xs text-gray-600">Notifiche automatiche a info@telemedcare.it per nuovi lead</p>
+                                <p class="text-xs text-gray-500 mt-1">Alert in tempo reale su nuove acquisizioni</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="adminToggle" class="sr-only peer" onchange="toggleAdmin(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Switch 4: Reminder Completamento Dati -->
+                    <div class="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">⏰ Reminder Completamento Dati</h5>
+                                <p class="text-xs text-gray-600">Reminder automatici per completare dati mancanti dei lead</p>
+                                <p class="text-xs text-gray-500 mt-1">Email follow-up dopo 3 giorni (max 2 reminder)</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="reminderToggle" class="sr-only peer" onchange="toggleReminder(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                             </label>
                         </div>
                     </div>
@@ -1280,7 +1310,7 @@
                 const response = await fetch('/api/settings/lead_email_notifications_enabled', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+                    body: JSON.stringify({ value: enabled })
                 });
                 
                 if (response.ok) {
@@ -1306,7 +1336,7 @@
                 const response = await fetch('/api/settings/hubspot_auto_import_enabled', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+                    body: JSON.stringify({ value: enabled })
                 });
                 
                 if (response.ok) {
@@ -1332,31 +1362,123 @@
             }
         }
 
+        // ⚙️ TOGGLE NOTIFICHE ADMIN
+        async function toggleAdmin(enabled) {
+            try {
+                const response = await fetch('/api/settings/admin_email_notifications_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    alert(enabled 
+                        ? '✅ Notifiche Admin ATTIVATE\n\nIl sistema invierà notifiche a info@telemedcare.it per ogni nuovo lead acquisito.'
+                        : '⛔ Notifiche Admin DISATTIVATE\n\nNessuna notifica verrà inviata a info@telemedcare.it.');
+                    console.log('✅ Notifiche admin:', enabled ? 'ATTIVE' : 'DISATTIVE');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle admin:', error);
+                alert('❌ Errore: Impossibile aggiornare le notifiche admin.\n\n' + error.message);
+                document.getElementById('adminToggle').checked = !enabled;
+            }
+        }
+
+        // ⚙️ TOGGLE REMINDER COMPLETAMENTO
+        async function toggleReminder(enabled) {
+            try {
+                const response = await fetch('/api/settings/reminder_completion_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    alert(enabled 
+                        ? '✅ Reminder Completamento ATTIVATI\n\nIl sistema invierà reminder automatici (max 2) ai lead che non hanno completato i dati dopo 3 giorni.'
+                        : '⛔ Reminder Completamento DISATTIVATI\n\nNessun reminder automatico verrà inviato ai lead.');
+                    console.log('✅ Reminder completamento:', enabled ? 'ATTIVI' : 'DISATTIVI');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle reminder:', error);
+                alert('❌ Errore: Impossibile aggiornare i reminder completamento.\n\n' + error.message);
+                document.getElementById('reminderToggle').checked = !enabled;
+            }
+        }
+
         // 📊 CARICA STATO INIZIALE TOGGLE
         async function loadToggleStates() {
             try {
-                const response = await fetch('/api/settings');
+                console.log('🔄 Caricamento stato toggle...');
+                const response = await fetch('/api/settings?t=' + Date.now());
+                console.log('📡 Response status:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('📦 Data ricevuta:', JSON.stringify(data, null, 2));
+                    
                     if (data.success && data.settings) {
                         // Aggiorna toggle Cron (Email Lead)
                         const cronToggle = document.getElementById('cronToggle');
                         if (cronToggle && data.settings.lead_email_notifications_enabled) {
-                            cronToggle.checked = data.settings.lead_email_notifications_enabled.value === 'true';
+                            const isEnabled = data.settings.lead_email_notifications_enabled.value === 'true';
+                            cronToggle.checked = isEnabled;
+                            console.log('✅ Toggle Email Lead:', isEnabled);
                         }
                         
                         // Aggiorna toggle HubSpot
                         const hubspotToggle = document.getElementById('hubspotToggle');
                         if (hubspotToggle && data.settings.hubspot_auto_import_enabled) {
-                            hubspotToggle.checked = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            hubspotToggle.checked = isEnabled;
+                            console.log('✅ Toggle HubSpot:', isEnabled);
+                        }
+                        
+                        // Aggiorna toggle Admin
+                        const adminToggle = document.getElementById('adminToggle');
+                        if (adminToggle && data.settings.admin_email_notifications_enabled) {
+                            const isEnabled = data.settings.admin_email_notifications_enabled.value === 'true';
+                            adminToggle.checked = isEnabled;
+                            console.log('✅ Toggle Admin:', isEnabled);
+                        }
+                        
+                        // Aggiorna toggle Reminder
+                        const reminderToggle = document.getElementById('reminderToggle');
+                        if (reminderToggle && data.settings.reminder_completion_enabled) {
+                            const isEnabled = data.settings.reminder_completion_enabled.value === 'true';
+                            reminderToggle.checked = isEnabled;
+                            console.log('✅ Toggle Reminder:', isEnabled);
                         }
                         
                         // Aggiorna stato HubSpot
                         const statusEl = document.getElementById('hubspotSyncStatus');
                         if (statusEl && data.settings.hubspot_auto_import_enabled) {
-                            statusEl.textContent = data.settings.hubspot_auto_import_enabled.value === 'true'
+                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            statusEl.textContent = isEnabled
                                 ? 'Sincronizzazione attiva • Ultima: --'
                                 : 'Sincronizzazione disattivata';
+                        }
+                        
+                        // Conta switch attivi
+                        const activeCount = Object.values(data.settings).filter(s => s.value === 'true').length;
+                        const totalCount = Object.keys(data.settings).length;
+                        const switchCountEl = document.getElementById('switchCount');
+                        if (switchCountEl) {
+                            switchCountEl.textContent = `(${activeCount}/${totalCount} attivi)`;
+                            switchCountEl.className = activeCount > 0 ? 'text-xs text-green-600 font-semibold' : 'text-xs text-gray-500';
+                        }
+                        
+                        console.log('✅ Toggle states loaded from /api/settings');
+                    } else {
+                        console.error('❌ Errore dati:', data);
+                    }
+                } else {
+                    console.error('❌ Response not ok:', response.status);
+                }
                         }
                         
                         console.log('✅ Toggle states loaded from /api/settings');
