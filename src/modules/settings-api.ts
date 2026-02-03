@@ -12,16 +12,22 @@ export async function getSettings(c: Context) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
-    // Verifica e inizializza i settings necessari se mancano
-    try {
-      await c.env.DB.prepare(`
-        INSERT OR IGNORE INTO system_config (key, value, description, updated_at) VALUES 
-          ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
-          ('lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead', datetime('now')),
-          ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it', datetime('now'))
-      `).run()
-    } catch (initError) {
-      console.warn('⚠️ Errore inizializzazione system_config:', initError)
+    // Inizializza i settings necessari uno per uno (più robusto)
+    const defaultSettings = [
+      { key: 'hubspot_auto_import_enabled', value: 'false', description: 'Abilita import automatico da HubSpot' },
+      { key: 'lead_email_notifications_enabled', value: 'false', description: 'Abilita invio email automatiche ai lead' },
+      { key: 'admin_email_notifications_enabled', value: 'true', description: 'Abilita notifiche email a info@telemedcare.it' }
+    ]
+
+    for (const setting of defaultSettings) {
+      try {
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO system_config (key, value, description, updated_at) 
+          VALUES (?, ?, ?, datetime('now'))
+        `).bind(setting.key, setting.value, setting.description).run()
+      } catch (err) {
+        console.warn(`⚠️ Skip init setting ${setting.key}:`, err)
+      }
     }
 
     const result = await c.env.DB.prepare(
