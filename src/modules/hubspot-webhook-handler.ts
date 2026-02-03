@@ -39,6 +39,7 @@ export interface HubSpotWebhookPayload {
     lastname?: string // Cognome richiedente
     email?: string // Email richiedente
     phone?: string // Telefono richiedente
+    city?: string // Città richiedente
     
     // Dati Assistito
     nome_assistito?: string
@@ -131,6 +132,7 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     cognomeRichiedente: props.lastname || '',
     emailRichiedente: props.email || '',
     telefonoRichiedente: props.phone || undefined,
+    cittaRichiedente: props.city || undefined,
     
     // Dati Assistito (opzionali)
     nomeAssistito: props.nome_assistito || undefined,
@@ -145,6 +147,9 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     vuoleManuale: false, // Non presente nel form eCura
     vuoleContratto: vuoleContratto,
     
+    // Fonte
+    fonte: 'HubSpot - Form ecura.it',
+    
     // Note
     note: props.note || undefined
   }
@@ -158,21 +163,23 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
     const insertQuery = `
       INSERT INTO leads (
         id, 
-        nome_richiedente, 
-        cognome_richiedente, 
-        email_richiedente, 
-        telefono_richiedente,
-        nome_assistito, 
-        cognome_assistito, 
-        eta_assistito,
+        nomeRichiedente, 
+        cognomeRichiedente, 
+        emailRichiedente, 
+        telefonoRichiedente,
+        cittaRichiedente,
+        nomeAssistito, 
+        cognomeAssistito, 
+        etaAssistito,
         pacchetto,
-        vuole_brochure,
-        vuole_manuale,
-        vuole_contratto,
+        vuoleBrochure,
+        vuoleManuale,
+        vuoleContratto,
+        fonte,
         note,
         status,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     await db
@@ -183,6 +190,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         lead.cognomeRichiedente,
         lead.emailRichiedente,
         lead.telefonoRichiedente || null,
+        lead.cittaRichiedente || null,
         lead.nomeAssistito || null,
         lead.cognomeAssistito || null,
         lead.etaAssistito || null,
@@ -190,6 +198,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         lead.vuoleBrochure ? 1 : 0,
         lead.vuoleManuale ? 1 : 0,
         lead.vuoleContratto ? 1 : 0,
+        lead.fonte || 'HubSpot - Form ecura.it',
         lead.note || null,
         'NEW',
         new Date().toISOString()
