@@ -1380,20 +1380,29 @@
         // 📊 CARICA STATO INIZIALE TOGGLE
         async function loadToggleStates() {
             try {
+                console.log('🔄 Caricamento stato toggle...');
                 const response = await fetch('/api/settings');
+                console.log('📡 Response status:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('📦 Data ricevuta:', data);
+                    
                     if (data.success && data.settings) {
                         // Aggiorna toggle Cron (Email Lead)
                         const cronToggle = document.getElementById('cronToggle');
                         if (cronToggle && data.settings.lead_email_notifications_enabled) {
-                            cronToggle.checked = data.settings.lead_email_notifications_enabled.value === 'true';
+                            const isEnabled = data.settings.lead_email_notifications_enabled.value === 'true';
+                            cronToggle.checked = isEnabled;
+                            console.log('✅ Toggle Email Lead:', isEnabled);
                         }
                         
                         // Aggiorna toggle HubSpot
                         const hubspotToggle = document.getElementById('hubspotToggle');
                         if (hubspotToggle && data.settings.hubspot_auto_import_enabled) {
-                            hubspotToggle.checked = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            hubspotToggle.checked = isEnabled;
+                            console.log('✅ Toggle HubSpot:', isEnabled);
                         }
                         
                         // Aggiorna stato HubSpot
@@ -1405,7 +1414,11 @@
                         }
                         
                         console.log('✅ Toggle states loaded from /api/settings');
+                    } else {
+                        console.error('❌ Errore dati:', data);
                     }
+                } else {
+                    console.error('❌ Response not ok:', response.status);
                 }
             } catch (error) {
                 console.error('⚠️ Errore caricamento toggle states:', error);
