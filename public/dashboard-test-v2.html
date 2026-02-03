@@ -1177,24 +1177,44 @@
             const leadsToUse = window.allLeadsData || leads;
             const channelCounts = {};
             
-            // Conta i lead per canale
+            // Conta i lead per canale usando campo FONTE
             leadsToUse.forEach(lead => {
-                let channel = 'Non specificato';
+                let channel = 'Website'; // Default
                 
-                // Cerca il canale nel campo canale o nelle note
-                if (lead.canale && lead.canale.trim() !== '') {
-                    channel = lead.canale;
-                } else if (lead.note) {
-                    // Cerca pattern comuni nelle note
-                    if (lead.note.includes('Irbema') || lead.note.includes('IRBEMA')) {
-                        channel = 'Irbema';
-                    } else if (lead.note.includes('AON')) {
-                        channel = 'AON';
-                    } else if (lead.note.includes('Double You')) {
-                        channel = 'Double You';
-                    } else if (lead.note.includes('Excel')) {
-                        channel = 'Excel Import';
-                    }
+                const leadId = (lead.id || '').toString().toUpperCase();
+                const fonte = (lead.fonte || '').toLowerCase().trim();
+                const nomeCompleto = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim().toLowerCase();
+                const emailRichiedente = (lead.emailRichiedente || lead.email || '').toLowerCase().trim();
+                
+                // Usa stesso mapping della funzione updateChannelsDistribution
+                if (fonte.includes('hubspot') || fonte.includes('irbema') || leadId.includes('LEAD-IRBEMA')) {
+                    channel = 'Partner';
+                }
+                else if (nomeCompleto.includes('laura calvi') || 
+                         emailRichiedente.includes('stefania.rocca@medicagb.it') ||
+                         fonte.includes('networking')) {
+                    channel = 'Networking';
+                }
+                else if (nomeCompleto.includes('francesca grati') ||
+                         fonte.includes('website') ||
+                         fonte.includes('web') ||
+                         fonte.includes('form')) {
+                    channel = 'Website';
+                }
+                else if (fonte.includes('excel') || leadId.includes('LEAD-EXCEL')) {
+                    channel = 'Excel';
+                }
+                else if (fonte.includes('aon') || leadId.includes('LEAD-AON')) {
+                    channel = 'AON';
+                }
+                else if (fonte.includes('doubleyou') || fonte.includes('double') || leadId.includes('LEAD-DOUBLEYOU')) {
+                    channel = 'DoubleYou';
+                }
+                else if (fonte.includes('telefono') || fonte.includes('phone')) {
+                    channel = 'Telefono';
+                }
+                else if (fonte.includes('email') || fonte.includes('e-mail')) {
+                    channel = 'Email';
                 }
                 
                 channelCounts[channel] = (channelCounts[channel] || 0) + 1;
