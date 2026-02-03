@@ -1392,23 +1392,27 @@
                         // Aggiorna toggle Cron (Email Lead)
                         const cronToggle = document.getElementById('cronToggle');
                         if (cronToggle && data.settings.lead_email_notifications_enabled) {
-                            const isEnabled = data.settings.lead_email_notifications_enabled.value === 'true';
+                            const value = data.settings.lead_email_notifications_enabled.value;
+                            const isEnabled = value === 'true' || value === '1' || value === 1 || value === true;
                             cronToggle.checked = isEnabled;
-                            console.log('✅ Toggle Email Lead:', isEnabled);
+                            console.log('✅ Toggle Email Lead:', isEnabled, '(valore raw:', value, ')');
                         }
                         
                         // Aggiorna toggle HubSpot
                         const hubspotToggle = document.getElementById('hubspotToggle');
                         if (hubspotToggle && data.settings.hubspot_auto_import_enabled) {
-                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            const value = data.settings.hubspot_auto_import_enabled.value;
+                            const isEnabled = value === 'true' || value === '1' || value === 1 || value === true;
                             hubspotToggle.checked = isEnabled;
-                            console.log('✅ Toggle HubSpot:', isEnabled);
+                            console.log('✅ Toggle HubSpot:', isEnabled, '(valore raw:', value, ')');
                         }
                         
                         // Aggiorna stato HubSpot
                         const statusEl = document.getElementById('hubspotSyncStatus');
                         if (statusEl && data.settings.hubspot_auto_import_enabled) {
-                            statusEl.textContent = data.settings.hubspot_auto_import_enabled.value === 'true'
+                            const value = data.settings.hubspot_auto_import_enabled.value;
+                            const isEnabled = value === 'true' || value === '1' || value === 1 || value === true;
+                            statusEl.textContent = isEnabled
                                 ? 'Sincronizzazione attiva • Ultima: --'
                                 : 'Sincronizzazione disattivata';
                         }
