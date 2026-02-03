@@ -160,6 +160,15 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
  */
 export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<boolean> {
   try {
+    console.log('💾 Tentativo salvataggio lead:', {
+      id: lead.id,
+      nome: lead.nomeRichiedente,
+      cognome: lead.cognomeRichiedente,
+      email: lead.emailRichiedente,
+      pacchetto: lead.pacchetto,
+      fonte: lead.fonte
+    })
+    
     const insertQuery = `
       INSERT INTO leads (
         id, 
@@ -182,7 +191,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
-    await db
+    const result = await db
       .prepare(insertQuery)
       .bind(
         lead.id,
@@ -205,10 +214,14 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
       )
       .run()
 
-    console.log(`✅ Lead ${lead.id} salvato nel database`)
+    console.log(`✅ Lead ${lead.id} salvato nel database. Changes: ${result.meta?.changes || 0}`)
     return true
   } catch (error) {
-    console.error(`❌ Errore salvataggio lead nel DB:`, error)
+    console.error(`❌ Errore salvataggio lead nel DB:`, {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      leadId: lead.id
+    })
     return false
   }
 }
