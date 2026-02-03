@@ -188,9 +188,8 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         vuoleContratto,
         fonte,
         note,
-        status,
-        timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     const result = await db
@@ -213,8 +212,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<bool
         lead.vuoleContratto ? 1 : 0,
         lead.fonte || 'HubSpot - Form ecura.it',
         lead.note || null,
-        'NEW',
-        new Date().toISOString()
+        'NEW'
       )
       .run()
 
