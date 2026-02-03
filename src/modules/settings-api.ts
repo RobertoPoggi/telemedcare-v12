@@ -12,7 +12,7 @@ export async function getSettings(c: Context) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
-    // Inizializza i settings necessari uno per uno (più robusto)
+    // Inizializza i settings necessari nella tabella settings
     const defaultSettings = [
       { key: 'hubspot_auto_import_enabled', value: 'false', description: 'Abilita import automatico da HubSpot' },
       { key: 'lead_email_notifications_enabled', value: 'false', description: 'Abilita invio email automatiche ai lead' },
@@ -22,7 +22,7 @@ export async function getSettings(c: Context) {
     for (const setting of defaultSettings) {
       try {
         await c.env.DB.prepare(`
-          INSERT OR IGNORE INTO system_config (key, value, description, updated_at) 
+          INSERT OR IGNORE INTO settings (key, value, description, updated_at) 
           VALUES (?, ?, ?, datetime('now'))
         `).bind(setting.key, setting.value, setting.description).run()
       } catch (err) {
@@ -31,7 +31,7 @@ export async function getSettings(c: Context) {
     }
 
     const result = await c.env.DB.prepare(
-      'SELECT key, value, description FROM system_config'
+      'SELECT key, value, description FROM settings'
     ).all()
 
     const settings: Record<string, any> = {}
@@ -67,7 +67,7 @@ export async function updateSetting(c: Context) {
 
     // Valida che il setting esista
     const existing = await c.env.DB.prepare(
-      'SELECT key FROM system_config WHERE key = ?'
+      'SELECT key FROM settings WHERE key = ?'
     ).bind(key).first()
 
     if (!existing) {
@@ -80,7 +80,7 @@ export async function updateSetting(c: Context) {
     // Aggiorna il valore
     const stringValue = value ? 'true' : 'false'
     await c.env.DB.prepare(
-      'UPDATE system_config SET value = ?, updated_at = ? WHERE key = ?'
+      'UPDATE settings SET value = ?, updated_at = ? WHERE key = ?'
     ).bind(stringValue, new Date().toISOString(), key).run()
 
     console.log(`⚙️ Setting aggiornato: ${key} = ${stringValue}`)
@@ -104,7 +104,7 @@ export async function updateSetting(c: Context) {
 export async function getSetting(db: any, key: string): Promise<boolean> {
   try {
     const result = await db.prepare(
-      'SELECT value FROM system_config WHERE key = ?'
+      'SELECT value FROM settings WHERE key = ?'
     ).bind(key).first()
     
     return result?.value === 'true'

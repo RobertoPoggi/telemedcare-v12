@@ -4421,7 +4421,7 @@ app.post('/api/admin/init-settings', async (c) => {
     
     // Inserisci settings se non esistono
     const result = await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO system_config (key, value, description, updated_at) VALUES 
+      INSERT OR IGNORE INTO settings (key, value, description, updated_at) VALUES 
         ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
         ('lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead', datetime('now')),
         ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it', datetime('now'))

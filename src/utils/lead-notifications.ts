@@ -25,7 +25,7 @@ export async function sendNewLeadNotification(
     // Controlla se le notifiche admin sono abilitate
     if (env?.DB) {
       const setting = await env.DB.prepare(
-        'SELECT value FROM system_config WHERE key = ?'
+        'SELECT value FROM settings WHERE key = ?'
       ).bind('admin_email_notifications_enabled').first()
       
       if (setting?.value !== 'true') {
