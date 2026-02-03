@@ -13272,23 +13272,26 @@ app.post('/api/assistiti/force-fix-eileen', async (c) => {
 app.get('/api/data/stats', async (c) => {
   try {
     console.log('📊 [STATS] Inizio calcolo statistiche...')
+    console.log('📊 [STATS] Env keys:', Object.keys(c.env || {}))
+    console.log('📊 [STATS] DB type:', typeof c.env?.DB)
     console.log('📊 [STATS] DB disponibile?', !!c.env?.DB)
     
     if (!c.env?.DB) { // Fallback se DB non disponibile
-      console.warn('⚠️  [STATS] DB non disponibile - usando fallback')
+      console.error('❌ [STATS] DB NON DISPONIBILE - env:', c.env)
       return c.json({
         success: true,
-        totalLeads: 25,
-        leadsToday: 12,
-        contractsToday: 8,
-        proformaToday: 5,
-        paymentsToday: 3,
-        configurationsToday: 6,
-        activationsToday: 4,
-        emailsMonth: 45,
-        topService: 'eCura PRO',
+        totalLeads: 0,
+        leadsToday: 0,
+        contractsToday: 0,
+        proformaToday: 0,
+        paymentsToday: 0,
+        configurationsToday: 0,
+        activationsToday: 0,
+        emailsMonth: 0,
+        topService: 'N/A',
         timestamp: new Date().toISOString(),
-        fallback: true
+        fallback: true,
+        error: 'DB not configured'
       })
     }
     
@@ -13297,11 +13300,15 @@ app.get('/api/data/stats', async (c) => {
     today.setUTCHours(0, 0, 0, 0)
     const todayISO = today.toISOString()
     
+    console.log('📊 [STATS] Data oggi (UTC 00:00):', todayISO)
+    
     // Query reali per database D1
     // Lead oggi
     const leadsToday = await c.env.DB.prepare(
       'SELECT COUNT(*) as count FROM leads WHERE created_at >= ?'
     ).bind(todayISO).first()
+    
+    console.log('📊 [STATS] Lead oggi result:', leadsToday)
     
     // Contratti oggi (dalla tabella contratti)
     const contractsToday = await c.env.DB.prepare(
