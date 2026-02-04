@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consegna Completata - TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .success-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .next-steps {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .step:last-child {
+            border-bottom: none;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background-color: #17a2b8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .warranty-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Consegna Completata!</h1>
+            <p>Il tuo dispositivo SiDLY Care Pro è arrivato</p>
+        </div>
+        
+        <div class="content">
+            <p>Perfetto <strong>{{NOME_CLIENTE}}</strong>!</p>
+            
+            <p>Il tuo ordine <strong>#{{NUMERO_ORDINE}}</strong> è stato consegnato con successo il <strong>{{DATA_CONSEGNA}}</strong> alle ore <strong>{{ORA_CONSEGNA}}</strong>.</p>
+            
+            <div class="success-badge">
+                ✅ CONSEGNA CONFERMATA
+            </div>
+            
+            <div class="next-steps">
+                <h3>🚀 Prossimi Passi per Iniziare</h3>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Disimballa con cura</strong><br>
+                        <small>Conserva la confezione originale per i primi 30 giorni</small>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Verifica il contenuto</strong><br>
+                        <small>Dispositivo SiDLY Care Pro, cavo USB-C, manuale, certificato garanzia</small>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Scarica l'app TeleMedCare</strong><br>
+                        <small>Disponibile su App Store e Google Play</small>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Registra il dispositivo</strong><br>
+                        <small>Attiva la garanzia e configura il tuo profilo sanitario</small>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div>
+                        <strong>Inizia il monitoraggio</strong><br>
+                        <small>Segui la guida setup per le prime misurazioni</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{URL_APP_DOWNLOAD}}" class="btn">📱 Scarica l'App</a>
+                <a href="{{URL_REGISTRAZIONE}}" class="btn btn-secondary">📝 Registra Dispositivo</a>
+            </div>
+            
+            <div class="warranty-info">
+                <h4>🛡️ Informazioni Garanzia</h4>
+                <ul>
+                    <li><strong>Periodo:</strong> 24 mesi dalla data di consegna</li>
+                    <li><strong>Codice Prodotto:</strong> {{CODICE_PRODOTTO}}</li>
+                    <li><strong>IMEI:</strong> {{IMEI_DISPOSITIVO}}</li>
+                    <li><strong>Numero Serie:</strong> {{NUMERO_SERIE}}</li>
+                </ul>
+                <p><strong>Importante:</strong> Conserva questo numero per future richieste di assistenza.</p>
+            </div>
+            
+            <h3>📚 Risorse Utili</h3>
+            <ul>
+                <li><a href="{{URL_MANUALE}}">📖 Manuale Utente Completo</a></li>
+                <li><a href="{{URL_VIDEO_SETUP}}">🎥 Video Tutorial Setup</a></li>
+                <li><a href="{{URL_FAQ}}">❓ Domande Frequenti</a></li>
+                <li><a href="{{URL_COMMUNITY}}">👥 Community Utenti</a></li>
+            </ul>
+            
+            <hr style="margin: 30px 0; border: none; height: 1px; background-color: #e9ecef;">
+            
+            <h3>🎁 Offerta Speciale per Te!</h3>
+            <p>Come nuovo cliente TeleMedCare, hai diritto a:</p>
+            <ul>
+                <li><strong>3 mesi gratuiti</strong> di servizio premium</li>
+                <li><strong>Consulenza medica</strong> telefonica gratuita</li>
+                <li><strong>20% di sconto</strong> su accessori aggiuntivi</li>
+            </ul>
+            <p>Codice sconto: <strong>{{CODICE_SCONTO}}</strong> (valido fino al {{SCADENZA_SCONTO}})</p>
+            
+            <h3>🆘 Supporto e Assistenza</h3>
+            <p>Il nostro team è sempre disponibile per aiutarti:</p>
+            <ul>
+                <li><strong>Supporto Tecnico:</strong> tech@telemedcare.it | +39 02 1234 5678</li>
+                <li><strong>Supporto Medico:</strong> medical@telemedcare.it | +39 02 8765 4321</li>
+                <li><strong>Chat Live:</strong> Disponibile 24/7 sul nostro sito</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p><strong>TeleMedCare V11.0</strong> - La tua salute, sempre connessa</p>
+            <p>© 2024 TeleMedCare S.r.l. | Via Roma 123, 20100 Milano | P.IVA: 12345678901</p>
+            <p style="font-size: 12px; margin-top: 15px;">
+                <a href="{{URL_UNSUBSCRIBE}}" style="color: #bdc3c7;">Disiscriviti</a> | 
+                <a href="{{URL_PRIVACY}}" style="color: #bdc3c7;">Privacy Policy</a> | 
+                <a href="{{URL_SUPPORT}}" style="color: #bdc3c7;">Centro Assistenza</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

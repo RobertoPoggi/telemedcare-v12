@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Follow-up Call TeleMedCare</title>
+<style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 80px;
+        position: relative;
+        box-sizing: border-box;
+        font-family: 'Inter', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+      }
+
+      .template-section {
+        margin-bottom: 60px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 40px;
+      }
+
+      .template-title {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px 8px 0 0;
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .email-container {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .email-content {
+        padding: 30px;
+      }
+
+      .call-summary {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .next-steps {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .important-note {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        text-align: center;
+      }
+
+      .footer {
+        background: #f8fafc;
+        color: #6b7280;
+        text-align: center;
+        padding: 20px;
+        font-size: 14px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin: 10px 5px;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 16px;
+        }
+      }
+</style>
+</head>
+<body>
+    <div class="email-container">
+        <h1 class="template-title">📞 Riepilogo Chiamata TeleMedCare</h1>
+
+        <div class="email-content">
+            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+
+            <p>La ringraziamo per il tempo dedicato alla nostra conversazione telefonica di oggi. È stato un piacere parlare con Lei e illustrarLe i vantaggi del nostro servizio TeleMedCare.</p>
+
+            <div class="call-summary">
+                <h3 style="margin-top: 0; color: #166534;">📋 Riepilogo della Nostra Conversazione</h3>
+                <ul>
+                    <li><strong>Data Chiamata:</strong> {{DATA_CHIAMATA}}</li>
+                    <li><strong>Piano Discusso:</strong> {{PIANO_SERVIZIO}}</li>
+                    <li><strong>Assistito:</strong> {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</li>
+                    <li><strong>Investimento:</strong> {{PREZZO_PIANO}}</li>
+                    <li><strong>Referente Chiamata:</strong> {{NOME_OPERATORE}}</li>
+                </ul>
+            </div>
+
+            <p><strong>🎯 Come concordato durante la chiamata:</strong></p>
+
+            <div class="next-steps">
+                <h4 style="margin-top: 0; color: #1e40af;">📝 Prossimi Passi</h4>
+                <ol>
+                    <li><strong>Documentazione:</strong> Le invieremo via email tutta la documentazione informativa</li>
+                    <li><strong>Valutazione:</strong> Prenda il tempo necessario per valutare la nostra proposta</li>
+                    <li><strong>Contratto:</strong> Se interessato/a, Le invieremo il contratto personalizzato</li>
+                    <li><strong>Attivazione:</strong> Una volta firmato, attiveremo il servizio in 10 giorni</li>
+                </ol>
+            </div>
+
+            <div class="important-note">
+                <h4 style="margin-top: 0; color: #d97706;">💡 Punti Salienti della Chiamata</h4>
+                <p>Durante la conversazione ha mostrato particolare interesse per:</p>
+                <ul style="text-align: left; display: inline-block;">
+                    <li>{{INTERESSE_PRINCIPALE}}</li>
+                    <li>La certificazione medica del dispositivo SiDLY</li>
+                    <li>La detraibilità fiscale del servizio</li>
+                    <li>La possibilità di comunicazione bidirezionale</li>
+                </ul>
+            </div>
+
+            <p><strong>🔔 Le Sue Domande Specifiche:</strong></p>
+            <ul>
+                <li><strong>Domanda:</strong> {{DOMANDA_1}}</li>
+                <li><strong>Risposta:</strong> {{RISPOSTA_1}}</li>
+            </ul>
+
+            <div style="background: #ecfdf5; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <h4 style="margin-top: 0; color: #059669;">✅ Vantaggi Principali del Piano {{PIANO_SERVIZIO}}</h4>
+                <ul>
+                    <li><strong>Dispositivo Certificato:</strong> SiDLY Care Pro - Classe IIa medicale</li>
+                    <li><strong>Monitoraggio Continuo:</strong> Frequenza cardiaca e saturazione</li>
+                    <li><strong>Rilevamento Cadute:</strong> Algoritmo avanzato automatico</li>
+                    <li><strong>GPS Integrato:</strong> Localizzazione precisa sempre attiva</li>
+                    <li><strong>Comunicazione Diretta:</strong> Parla direttamente con i soccorsi</li>
+                    <li><strong>Assistenza H24:</strong> {{#if CENTRALE_OPERATIVA}}Centrale operativa{{else}}Rete familiare{{/if}} sempre attiva</li>
+                </ul>
+            </div>
+
+            <p><strong>📞 Come concordato, La ricontatteremo:</strong></p>
+            <ul>
+                <li><strong>Quando:</strong> {{PROSSIMO_CONTATTO}}</li>
+                <li><strong>Modalità:</strong> {{MODALITA_CONTATTO}}</li>
+                <li><strong>Scopo:</strong> Verificare se ha bisogno di chiarimenti aggiuntivi</li>
+            </ul>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <p><strong>Nel frattempo, se ha domande immediate:</strong></p>
+                <a href="mailto:info@telemedcare.it" class="cta-button">📧 Scriva un'Email</a>
+                <a href="https://wa.me/393316432390" class="cta-button" style="background: #25D366;">💬 WhatsApp Diretto</a>
+            </div>
+
+            <div style="background: #dbeafe; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <p style="margin: 0; font-weight: 600; color: #1e40af;">🤝 Il Nostro Impegno</p>
+                <p style="margin: 5px 0 0; font-size: 14px;">Siamo qui per accompagnarLa in ogni fase di questo percorso, senza alcuna pressione. La Sua tranquillità e quella dei Suoi cari è la nostra priorità assoluta.</p>
+            </div>
+
+            <hr style="margin: 30px 0; border: none; height: 1px; background-color: #e5e7eb;">
+
+            <p>La ringraziamo nuovamente per la fiducia accordataci e restiamo in attesa di sentirLa presto.</p>
+
+            <p>Cordiali saluti,</p>
+            <p><strong>{{NOME_OPERATORE}}</strong><br>
+            <em>Consulente TeleMedCare</em><br>
+            Il Team TeleMedCare - Medica GB</p>
+        </div>
+
+        <div class="footer">
+            <p><strong>TeleMedCare</strong> - Medica GB S.r.l.</p>
+            <p>📞 +39 331 643 2390 | 📧 info@telemedcare.it | 🌐 www.telemedcare.it</p>
+            <p style="font-size: 12px; margin-top: 10px;">
+                Corso Giuseppe Garibaldi, 34 - 20121 Milano | P.IVA: 12435130963
+            </p>
+        </div>
+    </div>
+</body>
+</html>

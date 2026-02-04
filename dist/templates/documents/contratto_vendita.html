@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto di Vendita - TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+        }
+        .company-info {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .contract-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+        }
+        .party-info {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .product-table th, .product-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        .product-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .terms-list {
+            margin-left: 20px;
+        }
+        .terms-list li {
+            margin-bottom: 8px;
+        }
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            TELEMEDCARE S.R.L.<br>
+            Via Roma 123, 20100 Milano (MI)<br>
+            P.IVA: 12345678901 - C.F.: 12345678901<br>
+            Tel: +39 02 1234 5678 - Email: info@telemedcare.it
+        </div>
+        <div class="contract-title">
+            CONTRATTO DI VENDITA<br>
+            N° {{NUMERO_CONTRATTO}}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">PARTI CONTRAENTI</div>
+        
+        <div class="party-info">
+            <strong>VENDITORE:</strong><br>
+            TeleMedCare S.r.l.<br>
+            Codice Fiscale: 12345678901<br>
+            Partita IVA: 12345678901<br>
+            Sede Legale: Via Roma 123, 20100 Milano (MI)<br>
+            Rappresentata da: {{NOME_RAPPRESENTANTE}}<br>
+            in qualità di {{QUALIFICA_RAPPRESENTANTE}}
+        </div>
+
+        <div class="party-info">
+            <strong>ACQUIRENTE:</strong><br>
+            {{NOME_COGNOME_CLIENTE}}<br>
+            Codice Fiscale: {{CODICE_FISCALE_CLIENTE}}<br>
+            {{#PARTITA_IVA_CLIENTE}}Partita IVA: {{PARTITA_IVA_CLIENTE}}<br>{{/PARTITA_IVA_CLIENTE}}
+            Residenza: {{INDIRIZZO_CLIENTE}}<br>
+            {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}})<br>
+            Email: {{EMAIL_CLIENTE}}<br>
+            Telefono: {{TELEFONO_CLIENTE}}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">OGGETTO DEL CONTRATTO</div>
+        <p>Il Venditore vende e l'Acquirente acquista il/i seguente/i bene/i:</p>
+        
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Descrizione Prodotto</th>
+                    <th>Modello</th>
+                    <th>Codice/IMEI</th>
+                    <th>Quantità</th>
+                    <th>Prezzo Unitario</th>
+                    <th>Totale</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{NOME_PRODOTTO}}</td>
+                    <td>{{MODELLO_PRODOTTO}}</td>
+                    <td>{{IMEI_PRODOTTO}}</td>
+                    <td>{{QUANTITA}}</td>
+                    <td>€ {{PREZZO_UNITARIO}}</td>
+                    <td>€ {{PREZZO_TOTALE}}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" style="text-align: right;"><strong>Subtotale:</strong></td>
+                    <td><strong>€ {{SUBTOTALE}}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="5" style="text-align: right;"><strong>IVA ({{ALIQUOTA_IVA}}%):</strong></td>
+                    <td><strong>€ {{IMPORTO_IVA}}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="5" style="text-align: right;"><strong>TOTALE GENERALE:</strong></td>
+                    <td><strong>€ {{TOTALE_GENERALE}}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">MODALITÀ DI PAGAMENTO</div>
+        <ul>
+            <li><strong>Modalità:</strong> {{MODALITA_PAGAMENTO}}</li>
+            <li><strong>Importo:</strong> € {{TOTALE_GENERALE}}</li>
+            <li><strong>Scadenza:</strong> {{SCADENZA_PAGAMENTO}}</li>
+            {{#COORDINATE_BANCARIE}}<li><strong>Coordinate Bancarie:</strong> {{COORDINATE_BANCARIE}}</li>{{/COORDINATE_BANCARIE}}
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">CONSEGNA</div>
+        <ul>
+            <li><strong>Modalità di Consegna:</strong> {{MODALITA_CONSEGNA}}</li>
+            <li><strong>Indirizzo di Consegna:</strong> {{INDIRIZZO_CONSEGNA}}</li>
+            <li><strong>Tempi di Consegna:</strong> {{TEMPI_CONSEGNA}}</li>
+            <li><strong>Spese di Spedizione:</strong> {{SPESE_SPEDIZIONE}}</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">GARANZIA</div>
+        <ul class="terms-list">
+            <li>Il prodotto è garantito per <strong>{{PERIODO_GARANZIA}}</strong> dalla data di consegna.</li>
+            <li>La garanzia copre difetti di fabbricazione e malfunzionamenti non dovuti ad uso improprio.</li>
+            <li>Per attivare la garanzia è necessario conservare il presente contratto e il documento di trasporto.</li>
+            <li>La garanzia non copre danni dovuti a caduta, immersione in liquidi, uso improprio o normale usura.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">DIRITTO DI RECESSO</div>
+        <ul class="terms-list">
+            <li>L'Acquirente ha diritto di recedere dal presente contratto entro <strong>14 giorni</strong> dalla ricezione del bene.</li>
+            <li>Il recesso deve essere comunicato tramite lettera raccomandata o email certificata.</li>
+            <li>Il bene deve essere restituito integro, nella confezione originale e con tutti gli accessori.</li>
+            <li>Le spese di restituzione sono a carico dell'Acquirente.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-title">CLAUSOLE FINALI</div>
+        <ul class="terms-list">
+            <li>Il presente contratto è regolato dalla legge italiana.</li>
+            <li>Per qualsiasi controversia è competente il Foro di Milano.</li>
+            <li>Il contratto si intende accettato in tutte le sue parti con la firma dell'Acquirente.</li>
+            <li>Ai sensi dell'art. 1341 C.C. l'Acquirente dichiara di aver letto e approvare specificamente gli articoli relativi a garanzia, recesso e foro competente.</li>
+        </ul>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <strong>IL VENDITORE</strong><br>
+            TeleMedCare S.r.l.<br><br>
+            _________________________<br>
+            {{NOME_RAPPRESENTANTE}}<br>
+            {{QUALIFICA_RAPPRESENTANTE}}
+        </div>
+        <div class="signature-box">
+            <strong>L'ACQUIRENTE</strong><br><br><br>
+            _________________________<br>
+            {{NOME_COGNOME_CLIENTE}}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>
+            <strong>Data:</strong> {{DATA_CONTRATTO}} - <strong>Luogo:</strong> {{LUOGO_CONTRATTO}}<br>
+            Documento generato automaticamente dal sistema TeleMedCare V11.0<br>
+            Per informazioni: info@telemedcare.it - Tel: +39 02 1234 5678
+        </p>
+    </div>
+</body>
+</html>

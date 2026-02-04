@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conferma Ordine - TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .order-details {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .status-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Ordine Confermato!</h1>
+            <p>Grazie per aver scelto TeleMedCare</p>
+        </div>
+        
+        <div class="content">
+            <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
+            
+            <p>Il tuo ordine è stato ricevuto e confermato con successo. Di seguito trovi tutti i dettagli:</p>
+            
+            <div class="order-details">
+                <h3>📋 Dettagli Ordine #{{NUMERO_ORDINE}}</h3>
+                <div class="order-item">
+                    <span>Data Ordine:</span>
+                    <span>{{DATA_ORDINE}}</span>
+                </div>
+                <div class="order-item">
+                    <span>Dispositivo:</span>
+                    <span>{{NOME_DISPOSITIVO}}</span>
+                </div>
+                <div class="order-item">
+                    <span>Modello:</span>
+                    <span>{{MODELLO_DISPOSITIVO}}</span>
+                </div>
+                <div class="order-item">
+                    <span>IMEI:</span>
+                    <span>{{IMEI_DISPOSITIVO}}</span>
+                </div>
+                <div class="order-item">
+                    <span>Prezzo:</span>
+                    <span><strong>€ {{PREZZO_TOTALE}}</strong></span>
+                </div>
+            </div>
+            
+            <p><span class="status-badge">IN ELABORAZIONE</span></p>
+            
+            <p>Il tuo dispositivo SiDLY Care Pro sarà spedito entro <strong>3-5 giorni lavorativi</strong> all'indirizzo:</p>
+            
+            <div class="order-details">
+                <h4>📦 Indirizzo di Spedizione</h4>
+                <p>
+                    {{NOME_DESTINATARIO}}<br>
+                    {{INDIRIZZO_SPEDIZIONE}}<br>
+                    {{CAP}} {{CITTA}} ({{PROVINCIA}})<br>
+                    {{PAESE}}
+                </p>
+            </div>
+            
+            <p>Riceverai una notifica con il codice di tracking non appena il pacco sarà spedito.</p>
+            
+            <div style="text-align: center;">
+                <a href="{{URL_TRACKING}}" class="btn">🔍 Traccia il tuo Ordine</a>
+            </div>
+            
+            <hr style="margin: 30px 0; border: none; height: 1px; background-color: #e9ecef;">
+            
+            <h3>📞 Hai bisogno di aiuto?</h3>
+            <p>Il nostro team di supporto è sempre disponibile:</p>
+            <ul>
+                <li><strong>Email:</strong> support@telemedcare.it</li>
+                <li><strong>Telefono:</strong> +39 02 1234 5678</li>
+                <li><strong>Chat:</strong> Disponibile sul nostro sito 24/7</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p><strong>TeleMedCare V11.0</strong> - La tua salute, sempre connessa</p>
+            <p>© 2024 TeleMedCare S.r.l. | Via Roma 123, 20100 Milano | P.IVA: 12345678901</p>
+            <p style="font-size: 12px; margin-top: 15px;">
+                <a href="{{URL_UNSUBSCRIBE}}" style="color: #bdc3c7;">Disiscriviti</a> | 
+                <a href="{{URL_PRIVACY}}" style="color: #bdc3c7;">Privacy Policy</a> | 
+                <a href="{{URL_TERMS}}" style="color: #bdc3c7;">Termini di Servizio</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

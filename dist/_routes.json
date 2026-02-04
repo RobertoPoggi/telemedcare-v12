@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/admin-docs.html",
+    "/admin-environments.html",
+    "/app/*",
+    "/assets/*",
+    "/contract-signature.html",
+    "/contratti/*",
+    "/crud-functions.js",
+    "/dashboard.html",
+    "/data-dashboard.html",
+    "/documents/*",
+    "/home.html",
+    "/index.html",
+    "/leads-dashboard.html",
+    "/leads_clean_import.json",
+    "/setup-contracts.html",
+    "/setup-contracts-sql.html",
+    "/setup-contracts-client.js",
+    "/static/*",
+    "/templates/*",
+    "/workflow-manager.html"
+  ]
+}

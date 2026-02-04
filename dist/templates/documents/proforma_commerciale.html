@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Forma - TeleMedCare</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+        }
+        .company-info {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .document-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .patient-info {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .service-description {
+            background-color: #fafafa;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .pricing {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .payment-info {
+            background-color: #e8f4f8;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+        }
+        .signature-area {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .bank-details {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            MEDICA GB S.R.L.<br>
+            Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
+            P.IVA: 12435130963 - REA: MI-2661409<br>
+            Tel: +39 331 643 2390 - Email: info@medicagb.it
+        </div>
+        <div class="document-title">
+            PRO FORMA<br>
+            N° {{NUMERO_PROFORMA}}
+        </div>
+        <div>
+            <strong>Milano, {{DATA_RICHIESTA}}</strong>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">ANAGRAFICA PAZIENTE</div>
+        
+        <div class="patient-info">
+            <strong>NOME:</strong> {{NOME_ASSISTITO}}<br>
+            <strong>COGNOME:</strong> {{COGNOME_ASSISTITO}}<br>
+            <strong>C.F.:</strong> {{CODICE_FISCALE}}<br>
+            <strong>RESIDENTE IN:</strong> {{INDIRIZZO_COMPLETO}}<br>
+            <strong>CITTÀ:</strong> {{CITTA}}<br><br>
+            
+            <div class="highlight">
+                <strong>E.MAIL PER INVIO FATTURAZIONE:</strong> {{EMAIL_RICHIEDENTE}}
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">TIPOLOGIA PRESTAZIONE EROGATA</div>
+        
+        <p><strong>DATA ATTIVAZIONE:</strong> {{DATA_ATTIVAZIONE}}</p>
+        
+        <div class="service-description">
+            <h4>TIPO DI PRESTAZIONE:</h4>
+            <p><strong>SiDLY Care PRO numero seriale: {{SERIAL_NUMBER}}</strong></p>
+            
+            <p>Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con {{COMUNICAZIONE_TIPO}} le persone individuate come care givers.</p>
+            
+            <p>È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione.</p>
+            
+            <p><strong>È un Dispositivo Medico certificato in classe IIA (codice CDN Z12040199)</strong> e, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2).</p>
+            
+            <p><strong>INCLUSO NEL SERVIZIO:</strong></p>
+            <ul>
+                <li>Basetta per la ricarica</li>
+                <li>Alimentatore e cavo</li>
+                <li>Installazione e collaudo inclusi</li>
+                <li>SIM SiDLY per comunicazione e trasmissione dati</li>
+                <li>Piattaforma/APP SiDLY (Dispositivo medicale in classe I)</li>
+            </ul>
+            
+            <p><strong>Tel. Supporto:</strong> {{TELEFONO_SIDLY}}</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="pricing">
+            <h3>💰 TOTALE DA FATTURARE</h3>
+            <div style="font-size: 18px; font-weight: bold; color: #0066cc;">
+                {{PREZZO_PACCHETTO}} + IVA 22%
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">PAGAMENTO CON BONIFICO</div>
+        
+        <div class="payment-info">
+            <p><strong>Intestatario:</strong> Medica GB S.r.l.<br>
+            Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
+            
+            <div class="bank-details">
+                <strong>BANCA BPM S.P.A.</strong><br>
+                FILIALE MILANO-GARIBALDI<br>
+                C/C 03519<br>
+                ABI 05034<br>
+                CAB 01727<br>
+                <strong>IBAN: IT97L0503401727000000003519</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; font-style: italic; text-align: center;">
+            <strong>NOTA IMPORTANTE:</strong><br>
+            Il presente documento non costituisce fattura che verrà emessa all'atto del pagamento ai sensi dell'art.6 DPR 26.10.1972 n. 633.
+        </div>
+    </div>
+
+    <div class="signature-area">
+        <div class="signature-box">
+            <strong>MEDICA GB S.R.L.</strong><br><br>
+            _________________________<br>
+            Stefania Rocca<br>
+            Amministratore
+        </div>
+        <div class="signature-box">
+            <strong>IL CLIENTE</strong><br><br>
+            _________________________<br>
+            {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>
+            <strong>Medica GB S.r.l.</strong><br>
+            Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
+            PEC: medicagbsrl@pecimprese.it - Email: info@medicagb.it<br>
+            Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409<br>
+            www.medicagb.it - www.telemedcare.it
+        </p>
+        <p style="margin-top: 15px;">
+            <strong>Data:</strong> {{DATA_RICHIESTA}} - <strong>Documento N°:</strong> {{NUMERO_PROFORMA}}<br>
+            Documento generato automaticamente dal sistema TeleMedCare V11.0
+        </p>
+    </div>
+</body>
+</html>
