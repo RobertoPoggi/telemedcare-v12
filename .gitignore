@@ -1,5 +1,5 @@
 # prod
-dist/
+# dist/ - TEMPORANEAMENTE COMMENTATO per deploy diretto su Cloudflare
 
 # dev
 .yarn/

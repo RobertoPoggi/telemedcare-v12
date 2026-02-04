@@ -1,0 +1,6 @@
+VERSION: 4-SWITCH-FIXED
+BUILD: 2026-02-04 00:40 UTC
+COMMIT: $(git rev-parse --short HEAD)
+SWITCHES: 4 (HubSpot, Email, Admin, Reminder)
+TYPE: Toggle Switch (NOT Select Dropdown)
+241374f
