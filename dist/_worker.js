@@ -3731,12 +3731,19 @@ ${370+e.length}
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('Import Irbema completato!\\n\\n' +
-                          'Lead importati: ' + result.totalImported + '\\n' +
-                          'Lead skippati: ' + result.totalSkipped + '\\n' +
-                          'Totale contatti: ' + result.totalContacts + '\\n' +
-                          'Pagine processate: ' + result.totalPages);
-                    loadAssistitiData(); // Ricarica la tabella
+                    alert('✅ Import Irbema completato!\\n\\n' +
+                          'Lead importati: ' + result.imported + '\\n' +
+                          'Lead skippati: ' + result.skipped + '\\n' +
+                          'Totale contatti: ' + result.total + '\\n' +
+                          'Pagine processate: ' + result.pages);
+                    
+                    // Ricarica la tabella assistiti
+                    if (typeof window.loadAssistitiData === 'function') {
+                        window.loadAssistitiData();
+                    } else {
+                        // Fallback: reload pagina
+                        location.reload();
+                    }
                 } else {
                     alert('Errore import: ' + result.error);
                 }
