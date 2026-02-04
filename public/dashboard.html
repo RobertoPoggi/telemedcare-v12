@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operativa - TeleMedCare V12.1 🔴 4-SWITCH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-sent { background: #dcfce7; color: #16a34a; }
+        .status-pending { background: #fef3c7; color: #ca8a04; }
+        .status-error { background: #fee2e2; color: #dc2626; }
+        .refresh-btn {
+            animation: rotate 1s linear infinite;
+            animation-play-state: paused;
+        }
+        .refresh-btn.rotating {
+            animation-play-state: running;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Dashboard Operativa</h1>
+                        <p class="text-purple-100">Centro di controllo staff - TeleMedCare V12.1 🔴 4-SWITCH EDITION</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/admin/leads-dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-users mr-2"></i>Leads
+                    </a>
+                    <button onclick="refreshData()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
+                        <i class="fas fa-sync-alt mr-2 refresh-btn" id="refreshIcon"></i>Aggiorna
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Lead Totali</p>
+                        <p class="text-3xl font-bold text-blue-600" id="totalLeads">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Contratti Inviati</p>
+                        <p class="text-3xl font-bold text-green-600" id="contractsSent">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
+                    </div>
+                    <i class="fas fa-file-contract text-3xl text-green-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Email Inviate</p>
+                        <p class="text-3xl font-bold text-purple-600" id="emailsSent">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Ultimi 30 giorni</p>
+                    </div>
+                    <i class="fas fa-envelope text-3xl text-purple-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Servizio Più Richiesto</p>
+                        <p class="text-xl font-bold text-orange-600" id="topService">-</p>
+                        <p class="text-xs text-gray-500 mt-1">Questo mese</p>
+                    </div>
+                    <i class="fas fa-star text-3xl text-orange-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import API Buttons per Canale + Automazioni -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-download mr-2 text-blue-600"></i>Import Lead da Canali
+            </h3>
+            
+            <!-- Riga 2: 4 Bottoni Canali -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <button onclick="importFromExcel()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-file-excel mr-2"></i>Excel
+                </button>
+                <button onclick="importFromIrbema()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-building mr-2"></i>Irbema
+                </button>
+                <button onclick="importFromAON()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
+                    <i class="fas fa-handshake mr-2"></i>AON
+                </button>
+                <button onclick="importFromDoubleYou()" class="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md" style="color: white !important; background-color: #db2777 !important;">
+                    <i class="fas fa-chart-line mr-2"></i>DoubleYou
+                </button>
+            </div>
+
+            <!-- Riga 3: Automazioni (Switch ON/OFF Sistema) -->
+            <div class="border-t border-gray-200 pt-4">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-cogs mr-2 text-purple-600"></i>Automazioni Sistema <span id="switchCount" class="text-xs text-gray-500">(caricamento...)</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                    <!-- Switch 1: Import Automatico Giornaliero HubSpot IRBEMA -->
+                    <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">🔄 Import Automatico HubSpot IRBEMA</h5>
+                                <p class="text-xs text-gray-600">Importazione giornaliera automatica lead da HubSpot (filtro ecura.it)</p>
+                                <p class="text-xs text-gray-500 mt-1" id="hubspotSyncStatus">Import giornaliero • Prossimo: 09:00 UTC</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="hubspotToggle" class="sr-only peer" onchange="toggleHubSpot(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Switch 2: Email Automatica Benvenuto Nuovi Lead -->
+                    <div class="border border-green-200 rounded-lg p-4 bg-green-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">📧 Email Automatica Benvenuto Lead</h5>
+                                <p class="text-xs text-gray-600">Invio automatico prima email ai nuovi lead da tutti i canali</p>
+                                <p class="text-xs text-gray-500 mt-1">Brochure + Link completamento dati</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="cronToggle" class="sr-only peer" onchange="toggleCron(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Switch 3: Notifiche Email Admin -->
+                    <div class="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">🔔 Notifiche Email Admin</h5>
+                                <p class="text-xs text-gray-600">Notifiche automatiche a info@telemedcare.it per nuovi lead</p>
+                                <p class="text-xs text-gray-500 mt-1">Alert in tempo reale su nuove acquisizioni</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="adminToggle" class="sr-only peer" onchange="toggleAdmin(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Switch 4: Reminder Completamento Dati -->
+                    <div class="border border-purple-200 rounded-lg p-4 bg-purple-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h5 class="font-semibold text-sm text-gray-800 mb-1">⏰ Reminder Completamento Dati</h5>
+                                <p class="text-xs text-gray-600">Reminder automatici per completare dati mancanti dei lead</p>
+                                <p class="text-xs text-gray-500 mt-1">Email follow-up dopo 3 giorni (max 2 reminder)</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer ml-4">
+                                <input type="checkbox" id="reminderToggle" class="sr-only peer" onchange="toggleReminder(this.checked)">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elenco Assistiti -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-users text-green-500 mr-2"></i>
+                    Assistiti Attivi
+                    <span id="assistitiCount" class="ml-3 text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">0</span>
+                </h3>
+                <div class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="searchAssistitoCognome" 
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-56" 
+                        placeholder="🔍 Cerca assistito..."
+                        onkeyup="filterAssistiti()"
+                    />
+                    <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Nuovo Assistito
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Assistito</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">IMEI Dispositivo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Email</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assistitiTable">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento assistiti...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analisi Lead: Servizi, Piani e Canali (Compattati su 1 riga) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Distribuzione Servizi -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                    Distribuzione Servizi
+                </h3>
+                <div id="servicesChart" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Piano BASE vs AVANZATO -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
+                    Piano BASE vs AVANZATO
+                </h3>
+                <div id="plansChart" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Distribuzione per Canale -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-network-wired text-orange-500 mr-2"></i>
+                    Distribuzione per Canale
+                </h3>
+                <div id="channelsDistribution" class="space-y-3">
+                    <!-- Distribuzione canali verrà popolata dinamicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Ultimi Lead Ricevuti -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-clock text-green-500 mr-2"></i>
+                    Ultimi Lead Ricevuti
+                </h3>
+                <span class="text-sm text-gray-500" id="lastUpdate">Aggiornato ora</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Dispositivo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTable">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento dati...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        let refreshInterval;
+        let isLoading = false;
+
+        // Carica dati iniziali
+        loadDashboardData();
+
+        // Auto-refresh ogni 30 secondi (solo se non sta già caricando)
+        refreshInterval = setInterval(() => {
+            if (!isLoading) {
+                loadDashboardData();
+            }
+        }, 30000);
+
+        async function loadDashboardData() {
+            // Previeni chiamate sovrapposte
+            if (isLoading) return;
+            
+            isLoading = true;
+            try {
+                // MIGRAZIONE AUTOMATICA SCHEMA (eseguita una sola volta)
+                try {
+                    const migrateResponse = await fetch('/api/migrate-schema', { method: 'POST' });
+                    const migrateData = await migrateResponse.json();
+                    if (migrateData.success) {
+                        console.log('✅ Migrazione schema:', migrateData.migrations);
+                    }
+                } catch (migrateError) {
+                    console.warn('⚠️ Migrazione schema saltata:', migrateError);
+                }
+                
+                // Carica TUTTI i lead (limite massimo 999999)
+                const allLeadsResponse = await fetch('/api/leads?limit=999999');
+                const allLeadsData = await allLeadsResponse.json();
+                const allLeads = allLeadsData.leads || [];
+                
+                // Carica CONTRATTI reali per conteggio accurato
+                const contractsResponse = await fetch('/api/contratti?limit=100');
+                const contractsData = await contractsResponse.json();
+                const contracts = contractsData.contracts || contractsData.contratti || contractsData.data || [];
+                
+                // Carica ASSISTITI reali con IMEI
+                const assistitiResponse = await fetch('/api/assistiti');
+                const assistitiData = await assistitiResponse.json();
+                const assistiti = assistitiData.assistiti || [];
+                
+                // Calcola statistiche reali
+                const totalLeads = allLeads.length;
+                const contratti = contracts.length; // Conta contratti reali, non lead convertiti
+                const topService = 'eCura PRO';
+                
+                // Aggiorna KPI
+                document.getElementById('totalLeads').textContent = totalLeads;
+                document.getElementById('contractsSent').textContent = contratti;
+                document.getElementById('emailsSent').textContent = '0'; // TODO
+                document.getElementById('topService').textContent = topService;
+
+                // Filtra ultimi 3 mesi (90 giorni) e NON convertiti
+                const threeMonthsAgo = new Date();
+                threeMonthsAgo.setDate(threeMonthsAgo.getDate() - 90);
+                
+                // REGOLA: Mostra solo lead NON convertiti (senza hardcoding)
+                // Un lead è DAVVERO convertito SOLO se ha:
+                // 1. Status: CONVERTED, CONTRACT_SIGNED, ACTIVE
+                // 2. Note con parole chiave FORTE: "firmato", "pagato", "consegnato", "attivo"
+                // 
+                // IMPORTANTE: "inviato contratto" NON significa convertito!
+                // Solo quando c'è conferma di firma/pagamento/consegna
+                
+                const recentLeads = allLeads.filter(lead => {
+                    const leadDate = new Date(lead.created_at || lead.timestamp);
+                    const status = (lead.status || '').toUpperCase();
+                    const isRecent = leadDate >= threeMonthsAgo;
+                    
+                    // Controlla se lo status indica conversione REALE
+                    const statusConverted = ['CONVERTED', 'CONTRACT_SIGNED', 'ACTIVE'].includes(status);
+                    
+                    // Controlla se le note indicano conversione REALE (non solo "inviato")
+                    const note = (lead.note || lead.notes || '').toLowerCase();
+                    const noteConverted = 
+                        note.includes('firmato') ||           // Contratto firmato
+                        note.includes('pagato') ||            // Pagamento ricevuto
+                        note.includes('consegnato') ||        // Dispositivo consegnato
+                        note.includes('attivo') ||            // Servizio attivo
+                        note.includes('installato') ||        // Dispositivo installato
+                        (note.includes('contratto') && note.includes('firmato')) ||  // "contratto firmato"
+                        (note.includes('contratto') && note.includes('pagato'));     // "contratto pagato"
+                    
+                    // Lead è convertito SOLO se status O note indicano conversione REALE
+                    const notConverted = !statusConverted && !noteConverted;
+                    
+                    return isRecent && notConverted;
+                });
+                
+                // Ultimi 10 lead recenti non convertiti per la tabella
+                const leads = recentLeads.slice(0, 10);
+
+                // Popola tabella lead
+                const tbody = document.getElementById('leadsTable');
+                if (leads.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-gray-400">
+                                Nessun lead trovato
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbody.innerHTML = leads.map(lead => {
+                        const servizio = 'eCura PRO';
+                        const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                        const dispositivo = 'SiDLY CARE PRO';
+                        const prezzo = piano === 'AVANZATO' ? '840' : '480';
+                        const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
+                        const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
+                        const telefono = lead.telefono || 'N/A';
+                        const date = new Date(lead.created_at).toLocaleString('it-IT', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        return `
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="py-3 text-sm">
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="${lead.id}">${formatLeadId(lead.id)}</code>
+                                </td>
+                                <td class="py-3 text-sm">
+                                    <div class="font-medium">${escapeHtml(lead.nomeRichiedente)} ${escapeHtml(lead.cognomeRichiedente)}</div>
+                                    <div class="text-xs text-gray-500">${escapeHtml(lead.email)}</div>
+                                </td>
+                                <td class="py-3 text-sm text-gray-600">${telefono}</td>
+                                <td class="py-3 text-sm font-medium text-purple-600">${servizio}</td>
+                                <td class="py-3 text-sm">${piano}</td>
+                                <td class="py-3 text-sm text-gray-600">${dispositivo}</td>
+                                <td class="py-3 text-sm font-bold text-green-600">€${prezzo}</td>
+                                <td class="py-3">
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                </td>
+                                <td class="py-3 text-xs text-gray-500">${date}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Salva tutti i lead per i grafici
+                window.allLeadsData = allLeads;
+                
+                // Aggiorna grafici: servizi basati su ASSISTITI, piani basati su ASSISTITI
+                updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
+                updatePlansChart(allLeads);
+                updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
+                
+                // Renderizza assistiti da API dedicata
+                allAssistiti = assistiti;  // Salva per filtri
+                renderAssistitiTable(assistiti);
+
+                // Aggiorna timestamp
+                document.getElementById('lastUpdate').textContent = `Aggiornato: ${new Date().toLocaleTimeString('it-IT')}`;
+
+            } catch (error) {
+                console.error('Errore caricamento dashboard:', error);
+                // Mostra dettagli errore per debugging
+                const errorMsg = error.message || 'Errore sconosciuto';
+                document.getElementById('leadsTable').innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                            <p class="font-bold">Errore nel caricamento dei dati</p>
+                            <p class="text-xs mt-2">${errorMsg}</p>
+                            <button onclick="loadDashboardData()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                <i class="fas fa-redo mr-2"></i>Riprova
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        
+        function importFromChannel(channel) {
+            if (confirm(`📥 Vuoi importare i lead dal canale ${channel}?\n\nQuesta operazione:
+- Scaricherà i nuovi lead da ${channel}
+- Aggiornerà il database
+- Sincronizzerà i dati\n\nProcedi?`)) {
+                // Mostra loading
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importazione...';
+                
+                fetch(`/api/leads/import/${channel.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    
+                    if (data.success) {
+                        alert('✅ Import completato!\n\nCanale: ' + channel + '\nLead importati: ' + (data.count || 0) + '\nTotale lead: ' + (data.total || 0));
+                        loadDashboardData(); // Ricarica dashboard
+                    } else {
+                        alert('❌ Errore import:\n\n' + (data.error || 'Errore sconosciuto'));
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    alert('❌ Errore di comunicazione:\n\n' + error.message);
+                });
+            }
+        }
+
+        function refreshData() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('rotating');
+            loadDashboardData().finally(() => {
+                setTimeout(() => icon.classList.remove('rotating'), 1000);
+            });
+        }
+
+        function getDispositivoForService(servizio) {
+            const dispositivi = {
+                'FAMILY': 'SiDLY CARE PRO',
+                'PRO': 'SiDLY CARE PRO',
+                'PREMIUM': 'SiDLY VITAL CARE'
+            };
+            return dispositivi[servizio] || 'N/A';
+        }
+
+        function getPrezzoForService(servizio, piano) {
+            const prezzi = {
+                'FAMILY': { 'BASE': '390.00', 'AVANZATO': '690.00' },
+                'PRO': { 'BASE': '480.00', 'AVANZATO': '840.00' },
+                'PREMIUM': { 'BASE': '590.00', 'AVANZATO': '990.00' }
+            };
+            return prezzi[servizio]?.[piano] || '0.00';
+        }
+
+        function updateServicesChart(assistiti) {
+            // FIX: Usa assistiti attivi, non lead
+            const total = assistiti.length || 1;
+            
+            // Conta servizi basandosi sui piani degli assistiti
+            // eCura PRO BASE e AVANZATO (tutti gli assistiti attuali)
+            const serviceCounts = {
+                'eCura PRO': total  // Tutti gli assistiti attivi sono eCura PRO
+            };
+
+            const colors = {
+                'eCura PRO': 'bg-purple-500',
+                'eCura FAMILY': 'bg-blue-500',
+                'eCura PREMIUM': 'bg-green-500'
+            };
+
+            const html = Object.entries(serviceCounts).map(([service, count]) => {
+                const percentage = 100; // Sempre 100% per eCura PRO
+                const color = colors[service] || 'bg-gray-500';
+                return `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${service}</span>
+                            <span class="text-sm font-bold text-gray-900">${count} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('servicesChart').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>';
+        }
+
+        function updatePlansChart(leads) {
+            // USA SOLO ASSISTITI per conteggio piani (non tutti i lead)
+            const assistitiResponse = fetch('/api/assistiti').then(r => r.json()).then(data => {
+                const assistiti = data.assistiti || [];
+                const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
+                
+                // Conta i piani reali basati sui contratti degli assistiti
+                assistiti.forEach(assistito => {
+                    const piano = assistito.piano || 'BASE';
+                    if (piano === 'AVANZATO') {
+                        planCounts.AVANZATO++;
+                    } else {
+                        planCounts.BASE++;
+                    }
+                });
+
+                const total = assistiti.length || 1;
+                const basePercentage = Math.round((planCounts.BASE / total) * 100);
+                const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
+
+                document.getElementById('plansChart').innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">BASE</span>
+                            <span class="text-sm font-bold text-gray-900">${planCounts.BASE} (${basePercentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: ${basePercentage}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">AVANZATO</span>
+                            <span class="text-sm font-bold text-gray-900">${planCounts.AVANZATO} (${avanzatoPercentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-purple-500 h-2 rounded-full" style="width: ${avanzatoPercentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // Funzione per formattare ID lead - mostra ID completo in formato LEAD-CANALE-NUMERO
+        function formatLeadId(leadId) {
+            if (!leadId) return 'N/A';
+            const id = leadId.toString();
+            
+            // Mostra l'ID completo (formato LEAD-IRBEMA-xxxxx)
+            return id;
+        }
+        
+        function updateChannelsDistribution(assistiti) {
+            // Analizza SOLO gli ASSISTITI ATTIVI per identificare il canale di provenienza
+            const channelCounts = {};
+            const channelColors = {
+                'Irbema': 'bg-blue-500',
+                'Excel': 'bg-green-500',
+                'Web': 'bg-indigo-600',
+                'Networking': 'bg-purple-500',
+                'AON': 'bg-orange-500',
+                'DoubleYou': 'bg-pink-500'
+            };
+            
+            assistiti.forEach(assistito => {
+                let canale = 'Web'; // Default
+                
+                // Estrai info assistito - prova vari nomi campo
+                const leadId = (assistito.id || '').toString().toUpperCase();
+                const emailRichiedente = (
+                    assistito.emailRichiedente || 
+                    assistito.email || 
+                    assistito.email_richiedente ||
+                    assistito.emailrichiedente ||
+                    ''
+                ).toLowerCase().trim();
+                const nomeCompleto = `${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} ${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}`.trim().toLowerCase();
+                const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
+                
+                // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
+                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
+                if (nomeCompleto.includes('laura calvi') || 
+                    emailRichiedente.includes('stefania.rocca@medicagb.it')) {
+                    canale = 'Networking';
+                    console.log('✅ Networking:', nomeCompleto);
+                }
+                // PRIORITÀ 2: Tutti gli altri assistiti attivi = Irbema (da Excel colonna F: info@irbema.com)
+                // Lista verificata dall'Excel: Elena Saglia, Paolo Magri, Caterina D'Alterio, 
+                // Simona Pizzutto, Elisabetta Cattini, e gli assistiti attuali nel DB
+                else if (
+                    nomeCompleto.includes('elena') || nomeCompleto.includes('saglia') ||
+                    nomeCompleto.includes('paolo') || nomeCompleto.includes('magri') ||
+                    nomeCompleto.includes('caterina') || nomeCompleto.includes('alterio') ||
+                    nomeCompleto.includes('simona') || nomeCompleto.includes('pizzutto') ||
+                    nomeCompleto.includes('elisabetta') || nomeCompleto.includes('cattini') ||
+                    nomeCompleto.includes('giuliana') || nomeCompleto.includes('balzarotti') ||
+                    nomeCompleto.includes('rita') || nomeCompleto.includes('pennacchio') ||
+                    nomeCompleto.includes('maria') || nomeCompleto.includes('capone') ||
+                    nomeCompleto.includes('giuseppina') || nomeCompleto.includes('cozzi') ||
+                    nomeCompleto.includes('eileen') || nomeCompleto.includes('king')
+                ) {
+                    canale = 'Irbema';
+                    console.log('✅ Irbema:', nomeCompleto, '(da mappatura Excel)');
+                }
+                // PRIORITÀ 3: Altri canali (Excel, AON, DoubleYou) - solo se campo canale popolato
+                else if (canaleField.includes('excel') || leadId.includes('LEAD-EXCEL')) {
+                    canale = 'Excel';
+                } else if (canaleField.includes('aon')) {
+                    canale = 'AON';
+                } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
+                    canale = 'DoubleYou';
+                } else if (canaleField.includes('network')) {
+                    canale = 'Networking';
+                } else {
+                    // Se non riconosciuto, rimane Web (default)
+                    console.log('⚠️  Web (default):', nomeCompleto);
+                }
+                
+                channelCounts[canale] = (channelCounts[canale] || 0) + 1;
+            });
+            
+            // DEBUG: Mostra distribuzione finale
+            console.log('📊 Distribuzione Canali:', channelCounts);
+            
+            const total = assistiti.length || 1;
+            let html = '';
+            
+            // Ordina per count discendente
+            const sortedChannels = Object.entries(channelCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (sortedChannels.length === 0) {
+                html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
+            } else {
+                sortedChannels.forEach(([canale, count]) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = channelColors[canale] || 'bg-gray-500';
+                    
+                    html += `
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">${canale}</span>
+                                <span class="text-sm font-bold text-gray-900">${count} (${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('channelsDistribution').innerHTML = html;
+        }
+
+        // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
+        
+        async function viewAssistito(id) {
+            try {
+                const response = await fetch('/api/assistiti?id=' + id);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Mostra modal dettagli assistito
+                    alert('📋 Dettagli Assistito\n\n' +
+                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\n' +
+                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\n' +
+                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\n' +
+                        'IMEI: ' + (assistito.imei || 'N/A') + '\n' +
+                        'Email: ' + (assistito.email || 'N/A') + '\n' +
+                        'Telefono: ' + (assistito.telefono || 'N/A') + '\n' +
+                        'Piano: ' + (assistito.piano || 'BASE') + '\n' +
+                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\n' +
+                        'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
+                    );
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.viewAssistito = viewAssistito;  // Esponi globalmente
+        
+        async function editAssistito(id) {
+            try {
+                const response = await fetch('/api/assistiti?id=' + id);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Richiedi nuovi dati
+                    const nuovoNome = prompt('Nome Assistito:', assistito.nome_assistito || '');
+                    if (!nuovoNome) return;
+                    
+                    const nuovoCognome = prompt('Cognome Assistito:', assistito.cognome_assistito || '');
+                    if (!nuovoCognome) return;
+                    
+                    const nuovaEmail = prompt('Email:', assistito.email || '');
+                    const nuovoTelefono = prompt('Telefono:', assistito.telefono || '');
+                    const nuovoIMEI = prompt('IMEI Dispositivo:', assistito.imei || '');
+                    
+                    const caregiverNome = prompt('Nome Caregiver:', assistito.nome_caregiver || '');
+                    const caregiverCognome = prompt('Cognome Caregiver:', assistito.cognome_caregiver || '');
+                    const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
+                    
+                    // Aggiorna
+                    const updateResponse = await fetch(`/api/assistiti/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome_assistito: nuovoNome,
+                            cognome_assistito: nuovoCognome,
+                            nome_caregiver: caregiverNome,
+                            cognome_caregiver: caregiverCognome,
+                            parentela_caregiver: parentela,
+                            email: nuovaEmail,
+                            telefono: nuovoTelefono,
+                            imei: nuovoIMEI
+                        })
+                    });
+                    
+                    const result = await updateResponse.json();
+                    
+                    if (result.success) {
+                        alert('✅ Assistito aggiornato con successo!');
+                        loadDashboardData(); // Ricarica dashboard
+                    } else {
+                        alert('❌ Errore: ' + result.error);
+                    }
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.editAssistito = editAssistito;  // Esponi globalmente
+        
+        async function deleteAssistito(id) {
+            // Trova l'assistito nell'array globale per ottenere il nome
+            const assistito = allAssistiti.find(a => a.id === id);
+            const nome = assistito ? 
+                (assistito.nome || ((assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '')).trim() || 'questo assistito') 
+                : 'questo assistito';
+            
+            if (!confirm('⚠️ Sei sicuro di voler eliminare l\'assistito ' + nome + '?\n\nQuesta azione non può essere annullata!')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/assistiti/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Assistito ' + nome + ' eliminato con successo!');
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.deleteAssistito = deleteAssistito;  // Esponi globalmente
+        
+        async function editAssistito(id) {
+            try {
+                const response = await fetch('/api/assistiti?id=' + id);
+                const data = await response.json();
+                
+                if (data.success && data.assistiti && data.assistiti.length > 0) {
+                    const assistito = data.assistiti[0];
+                    
+                    // Verifica che il modal esista
+                    const modal = document.getElementById('editAssistitoModal');
+                    if (!modal) {
+                        console.error('Modal editAssistitoModal non trovato');
+                        alert('❌ Errore: Modal non trovato. Ricaricare la pagina.');
+                        return;
+                    }
+                    
+                    // Popola form modal con controlli
+                    const setValueSafe = (id, value) => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = value || '';
+                        else console.warn(`Elemento ${id} non trovato`);
+                    };
+                    
+                    setValueSafe('editAssistitoId', id);
+                    setValueSafe('editNomeAssistito', assistito.nome_assistito);
+                    setValueSafe('editCognomeAssistito', assistito.cognome_assistito);
+                    setValueSafe('editEmailAssistito', assistito.email);
+                    setValueSafe('editTelefonoAssistito', assistito.telefono);
+                    setValueSafe('editIMEI', assistito.imei);
+                    setValueSafe('editServizioAssistito', assistito.servizio || 'eCura PRO');
+                    setValueSafe('editNomeCaregiver', assistito.nome_caregiver);
+                    setValueSafe('editCognomeCaregiver', assistito.cognome_caregiver);
+                    setValueSafe('editParentela', assistito.parentela_caregiver);
+                    setValueSafe('editPianoAssistito', assistito.piano || 'BASE');
+                    
+                    // Aggiorna prezzi dinamicamente
+                    setTimeout(() => updatePrezziServizio(), 100);
+                    
+                    // Mostra modal
+                    modal.classList.remove('hidden');
+                } else {
+                    alert('❌ Assistito non trovato');
+                }
+            } catch (error) {
+                console.error('Errore editAssistito:', error);
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.editAssistito = editAssistito;  // Esponi globalmente
+        
+        async function saveEditAssistito() {
+            const id = document.getElementById('editAssistitoId').value;
+            const nomeAssistito = document.getElementById('editNomeAssistito').value;
+            const cognomeAssistito = document.getElementById('editCognomeAssistito').value;
+            const email = document.getElementById('editEmailAssistito').value;
+            const telefono = document.getElementById('editTelefonoAssistito').value;
+            const imei = document.getElementById('editIMEI').value;
+            const servizio = document.getElementById('editServizioAssistito').value;
+            const nomeCaregiver = document.getElementById('editNomeCaregiver').value;
+            const cognomeCaregiver = document.getElementById('editCognomeCaregiver').value;
+            const parentela = document.getElementById('editParentela').value;
+            const piano = document.getElementById('editPianoAssistito').value;
+            
+            // DEBUG: Log dei dati raccolti
+            console.log('📝 SAVE EDIT ASSISTITO:', {
+                id,
+                nomeAssistito,
+                cognomeAssistito,
+                servizio,
+                piano,
+                email,
+                telefono,
+                imei
+            });
+            
+            if (!nomeAssistito || !cognomeAssistito || !imei) {
+                alert('⚠️ Campi obbligatori: Nome, Cognome e IMEI');
+                return;
+            }
+            
+            const payload = {
+                nome_assistito: nomeAssistito,
+                cognome_assistito: cognomeAssistito,
+                email: email,
+                telefono: telefono,
+                imei: imei,
+                servizio: servizio,
+                nome_caregiver: nomeCaregiver,
+                cognome_caregiver: cognomeCaregiver,
+                parentela_caregiver: parentela,
+                piano: piano
+            };
+            
+            console.log('📤 PAYLOAD INVIATO:', payload);
+            
+            try {
+                const response = await fetch(`/api/assistiti/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                console.log('📥 RISPOSTA SERVER:', result);
+                
+                if (result.success) {
+                    alert('✅ Assistito aggiornato con successo!');
+                    closeModal('editAssistitoModal');
+                    loadDashboardData();
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                    console.error('❌ Dettagli errore:', result);
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+                console.error('❌ Errore catch:', error);
+            }
+        }
+        window.saveEditAssistito = saveEditAssistito;
+        
+        // Tabella prezzi eCura (1° anno)
+        const PREZZI_ECURA = {
+            'eCura FAMILY': { BASE: 390, AVANZATO: 690, rinnovo_BASE: 200, rinnovo_AVANZATO: 500 },
+            'eCura PRO': { BASE: 480, AVANZATO: 840, rinnovo_BASE: 240, rinnovo_AVANZATO: 600 },
+            'eCura PREMIUM': { BASE: 590, AVANZATO: 990, rinnovo_BASE: 300, rinnovo_AVANZATO: 750 }
+        };
+        
+        function updatePrezziServizio() {
+            const servizio = document.getElementById('editServizioAssistito')?.value || 'eCura PRO';
+            const piano = document.getElementById('editPianoAssistito')?.value || 'BASE';
+            const prezzoInfo = document.getElementById('prezzoInfo');
+            
+            if (!prezzoInfo) return;
+            
+            const prezzi = PREZZI_ECURA[servizio];
+            if (!prezzi) return;
+            
+            const prezzoAnno1 = prezzi[piano];
+            const prezzoRinnovo = prezzi['rinnovo_' + piano];
+            
+            prezzoInfo.innerHTML = 
+                '<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">' +
+                    '<div class="flex justify-between items-center">' +
+                        '<span class="font-semibold text-blue-900">1° Anno:</span>' +
+                        '<span class="text-xl font-bold text-blue-600">€' + prezzoAnno1 + '</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between items-center mt-1">' +
+                        '<span class="text-sm text-gray-600">Rinnovo (dal 2° anno):</span>' +
+                        '<span class="font-semibold text-gray-700">€' + prezzoRinnovo + '/anno</span>' +
+                    '</div>' +
+                '</div>';
+            
+            // Aggiorna anche il testo delle opzioni
+            const pianoSelect = document.getElementById('editPianoAssistito');
+            if (pianoSelect) {
+                pianoSelect.innerHTML = 
+                    '<option value="BASE" data-prezzo="' + prezzi.BASE + '">BASE - €' + prezzi.BASE + '/anno</option>' +
+                    '<option value="AVANZATO" data-prezzo="' + prezzi.AVANZATO + '">AVANZATO - €' + prezzi.AVANZATO + '/anno</option>';
+                pianoSelect.value = piano; // Ripristina selezione
+            }
+        }
+        window.updatePrezziServizio = updatePrezziServizio;
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        window.closeModal = closeModal;
+
+        function renderAssistitiTable(assistiti) {
+            const tbody = document.getElementById('assistitiTable');
+            
+            // Aggiorna contatore
+            document.getElementById('assistitiCount').textContent = assistiti.length;
+            
+            if (assistiti.length === 0) {
+                tbody.innerHTML = '<tr>' +
+                    '<td colspan="9" class="py-8 text-center text-gray-400">' +
+                        '<i class="fas fa-users text-3xl mb-2"></i><br>' +
+                        'Nessun assistito attivo trovato' +
+                    '</td>' +
+                '</tr>';
+                return;
+            }
+            
+            tbody.innerHTML = assistiti.map(assistito => {
+                // Dati assistito reali con nuovi campi
+                const nomeAssistito = assistito.nome_assistito || '';
+                const cognomeAssistito = assistito.cognome_assistito || '';
+                const nomeCompleto = assistito.nome || (nomeAssistito + ' ' + cognomeAssistito).trim() || 'N/A';
+                const caregiverNome = assistito.nome_caregiver || '';
+                const caregiverCognome = assistito.cognome_caregiver || '';
+                const caregiver = (caregiverNome + ' ' + caregiverCognome).trim() || 'N/A';
+                const parentela = assistito.parentela_caregiver || 'N/A';
+                const imei = assistito.imei || 'N/A';
+                const email = assistito.email || 'N/A';
+                const telefono = assistito.telefono || 'N/A';
+                const servizio = assistito.servizio || 'eCura PRO';
+                const piano = assistito.piano || 'BASE';
+                
+                // Calcola prezzo dinamico
+                const PREZZI_ECURA_TABLE = {
+                    'eCura FAMILY': { BASE: 390, AVANZATO: 690 },
+                    'eCura PRO': { BASE: 480, AVANZATO: 840 },
+                    'eCura PREMIUM': { BASE: 590, AVANZATO: 990 }
+                };
+                const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
+                
+                const status = assistito.status || 'ATTIVO';
+                const codice = assistito.codice_contratto || assistito.codice || 'N/A';
+                const assistitoId = assistito.id;
+                
+                // Status badge colors
+                const statusColors = {
+                    'ATTIVO': 'bg-green-100 text-green-700',
+                    'FIRMATO': 'bg-green-100 text-green-700',
+                    'INVIATO': 'bg-blue-100 text-blue-700',
+                    'CONVERTITO': 'bg-purple-100 text-purple-700'
+                };
+                const statusColor = statusColors[status] || 'bg-gray-100 text-gray-700';
+                
+                // Piano badge colors
+                const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                    '<td class="py-3 px-2">' +
+                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + '</div>' +
+                        '<div class="text-xs text-gray-500 mt-1">' +
+                            '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (' + parentela + ')' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<code class="bg-gray-100 px-2 py-1 rounded font-mono text-xs">' + imei + '</code>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-sm text-gray-700">' +
+                        '<div><i class="fas fa-envelope text-gray-400 mr-1"></i>' + email + '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-sm text-gray-700">' +
+                        '<div><i class="fas fa-phone text-gray-400 mr-1"></i>' + telefono + '</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">' + servizio + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 ' + pianoColor + ' text-xs font-medium rounded-full">' + piano + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<div class="font-bold text-green-600 text-base">€' + prezzoAnno + '</div>' +
+                        '<div class="text-xs text-gray-500">/anno</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<span class="px-3 py-1 ' + statusColor + ' text-xs font-medium rounded-full">' + status + '</span>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        '<div class="flex justify-center gap-1">' +
+                            '<button onclick="window.viewAssistito(' + assistitoId + ')" class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition text-sm" title="Visualizza">' +
+                                '<i class="fas fa-eye"></i>' +
+                            '</button>' +
+                            '<button onclick="window.editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-1 rounded transition text-sm" title="Modifica">' +
+                                '<i class="fas fa-edit"></i>' +
+                            '</button>' +
+                            '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
+                                '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        // Variabile globale per tenere tutti gli assistiti
+        let allAssistiti = [];
+
+        function filterAssistiti() {
+            const searchTerm = document.getElementById('searchAssistitoCognome').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                renderAssistitiTable(allAssistiti);
+                return;
+            }
+
+            const filtered = allAssistiti.filter(assistito => {
+                const nomeAssistito = (assistito.nome_assistito || '').toLowerCase();
+                const cognomeAssistito = (assistito.cognome_assistito || '').toLowerCase();
+                const nomeCompleto = (assistito.nome || '').toLowerCase();
+                const caregiverNome = (assistito.nome_caregiver || '').toLowerCase();
+                const caregiverCognome = (assistito.cognome_caregiver || '').toLowerCase();
+                
+                return nomeAssistito.includes(searchTerm) || 
+                       cognomeAssistito.includes(searchTerm) ||
+                       nomeCompleto.includes(searchTerm) ||
+                       caregiverNome.includes(searchTerm) ||
+                       caregiverCognome.includes(searchTerm);
+            });
+
+            renderAssistitiTable(filtered);
+        }
+
+        function updateChannelsChart(leads) {
+            const leadsToUse = window.allLeadsData || leads;
+            const channelCounts = {};
+            
+            // Conta i lead per canale
+            leadsToUse.forEach(lead => {
+                let channel = 'Non specificato';
+                
+                // Cerca il canale nel campo canale o nelle note
+                if (lead.canale && lead.canale.trim() !== '') {
+                    channel = lead.canale;
+                } else if (lead.note) {
+                    // Cerca pattern comuni nelle note
+                    if (lead.note.includes('Irbema') || lead.note.includes('IRBEMA')) {
+                        channel = 'Irbema';
+                    } else if (lead.note.includes('AON')) {
+                        channel = 'AON';
+                    } else if (lead.note.includes('Double You')) {
+                        channel = 'Double You';
+                    } else if (lead.note.includes('Excel')) {
+                        channel = 'Excel Import';
+                    }
+                }
+                
+                channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+            });
+
+            const total = leadsToUse.length || 1;
+            const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-indigo-500', 'bg-yellow-500'];
+            
+            const html = Object.entries(channelCounts)
+                .sort(([,a], [,b]) => b - a) // Ordina per count decrescente
+                .map(([channel, count], index) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = colors[index % colors.length];
+                    return `
+                        <div class="p-4 border-2 border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-bold text-gray-800">${channel}</span>
+                                <i class="fas fa-chart-pie text-gray-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold text-gray-900 mb-1">${count}</div>
+                            <div class="text-xs text-gray-500 mb-2">${percentage}% del totale</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${color} h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            document.getElementById('channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
+        }
+
+        // Funzioni Import API
+        function importFromExcel() {
+            alert('📋 IMPORT DA EXCEL\n\n' +
+                  '📁 Preparazione file Excel richiesta:\n\n' +
+                  '1️⃣ Usa il template Excel già popolato\n' +
+                  '2️⃣ Compila i campi richiesti:\n' +
+                  '   • Colonna B: DATA DI ARRIVO RICHIESTA\n' +
+                  '   • Colonna F: CANALE (info@irbema.com, diretto, ecc.)\n' +
+                  '   • Colonna G: NOME E COGNOME\n' +
+                  '   • Colonna I: E-MAIL\n' +
+                  '   • Colonna J: CONTATTO TELEFONICO\n\n' +
+                  '3️⃣ Il sistema assegnerà automaticamente:\n' +
+                  '   • ID progressivi (LEAD-CANALE-00130, 00131...)\n' +
+                  '   • Status: NEW o CONVERTED\n' +
+                  '   • Canale: IRBEMA, WEB, NETWORKING, ecc.\n\n' +
+                  '✅ I nuovi lead saranno AGGIUNTI senza cancellare gli esistenti.\n\n' +
+                  '🚧 Funzionalità in sviluppo - contatta l\'amministratore.');
+        }
+        window.importFromExcel = importFromExcel;  // Esponi globalmente
+
+        function importFromIrbema() {
+            if (!confirm('🔄 Import da HubSpot (IRBEMA)\n\nVuoi importare i nuovi lead da HubSpot CRM?\n\n✅ Solo contatti creati dal 1 gennaio 2026\n✅ I lead già esistenti verranno saltati\n\nQuesto può richiedere qualche secondo...')) {
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Import in corso...';
+            
+            fetch('/api/import/irbema', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Import completato!\n\n` +
+                          `• Lead importati: ${data.imported}\n` +
+                          `• Lead saltati (duplicati): ${data.skipped}\n` +
+                          `• Lead filtrati (pre-2026): ${data.filtered || 0}\n` +
+                          `• Totale contatti elaborati: ${data.total}\n` +
+                          `• Pagine processate: ${data.pages || 1}\n\n` +
+                          (data.errors && data.errors.length > 0 ? `⚠️ Errori:\n${data.errors.slice(0, 5).join('\n')}${data.errors.length > 5 ? '\n... e altri ' + (data.errors.length - 5) + ' errori' : ''}` : ''));
+                    loadDashboardData(); // Ricarica dashboard
+                } else {
+                    alert('❌ Errore import:\n\n' + data.error + (data.details ? '\n\n' + data.details : ''));
+                }
+            })
+            .catch(error => {
+                alert('❌ Errore connessione:\n\n' + error.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-cloud-download-alt mr-2"></i>Irbema';
+            });
+        }
+
+        function importFromAON() {
+            alert('🔄 Import da AON\n\nFunzionalità in sviluppo.\n\nEndpoint: POST /api/import/aon\n\nQuesta funzionalità permetterà di importare lead dal partner AON.');
+        }
+
+        function importFromDoubleYou() {
+            alert('🔄 Import da DoubleYou\n\nFunzionalità in sviluppo.\n\nEndpoint: POST /api/import/doubleyou\n\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.');
+        }
+
+        // ⚙️ TOGGLE CRON REMINDER AUTOMATICI
+        async function toggleCron(enabled) {
+            try {
+                const response = await fetch('/api/settings/lead_email_notifications_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(enabled 
+                        ? '✅ Email Automatica Benvenuto ATTIVATA\n\nIl sistema invierà automaticamente una email di benvenuto con brochure e link completamento dati a tutti i nuovi lead da qualsiasi canale (IRBEMA, AON, DoubleYou, Excel, ecc.).'
+                        : '⛔ Email Automatica Benvenuto DISATTIVATA\n\nNessuna email automatica verrà inviata ai nuovi lead. Dovrai inviarle manualmente dalla dashboard.');
+                    console.log('✅ Email automatica lead:', enabled ? 'ATTIVA' : 'DISATTIVA');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle cron:', error);
+                alert('❌ Errore: Impossibile aggiornare la configurazione del cron.\n\n' + error.message);
+                // Ripristina lo stato del toggle
+                document.getElementById('cronToggle').checked = !enabled;
+            }
+        }
+
+        // ⚙️ TOGGLE SYNC HUBSPOT AUTOMATICA
+        async function toggleHubSpot(enabled) {
+            try {
+                const response = await fetch('/api/settings/hubspot_auto_import_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    const statusEl = document.getElementById('hubspotSyncStatus');
+                    if (statusEl) {
+                        statusEl.textContent = enabled 
+                            ? 'Sincronizzazione attiva • Ultima: --' 
+                            : 'Sincronizzazione disattivata';
+                    }
+                    alert(enabled 
+                        ? '✅ Sync HubSpot ATTIVATA\n\nIl sistema importerà automaticamente i nuovi lead da HubSpot CRM (IRBEMA) in modo periodico.'
+                        : '⛔ Sync HubSpot DISATTIVATA\n\nL\'import automatico è disattivato. Usa il pulsante "Irbema" per import manuali.');
+                    console.log('✅ HubSpot sync:', enabled ? 'ATTIVO' : 'DISATTIVO');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle HubSpot:', error);
+                alert('❌ Errore: Impossibile aggiornare la configurazione HubSpot.\n\n' + error.message);
+                // Ripristina lo stato del toggle
+                document.getElementById('hubspotToggle').checked = !enabled;
+            }
+        }
+
+        // ⚙️ TOGGLE NOTIFICHE ADMIN
+        async function toggleAdmin(enabled) {
+            try {
+                const response = await fetch('/api/settings/admin_email_notifications_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    alert(enabled 
+                        ? '✅ Notifiche Admin ATTIVATE\n\nIl sistema invierà notifiche a info@telemedcare.it per ogni nuovo lead acquisito.'
+                        : '⛔ Notifiche Admin DISATTIVATE\n\nNessuna notifica verrà inviata a info@telemedcare.it.');
+                    console.log('✅ Notifiche admin:', enabled ? 'ATTIVE' : 'DISATTIVE');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle admin:', error);
+                alert('❌ Errore: Impossibile aggiornare le notifiche admin.\n\n' + error.message);
+                document.getElementById('adminToggle').checked = !enabled;
+            }
+        }
+
+        // ⚙️ TOGGLE REMINDER COMPLETAMENTO
+        async function toggleReminder(enabled) {
+            try {
+                const response = await fetch('/api/settings/reminder_completion_enabled', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: enabled })
+                });
+                
+                if (response.ok) {
+                    alert(enabled 
+                        ? '✅ Reminder Completamento ATTIVATI\n\nIl sistema invierà reminder automatici (max 2) ai lead che non hanno completato i dati dopo 3 giorni.'
+                        : '⛔ Reminder Completamento DISATTIVATI\n\nNessun reminder automatico verrà inviato ai lead.');
+                    console.log('✅ Reminder completamento:', enabled ? 'ATTIVI' : 'DISATTIVI');
+                } else {
+                    throw new Error('Errore aggiornamento configurazione');
+                }
+            } catch (error) {
+                console.error('❌ Errore toggle reminder:', error);
+                alert('❌ Errore: Impossibile aggiornare i reminder completamento.\n\n' + error.message);
+                document.getElementById('reminderToggle').checked = !enabled;
+            }
+        }
+
+        // 📊 CARICA STATO INIZIALE TOGGLE
+        async function loadToggleStates() {
+            try {
+                console.log('🔄 Caricamento stato toggle...');
+                const response = await fetch('/api/settings?t=' + Date.now());
+                console.log('📡 Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📦 Data ricevuta:', JSON.stringify(data, null, 2));
+                    
+                    if (data.success && data.settings) {
+                        // Aggiorna toggle Cron (Email Lead)
+                        const cronToggle = document.getElementById('cronToggle');
+                        if (cronToggle && data.settings.lead_email_notifications_enabled) {
+                            const isEnabled = data.settings.lead_email_notifications_enabled.value === 'true';
+                            cronToggle.checked = isEnabled;
+                            console.log('✅ Toggle Email Lead:', isEnabled);
+                        }
+                        
+                        // Aggiorna toggle HubSpot
+                        const hubspotToggle = document.getElementById('hubspotToggle');
+                        if (hubspotToggle && data.settings.hubspot_auto_import_enabled) {
+                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            hubspotToggle.checked = isEnabled;
+                            console.log('✅ Toggle HubSpot:', isEnabled);
+                        }
+                        
+                        // Aggiorna toggle Admin
+                        const adminToggle = document.getElementById('adminToggle');
+                        if (adminToggle && data.settings.admin_email_notifications_enabled) {
+                            const isEnabled = data.settings.admin_email_notifications_enabled.value === 'true';
+                            adminToggle.checked = isEnabled;
+                            console.log('✅ Toggle Admin:', isEnabled);
+                        }
+                        
+                        // Aggiorna toggle Reminder
+                        const reminderToggle = document.getElementById('reminderToggle');
+                        if (reminderToggle && data.settings.reminder_completion_enabled) {
+                            const isEnabled = data.settings.reminder_completion_enabled.value === 'true';
+                            reminderToggle.checked = isEnabled;
+                            console.log('✅ Toggle Reminder:', isEnabled);
+                        }
+                        
+                        // Aggiorna stato HubSpot
+                        const statusEl = document.getElementById('hubspotSyncStatus');
+                        if (statusEl && data.settings.hubspot_auto_import_enabled) {
+                            const isEnabled = data.settings.hubspot_auto_import_enabled.value === 'true';
+                            statusEl.textContent = isEnabled
+                                ? 'Sincronizzazione attiva • Ultima: --'
+                                : 'Sincronizzazione disattivata';
+                        }
+                        
+                        // Conta switch attivi
+                        const activeCount = Object.values(data.settings).filter(s => s.value === 'true').length;
+                        const totalCount = Object.keys(data.settings).length;
+                        const switchCountEl = document.getElementById('switchCount');
+                        if (switchCountEl) {
+                            switchCountEl.textContent = `(${activeCount}/${totalCount} attivi)`;
+                            switchCountEl.className = activeCount > 0 ? 'text-xs text-green-600 font-semibold' : 'text-xs text-gray-500';
+                        }
+                        
+                        console.log('✅ Toggle states loaded from /api/settings');
+                    } else {
+                        console.error('❌ Errore dati:', data);
+                    }
+                } else {
+                    console.error('❌ Response not ok:', response.status);
+                }
+                        }
+                        
+                        console.log('✅ Toggle states loaded from /api/settings');
+                    }
+                }
+            } catch (error) {
+                console.error('⚠️ Errore caricamento toggle states:', error);
+            }
+        }
+
+        // Carica stati toggle all'avvio
+        loadToggleStates();
+
+        // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
+    </script>
+
+    <!-- MODAL: EDIT ASSISTITO -->
+    <div id="editAssistitoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-xl font-bold">✏️ Modifica Assistito</h3>
+                <button onclick="closeModal('editAssistitoModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="editAssistitoId">
+                
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👤 Dati Assistito</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                        <input type="text" id="editNomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome *</label>
+                        <input type="text" id="editCognomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="editEmailAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                        <input type="tel" id="editTelefonoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IMEI Dispositivo *</label>
+                        <input type="text" id="editIMEI" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
+                        <select id="editServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updatePrezziServizio()">
+                            <option value="eCura FAMILY">eCura FAMILY (SiDLY CARE PRO)</option>
+                            <option value="eCura PRO">eCura PRO (SiDLY CARE PRO)</option>
+                            <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
+                        <select id="editPianoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" onchange="updatePrezziServizio()">
+                            <option value="BASE" data-prezzo="480">BASE - €480/anno</option>
+                            <option value="AVANZATO" data-prezzo="840">AVANZATO - €840/anno</option>
+                        </select>
+                        <div id="prezzoInfo" class="mt-2 text-sm text-gray-600"></div>
+                    </div>
+                </div>
+                
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👨‍👩‍👦 Dati Caregiver</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Caregiver</label>
+                        <input type="text" id="editNomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome Caregiver</label>
+                        <input type="text" id="editCognomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Parentela</label>
+                        <input type="text" id="editParentela" placeholder="es. Figlio, Figlia, Coniuge..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('editAssistitoModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                        Annulla
+                    </button>
+                    <button onclick="saveEditAssistito()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        💾 Salva Modifiche
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
