@@ -6547,7 +6547,7 @@ PUT /api/contratti/\${contractId}\`);
             return String(str || '').replace(/"/g, '\\"').replace(/'/g, "\\'");
         }
 
-        async function loadWorkflows() {
+        window.loadWorkflows = async function() {
             // Previeni chiamate multiple simultanee
             if (isLoading) {
                 console.log('Caricamento già in corso, skip...');
@@ -6699,7 +6699,7 @@ PUT /api/contratti/\${contractId}\`);
         }
 
         function refreshWorkflows() {
-            loadWorkflows();
+            window.loadWorkflows();
         }
 
         function viewWorkflowDetails(leadId) {
@@ -6975,7 +6975,7 @@ PUT /api/contratti/\${contractId}\`);
         // SETTINGS: SWITCH ON/OFF - LOAD SETTINGS
         // ============================================
         
-        async function loadSettings() {
+        window.loadSettings = async function() {
             try {
                 console.log('📥 [SETTINGS] Caricamento settings dal database...');
                 const response = await fetch('/api/settings');
@@ -7022,8 +7022,8 @@ PUT /api/contratti/\${contractId}\`);
         // Load workflows on page load (chiamata dopo tutte le definizioni)
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 [DASHBOARD] DOM Loaded - Inizializzazione...');
-            loadWorkflows();
-            loadSettings(); // Carica gli switch
+            window.loadWorkflows();
+            window.loadSettings(); // Carica gli switch dal DB
             console.log('✅ [DASHBOARD] Inizializzazione completata');
         });
     <\/script>
