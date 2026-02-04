@@ -10741,6 +10741,19 @@ app.post('/api/import/irbema', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
+    // 🔴 CONTROLLO SWITCH: Verifica se import automatico HubSpot è abilitato
+    const hubspotImportEnabled = await getSetting(c.env.DB, 'hubspot_auto_import_enabled')
+    if (!hubspotImportEnabled) {
+      console.log('⏭️ [HUBSPOT] Import automatico HubSpot disabilitato nelle impostazioni sistema')
+      return c.json({
+        success: false,
+        error: 'Import automatico HubSpot disabilitato',
+        hint: 'Attiva lo switch "Import Auto HubSpot" nella Dashboard Operativa',
+        imported: 0,
+        skipped: 0
+      }, 403)
+    }
+    
     if (!c.env?.HUBSPOT_ACCESS_TOKEN) {
       return c.json({ 
         success: false, 

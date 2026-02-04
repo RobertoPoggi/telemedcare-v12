@@ -78,8 +78,13 @@ export async function updateSetting(c: Context) {
       }, 404)
     }
 
-    // Aggiorna il valore (usa 'true'/'false' come stringhe)
-    const stringValue = value ? 'true' : 'false'
+    // Normalizza il valore a stringa 'true' o 'false'
+    // Gestisce: boolean, string "true"/"false", numeri 0/1
+    let stringValue = 'false'
+    if (value === true || value === 'true' || value === '1' || value === 1) {
+      stringValue = 'true'
+    }
+    
     await c.env.DB.prepare(
       'UPDATE settings SET value = ?, updated_at = ? WHERE key = ?'
     ).bind(stringValue, new Date().toISOString(), key).run()

@@ -18,6 +18,7 @@ import { D1Database } from '@cloudflare/workers-types'
 import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
 import { formatServiceName } from './ecura-pricing'
 import { getMissingFields, isLeadComplete } from './lead-completion'
+import { getSetting } from './settings-api'
 
 /**
  * Genera HTML completo del contratto con tutti i dati del cliente
@@ -462,6 +463,14 @@ export async function inviaEmailDocumentiInformativi(
   }
 
   try {
+    // 🔴 CONTROLLO SWITCH: Verifica se email automatiche ai lead sono abilitate
+    const emailLeadsEnabled = await getSetting(db, 'lead_email_notifications_enabled')
+    if (!emailLeadsEnabled) {
+      console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio documenti informativi`)
+      result.errors.push('Email automatiche ai lead disabilitate nelle impostazioni sistema')
+      return result
+    }
+
     console.log(`📧 [WORKFLOW] STEP 2A: Invio documenti informativi a ${leadData.emailRichiedente}`)
     console.log(`Richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
 
@@ -734,6 +743,14 @@ export async function inviaEmailContratto(
   }
 
   try {
+    // 🔴 CONTROLLO SWITCH: Verifica se email automatiche ai lead sono abilitate
+    const emailLeadsEnabled = await getSetting(db, 'lead_email_notifications_enabled')
+    if (!emailLeadsEnabled) {
+      console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
+      result.errors.push('Email automatiche ai lead disabilitate nelle impostazioni sistema')
+      return result
+    }
+
     console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.emailRichiedente}`)
 
     // ============================================
