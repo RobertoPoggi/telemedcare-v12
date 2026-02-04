@@ -2514,7 +2514,7 @@ ${370+e.length}
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 <i class="fas fa-cog mr-2 text-purple-600"></i>Impostazioni Sistema
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Import Automatico HubSpot -->
                 <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 class="font-semibold text-gray-800 mb-2">🔄 Import Auto HubSpot</h4>
@@ -2535,11 +2535,21 @@ ${370+e.length}
                     </select>
                 </div>
 
+                <!-- Notifiche Email Admin -->
+                <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <h4 class="font-semibold text-gray-800 mb-2">🔔 Notifiche Email Admin</h4>
+                    <p class="text-xs text-gray-600 mb-3">Abilita notifiche email a info@telemedcare.it</p>
+                    <select id="selectAdminEmails" class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500" onchange="updateSetting('admin_email_notifications_enabled', this.value)">
+                        <option value="false">❌ OFF - Disattivato</option>
+                        <option value="true">✅ ON - Attivo</option>
+                    </select>
+                </div>
+
                 <!-- Reminder Automatici Completamento -->
                 <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
                     <h4 class="font-semibold text-gray-800 mb-2">⏰ Reminder Completamento</h4>
                     <p class="text-xs text-gray-600 mb-3">Reminder automatici per dati mancanti</p>
-                    <select id="selectCronEnabled" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="updateSetting('cron_enabled', this.value)">
+                    <select id="selectReminderCompletion" class="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500" onchange="updateSetting('reminder_completion_enabled', this.value)">
                         <option value="false">❌ OFF - Disattivato</option>
                         <option value="true">✅ ON - Attivo</option>
                     </select>
@@ -6927,15 +6937,18 @@ PUT /api/contratti/\${contractId}\`);
                 if (data.success) {
                     const settings = data.settings;
                     
-                    // Update select states
+                    // Update select states - tutti e 4 i settings
                     if (settings.hubspot_auto_import_enabled) {
                         document.getElementById('selectHubspotAuto').value = settings.hubspot_auto_import_enabled.value;
                     }
                     if (settings.lead_email_notifications_enabled) {
                         document.getElementById('selectLeadEmails').value = settings.lead_email_notifications_enabled.value;
                     }
-                    if (settings.cron_enabled) {
-                        document.getElementById('selectCronEnabled').value = settings.cron_enabled.value;
+                    if (settings.admin_email_notifications_enabled) {
+                        document.getElementById('selectAdminEmails').value = settings.admin_email_notifications_enabled.value;
+                    }
+                    if (settings.reminder_completion_enabled) {
+                        document.getElementById('selectReminderCompletion').value = settings.reminder_completion_enabled.value;
                     }
                 }
             } catch (error) {
@@ -6966,8 +6979,8 @@ PUT /api/contratti/\${contractId}\`);
             }
         }
         
-        // Load settings on page load
-        async function loadSettings() {
+        // Load settings on page load (backup function - should not be reached)
+        async function loadSettingsBackup() {
             try {
                 const response = await fetch('/api/settings');
                 const result = await response.json();
@@ -6978,6 +6991,10 @@ PUT /api/contratti/\${contractId}\`);
                             document.getElementById('selectHubspotAuto').value = setting.value;
                         } else if (setting.key === 'lead_email_notifications_enabled') {
                             document.getElementById('selectLeadEmails').value = setting.value;
+                        } else if (setting.key === 'admin_email_notifications_enabled') {
+                            document.getElementById('selectAdminEmails').value = setting.value;
+                        } else if (setting.key === 'reminder_completion_enabled') {
+                            document.getElementById('selectReminderCompletion').value = setting.value;
                         }
                     });
                 }
