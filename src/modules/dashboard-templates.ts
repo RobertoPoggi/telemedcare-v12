@@ -5290,34 +5290,51 @@ export const workflow_manager = `<!DOCTYPE html>
         
         async function loadSettings() {
             try {
+                console.log('📥 [SETTINGS] Caricamento settings dal database...');
                 const response = await fetch('/api/settings');
                 const data = await response.json();
                 
-                if (data.success) {
+                console.log('📥 [SETTINGS] Response:', data);
+                
+                if (data.success && data.settings) {
                     const settings = data.settings;
                     
                     // Update select states - tutti e 4 i settings
                     if (settings.hubspot_auto_import_enabled) {
-                        document.getElementById('selectHubspotAuto').value = settings.hubspot_auto_import_enabled.value;
+                        const value = settings.hubspot_auto_import_enabled.value;
+                        console.log('✅ [SETTINGS] HubSpot:', value);
+                        document.getElementById('selectHubspotAuto').value = value;
                     }
                     if (settings.lead_email_notifications_enabled) {
-                        document.getElementById('selectLeadEmails').value = settings.lead_email_notifications_enabled.value;
+                        const value = settings.lead_email_notifications_enabled.value;
+                        console.log('✅ [SETTINGS] Lead Emails:', value);
+                        document.getElementById('selectLeadEmails').value = value;
                     }
                     if (settings.admin_email_notifications_enabled) {
-                        document.getElementById('selectAdminEmails').value = settings.admin_email_notifications_enabled.value;
+                        const value = settings.admin_email_notifications_enabled.value;
+                        console.log('✅ [SETTINGS] Admin Emails:', value);
+                        document.getElementById('selectAdminEmails').value = value;
                     }
                     if (settings.reminder_completion_enabled) {
-                        document.getElementById('selectReminderCompletion').value = settings.reminder_completion_enabled.value;
+                        const value = settings.reminder_completion_enabled.value;
+                        console.log('✅ [SETTINGS] Reminder:', value);
+                        document.getElementById('selectReminderCompletion').value = value;
                     }
+                    
+                    console.log('✅ [SETTINGS] Tutti e 4 gli switch caricati correttamente');
+                } else {
+                    console.error('❌ [SETTINGS] Risposta API non valida:', data);
                 }
             } catch (error) {
-                console.error('Errore caricamento settings:', error);
+                console.error('❌ [SETTINGS] Errore caricamento settings:', error);
             }
         }
         
-        // ⚙️ UPDATE SETTING SEMPLICE
-        async function updateSetting(key, value) {
+        // ⚙️ UPDATE SETTING - ESPOSTA NEL WINDOW SCOPE
+        window.updateSetting = async function(key, value) {
             try {
+                console.log('🔄 [SETTINGS] Aggiornamento setting:', key, '=', value);
+                
                 const response = await fetch('/api/settings/' + key, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -5326,46 +5343,27 @@ export const workflow_manager = `<!DOCTYPE html>
                 
                 const result = await response.json();
                 
-                if (result.success) {
-                    alert('✅ Impostazione aggiornata con successo!');
-                    console.log('Setting aggiornato:', key, '=', value);
-                } else {
-                    alert('❌ Errore: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Errore aggiornamento setting:', error);
-                alert('❌ Errore di comunicazione');
-            }
-        }
-        
-        // Load settings on page load (backup function - should not be reached)
-        async function loadSettingsBackup() {
-            try {
-                const response = await fetch('/api/settings');
-                const result = await response.json();
+                console.log('🔄 [SETTINGS] Response:', result);
                 
                 if (result.success) {
-                    result.settings.forEach(setting => {
-                        if (setting.key === 'hubspot_auto_import_enabled') {
-                            document.getElementById('selectHubspotAuto').value = setting.value;
-                        } else if (setting.key === 'lead_email_notifications_enabled') {
-                            document.getElementById('selectLeadEmails').value = setting.value;
-                        } else if (setting.key === 'admin_email_notifications_enabled') {
-                            document.getElementById('selectAdminEmails').value = setting.value;
-                        } else if (setting.key === 'reminder_completion_enabled') {
-                            document.getElementById('selectReminderCompletion').value = setting.value;
-                        }
-                    });
+                    alert('✅ Impostazione aggiornata con successo!\\n\\n' + key + ' = ' + value);
+                    console.log('✅ [SETTINGS] Setting aggiornato:', key, '=', value);
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                    console.error('❌ [SETTINGS] Errore:', result.error);
                 }
             } catch (error) {
-                console.error('Errore caricamento settings:', error);
+                console.error('❌ [SETTINGS] Errore aggiornamento setting:', error);
+                alert('❌ Errore di comunicazione: ' + error.message);
             }
         }
 
         // Load workflows on page load (chiamata dopo tutte le definizioni)
         window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 [DASHBOARD] DOM Loaded - Inizializzazione...');
             loadWorkflows();
             loadSettings(); // Carica gli switch
+            console.log('✅ [DASHBOARD] Inizializzazione completata');
         });
     </script>
 </body>
