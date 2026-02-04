@@ -15766,26 +15766,13 @@ app.get('/landing', (c) => {
 
 // ========== DASHBOARD ROUTES ==========
 // Dashboard Operativa - Centro di controllo staff con analytics e monitoring
-app.get('/dashboard', async (c) => {
-  try {
-    // Tenta di caricare il file dashboard.html aggiornato da /dashboard.html
-    const baseUrl = new URL(c.req.url).origin
-    const dashboardUrl = `${baseUrl}/dashboard.html`
-    const response = await fetch(dashboardUrl)
-    
-    if (response.ok) {
-      const html = await response.text()
-      c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
-      c.header('X-TeleMedCare-Dashboard', 'operativa')
-      return c.html(html)
-    }
-  } catch (error) {
-    console.error('Fallback to embedded dashboard:', error)
-  }
-  
-  // Fallback alla versione embedded
-  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+app.get('/dashboard', (c) => {
+  // Usa SEMPRE il template TypeScript aggiornato (non file statici vecchi)
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  c.header('Pragma', 'no-cache')
+  c.header('Expires', '0')
   c.header('X-TeleMedCare-Dashboard', 'operativa')
+  c.header('X-TeleMedCare-Version', 'V12.0-Dynamic-Template')
   return c.html(dashboard)
 })
 
