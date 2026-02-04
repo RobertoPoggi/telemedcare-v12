@@ -3816,17 +3816,32 @@ app.post('/api/lead', async (c) => {
       }
       
       // Esegui STEP 1: Processamento nuovo lead
-      const workflowResults = await WorkflowOrchestrator.processNewLead(workflowContext)
-      
-      console.log('📧 [WORKFLOW] Orchestratore completato:', workflowResults)
-      
-      return c.json({
-        success: true,
-        leadId: leadId,
-        message: 'Lead ricevuto e processato con successo',
-        timestamp: timestamp,
-        workflow: workflowResults
-      })
+      try {
+        const workflowResults = await WorkflowOrchestrator.processNewLead(workflowContext)
+        
+        console.log('📧 [WORKFLOW] Orchestratore completato:', workflowResults)
+        
+        return c.json({
+          success: true,
+          leadId: leadId,
+          message: 'Lead ricevuto e processato con successo',
+          timestamp: timestamp,
+          workflow: workflowResults
+        })
+      } catch (workflowError) {
+        // Lead è già salvato nel DB, errore workflow non è critico
+        console.error('⚠️ Workflow orchestrator error (lead già salvato):', workflowError)
+        console.error('Stack:', workflowError instanceof Error ? workflowError.stack : 'No stack')
+        
+        return c.json({
+          success: true,
+          leadId: leadId,
+          message: 'Lead salvato con successo',
+          timestamp: timestamp,
+          warning: 'Email workflow may be delayed',
+          workflowError: workflowError instanceof Error ? workflowError.message : String(workflowError)
+        })
+      }
       
     } else {
       console.log('⚠️ Database non configurato - modalità development')
