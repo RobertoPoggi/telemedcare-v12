@@ -4,6 +4,18 @@
 **Data analisi:** 2026-02-04  
 **Versione:** 2.0 (con date Git reali)  
 **Repository:** https://github.com/RobertoPoggi/telemedcare-v12  
+**Ultima pulizia:** 2026-02-04 (34 template obsoleti archiviati in OBSOLETI/)
+
+---
+
+## 🎯 AGGIORNAMENTO: PULIZIA COMPLETATA (2026-02-04)
+
+✅ **34 template obsoleti** spostati in `OBSOLETI/templates/`  
+✅ **22 template attivi** mantenuti in `/templates/`  
+✅ **Spazio archiviato:** ~320 KB  
+✅ **Periodo recupero:** 1 mese (fino al 4 marzo 2026)  
+✅ **Report completo:** [TEMPLATE_CLEANUP_REPORT.md](./TEMPLATE_CLEANUP_REPORT.md)  
+✅ **Istruzioni recupero:** [OBSOLETI/README.md](./OBSOLETI/README.md)
 
 ---
 
@@ -18,12 +30,13 @@
 
 2. **Regola per cartella:**
    - `/templates/email_*.html` → **ORIGINALI** (root, usati dal sistema)
-   - `/templates/email/` → **DUPLICATI VECCHI** (obsoleti)
-   - `/templates/email_cleaned/` → **VERSIONI INTERMEDIE** (obsoleti)
+   - ~~`/templates/email/`~~ → **ARCHIVIATI** in `OBSOLETI/templates/email/` (obsoleti, Ottobre 2025)
+   - ~~`/templates/email_cleaned/`~~ → **ARCHIVIATI** in `OBSOLETI/templates/email_cleaned/` (intermedi, Ott-Dic 2025)
 
 3. **Hash MD5:**
    - Hash identico = **DUPLICATO PERFETTO** (da eliminare)
    - Hash diverso = **VERSIONE DIVERSA** (contenuto modificato)
+   - ✅ **RISULTATO:** Nessun duplicato perfetto trovato (tutti hash MD5 diversi)
 
 4. **Uso nel codice:**
    - Riferimenti in `src/` = File attivo
