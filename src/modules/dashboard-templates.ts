@@ -953,6 +953,62 @@ export const dashboard = `<!DOCTYPE html>
             };
             
             console.log('✅ [SETTINGS] Funzione window.updateSetting definita');
+            
+            // ⚙️ FUNZIONE LOAD SETTINGS - Carica i valori dal DB
+            window.loadSettings = async function() {
+                try {
+                    console.log('📥 [SETTINGS] Caricamento settings dal database...');
+                    const response = await fetch('/api/settings');
+                    const data = await response.json();
+                    
+                    console.log('📥 [SETTINGS] Response:', data);
+                    
+                    if (data.success && data.settings) {
+                        const settings = data.settings;
+                        
+                        // Update select states - tutti e 4 i settings
+                        if (settings.hubspot_auto_import_enabled) {
+                            const value = settings.hubspot_auto_import_enabled.value;
+                            console.log('✅ [SETTINGS] HubSpot:', value);
+                            const el = document.getElementById('selectHubspotAuto');
+                            if (el) el.value = value;
+                        }
+                        if (settings.lead_email_notifications_enabled) {
+                            const value = settings.lead_email_notifications_enabled.value;
+                            console.log('✅ [SETTINGS] Lead Emails:', value);
+                            const el = document.getElementById('selectLeadEmails');
+                            if (el) el.value = value;
+                        }
+                        if (settings.admin_email_notifications_enabled) {
+                            const value = settings.admin_email_notifications_enabled.value;
+                            console.log('✅ [SETTINGS] Admin Emails:', value);
+                            const el = document.getElementById('selectAdminEmails');
+                            if (el) el.value = value;
+                        }
+                        if (settings.reminder_completion_enabled) {
+                            const value = settings.reminder_completion_enabled.value;
+                            console.log('✅ [SETTINGS] Reminder:', value);
+                            const el = document.getElementById('selectReminderCompletion');
+                            if (el) el.value = value;
+                        }
+                        
+                        console.log('✅ [SETTINGS] Tutti e 4 gli switch caricati correttamente');
+                    } else {
+                        console.error('❌ [SETTINGS] Risposta API non valida:', data);
+                    }
+                } catch (error) {
+                    console.error('❌ [SETTINGS] Errore caricamento settings:', error);
+                }
+            };
+            
+            console.log('✅ [SETTINGS] Funzione window.loadSettings definita');
+            
+            // Carica settings al caricamento pagina
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', window.loadSettings);
+            } else {
+                window.loadSettings();
+            }
         </script>
 
         <!-- Elenco Assistiti -->
