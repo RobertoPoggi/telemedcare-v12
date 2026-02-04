@@ -2570,6 +2570,39 @@ ${370+e.length}
             </div>
         </div>
 
+        <!-- Script Settings: Definito QUI per essere disponibile agli handler inline -->
+        <script>
+            // ⚙️ FUNZIONE UPDATE SETTING - Definita prima degli handler
+            window.updateSetting = async function(key, value) {
+                try {
+                    console.log('🔄 [SETTINGS] Aggiornamento setting:', key, '=', value);
+                    
+                    const response = await fetch('/api/settings/' + key, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ value: value })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    console.log('🔄 [SETTINGS] Response:', result);
+                    
+                    if (result.success) {
+                        alert('✅ Impostazione aggiornata con successo!\\n\\n' + key + ' = ' + value);
+                        console.log('✅ [SETTINGS] Setting aggiornato:', key, '=', value);
+                    } else {
+                        alert('❌ Errore: ' + result.error);
+                        console.error('❌ [SETTINGS] Errore:', result.error);
+                    }
+                } catch (error) {
+                    console.error('❌ [SETTINGS] Errore aggiornamento setting:', error);
+                    alert('❌ Errore di comunicazione: ' + error.message);
+                }
+            };
+            
+            console.log('✅ [SETTINGS] Funzione window.updateSetting definita');
+        <\/script>
+
         <!-- Elenco Assistiti -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
             <div class="flex items-center justify-between mb-4">
@@ -6939,7 +6972,7 @@ PUT /api/contratti/\${contractId}\`);
         }
 
         // ============================================
-        // SETTINGS: SWITCH ON/OFF
+        // SETTINGS: SWITCH ON/OFF - LOAD SETTINGS
         // ============================================
         
         async function loadSettings() {
@@ -6984,33 +7017,7 @@ PUT /api/contratti/\${contractId}\`);
             }
         }
         
-        // ⚙️ UPDATE SETTING - ESPOSTA NEL WINDOW SCOPE
-        window.updateSetting = async function(key, value) {
-            try {
-                console.log('🔄 [SETTINGS] Aggiornamento setting:', key, '=', value);
-                
-                const response = await fetch('/api/settings/' + key, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ value: value })
-                });
-                
-                const result = await response.json();
-                
-                console.log('🔄 [SETTINGS] Response:', result);
-                
-                if (result.success) {
-                    alert('✅ Impostazione aggiornata con successo!\\n\\n' + key + ' = ' + value);
-                    console.log('✅ [SETTINGS] Setting aggiornato:', key, '=', value);
-                } else {
-                    alert('❌ Errore: ' + result.error);
-                    console.error('❌ [SETTINGS] Errore:', result.error);
-                }
-            } catch (error) {
-                console.error('❌ [SETTINGS] Errore aggiornamento setting:', error);
-                alert('❌ Errore di comunicazione: ' + error.message);
-            }
-        }
+        // Nota: window.updateSetting è già definita inline dopo gli switch HTML
 
         // Load workflows on page load (chiamata dopo tutte le definizioni)
         window.addEventListener('DOMContentLoaded', () => {
