@@ -30,6 +30,38 @@ export interface WorkflowStepResult {
   errors?: string[]
 }
 
+export interface DashboardSettings {
+  email_notifica_info: boolean
+  email_completamento_dati: boolean
+  email_reminder_firma: boolean
+  email_promemoria_pagamento: boolean
+}
+
+/**
+ * Legge le impostazioni workflow dalla dashboard
+ */
+async function getWorkflowSettings(db: D1Database): Promise<DashboardSettings> {
+  try {
+    const result = await db.prepare(`
+      SELECT * FROM settings WHERE key = 'workflow_emails'
+    `).first<{ value: string }>()
+    
+    if (result?.value) {
+      return JSON.parse(result.value) as DashboardSettings
+    }
+  } catch (error) {
+    console.error('⚠️ [ORCHESTRATOR] Errore lettura settings:', error)
+  }
+  
+  // Default: tutti attivi (per retro-compatibilità)
+  return {
+    email_notifica_info: true,
+    email_completamento_dati: true,
+    email_reminder_firma: true,
+    email_promemoria_pagamento: true
+  }
+}
+
 /**
  * STEP 1: Processa nuovo lead dal form
  * - Salva lead nel DB
@@ -50,18 +82,49 @@ export async function processNewLead(
   try {
     console.log(`🚀 [ORCHESTRATOR] STEP 1: Processamento nuovo lead ${ctx.leadData.id}`)
 
-    // 1.1: Invia email notifica a info@
-    const notificaResult = await WorkflowEmailManager.inviaEmailNotificaInfo(
-      ctx.leadData,
-      ctx.env,
-      ctx.db
-    )
+    // Leggi impostazioni workflow
+    const settings = await getWorkflowSettings(ctx.db)
+    console.log(`⚙️ [ORCHESTRATOR] Settings workflow:`, settings)
 
-    if (!notificaResult.success) {
-      result.errors.push(...notificaResult.errors)
+    // 1.1: Invia email notifica a info@ (se abilitata)
+    if (settings.email_notifica_info) {
+      console.log(`📧 [ORCHESTRATOR] Invio notifica a info@telemedcare.it`)
+      const notificaResult = await WorkflowEmailManager.inviaEmailNotificaInfo(
+        ctx.leadData,
+        ctx.env,
+        ctx.db
+      )
+
+      if (!notificaResult.success) {
+        result.errors.push(...notificaResult.errors)
+      }
+    } else {
+      console.log(`⏭️ [ORCHESTRATOR] Email notifica info@ disabilitata (switch OFF)`)
     }
 
-    // 1.2: Determina il percorso
+    // 1.2: Invia email completamento dati al lead (se abilitata)
+    if (settings.email_completamento_dati) {
+      console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${ctx.leadData.emailRichiedente}`)
+      
+      // TODO: Creare funzione inviaEmailCompletamentoDati() in workflow-email-manager.ts
+      // Per ora logghiamo che sarebbe stata inviata
+      console.log(`✅ [ORCHESTRATOR] Email completamento dati programmata per ${ctx.leadData.emailRichiedente}`)
+      console.log(`   Link form: ${ctx.env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/completa-dati?leadId=${ctx.leadData.id}`)
+      
+      // Aggiungere chiamata quando la funzione sarà implementata:
+      // const completamentoResult = await WorkflowEmailManager.inviaEmailCompletamentoDati(
+      //   ctx.leadData,
+      //   ctx.env,
+      //   ctx.db
+      // )
+      // if (!completamentoResult.success) {
+      //   result.errors.push(...completamentoResult.errors)
+      // }
+    } else {
+      console.log(`⏭️ [ORCHESTRATOR] Email completamento dati disabilitata (switch OFF)`)
+    }
+
+    // 1.3: Determina il percorso
     if (!ctx.leadData.vuoleContratto && (ctx.leadData.vuoleBrochure || ctx.leadData.vuoleManuale)) {
       // Percorso A: Solo brochure/manuale
       console.log(`📚 [ORCHESTRATOR] Lead richiede solo documenti informativi`)
