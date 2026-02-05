@@ -1,6 +1,9 @@
 // Auto-generated dashboard templates
 // Generated from public/*.html files
 
+// Import auto-import script for HubSpot incremental sync
+import { autoImportScript } from './auto-import-script'
+
 export const home = `<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -2181,6 +2184,7 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </div>
 
+    ${autoImportScript}
 </body>
 </html>
 `
@@ -3792,6 +3796,7 @@ export const leads_dashboard = `<!DOCTYPE html>
     <!-- MODAL: EDIT LEAD -->
     <!-- editLeadModal rimosso - ora usa newLeadModal anche per edit -->
 
+    ${autoImportScript}
 </body>
 </html>
 `
@@ -4681,6 +4686,7 @@ PUT /api/contratti/\${contractId}\`);
         </div>
     </div>
 
+    ${autoImportScript}
 </body>
 </html>
 `
