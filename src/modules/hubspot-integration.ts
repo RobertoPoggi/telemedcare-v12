@@ -131,7 +131,8 @@ export class HubSpotClient {
       const defaultProps = [
         'firstname', 'lastname', 'email', 'phone', 'mobilephone',
         'company', 'address', 'city', 'state', 'zip', 'country',
-        'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate'
+        'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
+        'servizio_ecura', 'piano_ecura', 'hs_object_source_detail_1'
       ]
       defaultProps.forEach(prop => queryParams.append('properties', prop))
     }
@@ -311,9 +312,40 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     .filter(Boolean)
     .join(', ')
   
-  // Servizio e piano (da custom properties se esistono)
-  const servizio = props.servizio_richiesto || 'eCura PRO'
-  const piano = props.piano_selezionato || 'BASE'
+  // Servizio e piano (da custom properties eCura)
+  const servizioEcura = (props.servizio_ecura || 'PRO').toUpperCase() // FAMILY, PRO, PREMIUM
+  const pianoEcura = (props.piano_ecura || 'BASE').toUpperCase() // BASE, AVANZATO
+  
+  // Normalizza formato servizio per TeleMedCare
+  const servizio = `eCura ${servizioEcura}` // es. "eCura PRO"
+  const piano = pianoEcura
+  
+  // ✅ CALCOLO AUTOMATICO PREZZI (IVA ESCLUSA)
+  let pricing = {
+    setupBase: 0,
+    setupIva: 0,
+    setupTotale: 0,
+    rinnovoBase: 0,
+    rinnovoIva: 0,
+    rinnovoTotale: 0
+  }
+  
+  try {
+    // Import dinamico del pricing calculator
+    const { calculatePrice } = require('./pricing-calculator')
+    pricing = calculatePrice(servizioEcura, pianoEcura)
+  } catch (error) {
+    console.error('⚠️ Errore calcolo prezzi, uso default PRO BASE:', error)
+    // Fallback: PRO BASE (prezzi più comuni)
+    pricing = {
+      setupBase: 480,
+      setupIva: 105.60,
+      setupTotale: 585.60,
+      rinnovoBase: 240,
+      rinnovoIva: 52.80,
+      rinnovoTotale: 292.80
+    }
+  }
   
   // Status mapping
   const statusMap: Record<string, string> = {
@@ -343,6 +375,16 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     piano,
     pacchetto: piano,
     tipoServizio: servizio,
+    servizio_ecura: servizioEcura,
+    piano_ecura: pianoEcura,
+    
+    // ✅ PREZZI CALCOLATI AUTOMATICAMENTE (IVA ESCLUSA)
+    setupBase: pricing.setupBase,
+    setupIva: pricing.setupIva,
+    setupTotale: pricing.setupTotale,
+    rinnovoBase: pricing.rinnovoBase,
+    rinnovoIva: pricing.rinnovoIva,
+    rinnovoTotale: pricing.rinnovoTotale,
     
     // Status
     status,

@@ -9623,6 +9623,144 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
   }
 })
 
+// POST /api/leads/fix-prices - Corregge i prezzi di tutti i lead in base a servizio+piano
+app.post('/api/leads/fix-prices', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Avvio correzione prezzi per tutti i lead...')
+    
+    // Import pricing calculator
+    const { calculatePrice } = await import('./modules/pricing-calculator')
+    
+    // Leggi tutti i lead
+    const allLeads = await c.env.DB.prepare(`
+      SELECT 
+        id, servizio, piano, pacchetto, tipoServizio,
+        setupBase, setupIva, setupTotale,
+        rinnovoBase, rinnovoIva, rinnovoTotale
+      FROM leads
+      ORDER BY created_at DESC
+    `).all()
+    
+    if (!allLeads.results || allLeads.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun lead da correggere',
+        total: 0,
+        corrected: 0,
+        skipped: 0,
+        errors: []
+      })
+    }
+    
+    console.log(`📊 Trovati ${allLeads.results.length} lead totali`)
+    
+    let corrected = 0
+    let skipped = 0
+    const errors: any[] = []
+    
+    for (const lead of allLeads.results as any[]) {
+      try {
+        // Estrai servizio e piano
+        let servizioEcura = 'PRO'  // Default
+        let pianoEcura = 'BASE'    // Default
+        
+        // Parse servizio (es. "eCura PRO" → "PRO")
+        if (lead.servizio) {
+          const match = lead.servizio.match(/eCura\s+(FAMILY|PRO|PREMIUM)/i)
+          if (match) {
+            servizioEcura = match[1].toUpperCase()
+          }
+        } else if (lead.tipoServizio) {
+          const match = lead.tipoServizio.match(/eCura\s+(FAMILY|PRO|PREMIUM)/i)
+          if (match) {
+            servizioEcura = match[1].toUpperCase()
+          }
+        }
+        
+        // Parse piano
+        if (lead.piano) {
+          pianoEcura = lead.piano.toUpperCase()
+        } else if (lead.pacchetto) {
+          pianoEcura = lead.pacchetto.toUpperCase()
+        }
+        
+        // Calcola prezzi corretti
+        const pricing = calculatePrice(servizioEcura, pianoEcura)
+        
+        // Verifica se il prezzo è già corretto
+        if (
+          lead.setupBase === pricing.setupBase &&
+          lead.setupIva === pricing.setupIva &&
+          lead.setupTotale === pricing.setupTotale &&
+          lead.rinnovoBase === pricing.rinnovoBase &&
+          lead.rinnovoIva === pricing.rinnovoIva &&
+          lead.rinnovoTotale === pricing.rinnovoTotale
+        ) {
+          skipped++
+          continue
+        }
+        
+        // Aggiorna il lead con i prezzi corretti
+        await c.env.DB.prepare(`
+          UPDATE leads
+          SET 
+            setupBase = ?,
+            setupIva = ?,
+            setupTotale = ?,
+            rinnovoBase = ?,
+            rinnovoIva = ?,
+            rinnovoTotale = ?
+          WHERE id = ?
+        `).bind(
+          pricing.setupBase,
+          pricing.setupIva,
+          pricing.setupTotale,
+          pricing.rinnovoBase,
+          pricing.rinnovoIva,
+          pricing.rinnovoTotale,
+          lead.id
+        ).run()
+        
+        corrected++
+        
+        console.log(`✅ Lead ${lead.id} corretto: ${servizioEcura} ${pianoEcura} → ${pricing.setupBase}€`)
+        
+      } catch (error) {
+        errors.push({
+          leadId: lead.id,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        console.error(`❌ Errore lead ${lead.id}:`, error)
+      }
+    }
+    
+    const result = {
+      success: true,
+      message: `Correzione prezzi completata: ${corrected} corretti, ${skipped} già corretti, ${errors.length} errori`,
+      total: allLeads.results.length,
+      corrected,
+      skipped,
+      errors: errors.length > 0 ? errors : undefined
+    }
+    
+    console.log('🎉 Correzione prezzi completata:', result)
+    
+    return c.json(result)
+    
+  } catch (error) {
+    console.error('❌ Errore correzione prezzi:', error)
+    return c.json({
+      success: false,
+      error: 'Errore correzione prezzi',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ========================================
 // SETTINGS API
 // ========================================
