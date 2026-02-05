@@ -1,8 +1,8 @@
-name: HubSpot Daily Sync 9:00
+name: HubSpot Daily Sync 8:00
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # Ogni giorno alle 9:00 UTC (10:00 ora italiana)
+    - cron: '0 7 * * *'  # Ogni giorno alle 7:00 UTC (8:00 ora italiana)
   workflow_dispatch:      # Permette esecuzione manuale
 
 jobs:
