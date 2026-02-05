@@ -37,7 +37,10 @@ export interface PricingDetails {
 
 /**
  * MATRICE PREZZI COMPLETA eCura
- * Tutti i prezzi sono IVA 22% inclusa
+ * ⚠️ IMPORTANTE: Prezzi da www.ecura.it sono IVA ESCLUSA (22%)
+ * setupBase = prezzo sul sito (IVA esclusa)
+ * setupIva = setupBase * 0.22
+ * setupTotale = setupBase * 1.22
  */
 export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
   'FAMILY': {
@@ -47,18 +50,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'Senium',
       descrizioneDispositivo: 'Dispositivo base per monitoraggio familiare',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 319.67,
-      setupIva: 70.33,
-      setupTotale: 390.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 390.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 85.80,          // 390 * 0.22
+      setupTotale: 475.80,      // 390 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 163.93,
-      rinnovoIva: 36.07,
-      rinnovoTotale: 200.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 200.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 44.00,        // 200 * 0.22
+      rinnovoTotale: 244.00,    // 200 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 74.10, // 19% di 390.00
+      detrazioneFiscale19: 90.40, // 19% di 475.80
       
       serviziInclusi: [
         'Dispositivo medicale Senium',
@@ -74,18 +77,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'Senium',
       descrizioneDispositivo: 'Dispositivo base con centrale operativa H24',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 565.57,
-      setupIva: 124.43,
-      setupTotale: 690.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 690.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 151.80,         // 690 * 0.22
+      setupTotale: 841.80,      // 690 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 409.84,
-      rinnovoIva: 90.16,
-      rinnovoTotale: 500.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 500.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 110.00,       // 500 * 0.22
+      rinnovoTotale: 610.00,    // 500 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 131.10, // 19% di 690.00
+      detrazioneFiscale19: 159.94, // 19% di 841.80
       
       serviziInclusi: [
         'Dispositivo medicale Senium',
@@ -105,18 +108,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'SiDLY Care PRO',
       descrizioneDispositivo: 'Dispositivo professionale per assistenza avanzata',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 393.44,
-      setupIva: 86.56,
-      setupTotale: 480.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 480.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 105.60,         // 480 * 0.22
+      setupTotale: 585.60,      // 480 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 196.72,
-      rinnovoIva: 43.28,
-      rinnovoTotale: 240.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 240.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 52.80,        // 240 * 0.22
+      rinnovoTotale: 292.80,    // 240 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 91.20, // 19% di 480.00
+      detrazioneFiscale19: 111.26, // 19% di 585.60
       
       serviziInclusi: [
         'Dispositivo medicale SiDLY Care PRO (Classe IIa)',
@@ -134,18 +137,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'SiDLY Care PRO',
       descrizioneDispositivo: 'Dispositivo professionale con centrale operativa H24',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 688.52,
-      setupIva: 151.48,
-      setupTotale: 840.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 840.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 184.80,         // 840 * 0.22
+      setupTotale: 1024.80,     // 840 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 491.80,
-      rinnovoIva: 108.20,
-      rinnovoTotale: 600.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 600.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 132.00,       // 600 * 0.22
+      rinnovoTotale: 732.00,    // 600 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 159.60, // 19% di 840.00
+      detrazioneFiscale19: 194.71, // 19% di 1024.80
       
       serviziInclusi: [
         'Dispositivo medicale SiDLY Care PRO (Classe IIa)',
@@ -170,18 +173,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'SiDLY Vital Care',
       descrizioneDispositivo: 'Dispositivo premium per monitoraggio completo',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 483.61,
-      setupIva: 106.39,
-      setupTotale: 590.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 590.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 129.80,         // 590 * 0.22
+      setupTotale: 719.80,      // 590 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 245.90,
-      rinnovoIva: 54.10,
-      rinnovoTotale: 300.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 300.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 66.00,        // 300 * 0.22
+      rinnovoTotale: 366.00,    // 300 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 112.10, // 19% di 590.00
+      detrazioneFiscale19: 136.76, // 19% di 719.80
       
       serviziInclusi: [
         'Dispositivo medicale SiDLY Vital Care (Classe IIa)',
@@ -199,18 +202,18 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       dispositivo: 'SiDLY Vital Care',
       descrizioneDispositivo: 'Dispositivo premium con centrale operativa H24',
       
-      // Primo anno (da sito www.ecura.it)
-      setupBase: 811.48,
-      setupIva: 178.52,
-      setupTotale: 990.00,
+      // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
+      setupBase: 990.00,        // Prezzo base sito (IVA esclusa)
+      setupIva: 217.80,         // 990 * 0.22
+      setupTotale: 1207.80,     // 990 * 1.22
       
-      // Rinnovo (da sito www.ecura.it)
-      rinnovoBase: 614.75,
-      rinnovoIva: 135.25,
-      rinnovoTotale: 750.00,
+      // Rinnovo (da sito www.ecura.it - IVA ESCLUSA)
+      rinnovoBase: 750.00,      // Prezzo rinnovo sito (IVA esclusa)
+      rinnovoIva: 165.00,       // 750 * 0.22
+      rinnovoTotale: 915.00,    // 750 * 1.22
       
       // Detrazione
-      detrazioneFiscale19: 188.10, // 19% di 990.00
+      detrazioneFiscale19: 229.48, // 19% di 1207.80
       
       serviziInclusi: [
         'Dispositivo medicale SiDLY Vital Care (Classe IIa)',
