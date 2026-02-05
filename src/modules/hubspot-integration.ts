@@ -385,13 +385,9 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     servizio_ecura: servizioEcura,
     piano_ecura: pianoEcura,
     
-    // ✅ PREZZI CALCOLATI AUTOMATICAMENTE (NULL se servizio/piano mancanti)
-    setupBase: pricing.setupBase,
-    setupIva: pricing.setupIva,
-    setupTotale: pricing.setupTotale,
-    rinnovoBase: pricing.rinnovoBase,
-    rinnovoIva: pricing.rinnovoIva,
-    rinnovoTotale: pricing.rinnovoTotale,
+    // ✅ PREZZI (USA CAMPI ESISTENTI - IVA ESCLUSA)
+    prezzo_anno: pricing.setupBase,      // Setup IVA esclusa
+    prezzo_rinnovo: pricing.rinnovoBase, // Rinnovo IVA esclusa
     
     // Status
     status,

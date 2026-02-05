@@ -9632,41 +9632,14 @@ app.post('/api/leads/fix-prices', async (c) => {
     
     console.log('🔧 Avvio correzione prezzi per tutti i lead...')
     
-    // STEP 1: Verifica e aggiungi colonne se mancanti
-    console.log('📊 Step 1: Verifica colonne database...')
-    const columnsToAdd = [
-      'setupBase REAL',
-      'setupIva REAL',
-      'setupTotale REAL',
-      'rinnovoBase REAL',
-      'rinnovoIva REAL',
-      'rinnovoTotale REAL'
-    ]
-    
-    for (const column of columnsToAdd) {
-      try {
-        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${column}`).run()
-        console.log(`✅ Colonna aggiunta: ${column}`)
-      } catch (error) {
-        // Colonna già exists, skip
-        if ((error as Error).message.includes('duplicate column')) {
-          console.log(`⏭️  Colonna già esiste: ${column.split(' ')[0]}`)
-        } else {
-          console.warn(`⚠️ Errore aggiunta colonna ${column}:`, (error as Error).message)
-        }
-      }
-    }
-    
-    // STEP 2: Import pricing calculator
+    // Import pricing calculator
     const { calculatePrice } = await import('./modules/pricing-calculator')
     
-    // STEP 3: Leggi tutti i lead (solo campi che esistono sicuramente)
-    console.log('📊 Step 2: Lettura lead dal database...')
+    // Leggi tutti i lead (usa campi esistenti)
     const allLeads = await c.env.DB.prepare(`
       SELECT 
         id, servizio, piano, tipoServizio,
-        setupBase, setupIva, setupTotale,
-        rinnovoBase, rinnovoIva, rinnovoTotale
+        prezzo_anno, prezzo_rinnovo
       FROM leads
       ORDER BY created_at DESC
     `).all()
@@ -9717,12 +9690,8 @@ app.post('/api/leads/fix-prices', async (c) => {
         
         // Verifica se il prezzo è già corretto
         if (
-          lead.setupBase === pricing.setupBase &&
-          lead.setupIva === pricing.setupIva &&
-          lead.setupTotale === pricing.setupTotale &&
-          lead.rinnovoBase === pricing.rinnovoBase &&
-          lead.rinnovoIva === pricing.rinnovoIva &&
-          lead.rinnovoTotale === pricing.rinnovoTotale
+          lead.prezzo_anno === pricing.setupBase &&
+          lead.prezzo_rinnovo === pricing.rinnovoBase
         ) {
           skipped++
           continue
@@ -9732,20 +9701,12 @@ app.post('/api/leads/fix-prices', async (c) => {
         await c.env.DB.prepare(`
           UPDATE leads
           SET 
-            setupBase = ?,
-            setupIva = ?,
-            setupTotale = ?,
-            rinnovoBase = ?,
-            rinnovoIva = ?,
-            rinnovoTotale = ?
+            prezzo_anno = ?,
+            prezzo_rinnovo = ?
           WHERE id = ?
         `).bind(
           pricing.setupBase,
-          pricing.setupIva,
-          pricing.setupTotale,
           pricing.rinnovoBase,
-          pricing.rinnovoIva,
-          pricing.rinnovoTotale,
           lead.id
         ).run()
         
@@ -10237,19 +10198,18 @@ app.post('/api/hubspot/sync', async (c) => {
         const leadId = `LEAD-IRBEMA-${nextNumber.toString().padStart(5, '0')}`
         console.log(`🆔 [HUBSPOT SYNC] Generato ID: ${leadId}`)
         
-        // Inserisci nel database con PREZZI CALCOLATI
+        // Inserisci nel database con PREZZI (usa campi esistenti)
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
-            setupBase, setupIva, setupTotale,
-            rinnovoBase, rinnovoIva, rinnovoTotale,
+            prezzo_anno, prezzo_rinnovo,
             fonte, external_source_id, status, note,
             vuoleContratto, vuoleBrochure, vuoleManuale,
             consensoPrivacy, consensoMarketing, consensoTerze,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           leadData.nomeRichiedente,
@@ -10261,12 +10221,8 @@ app.post('/api/hubspot/sync', async (c) => {
           leadData.servizio,
           leadData.piano,
           leadData.tipoServizio,
-          leadData.setupBase || null,
-          leadData.setupIva || null,
-          leadData.setupTotale || null,
-          leadData.rinnovoBase || null,
-          leadData.rinnovoIva || null,
-          leadData.rinnovoTotale || null,
+          leadData.prezzo_anno || null,
+          leadData.prezzo_rinnovo || null,
           leadData.fonte,
           leadData.external_source_id,
           leadData.status,
