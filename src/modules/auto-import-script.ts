@@ -16,7 +16,7 @@ export const autoImportScript = `
     enabled: true,
     silent: true, // Non mostrare notifiche se non ci sono nuovi lead
     showSuccessToast: true, // Mostra toast solo se importati nuovi lead
-    minIntervalMinutes: 5 // Minimo 5 minuti tra un import e l'altro
+    minIntervalMinutes: 0 // ✅ SEMPRE ESEGUI (rimosso interval)
   };
   
   // Verifica parametro URL per forzare import
@@ -25,20 +25,8 @@ export const autoImportScript = `
   
   // Verifica se auto-import è necessario
   async function shouldRunAutoImport() {
-    // Se forceImport nel URL, esegui sempre
-    if (forceImport) {
-      console.log('🔥 [AUTO-IMPORT] Force import attivo da URL');
-      return true;
-    }
-    
-    const lastRun = localStorage.getItem('lastAutoImportTimestamp');
-    if (!lastRun) return true;
-    
-    const lastTime = new Date(lastRun);
-    const now = new Date();
-    const diffMinutes = (now - lastTime) / 1000 / 60;
-    
-    return diffMinutes >= AUTO_IMPORT_CONFIG.minIntervalMinutes;
+    // ✅ SEMPRE TRUE - Esegui ad ogni refresh
+    return true;
   }
   
   // Esegui auto-import incrementale
