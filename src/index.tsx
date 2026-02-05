@@ -9635,10 +9635,10 @@ app.post('/api/leads/fix-prices', async (c) => {
     // Import pricing calculator
     const { calculatePrice } = await import('./modules/pricing-calculator')
     
-    // Leggi tutti i lead
+    // Leggi tutti i lead (solo campi che esistono sicuramente)
     const allLeads = await c.env.DB.prepare(`
       SELECT 
-        id, servizio, piano, pacchetto, tipoServizio,
+        id, servizio, piano, tipoServizio,
         setupBase, setupIva, setupTotale,
         rinnovoBase, rinnovoIva, rinnovoTotale
       FROM leads
@@ -9684,8 +9684,6 @@ app.post('/api/leads/fix-prices', async (c) => {
         // Parse piano
         if (lead.piano) {
           pianoEcura = lead.piano.toUpperCase()
-        } else if (lead.pacchetto) {
-          pianoEcura = lead.pacchetto.toUpperCase()
         }
         
         // Calcola prezzi corretti
