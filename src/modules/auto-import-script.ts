@@ -19,8 +19,18 @@ export const autoImportScript = `
     minIntervalMinutes: 5 // Minimo 5 minuti tra un import e l'altro
   };
   
+  // Verifica parametro URL per forzare import
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceImport = urlParams.get('forceImport') === 'true';
+  
   // Verifica se auto-import è necessario
   async function shouldRunAutoImport() {
+    // Se forceImport nel URL, esegui sempre
+    if (forceImport) {
+      console.log('🔥 [AUTO-IMPORT] Force import attivo da URL');
+      return true;
+    }
+    
     const lastRun = localStorage.getItem('lastAutoImportTimestamp');
     if (!lastRun) return true;
     
