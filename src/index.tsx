@@ -9630,6 +9630,43 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
 // GET /api/settings - Ottieni configurazioni
 app.get('/api/settings', getSettings)
 
+// GET /api/settings/:key - Ottieni singolo setting (per cron GitHub)
+app.get('/api/settings/:key', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const key = c.req.param('key')
+    const { getSetting } = await import('./modules/settings-api')
+    
+    const value = await getSetting(c.env.DB, key)
+    
+    if (value === null || value === undefined) {
+      return c.json({
+        success: false,
+        error: `Setting '${key}' non trovato`,
+        setting: null
+      }, 404)
+    }
+    
+    return c.json({
+      success: true,
+      setting: {
+        key,
+        value: value === 'true' || value === true ? 'true' : 'false',
+        enabled: value === 'true' || value === true
+      }
+    })
+  } catch (error) {
+    console.error(`❌ Errore lettura setting ${c.req.param('key')}:`, error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
 // PUT /api/settings/:key - Aggiorna setting
 app.put('/api/settings/:key', updateSetting)
 
