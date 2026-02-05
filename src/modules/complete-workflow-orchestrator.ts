@@ -106,20 +106,63 @@ export async function processNewLead(
     if (settings.email_completamento_dati) {
       console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${ctx.leadData.emailRichiedente}`)
       
-      // TODO: Creare funzione inviaEmailCompletamentoDati() in workflow-email-manager.ts
-      // Per ora logghiamo che sarebbe stata inviata
-      console.log(`✅ [ORCHESTRATOR] Email completamento dati programmata per ${ctx.leadData.emailRichiedente}`)
-      console.log(`   Link form: ${ctx.env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/completa-dati?leadId=${ctx.leadData.id}`)
-      
-      // Aggiungere chiamata quando la funzione sarà implementata:
-      // const completamentoResult = await WorkflowEmailManager.inviaEmailCompletamentoDati(
-      //   ctx.leadData,
-      //   ctx.env,
-      //   ctx.db
-      // )
-      // if (!completamentoResult.success) {
-      //   result.errors.push(...completamentoResult.errors)
-      // }
+      try {
+        // Importa modulo lead-completion per inviare email
+        const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
+        const EmailService = (await import('./email-service')).default
+        const { loadEmailTemplate, renderTemplate } = await import('./template-loader-clean')
+        
+        // Ottieni configurazione
+        const config = await getSystemConfig(ctx.db)
+        
+        // Crea token completamento
+        const token = await createCompletionToken(
+          ctx.db,
+          ctx.leadData.id,
+          config.auto_completion_token_days
+        )
+        
+        // Genera URL completamento
+        const baseUrl = ctx.env?.PUBLIC_URL || ctx.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+        const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
+        
+        // Prepara dati per email
+        const { missing, available } = getMissingFields(ctx.leadData)
+        
+        // Carica e renderizza template email
+        const emailService = new EmailService(ctx.env)
+        const template = await loadEmailTemplate('email_richiesta_completamento_form', ctx.db, ctx.env)
+        
+        const templateData = {
+          NOME_CLIENTE: ctx.leadData.nomeRichiedente || 'Cliente',
+          COGNOME_CLIENTE: ctx.leadData.cognomeRichiedente || '',
+          LEAD_ID: ctx.leadData.id,
+          SERVIZIO: ctx.leadData.pacchetto || 'eCura',
+          COMPLETION_LINK: completionUrl,
+          TOKEN_EXPIRY: new Date(token.expires_at).toLocaleDateString('it-IT'),
+          MISSING_FIELDS_COUNT: missing.length
+        }
+        
+        const emailHtml = renderTemplate(template, templateData)
+        
+        // Invia email
+        const emailResult = await emailService.sendEmail({
+          to: ctx.leadData.emailRichiedente,
+          subject: 'eCura - Completa la tua richiesta',
+          html: emailHtml
+        })
+        
+        if (emailResult.success) {
+          console.log(`✅ [ORCHESTRATOR] Email completamento dati inviata a ${ctx.leadData.emailRichiedente}`)
+          console.log(`   Link form: ${completionUrl}`)
+        } else {
+          console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, emailResult.error)
+          result.errors.push(`Errore email completamento: ${emailResult.error}`)
+        }
+      } catch (error) {
+        console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, error)
+        result.errors.push(`Errore email completamento: ${error.message}`)
+      }
     } else {
       console.log(`⏭️ [ORCHESTRATOR] Email completamento dati disabilitata (switch OFF)`)
     }
