@@ -9632,10 +9632,36 @@ app.post('/api/leads/fix-prices', async (c) => {
     
     console.log('🔧 Avvio correzione prezzi per tutti i lead...')
     
-    // Import pricing calculator
+    // STEP 1: Verifica e aggiungi colonne se mancanti
+    console.log('📊 Step 1: Verifica colonne database...')
+    const columnsToAdd = [
+      'setupBase REAL',
+      'setupIva REAL',
+      'setupTotale REAL',
+      'rinnovoBase REAL',
+      'rinnovoIva REAL',
+      'rinnovoTotale REAL'
+    ]
+    
+    for (const column of columnsToAdd) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${column}`).run()
+        console.log(`✅ Colonna aggiunta: ${column}`)
+      } catch (error) {
+        // Colonna già exists, skip
+        if ((error as Error).message.includes('duplicate column')) {
+          console.log(`⏭️  Colonna già esiste: ${column.split(' ')[0]}`)
+        } else {
+          console.warn(`⚠️ Errore aggiunta colonna ${column}:`, (error as Error).message)
+        }
+      }
+    }
+    
+    // STEP 2: Import pricing calculator
     const { calculatePrice } = await import('./modules/pricing-calculator')
     
-    // Leggi tutti i lead (solo campi che esistono sicuramente)
+    // STEP 3: Leggi tutti i lead (solo campi che esistono sicuramente)
+    console.log('📊 Step 2: Lettura lead dal database...')
     const allLeads = await c.env.DB.prepare(`
       SELECT 
         id, servizio, piano, tipoServizio,
