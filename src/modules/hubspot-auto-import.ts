@@ -198,17 +198,19 @@ export async function executeAutoImport(
         const leadId = `LEAD-IRBEMA-${nextNumber.toString().padStart(5, '0')}`
         console.log(`🆔 [AUTO-IMPORT] Generato ID: ${leadId} per ${contact.properties.email}`)
         
-        // Inserisci nel database
+        // Inserisci nel database con PREZZI CALCOLATI
         await db.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
+            setupBase, setupIva, setupTotale,
+            rinnovoBase, rinnovoIva, rinnovoTotale,
             fonte, external_source_id, status, note,
             vuoleContratto, vuoleBrochure, vuoleManuale,
             consensoPrivacy, consensoMarketing, consensoTerze,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           leadData.nomeRichiedente,
@@ -220,6 +222,12 @@ export async function executeAutoImport(
           leadData.servizio,
           leadData.piano,
           leadData.tipoServizio,
+          leadData.setupBase || null,
+          leadData.setupIva || null,
+          leadData.setupTotale || null,
+          leadData.rinnovoBase || null,
+          leadData.rinnovoIva || null,
+          leadData.rinnovoTotale || null,
           leadData.fonte,
           leadData.external_source_id,
           leadData.status,

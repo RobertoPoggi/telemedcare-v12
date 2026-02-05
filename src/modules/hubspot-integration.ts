@@ -313,38 +313,45 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     .join(', ')
   
   // Servizio e piano (da custom properties eCura)
-  const servizioEcura = (props.servizio_ecura || 'PRO').toUpperCase() // FAMILY, PRO, PREMIUM
-  const pianoEcura = (props.piano_ecura || 'BASE').toUpperCase() // BASE, AVANZATO
+  // ⚠️ IMPORTANTE: Se HubSpot non manda il campo, lasciare NULL (no default)
+  //    In questo caso partirà l'email di completamento dati
+  const servizioEcura = props.servizio_ecura ? props.servizio_ecura.toUpperCase() : null
+  const pianoEcura = props.piano_ecura ? props.piano_ecura.toUpperCase() : null
   
-  // Normalizza formato servizio per TeleMedCare
-  const servizio = `eCura ${servizioEcura}` // es. "eCura PRO"
+  // Normalizza formato servizio per TeleMedCare (solo se presente)
+  const servizio = servizioEcura ? `eCura ${servizioEcura}` : null
   const piano = pianoEcura
   
-  // ✅ CALCOLO AUTOMATICO PREZZI (IVA ESCLUSA)
+  // ✅ CALCOLO AUTOMATICO PREZZI (solo se servizio E piano presenti)
   let pricing = {
-    setupBase: 0,
-    setupIva: 0,
-    setupTotale: 0,
-    rinnovoBase: 0,
-    rinnovoIva: 0,
-    rinnovoTotale: 0
+    setupBase: null as number | null,
+    setupIva: null as number | null,
+    setupTotale: null as number | null,
+    rinnovoBase: null as number | null,
+    rinnovoIva: null as number | null,
+    rinnovoTotale: null as number | null
   }
   
-  try {
-    // Import dinamico del pricing calculator
-    const { calculatePrice } = require('./pricing-calculator')
-    pricing = calculatePrice(servizioEcura, pianoEcura)
-  } catch (error) {
-    console.error('⚠️ Errore calcolo prezzi, uso default PRO BASE:', error)
-    // Fallback: PRO BASE (prezzi più comuni)
-    pricing = {
-      setupBase: 480,
-      setupIva: 105.60,
-      setupTotale: 585.60,
-      rinnovoBase: 240,
-      rinnovoIva: 52.80,
-      rinnovoTotale: 292.80
+  if (servizioEcura && pianoEcura) {
+    try {
+      // Import dinamico del pricing calculator
+      const { calculatePrice } = require('./pricing-calculator')
+      const calculated = calculatePrice(servizioEcura, pianoEcura)
+      pricing = {
+        setupBase: calculated.setupBase,
+        setupIva: calculated.setupIva,
+        setupTotale: calculated.setupTotale,
+        rinnovoBase: calculated.rinnovoBase,
+        rinnovoIva: calculated.rinnovoIva,
+        rinnovoTotale: calculated.rinnovoTotale
+      }
+      console.log(`✅ Prezzi calcolati per ${servizioEcura} ${pianoEcura}: €${calculated.setupBase}`)
+    } catch (error) {
+      console.error('⚠️ Errore calcolo prezzi:', error)
+      // Prezzi restano NULL → partirà email completamento
     }
+  } else {
+    console.warn(`⚠️ Servizio o Piano mancante (${servizioEcura}, ${pianoEcura}) → prezzi NULL, richiederà completamento`)
   }
   
   // Status mapping
@@ -370,7 +377,7 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     nomeAssistito: nomeRichiedente,
     cognomeAssistito: cognomeRichiedente,
     
-    // Servizio
+    // Servizio (può essere NULL se HubSpot non lo manda)
     servizio,
     piano,
     pacchetto: piano,
@@ -378,7 +385,7 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     servizio_ecura: servizioEcura,
     piano_ecura: pianoEcura,
     
-    // ✅ PREZZI CALCOLATI AUTOMATICAMENTE (IVA ESCLUSA)
+    // ✅ PREZZI CALCOLATI AUTOMATICAMENTE (NULL se servizio/piano mancanti)
     setupBase: pricing.setupBase,
     setupIva: pricing.setupIva,
     setupTotale: pricing.setupTotale,
