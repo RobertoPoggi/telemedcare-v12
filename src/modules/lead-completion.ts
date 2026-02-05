@@ -392,7 +392,7 @@ export async function sendReminderEmail(
     const template = await loadEmailTemplate('email_reminder_completamento', db, env)
     
     // Prepara dati per il template
-    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
     const completionLink = `${baseUrl}/completa-dati?token=${tokenData.token}`
     
     const { missing } = getMissingFields(leadData)

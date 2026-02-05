@@ -404,6 +404,44 @@ async function inviaEmailLandingPagePersonalizzata(email: string, nome: string, 
 }
 
 // ============================================
+// PRICING CALCULATION HELPER
+// ============================================
+
+/**
+ * Calcola prezzi da pacchetto lead
+ * Es: "eCura BASE" → { servizio: 'PRO', piano: 'BASE', prezzoAnno: 480, prezzoRinnovo: 240 }
+ */
+function calculatePricingFromPackage(pacchetto: string): {
+  servizio: 'FAMILY' | 'PRO' | 'PREMIUM'
+  piano: 'BASE' | 'AVANZATO'
+  prezzoAnno: number
+  prezzoRinnovo: number
+} {
+  const pacchettoLower = (pacchetto || '').toLowerCase()
+  
+  // Determina piano
+  const piano: 'BASE' | 'AVANZATO' = pacchettoLower.includes('avanzat') ? 'AVANZATO' : 'BASE'
+  
+  // Determina servizio
+  let servizio: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO' // default
+  if (pacchettoLower.includes('family')) {
+    servizio = 'FAMILY'
+  } else if (pacchettoLower.includes('premium')) {
+    servizio = 'PREMIUM'
+  }
+  
+  // Calcola prezzi usando ecura-pricing.ts
+  const pricing = getPricing(servizio, piano)
+  
+  return {
+    servizio,
+    piano,
+    prezzoAnno: pricing?.setupTotale || 0,
+    prezzoRinnovo: pricing?.rinnovoTotale || 0
+  }
+}
+
+// ============================================
 // OLD PLACEHOLDER FUNCTIONS - DEPRECATED
 // Now using complete-workflow-orchestrator.ts instead
 // ============================================
@@ -449,6 +487,25 @@ app.use('*', async (c, next) => {
       } catch (e: any) {
         if (!e.message?.includes('duplicate column')) {
           console.warn('⚠️ Errore colonna servizio contracts:', e.message)
+        }
+      }
+      
+      // Aggiungi colonne pricing alla tabella leads
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN prezzo_anno REAL DEFAULT 0`).run()
+        console.log('✅ Colonna prezzo_anno aggiunta a leads')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna prezzo_anno leads:', e.message)
+        }
+      }
+      
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN prezzo_rinnovo REAL DEFAULT 0`).run()
+        console.log('✅ Colonna prezzo_rinnovo aggiunta a leads')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna prezzo_rinnovo leads:', e.message)
         }
       }
       
@@ -3746,6 +3803,10 @@ app.post('/api/lead', async (c) => {
 
     // Salva nel database D1 con nuovo schema
     if (c.env.DB) {
+      // 💰 CALCOLO PREZZI da pacchetto
+      const { servizio, piano, prezzoAnno, prezzoRinnovo } = calculatePricingFromPackage(normalizedLead.pacchetto)
+      console.log(`💰 [PRICING] ${normalizedLead.pacchetto} → ${servizio} ${piano} = €${prezzoAnno} (rinnovo: €${prezzoRinnovo})`)
+      
       // Mappa i dati al nuovo schema
       await c.env.DB.prepare(`
         INSERT INTO leads (
@@ -3754,8 +3815,9 @@ app.post('/api/lead', async (c) => {
           pacchetto, condizioniSalute, preferenzaContatto,
           vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
-          note, gdprConsent, timestamp, fonte, versione, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          note, gdprConsent, timestamp, fonte, versione, status,
+          prezzo_anno, prezzo_rinnovo
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
@@ -3783,7 +3845,9 @@ app.post('/api/lead', async (c) => {
         normalizedLead.timestamp,
         normalizedLead.fonte,
         normalizedLead.versione,
-        normalizedLead.status
+        normalizedLead.status,
+        prezzoAnno,
+        prezzoRinnovo
       ).run()
 
       console.log('✅ Lead salvato nel database con nuovo schema')
@@ -10133,7 +10197,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
     )
     
     // Genera URL completamento
-    const baseUrl = c.env?.PUBLIC_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
     const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
     
     // Prepara dati per email
@@ -10400,7 +10464,7 @@ app.post('/api/leads/complete', async (c) => {
           <p><strong>Servizio:</strong> ${updatedLead.servizio} ${updatedLead.piano}</p>
           <hr>
           <p>Il lead ha completato i dati mancanti e ora è pronto per l'attivazione.</p>
-          <p><a href="https://genspark-ai-developer.telemedcare-v12.pages.dev/leads">Visualizza nella Dashboard</a></p>
+          <p><a href="https://telemedcare-v12.pages.dev/leads">Visualizza nella Dashboard</a></p>
         `,
         text: `Lead ${leadId} completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`
       })

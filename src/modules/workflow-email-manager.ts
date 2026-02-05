@@ -485,7 +485,7 @@ export async function inviaEmailDocumentiInformativi(
     const dispositivo = (servizioNome === 'PREMIUM' || servizioNome === 'premium') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     // Determina l'URL della brochure in base al servizio
-    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
     
     console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
     
@@ -578,7 +578,7 @@ export async function inviaEmailDocumentiInformativi(
     try {
       // In Cloudflare Workers, usiamo fetch per leggere file statici da public/
       // Determina baseUrl da env
-      const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+      const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
       
       console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
       
@@ -842,7 +842,7 @@ export async function inviaEmailContratto(
     const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     // Determina URL brochure per il link diretto
-    const baseUrl = env?.PUBLIC_URL || 'https://genspark-ai-developer.telemedcare-v12.pages.dev'
+    const baseUrl = env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
     const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
     let brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
     if (servizioNormalized === 'PREMIUM') {

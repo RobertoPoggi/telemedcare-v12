@@ -117,7 +117,7 @@ export async function sendNewLeadNotification(
             ` : ''}
             
             <div style="margin-top: 30px; text-align: center;">
-              <a href="https://genspark-ai-developer.telemedcare-v12.pages.dev/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visualizza nella Dashboard</a>
+              <a href="https://telemedcare-v12.pages.dev/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Visualizza nella Dashboard</a>
             </div>
           </div>
           
