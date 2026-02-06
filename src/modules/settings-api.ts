@@ -17,7 +17,10 @@ export async function getSettings(c: Context) {
       { key: 'hubspot_auto_import_enabled', value: 'false', description: 'Abilita import automatico da HubSpot' },
       { key: 'lead_email_notifications_enabled', value: 'false', description: 'Abilita invio email automatiche ai lead' },
       { key: 'admin_email_notifications_enabled', value: 'true', description: 'Abilita notifiche email a info@telemedcare.it' },
-      { key: 'reminder_completion_enabled', value: 'false', description: 'Abilita reminder automatici completamento dati lead' }
+      { key: 'reminder_completion_enabled', value: 'false', description: 'Abilita reminder automatici completamento dati lead' },
+      { key: 'auto_completion_enabled', value: 'false', description: 'Abilita invio automatico email completamento dati' },
+      { key: 'auto_payment_workflow_enabled', value: 'false', description: 'Abilita workflow automatico pagamenti' },
+      { key: 'auto_contract_workflow_enabled', value: 'false', description: 'Abilita workflow automatico contratti' }
     ]
 
     for (const setting of defaultSettings) {
@@ -36,16 +39,22 @@ export async function getSettings(c: Context) {
     ).all()
 
     const settings: Record<string, any> = {}
+    const settingsFlat: Record<string, boolean> = {}
+    
     result.results.forEach((row: any) => {
+      const boolValue = row.value === 'true'
       settings[row.key] = {
         value: row.value,  // Mantieni come stringa
         description: row.description
       }
+      // Aggiungi anche chiave diretta per retrocompatibilità
+      settingsFlat[row.key] = boolValue
     })
 
     return c.json({
       success: true,
-      settings
+      settings,
+      ...settingsFlat  // Aggiungi chiavi dirette (es. hubspot_auto_import_enabled: true)
     })
   } catch (error) {
     console.error('❌ Errore get settings:', error)

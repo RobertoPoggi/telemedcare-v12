@@ -1250,10 +1250,11 @@ export const dashboard = `<!DOCTYPE html>
                     \`;
                 } else {
                     tbody.innerHTML = leads.map(lead => {
-                        const servizio = 'eCura PRO';
-                        const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
+                        // ✅ USA SERVIZIO E PREZZO DAL DATABASE
+                        const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
+                        const piano = lead.piano || ((lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE');
                         const dispositivo = 'SiDLY CARE PRO';
-                        const prezzo = piano === 'AVANZATO' ? '840' : '480';
+                        const prezzo = lead.prezzo_anno || (piano === 'AVANZATO' ? 840 : 480);
                         const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
                         const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
                         const telefono = lead.telefono || 'N/A';
