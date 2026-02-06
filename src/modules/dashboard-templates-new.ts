@@ -1253,7 +1253,9 @@ export const dashboard = `<!DOCTYPE html>
                         // ✅ USA SERVIZIO E PREZZO DAL DATABASE
                         const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                         const piano = lead.piano || ((lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE');
-                        const dispositivo = 'SiDLY CARE PRO';
+                        // Determina dispositivo in base al servizio
+                        const servizioType = servizio ? servizio.replace('eCura ', '') : 'PRO';
+                        const dispositivo = servizioType.includes('PREMIUM') ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO';
                         const prezzo = lead.prezzo_anno || (piano === 'AVANZATO' ? 840 : 480);
                         const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
                         const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
