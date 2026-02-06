@@ -2667,7 +2667,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     piano = 'AVANZATO';
                 }
                 
-                const prezzo = (piano === 'AVANZATO') ? '840' : '480';
+                // ✅ USA PREZZO DAL DATABASE (IVA esclusa)
+                const prezzo = lead.prezzo_anno || 0;
                 const date = new Date(lead.created_at).toLocaleDateString('it-IT');
                 // Usa il campo vuoleContratto dal lead
                 const hasContract = lead.vuoleContratto === 'Si' || lead.vuoleContratto === true;
@@ -5231,8 +5232,8 @@ export const workflow_manager = `<!DOCTYPE html>
             switch(action) {
                 case 'view':
                     // Mostra dettagli completi del lead
-                    const piano = (lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE';
-                    const prezzo = piano === 'AVANZATO' ? '€840' : '€480';
+                    const piano = lead.piano || ((lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE');
+                    const prezzo = lead.prezzo_anno ? `€${lead.prezzo_anno}` : '€0';
                     
                     // Mostra servizio così com'è dal DB
                     const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
