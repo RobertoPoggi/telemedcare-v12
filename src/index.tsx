@@ -10684,10 +10684,82 @@ app.post('/api/leads/complete', async (c) => {
     
     console.log(`✅ Lead ${leadId} completato con successo`)
     
+    // Recupera lead aggiornato
+    const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+    
+    // 🚀 TRIGGER WORKFLOW AUTOMATICO
+    const { getSetting } = await import('./modules/settings-api')
+    const autoContractEnabled = await getSetting(c.env.DB, 'auto_contract_workflow_enabled')
+    
+    if (autoContractEnabled && updatedLead) {
+      console.log(`🚀 [WORKFLOW] Avvio workflow automatico per lead ${leadId}`)
+      
+      try {
+        const { EmailService } = await import('./modules/email-service')
+        const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+        const emailService = new EmailService(c.env)
+        
+        // 1️⃣ Invia Brochure (se richiesta)
+        if (updatedLead.vuoleBrochure === 'Si' || updatedLead.vuoleBrochure === true || updatedLead.vuoleBrochure === 1) {
+          try {
+            const brochureTemplate = await loadEmailTemplate('email_brochure', c.env.DB, c.env)
+            const brochureHtml = renderTemplate(brochureTemplate, {
+              NOME_CLIENTE: updatedLead.nomeRichiedente,
+              COGNOME_CLIENTE: updatedLead.cognomeRichiedente,
+              SERVIZIO: updatedLead.servizio || 'eCura PRO',
+              BROCHURE_URL: 'https://telemedcare-v12.pages.dev/assets/brochures/brochure-ecura.pdf'
+            })
+            
+            await emailService.sendEmail({
+              to: updatedLead.email || updatedLead.emailRichiedente,
+              from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+              subject: '📄 Brochure eCura - Documentazione Completa',
+              html: brochureHtml,
+              text: `Gentile ${updatedLead.nomeRichiedente}, in allegato trova la brochure completa del servizio eCura.`
+            })
+            
+            console.log(`✅ [WORKFLOW] Brochure inviata a ${updatedLead.email}`)
+          } catch (brochureError) {
+            console.error('⚠️ [WORKFLOW] Errore invio brochure:', brochureError)
+          }
+        }
+        
+        // 2️⃣ Invia Contratto (se richiesto)
+        if (updatedLead.vuoleContratto === 'Si' || updatedLead.vuoleContratto === true || updatedLead.vuoleContratto === 1) {
+          try {
+            const contractTemplate = await loadEmailTemplate('email_invio_contratto', c.env.DB, c.env)
+            const contractHtml = renderTemplate(contractTemplate, {
+              NOME_CLIENTE: updatedLead.nomeRichiedente,
+              COGNOME_CLIENTE: updatedLead.cognomeRichiedente,
+              SERVIZIO: updatedLead.servizio || 'eCura PRO',
+              PIANO: updatedLead.piano || 'BASE',
+              PREZZO_ANNO: updatedLead.prezzo_anno || 480,
+              CONTRACT_URL: `https://telemedcare-v12.pages.dev/contract/${leadId}`
+            })
+            
+            await emailService.sendEmail({
+              to: updatedLead.email || updatedLead.emailRichiedente,
+              from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+              subject: '📝 Contratto eCura - Pronto per la Firma',
+              html: contractHtml,
+              text: `Gentile ${updatedLead.nomeRichiedente}, il contratto eCura è pronto per la firma.`
+            })
+            
+            console.log(`✅ [WORKFLOW] Contratto inviato a ${updatedLead.email}`)
+          } catch (contractError) {
+            console.error('⚠️ [WORKFLOW] Errore invio contratto:', contractError)
+          }
+        }
+        
+      } catch (workflowError) {
+        console.error('⚠️ [WORKFLOW] Errore workflow automatico:', workflowError)
+      }
+    } else {
+      console.log(`ℹ️ [WORKFLOW] Workflow automatico disabilitato (auto_contract_workflow_enabled=${autoContractEnabled})`)
+    }
+    
     // Invia notifica a info@telemedcare.it
     try {
-      const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
-      
       const { EmailService } = await import('./modules/email-service')
       const emailService = new EmailService(c.env)
       
