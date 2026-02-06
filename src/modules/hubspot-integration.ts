@@ -313,16 +313,15 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     .join(', ')
   
   // Servizio e piano (da custom properties eCura)
-  // ⚠️ IMPORTANTE: Se HubSpot non manda il campo, lasciare NULL (no default)
-  //    In questo caso partirà l'email di completamento dati
-  const servizioEcura = props.servizio_ecura ? props.servizio_ecura.toUpperCase() : null
-  const pianoEcura = props.piano_ecura ? props.piano_ecura.toUpperCase() : null
+  // ⚠️ SE HubSpot non manda il campo, usa default per evitare NOT NULL constraint
+  const servizioEcura = props.servizio_ecura ? props.servizio_ecura.toUpperCase() : 'PRO'
+  const pianoEcura = props.piano_ecura ? props.piano_ecura.toUpperCase() : 'BASE'
   
-  // Normalizza formato servizio per TeleMedCare (solo se presente)
-  const servizio = servizioEcura ? `eCura ${servizioEcura}` : null
+  // Normalizza formato servizio per TeleMedCare
+  const servizio = `eCura ${servizioEcura}`
   const piano = pianoEcura
   
-  // ✅ CALCOLO AUTOMATICO PREZZI (solo se servizio E piano presenti)
+  // ✅ CALCOLO AUTOMATICO PREZZI (sempre, usa defaults se necessario)
   let pricing = {
     setupBase: null as number | null,
     setupIva: null as number | null,
@@ -332,17 +331,23 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     rinnovoTotale: null as number | null
   }
   
-  if (servizioEcura && pianoEcura) {
-    try {
-      // Import dinamico del pricing calculator
-      const { calculatePrice } = require('./pricing-calculator')
-      const calculated = calculatePrice(servizioEcura, pianoEcura)
-      pricing = {
-        setupBase: calculated.setupBase,
-        setupIva: calculated.setupIva,
-        setupTotale: calculated.setupTotale,
-        rinnovoBase: calculated.rinnovoBase,
-        rinnovoIva: calculated.rinnovoIva,
+  try {
+    // Import dinamico del pricing calculator
+    const { calculatePrice } = require('./pricing-calculator')
+    const calculated = calculatePrice(servizioEcura, pianoEcura)
+    pricing = {
+      setupBase: calculated.setupBase,
+      setupIva: calculated.setupIva,
+      setupTotale: calculated.setupTotale,
+      rinnovoBase: calculated.rinnovoBase,
+      rinnovoIva: calculated.rinnovoIva,
+      rinnovoTotale: calculated.rinnovoTotale
+    }
+    console.log(`✅ Prezzi calcolati per ${servizioEcura} ${pianoEcura}: €${calculated.setupBase}`)
+  } catch (error) {
+    console.error('⚠️ Errore calcolo prezzi:', error)
+    // Prezzi restano NULL → saranno fixati con fix-prices
+  }
         rinnovoTotale: calculated.rinnovoTotale
       }
       console.log(`✅ Prezzi calcolati per ${servizioEcura} ${pianoEcura}: €${calculated.setupBase}`)
