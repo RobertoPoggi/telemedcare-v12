@@ -44,7 +44,7 @@ import * as WorkflowOrchestrator from './modules/complete-workflow-orchestrator'
 import * as WorkflowEmailManager from './modules/workflow-email-manager'
 
 // Import Dashboard Templates
-import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates'
+import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates-new'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
