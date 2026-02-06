@@ -5236,7 +5236,7 @@ export const workflow_manager = `<!DOCTYPE html>
                     const piano = lead.piano || ((lead.note && lead.note.includes('Piano: AVANZATO')) ? 'AVANZATO' : 'BASE');
                     const prezzo = lead.prezzo_anno ? `${lead.prezzo_anno}` : '0';
                     
-                    // Mostra servizio così com'è dal DB
+                    // Mostra servizio cosi come dal DB
                     const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                     
                     alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\\n\\n' +
