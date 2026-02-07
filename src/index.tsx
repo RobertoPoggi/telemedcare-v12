@@ -10220,7 +10220,7 @@ app.post('/api/hubspot/sync', async (c) => {
           leadData.cognomeAssistito,
           leadData.servizio,
           leadData.piano,
-          leadData.tipoServizio,
+          leadData.tipoServizio || leadData.servizio || 'eCura PRO', // ✅ FALLBACK per NOT NULL
           leadData.prezzo_anno || null,
           leadData.prezzo_rinnovo || null,
           leadData.fonte,
