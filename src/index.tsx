@@ -4052,9 +4052,8 @@ app.get('/api/admin/leads-dashboard', async (c) => {
 
     // Canali unici (usa colonna 'fonte')
     const channelsResult = await c.env.DB.prepare(`
-      SELECT fonte as canale, COUNT(*) as count 
+      SELECT COALESCE(fonte, 'Sconosciuto') as canale, COUNT(*) as count 
       FROM leads 
-      WHERE fonte IS NOT NULL AND fonte != ''
       GROUP BY fonte
       ORDER BY count DESC
     `).all();
