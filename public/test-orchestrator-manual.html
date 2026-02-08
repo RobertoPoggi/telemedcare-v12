@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Orchestrator Email Manuale</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Email Completamento Dati</h1>
+  <p>Test manuale del WorkflowOrchestrator per verificare invio email completamento dati.</p>
+
+  <label>Lead ID:</label>
+  <input type="text" id="leadId" value="LEAD-IRBEMA-00169" placeholder="LEAD-IRBEMA-00169">
+
+  <label>Email Destinatario:</label>
+  <input type="email" id="email" value="roberto.pgg@gmail.com" placeholder="roberto.pgg@gmail.com">
+
+  <label>Nome:</label>
+  <input type="text" id="nome" value="Rosaria" placeholder="Nome">
+
+  <label>Cognome:</label>
+  <input type="text" id="cognome" value="Ressa" placeholder="Cognome">
+
+  <button onclick="testWorkflowOrchestrator()">🚀 Test Workflow Orchestrator</button>
+  <button onclick="testDirectAPI()">📧 Test API Diretta (/api/leads/:id/request-completion)</button>
+  <button onclick="checkSwitches()">🔍 Verifica Switches</button>
+
+  <div id="result"></div>
+
+  <script>
+    const baseUrl = 'https://telemedcare-v12.pages.dev';
+
+    function showResult(message, type = 'info') {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = `result ${type}`;
+      resultDiv.textContent = message;
+    }
+
+    async function checkSwitches() {
+      showResult('Controllo switches...', 'info');
+      try {
+        const response = await fetch(`${baseUrl}/api/settings`);
+        const data = await response.json();
+        
+        const admin = data.settings.admin_email_notifications_enabled.value;
+        const lead = data.settings.lead_email_notifications_enabled.value;
+        
+        showResult(
+          `✅ Switches verificati:\n` +
+          `- admin_email_notifications_enabled: ${admin}\n` +
+          `- lead_email_notifications_enabled: ${lead}\n\n` +
+          JSON.stringify(data, null, 2),
+          'success'
+        );
+      } catch (error) {
+        showResult(`❌ Errore: ${error.message}`, 'error');
+      }
+    }
+
+    async function testDirectAPI() {
+      const leadId = document.getElementById('leadId').value;
+      showResult(`Invio richiesta completamento per ${leadId}...`, 'info');
+      
+      try {
+        const response = await fetch(
+          `${baseUrl}/api/leads/${leadId}/request-completion?sendEmail=true`,
+          { method: 'POST' }
+        );
+        const data = await response.json();
+        
+        if (data.success) {
+          showResult(
+            `✅ Successo!\n\n` +
+            `Token creato: ${data.token.id}\n` +
+            `Link: ${data.token.completionUrl}\n` +
+            `Scadenza: ${data.token.expiresAt}\n\n` +
+            `Email inviata: ${data.message.includes('email inviata') ? 'SÌ' : 'NO'}\n\n` +
+            JSON.stringify(data, null, 2),
+            'success'
+          );
+        } else {
+          showResult(`❌ Errore: ${data.error}`, 'error');
+        }
+      } catch (error) {
+        showResult(`❌ Errore: ${error.message}`, 'error');
+      }
+    }
+
+    async function testWorkflowOrchestrator() {
+      const leadId = document.getElementById('leadId').value;
+      const email = document.getElementById('email').value;
+      const nome = document.getElementById('nome').value;
+      const cognome = document.getElementById('cognome').value;
+      
+      showResult(`Test WorkflowOrchestrator non disponibile via API diretta.\n\nUsa invece il test API diretta che chiama lo stesso flusso.`, 'info');
+    }
+  </script>
+</body>
+</html>
