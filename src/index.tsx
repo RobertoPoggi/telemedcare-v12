@@ -544,7 +544,13 @@ app.use('/api/*', cors())
 // Serve static files 
 app.use('/assets/*', serveStatic({ root: './' }))
 app.use('/documents/*', serveStatic({ root: './' }))
-app.use('/*.html', serveStatic({ root: './' }))
+// Serve HTML files with no-cache headers to ensure users always get the latest version
+app.use('/*.html', async (c, next) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  c.header('Pragma', 'no-cache')
+  c.header('Expires', '0')
+  return serveStatic({ root: './' })(c, next)
+})
 
 // Endpoint per servire brochure PDF (usa ASSETS binding di Cloudflare Pages)
 app.get('/brochures/:filename', async (c) => {
@@ -2217,62 +2223,9 @@ app.get('/home', (c) => {
   return c.html(home)
 })
 
-// Route per form completamento dati lead
-app.get('/completa-dati-minimal.html', async (c) => {
-  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
-  c.header('Content-Type', 'text/html; charset=utf-8')
-  
-  try {
-    const { completaDatiHtml } = await import('./templates/completa-dati-html')
-    return c.html(completaDatiHtml)
-  } catch (error) {
-    console.error('❌ Errore caricamento form completamento:', error)
-    return c.html(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <title>Errore - eCura</title>
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f4f6f8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-          }
-          .error-box {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-          }
-          h1 {
-            color: #ef4444;
-            margin: 0 0 10px 0;
-          }
-          p {
-            color: #64748b;
-            line-height: 1.6;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="error-box">
-          <h1>❌ Pagina non disponibile</h1>
-          <p>Impossibile caricare il form di completamento.</p>
-          <p>Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
-        </div>
-      </body>
-      </html>
-    `, 500)
-  }
-})
+// ✅ REMOVED: Old route that served outdated template
+// Now completa-dati-minimal.html is served from static files (public/ -> dist/)
+// This allows the improved form with sections and date auto-focus to be served
 
 // Route per System Status
 app.get('/admin/system-status', (c) => {
