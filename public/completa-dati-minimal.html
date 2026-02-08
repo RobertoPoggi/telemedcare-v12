@@ -240,52 +240,80 @@
                 
                 // Rimosso blocco "Dati disponibili" - ridondante
                 
-                // Genera campi mancanti
+                // Genera campi mancanti divisi per sezione
                 const missingContainer = document.getElementById('missingFieldsContainer');
-                const fields = [];
                 
+                // Sezione Richiedente
+                const richiedenteFields = [];
                 if (!lead.telefonoRichiedente) {
-                    fields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
+                    richiedenteFields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
                 }
                 
+                // Sezione Assistito
+                const assistitoFields = [];
                 if (!lead.nomeAssistito) {
-                    fields.push(createField('nomeAssistito', 'Nome Assistito', 'text', 'Nome', true));
+                    assistitoFields.push(createField('nomeAssistito', 'Nome Assistito', 'text', 'Nome', true));
                 }
                 
                 if (!lead.cognomeAssistito) {
-                    fields.push(createField('cognomeAssistito', 'Cognome Assistito', 'text', 'Cognome', true));
+                    assistitoFields.push(createField('cognomeAssistito', 'Cognome Assistito', 'text', 'Cognome', true));
                 }
                 
                 if (!lead.dataNascitaAssistito) {
-                    fields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));
+                    assistitoFields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));
                 }
                 
                 if (!lead.luogoNascitaAssistito) {
-                    fields.push(createField('luogoNascitaAssistito', 'Luogo Nascita Assistito', 'text', 'Es. Milano', true));
+                    assistitoFields.push(createField('luogoNascitaAssistito', 'Luogo Nascita Assistito', 'text', 'Es. Milano', true));
                 }
                 
                 if (!lead.cfAssistito) {
-                    fields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA80A01F205K', true));
+                    assistitoFields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA80A01F205K', true));
                 }
                 
                 if (!lead.indirizzoAssistito) {
-                    fields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Es. Via Roma 123', true));
+                    assistitoFields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Es. Via Roma 123', true));
                 }
                 
                 if (!lead.cittaAssistito) {
-                    fields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', true));
+                    assistitoFields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', true));
                 }
                 
                 if (!lead.condizioniSalute) {
-                    fields.push(createTextAreaField('condizioniSalute', 'Condizioni di Salute', 'Descrivi brevemente le condizioni di salute dell\'assistito...', true));
+                    assistitoFields.push(createTextAreaField('condizioniSalute', 'Condizioni di Salute', 'Descrivi brevemente le condizioni di salute dell\'assistito...', true));
                 }
                 
-                if (fields.length === 0) {
+                // Costruisci HTML con sezioni divise
+                let htmlContent = '';
+                
+                if (richiedenteFields.length > 0) {
+                    htmlContent += `
+                        <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
+                            <h3 style="color: #475569; font-size: 18px; margin-bottom: 20px; font-weight: 600;">
+                                📋 Dati Richiedente
+                            </h3>
+                            ${richiedenteFields.join('')}
+                        </div>
+                    `;
+                }
+                
+                if (assistitoFields.length > 0) {
+                    htmlContent += `
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #475569; font-size: 18px; margin-bottom: 20px; font-weight: 600;">
+                                👤 Dati Assistito
+                            </h3>
+                            ${assistitoFields.join('')}
+                        </div>
+                    `;
+                }
+                
+                if (htmlContent === '') {
                     showError('Tutti i dati sono già completi!');
                     return;
                 }
                 
-                missingContainer.innerHTML = fields.join('');
+                missingContainer.innerHTML = htmlContent;
                 
                 loadingDiv.style.display = 'none';
                 formContainer.style.display = 'block';
@@ -299,6 +327,30 @@
         function createField(name, label, type, placeholder, required) {
             const req = required ? '<span class="required">*</span>' : '';
             const reqAttr = required ? 'required' : '';
+            
+            // Campo data personalizzato con 3 input separati e auto-focus
+            if (type === 'date') {
+                return `
+                    <div class="form-group">
+                        <label for="${name}">${label} ${req}</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="${name}_giorno" name="${name}_giorno" maxlength="2" placeholder="GG"
+                                style="width: 33%; text-align: center;" 
+                                onkeyup="autoFocusData(event, '${name}_mese', 2); updateDateField('${name}')" 
+                                pattern="[0-9]*" inputmode="numeric" ${reqAttr}>
+                            <input type="text" id="${name}_mese" name="${name}_mese" maxlength="2" placeholder="MM"
+                                style="width: 33%; text-align: center;" 
+                                onkeyup="autoFocusData(event, '${name}_anno', 2); updateDateField('${name}')" 
+                                pattern="[0-9]*" inputmode="numeric" ${reqAttr}>
+                            <input type="text" id="${name}_anno" name="${name}_anno" maxlength="4" placeholder="AAAA"
+                                style="width: 33%; text-align: center;" 
+                                onkeyup="updateDateField('${name}')" 
+                                pattern="[0-9]*" inputmode="numeric" ${reqAttr}>
+                        </div>
+                        <input type="hidden" id="${name}" name="${name}">
+                    </div>
+                `;
+            }
             
             return `
                 <div class="form-group">
@@ -374,6 +426,35 @@
                     </a>
                 </div>
             `;
+        }
+        
+        // Auto-focus tra campi data (giorno → mese → anno)
+        function autoFocusData(event, nextFieldId, maxLength) {
+            const input = event.target;
+            const value = input.value;
+            
+            // Permetti solo numeri
+            input.value = value.replace(/[^0-9]/g, '');
+            
+            // Se raggiunge la lunghezza massima, passa al campo successivo
+            if (input.value.length >= maxLength && nextFieldId) {
+                document.getElementById(nextFieldId).focus();
+            }
+        }
+        
+        // Aggiorna il campo hidden con formato YYYY-MM-DD
+        function updateDateField(fieldName) {
+            const giorno = document.getElementById(fieldName + '_giorno')?.value.padStart(2, '0') || '';
+            const mese = document.getElementById(fieldName + '_mese')?.value.padStart(2, '0') || '';
+            const anno = document.getElementById(fieldName + '_anno')?.value || '';
+            
+            if (giorno && mese && anno && anno.length === 4) {
+                const dataISO = `${anno}-${mese}-${giorno}`;
+                const hiddenField = document.getElementById(fieldName);
+                if (hiddenField) {
+                    hiddenField.value = dataISO;
+                }
+            }
         }
     </script>
 </body>
