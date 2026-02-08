@@ -134,11 +134,21 @@
                     </div>
                     
                     <div>
-                        <label class="block text-gray-700 font-semibold mb-2" for="dataNascita">
+                        <label class="block text-gray-700 font-semibold mb-2">
                             Data di Nascita <span class="text-red-500">*</span>
                         </label>
-                        <input type="date" id="dataNascita" name="dataNascita"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <div class="flex gap-2">
+                            <input type="text" id="giornoNascita" name="giornoNascita" maxlength="2" placeholder="GG"
+                                class="w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center"
+                                onkeyup="autoFocusData(event, 'meseNascita', 2)" pattern="[0-9]*" inputmode="numeric">
+                            <input type="text" id="meseNascita" name="meseNascita" maxlength="2" placeholder="MM"
+                                class="w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center"
+                                onkeyup="autoFocusData(event, 'annoNascita', 2)" pattern="[0-9]*" inputmode="numeric">
+                            <input type="text" id="annoNascita" name="annoNascita" maxlength="4" placeholder="AAAA"
+                                class="w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center"
+                                pattern="[0-9]*" inputmode="numeric">
+                        </div>
+                        <input type="hidden" id="dataNascita" name="dataNascita">
                     </div>
                     
                     <div>
@@ -444,6 +454,35 @@
                 alert('❌ Errore di comunicazione con il server');
             }
         });
+
+        // Auto-focus tra campi data (giorno → mese → anno)
+        function autoFocusData(event, nextFieldId, maxLength) {
+            const input = event.target;
+            const value = input.value;
+            
+            // Permetti solo numeri
+            input.value = value.replace(/[^0-9]/g, '');
+            
+            // Se raggiunge la lunghezza massima, passa al campo successivo
+            if (input.value.length >= maxLength && nextFieldId) {
+                document.getElementById(nextFieldId).focus();
+            }
+            
+            // Aggiorna campo hidden con formato ISO
+            updateDataNascita();
+        }
+        
+        // Aggiorna il campo hidden dataNascita con formato YYYY-MM-DD
+        function updateDataNascita() {
+            const giorno = document.getElementById('giornoNascita').value.padStart(2, '0');
+            const mese = document.getElementById('meseNascita').value.padStart(2, '0');
+            const anno = document.getElementById('annoNascita').value;
+            
+            if (giorno && mese && anno && anno.length === 4) {
+                const dataISO = `${anno}-${mese}-${giorno}`;
+                document.getElementById('dataNascita').value = dataISO;
+            }
+        }
     </script>
 </body>
 </html>
