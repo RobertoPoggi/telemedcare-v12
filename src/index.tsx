@@ -8067,17 +8067,65 @@ app.post('/api/leads/:id/complete', async (c) => {
         if (isLeadComplete(updatedLead)) {
           console.log('✅ [COMPLETAMENTO] Lead completo → Invio contratto automatico')
           
-          // Prepara dati per contratto
-          const contractResult = await inviaEmailContratto(
-            updatedLead,
-            c.env,
-            c.env.DB
-          )
+          // Verifica se workflow contratto automatico è abilitato
+          const settingsResult = await c.env.DB.prepare(
+            "SELECT value FROM settings WHERE key = 'auto_contract_workflow_enabled'"
+          ).first()
+          const autoContractEnabled = settingsResult?.value === 'true'
           
-          if (contractResult.success) {
-            console.log('✅ [COMPLETAMENTO] Contratto inviato con successo!')
+          if (autoContractEnabled) {
+            // Genera contratto
+            const timestamp = Date.now()
+            const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+            const contractId = `contract-${timestamp}`
+            
+            const servizio = (updatedLead as any).servizio || 'eCura PRO'
+            const piano = (updatedLead as any).piano || 'BASE'
+            
+            // Prepara contractData
+            const contractData = {
+              contractId,
+              contractCode,
+              contractPdfUrl: '',
+              tipoServizio: piano,
+              servizio: servizio,
+              prezzoBase: piano === 'AVANZATO' ? 840 : 480,
+              prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
+            }
+            
+            // Document URLs
+            const documentUrls: { brochure?: string; manuale?: string } = {}
+            if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+            } else if (servizio.includes('PREMIUM')) {
+              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+            }
+            
+            // Invia contratto
+            const contractResult = await inviaEmailContratto(
+              updatedLead as any,
+              contractData,
+              c.env,
+              documentUrls,
+              c.env.DB
+            )
+            
+            if (contractResult.success) {
+              console.log('✅ [COMPLETAMENTO] Contratto inviato con successo!')
+              
+              // Aggiorna lead
+              await c.env.DB.prepare(`
+                UPDATE leads SET 
+                  vuoleContratto = 'Si',
+                  status = 'CONTRACT_SENT',
+                  updated_at = ?
+                WHERE id = ?
+              `).bind(new Date().toISOString(), id).run()
+            } else {
+              console.error('❌ [COMPLETAMENTO] Errore invio contratto:', contractResult.errors)
+            }
           } else {
-            console.error('❌ [COMPLETAMENTO] Errore invio contratto:', contractResult.errors)
+            console.log('ℹ️ [COMPLETAMENTO] Workflow contratto automatico disabilitato')
           }
         } else {
           console.log('ℹ️ [COMPLETAMENTO] Lead non ancora completo, contratto non inviato')
