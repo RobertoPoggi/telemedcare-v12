@@ -1,0 +1,12 @@
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00163" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00162" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00155" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00154" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00145" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00121" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00111" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00082" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00065" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00054" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-IRBEMA-00026" -X PUT -H "Content-Type: application/json" -d '{"fonte": "IRBEMA"}' | jq -r .success
+curl -s "https://telemedcare-v12.pages.dev/api/leads/LEAD-WEB-00001" -X PUT -H "Content-Type: application/json" -d '{"fonte": "Web"}' | jq -r .success

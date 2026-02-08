@@ -391,22 +391,12 @@ export async function logAutoImport(
   db: D1Database,
   result: AutoImportResult
 ): Promise<void> {
-  try {
-    await db.prepare(`
-      INSERT INTO logs (action, details, timestamp)
-      VALUES (?, ?, ?)
-    `).bind(
-      'AUTO_IMPORT',
-      JSON.stringify({
-        imported: result.imported,
-        skipped: result.skipped,
-        errors: result.errors,
-        timeRange: result.timeRange,
-        performance: result.performance
-      }),
-      new Date().toISOString()
-    ).run()
-  } catch (error) {
-    console.error('Errore salvataggio log auto-import:', error)
-  }
+  // Log function disabled - use console.log instead
+  // The 'logs' table doesn't exist, and we don't need it for now
+  console.log('📝 [AUTO-IMPORT LOG]', JSON.stringify({
+    imported: result.imported,
+    skipped: result.skipped,
+    errors: result.errors,
+    timeRange: result.timeRange
+  }))
 }

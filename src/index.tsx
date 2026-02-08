@@ -10347,14 +10347,9 @@ app.post('/api/hubspot/auto-import', async (c) => {
       }
     }
     
-    // Log nel database (se tabella logs esiste)
+    // Log to console (DB log disabled)
     if (result.success && !config.dryRun) {
-      try {
-        await logAutoImport(c.env.DB, result)
-      } catch (logError) {
-        console.warn('⚠️ [AUTO-IMPORT] Log DB fallito (tabella logs potrebbe non esistere):', logError)
-        // Non bloccare l'import se il log fallisce
-      }
+      await logAutoImport(c.env.DB, result)
     }
     
     return c.json(result)
