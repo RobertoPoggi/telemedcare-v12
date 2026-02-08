@@ -205,7 +205,9 @@ export class HubSpotClient {
     const properties = filters.properties || [
       'firstname', 'lastname', 'email', 'phone', 'mobilephone',
       'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
-      'hs_object_source_detail_1' // Aggiungi questo campo alle properties
+      'hs_object_source_detail_1', // Form source
+      'servizio_ecura', // ✅ Custom property: FAMILY/PRO/PREMIUM
+      'piano_ecura' // ✅ Custom property: BASE/AVANZATO
     ]
     
     const body = {
