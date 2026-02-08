@@ -5024,13 +5024,20 @@ app.get('/api/leads', async (c) => {
     }
     
     const limit = c.req.query('limit') || '100'
+    
+    // Conta TUTTI i lead (senza limit)
+    const countResult = await c.env.DB.prepare(`SELECT COUNT(*) as total FROM leads`).first()
+    const totalLeads = countResult?.total || 0
+    
+    // Recupera lead con limit
     const leads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY timestamp DESC LIMIT ?`).bind(parseInt(limit)).all()
     
-    console.log('📊 Leads recuperati:', leads.results?.length || 0)
+    console.log('📊 Leads recuperati:', leads.results?.length || 0, 'di', totalLeads, 'totali')
     
     return c.json({
       success: true,
-      count: leads.results?.length || 0,
+      total: totalLeads, // ✅ Count totale (senza limit)
+      count: leads.results?.length || 0, // Count dei lead restituiti
       leads: leads.results || []
     })
   } catch (error) {
@@ -10340,9 +10347,14 @@ app.post('/api/hubspot/auto-import', async (c) => {
       }
     }
     
-    // Log nel database
+    // Log nel database (se tabella logs esiste)
     if (result.success && !config.dryRun) {
-      await logAutoImport(c.env.DB, result)
+      try {
+        await logAutoImport(c.env.DB, result)
+      } catch (logError) {
+        console.warn('⚠️ [AUTO-IMPORT] Log DB fallito (tabella logs potrebbe non esistere):', logError)
+        // Non bloccare l'import se il log fallisce
+      }
     }
     
     return c.json(result)

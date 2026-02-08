@@ -2449,8 +2449,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
-                // Calcola statistiche reali
-                const totalLeads = allLeads.length;
+                // ✅ USA IL TOTALE REALE DAL SERVER (non allLeads.length)
+                const totalLeads = leadsData.total || allLeads.length;
                 
                 // Calcola revenue totale SOLO dai contratti FIRMATI
                 const contrattiResponse = await fetch('/api/contratti');
