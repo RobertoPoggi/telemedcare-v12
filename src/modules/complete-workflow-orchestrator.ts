@@ -141,25 +141,31 @@ export async function processNewLead(
         console.error(`❌ [ORCHESTRATOR] Nessuna email trovata per lead ${ctx.leadData.id}`)
         result.errors.push('Email destinatario mancante')
       } else {
+        console.log(`🚀 [ORCHESTRATOR] INIZIO INVIO EMAIL - recipientEmail: ${recipientEmail}`)
         try {
+          console.log(`📦 [ORCHESTRATOR] Import moduli...`)
           // Importa modulo lead-completion per inviare email
           const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
           const EmailService = (await import('./email-service')).default
           
+          console.log(`⚙️ [ORCHESTRATOR] Carico configurazione...`)
           // Ottieni configurazione
           const config = await getSystemConfig(ctx.db)
           
+          console.log(`🎟️ [ORCHESTRATOR] Creo token completamento...`)
           // Crea token completamento
           const token = await createCompletionToken(
             ctx.db,
             ctx.leadData.id,
             config.auto_completion_token_days
           )
+          console.log(`✅ [ORCHESTRATOR] Token creato: ${token.token}`)
           
           // Genera URL completamento
           const baseUrl = ctx.env?.PUBLIC_URL || ctx.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
           const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
           
+          console.log(`📋 [ORCHESTRATOR] Preparo dati email...`)
           // Prepara dati per email
           const { missing, available } = getMissingFields(ctx.leadData)
         
@@ -257,6 +263,7 @@ export async function processNewLead(
 </body>
 </html>`
         
+        console.log(`📧 [ORCHESTRATOR] Creo EmailService e invio...`)
         // Invia email
         const emailService = new EmailService(ctx.env)
         const emailResult = await emailService.sendEmail({
@@ -265,15 +272,22 @@ export async function processNewLead(
           html: emailHtml
         })
         
+        console.log(`📬 [ORCHESTRATOR] Risultato invio:`, emailResult)
+        
         if (emailResult.success) {
           console.log(`✅ [ORCHESTRATOR] Email completamento dati inviata a ${recipientEmail}`)
           console.log(`   Link form: ${completionUrl}`)
+          if (emailResult.warning) {
+            console.warn(`⚠️ [ORCHESTRATOR] WARNING:`, emailResult.warning)
+          }
         } else {
           console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, emailResult.error)
           result.errors.push(`Errore email completamento: ${emailResult.error}`)
         }
       } catch (error) {
-        console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, error)
+        console.error(`❌ [ORCHESTRATOR] EXCEPTION durante invio email:`, error)
+        console.error(`   Error message:`, error.message)
+        console.error(`   Error stack:`, error.stack)
         result.errors.push(`Errore email completamento: ${error.message}`)
       }
     }
