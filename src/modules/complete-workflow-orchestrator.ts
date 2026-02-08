@@ -119,6 +119,13 @@ export async function processNewLead(
     ).first()
     const leadEmailEnabled = leadEmailSetting?.value === 'true'
     
+    console.log(`🔍 [ORCHESTRATOR] Lead email check:`, {
+      leadEmailEnabled,
+      emailRichiedente: ctx.leadData.emailRichiedente,
+      hasEmail: !!ctx.leadData.emailRichiedente,
+      leadId: ctx.leadData.id
+    })
+    
     console.log(`🔍 [ORCHESTRATOR] Switch check: workflow=${settings.email_completamento_dati}, dashboard=${leadEmailEnabled}`)
     
     // Usa SOLO il dashboard switch (ignora workflow switch per evitare conflitti)

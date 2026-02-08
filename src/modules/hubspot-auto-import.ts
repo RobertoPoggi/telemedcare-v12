@@ -279,6 +279,13 @@ export async function executeAutoImport(
           
           const leadEmailEnabled = leadEmailSetting?.value === 'true'
           
+          console.log(`🔍 [AUTO-IMPORT] Check email conditions:`, {
+            leadEmailEnabled,
+            hasEmail: !!leadData.email,
+            email: leadData.email,
+            leadId
+          })
+          
           if (leadEmailEnabled && leadData.email) {
             console.log(`📧 [AUTO-IMPORT] Invio email completamento dati tramite WorkflowOrchestrator per ${leadId}...`)
             
