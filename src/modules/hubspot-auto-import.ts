@@ -247,7 +247,7 @@ export async function executeAutoImport(
             
             // Import dinamico EmailService per evitare problemi di bundle
             const { EmailService } = await import('./email-service')
-            const emailService = new EmailService()
+            const emailService = new EmailService(env)
             
             const emailHtml = `
               <!DOCTYPE html>

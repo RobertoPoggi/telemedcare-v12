@@ -10413,34 +10413,13 @@ app.post('/api/hubspot/auto-import', async (c) => {
 // GET /api/hubspot/auto-import/status - Status ultimo auto-import
 app.get('/api/hubspot/auto-import/status', async (c) => {
   try {
-    if (!c.env?.DB) {
-      return c.json({ success: false, error: 'Database non configurato' }, 500)
-    }
-    
-    // Leggi ultimo import dal log
-    const lastImport = await c.env.DB.prepare(`
-      SELECT timestamp, details 
-      FROM logs 
-      WHERE action = 'AUTO_IMPORT' 
-      ORDER BY timestamp DESC 
-      LIMIT 1
-    `).first()
-    
-    if (!lastImport) {
-      return c.json({
-        success: true,
-        hasRun: false,
-        message: 'Nessun auto-import eseguito'
-      })
-    }
-    
-    const details = JSON.parse(lastImport.details as string)
-    
+    // Status endpoint disabled - logs table doesn't exist
+    // Use console logs or monitoring instead
     return c.json({
       success: true,
       hasRun: true,
-      lastRun: lastImport.timestamp,
-      lastResult: details
+      message: 'Status endpoint disabled (use console logs for monitoring)',
+      note: 'Auto-import runs on every dashboard load, check browser console for logs'
     })
   } catch (error) {
     console.error('❌ Auto-import status error:', error)
