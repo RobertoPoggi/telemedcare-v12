@@ -199,9 +199,10 @@ export async function executeAutoImport(
         console.log(`🆔 [AUTO-IMPORT] Generato ID: ${leadId} per ${contact.properties.email}`)
         
         // Inserisci nel database con PREZZI (usa campi esistenti)
+        // ⚠️ IMPORTANTE: DB usa emailRichiedente/telefonoRichiedente, NON email/telefono
         await db.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
             prezzo_anno, prezzo_rinnovo,
@@ -214,8 +215,8 @@ export async function executeAutoImport(
           leadId,
           leadData.nomeRichiedente,
           leadData.cognomeRichiedente,
-          leadData.email,
-          leadData.telefono,
+          leadData.email, // Viene mappato a emailRichiedente
+          leadData.telefono, // Viene mappato a telefonoRichiedente
           leadData.nomeAssistito,
           leadData.cognomeAssistito,
           leadData.servizio,

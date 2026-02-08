@@ -13613,7 +13613,7 @@ startxref
           LIMIT 1
         `).first();let A=146;if(R!=null&&R.id){const M=R.id.match(/LEAD-IRBEMA-(\d+)/);M&&(A=parseInt(M[1])+1)}const C=`LEAD-IRBEMA-${A.toString().padStart(5,"0")}`;console.log(`🆔 [AUTO-IMPORT] Generato ID: ${C} per ${E.properties.email}`),await o.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
             prezzo_anno, prezzo_rinnovo,
