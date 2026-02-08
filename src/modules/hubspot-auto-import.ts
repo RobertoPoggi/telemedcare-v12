@@ -320,7 +320,7 @@ export async function executeAutoImport(
               const token = await createCompletionToken(db, leadId, config.auto_completion_token_days)
               console.log(`✅ [AUTO-IMPORT] Token creato: ${token.token}`)
               
-              // Genera URL completamento
+              // Genera URL completamento (IDENTICO al pulsante manuale!)
               const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
               const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
               
