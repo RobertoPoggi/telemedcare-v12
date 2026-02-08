@@ -51,7 +51,7 @@ export const autoImportScript = `
         },
         body: JSON.stringify({
           enabled: true,
-          startHour: 9,
+          startHour: 0, // ✅ Ultimi 24h (non solo dalle 9:00)
           onlyEcura: true, // ✅ RIPRISTINATO: solo lead da Form eCura
           dryRun: false
         })
@@ -68,15 +68,15 @@ export const autoImportScript = `
         
         console.log(\`✅ [AUTO-IMPORT] Completato: \${result.imported} importati, \${result.skipped} già esistenti (\${timeFrom} - \${timeTo})\`);
         
+        // Ricarica dati dashboard sempre (anche se 0 importati) per sincronizzare cancellazioni
+        if (typeof window.refreshDashboardData === 'function') {
+          console.log('🔄 [AUTO-IMPORT] Ricarico dati dashboard...');
+          setTimeout(() => window.refreshDashboardData(), 1000);
+        }
+        
         // Mostra notifica solo se importati nuovi lead
         if (result.imported > 0 && AUTO_IMPORT_CONFIG.showSuccessToast) {
           showAutoImportToast(\`✅ \${result.imported} nuovi lead importati da HubSpot\`, 'success');
-          
-          // Ricarica dati dashboard se presente la funzione
-          if (typeof window.refreshDashboardData === 'function') {
-            console.log('🔄 [AUTO-IMPORT] Ricarico dati dashboard...');
-            setTimeout(() => window.refreshDashboardData(), 1000);
-          }
         } else if (AUTO_IMPORT_CONFIG.silent) {
           // Import silenzioso: nessuna notifica
           console.log(\`ℹ️  [AUTO-IMPORT] Nessun nuovo lead da importare\`);
