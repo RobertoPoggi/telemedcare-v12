@@ -290,7 +290,7 @@ export async function processNewLead(
         console.error(`   Error stack:`, error.stack)
         result.errors.push(`Errore email completamento: ${error.message}`)
       }
-    }
+    } // ← Chiude else del blocco recipientEmail
     } else {
       console.log(`⏭️ [ORCHESTRATOR] Email completamento dati disabilitata (switch OFF)`)
     }

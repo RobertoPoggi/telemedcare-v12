@@ -172,6 +172,13 @@ export async function executeAutoImport(
         // Mappa contatto HubSpot → Lead TeleMedCare
         const leadData = mapHubSpotContactToLead(contact)
         
+        console.log(`🔍 [AUTO-IMPORT] Lead data mapped:`, {
+          nomeRichiedente: leadData.nomeRichiedente,
+          email: leadData.email,
+          hasEmail: !!leadData.email,
+          emailLength: leadData.email?.length || 0
+        })
+        
         // Genera ID lead sequenziale LEAD-IRBEMA-xxxxx
         const lastIrbemaLead = await db.prepare(`
           SELECT id FROM leads 
@@ -291,6 +298,7 @@ export async function executeAutoImport(
             console.log(`📧 [AUTO-IMPORT] Invio email completamento dati tramite WorkflowOrchestrator per ${leadId}...`)
             console.log(`📧 Email destinatario: ${leadData.email}`)
             console.log(`📧 Switch abilitato: ${leadEmailEnabled}`)
+            console.log(`📧 [AUTO-IMPORT] CALLING WorkflowOrchestrator.processNewLead() NOW!`)
             
             // Import WorkflowOrchestrator
             const { WorkflowOrchestrator } = await import('./complete-workflow-orchestrator')
