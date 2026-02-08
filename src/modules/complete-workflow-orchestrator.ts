@@ -129,7 +129,6 @@ export async function processNewLead(
         // Importa modulo lead-completion per inviare email
         const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
         const EmailService = (await import('./email-service')).default
-        const { loadEmailTemplate, renderTemplate } = await import('./template-loader-clean')
         
         // Ottieni configurazione
         const config = await getSystemConfig(ctx.db)
@@ -148,26 +147,105 @@ export async function processNewLead(
         // Prepara dati per email
         const { missing, available } = getMissingFields(ctx.leadData)
         
-        // Carica e renderizza template email
-        const emailService = new EmailService(ctx.env)
-        const template = await loadEmailTemplate('email_richiesta_completamento_form', ctx.db, ctx.env)
-        
-        const templateData = {
-          NOME_CLIENTE: ctx.leadData.nomeRichiedente || 'Cliente',
-          COGNOME_CLIENTE: ctx.leadData.cognomeRichiedente || '',
-          LEAD_ID: ctx.leadData.id,
-          SERVIZIO: ctx.leadData.pacchetto || 'eCura',
-          COMPLETION_LINK: completionUrl,
-          TOKEN_EXPIRY: new Date(token.expires_at).toLocaleDateString('it-IT'),
-          MISSING_FIELDS_COUNT: missing.length
-        }
-        
-        const emailHtml = renderTemplate(template, templateData)
+        // Template HTML inline (ufficiale TeleMedCare)
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completa i tuoi dati - eCura</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">📝 Completa i tuoi dati</h1>
+              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Siamo quasi pronti per attivare il tuo servizio eCura</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Gentile <strong>${ctx.leadData.nomeRichiedente || 'Cliente'} ${ctx.leadData.cognomeRichiedente || ''}</strong>,
+              </p>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Grazie per il tuo interesse verso <strong>${ctx.leadData.pacchetto || ctx.leadData.servizio || 'eCura'}</strong>. 
+                Abbiamo ricevuto la tua richiesta e per inviarti una proposta per soddisfare le tue esigenze 
+                abbiamo bisogno di alcune <strong>informazioni aggiuntive</strong>.
+              </p>
+              
+              <!-- Info Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-left: 4px solid #667eea; margin: 30px 0; border-radius: 4px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="color: #333333; font-size: 14px; line-height: 1.6; margin: 0 0 10px 0;">
+                      <strong>📋 Dati richiesta:</strong>
+                    </p>
+                    <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0;">
+                      Lead ID: <strong>${ctx.leadData.id}</strong><br>
+                      Servizio: <strong>${ctx.leadData.pacchetto || ctx.leadData.servizio || 'eCura'}</strong><br>
+                      Campi mancanti: <strong>${missing.length}</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                Clicca sul pulsante qui sotto per completare i tuoi dati. 
+                Il link sarà valido per <strong>${config.auto_completion_token_days} giorni</strong>.
+              </p>
+              
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="${completionUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                      Completa i tuoi dati
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">
+                Se il pulsante non funziona, copia e incolla questo link nel tuo browser:<br>
+                <a href="${completionUrl}" style="color: #667eea; word-break: break-all;">${completionUrl}</a>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
+              <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0;">
+                <strong>TeleMedCare</strong> - Sistema di Gestione Lead
+              </p>
+              <p style="color: #999999; font-size: 12px; margin: 0;">
+                Per assistenza: <a href="mailto:info@telemedcare.it" style="color: #667eea; text-decoration: none;">info@telemedcare.it</a>
+              </p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
         
         // Invia email
+        const emailService = new EmailService(ctx.env)
         const emailResult = await emailService.sendEmail({
           to: ctx.leadData.emailRichiedente,
-          subject: 'eCura - Completa la tua richiesta',
+          subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml
         })
         
