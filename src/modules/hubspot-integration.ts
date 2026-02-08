@@ -316,8 +316,15 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
   
   // Servizio e piano (da custom properties eCura)
   // ⚠️ SE HubSpot non manda il campo, usa default per evitare NOT NULL constraint
+  console.log(`🔍 [HUBSPOT MAPPING] Contact ${props.firstname} ${props.lastname}:`)
+  console.log(`🔍 [HUBSPOT MAPPING] - servizio_ecura (raw): ${props.servizio_ecura || 'NULL/EMPTY'}`)
+  console.log(`🔍 [HUBSPOT MAPPING] - piano_ecura (raw): ${props.piano_ecura || 'NULL/EMPTY'}`)
+  
   const servizioEcura = props.servizio_ecura ? props.servizio_ecura.toUpperCase() : 'PRO'
   const pianoEcura = props.piano_ecura ? props.piano_ecura.toUpperCase() : 'BASE'
+  
+  console.log(`🔍 [HUBSPOT MAPPING] - servizioEcura (after default): ${servizioEcura}`)
+  console.log(`🔍 [HUBSPOT MAPPING] - pianoEcura (after default): ${pianoEcura}`)
   
   // Normalizza formato servizio per TeleMedCare
   const servizio = `eCura ${servizioEcura}`

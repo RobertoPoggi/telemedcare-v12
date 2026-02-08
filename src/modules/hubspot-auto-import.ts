@@ -231,6 +231,7 @@ export async function executeAutoImport(
         ).run()
         
         console.log(`✅ [AUTO-IMPORT] Lead creato: ${leadId} from HubSpot ${contact.id}`)
+        console.log(`🔔 [AUTO-IMPORT] >>> INIZIO BLOCCO EMAIL <<<`)
         result.imported++
         
         // 📧 INVIA EMAIL DI NOTIFICA ADMIN (se abilitato)
@@ -322,6 +323,8 @@ export async function executeAutoImport(
           })
           // Non bloccare l'import se l'email fallisce
         }
+        
+        console.log(`🔔 [AUTO-IMPORT] >>> FINE BLOCCO EMAIL <<<`)
         
       } catch (error) {
         console.error(`❌ [AUTO-IMPORT] Errore import contact ${contact.id}:`, error)
