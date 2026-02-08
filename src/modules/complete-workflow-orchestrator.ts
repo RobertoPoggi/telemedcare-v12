@@ -87,7 +87,16 @@ export async function processNewLead(
     console.log(`⚙️ [ORCHESTRATOR] Settings workflow:`, settings)
 
     // 1.1: Invia email notifica a info@ (se abilitata)
-    if (settings.email_notifica_info) {
+    // PRIORITÀ: Dashboard switch (admin_email_notifications_enabled)
+    const adminEmailSetting = await ctx.db.prepare(
+      "SELECT value FROM settings WHERE key = 'admin_email_notifications_enabled' LIMIT 1"
+    ).first()
+    const adminEmailEnabled = adminEmailSetting?.value === 'true'
+    
+    console.log(`🔍 [ORCHESTRATOR] Admin switch check: workflow=${settings.email_notifica_info}, dashboard=${adminEmailEnabled}`)
+    
+    // Usa SOLO il dashboard switch
+    if (adminEmailEnabled) {
       console.log(`📧 [ORCHESTRATOR] Invio notifica a info@telemedcare.it`)
       const notificaResult = await WorkflowEmailManager.inviaEmailNotificaInfo(
         ctx.leadData,
@@ -99,11 +108,12 @@ export async function processNewLead(
         result.errors.push(...notificaResult.errors)
       }
     } else {
-      console.log(`⏭️ [ORCHESTRATOR] Email notifica info@ disabilitata (switch OFF)`)
+      console.log(`⏭️ [ORCHESTRATOR] Email notifica info@ disabilitata (dashboard switch OFF)`)
     }
 
     // 1.2: Invia email completamento dati al lead (se abilitata)
-    // Controlla anche il nuovo switch lead_email_notifications_enabled
+    // PRIORITÀ: Dashboard switch (lead_email_notifications_enabled)
+    // Se dashboard switch è OFF, NON inviare email (indipendentemente da workflow switch)
     const leadEmailSetting = await ctx.db.prepare(
       "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
     ).first()
@@ -111,7 +121,8 @@ export async function processNewLead(
     
     console.log(`🔍 [ORCHESTRATOR] Switch check: workflow=${settings.email_completamento_dati}, dashboard=${leadEmailEnabled}`)
     
-    if ((settings.email_completamento_dati || leadEmailEnabled)) {
+    // Usa SOLO il dashboard switch (ignora workflow switch per evitare conflitti)
+    if (leadEmailEnabled) {
       console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${ctx.leadData.emailRichiedente}`)
       
       try {
