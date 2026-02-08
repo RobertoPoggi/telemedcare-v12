@@ -7940,7 +7940,9 @@ app.post('/api/leads/:id/complete', async (c) => {
       }
     }
     
-    console.log(`📝 COMPLETE Lead ${id} da form email:`, JSON.stringify(data, null, 2))
+    console.log(`📝 [COMPLETE] Lead ${id} - Dati ricevuti:`, JSON.stringify(data, null, 2))
+    console.log(`📝 [COMPLETE] Content-Type:`, contentType)
+    console.log(`📝 [COMPLETE] DB disponibile:`, !!c.env?.DB)
     
     if (!c.env?.DB) {
       return c.text('✅ Grazie! I tuoi dati sono stati salvati con successo. Ti contatteremo presto.', 200, {
@@ -8006,11 +8008,20 @@ app.post('/api/leads/:id/complete', async (c) => {
     binds.push(id)
     const query = `UPDATE leads SET ${updateFields.join(', ')}, updated_at = datetime('now') WHERE id = ?`
     
-    console.log('🔍 Query UPDATE:', query)
-    console.log('🔍 Binds:', binds)
-    console.log('🔍 Lead ID:', id)
+    console.log('🔍 [COMPLETE] Query UPDATE:', query)
+    console.log('🔍 [COMPLETE] Binds:', binds)
+    console.log('🔍 [COMPLETE] Lead ID:', id)
     
-    const result = await c.env.DB.prepare(query).bind(...binds).run()
+    let result
+    try {
+      result = await c.env.DB.prepare(query).bind(...binds).run()
+      console.log('✅ [COMPLETE] UPDATE eseguito con successo')
+    } catch (updateError) {
+      console.error('❌ [COMPLETE] ERRORE UPDATE DATABASE:', updateError)
+      console.error('❌ [COMPLETE] Query che ha fallito:', query)
+      console.error('❌ [COMPLETE] Binds:', JSON.stringify(binds))
+      throw new Error(`Errore aggiornamento database: ${updateError instanceof Error ? updateError.message : String(updateError)}`)
+    }
     
     console.log('🔍 Update result:', JSON.stringify(result))
     console.log('🔍 Rows affected:', result.meta?.changes || 0)
