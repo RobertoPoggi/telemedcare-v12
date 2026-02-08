@@ -320,9 +320,9 @@ export async function executeAutoImport(
               const token = await createCompletionToken(db, leadId, config.auto_completion_token_days)
               console.log(`✅ [AUTO-IMPORT] Token creato: ${token.token}`)
               
-              // Genera URL completamento (IDENTICO al pulsante manuale!)
+              // Genera URL completamento - USA IL WIZARD COMPLETO che funziona sicuramente!
               const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-              const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
+              const completionUrl = `${baseUrl}/completa-dati.html?leadId=${leadId}`
               
               // Prepara dati per email
               const { missing, available } = getMissingFields(insertedLead)
