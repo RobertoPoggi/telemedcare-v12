@@ -7870,6 +7870,23 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
   }
 })
 
+// GET /api/form/:leadId - Serve il form di completamento dati (SOLUZIONE 404)
+app.get('/api/form/:leadId', async (c) => {
+  try {
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const htmlPath = path.join(process.cwd(), 'public', 'completa-dati-minimal.html')
+    const formHtml = await fs.readFile(htmlPath, 'utf-8')
+    
+    c.header('Content-Type', 'text/html; charset=utf-8')
+    c.header('Cache-Control', 'no-store')
+    return c.html(formHtml)
+  } catch (error) {
+    console.error('Error loading form:', error)
+    return c.text('Form non disponibile', 500)
+  }
+})
+
 // POINT 10 - API per gestione singoli lead (correzione azioni Data Dashboard)
 app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
