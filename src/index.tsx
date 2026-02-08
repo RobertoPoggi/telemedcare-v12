@@ -10497,7 +10497,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
     
     // Genera URL completamento
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
-    const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
+    const completionUrl = `${baseUrl}/api/form/${leadId}`
     
     // Prepara dati per email
     const { missing, available } = getMissingFields(lead)
