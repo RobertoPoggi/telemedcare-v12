@@ -1256,7 +1256,18 @@ export const dashboard = `<!DOCTYPE html>
                         // Determina dispositivo in base al servizio
                         const servizioType = servizio ? servizio.replace('eCura ', '') : 'PRO';
                         const dispositivo = servizioType.includes('PREMIUM') ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO';
-                        const prezzo = lead.prezzo_anno || (piano === 'AVANZATO' ? 840 : 480);
+                        
+                        // ✅ CALCOLO PREZZO CORRETTO: considera servizio + piano
+                        let prezzoFallback = 480; // Default: PRO BASE
+                        if (servizioType.includes('FAMILY')) {
+                          prezzoFallback = piano === 'AVANZATO' ? 690 : 390;
+                        } else if (servizioType.includes('PREMIUM')) {
+                          prezzoFallback = piano === 'AVANZATO' ? 990 : 590;
+                        } else {
+                          prezzoFallback = piano === 'AVANZATO' ? 840 : 480;
+                        }
+                        const prezzo = lead.prezzo_anno || prezzoFallback;
+                        
                         const statusClass = (lead.vuoleBrochure === 'Si') ? 'status-sent' : 'status-pending';
                         const statusText = (lead.vuoleBrochure === 'Si') ? 'Inviata brochure' : 'Da contattare';
                         const telefono = lead.telefono || 'N/A';

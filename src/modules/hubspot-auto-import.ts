@@ -3,15 +3,15 @@
  * TeleMedCare V12.0
  * 
  * Logica:
- * - Import automatico incrementale: solo lead creati dalle 9:00 del mattino ad ora
+ * - Import automatico incrementale: lead creati nelle ultime 24 ore
  * - Trigger: ogni caricamento dashboard operativa o leads dashboard
- * - Filtro: Form eCura (hs_object_source_detail_1 = 'Form eCura')
+ * - Filtro: NESSUN FILTRO (importa tutti i lead, non solo Form eCura)
  * - Efficiente: evita di leggere 4400+ lead ogni volta
  * - Tasto IRBEMA: rimane per sincronizzazione completa manuale
  * 
  * Frequenza Import HubSpot:
  * - Import automatico HubSpot: ogni giorno alle 9:00 AM
- * - Import incrementale TeleMedCare: ogni caricamento dashboard
+ * - Import incrementale TeleMedCare: ogni caricamento dashboard (ultimi 1 giorno)
  */
 
 import type { D1Database } from '@cloudflare/workers-types'
@@ -50,20 +50,12 @@ export interface AutoImportConfig {
 
 /**
  * Calcola il timestamp di inizio per import incrementale
- * - Se prima delle 9:00: inizia dalle 9:00 del giorno prima
- * - Se dopo le 9:00: inizia dalle 9:00 di oggi
+ * ✅ NUOVO: Importa lead delle ultime 24 ore (non più dalle 9:00)
  */
 export function getIncrementalStartTime(config: AutoImportConfig): Date {
   const now = new Date()
-  const todayAt9AM = new Date(now)
-  todayAt9AM.setHours(config.startHour, 0, 0, 0)
-  
-  if (now < todayAt9AM) {
-    // Siamo prima delle 9:00, prendi le 9:00 del giorno precedente
-    todayAt9AM.setDate(todayAt9AM.getDate() - 1)
-  }
-  
-  return todayAt9AM
+  const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000)) // 24 ore fa
+  return oneDayAgo
 }
 
 /**
@@ -124,7 +116,7 @@ export async function executeAutoImport(
     const createdAfter = getIncrementalStartTime(config)
     result.timeRange.from = createdAfter.toISOString()
     
-    console.log(`🔄 [AUTO-IMPORT] Inizio import incrementale dalle ${createdAfter.toLocaleTimeString('it-IT')} ad ora`)
+    console.log(`🔄 [AUTO-IMPORT] Inizio import incrementale ultimi 1 giorno (da ${createdAfter.toLocaleString('it-IT')})`)
     console.log(`📊 [AUTO-IMPORT] Config: onlyEcura=${config.onlyEcura}, dryRun=${config.dryRun}`)
     
     // Client HubSpot
