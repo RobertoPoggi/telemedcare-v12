@@ -300,6 +300,7 @@ export async function executeAutoImport(
                 id: leadId,
                 nomeRichiedente: leadData.nomeRichiedente,
                 cognomeRichiedente: leadData.cognomeRichiedente,
+                email: leadData.email,  // ✅ Aggiungi campo email
                 emailRichiedente: leadData.email,
                 telefonoRichiedente: leadData.telefono,
                 nomeAssistito: leadData.nomeAssistito,
