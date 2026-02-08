@@ -320,9 +320,9 @@ export async function executeAutoImport(
               const token = await createCompletionToken(db, leadId, config.auto_completion_token_days)
               console.log(`✅ [AUTO-IMPORT] Token creato: ${token.token}`)
               
-              // Genera URL completamento - USA ENDPOINT API CHE FUNZIONA!
+              // Genera URL completamento - USA ENDPOINT API con query parameter!
               const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-              const completionUrl = `${baseUrl}/api/form/${leadId}`
+              const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
               
               // Prepara dati per email
               const { missing, available } = getMissingFields(insertedLead)

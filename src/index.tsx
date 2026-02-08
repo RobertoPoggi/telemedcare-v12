@@ -10493,9 +10493,9 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       config.auto_completion_token_days
     )
     
-    // Genera URL completamento
+    // Genera URL completamento (con query parameter leadId che il form si aspetta!)
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
-    const completionUrl = `${baseUrl}/api/form/${leadId}`
+    const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
     
     // Prepara dati per email
     const { missing, available } = getMissingFields(lead)
