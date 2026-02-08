@@ -130,29 +130,38 @@ export async function processNewLead(
     
     // Usa SOLO il dashboard switch (ignora workflow switch per evitare conflitti)
     if (leadEmailEnabled) {
-      console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${ctx.leadData.emailRichiedente}`)
+      // Determina email destinatario (usa emailRichiedente o fallback su email)
+      const recipientEmail = ctx.leadData.emailRichiedente || ctx.leadData.email
       
-      try {
-        // Importa modulo lead-completion per inviare email
-        const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
-        const EmailService = (await import('./email-service')).default
-        
-        // Ottieni configurazione
-        const config = await getSystemConfig(ctx.db)
-        
-        // Crea token completamento
-        const token = await createCompletionToken(
-          ctx.db,
-          ctx.leadData.id,
-          config.auto_completion_token_days
-        )
-        
-        // Genera URL completamento
-        const baseUrl = ctx.env?.PUBLIC_URL || ctx.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-        const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
-        
-        // Prepara dati per email
-        const { missing, available } = getMissingFields(ctx.leadData)
+      console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${recipientEmail}`)
+      console.log(`   emailRichiedente: ${ctx.leadData.emailRichiedente}`)
+      console.log(`   email: ${ctx.leadData.email}`)
+      
+      if (!recipientEmail) {
+        console.error(`❌ [ORCHESTRATOR] Nessuna email trovata per lead ${ctx.leadData.id}`)
+        result.errors.push('Email destinatario mancante')
+      } else {
+        try {
+          // Importa modulo lead-completion per inviare email
+          const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
+          const EmailService = (await import('./email-service')).default
+          
+          // Ottieni configurazione
+          const config = await getSystemConfig(ctx.db)
+          
+          // Crea token completamento
+          const token = await createCompletionToken(
+            ctx.db,
+            ctx.leadData.id,
+            config.auto_completion_token_days
+          )
+          
+          // Genera URL completamento
+          const baseUrl = ctx.env?.PUBLIC_URL || ctx.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+          const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
+          
+          // Prepara dati per email
+          const { missing, available } = getMissingFields(ctx.leadData)
         
         // Template HTML inline (ufficiale TeleMedCare)
         const emailHtml = `
@@ -251,13 +260,13 @@ export async function processNewLead(
         // Invia email
         const emailService = new EmailService(ctx.env)
         const emailResult = await emailService.sendEmail({
-          to: ctx.leadData.emailRichiedente,
+          to: recipientEmail,
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml
         })
         
         if (emailResult.success) {
-          console.log(`✅ [ORCHESTRATOR] Email completamento dati inviata a ${ctx.leadData.emailRichiedente}`)
+          console.log(`✅ [ORCHESTRATOR] Email completamento dati inviata a ${recipientEmail}`)
           console.log(`   Link form: ${completionUrl}`)
         } else {
           console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, emailResult.error)
@@ -267,6 +276,7 @@ export async function processNewLead(
         console.error(`❌ [ORCHESTRATOR] Errore invio email completamento:`, error)
         result.errors.push(`Errore email completamento: ${error.message}`)
       }
+    }
     } else {
       console.log(`⏭️ [ORCHESTRATOR] Email completamento dati disabilitata (switch OFF)`)
     }
