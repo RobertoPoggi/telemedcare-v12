@@ -22,19 +22,30 @@ export async function sendNewLeadNotification(
   env: any
 ): Promise<void> {
   try {
+    console.log(`🔔 [NOTIFICATION] Inizio invio notifica per lead ${leadId}`)
+    console.log(`🔔 [NOTIFICATION] Lead data:`, JSON.stringify(leadData, null, 2))
+    
     // Controlla se le notifiche admin sono abilitate
     if (env?.DB) {
+      console.log(`🔔 [NOTIFICATION] Controllo switch admin_email_notifications_enabled...`)
       const setting = await env.DB.prepare(
         'SELECT value FROM settings WHERE key = ?'
       ).bind('admin_email_notifications_enabled').first()
+      
+      console.log(`🔔 [NOTIFICATION] Switch value:`, setting?.value)
       
       if (setting?.value !== 'true') {
         console.log(`⏭️ [NOTIFICATION] Notifiche admin disabilitate, skip email per lead ${leadId}`)
         return
       }
+      console.log(`✅ [NOTIFICATION] Switch attivo, procedo con invio email`)
+    } else {
+      console.warn(`⚠️ [NOTIFICATION] Database non disponibile, procedo comunque con invio email`)
     }
     
+    console.log(`📧 [NOTIFICATION] Creazione EmailService...`)
     const emailService = new EmailService(env)
+    console.log(`📧 [NOTIFICATION] EmailService creato, preparo dati email...`)
     
     const nome = leadData.nomeRichiedente || 'N/A'
     const cognome = leadData.cognomeRichiedente || ''
@@ -49,7 +60,10 @@ export async function sendNewLeadNotification(
       ? new Date(leadData.created_at).toLocaleString('it-IT')
       : new Date().toLocaleString('it-IT')
 
-    await emailService.sendEmail({
+    console.log(`📧 [NOTIFICATION] Invio email a ${env?.EMAIL_TO_INFO || 'info@telemedcare.it'}...`)
+    console.log(`📧 [NOTIFICATION] Subject: 🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`)
+    
+    const emailResult = await emailService.sendEmail({
       to: env?.EMAIL_TO_INFO || 'info@telemedcare.it',
       from: env?.EMAIL_FROM || 'info@telemedcare.it',
       subject: `🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`,
@@ -131,6 +145,7 @@ export async function sendNewLeadNotification(
       text: `Nuovo Lead: ${nome} ${cognome}\n\nEmail: ${email}\nTelefono: ${telefono}\nCittà: ${citta}\nServizio: ${servizio} - ${piano}\nFonte: ${fonte}\nLead ID: ${leadId}`
     })
 
+    console.log(`✅ [NOTIFICATION] Email result:`, JSON.stringify(emailResult, null, 2))
     console.log(`📧 [NOTIFICATION] Email inviata per nuovo lead ${leadId} (fonte: ${fonte})`)
   } catch (error) {
     console.error(`⚠️ [NOTIFICATION] Errore invio email per lead ${leadId}:`, error)

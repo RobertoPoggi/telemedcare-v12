@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Notification Email</title>
+</head>
+<body>
+  <h1>Test Email Notification</h1>
+  <button onclick="testNotification()">Test Invia Notifica Admin</button>
+  <div id="result"></div>
+  
+  <script>
+    async function testNotification() {
+      const result = document.getElementById('result');
+      result.innerHTML = 'Invio in corso...';
+      
+      try {
+        // Test con lead esistente
+        const response = await fetch('https://telemedcare-v12.pages.dev/api/leads?limit=1&fonte=IRBEMA');
+        const data = await response.json();
+        
+        if (data.leads && data.leads.length > 0) {
+          const lead = data.leads[0];
+          result.innerHTML = `<pre>${JSON.stringify(lead, null, 2)}</pre>`;
+          
+          // Verifica se la notifica è stata inviata
+          const notifResponse = await fetch('https://telemedcare-v12.pages.dev/api/settings');
+          const settings = await notifResponse.json();
+          result.innerHTML += `<h3>Settings:</h3><pre>${JSON.stringify(settings, null, 2)}</pre>`;
+        }
+      } catch (error) {
+        result.innerHTML = `Errore: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
