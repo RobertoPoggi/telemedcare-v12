@@ -298,10 +298,11 @@ export async function executeAutoImport(
             console.log(`📧 [AUTO-IMPORT] Email destinatario: ${leadData.email}`)
             console.log(`📧 Switch abilitato: ${leadEmailEnabled}`)
             
-            // ✅ SOLUZIONE SEMPLICE: Usa lo stesso codice del pulsante manuale che FUNZIONA!
+            // ✅ SOLUZIONE: Usa ESATTAMENTE lo stesso codice del pulsante manuale
             try {
               const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
               const EmailService = (await import('./email-service')).default
+              const { loadEmailTemplate, renderTemplate } = await import('./template-loader-clean')
               
               // Ottieni lead appena inserito dal database
               const insertedLead = await db.prepare('SELECT * FROM leads WHERE id = ?')
@@ -321,76 +322,102 @@ export async function executeAutoImport(
               
               // Genera URL completamento
               const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-              const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
+              const completionUrl = `${baseUrl}/completa-dati-minimal.html?leadId=${leadId}`
               
               // Prepara dati per email
               const { missing, available } = getMissingFields(insertedLead)
               
-              // Template HTML inline (stesso dell'orchestrator)
-              const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Completa i tuoi dati - eCura</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 20px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <tr>
-            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">📝 Completa i tuoi dati</h1>
-              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Siamo quasi pronti per attivare il tuo servizio eCura</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 40px 30px;">
-              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Gentile <strong>${leadData.nomeRichiedente || 'Cliente'} ${leadData.cognomeRichiedente || ''}</strong>,
-              </p>
-              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Grazie per il tuo interesse verso <strong>${leadData.piano || leadData.servizio || 'eCura'}</strong>. 
-                Abbiamo ricevuto la tua richiesta e per inviarti una proposta abbiamo bisogno di alcune <strong>informazioni aggiuntive</strong>.
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td align="center" style="padding: 20px 0;">
-                    <a href="${completionUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold;">
-                      Completa i tuoi dati
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">
-                Se il pulsante non funziona, copia questo link:<br>
-                <a href="${completionUrl}" style="color: #667eea;">${completionUrl}</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+              // Carica template dal database (STESSO del pulsante manuale!)
+              const template = await loadEmailTemplate('email_richiesta_completamento_form', db, env)
               
-              // Invia email con EmailService (stesso codice del pulsante manuale)
-              const emailService = new EmailService(env)
-              const emailResult = await emailService.sendEmail({
-                to: leadData.email,
-                from: env?.EMAIL_FROM || 'info@telemedcare.it',
-                subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
-                html: emailHtml
+              // Prepara lista campi disponibili
+              const availableFieldsList = Object.entries(available).map(([label, value]) => ({
+                FIELD_LABEL: label,
+                FIELD_VALUE: value
+              }))
+              
+              // Prepara lista campi mancanti con metadati per il form
+              const fieldMetadata: Record<string, any> = {
+                'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+                'telefonoRichiedente': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+                'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+                'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+                'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
+                'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },
+                'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', placeholder: '', required: true },
+                'cittaAssistito': { label: 'Città Assistito', type: 'text', placeholder: 'Es. Roma', required: true },
+                'cfAssistito': { label: 'Codice Fiscale Assistito', type: 'text', placeholder: 'Es. RSSMRA85M01H501X', required: false },
+                'indirizzoAssistito': { label: 'Indirizzo Assistito', type: 'text', placeholder: 'Via, numero civico', required: false },
+                'servizio': { 
+                  label: 'Servizio', 
+                  type: 'select', 
+                  required: true,
+                  options: [
+                    { value: 'eCura FAMILY', label: 'eCura FAMILY - Monitoraggio base' },
+                    { value: 'eCura PRO', label: 'eCura PRO - Assistenza completa' },
+                    { value: 'eCura PREMIUM', label: 'eCura PREMIUM - Assistenza avanzata' }
+                  ]
+                },
+                'piano': { 
+                  label: 'Piano', 
+                  type: 'select', 
+                  required: true,
+                  options: [
+                    { value: 'BASE', label: 'BASE - Mensile' },
+                    { value: 'AVANZATO', label: 'AVANZATO - Trimestrale (sconto 5%)' }
+                  ]
+                }
+              }
+              
+              const missingFieldsList = missing.map(fieldName => {
+                const meta = fieldMetadata[fieldName] || { 
+                  label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1), 
+                  type: 'text', 
+                  placeholder: '',
+                  required: false 
+                }
+                
+                return {
+                  FIELD_ID: fieldName,
+                  FIELD_NAME: fieldName,
+                  FIELD_LABEL: meta.label,
+                  INPUT_TYPE: meta.type,
+                  PLACEHOLDER: meta.placeholder || '',
+                  IS_REQUIRED: meta.required,
+                  IS_INPUT: meta.type !== 'select' && meta.type !== 'textarea',
+                  IS_SELECT: meta.type === 'select',
+                  IS_TEXTAREA: meta.type === 'textarea',
+                  OPTIONS: meta.options || []
+                }
               })
               
-              if (emailResult.success) {
-                console.log(`✅✅✅ [AUTO-IMPORT] Email completamento inviata a ${leadData.email} ✅✅✅`)
-              } else {
-                console.error(`❌❌❌ [AUTO-IMPORT] Errore invio email: ${emailResult.error} ❌❌❌`)
+              const templateData = {
+                NOME_CLIENTE: insertedLead.nomeRichiedente,
+                COGNOME_CLIENTE: insertedLead.cognomeRichiedente,
+                SERVIZIO: insertedLead.servizio || insertedLead.tipoServizio || 'eCura PRO',
+                PIANO: insertedLead.piano || insertedLead.pacchetto || 'BASE',
+                LEAD_ID: leadId,
+                API_ENDPOINT: baseUrl,
+                COMPLETION_URL: completionUrl,
+                BROCHURE_URL: `${baseUrl}/assets/brochures/brochure-ecura.pdf`,
+                EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
+                AVAILABLE_FIELDS: availableFieldsList,
+                MISSING_FIELDS: missingFieldsList
               }
+              
+              const emailHtml = renderTemplate(template, templateData)
+              
+              // Invia email con EmailService (IDENTICO al pulsante manuale)
+              const emailService = new EmailService(env)
+              await emailService.sendEmail({
+                to: insertedLead.email || insertedLead.emailRichiedente,
+                from: env?.EMAIL_FROM || 'info@telemedcare.it',
+                subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
+                html: emailHtml,
+                text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
+              })
+              
+              console.log(`✅✅✅ [AUTO-IMPORT] Email completamento inviata a ${leadData.email} ✅✅✅`)
               
             } catch (emailError) {
               console.error(`⚠️ [AUTO-IMPORT] Errore email completamento:`, emailError)
