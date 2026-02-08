@@ -404,8 +404,9 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     note: props.note_assistito || `Importato da HubSpot - ID: ${contact.id}`,
     
     // Richieste documentazione
-    vuoleContratto: props.vuole_contratto === 'Si' || props.vuole_contratto === 'true' ? 'Si' : 'No',
-    vuoleBrochure: props.vuole_brochure === 'Si' || props.vuole_brochure === 'true' ? 'Si' : 'No',
+    // ✅ SEMPRE SI per lead da Form eCura (import automatico)
+    vuoleContratto: 'Si',
+    vuoleBrochure: 'Si',
     vuoleManuale: 'No',
     
     // Privacy (default true per import da CRM)
