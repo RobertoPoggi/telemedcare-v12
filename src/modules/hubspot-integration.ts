@@ -348,16 +348,6 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     console.error('⚠️ Errore calcolo prezzi:', error)
     // Prezzi restano NULL → saranno fixati con fix-prices
   }
-        rinnovoTotale: calculated.rinnovoTotale
-      }
-      console.log(`✅ Prezzi calcolati per ${servizioEcura} ${pianoEcura}: €${calculated.setupBase}`)
-    } catch (error) {
-      console.error('⚠️ Errore calcolo prezzi:', error)
-      // Prezzi restano NULL → partirà email completamento
-    }
-  } else {
-    console.warn(`⚠️ Servizio o Piano mancante (${servizioEcura}, ${pianoEcura}) → prezzi NULL, richiederà completamento`)
-  }
   
   // Status mapping
   const statusMap: Record<string, string> = {
