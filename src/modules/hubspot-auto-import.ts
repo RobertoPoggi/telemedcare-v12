@@ -295,50 +295,110 @@ export async function executeAutoImport(
           
           if (leadEmailEnabled && leadData.email) {
             console.log(`🚨🚨🚨 [AUTO-IMPORT] INIZIO INVIO EMAIL AL LEAD 🚨🚨🚨`)
-            console.log(`📧 [AUTO-IMPORT] Invio email completamento dati tramite WorkflowOrchestrator per ${leadId}...`)
-            console.log(`📧 Email destinatario: ${leadData.email}`)
+            console.log(`📧 [AUTO-IMPORT] Email destinatario: ${leadData.email}`)
             console.log(`📧 Switch abilitato: ${leadEmailEnabled}`)
-            console.log(`📧 [AUTO-IMPORT] CALLING WorkflowOrchestrator.processNewLead() NOW!`)
             
-            // Import WorkflowOrchestrator
-            const { WorkflowOrchestrator } = await import('./complete-workflow-orchestrator')
-            
-            // Prepara contesto workflow
-            const workflowContext = {
-              db,
-              env,
-              leadData: {
-                id: leadId,
-                nomeRichiedente: leadData.nomeRichiedente,
-                cognomeRichiedente: leadData.cognomeRichiedente,
-                email: leadData.email,  // ✅ Aggiungi campo email
-                emailRichiedente: leadData.email,
-                telefonoRichiedente: leadData.telefono,
-                nomeAssistito: leadData.nomeAssistito,
-                cognomeAssistito: leadData.cognomeAssistito,
-                etaAssistito: null,
-                servizio: leadData.servizio,
-                pacchetto: leadData.piano,
-                piano: leadData.piano,
-                vuoleContratto: leadData.vuoleContratto || 'No',
-                vuoleBrochure: leadData.vuoleBrochure || 'No',
-                vuoleManuale: leadData.vuoleManuale || 'No',
-                fonte: 'IRBEMA'
+            // ✅ SOLUZIONE SEMPLICE: Usa lo stesso codice del pulsante manuale che FUNZIONA!
+            try {
+              const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./lead-completion')
+              const EmailService = (await import('./email-service')).default
+              
+              // Ottieni lead appena inserito dal database
+              const insertedLead = await db.prepare('SELECT * FROM leads WHERE id = ?')
+                .bind(leadId).first()
+              
+              if (!insertedLead) {
+                console.error(`❌ [AUTO-IMPORT] Lead ${leadId} non trovato in DB dopo inserimento`)
+                throw new Error('Lead not found after insert')
               }
-            }
-            
-            console.log(`📦 [AUTO-IMPORT] Workflow context preparato`)
-            
-            // Chiama il workflow orchestrator che gestisce il flusso completo
-            const workflowResult = await WorkflowOrchestrator.processNewLead(workflowContext)
-            
-            console.log(`📬 [AUTO-IMPORT] Workflow result:`, JSON.stringify(workflowResult, null, 2))
-            
-            if (workflowResult.success) {
-              console.log(`✅✅✅ [AUTO-IMPORT] Workflow completato con successo per ${leadId} ✅✅✅`)
-            } else {
-              console.error(`❌❌❌ [AUTO-IMPORT] Workflow fallito: ${workflowResult.message} ❌❌❌`)
-              console.error(`❌ Errori:`, workflowResult.errors)
+              
+              // Ottieni configurazione
+              const config = await getSystemConfig(db)
+              
+              // Crea token
+              const token = await createCompletionToken(db, leadId, config.auto_completion_token_days)
+              console.log(`✅ [AUTO-IMPORT] Token creato: ${token.token}`)
+              
+              // Genera URL completamento
+              const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+              const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
+              
+              // Prepara dati per email
+              const { missing, available } = getMissingFields(insertedLead)
+              
+              // Template HTML inline (stesso dell'orchestrator)
+              const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completa i tuoi dati - eCura</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">📝 Completa i tuoi dati</h1>
+              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Siamo quasi pronti per attivare il tuo servizio eCura</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Gentile <strong>${leadData.nomeRichiedente || 'Cliente'} ${leadData.cognomeRichiedente || ''}</strong>,
+              </p>
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Grazie per il tuo interesse verso <strong>${leadData.piano || leadData.servizio || 'eCura'}</strong>. 
+                Abbiamo ricevuto la tua richiesta e per inviarti una proposta abbiamo bisogno di alcune <strong>informazioni aggiuntive</strong>.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="${completionUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                      Completa i tuoi dati
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">
+                Se il pulsante non funziona, copia questo link:<br>
+                <a href="${completionUrl}" style="color: #667eea;">${completionUrl}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+              
+              // Invia email con EmailService (stesso codice del pulsante manuale)
+              const emailService = new EmailService(env)
+              const emailResult = await emailService.sendEmail({
+                to: leadData.email,
+                from: env?.EMAIL_FROM || 'info@telemedcare.it',
+                subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
+                html: emailHtml
+              })
+              
+              if (emailResult.success) {
+                console.log(`✅✅✅ [AUTO-IMPORT] Email completamento inviata a ${leadData.email} ✅✅✅`)
+              } else {
+                console.error(`❌❌❌ [AUTO-IMPORT] Errore invio email: ${emailResult.error} ❌❌❌`)
+              }
+              
+            } catch (emailError) {
+              console.error(`⚠️ [AUTO-IMPORT] Errore email completamento:`, emailError)
+              console.error(`⚠️ [AUTO-IMPORT] Error details:`, {
+                message: (emailError as Error).message,
+                stack: (emailError as Error).stack,
+                leadId
+              })
             }
           } else {
             console.log(`⏭️⏭️⏭️ [AUTO-IMPORT] Email completamento dati NON inviata ⏭️⏭️⏭️`)
