@@ -234,86 +234,32 @@ export async function executeAutoImport(
         console.log(`🔔 [AUTO-IMPORT] >>> INIZIO BLOCCO EMAIL <<<`)
         result.imported++
         
-        // 📧 INVIA EMAIL DI NOTIFICA ADMIN (se abilitato)
+        // 📧 INVIA EMAIL DI NOTIFICA ADMIN usando la funzione ufficiale
         try {
-          // Verifica se le notifiche email sono abilitate
-          const settingResult = await db.prepare(
-            "SELECT value FROM settings WHERE key = 'admin_email_notifications_enabled' LIMIT 1"
-          ).first()
+          console.log(`📧 [AUTO-IMPORT] Invio email notifica tramite sendNewLeadNotification per ${leadId}...`)
           
-          const adminEmailEnabled = settingResult?.value === 'true'
+          // Import della funzione ufficiale di notifica
+          const { sendNewLeadNotification } = await import('../utils/lead-notifications')
           
-          console.log(`🔍 [AUTO-IMPORT DEBUG] adminEmailEnabled=${adminEmailEnabled}, leadData.email=${leadData.email}`)
+          // Chiama la funzione ufficiale che usa il template NOTIFICA_INFO
+          await sendNewLeadNotification(
+            leadId,
+            {
+              nomeRichiedente: leadData.nomeRichiedente || 'N/A',
+              cognomeRichiedente: leadData.cognomeRichiedente || '',
+              email: leadData.email || undefined,
+              telefono: leadData.telefono || undefined,
+              citta: undefined, // Non disponibile in leadData
+              servizio: leadData.servizio,
+              piano: leadData.piano,
+              fonte: 'IRBEMA',
+              note: leadData.note || '',
+              created_at: new Date().toISOString()
+            },
+            env
+          )
           
-          if (adminEmailEnabled && leadData.email) {
-            console.log(`📧 [AUTO-IMPORT] Invio email notifica per ${leadId}...`)
-            console.log(`🔍 [AUTO-IMPORT DEBUG] env.RESEND_API_KEY exists: ${!!env.RESEND_API_KEY}`)
-            console.log(`🔍 [AUTO-IMPORT DEBUG] env.EMAIL_FROM: ${env.EMAIL_FROM || 'NOT SET'}`)
-            
-            // Import dinamico EmailService per evitare problemi di bundle
-            const { EmailService } = await import('./email-service')
-            const emailService = new EmailService(env)
-            console.log(`🔍 [AUTO-IMPORT DEBUG] EmailService initialized`)
-            
-            const emailHtml = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="UTF-8">
-                <style>
-                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                  .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-                  .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-                  .info-box { background: white; border-left: 4px solid #667eea; padding: 15px; margin: 15px 0; }
-                  .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-                  .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1 style="margin: 0;">🆕 Nuovo Lead da HubSpot</h1>
-                  </div>
-                  <div class="content">
-                    <p><strong>Un nuovo lead è stato importato automaticamente da HubSpot!</strong></p>
-                    
-                    <div class="info-box">
-                      <p style="margin: 5px 0;"><strong>Lead ID:</strong> ${leadId}</p>
-                      <p style="margin: 5px 0;"><strong>Nome:</strong> ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}</p>
-                      <p style="margin: 5px 0;"><strong>Email:</strong> ${leadData.email}</p>
-                      <p style="margin: 5px 0;"><strong>Telefono:</strong> ${leadData.telefono || 'N/A'}</p>
-                      <p style="margin: 5px 0;"><strong>Servizio:</strong> ${leadData.servizio}</p>
-                      <p style="margin: 5px 0;"><strong>Piano:</strong> ${leadData.piano}</p>
-                      <p style="margin: 5px 0;"><strong>Prezzo Anno:</strong> €${leadData.prezzo_anno || '0'}</p>
-                    </div>
-                    
-                    <p style="text-align: center;">
-                      <a href="${baseUrl || 'https://telemedcare-v12.pages.dev'}/admin/leads-dashboard" class="button">
-                        Visualizza Dashboard
-                      </a>
-                    </p>
-                  </div>
-                  <div class="footer">
-                    <p>TeleMedCare V12.0 - Sistema di Import Automatico</p>
-                    <p>Questa è una email automatica, non rispondere.</p>
-                  </div>
-                </div>
-              </body>
-              </html>
-            `
-            
-            await emailService.sendEmail({
-              to: 'info@telemedcare.it',
-              subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-              html: emailHtml,
-              text: `Nuovo lead importato da HubSpot:\n\nID: ${leadId}\nNome: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nEmail: ${leadData.email}\nServizio: ${leadData.servizio} ${leadData.piano}`
-            })
-            
-            console.log(`✅ [AUTO-IMPORT] Email notifica inviata con successo per ${leadId}`)
-          } else {
-            console.log(`ℹ️  [AUTO-IMPORT] Email notifica NON inviata - adminEmailEnabled=${adminEmailEnabled}, leadData.email=${leadData.email || 'MISSING'}`)
-          }
+          console.log(`✅ [AUTO-IMPORT] Email notifica inviata con successo per ${leadId}`)
         } catch (emailError) {
           console.error(`⚠️ [AUTO-IMPORT] Errore invio email notifica:`, emailError)
           console.error(`⚠️ [AUTO-IMPORT] Error details:`, {
