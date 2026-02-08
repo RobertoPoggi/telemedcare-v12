@@ -13560,9 +13560,9 @@ startxref
                     <h2 style="color: #10b981; margin: 0 0 10px 0;">Dati salvati con successo!</h2>
                     <p style="color: #64748b; margin: 10px 0;">Grazie per aver completato i tuoi dati.</p>
                     <p style="color: #64748b;">Il nostro team ti contatterà presto per finalizzare la tua richiesta.</p>
-                    <a href="https://telemedcare.it" class="submit-button" style="display: inline-block; margin-top: 20px; text-decoration: none;">
-                        Torna al sito
-                    </a>
+                    <button onclick="window.close()" class="submit-button" style="margin-top: 20px;">
+                        ✓ Conferma
+                    </button>
                 </div>
             \`;
         }
