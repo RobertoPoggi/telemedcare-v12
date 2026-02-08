@@ -2227,39 +2227,9 @@ app.get('/home', (c) => {
 // Now completa-dati-minimal.html is served from static files (public/ -> dist/)
 // This allows the improved form with sections and date auto-focus to be served
 
-// Route per servire completa-dati-minimal.html
-app.get('/completa-dati-minimal.html', async (c) => {
-  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
-  c.header('Content-Type', 'text/html; charset=utf-8')
-  
-  try {
-    // Usa ASSETS binding di Cloudflare Pages
-    const assetRequest = new Request(new URL('/completa-dati-minimal.html', c.req.url), c.req.raw)
-    const asset = await c.env.ASSETS.fetch(assetRequest)
-    
-    if (asset.ok) {
-      return new Response(asset.body, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate'
-        }
-      })
-    }
-    
-    throw new Error('Asset not found')
-  } catch (error) {
-    console.error('❌ Errore serving completa-dati-minimal.html:', error)
-    return c.html(`
-      <!DOCTYPE html>
-      <html><head><meta charset="UTF-8"><title>Form non disponibile</title></head>
-      <body style="font-family: Arial; text-align: center; padding: 50px;">
-        <h1>❌ Form temporaneamente non disponibile</h1>
-        <p>Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
-      </body></html>
-    `, 404)
-  }
-})
+// ✅ completa-dati-minimal.html è servito STATICAMENTE da Cloudflare Pages
+// Configurato in public/_routes.json (exclude list)
+// NON serve route esplicita - il file viene servito direttamente dalla build
 
 // Route per System Status
 app.get('/admin/system-status', (c) => {

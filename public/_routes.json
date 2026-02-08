@@ -6,6 +6,8 @@
     "/admin-environments.html",
     "/app/*",
     "/assets/*",
+    "/completa-dati.html",
+    "/completa-dati-minimal.html",
     "/contract-signature.html",
     "/contratti/*",
     "/crud-functions.js",
