@@ -465,31 +465,14 @@ export class EmailService {
         subject: emailData.subject,
         attachments: emailData.attachments?.length || 0,
         hasEnv: !!env,
-        hasSendgrid: !!env?.SENDGRID_API_KEY,
         hasResend: !!env?.RESEND_API_KEY
       })
 
-      let sendgridError: any = null
       let resendError: any = null
 
-      // INVIO REALE con SendGrid
+      // ✅ PRIMARIO: Resend (SendGrid DISABILITATO - periodo prova scaduto)
       try {
-        console.log('📧 [1/2] Tentativo SendGrid...')
-        const result = await this.sendWithSendGrid(emailData, env)
-        if (result.success) {
-          console.log('✅ Email inviata con successo via SendGrid:', result.messageId)
-          return result
-        }
-        console.warn('⚠️ SendGrid non ha avuto successo:', result)
-        sendgridError = result.error || 'Unknown error'
-      } catch (error) {
-        sendgridError = error
-        console.error('❌ SendGrid exception:', error)
-      }
-
-      // Fallback con Resend
-      try {
-        console.log('📧 [2/2] Tentativo Resend (fallback)...')
+        console.log('📧 [PRIMARY] Tentativo Resend...')
         const result = await this.sendWithResend(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via Resend:', result.messageId)
@@ -503,21 +486,19 @@ export class EmailService {
       }
 
       // Fallback finale: DEMO MODE (NON invia email reali!)
-      console.error('🚨🚨🚨 TUTTI I PROVIDER FALLITI - MODALITÀ DEMO ATTIVA 🚨🚨🚨')
+      console.error('🚨🚨🚨 RESEND FALLITO - MODALITÀ DEMO ATTIVA 🚨🚨🚨')
       console.error('📧 Email destinatario:', emailData.to)
       console.error('📧 Oggetto:', emailData.subject)
-      console.error('❌ SendGrid error:', sendgridError)
       console.error('❌ Resend error:', resendError)
       console.error('🔑 RESEND_API_KEY presente?', !!env?.RESEND_API_KEY)
-      console.error('🔑 SENDGRID_API_KEY presente?', !!env?.SENDGRID_API_KEY)
+      console.error('💡 SendGrid DISABILITATO (periodo prova scaduto)')
       
       return {
         success: true,  // ⚠️ FAKE SUCCESS per non bloccare il flusso
         messageId: `DEMO_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         timestamp: new Date().toISOString(),
-        warning: '⚠️ DEMO MODE: Email NON inviata realmente!',
+        warning: '⚠️ DEMO MODE: Email NON inviata realmente! Configura RESEND_API_KEY',
         errors: {
-          sendgrid: sendgridError?.message || String(sendgridError),
           resend: resendError?.message || String(resendError)
         }
       }
