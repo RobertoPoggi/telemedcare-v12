@@ -13308,7 +13308,7 @@ startxref
                                      !lead.capRichiedente || !lead.cittaRichiedente;
             
             if (needsIntestatario) {
-                html += '<h3 class="section-header">📋 Dati Intestatario (per il contratto)</h3>';
+                html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
                 
                 if (!lead.cfRichiedente) {
                     html += \`
