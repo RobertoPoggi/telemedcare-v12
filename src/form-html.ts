@@ -23,7 +23,7 @@ export const FORM_HTML = `<!DOCTYPE html>
             background: white;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
             overflow: hidden;
         }
@@ -44,6 +44,28 @@ export const FORM_HTML = `<!DOCTYPE html>
             font-size: 18px;
             color: #2c3e50;
             margin-bottom: 20px;
+        }
+        .section-header {
+            color: #475569;
+            font-size: 18px;
+            margin: 30px 0 20px 0;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .form-row {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-row.cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+        .form-row.cols-3 {
+            grid-template-columns: 2fr 1fr 1fr;
+        }
+        .form-row.date-location {
+            grid-template-columns: 1fr 1fr;
         }
         .form-group {
             margin-bottom: 20px;
@@ -72,25 +94,23 @@ export const FORM_HTML = `<!DOCTYPE html>
             outline: none;
             border-color: #667eea;
         }
+        .date-input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .date-input-group input {
+            text-align: center;
+            padding: 12px 8px;
+        }
+        .date-input-group input.day,
+        .date-input-group input.month {
+            flex: 1;
+        }
+        .date-input-group input.year {
+            flex: 1.5;
+        }
         .required {
             color: #ef4444;
-        }
-        .info-section {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .info-section h3 {
-            margin: 0 0 10px 0;
-            color: #1e40af;
-            font-size: 16px;
-        }
-        .data-item {
-            padding: 5px 0;
-            color: #1e40af;
-            font-size: 14px;
         }
         .submit-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -102,7 +122,7 @@ export const FORM_HTML = `<!DOCTYPE html>
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            margin-top: 10px;
+            margin-top: 20px;
             transition: opacity 0.3s;
         }
         .submit-button:hover:not(:disabled) {
@@ -160,6 +180,13 @@ export const FORM_HTML = `<!DOCTYPE html>
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @media (max-width: 768px) {
+            .form-row.cols-2,
+            .form-row.cols-3,
+            .form-row.date-location {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -178,10 +205,8 @@ export const FORM_HTML = `<!DOCTYPE html>
             <div id="formContainer" style="display: none;">
                 <p class="greeting" id="greeting">Gentile Cliente,</p>
                 
-                <!-- Rimosso box verde "Dati disponibili" - ridondante -->
-                
                 <form id="completaForm" onsubmit="submitForm(event)">
-                    <div id="missingFieldsContainer"></div>
+                    <div id="formFieldsContainer"></div>
                     
                     <div class="form-group">
                         <label for="note">Note aggiuntive (facoltativo)</label>
@@ -238,82 +263,8 @@ export const FORM_HTML = `<!DOCTYPE html>
                 const greeting = document.getElementById('greeting');
                 greeting.textContent = \`Gentile \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''},\`;
                 
-                // Rimosso blocco "Dati disponibili" - ridondante
-                
-                // Genera campi mancanti divisi per sezione
-                const missingContainer = document.getElementById('missingFieldsContainer');
-                
-                // Sezione Richiedente
-                const richiedenteFields = [];
-                if (!lead.telefonoRichiedente) {
-                    richiedenteFields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
-                }
-                
-                // Sezione Assistito
-                const assistitoFields = [];
-                if (!lead.nomeAssistito) {
-                    assistitoFields.push(createField('nomeAssistito', 'Nome Assistito', 'text', 'Nome', true));
-                }
-                
-                if (!lead.cognomeAssistito) {
-                    assistitoFields.push(createField('cognomeAssistito', 'Cognome Assistito', 'text', 'Cognome', true));
-                }
-                
-                if (!lead.dataNascitaAssistito) {
-                    assistitoFields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));
-                }
-                
-                if (!lead.luogoNascitaAssistito) {
-                    assistitoFields.push(createField('luogoNascitaAssistito', 'Luogo Nascita Assistito', 'text', 'Es. Milano', true));
-                }
-                
-                if (!lead.cfAssistito) {
-                    assistitoFields.push(createField('cfAssistito', 'Codice Fiscale Assistito', 'text', 'Es. RSSMRA80A01F205K', true));
-                }
-                
-                if (!lead.indirizzoAssistito) {
-                    assistitoFields.push(createField('indirizzoAssistito', 'Indirizzo Assistito', 'text', 'Es. Via Roma 123', true));
-                }
-                
-                if (!lead.cittaAssistito) {
-                    assistitoFields.push(createField('cittaAssistito', 'Città Assistito', 'text', 'Es. Roma', true));
-                }
-                
-                if (!lead.condizioniSalute) {
-                    assistitoFields.push(createTextAreaField('condizioniSalute', 'Condizioni di Salute', 'Descrivi brevemente le condizioni di salute dell\\'assistito...', true));
-                }
-                
-                // Costruisci HTML con sezioni divise
-                let htmlContent = '';
-                
-                if (richiedenteFields.length > 0) {
-                    htmlContent += \`
-                        <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
-                            <h3 style="color: #475569; font-size: 18px; margin-bottom: 20px; font-weight: 600;">
-                                📋 Dati Richiedente
-                            </h3>
-                            \${richiedenteFields.join('')}
-                        </div>
-                    \`;
-                }
-                
-                if (assistitoFields.length > 0) {
-                    htmlContent += \`
-                        <div style="margin-bottom: 30px;">
-                            <h3 style="color: #475569; font-size: 18px; margin-bottom: 20px; font-weight: 600;">
-                                👤 Dati Assistito
-                            </h3>
-                            \${assistitoFields.join('')}
-                        </div>
-                    \`;
-                }
-                
-                if (htmlContent === '') {
-                    showError('Tutti i dati sono già completi!');
-                    return;
-                }
-                
-                missingContainer.innerHTML = htmlContent;
+                // Genera campi form
+                generateFormFields(lead);
                 
                 loadingDiv.style.display = 'none';
                 formContainer.style.display = 'block';
@@ -324,52 +275,216 @@ export const FORM_HTML = `<!DOCTYPE html>
             }
         }
         
-        function createField(name, label, type, placeholder, required) {
-            const req = required ? '<span class="required">*</span>' : '';
-            const reqAttr = required ? 'required' : '';
+        function generateFormFields(lead) {
+            const container = document.getElementById('formFieldsContainer');
+            let html = '';
             
-            // Campo data personalizzato con 3 input separati e auto-focus
-            if (type === 'date') {
-                return \`
-                    <div class="form-group">
-                        <label for="\${name}">\${label} \${req}</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" id="\${name}_giorno" name="\${name}_giorno" maxlength="2" placeholder="GG"
-                                style="width: 33%; text-align: center;" 
-                                onkeyup="autoFocusData(event, '\${name}_mese', 2); updateDateField('\${name}')" 
-                                pattern="[0-9]*" inputmode="numeric" \${reqAttr}>
-                            <input type="text" id="\${name}_mese" name="\${name}_mese" maxlength="2" placeholder="MM"
-                                style="width: 33%; text-align: center;" 
-                                onkeyup="autoFocusData(event, '\${name}_anno', 2); updateDateField('\${name}')" 
-                                pattern="[0-9]*" inputmode="numeric" \${reqAttr}>
-                            <input type="text" id="\${name}_anno" name="\${name}_anno" maxlength="4" placeholder="AAAA"
-                                style="width: 33%; text-align: center;" 
-                                onkeyup="updateDateField('\${name}')" 
-                                pattern="[0-9]*" inputmode="numeric" \${reqAttr}>
+            // SEZIONE 1: Dati Intestatario (per il contratto)
+            const needsIntestatario = !lead.cfRichiedente || !lead.indirizzoRichiedente || 
+                                     !lead.capRichiedente || !lead.cittaRichiedente;
+            
+            if (needsIntestatario) {
+                html += '<h3 class="section-header">📋 Dati Intestatario (per il contratto)</h3>';
+                
+                if (!lead.cfRichiedente) {
+                    html += \`
+                        <div class="form-group">
+                            <label for="cfRichiedente">Codice Fiscale <span class="required">*</span></label>
+                            <input type="text" id="cfRichiedente" name="cfRichiedente" 
+                                   placeholder="Es. RSSMRA80A01F205K" required 
+                                   maxlength="16" style="text-transform: uppercase;">
                         </div>
-                        <input type="hidden" id="\${name}" name="\${name}">
-                    </div>
-                \`;
+                    \`;
+                }
+                
+                // Indirizzo, CAP, Città sulla stessa riga
+                const hasAddressGaps = !lead.indirizzoRichiedente || !lead.capRichiedente || !lead.cittaRichiedente;
+                if (hasAddressGaps) {
+                    html += '<div class="form-row cols-3">';
+                    
+                    if (!lead.indirizzoRichiedente) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
+                                <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente" 
+                                       placeholder="Via/Piazza Nome, N." required>
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.capRichiedente) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="capRichiedente">CAP <span class="required">*</span></label>
+                                <input type="text" id="capRichiedente" name="capRichiedente" 
+                                       placeholder="00000" required maxlength="5" 
+                                       pattern="[0-9]*" inputmode="numeric">
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.cittaRichiedente) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="cittaRichiedente">Città <span class="required">*</span></label>
+                                <input type="text" id="cittaRichiedente" name="cittaRichiedente" 
+                                       placeholder="Es. Milano" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    html += '</div>';
+                }
             }
             
-            return \`
-                <div class="form-group">
-                    <label for="\${name}">\${label} \${req}</label>
-                    <input type="\${type}" id="\${name}" name="\${name}" placeholder="\${placeholder}" \${reqAttr}>
-                </div>
-            \`;
-        }
-        
-        function createTextAreaField(name, label, placeholder, required) {
-            const req = required ? '<span class="required">*</span>' : '';
-            const reqAttr = required ? 'required' : '';
+            // SEZIONE 2: Dati Assistito
+            const needsAssistito = !lead.nomeAssistito || !lead.cognomeAssistito || 
+                                  !lead.dataNascitaAssistito || !lead.luogoNascitaAssistito ||
+                                  !lead.cfAssistito || !lead.indirizzoAssistito || 
+                                  !lead.capAssistito || !lead.cittaAssistito || !lead.condizioniSalute;
             
-            return \`
-                <div class="form-group">
-                    <label for="\${name}">\${label} \${req}</label>
-                    <textarea id="\${name}" name="\${name}" placeholder="\${placeholder}" rows="4" \${reqAttr}></textarea>
-                </div>
-            \`;
+            if (needsAssistito) {
+                html += '<h3 class="section-header">👤 Dati Assistito</h3>';
+                
+                // Nome e Cognome sulla stessa riga
+                const needsNameSurname = !lead.nomeAssistito || !lead.cognomeAssistito;
+                if (needsNameSurname) {
+                    html += '<div class="form-row cols-2">';
+                    
+                    if (!lead.nomeAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="nomeAssistito">Nome <span class="required">*</span></label>
+                                <input type="text" id="nomeAssistito" name="nomeAssistito" 
+                                       placeholder="Nome" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.cognomeAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="cognomeAssistito">Cognome <span class="required">*</span></label>
+                                <input type="text" id="cognomeAssistito" name="cognomeAssistito" 
+                                       placeholder="Cognome" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                // Data e Luogo di nascita sulla stessa riga
+                const needsBirthInfo = !lead.dataNascitaAssistito || !lead.luogoNascitaAssistito;
+                if (needsBirthInfo) {
+                    html += '<div class="form-row date-location">';
+                    
+                    if (!lead.dataNascitaAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="dataNascitaAssistito">Data di Nascita <span class="required">*</span></label>
+                                <div class="date-input-group">
+                                    <input type="text" class="day" id="dataNascitaAssistito_giorno" 
+                                           maxlength="2" placeholder="GG"
+                                           onkeyup="autoFocusDate(event, 'dataNascitaAssistito_mese', 2); updateDateField('dataNascitaAssistito')" 
+                                           pattern="[0-9]*" inputmode="numeric" required>
+                                    <input type="text" class="month" id="dataNascitaAssistito_mese" 
+                                           maxlength="2" placeholder="MM"
+                                           onkeyup="autoFocusDate(event, 'dataNascitaAssistito_anno', 2); updateDateField('dataNascitaAssistito')" 
+                                           pattern="[0-9]*" inputmode="numeric" required>
+                                    <input type="text" class="year" id="dataNascitaAssistito_anno" 
+                                           maxlength="4" placeholder="AAAA"
+                                           onkeyup="updateDateField('dataNascitaAssistito')" 
+                                           pattern="[0-9]*" inputmode="numeric" required>
+                                </div>
+                                <input type="hidden" id="dataNascitaAssistito" name="dataNascitaAssistito">
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.luogoNascitaAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="luogoNascitaAssistito">Luogo di Nascita <span class="required">*</span></label>
+                                <input type="text" id="luogoNascitaAssistito" name="luogoNascitaAssistito" 
+                                       placeholder="Es. Milano" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                // Codice Fiscale
+                if (!lead.cfAssistito) {
+                    html += \`
+                        <div class="form-group">
+                            <label for="cfAssistito">Codice Fiscale <span class="required">*</span></label>
+                            <input type="text" id="cfAssistito" name="cfAssistito" 
+                                   placeholder="Es. RSSMRA80A01F205K" required 
+                                   maxlength="16" style="text-transform: uppercase;">
+                        </div>
+                    \`;
+                }
+                
+                // Indirizzo, CAP, Città sulla stessa riga
+                const hasAssistitoAddressGaps = !lead.indirizzoAssistito || !lead.capAssistito || !lead.cittaAssistito;
+                if (hasAssistitoAddressGaps) {
+                    html += '<div class="form-row cols-3">';
+                    
+                    if (!lead.indirizzoAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="indirizzoAssistito">Indirizzo <span class="required">*</span></label>
+                                <input type="text" id="indirizzoAssistito" name="indirizzoAssistito" 
+                                       placeholder="Via/Piazza Nome, N." required>
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.capAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="capAssistito">CAP <span class="required">*</span></label>
+                                <input type="text" id="capAssistito" name="capAssistito" 
+                                       placeholder="00000" required maxlength="5" 
+                                       pattern="[0-9]*" inputmode="numeric">
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.cittaAssistito) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="cittaAssistito">Città <span class="required">*</span></label>
+                                <input type="text" id="cittaAssistito" name="cittaAssistito" 
+                                       placeholder="Es. Roma" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                // Condizioni di Salute
+                if (!lead.condizioniSalute) {
+                    html += \`
+                        <div class="form-group">
+                            <label for="condizioniSalute">Condizioni di Salute <span class="required">*</span></label>
+                            <textarea id="condizioniSalute" name="condizioniSalute" 
+                                      placeholder="Descrivi brevemente le condizioni di salute dell'assistito..." 
+                                      rows="4" required></textarea>
+                        </div>
+                    \`;
+                }
+            }
+            
+            if (!needsIntestatario && !needsAssistito) {
+                showError('Tutti i dati sono già completi!');
+                return;
+            }
+            
+            container.innerHTML = html;
         }
         
         async function submitForm(event) {
@@ -429,7 +544,7 @@ export const FORM_HTML = `<!DOCTYPE html>
         }
         
         // Auto-focus tra campi data (giorno → mese → anno)
-        function autoFocusData(event, nextFieldId, maxLength) {
+        function autoFocusDate(event, nextFieldId, maxLength) {
             const input = event.target;
             const value = input.value;
             
@@ -438,7 +553,10 @@ export const FORM_HTML = `<!DOCTYPE html>
             
             // Se raggiunge la lunghezza massima, passa al campo successivo
             if (input.value.length >= maxLength && nextFieldId) {
-                document.getElementById(nextFieldId).focus();
+                const nextField = document.getElementById(nextFieldId);
+                if (nextField) {
+                    nextField.focus();
+                }
             }
         }
         
@@ -459,4 +577,4 @@ export const FORM_HTML = `<!DOCTYPE html>
     </script>
 </body>
 </html>
-`
+`;
