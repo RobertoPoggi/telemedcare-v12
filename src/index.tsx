@@ -10286,7 +10286,10 @@ app.post('/api/hubspot/auto-import', async (c) => {
     
     console.log(`🔄 [AUTO-IMPORT API] Richiesta import incrementale (dryRun: ${config.dryRun})`)
     
-    const result = await executeAutoImport(c.env.DB, c.env, config)
+    // Ottieni baseUrl per email
+    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    
+    const result = await executeAutoImport(c.env.DB, c.env, baseUrl, config)
     
     // Log nel database
     if (result.success && !config.dryRun) {

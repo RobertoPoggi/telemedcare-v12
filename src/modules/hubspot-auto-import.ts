@@ -60,17 +60,18 @@ export function getIncrementalStartTime(config: AutoImportConfig): Date {
 
 /**
  * Esegue import incrementale automatico da HubSpot
- * - Importa solo lead creati dalle 9:00 di mattina ad ora
- * - Filtro Form eCura attivo
+ * - Importa solo lead creati nelle ultime 24 ore
+ * - Filtro: NESSUN FILTRO (importa tutti i lead)
  * - Ottimizzato: legge solo nuovi lead
  */
 export async function executeAutoImport(
   db: D1Database,
   env: any,
+  baseUrl?: string,
   config: AutoImportConfig = {
     enabled: true,
     startHour: 9,
-    onlyEcura: true,
+    onlyEcura: false,
     dryRun: false
   }
 ): Promise<AutoImportResult> {
@@ -232,6 +233,86 @@ export async function executeAutoImport(
         console.log(`✅ [AUTO-IMPORT] Lead creato: ${leadId} from HubSpot ${contact.id}`)
         result.imported++
         
+        // 📧 INVIA EMAIL DI NOTIFICA ADMIN (se abilitato)
+        try {
+          // Verifica se le notifiche email sono abilitate
+          const settingResult = await db.prepare(
+            "SELECT value FROM settings WHERE key = 'admin_email_notifications_enabled' LIMIT 1"
+          ).first()
+          
+          const adminEmailEnabled = settingResult?.value === 'true'
+          
+          if (adminEmailEnabled && leadData.email) {
+            console.log(`📧 [AUTO-IMPORT] Invio email notifica per ${leadId}...`)
+            
+            // Import dinamico EmailService per evitare problemi di bundle
+            const { EmailService } = await import('./email-service')
+            const emailService = new EmailService()
+            
+            const emailHtml = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <style>
+                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                  .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+                  .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+                  .info-box { background: white; border-left: 4px solid #667eea; padding: 15px; margin: 15px 0; }
+                  .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+                  .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <h1 style="margin: 0;">🆕 Nuovo Lead da HubSpot</h1>
+                  </div>
+                  <div class="content">
+                    <p><strong>Un nuovo lead è stato importato automaticamente da HubSpot!</strong></p>
+                    
+                    <div class="info-box">
+                      <p style="margin: 5px 0;"><strong>Lead ID:</strong> ${leadId}</p>
+                      <p style="margin: 5px 0;"><strong>Nome:</strong> ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}</p>
+                      <p style="margin: 5px 0;"><strong>Email:</strong> ${leadData.email}</p>
+                      <p style="margin: 5px 0;"><strong>Telefono:</strong> ${leadData.telefono || 'N/A'}</p>
+                      <p style="margin: 5px 0;"><strong>Servizio:</strong> ${leadData.servizio}</p>
+                      <p style="margin: 5px 0;"><strong>Piano:</strong> ${leadData.piano}</p>
+                      <p style="margin: 5px 0;"><strong>Prezzo Anno:</strong> €${leadData.prezzo_anno || '0'}</p>
+                    </div>
+                    
+                    <p style="text-align: center;">
+                      <a href="${baseUrl || 'https://telemedcare-v12.pages.dev'}/admin/leads-dashboard" class="button">
+                        Visualizza Dashboard
+                      </a>
+                    </p>
+                  </div>
+                  <div class="footer">
+                    <p>TeleMedCare V12.0 - Sistema di Import Automatico</p>
+                    <p>Questa è una email automatica, non rispondere.</p>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `
+            
+            await emailService.send({
+              to: 'info@telemedcare.it',
+              subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+              html: emailHtml,
+              text: `Nuovo lead importato da HubSpot:\n\nID: ${leadId}\nNome: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nEmail: ${leadData.email}\nServizio: ${leadData.servizio} ${leadData.piano}`
+            })
+            
+            console.log(`✅ [AUTO-IMPORT] Email notifica inviata per ${leadId}`)
+          } else {
+            console.log(`ℹ️  [AUTO-IMPORT] Email notifica disabilitata o email lead mancante`)
+          }
+        } catch (emailError) {
+          console.error(`⚠️ [AUTO-IMPORT] Errore invio email notifica:`, emailError)
+          // Non bloccare l'import se l'email fallisce
+        }
+        
       } catch (error) {
         console.error(`❌ [AUTO-IMPORT] Errore import contact ${contact.id}:`, error)
         result.errors++
@@ -249,6 +330,19 @@ export async function executeAutoImport(
       ? `Dry run: ${result.imported} lead sarebbero stati importati` 
       : `Import completato: ${result.imported} nuovi lead importati, ${result.skipped} già esistenti`
     result.performance.processingTimeMs = Date.now() - startTime
+    
+    // 💰 FIX AUTOMATICO PREZZI dopo import
+    if (result.imported > 0 && !config.dryRun) {
+      try {
+        console.log(`💰 [AUTO-IMPORT] Eseguo fix automatico prezzi...`)
+        const { fixLeadsPrices } = await import('./pricing-fixer')
+        const fixResult = await fixLeadsPrices(db)
+        console.log(`✅ [AUTO-IMPORT] Fix prezzi completato: ${fixResult.corrected} corretti`)
+      } catch (fixError) {
+        console.error(`⚠️ [AUTO-IMPORT] Errore fix prezzi:`, fixError)
+        // Non bloccare se fix prezzi fallisce
+      }
+    }
     
     console.log(`✅ [AUTO-IMPORT] Completato in ${result.performance.processingTimeMs}ms`)
     console.log(`📊 [AUTO-IMPORT] Risultati: ${result.imported} importati, ${result.skipped} skipped, ${result.errors} errori`)
