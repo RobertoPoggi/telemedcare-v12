@@ -287,7 +287,10 @@ export async function executeAutoImport(
           })
           
           if (leadEmailEnabled && leadData.email) {
+            console.log(`🚨🚨🚨 [AUTO-IMPORT] INIZIO INVIO EMAIL AL LEAD 🚨🚨🚨`)
             console.log(`📧 [AUTO-IMPORT] Invio email completamento dati tramite WorkflowOrchestrator per ${leadId}...`)
+            console.log(`📧 Email destinatario: ${leadData.email}`)
+            console.log(`📧 Switch abilitato: ${leadEmailEnabled}`)
             
             // Import WorkflowOrchestrator
             const { WorkflowOrchestrator } = await import('./complete-workflow-orchestrator')
@@ -316,16 +319,24 @@ export async function executeAutoImport(
               }
             }
             
+            console.log(`📦 [AUTO-IMPORT] Workflow context preparato`)
+            
             // Chiama il workflow orchestrator che gestisce il flusso completo
             const workflowResult = await WorkflowOrchestrator.processNewLead(workflowContext)
             
+            console.log(`📬 [AUTO-IMPORT] Workflow result:`, JSON.stringify(workflowResult, null, 2))
+            
             if (workflowResult.success) {
-              console.log(`✅ [AUTO-IMPORT] Workflow completato con successo per ${leadId}`)
+              console.log(`✅✅✅ [AUTO-IMPORT] Workflow completato con successo per ${leadId} ✅✅✅`)
             } else {
-              console.warn(`⚠️ [AUTO-IMPORT] Workflow completato con warning: ${workflowResult.message}`)
+              console.error(`❌❌❌ [AUTO-IMPORT] Workflow fallito: ${workflowResult.message} ❌❌❌`)
+              console.error(`❌ Errori:`, workflowResult.errors)
             }
           } else {
-            console.log(`⏭️ [AUTO-IMPORT] Email completamento dati NON inviata - leadEmailEnabled=${leadEmailEnabled}, email=${leadData.email || 'MISSING'}`)
+            console.log(`⏭️⏭️⏭️ [AUTO-IMPORT] Email completamento dati NON inviata ⏭️⏭️⏭️`)
+            console.log(`   leadEmailEnabled: ${leadEmailEnabled}`)
+            console.log(`   leadData.email: ${leadData.email || 'MISSING'}`)
+            console.log(`   Motivo: ${!leadEmailEnabled ? 'Switch OFF' : 'Email mancante'}`)
           }
         } catch (emailError) {
           console.error(`⚠️ [AUTO-IMPORT] Errore workflow completamento dati:`, emailError)
