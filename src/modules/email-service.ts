@@ -503,15 +503,19 @@ export class EmailService {
       }
 
       // Fallback finale: DEMO MODE (NON invia email reali!)
-      console.error('❌ TUTTI I PROVIDER FALLITI - MODALITÀ DEMO ATTIVA')
-      console.error('SendGrid error:', sendgridError)
-      console.error('Resend error:', resendError)
+      console.error('🚨🚨🚨 TUTTI I PROVIDER FALLITI - MODALITÀ DEMO ATTIVA 🚨🚨🚨')
+      console.error('📧 Email destinatario:', emailData.to)
+      console.error('📧 Oggetto:', emailData.subject)
+      console.error('❌ SendGrid error:', sendgridError)
+      console.error('❌ Resend error:', resendError)
+      console.error('🔑 RESEND_API_KEY presente?', !!env?.RESEND_API_KEY)
+      console.error('🔑 SENDGRID_API_KEY presente?', !!env?.SENDGRID_API_KEY)
       
       return {
         success: true,  // ⚠️ FAKE SUCCESS per non bloccare il flusso
         messageId: `DEMO_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         timestamp: new Date().toISOString(),
-        warning: 'DEMO MODE: Email non inviata realmente',
+        warning: '⚠️ DEMO MODE: Email NON inviata realmente!',
         errors: {
           sendgrid: sendgridError?.message || String(sendgridError),
           resend: resendError?.message || String(resendError)
