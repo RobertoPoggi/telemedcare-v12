@@ -103,7 +103,15 @@ export async function processNewLead(
     }
 
     // 1.2: Invia email completamento dati al lead (se abilitata)
-    if (settings.email_completamento_dati) {
+    // Controlla anche il nuovo switch lead_email_notifications_enabled
+    const leadEmailSetting = await ctx.db.prepare(
+      "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
+    ).first()
+    const leadEmailEnabled = leadEmailSetting?.value === 'true'
+    
+    console.log(`🔍 [ORCHESTRATOR] Switch check: workflow=${settings.email_completamento_dati}, dashboard=${leadEmailEnabled}`)
+    
+    if ((settings.email_completamento_dati || leadEmailEnabled)) {
       console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${ctx.leadData.emailRichiedente}`)
       
       try {
