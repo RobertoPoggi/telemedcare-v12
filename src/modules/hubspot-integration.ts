@@ -405,9 +405,10 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     
     // Richieste documentazione
     // ✅ SEMPRE SI per lead da Form eCura (import automatico)
-    vuoleContratto: 'Si',
-    vuoleBrochure: 'Si',
-    vuoleManuale: 'No',
+    // Usa 1/0 per compatibilità con INTEGER nel DB
+    vuoleContratto: 1,
+    vuoleBrochure: 1,
+    vuoleManuale: 0,
     
     // Privacy (default true per import da CRM)
     consensoPrivacy: true,

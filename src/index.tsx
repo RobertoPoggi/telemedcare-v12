@@ -7991,7 +7991,7 @@ app.post('/api/leads/:id/complete', async (c) => {
       if (data[formField] !== undefined && data[formField] !== '') {
         updateFields.push(`${dbField} = ?`)
         
-        // Converti checkbox a boolean
+        // Converti checkbox a integer (0/1)
         if (formField === 'gdprConsent') {
           binds.push(data[formField] === '1' || data[formField] === 'true' || data[formField] === true ? 1 : 0)
         } else {
@@ -7999,6 +7999,9 @@ app.post('/api/leads/:id/complete', async (c) => {
         }
       }
     }
+    
+    console.log(`🔍 [COMPLETE] Fields to update:`, updateFields)
+    console.log(`🔍 [COMPLETE] Values:`, binds)
     
     if (updateFields.length === 0) {
       return c.text('❌ Nessun dato da aggiornare', 400)
