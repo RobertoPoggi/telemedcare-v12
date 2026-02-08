@@ -8166,6 +8166,34 @@ app.put('/api/leads/:id', async (c) => {
       }
     }
     
+    // 💰 RICALCOLA PREZZI se servizio o piano sono stati modificati
+    if (data.servizio || data.piano) {
+      try {
+        // Leggi il lead corrente per avere servizio/piano completi
+        const currentLead = await c.env.DB.prepare('SELECT servizio, piano FROM leads WHERE id = ?').bind(id).first()
+        
+        const servizio = data.servizio || currentLead?.servizio || 'eCura PRO'
+        const piano = data.piano || currentLead?.piano || 'BASE'
+        
+        // Estrai il tipo di servizio (FAMILY/PRO/PREMIUM)
+        const servizioType = servizio.replace('eCura ', '').toUpperCase()
+        
+        console.log(`💰 [UPDATE] Ricalcolo prezzi per ${servizio} ${piano}`)
+        
+        const { calculatePrice } = await import('./modules/pricing-calculator')
+        const pricing = calculatePrice(servizioType, piano)
+        
+        // Aggiungi prezzi all'update
+        updateFields.push('prezzo_anno = ?', 'prezzo_rinnovo = ?')
+        binds.push(pricing.setupBase, pricing.rinnovoBase)
+        
+        console.log(`✅ [UPDATE] Prezzi calcolati: €${pricing.setupBase}/anno, €${pricing.rinnovoBase}/rinnovo`)
+      } catch (pricingError) {
+        console.error(`⚠️ [UPDATE] Errore calcolo prezzi:`, pricingError)
+        // Continua l'update anche se il calcolo prezzi fallisce
+      }
+    }
+    
     // Aggiungi updated_at
     updateFields.push('updated_at = ?')
     binds.push(new Date().toISOString())
