@@ -377,9 +377,9 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
     telefono,
     indirizzoRichiedente: indirizzo,
     
-    // Dati assistito (se non specificato, usa richiedente)
-    nomeAssistito: nomeRichiedente,
-    cognomeAssistito: cognomeRichiedente,
+    // Dati assistito (SOLO se forniti da HubSpot, altrimenti NULL)
+    nomeAssistito: props.nome_assistito || null,
+    cognomeAssistito: props.cognome_assistito || null,
     
     // Servizio (può essere NULL se HubSpot non lo manda)
     servizio,
