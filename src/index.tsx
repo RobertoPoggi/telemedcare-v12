@@ -7960,6 +7960,14 @@ app.post('/api/leads/:id/complete', async (c) => {
       email: 'emailRichiedente',
       telefonoRichiedente: 'telefonoRichiedente',
       telefono: 'telefonoRichiedente',
+      
+      // Dati Intestatario (per la proposta)
+      cfRichiedente: 'cfRichiedente',
+      indirizzoRichiedente: 'indirizzoRichiedente',
+      capRichiedente: 'capRichiedente',
+      cittaRichiedente: 'cittaRichiedente',
+      
+      // Dati Assistito
       nomeAssistito: 'nomeAssistito',
       cognomeAssistito: 'cognomeAssistito',
       dataNascitaAssistito: 'dataNascitaAssistito',
@@ -7968,13 +7976,9 @@ app.post('/api/leads/:id/complete', async (c) => {
       cfAssistito: 'cfAssistito',  // DB usa cfAssistito
       codiceFiscaleAssistito: 'cfAssistito',  // Alias
       indirizzoAssistito: 'indirizzoAssistito',
+      capAssistito: 'capAssistito',
       condizioniSalute: 'condizioniSalute',  // Campo per trigger contratto
-      cfIntestatario: 'cfIntestatario',
-      codiceFiscaleIntestatario: 'cfIntestatario',  // Alias
-      indirizzoIntestatario: 'indirizzoIntestatario',
-      capIntestatario: 'capIntestatario',
-      cittaIntestatario: 'cittaIntestatario',
-      provinciaIntestatario: 'provinciaIntestatario',
+      
       servizio: 'servizio',
       piano: 'piano',
       note: 'note',
@@ -8037,15 +8041,10 @@ app.post('/api/leads/:id/complete', async (c) => {
         
         // Verifica se lead è completo
         if (isLeadComplete(updatedLead)) {
-          console.log('✅ [COMPLETAMENTO] Lead completo → Invio contratto automatico')
+          console.log('✅ [COMPLETAMENTO] Lead completo → Invio contratto e brochure automatico')
           
-          // Verifica se workflow contratto automatico è abilitato
-          const settingsResult = await c.env.DB.prepare(
-            "SELECT value FROM settings WHERE key = 'auto_contract_workflow_enabled'"
-          ).first()
-          const autoContractEnabled = settingsResult?.value === 'true'
-          
-          if (autoContractEnabled) {
+          // SEMPRE ATTIVO: invio contratto e brochure dopo completamento dati
+          if (true) {
             // Genera contratto
             const timestamp = Date.now()
             const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
@@ -8083,12 +8082,13 @@ app.post('/api/leads/:id/complete', async (c) => {
             )
             
             if (contractResult.success) {
-              console.log('✅ [COMPLETAMENTO] Contratto inviato con successo!')
+              console.log('✅ [COMPLETAMENTO] Contratto e brochure inviati con successo!')
               
               // Aggiorna lead
               await c.env.DB.prepare(`
                 UPDATE leads SET 
                   vuoleContratto = 'Si',
+                  vuoleBrochure = 'Si',
                   status = 'CONTRACT_SENT',
                   updated_at = ?
                 WHERE id = ?
@@ -8097,7 +8097,7 @@ app.post('/api/leads/:id/complete', async (c) => {
               console.error('❌ [COMPLETAMENTO] Errore invio contratto:', contractResult.errors)
             }
           } else {
-            console.log('ℹ️ [COMPLETAMENTO] Workflow contratto automatico disabilitato')
+            console.log('ℹ️ [COMPLETAMENTO] Invio contratto disabilitato manualmente (non dovrebbe accadere)')
           }
         } else {
           console.log('ℹ️ [COMPLETAMENTO] Lead non ancora completo, contratto non inviato')
