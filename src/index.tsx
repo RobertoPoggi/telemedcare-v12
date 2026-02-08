@@ -10291,6 +10291,27 @@ app.post('/api/hubspot/auto-import', async (c) => {
     
     const result = await executeAutoImport(c.env.DB, c.env, baseUrl, config)
     
+    // 💰 FIX AUTOMATICO PREZZI dopo import (se ci sono nuovi lead)
+    if (result.success && result.imported > 0 && !config.dryRun) {
+      try {
+        console.log(`💰 [AUTO-IMPORT API] Eseguo fix automatico prezzi per ${result.imported} nuovi lead...`)
+        
+        // Chiama l'endpoint fix-prices internamente
+        const fixResponse = await fetch(`${baseUrl}/api/leads/fix-prices`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        
+        if (fixResponse.ok) {
+          const fixResult = await fixResponse.json()
+          console.log(`✅ [AUTO-IMPORT API] Fix prezzi completato: ${fixResult.corrected} corretti`)
+        }
+      } catch (fixError) {
+        console.error(`⚠️ [AUTO-IMPORT API] Errore fix prezzi:`, fixError)
+        // Non bloccare l'import se fix prezzi fallisce
+      }
+    }
+    
     // Log nel database
     if (result.success && !config.dryRun) {
       await logAutoImport(c.env.DB, result)

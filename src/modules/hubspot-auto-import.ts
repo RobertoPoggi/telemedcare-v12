@@ -331,21 +331,11 @@ export async function executeAutoImport(
       : `Import completato: ${result.imported} nuovi lead importati, ${result.skipped} già esistenti`
     result.performance.processingTimeMs = Date.now() - startTime
     
-    // 💰 FIX AUTOMATICO PREZZI dopo import
-    if (result.imported > 0 && !config.dryRun) {
-      try {
-        console.log(`💰 [AUTO-IMPORT] Eseguo fix automatico prezzi...`)
-        const { fixLeadsPrices } = await import('./pricing-fixer')
-        const fixResult = await fixLeadsPrices(db)
-        console.log(`✅ [AUTO-IMPORT] Fix prezzi completato: ${fixResult.corrected} corretti`)
-      } catch (fixError) {
-        console.error(`⚠️ [AUTO-IMPORT] Errore fix prezzi:`, fixError)
-        // Non bloccare se fix prezzi fallisce
-      }
-    }
-    
     console.log(`✅ [AUTO-IMPORT] Completato in ${result.performance.processingTimeMs}ms`)
     console.log(`📊 [AUTO-IMPORT] Risultati: ${result.imported} importati, ${result.skipped} skipped, ${result.errors} errori`)
+    
+    // 💰 NOTA: Fix prezzi viene eseguito tramite endpoint /api/leads/fix-prices
+    // Non lo eseguiamo qui per evitare dipendenze circolari
     
     return result
     
