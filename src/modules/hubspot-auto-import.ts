@@ -270,7 +270,7 @@ export async function executeAutoImport(
           // Non bloccare l'import se l'email fallisce
         }
         
-        // 📧 INVIA EMAIL COMPLETAMENTO DATI AL LEAD (se abilitato)
+        // 📧 INVIA EMAIL COMPLETAMENTO DATI AL LEAD usando WorkflowOrchestrator
         try {
           // Verifica se le email ai lead sono abilitate
           const leadEmailSetting = await db.prepare(
@@ -280,42 +280,47 @@ export async function executeAutoImport(
           const leadEmailEnabled = leadEmailSetting?.value === 'true'
           
           if (leadEmailEnabled && leadData.email) {
-            console.log(`📧 [AUTO-IMPORT] Invio email completamento dati al lead ${leadData.email}...`)
+            console.log(`📧 [AUTO-IMPORT] Invio email completamento dati tramite WorkflowOrchestrator per ${leadId}...`)
             
-            // Import funzione email documenti informativi
-            const { inviaEmailDocumentiInformativi } = await import('./workflow-email-manager')
+            // Import WorkflowOrchestrator
+            const { WorkflowOrchestrator } = await import('./complete-workflow-orchestrator')
             
-            // Prepara document URLs
-            const documentUrls = {
-              brochure: `${baseUrl || 'https://telemedcare-v12.pages.dev'}/brochures/Brochure_eCura.pdf`,
-              manuale: `${baseUrl || 'https://telemedcare-v12.pages.dev'}/documents/Manuale_SiDLY.pdf`
-            }
-            
-            // Invia email al lead con link completamento dati
-            await inviaEmailDocumentiInformativi(
-              {
+            // Prepara contesto workflow
+            const workflowContext = {
+              db,
+              env,
+              leadData: {
                 id: leadId,
                 nomeRichiedente: leadData.nomeRichiedente,
                 cognomeRichiedente: leadData.cognomeRichiedente,
                 emailRichiedente: leadData.email,
                 telefonoRichiedente: leadData.telefono,
+                nomeAssistito: leadData.nomeAssistito,
+                cognomeAssistito: leadData.cognomeAssistito,
+                etaAssistito: null,
                 servizio: leadData.servizio,
                 pacchetto: leadData.piano,
                 piano: leadData.piano,
-                vuoleBrochure: leadData.vuoleBrochure,
-                vuoleManuale: leadData.vuoleManuale
-              } as any,
-              env,
-              documentUrls,
-              db
-            )
+                vuoleContratto: leadData.vuoleContratto || 'No',
+                vuoleBrochure: leadData.vuoleBrochure || 'No',
+                vuoleManuale: leadData.vuoleManuale || 'No',
+                fonte: 'IRBEMA'
+              }
+            }
             
-            console.log(`✅ [AUTO-IMPORT] Email completamento dati inviata con successo a ${leadData.email}`)
+            // Chiama il workflow orchestrator che gestisce il flusso completo
+            const workflowResult = await WorkflowOrchestrator.processNewLead(workflowContext)
+            
+            if (workflowResult.success) {
+              console.log(`✅ [AUTO-IMPORT] Workflow completato con successo per ${leadId}`)
+            } else {
+              console.warn(`⚠️ [AUTO-IMPORT] Workflow completato con warning: ${workflowResult.message}`)
+            }
           } else {
             console.log(`⏭️ [AUTO-IMPORT] Email completamento dati NON inviata - leadEmailEnabled=${leadEmailEnabled}, email=${leadData.email || 'MISSING'}`)
           }
         } catch (emailError) {
-          console.error(`⚠️ [AUTO-IMPORT] Errore invio email completamento dati:`, emailError)
+          console.error(`⚠️ [AUTO-IMPORT] Errore workflow completamento dati:`, emailError)
           console.error(`⚠️ [AUTO-IMPORT] Error details:`, {
             message: (emailError as Error).message,
             stack: (emailError as Error).stack,
