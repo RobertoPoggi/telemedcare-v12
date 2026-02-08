@@ -5,13 +5,13 @@
  * Logica:
  * - Import automatico incrementale: lead creati nelle ultime 24 ore
  * - Trigger: ogni caricamento dashboard operativa o leads dashboard
- * - Filtro: NESSUN FILTRO (importa tutti i lead, non solo Form eCura)
+ * - Filtro: SOLO FORM ECURA (hs_object_source_detail_1 = 'Form eCura')
  * - Efficiente: evita di leggere 4400+ lead ogni volta
  * - Tasto IRBEMA: rimane per sincronizzazione completa manuale
  * 
  * Frequenza Import HubSpot:
  * - Import automatico HubSpot: ogni giorno alle 9:00 AM
- * - Import incrementale TeleMedCare: ogni caricamento dashboard (ultimi 1 giorno)
+ * - Import incrementale TeleMedCare: ogni caricamento dashboard (ultimi 1 giorno, SOLO Form eCura)
  */
 
 import type { D1Database } from '@cloudflare/workers-types'
@@ -71,7 +71,7 @@ export async function executeAutoImport(
   config: AutoImportConfig = {
     enabled: true,
     startHour: 9,
-    onlyEcura: false,
+    onlyEcura: true, // ✅ RIPRISTINATO: solo lead da Form eCura
     dryRun: false
   }
 ): Promise<AutoImportResult> {

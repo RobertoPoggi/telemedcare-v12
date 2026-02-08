@@ -52,7 +52,7 @@ export const autoImportScript = `
         body: JSON.stringify({
           enabled: true,
           startHour: 9,
-          onlyEcura: false, // ✅ RIMOSSO FILTRO ECURA per importare tutti i lead
+          onlyEcura: true, // ✅ RIPRISTINATO: solo lead da Form eCura
           dryRun: false
         })
       });

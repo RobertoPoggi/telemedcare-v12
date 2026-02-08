@@ -10280,7 +10280,7 @@ app.post('/api/hubspot/auto-import', async (c) => {
     const config = {
       enabled: body.enabled !== false, // Default true
       startHour: body.startHour || 9,
-      onlyEcura: body.onlyEcura !== false, // Default true
+      onlyEcura: body.onlyEcura !== false, // ✅ RIPRISTINATO: Default true (solo Form eCura)
       dryRun: body.dryRun || false
     }
     
