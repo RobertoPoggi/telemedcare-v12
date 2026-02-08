@@ -242,12 +242,17 @@ export async function executeAutoImport(
           
           const adminEmailEnabled = settingResult?.value === 'true'
           
+          console.log(`🔍 [AUTO-IMPORT DEBUG] adminEmailEnabled=${adminEmailEnabled}, leadData.email=${leadData.email}`)
+          
           if (adminEmailEnabled && leadData.email) {
             console.log(`📧 [AUTO-IMPORT] Invio email notifica per ${leadId}...`)
+            console.log(`🔍 [AUTO-IMPORT DEBUG] env.RESEND_API_KEY exists: ${!!env.RESEND_API_KEY}`)
+            console.log(`🔍 [AUTO-IMPORT DEBUG] env.EMAIL_FROM: ${env.EMAIL_FROM || 'NOT SET'}`)
             
             // Import dinamico EmailService per evitare problemi di bundle
             const { EmailService } = await import('./email-service')
             const emailService = new EmailService(env)
+            console.log(`🔍 [AUTO-IMPORT DEBUG] EmailService initialized`)
             
             const emailHtml = `
               <!DOCTYPE html>
@@ -304,12 +309,17 @@ export async function executeAutoImport(
               text: `Nuovo lead importato da HubSpot:\n\nID: ${leadId}\nNome: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nEmail: ${leadData.email}\nServizio: ${leadData.servizio} ${leadData.piano}`
             })
             
-            console.log(`✅ [AUTO-IMPORT] Email notifica inviata per ${leadId}`)
+            console.log(`✅ [AUTO-IMPORT] Email notifica inviata con successo per ${leadId}`)
           } else {
-            console.log(`ℹ️  [AUTO-IMPORT] Email notifica disabilitata o email lead mancante`)
+            console.log(`ℹ️  [AUTO-IMPORT] Email notifica NON inviata - adminEmailEnabled=${adminEmailEnabled}, leadData.email=${leadData.email || 'MISSING'}`)
           }
         } catch (emailError) {
           console.error(`⚠️ [AUTO-IMPORT] Errore invio email notifica:`, emailError)
+          console.error(`⚠️ [AUTO-IMPORT] Error details:`, {
+            message: (emailError as Error).message,
+            stack: (emailError as Error).stack,
+            leadId
+          })
           // Non bloccare l'import se l'email fallisce
         }
         
