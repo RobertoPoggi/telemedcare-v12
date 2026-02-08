@@ -303,7 +303,7 @@ export async function executeAutoImport(
               </html>
             `
             
-            await emailService.send({
+            await emailService.sendEmail({
               to: 'info@telemedcare.it',
               subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
               html: emailHtml,
