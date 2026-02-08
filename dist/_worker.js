@@ -9027,7 +9027,14 @@ PUT /api/contratti/\${contractId}\`);
         }
     <\/script>
 </body>
-</html>`));S.get("/home",o=>(o.header("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"),o.header("Pragma","no-cache"),o.header("Expires","0"),o.header("X-Cache-Bypass","true"),o.header("X-TeleMedCare-Version","12.0-"+Date.now()),o.html(a0)));S.get("/admin/system-status",o=>o.html(`
+</html>`));S.get("/home",o=>(o.header("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"),o.header("Pragma","no-cache"),o.header("Expires","0"),o.header("X-Cache-Bypass","true"),o.header("X-TeleMedCare-Version","12.0-"+Date.now()),o.html(a0)));S.get("/completa-dati-minimal.html",async o=>{o.header("Cache-Control","no-store, no-cache, must-revalidate"),o.header("Content-Type","text/html; charset=utf-8");try{const t=new Request(new URL("/completa-dati-minimal.html",o.req.url),o.req.raw),e=await o.env.ASSETS.fetch(t);if(e.ok)return new Response(e.body,{status:200,headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate"}});throw new Error("Asset not found")}catch(t){return console.error("❌ Errore serving completa-dati-minimal.html:",t),o.html(`
+      <!DOCTYPE html>
+      <html><head><meta charset="UTF-8"><title>Form non disponibile</title></head>
+      <body style="font-family: Arial; text-align: center; padding: 50px;">
+        <h1>❌ Form temporaneamente non disponibile</h1>
+        <p>Contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+      </body></html>
+    `,404)}});S.get("/admin/system-status",o=>o.html(`
     <!DOCTYPE html>
     <html lang="it">
     <head>
