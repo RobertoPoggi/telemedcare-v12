@@ -10122,7 +10122,7 @@ app.post('/api/hubspot/sync', async (c) => {
     const body = await c.req.json()
     const days = body.days || 7
     const dryRun = body.dryRun || false
-    const onlyEcura = body.onlyEcura !== false // Default true
+    const onlyEcura = body.onlyEcura !== false // ✅ Default TRUE - SEMPRE filtro eCura (anche IRBEMA)
     
     const client = new HubSpotClient(accessToken, portalId)
     
