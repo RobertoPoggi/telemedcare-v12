@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Switch Debug - TeleMedCare</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .switch { padding: 15px; margin: 10px 0; border: 2px solid #ddd; border-radius: 6px; }
+        .switch.on { border-color: #10b981; background: #f0fdf4; }
+        .switch.off { border-color: #ef4444; background: #fef2f2; }
+        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #5a67d8; }
+        .status { font-weight: bold; padding: 3px 8px; border-radius: 4px; }
+        .status.on { background: #10b981; color: white; }
+        .status.off { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Email Switch Debug</h1>
+        <p>Verifica stato switch email nel database</p>
+        
+        <button onclick="loadSwitches()">🔄 Ricarica Switch</button>
+        <button onclick="enableAll()">✅ Attiva Tutti</button>
+        
+        <div id="switches"></div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        async function loadSwitches() {
+            const log = document.getElementById('log');
+            const container = document.getElementById('switches');
+            
+            log.innerHTML = '<p>⏳ Caricamento...</p>';
+            
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                const emailKeys = [
+                    'lead_email_notifications_enabled',
+                    'info_email_notifications_enabled',
+                    'auto_completion_enabled',
+                    'email_completamento_dati'
+                ];
+                
+                let html = '<h2>Switch Email:</h2>';
+                
+                for (const key of emailKeys) {
+                    const setting = settings.find(s => s.key === key);
+                    const value = setting?.value || 'NOT_FOUND';
+                    const isOn = value === 'true';
+                    
+                    html += `
+                        <div class="switch ${isOn ? 'on' : 'off'}">
+                            <strong>${key}</strong><br>
+                            Valore: <span class="status ${isOn ? 'on' : 'off'}">${value}</span><br>
+                            ${setting?.description || 'No description'}
+                            <br><br>
+                            <button onclick="toggleSwitch('${key}', ${!isOn})">
+                                ${isOn ? '❌ Disattiva' : '✅ Attiva'}
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+                log.innerHTML = '<p>✅ Caricato!</p>';
+                
+            } catch (error) {
+                log.innerHTML = `<p style="color: red;">❌ Errore: ${error.message}</p>`;
+            }
+        }
+        
+        async function toggleSwitch(key, enable) {
+            const log = document.getElementById('log');
+            log.innerHTML = `<p>⏳ ${enable ? 'Attivazione' : 'Disattivazione'} ${key}...</p>`;
+            
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: key,
+                        value: enable ? 'true' : 'false'
+                    })
+                });
+                
+                if (response.ok) {
+                    log.innerHTML = `<p style="color: green;">✅ Switch ${key} ${enable ? 'attivato' : 'disattivato'}!</p>`;
+                    loadSwitches();
+                } else {
+                    throw new Error('API error: ' + response.status);
+                }
+            } catch (error) {
+                log.innerHTML = `<p style="color: red;">❌ Errore: ${error.message}</p>`;
+            }
+        }
+        
+        async function enableAll() {
+            const keys = [
+                'lead_email_notifications_enabled',
+                'info_email_notifications_enabled',
+                'auto_completion_enabled',
+                'email_completamento_dati'
+            ];
+            
+            for (const key of keys) {
+                await toggleSwitch(key, true);
+                await new Promise(r => setTimeout(r, 500));
+            }
+        }
+        
+        // Carica all'avvio
+        loadSwitches();
+    </script>
+</body>
+</html>
