@@ -150,16 +150,6 @@ export async function executeAutoImport(
     // Processa ogni contatto
     for (const contact of response.results) {
       try {
-        // 🚫 BLACKLIST: skip contatti non desiderati
-        const email = contact.properties.email?.toLowerCase()
-        const blacklist = ['f.pedinelli@usobio.it'] // Lead non da Form eCura
-        
-        if (blacklist.includes(email)) {
-          console.log(`🚫 [AUTO-IMPORT] Contatto in blacklist, skip: ${email}`)
-          result.skipped++
-          continue
-        }
-        
         // Verifica se esiste già (by email o external_source_id)
         const existing = await db.prepare(`
           SELECT id FROM leads 
