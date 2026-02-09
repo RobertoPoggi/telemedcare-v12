@@ -586,22 +586,52 @@ I **workflow** sono sequenze di azioni che il sistema esegue **automaticamente**
 - 📎 Allegato: `contratto_LEADID.pdf`
 - 🔗 Link firma: "Firma il contratto online"
 
-#### 4. **Workflow "Firma Contratto"**
+#### 4. **Workflow "Firma Contratto"** ✨ APPENA AGGIORNATO
 
 **Trigger:** Cliente firma contratto
 
 **Azioni automatiche:**
 1. ✅ Salva firma nel database (PNG base64)
 2. ✅ Registra metadata (IP, data, ora, browser)
-3. ✅ Aggiorna stato contratto: "firmato"
-4. ✅ **Genera automaticamente proforma**
-5. ✅ Crea link pagamento Stripe
-6. ✅ Invia email proforma al cliente
-7. ✅ Invia notifica firma a info@
+3. ✅ Aggiorna stato contratto: "SIGNED"
+4. ✅ **[NUOVO] Genera automaticamente proforma** (da commit 6be33c7)
+5. ✅ **[NUOVO] Calcola prezzi automatici** (servizio + piano)
+6. ✅ **[NUOVO] Salva proforma nel database** (tabella proformas)
+7. ✅ **[NUOVO] Invia email proforma al cliente** con PDF allegato
+8. ✅ Invia notifica firma a info@
+
+**Dettagli Proforma Automatica:**
+- **Numero Proforma:** `PRF-YYYYMM-NNNN` (es: PRF-202602-0001)
+- **Prezzo:** Calcolato da servizio+piano (es: €480 BASE, €840 AVANZATO)
+- **IVA:** 22% inclusa
+- **Scadenza:** 30 giorni dalla firma
+- **Link Pagamento:** Stripe checkout (da implementare)
 
 **Email inviate:**
-- 📧 Al cliente: "Grazie per la firma - Proforma per pagamento"
-- 📧 A info@: "Contratto firmato - [Nome Cliente]"
+- 📧 Al cliente: "✅ Contratto Firmato - Proforma per Pagamento"
+  - Dettagli contratto firmato
+  - Proforma PDF allegato
+  - Istruzioni pagamento
+  - Link pagamento Stripe (quando disponibile)
+- 📧 A info@: "✅ Contratto Firmato - [Codice Contratto]"
+  - Nome cliente
+  - Codice contratto
+  - Data/ora firma
+  - IP cliente
+
+**⚠️ Importante:**
+Questo workflow è stato **appena implementato** (commit 6be33c7). Prima di questo fix, la proforma doveva essere generata manualmente dopo la firma.
+
+**Vantaggi:**
+- ⚡ **Automazione completa** firma → proforma → email
+- 💰 **Prezzi corretti** calcolati automaticamente
+- 📧 **Email immediate** senza intervento manuale
+- 📊 **Tracciamento completo** in database
+
+**Prossimi Step dopo Firma:**
+- Cliente riceve email con proforma
+- Cliente clicca link pagamento Stripe
+- Workflow "Pagamento Ricevuto" parte automaticamente
 
 #### 5. **Workflow "Pagamento Ricevuto"**
 
@@ -749,75 +779,312 @@ Il sistema rispetta:
 
 ---
 
-## 9. IMPORT LEAD DA PARTNER
+## 9. IMPORT LEAD DA PARTNER (HUBSPOT/IRBEMA)
 
 ### 🤝 Cos'è l'Import da Partner?
 
-Alcuni partner (come IRBEMA) inviano lead tramite i loro sistemi (es: HubSpot CRM). Il sistema può importare questi lead automaticamente.
+TeleMedCare V12 importa automaticamente i lead dal **CRM HubSpot di IRBEMA**, che raccoglie le richieste dal sito **www.ecura.it** tramite form di contatto.
 
 ### 🏢 Partner Supportati
 
 | Partner | Sistema | Import Automatico | Status |
 |---------|---------|-------------------|--------|
-| **IRBEMA** | HubSpot CRM | ✅ Disponibile | 🟢 Attivo |
-| **AON** | API Custom | 🔄 In sviluppo | 🟡 Preview |
-| **DoubleYou** | API Custom | 🔄 In sviluppo | 🟡 Preview |
+| **IRBEMA** | HubSpot CRM | ✅ 3 Metodi Attivi | 🟢 100% Operativo |
+| **AON** | API Custom | 🔄 In sviluppo | 🟡 Q2 2026 |
+| **DoubleYou** | API Custom | 🔄 In sviluppo | 🟡 Q2 2026 |
+| **Mondadori** | B2B Portal | 📅 Pianificato | ⚪ Q3 2026 |
 
-### 📥 Import Manuale da IRBEMA
+---
 
-**Dashboard** → **Pulsante "IRBEMA"** (arancione)
+### 🔄 TRE METODI DI SINCRONIZZAZIONE HUBSPOT
 
-#### Cosa Succede
+Il sistema offre **3 metodi** per importare lead da HubSpot/IRBEMA:
 
-1. **Clicchi "IRBEMA"**
-2. **Sistema si connette** a HubSpot
-3. **Cerca lead** con questi criteri:
-   - URL contiene "ecura.it"
-   - Data >= 01/01/2026
-   - Non già importati
-4. **Importa i lead** trovati
-5. **Mostra messaggio:** "Importati 5 nuovi lead da IRBEMA"
-6. **Lead compaiono** in Dashboard con fonte "IRBEMA"
+#### **1️⃣ METODO 1: Tasto IRBEMA (Sincronizzazione Manuale Completa)**
 
-#### Lead ID Generati
+**Quando usarlo:** Quando vuoi fare una **sincronizzazione completa manuale** degli ultimi 7 giorni.
 
-I lead importati hanno ID formato:
-- `LEAD-IRBEMA-00001`
-- `LEAD-IRBEMA-00002`
-- etc.
+**Come funziona:**
+1. **Apri Dashboard** → https://telemedcare-v12.pages.dev/dashboard
+2. **Clicca pulsante "IRBEMA"** (arancione, in alto)
+3. **Sistema importa:**
+   - Lead creati negli **ultimi 7 giorni**
+   - Solo lead da **Form eCura** (filtro automatico)
+   - Esclude lead già presenti (no duplicati)
+4. **Vedi risultato:** 
+   - ✅ "Importati 5 nuovi lead da HubSpot"
+   - ⏭️ "3 lead già esistenti (skipped)"
 
-### 🔄 Import Automatico
+**Parametri Sincronizzazione:**
+- **Finestra temporale:** Ultimi 7 giorni
+- **Filtro:** `hs_object_source_detail_1 = 'Form eCura'`
+- **Controllo duplicati:** Email + external_source_id
+- **ID generati:** `LEAD-IRBEMA-00146`, `LEAD-IRBEMA-00147`, etc.
 
-Puoi configurare l'import automatico:
+---
 
-**Impostazioni** → **Import Automatici** → **Switch "Import IRBEMA Auto"** ON
+#### **2️⃣ METODO 2: CRON Giornaliero Automatico (GitHub Actions)**
 
-**Frequenze disponibili:**
-- Ogni 1 ora
-- Ogni 6 ore (consigliato)
-- Ogni 12 ore
-- Ogni 24 ore
+**Quando funziona:** Ogni giorno alle **8:00 ora italiana** (7:00 UTC) automaticamente.
 
-#### Quando è Utile
+**Come funziona:**
+1. **GitHub Actions** esegue workflow schedulato
+2. **Verifica switch** `hubspot_auto_import_enabled` nel DB
+3. **Se switch ON:**
+   - Chiama `POST /api/hubspot/sync`
+   - Parametri: `days=7, onlyEcura=true, dryRun=false`
+   - Importa lead ultimi 7 giorni
+4. **Se switch OFF:**
+   - Skip sincronizzazione
+   - Log: "Sync disabilitata da dashboard"
 
-- ✅ Se ricevi molti lead da IRBEMA
-- ✅ Se vuoi sincronizzazione continua
-- ✅ Se non vuoi cliccare manualmente ogni giorno
+**Dove verificare:**
+- **GitHub:** https://github.com/RobertoPoggi/telemedcare-v12/actions
+- **Workflow:** "HubSpot Daily Sync 8:00"
+- **Log completi:** Clicca su ultimo run → Job "sync-hubspot"
 
-#### Quando NON è Utile
+**Come abilitare/disabilitare:**
+- Vai su: **Dashboard** → **Impostazioni** → **Import Automatici**
+- **Switch "Import HubSpot Giornaliero":** ON/OFF
 
-- ❌ Se ricevi pochi lead
-- ❌ Se vuoi controllare prima di importare
-- ❌ Per risparmiare chiamate API
+**Orario esecuzione:** 
+- **8:00 AM** ogni giorno (ora italiana)
+- **7:00 AM** UTC (configurato in `.github/workflows/hubspot-sync-cron.yml`)
 
-### 📊 Verifica Import
+---
 
-Dopo import (manuale o automatico):
+#### **3️⃣ METODO 3: Auto-Sync al Refresh Dashboard (Ultimi 24h)**
+
+**Quando funziona:** **Ogni volta** che apri o ricarichi la Dashboard.
+
+**Come funziona:**
+1. **Apri/Ricarica** Dashboard
+2. **JavaScript automatico** chiama `POST /api/hubspot/auto-import`
+3. **Importa solo:**
+   - Lead creati nelle **ultime 24 ore**
+   - Solo **Form eCura**
+   - Esclude già importati
+4. **Modalità silenziosa:**
+   - Se 0 nuovi lead: **nessuna notifica** (silenzioso)
+   - Se >0 nuovi lead: **Toast verde** in basso a destra
+5. **Console log dettagliati:** (Apri F12 per vedere)
+
+**Esempio log console:**
+```
+🤖 [AUTO-IMPORT] Script caricato e pronto
+✅ [AUTO-IMPORT] DOM già caricato, eseguo executeAutoImport tra 500ms
+🚀 [AUTO-IMPORT] executeAutoImport() chiamata
+📡 [AUTO-IMPORT] Chiamata API: POST /api/hubspot/auto-import
+📡 [AUTO-IMPORT] Response status: 200
+✅ [AUTO-IMPORT] Completato: 2 importati, 0 già esistenti (09:15 - 09:45)
+```
+
+**Parametri:**
+- **Finestra temporale:** Ultime **24 ore** (non più dalle 9:00)
+- **Filtro:** Solo **Form eCura**
+- **Intervallo minimo:** 0 minuti (sempre esegui)
+- **Modalità:** Silent (no popup se 0 nuovi lead)
+
+**Debug (se non funziona):**
+1. **Apri Dashboard**
+2. **Premi F12** (Developer Tools)
+3. **Tab "Console"**
+4. **Ricarica pagina** (Ctrl+R)
+5. **Cerca log** che iniziano con `[AUTO-IMPORT]`
+6. **Se non vedi log:**
+   - Cache browser → Premi **Ctrl+Shift+R** (hard refresh)
+   - Modalità incognito → Prova in **finestra privata**
+   - Aspetta 2-3 minuti (deploy Cloudflare)
+
+---
+
+### 📊 CONFRONTO TRE METODI
+
+| Aspetto | Tasto IRBEMA | CRON Giornaliero | Auto-Sync Refresh |
+|---------|--------------|------------------|-------------------|
+| **Trigger** | Click manuale | Automatico 8:00 | Refresh dashboard |
+| **Finestra** | 7 giorni | 7 giorni | 24 ore |
+| **Frequenza** | A richiesta | 1x/giorno | Ogni refresh |
+| **Notifica** | ✅ Sempre | ⚠️ Solo errori | ✅ Se >0 lead |
+| **Log** | Dashboard | GitHub Actions | Browser Console |
+| **Controllo** | Manuale | Switch ON/OFF | Sempre attivo |
+| **Uso ideale** | Sync massiva | Routine giornaliera | Monitoraggio real-time |
+
+---
+
+### 💡 STRATEGIA CONSIGLIATA
+
+**Setup Ottimale per Produzione:**
+
+1. ✅ **CRON Giornaliero:** **ABILITATO** (backup notturno)
+2. ✅ **Auto-Sync Refresh:** **SEMPRE ATTIVO** (monitoraggio continuo)
+3. ✅ **Tasto IRBEMA:** **Usa solo se necessario** (es: problemi CRON)
+
+**Quando usare ciascun metodo:**
+
+- **Auto-Sync:** Uso normale, apri dashboard più volte al giorno
+- **CRON:** Backup automatico notturno se nessuno apre dashboard
+- **Tasto IRBEMA:** Solo per recupero massivo o troubleshooting
+
+---
+
+### 🛠️ RISOLUZIONE PROBLEMI
+
+#### **❌ Problema: Auto-Sync non importa nulla**
+
+**Verifica passo-passo:**
+
+1. **Console Browser (F12):**
+   ```
+   Cerca log: [AUTO-IMPORT]
+   Se non vedi log → Cache browser (Ctrl+Shift+R)
+   Se vedi "Credenziali mancanti" → Env vars non configurate
+   ```
+
+2. **Verifica Credenziali HubSpot:**
+   - Dashboard Cloudflare → Pages → telemedcare-v12
+   - Settings → Environment variables
+   - Controlla: `HUBSPOT_ACCESS_TOKEN` e `HUBSPOT_PORTAL_ID`
+
+3. **Verifica Switch:**
+   ```
+   GET https://telemedcare-v12.pages.dev/api/settings/hubspot_auto_import_enabled
+   
+   Risposta attesa: { "value": "true", "enabled": true }
+   ```
+
+4. **Test Manuale API:**
+   ```bash
+   curl -X POST https://telemedcare-v12.pages.dev/api/hubspot/auto-import \
+     -H "Content-Type: application/json" \
+     -d '{"enabled": true, "startHour": 0, "onlyEcura": true, "dryRun": false}'
+   ```
+
+#### **❌ Problema: CRON non esegue alle 8:00**
+
+**Verifica:**
+1. GitHub → Actions → "HubSpot Daily Sync 8:00"
+2. Controlla ultimo run (deve essere giornaliero)
+3. Se errore 403: Switch `hubspot_auto_import_enabled` è OFF
+4. Se errore 401: Credenziali HubSpot scadute/errate
+
+**Fix:**
+- Abilita switch in Dashboard → Impostazioni
+- Rigenera HUBSPOT_ACCESS_TOKEN se scaduto
+
+#### **❌ Problema: Lead importati hanno prezzo = €0**
+
+**Causa:** Errore nel calcolo automatico prezzi.
+
+**Verifica Log:**
+```javascript
+// Console browser dopo import:
+Cerca: [HUBSPOT MAPPING] Calcolo prezzi per: servizio=XXX, piano=YYY
+Se vedi: "ERRORE calcolo prezzi" → Servizio/Piano non validi
+```
+
+**Fix:**
+1. **Verifica servizio/piano in HubSpot:**
+   - Deve essere: `servizio_ecura` = PRO/FAMILY/PREMIUM
+   - Deve essere: `piano_ecura` = BASE/AVANZATO
+
+2. **Se mancanti in HubSpot:**
+   - Sistema usa default: `servizio=PRO, piano=BASE`
+   - Prezzo automatico: €480 (setup) + €240 (rinnovo)
+
+3. **Fix manuale prezzi:**
+   ```
+   Dashboard → Leads → Seleziona lead → Edit
+   Aggiorna: Prezzo Anno e Prezzo Rinnovo
+   ```
+
+---
+
+### 📋 Lead ID Generati
+
+Tutti i lead importati da HubSpot hanno ID formato:
+- `LEAD-IRBEMA-00146`
+- `LEAD-IRBEMA-00147`
+- `LEAD-IRBEMA-00148`
+
+**Numerazione:**
+- Incrementale automatica
+- Parte da 00146 (se nessun lead IRBEMA esistente)
+- Univoca (no duplicati possibili)
+
+---
+
+### 📧 Email Automatiche dopo Import
+
+**Dopo ogni import**, il sistema invia automaticamente:
+
+1. **📩 Email Notifica Admin** (a `info@telemedcare.it`)
+   - Template: `NOTIFICA_INFO`
+   - Contenuto: Nuovo lead ricevuto, nome, email, servizio
+
+2. **📧 Email Completamento Dati** (al lead)
+   - Template: `email_richiesta_completamento_form`
+   - Link personale: `https://telemedcare-v12.pages.dev/api/form/{leadId}`
+   - Allegato: Brochure eCura PDF
+   - **Solo se switch** `lead_email_notifications_enabled` è **ON**
+
+**Controllo invio email:**
+- Dashboard → Impostazioni → Email Notifications
+- Switch "Email Completamento Dati": ON/OFF
+
+---
+
+### 🎯 Workflow Completo dopo Import
+
+```
+1. Lead importato da HubSpot
+   ↓
+2. Prezzi calcolati automaticamente (servizio+piano)
+   ↓
+3. Email notifica admin inviata
+   ↓
+4. Email completamento dati al lead (con link)
+   ↓
+5. Lead clicca link e completa form
+   ↓
+6. Contratto generato automaticamente
+   ↓
+7. Email contratto inviata (con PDF)
+   ↓
+8. Lead firma contratto
+   ↓
+9. Proforma generata automaticamente
+   ↓
+10. Email proforma inviata (con link pagamento)
+    ↓
+11. Lead paga con Stripe
+    ↓
+12. Form configurazione dispositivo
+    ↓
+13. IMEI associato e DDT generato
+    ↓
+14. Email attivazione finale
+```
+
+---
+
+### 📊 Verifica Import Riuscito
+
+Dopo import (qualsiasi metodo):
 
 1. **Dashboard** → **Filtro Fonte:** "IRBEMA"
 2. **Vedi tutti** i lead importati
-3. **Controlla** che i dati siano corretti
-4. **Se OK** → Il workflow parte automaticamente
+3. **Controlla campi:**
+   - ✅ Nome e Cognome presenti
+   - ✅ Email valida
+   - ✅ Telefono (se disponibile)
+   - ✅ Servizio = "eCura PRO" (o FAMILY/PREMIUM)
+   - ✅ Piano = "BASE" o "AVANZATO"
+   - ✅ **Prezzo Anno ≠ €0** (es: €480)
+   - ✅ **Prezzo Rinnovo ≠ €0** (es: €240)
+4. **Se prezzi = €0:**
+   - Vedi sezione "Risoluzione Problemi" sopra
+   - Oppure aggiorna manualmente i prezzi
 
 ---
 
@@ -1306,6 +1573,51 @@ Per problemi urgenti:
 
 ---
 
+## 📝 CHANGELOG ULTIMI AGGIORNAMENTI
+
+### **🔥 9 Febbraio 2026 - V12.0.3 (OGGI)**
+
+#### ✨ **Nuove Funzionalità**
+
+1. **🔄 Auto-Sync Dashboard con HubSpot**
+   - Import automatico lead ogni volta che apri/ricarichi dashboard
+   - Finestra: Ultimi 24 ore
+   - Modalità silenziosa (no notifiche se 0 nuovi lead)
+   - Logging dettagliato in console browser (F12)
+
+2. **⚡ Trigger Automatico Proforma dopo Firma**
+   - Proforma generata automaticamente appena contratto firmato
+   - Calcolo prezzi automatico da servizio + piano
+   - Email proforma inviata immediatamente al cliente
+   - Salvato in database (tabella proformas)
+
+3. **💰 Calcolo Automatico Prezzi Lead Import**
+   - Prezzi calcolati automaticamente da servizio+piano HubSpot
+   - Supporto FAMILY, PRO, PREMIUM + BASE/AVANZATO
+   - Logging dettagliato per troubleshooting
+
+#### 🐛 **Bug Fix**
+
+1. Prezzi lead importati = €0 → Risolto con logging e gestione errori
+2. Auto-Sync non parte al refresh → Aggiunto debug completo
+
+#### 📖 **Documentazione Aggiunta**
+
+- INTEGRAZIONE_HUBSPOT_COMPLETA.md (10.5 KB)
+- STRATEGIA_IMPLEMENTAZIONE_COMPLETA.md (18 KB)
+- DATABASE_SCHEMA_MULTICANALE.md (11 KB)
+- PIANO_OPERATIVO_MULTICANALE.md (11 KB)
+- Manuale Utente aggiornato (Sezione 9 completamente riscritta)
+
+#### 🎯 **Progresso Workflow End-to-End**
+
+**Completato:** 85% (+10% questa sessione)
+
+- ✅ Steps 1-9: 100% funzionanti
+- 🔄 Steps 10-14: In completamento (Stripe, IMEI, DDT)
+
+---
+
 ## ✅ CHECKLIST RAPIDA OPERATORE
 
 Copia questa checklist per uso quotidiano:
@@ -1334,6 +1646,9 @@ Copia questa checklist per uso quotidiano:
 
 **Fine Manuale Utente TeleMedCare V12**
 
-*Documento versione 1.0 - 9 Febbraio 2026*
+*Documento versione 1.1 - 9 Febbraio 2026 (Aggiornato)*
+*Per supporto: info@telemedcare.it*
+*Sito: https://telemedcare-v12.pages.dev/*
+*GitHub: https://github.com/RobertoPoggi/telemedcare-v12*
 *Per supporto: info@telemedcare.it*
 *Sito: https://telemedcare-v12.pages.dev/*
