@@ -170,7 +170,7 @@ export async function executeAutoImport(
         }
         
         // Mappa contatto HubSpot → Lead TeleMedCare
-        const leadData = mapHubSpotContactToLead(contact)
+        const leadData = await mapHubSpotContactToLead(contact)
         
         console.log(`🔍 [AUTO-IMPORT] Lead data mapped:`, {
           nomeRichiedente: leadData.nomeRichiedente,

@@ -296,7 +296,7 @@ export class HubSpotClient {
 /**
  * Mappa un contatto HubSpot in un lead TeleMedCare
  */
-export function mapHubSpotContactToLead(contact: HubSpotContact): any {
+export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<any> {
   const props = contact.properties
   
   // Estrai nome e cognome
@@ -341,9 +341,9 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
   }
   
   try {
-    // Import dinamico del pricing calculator
-    const { calculatePrice } = require('./pricing-calculator')
-    const calculated = calculatePrice(servizioEcura, pianoEcura)
+    // Import dinamico per Cloudflare Workers
+    const pricingModule = await import('./pricing-calculator')
+    const calculated = pricingModule.calculatePrice(servizioEcura, pianoEcura)
     pricing = {
       setupBase: calculated.setupBase,
       setupIva: calculated.setupIva,
@@ -352,10 +352,8 @@ export function mapHubSpotContactToLead(contact: HubSpotContact): any {
       rinnovoIva: calculated.rinnovoIva,
       rinnovoTotale: calculated.rinnovoTotale
     }
-    console.log(`✅ Prezzi calcolati per ${servizioEcura} ${pianoEcura}: €${calculated.setupBase}`)
   } catch (error) {
-    console.error('⚠️ Errore calcolo prezzi:', error)
-    // Prezzi restano NULL → saranno fixati con fix-prices
+    // Prezzi restano NULL
   }
   
   // Status mapping
