@@ -341,9 +341,13 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
   }
   
   try {
+    console.log(`💰 [HUBSPOT MAPPING] Calcolo prezzi per: servizio=${servizioEcura}, piano=${pianoEcura}`)
     // Import dinamico per Cloudflare Workers
     const pricingModule = await import('./pricing-calculator')
     const calculated = pricingModule.calculatePrice(servizioEcura, pianoEcura)
+    
+    console.log(`💰 [HUBSPOT MAPPING] Prezzi calcolati:`, JSON.stringify(calculated, null, 2))
+    
     pricing = {
       setupBase: calculated.setupBase,
       setupIva: calculated.setupIva,
@@ -352,7 +356,11 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
       rinnovoIva: calculated.rinnovoIva,
       rinnovoTotale: calculated.rinnovoTotale
     }
+    
+    console.log(`✅ [HUBSPOT MAPPING] Prezzi assegnati: setupBase=${pricing.setupBase}, rinnovoBase=${pricing.rinnovoBase}`)
   } catch (error) {
+    console.error(`❌ [HUBSPOT MAPPING] ERRORE calcolo prezzi:`, error)
+    console.error(`❌ [HUBSPOT MAPPING] Servizio: ${servizioEcura}, Piano: ${pianoEcura}`)
     // Prezzi restano NULL
   }
   
@@ -367,7 +375,7 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
   }
   const status = statusMap[props.hs_lead_status || 'new'] || 'NEW'
   
-  return {
+  const leadData = {
     // Dati richiedente
     nomeRichiedente,
     cognomeRichiedente,
@@ -417,6 +425,15 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     created_at: props.createdate || new Date().toISOString(),
     updated_at: props.lastmodifieddate || new Date().toISOString()
   }
+  
+  console.log(`📋 [HUBSPOT MAPPING] Lead finale da ritornare:`)
+  console.log(`   - Nome: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`)
+  console.log(`   - Servizio: ${leadData.servizio} (${leadData.servizio_ecura})`)
+  console.log(`   - Piano: ${leadData.piano} (${leadData.piano_ecura})`)
+  console.log(`   - Prezzo anno: ${leadData.prezzo_anno}`)
+  console.log(`   - Prezzo rinnovo: ${leadData.prezzo_rinnovo}`)
+  
+  return leadData
 }
 
 /**
