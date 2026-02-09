@@ -8997,6 +8997,104 @@ app.post('/api/contracts/sign', async (c) => {
       console.error('⚠️ Errore invio email (firma salvata comunque):', emailError)
     }
     
+    // ✅ CRITICAL FIX: Trigger automatico generazione e invio proforma dopo firma
+    try {
+      console.log(`📊 [FIRMA→PROFORMA] Avvio workflow proforma per contratto ${contractId}`)
+      
+      // Recupera lead completo
+      const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+        .bind(contract.leadId).first() as any
+      
+      if (lead && c.env.RESEND_API_KEY) {
+        console.log(`📧 [FIRMA→PROFORMA] Lead recuperato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+        
+        // Importa funzione invio proforma
+        const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
+        
+        // Genera ID e numero proforma univoci
+        const proformaId = `PRF-${Date.now()}`
+        const year = new Date().getFullYear()
+        const month = String(new Date().getMonth() + 1).padStart(2, '0')
+        const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+        const numeroProforma = `PRF${year}${month}-${random}`
+        
+        // Determina prezzi in base al piano del contratto
+        const piano = contract.piano || 'BASE'
+        const servizio = contract.servizio || 'eCura PRO'
+        const prezzoBase = contract.prezzo_totale || (piano === 'AVANZATO' ? 840 : 480)
+        const prezzoIvaInclusa = piano === 'AVANZATO' ? 1024.80 : 585.60
+        
+        // Prepara dati proforma
+        const proformaData = {
+          proformaId,
+          numeroProforma,
+          proformaPdfUrl: '', // PDF generato separatamente (richiede Puppeteer)
+          tipoServizio: piano,
+          servizio: servizio,
+          prezzoBase: prezzoBase,
+          prezzoIvaInclusa: prezzoIvaInclusa,
+          dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 giorni
+        }
+        
+        console.log(`📊 [FIRMA→PROFORMA] Dati proforma:`, JSON.stringify(proformaData, null, 2))
+        
+        // Salva proforma nel DB prima dell'invio
+        try {
+          await c.env.DB.prepare(`
+            INSERT INTO proformas (
+              id, leadId, numero_proforma, 
+              data_emissione, data_scadenza, 
+              importo_base, importo_iva, importo_totale,
+              valuta, status, 
+              servizio, piano,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            proformaId,
+            lead.id,
+            numeroProforma,
+            new Date().toISOString().split('T')[0], // data_emissione
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // data_scadenza
+            prezzoBase, // importo_base (senza IVA)
+            (prezzoIvaInclusa - prezzoBase).toFixed(2), // importo_iva (22%)
+            prezzoIvaInclusa, // importo_totale (con IVA)
+            'EUR',
+            'GENERATED',
+            servizio,
+            piano,
+            new Date().toISOString(), // created_at
+            new Date().toISOString()  // updated_at
+          ).run()
+          
+          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} salvata nel DB`)
+        } catch (dbError) {
+          console.error(`❌ [FIRMA→PROFORMA] Errore salvataggio proforma nel DB:`, dbError)
+          // Continua comunque con l'invio email
+        }
+        
+        // Invia email proforma
+        const proformaResult = await inviaEmailProforma(
+          lead,
+          proformaData,
+          c.env,
+          c.env.DB
+        )
+        
+        if (proformaResult.success) {
+          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} inviata con successo a ${lead.emailRichiedente}`)
+          console.log(`✅ [FIRMA→PROFORMA] Email IDs:`, proformaResult.messageIds)
+        } else {
+          console.error(`❌ [FIRMA→PROFORMA] Errore invio proforma:`, proformaResult.errors)
+        }
+      } else {
+        console.warn(`⚠️ [FIRMA→PROFORMA] Lead non trovato o RESEND_API_KEY mancante - proforma NON inviata`)
+      }
+    } catch (proformaError) {
+      // Non blocchiamo la risposta se la proforma fallisce
+      console.error(`⚠️ [FIRMA→PROFORMA] Errore trigger proforma (firma salvata comunque):`, proformaError)
+      console.error(`⚠️ [FIRMA→PROFORMA] Stack:`, (proformaError as Error)?.stack)
+    }
+    
     return c.json({ 
       success: true,
       message: 'Contratto firmato con successo',
