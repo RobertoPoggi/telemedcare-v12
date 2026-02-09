@@ -32,17 +32,24 @@ export const autoImportScript = `
   // Esegui auto-import incrementale
   async function executeAutoImport() {
     try {
+      console.log('🚀 [AUTO-IMPORT] executeAutoImport() chiamata');
+      
       if (!AUTO_IMPORT_CONFIG.enabled) {
         console.log('🔴 [AUTO-IMPORT] Disabilitato');
         return;
       }
+      
+      console.log('✅ [AUTO-IMPORT] Config enabled: true');
       
       if (!(await shouldRunAutoImport())) {
         console.log('⏭️  [AUTO-IMPORT] Troppo recente, skip');
         return;
       }
       
+      console.log('✅ [AUTO-IMPORT] shouldRunAutoImport: true');
       console.log('🔄 [AUTO-IMPORT] Inizio import incrementale silenzioso...');
+      
+      console.log('📡 [AUTO-IMPORT] Chiamata API: POST /api/hubspot/auto-import');
       
       const response = await fetch('/api/hubspot/auto-import', {
         method: 'POST',
@@ -57,7 +64,10 @@ export const autoImportScript = `
         })
       });
       
+      console.log(\`📡 [AUTO-IMPORT] Response status: \${response.status}\`);
+      
       const result = await response.json();
+      console.log('📦 [AUTO-IMPORT] Response data:', result);
       
       // Salva timestamp ultimo import
       localStorage.setItem('lastAutoImportTimestamp', new Date().toISOString());
@@ -91,7 +101,8 @@ export const autoImportScript = `
       }
       
     } catch (error) {
-      console.error('❌ [AUTO-IMPORT] Errore esecuzione:', error);
+      console.error('❌ [AUTO-IMPORT] ERRORE CRITICO in executeAutoImport:', error);
+      console.error('❌ [AUTO-IMPORT] Stack trace:', error.stack);
       
       if (!AUTO_IMPORT_CONFIG.silent) {
         showAutoImportToast('⚠️ Errore auto-import HubSpot', 'error');
@@ -137,11 +148,21 @@ export const autoImportScript = `
   }
   
   // Esegui auto-import quando documento è pronto
+  console.log('🤖 [AUTO-IMPORT] Script injection started, readyState:', document.readyState);
+  
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', executeAutoImport);
+    console.log('⏳ [AUTO-IMPORT] Documento in caricamento, aspetto DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ [AUTO-IMPORT] DOMContentLoaded fired, eseguo executeAutoImport()');
+      executeAutoImport();
+    });
   } else {
     // DOM già caricato, esegui subito
-    setTimeout(executeAutoImport, 500); // Piccolo delay per lasciare caricare la dashboard
+    console.log('✅ [AUTO-IMPORT] DOM già caricato, eseguo executeAutoImport tra 500ms');
+    setTimeout(() => {
+      console.log('⏰ [AUTO-IMPORT] Timeout scaduto, chiamo executeAutoImport()');
+      executeAutoImport();
+    }, 500); // Piccolo delay per lasciare caricare la dashboard
   }
   
   // Log status
