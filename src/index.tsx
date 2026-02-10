@@ -11325,8 +11325,9 @@ app.post('/api/import/irbema', async (c) => {
 
     const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
 
-    // NESSUN FILTRO DATA - Usa filtro URL ecura.it
-    console.log(`📅 [HUBSPOT] Filtro attivo: solo lead da ecura.it`)
+    // 🗓️ FILTRO DATA: Solo lead dal 30/1/2026 (inizio campagna eCura)
+    const campaignStartDate = new Date('2026-01-30T00:00:00Z')
+    console.log(`📅 [HUBSPOT] Filtro attivo: solo lead da ecura.it dal ${campaignStartDate.toLocaleDateString('it-IT')}`)
 
     // Statistiche import
     let totalImported = 0
@@ -11414,7 +11415,15 @@ app.post('/api/import/irbema', async (c) => {
             continue
           }
           
-          console.log(`✅ [HUBSPOT] Lead eCura trovato: ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'})`)
+          // 🗓️ FILTRO DATA: Solo lead creati dal 30/1/2026 in poi
+          const createDate = new Date(props.createdate)
+          if (createDate < campaignStartDate) {
+            console.log(`⏭️ [HUBSPOT] Skip: lead pre-campagna (${createDate.toLocaleDateString('it-IT')}) - ${props.firstname || 'N/A'} ${props.lastname || ''}`)
+            totalFiltered++
+            continue
+          }
+          
+          console.log(`✅ [HUBSPOT] Lead eCura trovato: ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'}) - Creato: ${createDate.toLocaleDateString('it-IT')}`)
 
           // Validazione campi obbligatori
           if (!props.email && !props.mobilephone) {
