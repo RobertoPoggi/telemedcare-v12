@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Operatore TeleMedCare V12 - Completo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1a202c;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header .version {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .header .date {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+        
+        /* Sidebar & Content Layout */
+        .layout {
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #f7fafc;
+            border-right: 2px solid #e2e8f0;
+            padding: 30px 20px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            color: #667eea;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+        }
+        
+        .sidebar ul li {
+            margin-bottom: 8px;
+        }
+        
+        .sidebar ul li a {
+            color: #4a5568;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar ul li a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        /* Main Content */
+        .content {
+            flex: 1;
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 60px;
+            scroll-margin-top: 20px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .section p {
+            margin-bottom: 15px;
+            color: #4a5568;
+            font-size: 1rem;
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .info-box.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: #f59e0b;
+        }
+        
+        .info-box.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left-color: #10b981;
+        }
+        
+        .info-box.danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: #ef4444;
+        }
+        
+        .info-box h4 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1a202c;
+        }
+        
+        /* Feature Box */
+        .feature-box {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        
+        .feature-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        
+        .feature-box h4 {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        /* Step Box */
+        .step-box {
+            display: flex;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        
+        .step-content h4 {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a202c;
+        }
+        
+        /* Button Grid */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .button-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .button-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+        }
+        
+        .button-card .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .button-card h4 {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a202c;
+        }
+        
+        .button-card p {
+            font-size: 0.9rem;
+            color: #718096;
+            margin: 0;
+        }
+        
+        /* Code Block */
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 20px 0;
+        }
+        
+        /* List Styles */
+        ul.check-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        ul.check-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        ul.check-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .data-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .data-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        /* Action Button Style */
+        .action-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .action-button.secondary {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        
+        .action-button.danger {
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        }
+        
+        /* Print Button */
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            border: none;
+        }
+        
+        .print-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .print-button {
+                display: none;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📘 Manuale Operatore</h1>
+            <div class="version">TeleMedCare V12.0 - Sistema TeleAssistenza Domiciliare</div>
+            <div class="date">Versione Manuale: 1.2 | Aggiornato: 9 Febbraio 2026</div>
+        </div>
+        
+        <!-- Layout: Sidebar + Content -->
+        <div class="layout">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <h3>📑 Indice</h3>
+                <ul>
+                    <li><a href="#introduzione">1. Introduzione</a></li>
+                    <li><a href="#accesso">2. Accesso al Sistema</a></li>
+                    <li><a href="#dashboard">3. Dashboard Principale</a></li>
+                    <li><a href="#dashboard-operativa">4. Dashboard Operativa</a></li>
+                    <li><a href="#leads">5. Gestione Lead</a></li>
+                    <li><a href="#leads-crud">6. Azioni sui Lead (CRUD)</a></li>
+                    <li><a href="#nuovo-lead">7. Aggiungere Nuovo Lead</a></li>
+                    <li><a href="#contratti">8. Gestione Contratti</a></li>
+                    <li><a href="#firma">9. Firma Elettronica</a></li>
+                    <li><a href="#proforma">10. Proforma e Pagamenti</a></li>
+                    <li><a href="#clienti">11. Clienti Attivi</a></li>
+                    <li><a href="#import-irbema">12. Import Lead IRBEMA</a></li>
+                    <li><a href="#documenti">13. Gestione Documenti</a></li>
+                    <li><a href="#report">14. Report e Analytics</a></li>
+                    <li><a href="#impostazioni">15. Impostazioni Sistema</a></li>
+                    <li><a href="#faq">16. FAQ e Troubleshooting</a></li>
+                </ul>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="content">
+                <!-- Sezione 1: Introduzione -->
+                <section id="introduzione" class="section">
+                    <h2>1. Introduzione</h2>
+                    
+                    <div class="info-box success">
+                        <h4>🎯 Benvenuto in TeleMedCare V12</h4>
+                        <p>TeleMedCare V12 è il sistema completo per la gestione dei servizi di <strong>TeleAssistenza Domiciliare eCura</strong>. Questo manuale è stato creato per gli operatori che utilizzano quotidianamente la piattaforma.</p>
+                    </div>
+                    
+                    <h3>Cos'è TeleMedCare?</h3>
+                    <p>TeleMedCare V12 è una piattaforma web moderna e completa che gestisce l'intero percorso di acquisizione e attivazione dei clienti eCura:</p>
+                    
+                    <ul class="check-list">
+                        <li>Acquisizione automatica lead da partner (IRBEMA, AON, Mondadori...)</li>
+                        <li>Gestione completa anagrafica lead e clienti</li>
+                        <li>Generazione automatica contratti personalizzati</li>
+                        <li>Firma elettronica dei contratti</li>
+                        <li>Emissione proforma per pagamento</li>
+                        <li>Tracciamento completo workflow cliente</li>
+                        <li>Dashboard operative e analytics avanzate</li>
+                        <li>Report real-time su lead, conversioni e revenue</li>
+                    </ul>
+                    
+                    <h3>Servizi eCura Disponibili</h3>
+                    
+                    <div class="button-grid">
+                        <div class="button-card">
+                            <div class="icon" style="color: #3b82f6;">🏠</div>
+                            <h4>eCura FAMILY</h4>
+                            <p>Monitoraggio base famiglia</p>
+                            <p style="font-weight: 600; color: #10b981; margin-top: 10px;">BASE: €390/anno<br>AVANZATO: €690/anno</p>
+                        </div>
+                        
+                        <div class="button-card">
+                            <div class="icon" style="color: #8b5cf6;">⭐</div>
+                            <h4>eCura PRO</h4>
+                            <p>SiDLY CARE PRO con GPS</p>
+                            <p style="font-weight: 600; color: #10b981; margin-top: 10px;">BASE: €480/anno<br>AVANZATO: €840/anno</p>
+                        </div>
+                        
+                        <div class="button-card">
+                            <div class="icon" style="color: #10b981;">👑</div>
+                            <h4>eCura PREMIUM</h4>
+                            <p>SiDLY VITAL CARE completo</p>
+                            <p style="font-weight: 600; color: #10b981; margin-top: 10px;">BASE: €590/anno<br>AVANZATO: €990/anno</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Sezione 2: Accesso -->
+                <section id="accesso" class="section">
+                    <h2>2. Accesso al Sistema</h2>
+                    
+                    <div class="info-box">
+                        <h4>🔗 URL della Piattaforma</h4>
+                        <p><strong>Produzione:</strong> <code>https://telemedcare-v12.pages.dev</code></p>
+                    </div>
+                    
+                    <h3>Come Accedere</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Apri il Browser</h4>
+                            <p>Usa Chrome, Firefox, Edge o Safari aggiornati all'ultima versione.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Inserisci l'URL</h4>
+                            <p>Digita <code>https://telemedcare-v12.pages.dev</code> nella barra degli indirizzi.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Attendi il Caricamento</h4>
+                            <p>Il sistema si carica in 2-3 secondi. Vedrai subito la Dashboard Principale.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box warning">
+                        <h4>⚠️ Requisiti Tecnici</h4>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <li>Connessione internet stabile</li>
+                            <li>Browser aggiornato (Chrome, Firefox, Edge, Safari)</li>
+                            <li>JavaScript abilitato</li>
+                            <li>Risoluzione minima: 1024x768px</li>
+                        </ul>
+                    </div>
+                </section>
+                
+                <!-- Sezione 3: Dashboard Principale -->
+                <section id="dashboard" class="section">
+                    <h2>3. Dashboard Principale</h2>
+                    
+                    <p>La <strong>Dashboard Principale</strong> è il punto di ingresso del sistema. Da qui puoi accedere a tutte le dashboard specializzate.</p>
+                    
+                    <h3>Struttura della Dashboard Principale</h3>
+                    
+                    <div class="feature-box">
+                        <h4>📊 KPI Oggi (Ultimi 24 ore)</h4>
+                        <p>Nella parte alta della dashboard vedi 6 box colorati con i dati di oggi:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong style="color: #10b981;">Lead Oggi:</strong> Numero di nuovi lead ricevuti nelle ultime 24 ore</li>
+                            <li><strong style="color: #8b5cf6;">Contratti Oggi:</strong> Contratti generati oggi</li>
+                            <li><strong style="color: #3b82f6;">Proforma Oggi:</strong> Proforma emesse oggi</li>
+                            <li><strong style="color: #f59e0b;">Pagamenti Oggi:</strong> Pagamenti ricevuti oggi</li>
+                            <li><strong style="color: #ea580c;">Configurazioni Oggi:</strong> Clienti configurati oggi</li>
+                            <li><strong style="color: #ec4899;">Attivazioni Oggi:</strong> Servizi attivati oggi</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Dashboard Disponibili</h3>
+                    
+                    <div class="button-grid">
+                        <div class="button-card">
+                            <div class="icon" style="color: #8b5cf6;">📈</div>
+                            <h4>Dashboard Operativa</h4>
+                            <p>Centro di controllo staff con KPI real-time e ultimi lead</p>
+                        </div>
+                        
+                        <div class="button-card">
+                            <div class="icon" style="color: #10b981;">👥</div>
+                            <h4>Dashboard Leads</h4>
+                            <p>Analytics lead, conversioni, breakdown servizi e canali</p>
+                        </div>
+                        
+                        <div class="button-card">
+                            <div class="icon" style="color: #3b82f6;">💾</div>
+                            <h4>Data Dashboard</h4>
+                            <p>KPI aziendali, revenue tracking, performance servizi</p>
+                        </div>
+                        
+                        <div class="button-card">
+                            <div class="icon" style="color: #ef4444;">⚙️</div>
+                            <h4>Workflow Manager</h4>
+                            <p>Gestione manuale eventi workflow (firma, pagamento...)</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Archivi Disponibili</h3>
+                    
+                    <p>Dalla Dashboard Principale puoi anche accedere agli archivi:</p>
+                    
+                    <ul class="check-list">
+                        <li><strong>Contratti & Proforma:</strong> Archivio contratti personalizzati e proforma</li>
+                        <li><strong>Contratti Firmati:</strong> Archivio contratti definitivi firmati dai clienti</li>
+                        <li><strong>Documentazione:</strong> Lettura e modifica documentazione sistema</li>
+                        <li><strong>Template Manager:</strong> Gestione template email e contratti</li>
+                        <li><strong>Impostazioni:</strong> Configurazione sistema e parametri</li>
+                    </ul>
+                </section>
+                
+                <!-- Sezione 4: Dashboard Operativa -->
+                <section id="dashboard-operativa" class="section">
+                    <h2>4. Dashboard Operativa</h2>
+                    
+                    <p>La <strong>Dashboard Operativa</strong> è il cuore operativo del sistema. È la schermata che userai quotidianamente per monitorare i lead in tempo reale.</p>
+                    
+                    <div class="info-box">
+                        <h4>🔄 Auto-Refresh</h4>
+                        <p>La Dashboard Operativa si aggiorna automaticamente ogni <strong>30 secondi</strong> per mostrarti sempre i dati più recenti.</p>
+                    </div>
+                    
+                    <h3>Cosa Vedi nella Dashboard Operativa</h3>
+                    
+                    <div class="feature-box">
+                        <h4>📊 KPI Principali</h4>
+                        <p>In alto trovi i KPI principali del sistema:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Lead Totali:</strong> Numero totale di lead in database</li>
+                            <li><strong>Contratti Inviati:</strong> Quanti contratti sono stati generati</li>
+                            <li><strong>Contratti Firmati:</strong> Quanti contratti sono stati firmati</li>
+                            <li><strong>Clienti Attivi:</strong> Clienti con servizio attivo</li>
+                            <li><strong>Tasso Conversione:</strong> Percentuale lead → clienti attivi</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📈 Grafici Servizi e Piani</h4>
+                        <p>Visualizza la distribuzione dei lead per:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Servizio:</strong> eCura FAMILY, PRO, PREMIUM</li>
+                            <li><strong>Piano:</strong> BASE, AVANZATO</li>
+                        </ul>
+                        <p style="margin-top: 10px;">I grafici sono <strong>a torta interattivi</strong> e mostrano numero e percentuale per ogni categoria.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📋 Tabella Ultimi Lead Ricevuti</h4>
+                        <p>La tabella mostra gli ultimi lead in ordine cronologico (più recente in alto). Per ogni lead vedi:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>ID Lead:</strong> Codice univoco (es. LEAD-IRBEMA-00146)</li>
+                            <li><strong>Nome e Cognome</strong></li>
+                            <li><strong>Email</strong></li>
+                            <li><strong>Telefono</strong></li>
+                            <li><strong>Servizio:</strong> FAMILY, PRO, PREMIUM</li>
+                            <li><strong>Piano:</strong> BASE, AVANZATO</li>
+                            <li><strong>Stato:</strong> Badge colorato con stato corrente</li>
+                            <li><strong>Data Creazione:</strong> Quando il lead è stato acquisito</li>
+                            <li><strong>Azioni Rapide:</strong> Pulsanti per operare sul lead</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Stati Lead (Badge Colorati)</h3>
+                    
+                    <p>Ogni lead ha uno <strong>stato</strong> visualizzato con un badge colorato:</p>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Stato</th>
+                                <th>Colore Badge</th>
+                                <th>Significato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Nuovo</strong></td>
+                                <td style="color: #3b82f6;">🔵 Blu</td>
+                                <td>Lead appena acquisito, da lavorare</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email Inviata</strong></td>
+                                <td style="color: #f59e0b;">🟡 Giallo</td>
+                                <td>Email di benvenuto inviata</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contratto Inviato</strong></td>
+                                <td style="color: #8b5cf6;">🟣 Viola</td>
+                                <td>Contratto generato e inviato al cliente</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Contratto Firmato</strong></td>
+                                <td style="color: #06b6d4;">🔵 Azzurro</td>
+                                <td>Cliente ha firmato il contratto elettronicamente</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Pagamento Ricevuto</strong></td>
+                                <td style="color: #10b981;">🟢 Verde</td>
+                                <td>Pagamento confermato</td>
+                            </tr>
+                            <tr>
+                                <td><strong>In Configurazione</strong></td>
+                                <td style="color: #ea580c;">🟠 Arancione</td>
+                                <td>Dispositivo in configurazione</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Attivo</strong></td>
+                                <td style="color: #10b981;">✅ Verde brillante</td>
+                                <td>Servizio attivo, cliente operativo</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Pulsante IRBEMA (Import Automatico)</h3>
+                    
+                    <div class="info-box success">
+                        <h4>🔵 Pulsante IRBEMA BLU</h4>
+                        <p>Al centro della Dashboard Operativa, sopra la tabella lead, c'è il <strong>pulsante IRBEMA BLU</strong>.</p>
+                        <p style="margin-top: 10px;"><strong>Cosa fa:</strong> Importa automaticamente i lead ricevuti da IRBEMA negli ultimi 7 giorni.</p>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Clicca sul Pulsante IRBEMA</h4>
+                            <p>Il pulsante è BLU con testo bianco e icona 📥</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Il Sistema Importa i Lead</h4>
+                            <p>Vengono importati automaticamente i lead IRBEMA degli ultimi 7 giorni dal form "eCura"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Vedi il Risultato</h4>
+                            <p>Compare un messaggio di conferma con il numero di lead importati (es. "Importati 5 nuovi lead, 3 duplicati skip")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box warning">
+                        <h4>⚠️ Deduplicazione Automatica</h4>
+                        <p>Il sistema <strong>evita automaticamente i duplicati</strong> controllando email e ID esterno. Se un lead esiste già, viene saltato.</p>
+                    </div>
+                </section>
+                
+                <!-- Sezione 5: Gestione Lead -->
+                <section id="leads" class="section">
+                    <h2>5. Gestione Lead</h2>
+                    
+                    <p>I <strong>lead</strong> sono le richieste di servizio eCura che arrivano dai partner o vengono inserite manualmente.</p>
+                    
+                    <h3>Dati di un Lead</h3>
+                    
+                    <p>Ogni lead contiene le seguenti informazioni:</p>
+                    
+                    <div class="button-grid">
+                        <div class="feature-box">
+                            <h4>👤 Anagrafica</h4>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Nome e Cognome</li>
+                                <li>Email</li>
+                                <li>Telefono</li>
+                                <li>Indirizzo completo</li>
+                                <li>CAP, Città, Provincia</li>
+                                <li>Codice Fiscale</li>
+                                <li>Data di Nascita</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-box">
+                            <h4>🛡️ Servizio Richiesto</h4>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Servizio: FAMILY / PRO / PREMIUM</li>
+                                <li>Piano: BASE / AVANZATO</li>
+                                <li>Prezzo Annuo Calcolato</li>
+                                <li>Prezzo Mensile Calcolato</li>
+                                <li>Dispositivo Incluso</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-box">
+                            <h4>📊 Tracciamento</h4>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Stato Workflow</li>
+                                <li>Sorgente (IRBEMA, Manuale...)</li>
+                                <li>ID Esterno Partner</li>
+                                <li>Data Creazione</li>
+                                <li>Data Ultimo Aggiornamento</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3>Workflow Automatico Lead</h3>
+                    
+                    <p>Quando un lead viene acquisito, il sistema <strong>automaticamente</strong>:</p>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Calcola il Prezzo</h4>
+                            <p>In base a servizio e piano, calcola prezzo annuo e mensile (sincronizzati con www.ecura.it)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Invia Email di Benvenuto</h4>
+                            <p>Email automatica con informazioni sul servizio e brochure PDF allegata</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Genera il Contratto</h4>
+                            <p>Contratto personalizzato in PDF con tutti i dati del cliente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Invia il Contratto</h4>
+                            <p>Email con link alla firma elettronica (PandaDoc/SignRequest)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Attende la Firma</h4>
+                            <p>Quando il cliente firma, il sistema riceve notifica webhook</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4>Genera la Proforma</h4>
+                            <p>Proforma in PDF per il pagamento, inviata automaticamente via email</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <h4>Attende il Pagamento</h4>
+                            <p>L'operatore conferma manualmente il pagamento ricevuto</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">8</div>
+                        <div class="step-content">
+                            <h4>Configurazione e Attivazione</h4>
+                            <p>Dispositivo configurato e servizio attivato</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Sezione 6: Azioni CRUD sui Lead -->
+                <section id="leads-crud" class="section">
+                    <h2>6. Azioni sui Lead (CRUD)</h2>
+                    
+                    <p>Per ogni lead nella tabella della Dashboard Operativa, hai a disposizione dei <strong>pulsanti di azione rapida</strong>.</p>
+                    
+                    <h3>Pulsanti Disponibili nella Tabella Lead</h3>
+                    
+                    <div class="feature-box">
+                        <h4>👁️ VISUALIZZA</h4>
+                        <p><strong>Icona:</strong> 👁️ Occhio blu</p>
+                        <p><strong>Cosa fa:</strong> Apre una finestra modale con tutti i dettagli completi del lead</p>
+                        <p><strong>Quando usarlo:</strong> Per vedere tutte le informazioni del lead (anagrafica completa, servizio, stato, storico...)</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>✏️ MODIFICA</h4>
+                        <p><strong>Icona:</strong> ✏️ Matita gialla</p>
+                        <p><strong>Cosa fa:</strong> Apre un form di modifica pre-compilato con i dati attuali del lead</p>
+                        <p><strong>Quando usarlo:</strong> Per correggere dati errati (es. email sbagliata, telefono errato, indirizzo da aggiornare...)</p>
+                        <p style="margin-top: 10px;"><strong>Come funziona:</strong></p>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li>Clicca sulla matita</li>
+                            <li>Modifica i campi che vuoi cambiare</li>
+                            <li>Clicca "Salva Modifiche"</li>
+                            <li>I dati vengono aggiornati nel database</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>🗑️ ELIMINA</h4>
+                        <p><strong>Icona:</strong> 🗑️ Cestino rosso</p>
+                        <p><strong>Cosa fa:</strong> Elimina definitivamente il lead dal database</p>
+                        <p><strong>Quando usarlo:</strong> Solo per lead duplicati o inseriti per errore</p>
+                        
+                        <div class="info-box danger" style="margin-top: 15px;">
+                            <h4>⚠️ ATTENZIONE</h4>
+                            <p><strong>L'eliminazione è DEFINITIVA e NON REVERSIBILE!</strong></p>
+                            <p style="margin-top: 10px;">Prima di eliminare, il sistema chiede conferma con un popup.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📧 INVIA EMAIL</h4>
+                        <p><strong>Icona:</strong> 📧 Busta verde</p>
+                        <p><strong>Cosa fa:</strong> Apre un pannello per inviare manualmente un'email al lead</p>
+                        <p><strong>Quando usarlo:</strong> Per inviare comunicazioni personalizzate o rinviare documenti</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📄 GENERA CONTRATTO</h4>
+                        <p><strong>Icona:</strong> 📄 Documento viola</p>
+                        <p><strong>Cosa fa:</strong> Forza la generazione del contratto PDF anche se è già stato generato</p>
+                        <p><strong>Quando usarlo:</strong> Se i dati del lead sono stati modificati e serve rigenerare il contratto</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>✍️ FIRMA MANUALE</h4>
+                        <p><strong>Icona:</strong> ✍️ Penna blu</p>
+                        <p><strong>Cosa fa:</strong> Segna manualmente il contratto come "Firmato"</p>
+                        <p><strong>Quando usarlo:</strong> Se il cliente ha firmato su carta e non elettronicamente</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>💰 CONFERMA PAGAMENTO</h4>
+                        <p><strong>Icona:</strong> 💰 Monete verde</p>
+                        <p><strong>Cosa fa:</strong> Segna manualmente il pagamento come ricevuto</p>
+                        <p><strong>Quando usarlo:</strong> Dopo aver ricevuto il bonifico bancario del cliente</p>
+                    </div>
+                </section>
+                
+                <!-- Sezione 7: Nuovo Lead -->
+                <section id="nuovo-lead" class="section">
+                    <h2>7. Aggiungere Nuovo Lead Manualmente</h2>
+                    
+                    <p>Se ricevi un lead tramite telefono, email o altro canale, puoi inserirlo <strong>manualmente</strong> nel sistema.</p>
+                    
+                    <h3>Come Aggiungere un Nuovo Lead</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Clicca su "Aggiungi Lead Manuale"</h4>
+                            <p>Nella Dashboard Operativa, in alto a destra, c'è il pulsante verde "➕ Aggiungi Lead Manuale"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Compila il Form</h4>
+                            <p>Si apre un form con tutti i campi da compilare:</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li><strong>Anagrafica:</strong> Nome, Cognome, Email, Telefono</li>
+                                <li><strong>Indirizzo:</strong> Via, CAP, Città, Provincia</li>
+                                <li><strong>Dati Personali:</strong> Codice Fiscale, Data di Nascita</li>
+                                <li><strong>Servizio:</strong> Seleziona eCura FAMILY / PRO / PREMIUM</li>
+                                <li><strong>Piano:</strong> Seleziona BASE / AVANZATO</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Salva il Lead</h4>
+                            <p>Clicca "Salva Lead". Il sistema:</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Valida tutti i campi obbligatori</li>
+                                <li>Genera un ID univoco (es. LEAD-MANUALE-00123)</li>
+                                <li>Calcola automaticamente i prezzi</li>
+                                <li>Salva il lead nel database</li>
+                                <li>Avvia il workflow automatico</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box success">
+                        <h4>✅ Workflow Automatico Attivato</h4>
+                        <p>Anche per i lead manuali, il sistema avvia automaticamente il workflow completo (email benvenuto, generazione contratto, invio firma...)</p>
+                    </div>
+                    
+                    <h3>Campi Obbligatori</h3>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th>Obbligatorio</th>
+                                <th>Formato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Nome</td>
+                                <td>✅ Sì</td>
+                                <td>Testo (min 2 caratteri)</td>
+                            </tr>
+                            <tr>
+                                <td>Cognome</td>
+                                <td>✅ Sì</td>
+                                <td>Testo (min 2 caratteri)</td>
+                            </tr>
+                            <tr>
+                                <td>Email</td>
+                                <td>✅ Sì</td>
+                                <td>Email valida (es. mario@email.it)</td>
+                            </tr>
+                            <tr>
+                                <td>Telefono</td>
+                                <td>✅ Sì</td>
+                                <td>Numero (min 10 cifre)</td>
+                            </tr>
+                            <tr>
+                                <td>Indirizzo</td>
+                                <td>✅ Sì</td>
+                                <td>Testo completo</td>
+                            </tr>
+                            <tr>
+                                <td>CAP</td>
+                                <td>✅ Sì</td>
+                                <td>5 cifre</td>
+                            </tr>
+                            <tr>
+                                <td>Città</td>
+                                <td>✅ Sì</td>
+                                <td>Testo</td>
+                            </tr>
+                            <tr>
+                                <td>Provincia</td>
+                                <td>✅ Sì</td>
+                                <td>2 lettere (es. MI)</td>
+                            </tr>
+                            <tr>
+                                <td>Servizio</td>
+                                <td>✅ Sì</td>
+                                <td>FAMILY / PRO / PREMIUM</td>
+                            </tr>
+                            <tr>
+                                <td>Piano</td>
+                                <td>✅ Sì</td>
+                                <td>BASE / AVANZATO</td>
+                            </tr>
+                            <tr>
+                                <td>Codice Fiscale</td>
+                                <td>❌ No</td>
+                                <td>16 caratteri alfanumerici</td>
+                            </tr>
+                            <tr>
+                                <td>Data di Nascita</td>
+                                <td>❌ No</td>
+                                <td>gg/mm/aaaa</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <!-- Sezione 8: Contratti -->
+                <section id="contratti" class="section">
+                    <h2>8. Gestione Contratti</h2>
+                    
+                    <p>TeleMedCare genera <strong>automaticamente</strong> i contratti personalizzati per ogni lead.</p>
+                    
+                    <h3>Generazione Automatica Contratto</h3>
+                    
+                    <div class="info-box success">
+                        <h4>🤖 Processo Automatico</h4>
+                        <p>Quando un lead viene acquisito, il sistema genera automaticamente il contratto personalizzato sostituendo 19 placeholder con i dati reali del cliente.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📄 Placeholder Contratto (19 campi)</h4>
+                        <p>Il template del contratto contiene questi placeholder:</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                            <div>
+                                <ul style="list-style-type: disc; padding-left: 20px;">
+                                    <li>{{NOME}}</li>
+                                    <li>{{COGNOME}}</li>
+                                    <li>{{EMAIL}}</li>
+                                    <li>{{TELEFONO}}</li>
+                                    <li>{{INDIRIZZO}}</li>
+                                    <li>{{CAP}}</li>
+                                    <li>{{CITTA}}</li>
+                                    <li>{{PROVINCIA}}</li>
+                                    <li>{{CODICE_FISCALE}}</li>
+                                    <li>{{DATA_NASCITA}}</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <ul style="list-style-type: disc; padding-left: 20px;">
+                                    <li>{{SERVIZIO_NOME}}</li>
+                                    <li>{{PIANO_NOME}}</li>
+                                    <li>{{PREZZO_ANNUO}}</li>
+                                    <li>{{PREZZO_MENSILE}}</li>
+                                    <li>{{DATA_OGGI}}</li>
+                                    <li>{{NUMERO_CONTRATTO}}</li>
+                                    <li>{{DISPOSITIVO}}</li>
+                                    <li>{{DURATA_CONTRATTO}}</li>
+                                    <li>{{MODALITA_PAGAMENTO}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3>Visualizzare i Contratti</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Accedi all'Archivio Contratti</h4>
+                            <p>Dalla Dashboard Principale → "Contratti & Proforma"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Cerca il Contratto</h4>
+                            <p>Usa i filtri per cercare per nome cliente, email, ID contratto, data...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Visualizza o Scarica</h4>
+                            <p>Clicca su "Visualizza PDF" per aprirlo nel browser, o "Scarica PDF" per salvarlo sul PC</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Template Manager</h3>
+                    
+                    <p>Puoi modificare i template dei contratti andando su:</p>
+                    <p style="margin-top: 10px;"><strong>Dashboard Principale → Template Manager</strong></p>
+                    
+                    <div class="info-box warning">
+                        <h4>⚠️ Modifica Template</h4>
+                        <p>La modifica dei template è un'operazione <strong>avanzata</strong>. Consulta il responsabile tecnico prima di modificare i template.</p>
+                    </div>
+                </section>
+                
+                <!-- Sezione 9: Firma -->
+                <section id="firma" class="section">
+                    <h2>9. Firma Elettronica</h2>
+                    
+                    <p>TeleMedCare supporta la <strong>firma elettronica</strong> dei contratti tramite integrazione con servizi esterni (PandaDoc, SignRequest).</p>
+                    
+                    <h3>Come Funziona la Firma</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Contratto Generato</h4>
+                            <p>Il sistema genera il contratto personalizzato in PDF</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Caricamento su Servizio Firma</h4>
+                            <p>Il contratto viene caricato su PandaDoc/SignRequest tramite API</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Invio Email al Cliente</h4>
+                            <p>Il cliente riceve un'email con il link per firmare elettronicamente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Cliente Firma Online</h4>
+                            <p>Il cliente clicca sul link, legge il contratto e appone la firma elettronica</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Webhook Ricevuto</h4>
+                            <p>Il servizio di firma invia un webhook a TeleMedCare per notificare la firma completata</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h4>Stato Aggiornato</h4>
+                            <p>Lo stato del lead passa automaticamente a "Contratto Firmato" ✅</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <h4>Proforma Generata</h4>
+                            <p>Il sistema genera automaticamente la proforma e la invia al cliente via email</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Firma Manuale (Alternativa)</h3>
+                    
+                    <div class="info-box">
+                        <h4>✍️ Firma su Carta</h4>
+                        <p>Se un cliente preferisce firmare su carta, l'operatore può:</p>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li>Stampare il contratto PDF</li>
+                            <li>Farlo firmare fisicamente al cliente</li>
+                            <li>Cliccare il pulsante "✍️ Firma Manuale" nella tabella lead</li>
+                            <li>Il sistema segna il contratto come firmato</li>
+                        </ol>
+                    </div>
+                </section>
+                
+                <!-- Sezione 10: Proforma e Pagamenti -->
+                <section id="proforma" class="section">
+                    <h2>10. Proforma e Pagamenti</h2>
+                    
+                    <p>Dopo la firma del contratto, il sistema genera automaticamente la <strong>proforma</strong> per il pagamento.</p>
+                    
+                    <h3>Generazione Automatica Proforma</h3>
+                    
+                    <div class="info-box success">
+                        <h4>🤖 Generazione Automatica</h4>
+                        <p>Quando il contratto viene firmato, il sistema:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Genera automaticamente la proforma in PDF</li>
+                            <li>Assegna un numero univoco (es. PRF-202602-00156)</li>
+                            <li>Invia la proforma via email al cliente</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Contenuto della Proforma</h3>
+                    
+                    <div class="feature-box">
+                        <h4>📄 Dati Proforma</h4>
+                        <p>La proforma contiene:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Numero Proforma:</strong> Codice univoco (es. PRF-202602-00156)</li>
+                            <li><strong>Data Emissione:</strong> Data di generazione</li>
+                            <li><strong>Cliente:</strong> Nome, cognome, indirizzo completo</li>
+                            <li><strong>Servizio:</strong> Descrizione completa del servizio eCura</li>
+                            <li><strong>Importo:</strong> Prezzo annuo del servizio</li>
+                            <li><strong>Modalità Pagamento:</strong> Bonifico bancario</li>
+                            <li><strong>IBAN:</strong> Coordinate bancarie di Medica GB S.r.l.</li>
+                            <li><strong>Causale:</strong> Da inserire nel bonifico</li>
+                            <li><strong>Scadenza:</strong> Data entro cui effettuare il pagamento</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Gestione Pagamenti</h3>
+                    
+                    <p>Il pagamento avviene tramite <strong>bonifico bancario</strong>. L'operatore deve:</p>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Verifica Pagamento Ricevuto</h4>
+                            <p>Controlla l'estratto conto bancario e verifica che il bonifico sia arrivato</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Conferma Pagamento nel Sistema</h4>
+                            <p>Nella tabella lead, clicca il pulsante "💰 Conferma Pagamento"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Stato Aggiornato</h4>
+                            <p>Lo stato del lead passa a "Pagamento Ricevuto" 🟢</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Procedi con Configurazione</h4>
+                            <p>Ora puoi procedere con la configurazione del dispositivo e attivazione del servizio</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4>🔮 Integrazione Stripe (Prossimamente)</h4>
+                        <p>Nelle prossime versioni sarà possibile integrare Stripe per accettare pagamenti con carta di credito online, riducendo i tempi di attesa del bonifico.</p>
+                    </div>
+                </section>
+                
+                <!-- Sezione 11: Clienti Attivi -->
+                <section id="clienti" class="section">
+                    <h2>11. Clienti Attivi</h2>
+                    
+                    <p>Un lead diventa <strong>Cliente Attivo</strong> quando:</p>
+                    
+                    <ul class="check-list">
+                        <li>Ha firmato il contratto ✅</li>
+                        <li>Ha pagato il servizio ✅</li>
+                        <li>Il dispositivo è stato configurato ✅</li>
+                        <li>Il servizio è stato attivato ✅</li>
+                    </ul>
+                    
+                    <h3>Visualizzare i Clienti Attivi</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Accedi alla Dashboard Operativa</h4>
+                            <p>Dalla Dashboard Principale → "Dashboard Operativa"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Guarda il Box "Clienti Attivi"</h4>
+                            <p>Nel KPI in alto vedi il numero totale di clienti attivi</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Filtra per Stato "Attivo"</h4>
+                            <p>Nella tabella lead, puoi filtrare per stato "Attivo" ✅ per vedere solo i clienti operativi</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Dati Cliente Attivo</h3>
+                    
+                    <div class="feature-box">
+                        <h4>📊 Informazioni Disponibili</h4>
+                        <p>Per ogni cliente attivo puoi vedere:</p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Anagrafica completa</strong></li>
+                            <li><strong>Servizio attivo:</strong> FAMILY, PRO o PREMIUM</li>
+                            <li><strong>Piano:</strong> BASE o AVANZATO</li>
+                            <li><strong>Data attivazione</strong></li>
+                            <li><strong>Data scadenza servizio:</strong> 12 mesi dall'attivazione</li>
+                            <li><strong>Dispositivo assegnato</strong></li>
+                            <li><strong>Contratto firmato PDF</strong></li>
+                            <li><strong>Proforma pagamento PDF</strong></li>
+                        </ul>
+                    </div>
+                </section>
+                
+                <!-- Sezione 12: Import IRBEMA -->
+                <section id="import-irbema" class="section">
+                    <h2>12. Import Lead da IRBEMA</h2>
+                    
+                    <p>IRBEMA è uno dei <strong>partner principali</strong> che invia lead eCura a TeleMedCare.</p>
+                    
+                    <div class="info-box success">
+                        <h4>🔄 3 Modalità di Sincronizzazione</h4>
+                        <p>Il sistema offre <strong>3 modalità diverse</strong> per importare i lead da IRBEMA:</p>
+                    </div>
+                    
+                    <h3>1️⃣ Pulsante IRBEMA (Manuale)</h3>
+                    
+                    <div class="feature-box">
+                        <h4>🔵 Pulsante BLU nella Dashboard Operativa</h4>
+                        <p><strong>Dove si trova:</strong> Al centro della Dashboard Operativa, sopra la tabella lead</p>
+                        <p><strong>Cosa fa:</strong> Importa manualmente i lead ricevuti da IRBEMA negli ultimi 7 giorni</p>
+                        <p><strong>Quando usarlo:</strong> Quando vuoi verificare immediatamente se ci sono nuovi lead, o per fare una sincronizzazione manuale completa</p>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>Come funziona:</strong>
+                            <ol style="margin-top: 10px; padding-left: 20px;">
+                                <li>Clicca sul pulsante IRBEMA blu</li>
+                                <li>Il sistema chiama l'API HubSpot</li>
+                                <li>Scarica tutti i lead form "eCura" degli ultimi 7 giorni</li>
+                                <li>Verifica se il lead esiste già (controllo email + ID esterno)</li>
+                                <li>Importa solo i lead nuovi</li>
+                                <li>Mostra un messaggio di conferma con il numero di lead importati</li>
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <h3>2️⃣ Cron Automatico Giornaliero</h3>
+                    
+                    <div class="feature-box">
+                        <h4>⏰ Sincronizzazione Notturna Automatica</h4>
+                        <p><strong>Quando:</strong> Ogni giorno alle <strong>08:00 CET</strong> (07:00 UTC)</p>
+                        <p><strong>Cosa fa:</strong> Importa automaticamente i lead IRBEMA degli ultimi 7 giorni</p>
+                        <p><strong>Dove gira:</strong> GitHub Actions (workflow automatico)</p>
+                        <p><strong>Configurazione:</strong> Abilitato/disabilitato tramite il setting <code>hubspot_auto_import_enabled</code></p>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>Parametri:</strong>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li><code>days=7</code> (ultimi 7 giorni)</li>
+                                <li><code>onlyEcura=true</code> (solo form eCura)</li>
+                                <li><code>dryRun=false</code> (esegue l'import reale)</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>Log:</strong> Puoi vedere i log dell'esecuzione su GitHub Actions → Workflow "HubSpot Daily Sync"
+                        </div>
+                    </div>
+                    
+                    <h3>3️⃣ Auto-Import al Refresh Dashboard</h3>
+                    
+                    <div class="feature-box">
+                        <h4>🔄 Sincronizzazione Silenziosa Automatica</h4>
+                        <p><strong>Quando:</strong> Ogni volta che apri/ricarichi la Dashboard Operativa</p>
+                        <p><strong>Cosa fa:</strong> Importa automaticamente (in background) i lead IRBEMA delle ultime 24 ore</p>
+                        <p><strong>Finestra temporale:</strong> Solo ultimi 24 ore (più veloce del cron)</p>
+                        <p><strong>Notifiche:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Se 0 lead nuovi → Nessun messaggio (silenzioso)</li>
+                            <li>Se >0 lead nuovi → Toast di conferma con numero lead importati</li>
+                        </ul>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>Endpoint API:</strong> <code>POST /api/hubspot/auto-import</code>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>Log Console:</strong> Puoi vedere i log nella console del browser (F12 → Console) con tag <code>[AUTO-IMPORT]</code>
+                        </div>
+                    </div>
+                    
+                    <h3>Tabella Confronto 3 Metodi</h3>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Caratteristica</th>
+                                <th>🔵 Pulsante IRBEMA</th>
+                                <th>⏰ Cron Giornaliero</th>
+                                <th>🔄 Auto-Import</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Trigger</strong></td>
+                                <td>Manuale (click)</td>
+                                <td>Automatico ore 08:00</td>
+                                <td>Automatico al refresh</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Finestra Temporale</strong></td>
+                                <td>Ultimi 7 giorni</td>
+                                <td>Ultimi 7 giorni</td>
+                                <td>Ultime 24 ore</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Velocità</strong></td>
+                                <td>~3-5 secondi</td>
+                                <td>~5-10 secondi</td>
+                                <td>~1-2 secondi</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Notifiche</strong></td>
+                                <td>✅ Toast sempre visibile</td>
+                                <td>❌ Solo log GitHub</td>
+                                <td>✅ Toast solo se >0 lead</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Uso Consigliato</strong></td>
+                                <td>Recovery manuale</td>
+                                <td>Sincronizzazione notturna</td>
+                                <td>Uso quotidiano operatori</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Strategia Operativa Consigliata</h3>
+                    
+                    <div class="info-box success">
+                        <h4>✅ Setup Ottimale</h4>
+                        <ol style="padding-left: 20px;">
+                            <li><strong>Cron Giornaliero:</strong> Sempre ATTIVO (sincronizzazione notturna automatica)</li>
+                            <li><strong>Auto-Import Dashboard:</strong> Sempre ATTIVO (sincronizzazione real-time al refresh)</li>
+                            <li><strong>Pulsante IRBEMA:</strong> Da usare SOLO per recovery manuale o verifica immediata</li>
+                        </ol>
+                    </div>
+                    
+                    <h3>Troubleshooting Import IRBEMA</h3>
+                    
+                    <div class="info-box warning">
+                        <h4>⚠️ Problemi Comuni</h4>
+                        
+                        <p style="margin-top: 15px;"><strong>1. Pulsante IRBEMA non importa nulla</strong></p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Verifica che le credenziali HubSpot siano configurate (<code>HUBSPOT_ACCESS_TOKEN</code>, <code>HUBSPOT_PORTAL_ID</code>)</li>
+                            <li>Controlla i log nella console del browser (F12 → Console)</li>
+                            <li>Verifica che ci siano effettivamente lead nuovi negli ultimi 7 giorni su HubSpot</li>
+                        </ul>
+                        
+                        <p style="margin-top: 15px;"><strong>2. Cron non si attiva</strong></p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Verifica che il setting <code>hubspot_auto_import_enabled</code> sia <code>true</code></li>
+                            <li>Controlla i log su GitHub Actions → Workflow "HubSpot Daily Sync"</li>
+                            <li>Verifica che il workflow sia abilitato su GitHub</li>
+                        </ul>
+                        
+                        <p style="margin-top: 15px;"><strong>3. Auto-Import non funziona al refresh</strong></p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Apri la console del browser (F12) e cerca log <code>[AUTO-IMPORT]</code></li>
+                            <li>Verifica che lo script sia caricato correttamente</li>
+                            <li>Controlla l'endpoint <code>/api/settings/hubspot_auto_import_enabled</code> (deve ritornare <code>true</code>)</li>
+                        </ul>
+                    </div>
+                </section>
+                
+                <!-- Sezione 13: Documenti -->
+                <section id="documenti" class="section">
+                    <h2>13. Gestione Documenti</h2>
+                    
+                    <p>TeleMedCare gestisce tutti i <strong>documenti</strong> generati durante il workflow.</p>
+                    
+                    <h3>Tipi di Documenti</h3>
+                    
+                    <div class="button-grid">
+                        <div class="feature-box">
+                            <h4>📄 Contratti</h4>
+                            <p>Contratti personalizzati generati per ogni lead</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Formato: PDF</li>
+                                <li>Archiviazione: Database + Cloud Storage</li>
+                                <li>Accesso: Dashboard Contratti</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-box">
+                            <h4>✍️ Contratti Firmati</h4>
+                            <p>Contratti firmati elettronicamente dai clienti</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Formato: PDF firmato</li>
+                                <li>Valore Legale: Valido a norma di legge</li>
+                                <li>Accesso: Dashboard Contratti Firmati</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-box">
+                            <h4>💰 Proforma</h4>
+                            <p>Proforma per il pagamento del servizio</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Formato: PDF</li>
+                                <li>Numero Univoco: PRF-YYYYMM-NNNN</li>
+                                <li>Accesso: Dashboard Contratti & Proforma</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-box">
+                            <h4>📧 Email Template</h4>
+                            <p>Template email HTML personalizzati</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li>Formato: HTML</li>
+                                <li>Modificabili: Template Manager</li>
+                                <li>Placeholder: Sostituzione automatica</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3>Accedere ai Documenti</h3>
+                    
+                    <div class="step-box">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Dashboard Principale</h4>
+                            <p>Vai alla Dashboard Principale</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Sezione "Archivi e Documentazione"</h4>
+                            <p>Scorri verso il basso fino alla sezione archivi</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-box">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Scegli l'Archivio</h4>
+                            <p>Clicca su uno degli archivi disponibili:</p>
+                            <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                                <li><strong>Contratti & Proforma:</strong> Tutti i contratti e proforma</li>
+                                <li><strong>Contratti Firmati:</strong> Solo contratti firmati</li>
+                                <li><strong>Documentazione:</strong> Manuali e guide</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Sezione 14: Report -->
+                <section id="report" class="section">
+                    <h2>14. Report e Analytics</h2>
+                    
+                    <p>TeleMedCare offre <strong>analytics avanzate</strong> e report real-time.</p>
+                    
+                    <h3>Dashboard Analytics Disponibili</h3>
+                    
+                    <div class="feature-box">
+                        <h4>📊 Dashboard Operativa</h4>
+                        <p><strong>KPI Principali:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Lead Totali</li>
+                            <li>Contratti Inviati</li>
+                            <li>Contratti Firmati</li>
+                            <li>Clienti Attivi</li>
+                            <li>Tasso Conversione Lead → Clienti</li>
+                        </ul>
+                        
+                        <p style="margin-top: 15px;"><strong>Grafici:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Distribuzione per Servizio (FAMILY, PRO, PREMIUM)</li>
+                            <li>Distribuzione per Piano (BASE, AVANZATO)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>👥 Dashboard Leads</h4>
+                        <p><strong>Analytics Lead:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Tasso Conversione Lead → Contratti</li>
+                            <li>Tasso Conversione Contratti → Clienti Attivi</li>
+                            <li>Breakdown per Servizio</li>
+                            <li>Breakdown per Piano</li>
+                            <li>Statistiche per Canale (IRBEMA, Manuale, AON...)</li>
+                        </ul>
+                        
+                        <p style="margin-top: 15px;"><strong>Filtri Avanzati:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Filtra per Servizio</li>
+                            <li>Filtra per Piano</li>
+                            <li>Filtra per Sorgente</li>
+                            <li>Filtra per Stato</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>💾 Data Dashboard</h4>
+                        <p><strong>KPI Aziendali:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>Revenue Totale (somma prezzi annui)</li>
+                            <li>Revenue per Servizio</li>
+                            <li>Revenue per Piano</li>
+                            <li>Numero Contratti Generati</li>
+                            <li>Numero Pagamenti Ricevuti</li>
+                        </ul>
+                        
+                        <p style="margin-top: 15px;"><strong>Performance Servizi:</strong></p>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li>eCura FAMILY: Numero clienti + Revenue</li>
+                            <li>eCura PRO: Numero clienti + Revenue</li>
+                            <li>eCura PREMIUM: Numero clienti + Revenue</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Esportare i Dati</h3>
+                    
+                    <div class="info-box">
+                        <h4>📥 Export CSV/Excel</h4>
+                        <p>Nelle dashboard Analytics puoi esportare i dati in formato:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>CSV (per Excel, Google Sheets...)</li>
+                            <li>JSON (per elaborazioni programmatiche)</li>
+                        </ul>
+                    </div>
+                </section>
+                
+                <!-- Sezione 15: Impostazioni -->
+                <section id="impostazioni" class="section">
+                    <h2>15. Impostazioni Sistema</h2>
+                    
+                    <p>Dalla Dashboard Principale puoi accedere alle <strong>Impostazioni Sistema</strong>.</p>
+                    
+                    <h3>Impostazioni Disponibili</h3>
+                    
+                    <div class="feature-box">
+                        <h4>🔧 Configurazione Generale</h4>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Nome Azienda:</strong> Medica GB S.r.l.</li>
+                            <li><strong>Indirizzo Sede:</strong> Milano</li>
+                            <li><strong>Email Sistema:</strong> info@telemedcare.it</li>
+                            <li><strong>Telefono Supporto:</strong> Numero telefonico</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>📧 Configurazione Email</h4>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Provider:</strong> Resend API</li>
+                            <li><strong>API Key:</strong> Chiave API Resend</li>
+                            <li><strong>Email Mittente:</strong> noreply@telemedcare.it</li>
+                            <li><strong>Nome Mittente:</strong> TeleMedCare System</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>🔗 Integrazione HubSpot</h4>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Access Token:</strong> Token API HubSpot</li>
+                            <li><strong>Portal ID:</strong> ID account HubSpot</li>
+                            <li><strong>Auto-Import Enabled:</strong> true/false (abilita/disabilita auto-import)</li>
+                            <li><strong>Cron Enabled:</strong> true/false (abilita/disabilita cron giornaliero)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>✍️ Integrazione Firma Elettronica</h4>
+                        <ul style="margin-top: 10px; list-style-type: disc; padding-left: 20px;">
+                            <li><strong>Provider:</strong> PandaDoc / SignRequest</li>
+                            <li><strong>API Key:</strong> Chiave API del provider</li>
+                            <li><strong>Webhook URL:</strong> URL per ricevere notifiche firma</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-box warning">
+                        <h4>⚠️ Modifica Impostazioni</h4>
+                        <p>La modifica delle impostazioni è un'operazione <strong>delicata</strong>. Consulta il responsabile tecnico prima di modificare configurazioni critiche come API key o webhook URL.</p>
+                    </div>
+                </section>
+                
+                <!-- Sezione 16: FAQ -->
+                <section id="faq" class="section">
+                    <h2>16. FAQ e Troubleshooting</h2>
+                    
+                    <h3>Domande Frequenti</h3>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Come faccio a vedere i nuovi lead arrivati oggi?</h4>
+                        <p>Vai nella Dashboard Operativa. Il box "Lead Oggi" (verde) mostra il numero di lead ricevuti nelle ultime 24 ore. Nella tabella in basso vedi la lista completa dei lead più recenti in alto.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Un lead ha inserito un'email sbagliata, come la correggo?</h4>
+                        <p>Nella tabella lead, clicca il pulsante ✏️ Modifica (matita gialla). Si apre un form con tutti i dati del lead. Correggi l'email e clicca "Salva Modifiche".</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Il pulsante IRBEMA non importa nulla, perché?</h4>
+                        <p>Possibili cause:</p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>Non ci sono lead nuovi negli ultimi 7 giorni su HubSpot</li>
+                            <li>Le credenziali HubSpot non sono configurate correttamente</li>
+                            <li>Il form "eCura" su HubSpot non ha ricevuto submission</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Controlla i log nella console del browser (F12 → Console) per vedere dettagli dell'errore.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Come faccio a sapere se un contratto è stato firmato?</h4>
+                        <p>Nella tabella lead, guarda il badge dello stato. Se è "Contratto Firmato" (azzurro) significa che il cliente ha firmato elettronicamente. Puoi anche cliccare su 👁️ Visualizza per vedere tutti i dettagli e scaricare il contratto firmato.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Un cliente ha pagato con bonifico, come lo registro?</h4>
+                        <p>Nella tabella lead, clicca il pulsante 💰 Conferma Pagamento (monete verde). Lo stato del lead passa automaticamente a "Pagamento Ricevuto" 🟢.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Come faccio a vedere tutti i clienti attivi?</h4>
+                        <p>Vai nella Dashboard Operativa. Il box "Clienti Attivi" mostra il numero totale. Per vedere la lista, filtra la tabella lead per stato "Attivo" ✅.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Posso modificare i template email?</h4>
+                        <p>Sì. Vai su Dashboard Principale → Template Manager. Puoi modificare tutti i template email (benvenuto, contratto, proforma...). Ricorda di salvare dopo le modifiche.</p>
+                    </div>
+                    
+                    <div class="feature-box">
+                        <h4>❓ Come faccio a vedere quanti lead ho convertito in clienti?</h4>
+                        <p>Vai nella Dashboard Operativa o nella Dashboard Leads. Trovi il "Tasso Conversione" che mostra la percentuale di lead che sono diventati clienti attivi.</p>
+                    </div>
+                    
+                    <h3>Problemi Comuni e Soluzioni</h3>
+                    
+                    <div class="info-box danger">
+                        <h4>🚨 Problema: Il sistema non invia email</h4>
+                        <p><strong>Causa:</strong> Le credenziali Resend non sono configurate o la API Key è scaduta</p>
+                        <p><strong>Soluzione:</strong> Vai su Impostazioni → Configurazione Email e verifica che la API Key Resend sia corretta e valida</p>
+                    </div>
+                    
+                    <div class="info-box danger">
+                        <h4>🚨 Problema: La firma elettronica non funziona</h4>
+                        <p><strong>Causa:</strong> Il webhook non è configurato correttamente o il provider di firma (PandaDoc/SignRequest) non riesce a inviare notifiche</p>
+                        <p><strong>Soluzione:</strong> Controlla le impostazioni del provider di firma e verifica che il webhook URL sia corretto. Consulta il responsabile tecnico.</p>
+                    </div>
+                    
+                    <div class="info-box danger">
+                        <h4>🚨 Problema: I prezzi calcolati sono sbagliati</h4>
+                        <p><strong>Causa:</strong> I prezzi di www.ecura.it sono stati aggiornati ma non sincronizzati in TeleMedCare</p>
+                        <p><strong>Soluzione:</strong> Il sistema si sincronizza automaticamente ogni giorno. Se serve aggiornamento immediato, contatta il responsabile tecnico.</p>
+                    </div>
+                    
+                    <h3>Supporto Tecnico</h3>
+                    
+                    <div class="info-box">
+                        <h4>📞 Contatti Supporto</h4>
+                        <p><strong>Email:</strong> info@telemedcare.it</p>
+                        <p><strong>Telefono:</strong> [Inserire numero supporto]</p>
+                        <p><strong>Orari:</strong> Lun-Ven 9:00-18:00</p>
+                    </div>
+                </section>
+                
+                <!-- Footer -->
+                <div style="margin-top: 60px; padding: 30px; background: #f7fafc; border-radius: 12px; text-align: center;">
+                    <p style="color: #4a5568; font-size: 0.9rem;">
+                        <strong>TeleMedCare V12.0</strong> | Sistema TeleAssistenza Domiciliare<br>
+                        Medica GB S.r.l. | Milano | ISO 27001<br>
+                        <strong>Supporto:</strong> info@telemedcare.it<br>
+                        <strong>URL Sistema:</strong> <a href="https://telemedcare-v12.pages.dev" target="_blank" style="color: #667eea;">https://telemedcare-v12.pages.dev</a>
+                    </p>
+                    <p style="color: #718096; font-size: 0.8rem; margin-top: 20px;">
+                        © 2026 Medica GB S.r.l. - Tutti i diritti riservati<br>
+                        Manuale Operatore V1.2 | Ultimo aggiornamento: 9 Febbraio 2026
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Print Button -->
+    <button class="print-button" onclick="window.print()" title="Stampa / Salva PDF">
+        🖨️
+    </button>
+</body>
+</html>

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Operatore TeleMedCare V12 - TeleAssistenza Domiciliare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: var(--dark);
+            background: #f1f5f9;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .header .subtitle {
+            font-size: 1.4em;
+            font-weight: 300;
+            opacity: 0.95;
+            margin-bottom: 20px;
+        }
+        
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            font-size: 0.95em;
+        }
+        
+        .header-meta span {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        /* Sidebar + Content Layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 30px 20px;
+            border-right: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gray);
+            margin-bottom: 15px;
+            font-weight: 700;
+            padding-left: 10px;
+        }
+        
+        .toc {
+            list-style: none;
+        }
+        
+        .toc li {
+            margin-bottom: 5px;
+        }
+        
+        .toc a {
+            display: block;
+            padding: 10px 15px;
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        .toc a:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateX(3px);
+        }
+        
+        .toc .active {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Content */
+        .content {
+            padding: 50px 60px;
+        }
+        
+        .section {
+            margin-bottom: 60px;
+            scroll-margin-top: 20px;
+        }
+        
+        .section-title {
+            font-size: 2.2em;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .section-subtitle {
+            font-size: 1.1em;
+            color: var(--gray);
+            margin-bottom: 30px;
+        }
+        
+        h3 {
+            font-size: 1.6em;
+            color: var(--primary);
+            margin: 35px 0 15px;
+            font-weight: 700;
+        }
+        
+        h4 {
+            font-size: 1.2em;
+            color: var(--primary-dark);
+            margin: 25px 0 12px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            font-size: 1.05em;
+            line-height: 1.8;
+            color: #334155;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 25px;
+            line-height: 1.9;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            color: #334155;
+        }
+        
+        strong {
+            color: var(--dark);
+            font-weight: 600;
+        }
+        
+        /* Info Boxes */
+        .info-box {
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            border-left: 4px solid;
+        }
+        
+        .info-box.tip {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-left-color: var(--info);
+        }
+        
+        .info-box.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: var(--warning);
+        }
+        
+        .info-box.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left-color: var(--success);
+        }
+        
+        .info-box.important {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: var(--danger);
+        }
+        
+        .info-box-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Step by Step */
+        .steps {
+            counter-reset: step;
+            list-style: none;
+            margin: 25px 0;
+            padding: 0;
+        }
+        
+        .steps li {
+            counter-increment: step;
+            margin-bottom: 25px;
+            padding-left: 60px;
+            position: relative;
+        }
+        
+        .steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2em;
+        }
+        
+        .steps li strong {
+            display: block;
+            font-size: 1.1em;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        thead {
+            background: var(--primary);
+        }
+        
+        th {
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Screenshot Box */
+        .screenshot {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #475569;
+        }
+        
+        .screenshot-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Button Examples */
+        .button-example {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 5px;
+            font-size: 0.95em;
+        }
+        
+        .button-blue {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .button-green {
+            background: var(--success);
+            color: white;
+        }
+        
+        .button-orange {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .button-gray {
+            background: #94a3b8;
+            color: white;
+        }
+        
+        /* Print Button */
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer p {
+            margin: 8px 0;
+            color: #cbd5e1;
+        }
+        
+        /* Responsive */
+        @media (max-width: 968px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            
+            .content {
+                padding: 30px 25px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+        
+        @media print {
+            .sidebar, .print-btn {
+                display: none;
+            }
+            
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📘 MANUALE OPERATORE</h1>
+        <div class="subtitle">TeleMedCare V12 - TeleAssistenza Domiciliare eCura</div>
+        <div class="header-meta">
+            <span>📅 Versione 1.0 - Febbraio 2026</span>
+            <span>🌐 https://telemedcare-v12.pages.dev</span>
+            <span>📧 info@telemedcare.it</span>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">🖨️ Stampa / PDF</button>
+
+    <div class="container">
+        <div class="layout">
+            <aside class="sidebar">
+                <h3>📑 INDICE</h3>
+                <ul class="toc">
+                    <li><a href="#intro" class="active">1. Introduzione</a></li>
+                    <li><a href="#accesso">2. Come Accedere</a></li>
+                    <li><a href="#dashboard">3. Dashboard</a></li>
+                    <li><a href="#lead">4. Gestione Lead</a></li>
+                    <li><a href="#aggiungi-lead">5. Aggiungere Lead</a></li>
+                    <li><a href="#contratti">6. Contratti</a></li>
+                    <li><a href="#pagamenti">7. Pagamenti</a></li>
+                    <li><a href="#clienti">8. Clienti Attivi</a></li>
+                    <li><a href="#import">9. Import IRBEMA</a></li>
+                    <li><a href="#documenti">10. Documenti</a></li>
+                    <li><a href="#report">11. Report</a></li>
+                    <li><a href="#impostazioni">12. Impostazioni</a></li>
+                    <li><a href="#operazioni">13. Operazioni Quotidiane</a></li>
+                    <li><a href="#faq">14. Domande Frequenti</a></li>
+                </ul>
+            </aside>
+
+            <main class="content">
+                <!-- INTRODUZIONE -->
+                <section id="intro" class="section">
+                    <h2 class="section-title">1. Introduzione al Sistema</h2>
+                    <p class="section-subtitle">Benvenuto nel sistema di gestione TeleAssistenza Domiciliare</p>
+
+                    <h3>🏥 Cos'è TeleMedCare V12?</h3>
+                    <p>TeleMedCare V12 è il sistema che ti permette di <strong>gestire completamente</strong> i servizi di <strong>TeleAssistenza Domiciliare eCura</strong>. Con questo sistema puoi:</p>
+
+                    <ul>
+                        <li>📥 <strong>Ricevere e gestire</strong> le richieste dei clienti (chiamate "Lead")</li>
+                        <li>📄 <strong>Generare automaticamente</strong> i contratti personalizzati</li>
+                        <li>✍️ <strong>Raccogliere le firme elettroniche</strong> dei clienti</li>
+                        <li>💰 <strong>Gestire i pagamenti</strong> e le proforma</li>
+                        <li>📦 <strong>Seguire la spedizione</strong> dei dispositivi</li>
+                        <li>✅ <strong>Attivare i servizi</strong> per gli assistiti</li>
+                        <li>📊 <strong>Monitorare le statistiche</strong> in tempo reale</li>
+                    </ul>
+
+                    <div class="info-box tip">
+                        <div class="info-box-title">💡 Importante da sapere</div>
+                        <p>Questo manuale è scritto per <strong>operatori</strong>, non per tecnici. Troverai spiegazioni pratiche su <strong>come usare</strong> ogni funzione, passo dopo passo.</p>
+                    </div>
+
+                    <h3>🎯 A Cosa Serve il Sistema</h3>
+                    <p>Il sistema ti aiuta a gestire l'intero <strong>percorso del cliente</strong>:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fase</th>
+                                <th>Cosa Fa il Sistema</th>
+                                <th>Cosa Fai Tu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>1. Richiesta</strong></td>
+                                <td>Riceve la richiesta automaticamente</td>
+                                <td>Controlli i dati ricevuti</td>
+                            </tr>
+                            <tr>
+                                <td><strong>2. Contratto</strong></td>
+                                <td>Genera il contratto in PDF</td>
+                                <td>Verifichi che sia corretto</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3. Firma</strong></td>
+                                <td>Invia email con link per firmare</td>
+                                <td>Segui che il cliente firmi</td>
+                            </tr>
+                            <tr>
+                                <td><strong>4. Pagamento</strong></td>
+                                <td>Genera proforma e link pagamento</td>
+                                <td>Verifichi che il pagamento arrivi</td>
+                            </tr>
+                            <tr>
+                                <td><strong>5. Spedizione</strong></td>
+                                <td>Genera DDT (Documento Trasporto)</td>
+                                <td>Prepari il pacco e spedisci</td>
+                            </tr>
+                            <tr>
+                                <td><strong>6. Attivazione</strong></td>
+                                <td>Registra il dispositivo attivo</td>
+                                <td>Inserisci numero seriale (IMEI)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- COME ACCEDERE -->
+                <section id="accesso" class="section">
+                    <h2 class="section-title">2. Come Accedere al Sistema</h2>
+                    <p class="section-subtitle">Primi passi per entrare nella piattaforma</p>
+
+                    <h3>🔗 Accesso alla Dashboard</h3>
+                    
+                    <ol class="steps">
+                        <li>
+                            <strong>Apri il browser</strong>
+                            Usa Chrome, Firefox, Edge o Safari (preferibilmente Chrome)
+                        </li>
+                        <li>
+                            <strong>Vai all'indirizzo</strong>
+                            Digita: <strong>https://telemedcare-v12.pages.dev/</strong>
+                        </li>
+                        <li>
+                            <strong>Attendi il caricamento</strong>
+                            La dashboard si apre automaticamente in 2-3 secondi
+                        </li>
+                        <li>
+                            <strong>Vedrai la Dashboard Operativa</strong>
+                            Sei dentro! Ora puoi iniziare a lavorare
+                        </li>
+                    </ol>
+
+                    <div class="info-box warning">
+                        <div class="info-box-title">⚠️ Nota Importante</div>
+                        <p>Al momento <strong>non c'è login</strong>. Il sistema è accessibile direttamente. In futuro verrà aggiunto un sistema di autenticazione.</p>
+                    </div>
+
+                    <h3>🖥️ Requisiti del Computer</h3>
+                    <p>Per usare il sistema hai bisogno di:</p>
+                    <ul>
+                        <li>✅ <strong>Connessione internet</strong> stabile</li>
+                        <li>✅ <strong>Browser aggiornato</strong> (Chrome consigliato)</li>
+                        <li>✅ <strong>Schermo</strong> minimo 1024x768 pixel</li>
+                        <li>✅ <strong>Mouse e tastiera</strong></li>
+                    </ul>
+
+                    <p>Il sistema funziona anche su <strong>tablet</strong>, ma è consigliato usarlo da computer per maggiore comodità.</p>
+                </section>
+
+                <!-- DASHBOARD -->
+                <section id="dashboard" class="section">
+                    <h2 class="section-title">3. La Dashboard Operativa</h2>
+                    <p class="section-subtitle">Il cuore del sistema - tutto quello che ti serve in un colpo d'occhio</p>
+
+                    <h3>📊 Cosa Vedi nella Dashboard</h3>
+                    <p>Quando apri il sistema, la <strong>Dashboard Operativa</strong> è la prima cosa che vedi. È organizzata in queste sezioni:</p>
+
+                    <div class="screenshot">
+                        <div class="screenshot-title">📺 Schermata Dashboard</div>
+                        <pre>
+┌─────────────────────────────────────────────────────┐
+│                                                      │
+│  📊 TELEMEDCARE V12 - DASHBOARD OPERATIVA           │
+│                                                      │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  📈 STATISTICHE RAPIDE                               │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐│
+│  │ Lead     │ │ Contratti│ │ Firmati  │ │ Attivi ││
+│  │ Totali   │ │ Inviati  │ │          │ │        ││
+│  │   125    │ │    85    │ │    72    │ │   68   ││
+│  └──────────┘ └──────────┘ └──────────┘ └────────┘│
+│                                                      │
+│  🔵 PULSANTE IRBEMA (Blu, al centro)                │
+│  [Clicca per importare nuovi lead da IRBEMA]        │
+│                                                      │
+│  📋 ULTIMI LEAD (Tabella con ultime 10 richieste)   │
+│  │ Nome      │ Email           │ Servizio │ Stato ││
+│  │ M. Rossi  │ m.rossi@...     │ PRO BASE │ Nuovo ││
+│  │ G. Bianchi│ g.bianchi@...   │ FAMILY   │ Firma ││
+│  └───────────┴─────────────────┴──────────┴───────┘│
+│                                                      │
+│  📊 GRAFICO CONVERSIONI                              │
+│  [Grafico a barre colorato]                         │
+│                                                      │
+│  ⚙️ AZIONI RAPIDE                                    │
+│  [➕ Aggiungi Lead] [⚙️ Impostazioni]               │
+│                                                      │
+└─────────────────────────────────────────────────────┘
+                        </pre>
+                    </div>
+
+                    <h3>📈 I Quattro Box delle Statistiche</h3>
+                    <p>In alto vedi <strong>4 box colorati</strong> con i numeri più importanti:</p>
+
+                    <h4>1️⃣ Lead Totali (Box BLU)</h4>
+                    <ul>
+                        <li><strong>Mostra:</strong> Tutte le richieste ricevute (nuove + vecchie)</li>
+                        <li><strong>Se clicchi:</strong> Si apre la lista completa dei lead</li>
+                        <li><strong>Esempio:</strong> "125" significa che hai 125 richieste totali</li>
+                    </ul>
+
+                    <h4>2️⃣ Contratti Inviati (Box ARANCIONE)</h4>
+                    <ul>
+                        <li><strong>Mostra:</strong> Quanti contratti hai inviato ai clienti</li>
+                        <li><strong>Include:</strong> Sia i contratti in attesa di firma che quelli già firmati</li>
+                        <li><strong>Esempio:</strong> "85" significa che hai inviato 85 contratti</li>
+                    </ul>
+
+                    <h4>3️⃣ Contratti Firmati (Box VERDE)</h4>
+                    <ul>
+                        <li><strong>Mostra:</strong> Quanti contratti sono stati firmati dai clienti</li>
+                        <li><strong>Include:</strong> Contratti firmati in attesa di pagamento o già pagati</li>
+                        <li><strong>Esempio:</strong> "72" significa che 72 clienti hanno firmato</li>
+                    </ul>
+
+                    <h4>4️⃣ Clienti Attivi (Box VIOLA)</h4>
+                    <ul>
+                        <li><strong>Mostra:</strong> Quanti servizi di TeleAssistenza sono attivi</li>
+                        <li><strong>Include:</strong> Solo i clienti con dispositivo attivato e funzionante</li>
+                        <li><strong>Esempio:</strong> "68" significa che hai 68 clienti attivi</li>
+                    </ul>
+
+                    <div class="info-box success">
+                        <div class="info-box-title">✅ Consiglio Pratico</div>
+                        <p><strong>Guarda questi numeri ogni mattina!</strong> Ti danno un'idea immediata di quante richieste hai, quanti contratti aspettano firma, e quanti clienti sono attivi.</p>
+                    </div>
+
+                    <h3>🔵 Il Pulsante IRBEMA (Al Centro, Blu)</h3>
+                    <p>Al <strong>centro della dashboard</strong>, vedi un <strong>pulsante BLU</strong> con scritto <strong>"IRBEMA"</strong>.</p>
+
+                    <div class="info-box tip">
+                        <div class="info-box-title">❓ Cos'è IRBEMA?</div>
+                        <p><strong>IRBEMA</strong> è il partner che raccoglie le richieste dal sito <strong>www.ecura.it</strong>. Quando qualcuno compila il form sul sito, la richiesta viene salvata su HubSpot (il CRM di IRBEMA).</p>
+                    </div>
+
+                    <h4>🔵 Come Usare il Pulsante IRBEMA</h4>
+                    <ol class="steps">
+                        <li>
+                            <strong>Clicca sul pulsante BLU "IRBEMA"</strong>
+                            Si trova al centro della dashboard
+                        </li>
+                        <li>
+                            <strong>Il sistema importa i lead</strong>
+                            Vedi una rotellina che gira per qualche secondo
+                        </li>
+                        <li>
+                            <strong>Appare un messaggio</strong>
+                            Es: "✅ Importati 5 nuovi lead da HubSpot"
+                        </li>
+                        <li>
+                            <strong>I nuovi lead appaiono nella tabella</strong>
+                            Li vedi subito nella lista "Ultimi Lead"
+                        </li>
+                    </ol>
+
+                    <div class="info-box warning">
+                        <div class="info-box-title">⏰ Quando Usare il Pulsante IRBEMA</div>
+                        <ul>
+                            <li>📅 <strong>Ogni mattina</strong> quando inizi a lavorare</li>
+                            <li>🕐 <strong>Ogni poche ore</strong> durante il giorno (se hai molte richieste)</li>
+                            <li>🆕 <strong>Quando sai</strong> che è arrivata una nuova richiesta dal sito</li>
+                        </ul>
+                    </div>
+
+                    <h3>📋 Tabella "Ultimi Lead"</h3>
+                    <p>Sotto il pulsante IRBEMA, vedi una <strong>tabella</strong> con le <strong>ultime 10 richieste</strong> ricevute.</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Colonna</th>
+                                <th>Cosa Mostra</th>
+                                <th>Esempio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Nome</strong></td>
+                                <td>Nome e cognome di chi ha fatto la richiesta</td>
+                                <td>Mario Rossi</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email</strong></td>
+                                <td>Email del richiedente</td>
+                                <td>mario.rossi@gmail.com</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Telefono</strong></td>
+                                <td>Numero di telefono</td>
+                                <td>+39 333 1234567</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Servizio</strong></td>
+                                <td>Piano scelto (PRO, FAMILY, PREMIUM)</td>
+                                <td>eCura PRO - BASE</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stato</strong></td>
+                                <td>In che fase è la richiesta</td>
+                                <td>🆕 Nuovo / 📄 Contratto / ✅ Attivo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data</strong></td>
+                                <td>Quando è arrivata la richiesta</td>
+                                <td>09/02/2026 10:30</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Azioni</strong></td>
+                                <td>Pulsanti per aprire i dettagli</td>
+                                <td>[👁️ Vedi] [✉️ Email]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h4>🎨 Colori degli Stati</h4>
+                    <p>Ogni lead ha uno <strong>stato</strong> con un colore diverso:</p>
+
+                    <ul>
+                        <li>🔵 <strong>Nuovo</strong> - Richiesta appena arrivata (BLU)</li>
+                        <li>📧 <strong>Email Inviata</strong> - Email di benvenuto inviata (CELESTE)</li>
+                        <li>📄 <strong>Contratto Inviato</strong> - Contratto generato e inviato (ARANCIONE)</li>
+                        <li>✍️ <strong>Contratto Firmato</strong> - Cliente ha firmato (VERDE CHIARO)</li>
+                        <li>💰 <strong>Pagamento Ricevuto</strong> - Cliente ha pagato (VERDE SCURO)</li>
+                        <li>⚙️ <strong>In Configurazione</strong> - Cliente sta compilando il form (GIALLO)</li>
+                        <li>✅ <strong>Attivo</strong> - Servizio attivato (VERDE BRILLANTE)</li>
+                    </ul>
+                </section>
+
+                <!-- GESTIONE LEAD -->
+                <section id="lead" class="section">
+                    <h2 class="section-title">4. Gestione dei Lead</h2>
+                    <p class="section-subtitle">Come vedere, cercare e gestire tutte le richieste</p>
+
+                    <h3>📋 Cosa è un "Lead"?</h3>
+                    <p>Un <strong>"Lead"</strong> è una <strong>richiesta di informazioni</strong> o di acquisto di un servizio eCura. Può arrivare da:</p>
+
+                    <ul>
+                        <li>🌐 <strong>Sito web</strong> www.ecura.it (tramite IRBEMA/HubSpot)</li>
+                        <li>📞 <strong>Telefono</strong> (inserimento manuale da parte tua)</li>
+                        <li>👥 <strong>Eventi/Fiere</strong> (inserimento manuale)</li>
+                        <li>💼 <strong>Partner commerciali</strong> (AON, DoubleYou, ecc.)</li>
+                    </ul>
+
+                    <h3>🔍 Come Vedere Tutti i Lead</h3>
+                    
+                    <ol class="steps">
+                        <li>
+                            <strong>Dalla Dashboard</strong>
+                            Clicca sul box BLU "Lead Totali" in alto
+                        </li>
+                        <li>
+                            <strong>Si apre la "Leads Dashboard"</strong>
+                            Vedi la lista completa di tutti i lead
+                        </li>
+                        <li>
+                            <strong>Usa i filtri per cercare</strong>
+                            Puoi filtrare per fonte, stato, servizio, data...
+                        </li>
+                    </ol>
+
+                    <h3>🔎 Filtri Disponibili</h3>
+                    <p>Nella Leads Dashboard puoi <strong>filtrare</strong> i lead per trovare quello che cerchi:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Filtro</th>
+                                <th>Valori Possibili</th>
+                                <th>Quando Usarlo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Fonte</strong></td>
+                                <td>IRBEMA, WEB, TELEFONO, NETWORKING</td>
+                                <td>Per vedere solo lead da una fonte specifica</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stato</strong></td>
+                                <td>Nuovo, Contratto Inviato, Firmato, Attivo...</td>
+                                <td>Per vedere lead in una fase specifica</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Servizio</strong></td>
+                                <td>eCura PRO, FAMILY, PREMIUM</td>
+                                <td>Per vedere lead di un servizio specifico</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Piano</strong></td>
+                                <td>BASE, AVANZATO</td>
+                                <td>Per vedere lead di un piano specifico</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data</strong></td>
+                                <td>Da... A...</td>
+                                <td>Per vedere lead di un periodo specifico</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="info-box tip">
+                        <div class="info-box-title">💡 Esempio Pratico</div>
+                        <p><strong>Vuoi vedere solo i contratti firmati da IRBEMA?</strong></p>
+                        <ol>
+                            <li>Filtro "Fonte" → Seleziona "IRBEMA"</li>
+                            <li>Filtro "Stato" → Seleziona "Contratto Firmato"</li>
+                            <li>Clicca "Applica Filtri"</li>
+                            <li>La tabella si aggiorna e vedi solo quei lead</li>
+                        </ol>
+                    </div>
+
+                    <h3>👁️ Vedere i Dettagli di un Lead</h3>
+                    
+                    <ol class="steps">
+                        <li>
+                            <strong>Trova il lead nella lista</strong>
+                            Usa i filtri se necessario
+                        </li>
+                        <li>
+                            <strong>Clicca sul pulsante [👁️ Dettagli]</strong>
+                            Si trova nella colonna "Azioni"
+                        </li>
+                        <li>
+                            <strong>Si apre un popup con tutte le informazioni</strong>
+                            Vedi: dati richiedente, dati assistito, servizio, prezzi, stato, email inviate, documenti...
+                        </li>
+                        <li>
+                            <strong>Puoi fare azioni</strong>
+                            Vedi contratto, invia email, modifica dati, ecc.
+                        </li>
+                    </ol>
+
+                    <h4>📋 Cosa Vedi nei Dettagli Lead</h4>
+                    <ul>
+                        <li><strong>👤 Dati Richiedente:</strong> Nome, cognome, email, telefono</li>
+                        <li><strong>👨‍⚕️ Dati Assistito:</strong> Nome, cognome, età, codice fiscale, indirizzo</li>
+                        <li><strong>📦 Servizio:</strong> eCura PRO/FAMILY/PREMIUM, piano BASE/AVANZATO</li>
+                        <li><strong>💰 Prezzi:</strong> Prezzo primo anno, prezzo rinnovo annuale</li>
+                        <li><strong>📊 Stato Workflow:</strong> A che punto è il processo</li>
+                        <li><strong>📧 Email Inviate:</strong> Lista delle email mandate al cliente</li>
+                        <li><strong>📄 Documenti:</strong> Link per vedere contratto, proforma, DDT...</li>
+                    </ul>
+                </section>
+
+                <!-- AGGIUNGERE LEAD -->
+                <section id="aggiungi-lead" class="section">
+                    <h2 class="section-title">5. Aggiungere un Lead Manualmente</h2>
+                    <p class="section-subtitle">Come inserire una richiesta arrivata per telefono o di persona</p>
+
+                    <h3>➕ Quando Aggiungere un Lead Manuale</h3>
+                    <p>Usa questa funzione quando:</p>
+                    <ul>
+                        <li>📞 Un cliente ti <strong>chiama al telefono</strong> per chiedere informazioni</li>
+                        <li>🏛️ Raccogli richieste a <strong>fiere, eventi</strong> o presso aziende</li>
+                        <li>💼 Un partner commerciale ti <strong>passa un contatto</strong> via email/telefono</li>
+                        <li>👥 Raccogli richieste tramite <strong>networking</strong> o passaparola</li>
+                    </ul>
+
+                    <h3>📝 Come Aggiungere un Nuovo Lead</h3>
+                    
+                    <ol class="steps">
+                        <li>
+                            <strong>Vai nella Dashboard</strong>
+                            Clicca sul link o vai su https://telemedcare-v12.pages.dev/dashboard
+                        </li>
+                        <li>
+                            <strong>Clicca "Aggiungi Lead Manuale"</strong>
+                            Il pulsante è nella sezione "Azioni Rapide" (di solito in basso)
+                        </li>
+                        <li>
+                            <strong>Si apre il form di inserimento</strong>
+                            Vedi diversi campi da compilare
+                        </li>
+                        <li>
+                            <strong>Compila i dati obbligatori</strong>
+                            I campi con l'asterisco (*) sono obbligatori
+                        </li>
+                        <li>
+                            <strong>Clicca "Salva Lead"</strong>
+                            Il lead viene salvato e appare nella lista
+                        </li>
+                        <li>
+                            <strong>Il sistema invia le email automatiche</strong>
+                            Email di notifica a te e email di benvenuto al cliente (se richiesto)
+                        </li>
+                    </ol>
+
+                    <h3>📋 Campi del Form</h3>
+                    <p>Ecco cosa devi compilare nel form:</p>
+
+                    <h4>👤 Dati Richiedente (OBBLIGATORI)</h4>
+                    <ul>
+                        <li><strong>Nome:</strong> Nome di chi fa la richiesta (es: Mario)</li>
+                        <li><strong>Cognome:</strong> Cognome (es: Rossi)</li>
+                        <li><strong>Email:</strong> Email valida (es: mario.rossi@gmail.com)</li>
+                        <li><strong>Telefono:</strong> Con prefisso +39 (es: +39 333 1234567)</li>
+                    </ul>
+
+                    <h4>👨‍⚕️ Dati Assistito (OPZIONALI)</h4>
+                    <ul>
+                        <li><strong>Nome Assistito:</strong> Nome della persona che userà il servizio</li>
+                        <li><strong>Cognome Assistito:</strong> Cognome dell'assistito</li>
+                        <li><strong>Parentela:</strong> Seleziona: Madre, Padre, Nonno/a, Altro...</li>
+                        <li><strong>☑️ L'assistito è il richiedente:</strong> Spunta se la persona che chiede è quella che userà il servizio</li>
+                    </ul>
+
+                    <h4>📦 Servizio (OBBLIGATORIO)</h4>
+                    <ul>
+                        <li><strong>Servizio:</strong> Seleziona eCura PRO, FAMILY o PREMIUM</li>
+                        <li><strong>Piano:</strong> Seleziona BASE o AVANZATO</li>
+                    </ul>
+
+                    <h4>📌 Fonte (OBBLIGATORIO)</h4>
+                    <ul>
+                        <li><strong>Fonte:</strong> Seleziona da dove arriva (TELEFONO, NETWORKING, FIERA, ecc.)</li>
+                        <li><strong>Note:</strong> Campo libero per note aggiuntive (es: "Cliente interessato, richiamare domani")</li>
+                    </ul>
+
+                    <div class="info-box warning">
+                        <div class="info-box-title">⚠️ Attenzione ai Campi Obbligatori</div>
+                        <p>Se non compili <strong>Nome, Cognome, Email, Telefono, Servizio e Piano</strong>, il sistema non ti farà salvare il lead!</p>
+                    </div>
+
+                    <h3>✅ Dopo Aver Salvato</h3>
+                    <p>Quando salvi il lead, il sistema automaticamente:</p>
+
+                    <ul>
+                        <li>📝 <strong>Genera un ID univoco</strong> per il lead (es: LEAD-MANUAL-00123)</li>
+                        <li>📧 <strong>Invia email a info@telemedcare.it</strong> per avvisarti della nuova richiesta</li>
+                        <li>📬 <strong>Invia email al cliente</strong> con brochure eCura (se hai spuntato l'opzione)</li>
+                        <li>📊 <strong>Aggiunge il lead alla lista</strong> nella dashboard</li>
+                        <li>🔄 <strong>Avvia il workflow automatico</strong> se configurato</li>
+                    </ul>
+                </section>
+
+                <!-- CONTRATTI -->
+                <section id="contratti" class="section">
+                    <h2 class="section-title">6. Gestione Contratti</h2>
+                    <p class="section-subtitle">Come generare, inviare e gestire i contratti con i clienti</p>
+
+                    <h3>📄 Cos'è un Contratto nel Sistema?</h3>
+                    <p>Il <strong>contratto</strong> è il documento legale che formalizza l'accordo tra <strong>Medica GB</strong> (la tua azienda) e il <strong>cliente</strong> per il servizio di TeleAssistenza Domiciliare eCura.</p>
+
+                    <h3>🔄 Il Processo dei Contratti (Automatico)</h3>
+                    <p>Il sistema gestisce i contratti <strong>in modo automatico</strong>:</p>
+
+                    <ol class="steps">
+                        <li>
+                            <strong>Il lead ha tutti i dati completi</strong>
+                            Nome, cognome, CF, indirizzo, servizio, ecc.
+                        </li>
+                        <li>
+                            <strong>Il sistema genera il contratto</strong>
+                            Crea un file PDF personalizzato con i dati del cliente
+                        </li>
+                        <li>
+                            <strong>Il contratto viene salvato</strong>
+                            Il PDF viene salvato nel sistema cloud
+                        </li>
+                        <li>
+                            <strong>Email automatica al cliente</strong>
+                            Il cliente riceve un'email con:
+                            <ul>
+                                <li>📎 Contratto PDF allegato</li>
+                                <li>🔗 Link per firmare online</li>
+                                <li>📄 Brochure informativa eCura</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Il cliente firma online</strong>
+                            Clicca sul link e firma con dito/mouse su schermo
+                        </li>
+                        <li>
+                            <strong>Il sistema registra la firma</strong>
+                            Salva: firma, data/ora, indirizzo IP, browser usato
+                        </li>
+                    </ol>
+
+                    <div class="info-box success">
+                        <div class="info-box-title">✅ Tutto Automatico!</div>
+                        <p>Una volta che il lead ha tutti i dati, <strong>non devi fare nulla</strong>. Il sistema genera e invia il contratto automaticamente!</p>
+                    </div>
+
+                    <h3>📧 Email Contratto al Cliente</h3>
+                    <p>Il cliente riceve un'email con questo contenuto:</p>
+
+                    <div class="screenshot">
+                        <div class="screenshot-title">📧 Esempio Email Contratto</div>
+                        <pre>
+Oggetto: eCura - Il tuo contratto è pronto ✅
+
+Gentile Mario Rossi,
+
+Il tuo contratto per il servizio eCura PRO - BASE è pronto!
+
+📄 Trovi il contratto allegato a questa email in formato PDF.
+
+Per FIRMARE il contratto online, clicca qui:
+🔗 https://telemedcare-v12.pages.dev/firma/XXXXX
+
+Dopo la firma riceverai:
+1. Proforma per il pagamento
+2. Istruzioni per completare la configurazione
+
+Per qualsiasi domanda, rispondi a questa email.
+
+Cordiali saluti,
+Il Team TeleMedCare
+                        </pre>
+                    </div>
+
+                    <h3>✍️ Come Funziona la Firma Elettronica</h3>
+                    <p>Il cliente firma il contratto così:</p>
+
+                    <ol>
+                        <li>🔗 <strong>Clicca il link</strong> nell'email</li>
+                        <li>📄 <strong>Si apre una pagina</strong> con il contratto completo da leggere</li>
+                        <li>✍️ <strong>Firma con dito/mouse</strong> su un'area bianca (canvas)</li>
+                        <li>✅ <strong>Clicca "Invia Firma"</strong></li>
+                        <li>🎉 <strong>Riceve conferma</strong> "Grazie! Firma registrata"</li>
+                    </ol>
+
+                    <div class="info-box tip">
+                        <div class="info-box-title">💡 Firma Legalmente Valida</div>
+                        <p>Il sistema registra <strong>tutti i dati necessari</strong> per rendere la firma <strong>legalmente valida</strong> in Italia:</p>
+                        <ul>
+                            <li>✅ Immagine della firma (PNG)</li>
+                            <li>✅ Data e ora esatta</li>
+                            <li>✅ Indirizzo IP del cliente</li>
+                            <li>✅ Browser e sistema operativo usati</li>
+                        </ul>
+                    </div>
+
+                    <h3>🔍 Come Vedere i Contratti Firmati</h3>
+                    
+                    <ol class="steps">
+                        <li>
+                            <strong>Vai nella Dashboard</strong>
+                            Oppure apri la Leads Dashboard
+                        </li>
+                        <li>
+                            <strong>Usa il filtro "Stato"</strong>
+                            Seleziona "Contratto Firmato"
+                        </li>
+                        <li>
+                            <strong>Vedi la lista</strong>
+                            Appare lista con solo i lead che hanno firmato
+                        </li>
+                        <li>
+                            <strong>Clicca [👁️ Dettagli]</strong>
+                            Per vedere i dettagli di un lead specifico
+                        </li>
+                        <li>
+                            <strong>Clicca [📄 Vedi Contratto]</strong>
+                            Si apre il PDF del contratto firmato
+                        </li>
+                    </ol>
+
+                    <h3>📥 Come Scaricare un Contratto</h3>
+                    <p>Per scaricare un contratto firmato:</p>
+
+                    <ol>
+                        <li>Apri i <strong>Dettagli Lead</strong></li>
+                        <li>Nella sezione <strong>"Documenti"</strong>, clicca <strong>[📄 Contratto]</strong></li>
+                        <li>Il PDF si <strong>apre nel browser</strong></li>
+                        <li>Clicca <strong>tasto destro → "Salva con nome"</strong></li>
+                        <li>Oppure usa <strong>Ctrl+S</strong> (o Cmd+S su Mac)</li>
+                    </ol>
+
+                    <h3>🔄 Rigenerare un Contratto</h3>
+                    <p>Se c'è un <strong>errore</strong> nel contratto (es: indirizzo sbagliato):</p>
+
+                    <ol class="steps">
+                        <li>
+                            <strong>Apri Dettagli Lead</strong>
+                            Trova il lead nella lista
+                        </li>
+                        <li>
+                            <strong>Clicca [📝 Modifica]</strong>
+                            Correggi i dati sbagliati
+                        </li>
+                        <li>
+                            <strong>Salva le modifiche</strong>
+                            Clicca "Salva"
+                        </li>
+                        <li>
+                            <strong>Clicca [🔄 Rigenera Contratto]</strong>
+                            Il sistema genera un nuovo contratto corretto
+                        </li>
+                        <li>
+                            <strong>Il nuovo contratto viene inviato</strong>
+                            Email automatica al cliente con il contratto aggiornato
+                        </li>
+                    </ol>
+                </section>
+
+                <div class="footer">
+                    <p><strong>Manuale Operatore TeleMedCare V12</strong></p>
+                    <p>TeleAssistenza Domiciliare eCura - Versione 1.0 Febbraio 2026</p>
+                    <p>📧 info@telemedcare.it | 🌐 https://telemedcare-v12.pages.dev</p>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

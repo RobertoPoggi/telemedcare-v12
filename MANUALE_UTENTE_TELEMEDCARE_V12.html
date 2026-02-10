@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Utente - TeleMedCare V12</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2563eb;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 2em;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 5px solid #3b82f6;
+        }
+        
+        h3 {
+            color: #3b82f6;
+            font-size: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        
+        h4 {
+            color: #60a5fa;
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+        
+        th {
+            background: #3b82f6;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .info-box {
+            background: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background: #dcfce7;
+            border-left: 4px solid #22c55e;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .code-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+        
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-green {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-orange {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+        
+        .badge-red {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        .toc {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        
+        .toc h2 {
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        .toc ol {
+            margin-left: 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 10px;
+        }
+        
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        .header-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header-info h2 {
+            color: white;
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header-info p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+        
+        .checklist {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .checklist h3 {
+            color: #166534;
+            margin-top: 15px;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .checklist li:before {
+            content: "☐ ";
+            color: #22c55e;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .print-button:hover {
+            background: #2563eb;
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            body {
+                background: white;
+            }
+        }
+        
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+    
+    <div class="container">
+        <h1>📖 MANUALE UTENTE - TELEMEDCARE V12</h1>
+        
+        <div class="header-info">
+            <h2>Sistema di Gestione Telemedicina eCura</h2>
+            <p><strong>Versione applicazione:</strong> V12.0</p>
+            <p><strong>Data manuale:</strong> 9 Febbraio 2026</p>
+            <p><strong>Versione manuale:</strong> 1.1 (Aggiornato)</p>
+            <p><strong>URL applicazione:</strong> <a href="https://telemedcare-v12.pages.dev/" style="color: white; text-decoration: underline;">https://telemedcare-v12.pages.dev/</a></p>
+            <p><strong>Supporto:</strong> info@telemedcare.it</p>
+        </div>
+
+        <div class="toc">
+            <h2>📑 INDICE</h2>
+            <ol>
+                <li><a href="#intro">Introduzione al Sistema</a></li>
+                <li><a href="#start">Come Iniziare</a></li>
+                <li><a href="#dashboard">Dashboard Principale</a></li>
+                <li><a href="#lead">Gestione Lead (Richieste)</a></li>
+                <li><a href="#contratti">Gestione Contratti</a></li>
+                <li><a href="#clienti">Gestione Clienti Attivi</a></li>
+                <li><a href="#workflow">Workflow Automatici</a></li>
+                <li><a href="#config">Configurazione Sistema</a></li>
+                <li><a href="#import">Import Lead da Partner (HubSpot/IRBEMA)</a></li>
+                <li><a href="#documenti">Documenti e Template</a></li>
+                <li><a href="#report">Report e Statistiche</a></li>
+                <li><a href="#faq">Domande Frequenti (FAQ)</a></li>
+                <li><a href="#troubleshooting">Risoluzione Problemi</a></li>
+                <li><a href="#changelog">Changelog Aggiornamenti</a></li>
+            </ol>
+        </div>
+
+        <h2 id="intro">1. INTRODUZIONE AL SISTEMA</h2>
+        
+        <h3>🎯 Cos'è TeleMedCare V12?</h3>
+        <p>TeleMedCare V12 è una <strong>piattaforma completa di gestione</strong> per i servizi di telemedicina <strong>eCura</strong>. Il sistema gestisce automaticamente l'intero percorso del cliente, dalla prima richiesta fino all'attivazione del servizio.</p>
+
+        <h3>✨ Funzionalità Principali</h3>
+        <ul>
+            <li>✅ <strong>Acquisizione automatica richieste</strong> da sito web e partner</li>
+            <li>✅ <strong>Generazione automatica contratti</strong> personalizzati</li>
+            <li>✅ <strong>Gestione firme elettroniche</strong> dei contratti</li>
+            <li>✅ <strong>Generazione proforma</strong> per pagamenti</li>
+            <li>✅ <strong>Workflow email automatici</strong> per ogni fase</li>
+            <li>✅ <strong>Tracking completo</strong> dello stato delle richieste</li>
+            <li>✅ <strong>Dashboard operativa</strong> intuitiva</li>
+            <li>✅ <strong>Statistiche e report</strong> in tempo reale</li>
+        </ul>
+
+        <h3>🎨 Interfaccia del Sistema</h3>
+        <p>L'applicazione ha un'interfaccia moderna e semplice da usare:</p>
+        <ul>
+            <li><strong>Colori:</strong> Blu (#3B82F6) per le azioni principali, Verde per conferme</li>
+            <li><strong>Layout:</strong> Responsive (si adatta a computer, tablet e smartphone)</li>
+            <li><strong>Navigazione:</strong> Menu intuitivo con icone chiare</li>
+            <li><strong>Feedback visivi:</strong> Notifiche colorate per ogni azione</li>
+        </ul>
+
+        <h2 id="start">2. COME INIZIARE</h2>
+        
+        <h3>🔗 Accesso al Sistema</h3>
+        <ol>
+            <li><strong>Apri il browser</strong> (Chrome, Firefox, Safari, Edge)</li>
+            <li><strong>Vai all'indirizzo:</strong> <a href="https://telemedcare-v12.pages.dev/">https://telemedcare-v12.pages.dev/</a></li>
+            <li><strong>Attendi il caricamento</strong> (circa 2-3 secondi)</li>
+            <li><strong>Vedrai la Dashboard Principale</strong> con tutte le funzioni disponibili</li>
+        </ol>
+
+        <div class="warning-box">
+            <strong>⚠️ Nota:</strong> Non è richiesto login. Il sistema è accessibile direttamente.
+        </div>
+
+        <h3>📱 Compatibilità Browser</h3>
+        <p>Il sistema funziona perfettamente su:</p>
+        <ul>
+            <li>✅ <strong>Google Chrome</strong> (consigliato)</li>
+            <li>✅ <strong>Mozilla Firefox</strong></li>
+            <li>✅ <strong>Microsoft Edge</strong></li>
+            <li>✅ <strong>Safari</strong> (Mac/iPhone)</li>
+            <li>✅ <strong>Opera</strong></li>
+        </ul>
+
+        <h3>🖥️ Requisiti Minimi</h3>
+        <ul>
+            <li><strong>Connessione internet</strong> stabile</li>
+            <li><strong>Browser aggiornato</strong> (ultima versione)</li>
+            <li><strong>Risoluzione schermo:</strong> Minimo 1024x768px</li>
+            <li><strong>JavaScript abilitato</strong></li>
+        </ul>
+
+        <h2 id="import">9. IMPORT LEAD DA PARTNER (HUBSPOT/IRBEMA)</h2>
+        
+        <h3>🤝 Cos'è l'Import da Partner?</h3>
+        <p>TeleMedCare V12 importa automaticamente i lead dal <strong>CRM HubSpot di IRBEMA</strong>, che raccoglie le richieste dal sito <strong>www.ecura.it</strong> tramite form di contatto.</p>
+
+        <h3>🏢 Partner Supportati</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Partner</th>
+                    <th>Sistema</th>
+                    <th>Import Automatico</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>IRBEMA</strong></td>
+                    <td>HubSpot CRM</td>
+                    <td>✅ 3 Metodi Attivi</td>
+                    <td><span class="badge badge-green">100% Operativo</span></td>
+                </tr>
+                <tr>
+                    <td><strong>AON</strong></td>
+                    <td>API Custom</td>
+                    <td>🔄 In sviluppo</td>
+                    <td><span class="badge badge-orange">Q2 2026</span></td>
+                </tr>
+                <tr>
+                    <td><strong>DoubleYou</strong></td>
+                    <td>API Custom</td>
+                    <td>🔄 In sviluppo</td>
+                    <td><span class="badge badge-orange">Q2 2026</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Mondadori</strong></td>
+                    <td>B2B Portal</td>
+                    <td>📅 Pianificato</td>
+                    <td><span class="badge">Q3 2026</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>🔄 TRE METODI DI SINCRONIZZAZIONE HUBSPOT</h3>
+        <p>Il sistema offre <strong>3 metodi</strong> per importare lead da HubSpot/IRBEMA:</p>
+
+        <h4>1️⃣ METODO 1: Tasto IRBEMA (Sincronizzazione Manuale Completa)</h4>
+        
+        <div class="info-box">
+            <strong>Quando usarlo:</strong> Quando vuoi fare una <strong>sincronizzazione completa manuale</strong> degli ultimi 7 giorni.
+        </div>
+
+        <p><strong>Come funziona:</strong></p>
+        <ol>
+            <li><strong>Apri Dashboard</strong> → https://telemedcare-v12.pages.dev/dashboard</li>
+            <li><strong>Clicca pulsante "IRBEMA"</strong> (arancione, in alto)</li>
+            <li><strong>Sistema importa:</strong>
+                <ul>
+                    <li>Lead creati negli <strong>ultimi 7 giorni</strong></li>
+                    <li>Solo lead da <strong>Form eCura</strong> (filtro automatico)</li>
+                    <li>Esclude lead già presenti (no duplicati)</li>
+                </ul>
+            </li>
+            <li><strong>Vedi risultato:</strong>
+                <ul>
+                    <li>✅ "Importati 5 nuovi lead da HubSpot"</li>
+                    <li>⏭️ "3 lead già esistenti (skipped)"</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p><strong>Parametri Sincronizzazione:</strong></p>
+        <ul>
+            <li><strong>Finestra temporale:</strong> Ultimi 7 giorni</li>
+            <li><strong>Filtro:</strong> <code>hs_object_source_detail_1 = 'Form eCura'</code></li>
+            <li><strong>Controllo duplicati:</strong> Email + external_source_id</li>
+            <li><strong>ID generati:</strong> <code>LEAD-IRBEMA-00146</code>, <code>LEAD-IRBEMA-00147</code>, etc.</li>
+        </ul>
+
+        <h4>2️⃣ METODO 2: CRON Giornaliero Automatico (GitHub Actions)</h4>
+        
+        <div class="success-box">
+            <strong>Quando funziona:</strong> Ogni giorno alle <strong>8:00 ora italiana</strong> (7:00 UTC) automaticamente.
+        </div>
+
+        <p><strong>Come funziona:</strong></p>
+        <ol>
+            <li><strong>GitHub Actions</strong> esegue workflow schedulato</li>
+            <li><strong>Verifica switch</strong> <code>hubspot_auto_import_enabled</code> nel DB</li>
+            <li><strong>Se switch ON:</strong>
+                <ul>
+                    <li>Chiama <code>POST /api/hubspot/sync</code></li>
+                    <li>Parametri: <code>days=7, onlyEcura=true, dryRun=false</code></li>
+                    <li>Importa lead ultimi 7 giorni</li>
+                </ul>
+            </li>
+            <li><strong>Se switch OFF:</strong>
+                <ul>
+                    <li>Skip sincronizzazione</li>
+                    <li>Log: "Sync disabilitata da dashboard"</li>
+                </ul>
+            </li>
+        </ol>
+
+        <p><strong>Dove verificare:</strong></p>
+        <ul>
+            <li><strong>GitHub:</strong> <a href="https://github.com/RobertoPoggi/telemedcare-v12/actions">https://github.com/RobertoPoggi/telemedcare-v12/actions</a></li>
+            <li><strong>Workflow:</strong> "HubSpot Daily Sync 8:00"</li>
+            <li><strong>Log completi:</strong> Clicca su ultimo run → Job "sync-hubspot"</li>
+        </ul>
+
+        <h4>3️⃣ METODO 3: Auto-Sync al Refresh Dashboard (Ultimi 24h)</h4>
+        
+        <div class="info-box">
+            <strong>Quando funziona:</strong> <strong>Ogni volta</strong> che apri o ricarichi la Dashboard.
+        </div>
+
+        <p><strong>Come funziona:</strong></p>
+        <ol>
+            <li><strong>Apri/Ricarica</strong> Dashboard</li>
+            <li><strong>JavaScript automatico</strong> chiama <code>POST /api/hubspot/auto-import</code></li>
+            <li><strong>Importa solo:</strong>
+                <ul>
+                    <li>Lead creati nelle <strong>ultime 24 ore</strong></li>
+                    <li>Solo <strong>Form eCura</strong></li>
+                    <li>Esclude già importati</li>
+                </ul>
+            </li>
+            <li><strong>Modalità silenziosa:</strong>
+                <ul>
+                    <li>Se 0 nuovi lead: <strong>nessuna notifica</strong> (silenzioso)</li>
+                    <li>Se >0 nuovi lead: <strong>Toast verde</strong> in basso a destra</li>
+                </ul>
+            </li>
+            <li><strong>Console log dettagliati:</strong> (Apri F12 per vedere)</li>
+        </ol>
+
+        <div class="code-box">
+🤖 [AUTO-IMPORT] Script caricato e pronto
+✅ [AUTO-IMPORT] DOM già caricato, eseguo executeAutoImport tra 500ms
+🚀 [AUTO-IMPORT] executeAutoImport() chiamata
+📡 [AUTO-IMPORT] Chiamata API: POST /api/hubspot/auto-import
+📡 [AUTO-IMPORT] Response status: 200
+✅ [AUTO-IMPORT] Completato: 2 importati, 0 già esistenti (09:15 - 09:45)
+        </div>
+
+        <h3>📊 CONFRONTO TRE METODI</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Aspetto</th>
+                    <th>Tasto IRBEMA</th>
+                    <th>CRON Giornaliero</th>
+                    <th>Auto-Sync Refresh</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Trigger</strong></td>
+                    <td>Click manuale</td>
+                    <td>Automatico 8:00</td>
+                    <td>Refresh dashboard</td>
+                </tr>
+                <tr>
+                    <td><strong>Finestra</strong></td>
+                    <td>7 giorni</td>
+                    <td>7 giorni</td>
+                    <td>24 ore</td>
+                </tr>
+                <tr>
+                    <td><strong>Frequenza</strong></td>
+                    <td>A richiesta</td>
+                    <td>1x/giorno</td>
+                    <td>Ogni refresh</td>
+                </tr>
+                <tr>
+                    <td><strong>Notifica</strong></td>
+                    <td>✅ Sempre</td>
+                    <td>⚠️ Solo errori</td>
+                    <td>✅ Se >0 lead</td>
+                </tr>
+                <tr>
+                    <td><strong>Log</strong></td>
+                    <td>Dashboard</td>
+                    <td>GitHub Actions</td>
+                    <td>Browser Console</td>
+                </tr>
+                <tr>
+                    <td><strong>Controllo</strong></td>
+                    <td>Manuale</td>
+                    <td>Switch ON/OFF</td>
+                    <td>Sempre attivo</td>
+                </tr>
+                <tr>
+                    <td><strong>Uso ideale</strong></td>
+                    <td>Sync massiva</td>
+                    <td>Routine giornaliera</td>
+                    <td>Monitoraggio real-time</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>💡 STRATEGIA CONSIGLIATA</h3>
+        
+        <div class="success-box">
+            <h4>Setup Ottimale per Produzione:</h4>
+            <ol>
+                <li>✅ <strong>CRON Giornaliero:</strong> <strong>ABILITATO</strong> (backup notturno)</li>
+                <li>✅ <strong>Auto-Sync Refresh:</strong> <strong>SEMPRE ATTIVO</strong> (monitoraggio continuo)</li>
+                <li>✅ <strong>Tasto IRBEMA:</strong> <strong>Usa solo se necessario</strong> (es: problemi CRON)</li>
+            </ol>
+        </div>
+
+        <p><strong>Quando usare ciascun metodo:</strong></p>
+        <ul>
+            <li><strong>Auto-Sync:</strong> Uso normale, apri dashboard più volte al giorno</li>
+            <li><strong>CRON:</strong> Backup automatico notturno se nessuno apre dashboard</li>
+            <li><strong>Tasto IRBEMA:</strong> Solo per recupero massivo o troubleshooting</li>
+        </ul>
+
+        <h3>🛠️ RISOLUZIONE PROBLEMI</h3>
+        
+        <h4>❌ Problema: Auto-Sync non importa nulla</h4>
+        
+        <p><strong>Verifica passo-passo:</strong></p>
+        
+        <p><strong>1. Console Browser (F12):</strong></p>
+        <div class="code-box">
+Cerca log: [AUTO-IMPORT]
+Se non vedi log → Cache browser (Ctrl+Shift+R)
+Se vedi "Credenziali mancanti" → Env vars non configurate
+        </div>
+
+        <p><strong>2. Verifica Credenziali HubSpot:</strong></p>
+        <ul>
+            <li>Dashboard Cloudflare → Pages → telemedcare-v12</li>
+            <li>Settings → Environment variables</li>
+            <li>Controlla: <code>HUBSPOT_ACCESS_TOKEN</code> e <code>HUBSPOT_PORTAL_ID</code></li>
+        </ul>
+
+        <p><strong>3. Verifica Switch:</strong></p>
+        <div class="code-box">
+GET https://telemedcare-v12.pages.dev/api/settings/hubspot_auto_import_enabled
+
+Risposta attesa: { "value": "true", "enabled": true }
+        </div>
+
+        <h4>❌ Problema: Lead importati hanno prezzo = €0</h4>
+        
+        <div class="warning-box">
+            <strong>Causa:</strong> Errore nel calcolo automatico prezzi.
+        </div>
+
+        <p><strong>Verifica Log:</strong></p>
+        <div class="code-box">
+// Console browser dopo import:
+Cerca: [HUBSPOT MAPPING] Calcolo prezzi per: servizio=XXX, piano=YYY
+Se vedi: "ERRORE calcolo prezzi" → Servizio/Piano non validi
+        </div>
+
+        <p><strong>Fix:</strong></p>
+        <ol>
+            <li><strong>Verifica servizio/piano in HubSpot:</strong>
+                <ul>
+                    <li>Deve essere: <code>servizio_ecura</code> = PRO/FAMILY/PREMIUM</li>
+                    <li>Deve essere: <code>piano_ecura</code> = BASE/AVANZATO</li>
+                </ul>
+            </li>
+            <li><strong>Se mancanti in HubSpot:</strong>
+                <ul>
+                    <li>Sistema usa default: <code>servizio=PRO, piano=BASE</code></li>
+                    <li>Prezzo automatico: €480 (setup) + €240 (rinnovo)</li>
+                </ul>
+            </li>
+            <li><strong>Fix manuale prezzi:</strong>
+                <div class="code-box">
+Dashboard → Leads → Seleziona lead → Edit
+Aggiorna: Prezzo Anno e Prezzo Rinnovo
+                </div>
+            </li>
+        </ol>
+
+        <h2 id="changelog">📝 CHANGELOG ULTIMI AGGIORNAMENTI</h2>
+        
+        <h3>🔥 9 Febbraio 2026 - V12.0.3 (OGGI)</h3>
+        
+        <div class="success-box">
+            <h4>✨ Nuove Funzionalità</h4>
+            <ol>
+                <li><strong>🔄 Auto-Sync Dashboard con HubSpot</strong>
+                    <ul>
+                        <li>Import automatico lead ogni volta che apri/ricarichi dashboard</li>
+                        <li>Finestra: Ultimi 24 ore</li>
+                        <li>Modalità silenziosa (no notifiche se 0 nuovi lead)</li>
+                        <li>Logging dettagliato in console browser (F12)</li>
+                    </ul>
+                </li>
+                <li><strong>⚡ Trigger Automatico Proforma dopo Firma</strong>
+                    <ul>
+                        <li>Proforma generata automaticamente appena contratto firmato</li>
+                        <li>Calcolo prezzi automatico da servizio + piano</li>
+                        <li>Email proforma inviata immediatamente al cliente</li>
+                        <li>Salvato in database (tabella proformas)</li>
+                    </ul>
+                </li>
+                <li><strong>💰 Calcolo Automatico Prezzi Lead Import</strong>
+                    <ul>
+                        <li>Prezzi calcolati automaticamente da servizio+piano HubSpot</li>
+                        <li>Supporto FAMILY, PRO, PREMIUM + BASE/AVANZATO</li>
+                        <li>Logging dettagliato per troubleshooting</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="info-box">
+            <h4>🐛 Bug Fix</h4>
+            <ol>
+                <li>Prezzi lead importati = €0 → Risolto con logging e gestione errori</li>
+                <li>Auto-Sync non parte al refresh → Aggiunto debug completo</li>
+            </ol>
+        </div>
+
+        <h4>📖 Documentazione Aggiunta</h4>
+        <ul>
+            <li>INTEGRAZIONE_HUBSPOT_COMPLETA.md (10.5 KB)</li>
+            <li>STRATEGIA_IMPLEMENTAZIONE_COMPLETA.md (18 KB)</li>
+            <li>DATABASE_SCHEMA_MULTICANALE.md (11 KB)</li>
+            <li>PIANO_OPERATIVO_MULTICANALE.md (11 KB)</li>
+            <li>Manuale Utente aggiornato (Sezione 9 completamente riscritta)</li>
+        </ul>
+
+        <h4>🎯 Progresso Workflow End-to-End</h4>
+        <div class="success-box">
+            <p><strong>Completato:</strong> 85% (+10% questa sessione)</p>
+            <ul>
+                <li>✅ Steps 1-9: 100% funzionanti</li>
+                <li>🔄 Steps 10-14: In completamento (Stripe, IMEI, DDT)</li>
+            </ul>
+        </div>
+
+        <div class="checklist">
+            <h2>✅ CHECKLIST RAPIDA OPERATORE</h2>
+            <p>Copia questa checklist per uso quotidiano:</p>
+            
+            <h3>Al Mattino</h3>
+            <ul>
+                <li>Apri Dashboard</li>
+                <li>Controlla nuovi lead notturni</li>
+                <li>Clicca "IRBEMA" per import giornaliero</li>
+                <li>Verifica lead in attesa > 3 giorni</li>
+                <li>Controlla email notifiche ricevute</li>
+            </ul>
+
+            <h3>Durante il Giorno</h3>
+            <ul>
+                <li>Rispondi a eventuali richieste info lead</li>
+                <li>Controlla contratti da firmare in attesa</li>
+                <li>Verifica pagamenti ricevuti oggi</li>
+                <li>Controlla configurazioni da processare</li>
+                <li>Genera DDT per pagamenti confermati</li>
+            </ul>
+
+            <h3>Prima di Chiudere</h3>
+            <ul>
+                <li>Verifica tutti i lead oggi gestiti</li>
+                <li>Controlla statistiche giornaliere</li>
+                <li>Pianifica follow-up per domani</li>
+                <li>Backup dati (automatico alle 23:00)</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 2px solid #e5e7eb;">
+        
+        <div style="text-align: center; color: #6b7280; padding: 20px;">
+            <p><strong>Fine Manuale Utente TeleMedCare V12</strong></p>
+            <p><em>Documento versione 1.1 - 9 Febbraio 2026 (Aggiornato)</em></p>
+            <p><strong>Per supporto:</strong> info@telemedcare.it</p>
+            <p><strong>Sito:</strong> <a href="https://telemedcare-v12.pages.dev/">https://telemedcare-v12.pages.dev/</a></p>
+            <p><strong>GitHub:</strong> <a href="https://github.com/RobertoPoggi/telemedcare-v12">https://github.com/RobertoPoggi/telemedcare-v12</a></p>
+        </div>
+    </div>
+</body>
+</html>

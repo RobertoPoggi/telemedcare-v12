@@ -33,6 +33,7 @@ export const autoImportScript = `
   async function executeAutoImport() {
     try {
       console.log('🚀 [AUTO-IMPORT] executeAutoImport() chiamata');
+      console.log('🔍 [AUTO-IMPORT] URL corrente:', window.location.href);
       
       if (!AUTO_IMPORT_CONFIG.enabled) {
         console.log('🔴 [AUTO-IMPORT] Disabilitato');
@@ -49,9 +50,16 @@ export const autoImportScript = `
       console.log('✅ [AUTO-IMPORT] shouldRunAutoImport: true');
       console.log('🔄 [AUTO-IMPORT] Inizio import incrementale silenzioso...');
       
-      console.log('📡 [AUTO-IMPORT] Chiamata API: POST /api/hubspot/auto-import');
+      const apiEndpoint = '/api/hubspot/auto-import';
+      console.log('📡 [AUTO-IMPORT] Chiamata API: POST', apiEndpoint);
+      console.log('📤 [AUTO-IMPORT] Body:', JSON.stringify({
+        enabled: true,
+        startHour: 0,
+        onlyEcura: true,
+        dryRun: false
+      }));
       
-      const response = await fetch('/api/hubspot/auto-import', {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -65,9 +73,16 @@ export const autoImportScript = `
       });
       
       console.log(\`📡 [AUTO-IMPORT] Response status: \${response.status}\`);
+      console.log(\`📡 [AUTO-IMPORT] Response ok: \${response.ok}\`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(\`❌ [AUTO-IMPORT] HTTP Error \${response.status}:\`, errorText);
+        throw new Error(\`HTTP \${response.status}: \${errorText}\`);
+      }
       
       const result = await response.json();
-      console.log('📦 [AUTO-IMPORT] Response data:', result);
+      console.log('📦 [AUTO-IMPORT] Response data:', JSON.stringify(result, null, 2));
       
       // Salva timestamp ultimo import
       localStorage.setItem('lastAutoImportTimestamp', new Date().toISOString());

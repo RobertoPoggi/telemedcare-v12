@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuale Utente TeleMedCare V12 - Professional Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .hero h1 {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.5em;
+            font-weight: 300;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+        
+        .hero-meta {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        
+        .hero-meta-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .hero-meta-label {
+            font-size: 0.85em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .hero-meta-value {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: -40px auto 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* Sidebar */
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 40px 30px;
+            border-right: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gray);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .toc {
+            list-style: none;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+        }
+        
+        .toc a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--dark);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+        
+        .toc a:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .toc .active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .content {
+            padding: 60px 80px;
+            background: white;
+        }
+        
+        .section {
+            margin-bottom: 80px;
+            scroll-margin-top: 20px;
+        }
+        
+        .section-header {
+            border-left: 6px solid var(--primary);
+            padding-left: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .section-header h2 {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        
+        .section-header p {
+            font-size: 1.2em;
+            color: var(--gray);
+            font-weight: 400;
+        }
+        
+        h3 {
+            font-size: 1.8em;
+            color: var(--primary);
+            margin: 40px 0 20px;
+            font-weight: 700;
+        }
+        
+        h4 {
+            font-size: 1.3em;
+            color: var(--primary-dark);
+            margin: 30px 0 15px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 20px;
+            font-size: 1.05em;
+            line-height: 1.8;
+            color: #374151;
+        }
+        
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            padding: 30px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .feature-card h4 {
+            margin-top: 0;
+            color: var(--dark);
+            font-size: 1.2em;
+        }
+        
+        .feature-card p {
+            margin: 0;
+            color: var(--gray);
+            font-size: 0.95em;
+        }
+        
+        /* Info Boxes */
+        .info-box {
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin: 30px 0;
+            border-left: 5px solid;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        
+        .info-box::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            border-radius: 16px 0 0 16px;
+        }
+        
+        .info-box.success {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-left-color: var(--success);
+        }
+        
+        .info-box.warning {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left-color: var(--warning);
+        }
+        
+        .info-box.info {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left-color: var(--info);
+        }
+        
+        .info-box.danger {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-left-color: var(--danger);
+        }
+        
+        .info-box-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-box p {
+            margin-bottom: 10px;
+        }
+        
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-box ul {
+            margin: 10px 0 10px 20px;
+        }
+        
+        .info-box li {
+            margin-bottom: 8px;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 30px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        
+        th {
+            color: white;
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        
+        .badge-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .badge-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .badge-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .badge-gray {
+            background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+            color: white;
+        }
+        
+        /* Code Blocks */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        
+        /* Steps */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+            margin: 30px 0;
+        }
+        
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 30px;
+            padding-left: 80px;
+            position: relative;
+        }
+        
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.3em;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .steps li strong {
+            display: block;
+            font-size: 1.2em;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        /* Comparison Table */
+        .comparison-table {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: 40px 0;
+        }
+        
+        .comparison-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .comparison-table th {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .comparison-table td {
+            text-align: center;
+            padding: 18px;
+        }
+        
+        /* Checklist */
+        .checklist {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 2px solid #10b981;
+        }
+        
+        .checklist h3 {
+            color: #065f46;
+            margin-top: 0;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 12px 0;
+            padding-left: 40px;
+            position: relative;
+            font-weight: 500;
+        }
+        
+        .checklist li::before {
+            content: '☑';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-size: 1.5em;
+        }
+        
+        /* Print Button */
+        .print-button {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 16px 28px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+        }
+        
+        /* Status Indicators */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-planned {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            margin-top: 60px;
+        }
+        
+        .footer p {
+            margin: 10px 0;
+            color: #cbd5e1;
+        }
+        
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 280px 1fr;
+            }
+            
+            .content {
+                padding: 40px 50px;
+            }
+        }
+        
+        @media (max-width: 968px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            
+            .content {
+                padding: 30px 30px;
+            }
+        }
+        
+        @media print {
+            .sidebar, .print-button {
+                display: none;
+            }
+            
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero {
+                page-break-after: always;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>📖 MANUALE UTENTE</h1>
+        <div class="subtitle">TeleMedCare V12 - Sistema di Gestione Telemedicina eCura</div>
+        <div class="hero-meta">
+            <div class="hero-meta-item">
+                <div class="hero-meta-label">Versione</div>
+                <div class="hero-meta-value">V12.0.3</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-label">Data</div>
+                <div class="hero-meta-value">9 Febbraio 2026</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-label">Edizione</div>
+                <div class="hero-meta-value">Professional</div>
+            </div>
+            <div class="hero-meta-item">
+                <div class="hero-meta-label">Supporto</div>
+                <div class="hero-meta-value">info@telemedcare.it</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-button" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+
+    <div class="container">
+        <div class="layout">
+            <aside class="sidebar">
+                <h3>📑 INDICE</h3>
+                <ul class="toc">
+                    <li><a href="#intro" class="active">Introduzione</a></li>
+                    <li><a href="#start">Come Iniziare</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#lead">Gestione Lead</a></li>
+                    <li><a href="#contratti">Contratti</a></li>
+                    <li><a href="#clienti">Clienti Attivi</a></li>
+                    <li><a href="#workflow">Workflow</a></li>
+                    <li><a href="#config">Configurazione</a></li>
+                    <li><a href="#import">Import Partner</a></li>
+                    <li><a href="#documenti">Documenti</a></li>
+                    <li><a href="#report">Report</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                    <li><a href="#changelog">Changelog</a></li>
+                </ul>
+            </aside>
+
+            <main class="content">
+                <!-- SEZIONE INTRODUZIONE -->
+                <section id="intro" class="section">
+                    <div class="section-header">
+                        <h2>1. Introduzione al Sistema</h2>
+                        <p>Scopri TeleMedCare V12 e le sue potenti funzionalità</p>
+                    </div>
+
+                    <h3>🎯 Cos'è TeleMedCare V12?</h3>
+                    <p>TeleMedCare V12 è una <strong>piattaforma completa di gestione</strong> per i servizi di telemedicina <strong>eCura</strong>. Il sistema gestisce automaticamente l'intero percorso del cliente, dalla prima richiesta fino all'attivazione del servizio.</p>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <span class="feature-icon">📥</span>
+                            <h4>Acquisizione Automatica</h4>
+                            <p>Lead da sito web, partner e CRM HubSpot/IRBEMA</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">📄</span>
+                            <h4>Contratti Intelligenti</h4>
+                            <p>Generazione automatica con firma elettronica legale</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">💰</span>
+                            <h4>Pagamenti Stripe</h4>
+                            <p>Proforma automatiche con link pagamento sicuro</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">📧</span>
+                            <h4>Email Workflow</h4>
+                            <p>Invio automatico per ogni fase del processo</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">📊</span>
+                            <h4>Dashboard Live</h4>
+                            <p>Statistiche e KPI in tempo reale</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🔄</span>
+                            <h4>Sync HubSpot</h4>
+                            <p>3 metodi di sincronizzazione automatica</p>
+                        </div>
+                    </div>
+
+                    <div class="info-box info">
+                        <div class="info-box-title">💡 Workflow End-to-End</div>
+                        <p>Il sistema gestisce l'intero ciclo di vita del cliente:</p>
+                        <ul>
+                            <li><strong>Step 1-3:</strong> Acquisizione lead → Email brochure → Form completamento dati</li>
+                            <li><strong>Step 4-6:</strong> Generazione contratto → Firma elettronica → Proforma pagamento</li>
+                            <li><strong>Step 7-9:</strong> Pagamento Stripe → Form configurazione → Associazione IMEI</li>
+                            <li><strong>Step 10-11:</strong> DDT spedizione → Attivazione servizio → Cliente attivo</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- SEZIONE IMPORT PARTNER -->
+                <section id="import" class="section">
+                    <div class="section-header">
+                        <h2>9. Import Lead da Partner</h2>
+                        <p>Sincronizzazione automatica con HubSpot CRM di IRBEMA</p>
+                    </div>
+
+                    <h3>🏢 Partner Supportati</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Partner</th>
+                                <th>Sistema</th>
+                                <th>Import Automatico</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>IRBEMA</strong></td>
+                                <td>HubSpot CRM</td>
+                                <td>✅ 3 Metodi Attivi</td>
+                                <td><span class="badge badge-success">100% Operativo</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>AON</strong></td>
+                                <td>API Custom</td>
+                                <td>🔄 In sviluppo</td>
+                                <td><span class="badge badge-warning">Q2 2026</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DoubleYou</strong></td>
+                                <td>API Custom</td>
+                                <td>🔄 In sviluppo</td>
+                                <td><span class="badge badge-warning">Q2 2026</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mondadori</strong></td>
+                                <td>B2B Portal</td>
+                                <td>📅 Pianificato</td>
+                                <td><span class="badge badge-gray">Q3 2026</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>🔄 TRE METODI DI SINCRONIZZAZIONE HUBSPOT</h3>
+                    <p>Il sistema offre <strong>3 metodi complementari</strong> per importare lead da HubSpot/IRBEMA, garantendo <strong>zero perdite di dati</strong>:</p>
+
+                    <!-- METODO 1 -->
+                    <div class="info-box warning">
+                        <div class="info-box-title">1️⃣ METODO 1: Tasto IRBEMA (Sincronizzazione Manuale)</div>
+                        <p><strong>🎯 Quando usarlo:</strong> Sincronizzazione completa manuale degli ultimi 7 giorni</p>
+                        
+                        <h4>Come funziona:</h4>
+                        <ol class="steps">
+                            <li>
+                                <strong>Apri Dashboard</strong>
+                                Vai su https://telemedcare-v12.pages.dev/dashboard
+                            </li>
+                            <li>
+                                <strong>Clicca "IRBEMA"</strong>
+                                Pulsante arancione in alto a destra
+                            </li>
+                            <li>
+                                <strong>Sistema importa</strong>
+                                Lead degli ultimi 7 giorni da Form eCura
+                            </li>
+                            <li>
+                                <strong>Vedi risultato</strong>
+                                Notifica con numero lead importati e skipped
+                            </li>
+                        </ol>
+
+                        <p><strong>📊 Parametri:</strong></p>
+                        <ul>
+                            <li><strong>Finestra:</strong> Ultimi 7 giorni</li>
+                            <li><strong>Filtro:</strong> Solo Form eCura (www.ecura.it)</li>
+                            <li><strong>Controllo duplicati:</strong> Email + external_source_id</li>
+                            <li><strong>ID generati:</strong> LEAD-IRBEMA-00146, LEAD-IRBEMA-00147...</li>
+                        </ul>
+                    </div>
+
+                    <!-- METODO 2 -->
+                    <div class="info-box info">
+                        <div class="info-box-title">2️⃣ METODO 2: CRON Giornaliero (GitHub Actions)</div>
+                        <p><strong>⏰ Quando funziona:</strong> Ogni giorno alle <strong>8:00 ora italiana</strong> automaticamente</p>
+
+                        <h4>Come funziona:</h4>
+                        <ol class="steps">
+                            <li>
+                                <strong>GitHub Actions</strong>
+                                Workflow schedulato esegue automaticamente
+                            </li>
+                            <li>
+                                <strong>Verifica switch</strong>
+                                Controlla se hubspot_auto_import_enabled = ON
+                            </li>
+                            <li>
+                                <strong>Chiama API</strong>
+                                POST /api/hubspot/sync con parametri days=7
+                            </li>
+                            <li>
+                                <strong>Log su GitHub</strong>
+                                Risultati visibili in Actions tab
+                            </li>
+                        </ol>
+
+                        <p><strong>🔗 Verifica:</strong></p>
+                        <ul>
+                            <li><strong>GitHub Actions:</strong> <a href="https://github.com/RobertoPoggi/telemedcare-v12/actions" target="_blank">github.com/RobertoPoggi/telemedcare-v12/actions</a></li>
+                            <li><strong>Workflow:</strong> "HubSpot Daily Sync 8:00"</li>
+                            <li><strong>Controllo:</strong> Dashboard → Impostazioni → Switch ON/OFF</li>
+                        </ul>
+                    </div>
+
+                    <!-- METODO 3 -->
+                    <div class="info-box success">
+                        <div class="info-box-title">3️⃣ METODO 3: Auto-Sync al Refresh Dashboard</div>
+                        <p><strong>⚡ Quando funziona:</strong> <strong>Ogni volta</strong> che apri o ricarichi la Dashboard</p>
+
+                        <h4>Come funziona:</h4>
+                        <ol class="steps">
+                            <li>
+                                <strong>Apri/Ricarica Dashboard</strong>
+                                Script JavaScript si attiva automaticamente
+                            </li>
+                            <li>
+                                <strong>Chiama API</strong>
+                                POST /api/hubspot/auto-import in background
+                            </li>
+                            <li>
+                                <strong>Importa ultimi 24h</strong>
+                                Solo lead delle ultime 24 ore da Form eCura
+                            </li>
+                            <li>
+                                <strong>Modalità silenziosa</strong>
+                                Se 0 lead: nessuna notifica; se >0: toast verde
+                            </li>
+                        </ol>
+
+                        <div class="code-block">
+<pre>🤖 [AUTO-IMPORT] Script caricato e pronto
+✅ [AUTO-IMPORT] DOM già caricato, eseguo executeAutoImport
+🚀 [AUTO-IMPORT] executeAutoImport() chiamata
+📡 [AUTO-IMPORT] Chiamata API: POST /api/hubspot/auto-import
+📡 [AUTO-IMPORT] Response status: 200
+✅ [AUTO-IMPORT] Completato: 2 importati, 0 già esistenti (09:15 - 09:45)</pre>
+                        </div>
+
+                        <p><strong>🔍 Debug (F12 Console):</strong></p>
+                        <ul>
+                            <li>Apri Developer Tools con <strong>F12</strong></li>
+                            <li>Tab <strong>Console</strong></li>
+                            <li>Cerca log con <strong>[AUTO-IMPORT]</strong></li>
+                            <li>Se non vedi log: hard refresh con <strong>Ctrl+Shift+R</strong></li>
+                        </ul>
+                    </div>
+
+                    <!-- TABELLA CONFRONTO -->
+                    <h3>📊 Confronto Tre Metodi</h3>
+                    <div class="comparison-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Aspetto</th>
+                                    <th>Tasto IRBEMA</th>
+                                    <th>CRON Giornaliero</th>
+                                    <th>Auto-Sync Refresh</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Trigger</strong></td>
+                                    <td>Click manuale</td>
+                                    <td>Automatico 8:00</td>
+                                    <td>Refresh dashboard</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Finestra</strong></td>
+                                    <td>7 giorni</td>
+                                    <td>7 giorni</td>
+                                    <td>24 ore</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Frequenza</strong></td>
+                                    <td>A richiesta</td>
+                                    <td>1x/giorno</td>
+                                    <td>Ogni refresh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Notifica</strong></td>
+                                    <td>✅ Sempre</td>
+                                    <td>⚠️ Solo errori</td>
+                                    <td>✅ Se >0 lead</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Log</strong></td>
+                                    <td>Dashboard</td>
+                                    <td>GitHub Actions</td>
+                                    <td>Browser Console</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Controllo</strong></td>
+                                    <td>Manuale</td>
+                                    <td>Switch ON/OFF</td>
+                                    <td>Sempre attivo</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Uso ideale</strong></td>
+                                    <td>Sync massiva</td>
+                                    <td>Backup notturno</td>
+                                    <td>Real-time</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- STRATEGIA CONSIGLIATA -->
+                    <div class="info-box success">
+                        <div class="info-box-title">💡 STRATEGIA CONSIGLIATA PER PRODUZIONE</div>
+                        <ol>
+                            <li><strong>✅ CRON Giornaliero:</strong> <span class="badge badge-success">ABILITATO</span> (backup automatico notturno alle 8:00)</li>
+                            <li><strong>✅ Auto-Sync Refresh:</strong> <span class="badge badge-success">SEMPRE ATTIVO</span> (monitoraggio continuo real-time)</li>
+                            <li><strong>✅ Tasto IRBEMA:</strong> <span class="badge badge-warning">Usa solo se necessario</span> (es: troubleshooting, recupero massivo)</li>
+                        </ol>
+
+                        <p><strong>Quando usare ciascun metodo:</strong></p>
+                        <ul>
+                            <li><strong>Auto-Sync:</strong> Uso normale quotidiano (apri dashboard più volte al giorno)</li>
+                            <li><strong>CRON:</strong> Backup notturno se nessuno apre dashboard</li>
+                            <li><strong>Tasto IRBEMA:</strong> Solo per recupero massivo o debug</li>
+                        </ul>
+                    </div>
+
+                    <!-- TROUBLESHOOTING -->
+                    <h3>🛠️ Risoluzione Problemi</h3>
+
+                    <div class="info-box danger">
+                        <div class="info-box-title">❌ Problema: Auto-Sync non importa nulla</div>
+                        
+                        <p><strong>Verifica passo-passo:</strong></p>
+                        
+                        <p><strong>1️⃣ Console Browser (F12):</strong></p>
+                        <div class="code-block">
+<pre>Cerca log: [AUTO-IMPORT]
+Se non vedi log → Cache browser (Ctrl+Shift+R)
+Se vedi "Credenziali mancanti" → Env vars non configurate</pre>
+                        </div>
+
+                        <p><strong>2️⃣ Verifica Credenziali HubSpot:</strong></p>
+                        <ul>
+                            <li>Dashboard Cloudflare → Pages → telemedcare-v12</li>
+                            <li>Settings → Environment variables</li>
+                            <li>Controlla: HUBSPOT_ACCESS_TOKEN e HUBSPOT_PORTAL_ID</li>
+                        </ul>
+
+                        <p><strong>3️⃣ Verifica Switch:</strong></p>
+                        <div class="code-block">
+<pre>GET https://telemedcare-v12.pages.dev/api/settings/hubspot_auto_import_enabled
+
+Risposta attesa: { "value": "true", "enabled": true }</pre>
+                        </div>
+                    </div>
+
+                    <div class="info-box danger">
+                        <div class="info-box-title">❌ Problema: Lead importati hanno prezzo = €0</div>
+                        
+                        <p><strong>Causa:</strong> Errore nel calcolo automatico prezzi da servizio+piano.</p>
+
+                        <p><strong>Verifica Log Console:</strong></p>
+                        <div class="code-block">
+<pre>// Console browser dopo import:
+Cerca: [HUBSPOT MAPPING] Calcolo prezzi per: servizio=XXX, piano=YYY
+Se vedi: "ERRORE calcolo prezzi" → Servizio/Piano non validi</pre>
+                        </div>
+
+                        <p><strong>Fix:</strong></p>
+                        <ol>
+                            <li><strong>Verifica in HubSpot:</strong>
+                                <ul>
+                                    <li>servizio_ecura = PRO/FAMILY/PREMIUM</li>
+                                    <li>piano_ecura = BASE/AVANZATO</li>
+                                </ul>
+                            </li>
+                            <li><strong>Default se mancanti:</strong>
+                                <ul>
+                                    <li>servizio=PRO, piano=BASE</li>
+                                    <li>Prezzo: €480 (setup) + €240 (rinnovo)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Fix manuale:</strong>
+                                <ul>
+                                    <li>Dashboard → Leads → Edit lead</li>
+                                    <li>Aggiorna: Prezzo Anno e Prezzo Rinnovo</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- SEZIONE CHANGELOG -->
+                <section id="changelog" class="section">
+                    <div class="section-header">
+                        <h2>14. Changelog Aggiornamenti</h2>
+                        <p>Tutte le novità e miglioramenti della versione corrente</p>
+                    </div>
+
+                    <h3>🔥 9 Febbraio 2026 - V12.0.3 (OGGI)</h3>
+
+                    <div class="info-box success">
+                        <div class="info-box-title">✨ Nuove Funzionalità</div>
+                        
+                        <h4>1. 🔄 Auto-Sync Dashboard con HubSpot</h4>
+                        <ul>
+                            <li>Import automatico lead ogni volta che apri/ricarichi dashboard</li>
+                            <li>Finestra: Ultimi 24 ore</li>
+                            <li>Modalità silenziosa (no notifiche se 0 nuovi lead)</li>
+                            <li>Logging dettagliato in console browser (F12)</li>
+                        </ul>
+
+                        <h4>2. ⚡ Trigger Automatico Proforma dopo Firma</h4>
+                        <ul>
+                            <li>Proforma generata automaticamente appena contratto firmato</li>
+                            <li>Calcolo prezzi automatico da servizio + piano</li>
+                            <li>Email proforma inviata immediatamente al cliente</li>
+                            <li>Salvato in database (tabella proformas)</li>
+                        </ul>
+
+                        <h4>3. 💰 Calcolo Automatico Prezzi Lead Import</h4>
+                        <ul>
+                            <li>Prezzi calcolati automaticamente da servizio+piano HubSpot</li>
+                            <li>Supporto FAMILY, PRO, PREMIUM + BASE/AVANZATO</li>
+                            <li>Logging dettagliato per troubleshooting</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box info">
+                        <div class="info-box-title">🐛 Bug Fix</div>
+                        <ol>
+                            <li>Prezzi lead importati = €0 → Risolto con logging e gestione errori</li>
+                            <li>Auto-Sync non parte al refresh → Aggiunto debug completo</li>
+                        </ol>
+                    </div>
+
+                    <h4>📖 Documentazione Aggiunta</h4>
+                    <ul>
+                        <li>INTEGRAZIONE_HUBSPOT_COMPLETA.md (10.5 KB)</li>
+                        <li>STRATEGIA_IMPLEMENTAZIONE_COMPLETA.md (18 KB)</li>
+                        <li>DATABASE_SCHEMA_MULTICANALE.md (11 KB)</li>
+                        <li>PIANO_OPERATIVO_MULTICANALE.md (11 KB)</li>
+                        <li>Manuale Utente aggiornato (Sezione 9 completamente riscritta)</li>
+                    </ul>
+
+                    <h4>🎯 Progresso Workflow End-to-End</h4>
+                    <div class="info-box success">
+                        <p><strong>Completato:</strong> 85% (+10% questa sessione)</p>
+                        <ul>
+                            <li>✅ <strong>Steps 1-9:</strong> 100% funzionanti</li>
+                            <li>🔄 <strong>Steps 10-14:</strong> In completamento (Stripe, IMEI, DDT)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- CHECKLIST OPERATORE -->
+                <section id="checklist" class="section">
+                    <div class="section-header">
+                        <h2>✅ Checklist Rapida Operatore</h2>
+                        <p>Copia questa checklist per uso quotidiano</p>
+                    </div>
+
+                    <div class="checklist">
+                        <h3>🌅 Al Mattino</h3>
+                        <ul>
+                            <li>Apri Dashboard</li>
+                            <li>Controlla nuovi lead notturni</li>
+                            <li>Clicca "IRBEMA" per import giornaliero</li>
+                            <li>Verifica lead in attesa > 3 giorni</li>
+                            <li>Controlla email notifiche ricevute</li>
+                        </ul>
+
+                        <h3>☀️ Durante il Giorno</h3>
+                        <ul>
+                            <li>Rispondi a eventuali richieste info lead</li>
+                            <li>Controlla contratti da firmare in attesa</li>
+                            <li>Verifica pagamenti ricevuti oggi</li>
+                            <li>Controlla configurazioni da processare</li>
+                            <li>Genera DDT per pagamenti confermati</li>
+                        </ul>
+
+                        <h3>🌙 Prima di Chiudere</h3>
+                        <ul>
+                            <li>Verifica tutti i lead oggi gestiti</li>
+                            <li>Controlla statistiche giornaliere</li>
+                            <li>Pianifica follow-up per domani</li>
+                            <li>Backup dati (automatico alle 23:00)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <div class="footer">
+                    <p><strong>Fine Manuale Utente TeleMedCare V12 - Professional Edition</strong></p>
+                    <p><em>Documento versione 1.1 - 9 Febbraio 2026 (Aggiornato)</em></p>
+                    <p><strong>Per supporto:</strong> info@telemedcare.it</p>
+                    <p><strong>Sito:</strong> <a href="https://telemedcare-v12.pages.dev/">https://telemedcare-v12.pages.dev/</a></p>
+                    <p><strong>GitHub:</strong> <a href="https://github.com/RobertoPoggi/telemedcare-v12">https://github.com/RobertoPoggi/telemedcare-v12</a></p>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
