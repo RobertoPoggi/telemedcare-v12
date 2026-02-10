@@ -202,6 +202,12 @@ export async function executeAutoImport(
         const leadId = `LEAD-IRBEMA-${nextNumber.toString().padStart(5, '0')}`
         console.log(`🆔 [AUTO-IMPORT] Generato ID: ${leadId} per ${contact.properties.email}`)
         
+        // ⚠️ FALLBACK: se email manca, usa placeholder per NOT NULL constraint
+        const emailSafe = leadData.email || `noemail-${contact.id}@placeholder.local`
+        const telefonoSafe = leadData.telefono || ''
+        
+        console.log(`📧 [AUTO-IMPORT] Email: ${emailSafe}, Telefono: ${telefonoSafe}`)
+        
         // Inserisci nel database con PREZZI (usa campi esistenti)
         // ⚠️ IMPORTANTE: DB usa emailRichiedente/telefonoRichiedente, NON email/telefono
         await db.prepare(`
@@ -219,8 +225,8 @@ export async function executeAutoImport(
           leadId,
           leadData.nomeRichiedente,
           leadData.cognomeRichiedente,
-          leadData.email, // Viene mappato a emailRichiedente
-          leadData.telefono, // Viene mappato a telefonoRichiedente
+          emailSafe, // ✅ FALLBACK per NOT NULL - Viene mappato a emailRichiedente
+          telefonoSafe, // Viene mappato a telefonoRichiedente
           leadData.nomeAssistito,
           leadData.cognomeAssistito,
           leadData.servizio,

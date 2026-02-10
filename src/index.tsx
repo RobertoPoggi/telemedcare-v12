@@ -10372,6 +10372,9 @@ app.post('/api/hubspot/sync', async (c) => {
         console.log(`🆔 [HUBSPOT SYNC] Generato ID: ${leadId}`)
         
         // Inserisci nel database con PREZZI (usa campi esistenti)
+        // ⚠️ FALLBACK: se email manca, usa placeholder per NOT NULL constraint
+        const emailSafe = leadData.email || `noemail-${contact.id}@placeholder.local`
+        
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
@@ -10387,7 +10390,7 @@ app.post('/api/hubspot/sync', async (c) => {
           leadId,
           leadData.nomeRichiedente,
           leadData.cognomeRichiedente,
-          leadData.email,
+          emailSafe, // ✅ FALLBACK per NOT NULL
           leadData.telefono,
           leadData.nomeAssistito,
           leadData.cognomeAssistito,
