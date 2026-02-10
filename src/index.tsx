@@ -7959,9 +7959,9 @@ app.post('/api/leads/:id/complete', async (c) => {
       nomeRichiedente: 'nomeRichiedente',
       cognomeRichiedente: 'cognomeRichiedente',
       emailRichiedente: 'emailRichiedente',
-      email: 'emailRichiedente',
+      // email: 'emailRichiedente',  // ← RIMOSSO: gestiamo email separatamente
       telefonoRichiedente: 'telefonoRichiedente',
-      telefono: 'telefonoRichiedente',
+      // telefono: 'telefonoRichiedente',  // ← RIMOSSO: gestiamo telefono separatamente
       
       // Dati Intestatario (per la proposta)
       cfRichiedente: 'cfRichiedente',
@@ -7997,22 +7997,40 @@ app.post('/api/leads/:id/complete', async (c) => {
         } else {
           binds.push(data[formField])
         }
-        
-        // 🔧 FIX: Popola ANCHE il campo legacy se è email o telefono
-        if (formField === 'email' || formField === 'emailRichiedente') {
-          // Aggiungi anche il campo 'email' (legacy NOT NULL)
-          if (!updateFields.includes('email = ?')) {
-            updateFields.push('email = ?')
-            binds.push(data[formField])
-          }
-        }
-        if (formField === 'telefono' || formField === 'telefonoRichiedente') {
-          // Aggiungi anche il campo 'telefono' (legacy)
-          if (!updateFields.includes('telefono = ?')) {
-            updateFields.push('telefono = ?')
-            binds.push(data[formField] || '')
-          }
-        }
+      }
+    }
+    
+    // 🔧 FIX CRITICO: Gestione doppi campi email/telefono
+    // Il DB ha sia 'email' (NOT NULL legacy) che 'emailRichiedente' (nuovo)
+    // Dobbiamo popolare ENTRAMBI per evitare NOT NULL constraint
+    
+    // Gestione EMAIL: popola sia 'email' che 'emailRichiedente'
+    const emailValue = data.email || data.emailRichiedente
+    if (emailValue) {
+      // Aggiungi 'email' se non già presente
+      if (!updateFields.some(f => f.startsWith('email ='))) {
+        updateFields.push('email = ?')
+        binds.push(emailValue)
+      }
+      // Aggiungi 'emailRichiedente' se non già presente
+      if (!updateFields.some(f => f.startsWith('emailRichiedente ='))) {
+        updateFields.push('emailRichiedente = ?')
+        binds.push(emailValue)
+      }
+    }
+    
+    // Gestione TELEFONO: popola sia 'telefono' che 'telefonoRichiedente'
+    const telefonoValue = data.telefono || data.telefonoRichiedente
+    if (telefonoValue) {
+      // Aggiungi 'telefono' se non già presente
+      if (!updateFields.some(f => f.startsWith('telefono ='))) {
+        updateFields.push('telefono = ?')
+        binds.push(telefonoValue)
+      }
+      // Aggiungi 'telefonoRichiedente' se non già presente
+      if (!updateFields.some(f => f.startsWith('telefonoRichiedente ='))) {
+        updateFields.push('telefonoRichiedente = ?')
+        binds.push(telefonoValue)
       }
     }
     
