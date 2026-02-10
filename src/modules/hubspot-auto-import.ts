@@ -40,6 +40,7 @@ export interface AutoImportResult {
 export interface AutoImportConfig {
   enabled: boolean
   startHour: number // Ora di inizio import automatico HubSpot (default 9)
+  days?: number // Numero di giorni da importare (default 1 per ultimi 24h)
   onlyEcura: boolean // Filtra solo Form eCura
   dryRun: boolean // Test mode
 }
@@ -50,18 +51,19 @@ export interface AutoImportConfig {
 
 /**
  * Calcola il timestamp di inizio per import incrementale
- * ✅ NUOVO: Importa lead delle ultime 24 ore (non più dalle 9:00)
+ * ✅ CONFIGURABILE: Importa lead degli ultimi X giorni (default 1 giorno = 24h)
  */
 export function getIncrementalStartTime(config: AutoImportConfig): Date {
   const now = new Date()
-  const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000)) // 24 ore fa
-  return oneDayAgo
+  const days = config.days || 1 // Default 1 giorno (24 ore)
+  const daysAgo = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000))
+  return daysAgo
 }
 
 /**
  * Esegue import incrementale automatico da HubSpot
- * - Importa solo lead creati nelle ultime 24 ore
- * - Filtro: NESSUN FILTRO (importa tutti i lead)
+ * - Importa solo lead creati negli ultimi X giorni (default 1 giorno = 24h)
+ * - Filtro: Solo Form eCura (se onlyEcura: true)
  * - Ottimizzato: legge solo nuovi lead
  */
 export async function executeAutoImport(
@@ -71,6 +73,7 @@ export async function executeAutoImport(
   config: AutoImportConfig = {
     enabled: true,
     startHour: 9,
+    days: 1, // ✅ Default 1 giorno (24 ore)
     onlyEcura: true, // ✅ RIPRISTINATO: solo lead da Form eCura
     dryRun: false
   }
@@ -113,11 +116,12 @@ export async function executeAutoImport(
     // Import modulo HubSpot
     const { HubSpotClient, mapHubSpotContactToLead } = await import('./hubspot-integration')
     
-    // Calcola intervallo temporale (dalle 9:00 ad ora)
+    // Calcola intervallo temporale (ultimi X giorni configurabili)
     const createdAfter = getIncrementalStartTime(config)
     result.timeRange.from = createdAfter.toISOString()
     
-    console.log(`🔄 [AUTO-IMPORT] Inizio import incrementale ultimi 1 giorno (da ${createdAfter.toLocaleString('it-IT')})`)
+    const days = config.days || 1
+    console.log(`🔄 [AUTO-IMPORT] Inizio import incrementale ultimi ${days} ${days === 1 ? 'giorno' : 'giorni'} (da ${createdAfter.toLocaleString('it-IT')})`)
     console.log(`📊 [AUTO-IMPORT] Config: onlyEcura=${config.onlyEcura}, dryRun=${config.dryRun}`)
     
     // Client HubSpot

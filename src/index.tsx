@@ -10434,7 +10434,7 @@ app.post('/api/hubspot/sync', async (c) => {
   }
 })
 
-// POST /api/hubspot/auto-import - Import automatico incrementale (dalle 9:00 ad ora)
+// POST /api/hubspot/auto-import - Import automatico incrementale (ultimi X giorni configurabili)
 app.post('/api/hubspot/auto-import', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -10446,12 +10446,13 @@ app.post('/api/hubspot/auto-import', async (c) => {
     const body = await c.req.json().catch(() => ({}))
     const config = {
       enabled: body.enabled !== false, // Default true
-      startHour: body.startHour || 9,
+      startHour: body.startHour || 0, // Default 0 (importa da mezzanotte)
+      days: body.days || 1, // ✅ Default 1 giorno (24 ore), configurabile
       onlyEcura: body.onlyEcura !== false, // ✅ RIPRISTINATO: Default true (solo Form eCura)
       dryRun: body.dryRun || false
     }
     
-    console.log(`🔄 [AUTO-IMPORT API] Richiesta import incrementale (dryRun: ${config.dryRun})`)
+    console.log(`🔄 [AUTO-IMPORT API] Richiesta import incrementale ultimi ${config.days} ${config.days === 1 ? 'giorno' : 'giorni'} (dryRun: ${config.dryRun})`)
     
     // Ottieni baseUrl per email
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'

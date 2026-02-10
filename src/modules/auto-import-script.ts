@@ -55,6 +55,7 @@ export const autoImportScript = `
       console.log('📤 [AUTO-IMPORT] Body:', JSON.stringify({
         enabled: true,
         startHour: 0,
+        days: 7,
         onlyEcura: true,
         dryRun: false
       }));
@@ -66,7 +67,8 @@ export const autoImportScript = `
         },
         body: JSON.stringify({
           enabled: true,
-          startHour: 0, // ✅ Ultimi 24h (non solo dalle 9:00)
+          startHour: 0,
+          days: 7, // ✅ Ultimi 7 giorni (invece di 24h)
           onlyEcura: true, // ✅ RIPRISTINATO: solo lead da Form eCura
           dryRun: false
         })
