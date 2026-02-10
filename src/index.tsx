@@ -11660,6 +11660,26 @@ app.post('/api/import/irbema', async (c) => {
             }
           }
 
+          // 💰 CALCOLO PREZZI AUTOMATICO
+          let prezzoAnno = null
+          let prezzoRinnovo = null
+          
+          try {
+            const { calculatePrice } = await import('./modules/pricing-calculator')
+            // Estrai servizio senza "eCura " prefix per il calculator
+            const servizioNorm = servizio.replace('eCura ', '').toUpperCase()
+            const pianoNorm = piano.toUpperCase()
+            
+            const pricing = calculatePrice(servizioNorm, pianoNorm)
+            prezzoAnno = pricing.setupBase      // IVA esclusa
+            prezzoRinnovo = pricing.rinnovoBase // IVA esclusa
+            
+            console.log(`💰 [HUBSPOT] Prezzi calcolati per ${servizio} ${piano}: Anno €${prezzoAnno}, Rinnovo €${prezzoRinnovo}`)
+          } catch (error) {
+            console.error(`❌ [HUBSPOT] Errore calcolo prezzi per ${servizio} ${piano}:`, error)
+            // Prezzi restano NULL - verrà fixato dopo con /api/leads/fix-prices
+          }
+
           // Costruisci note con città e messaggio
           let note = `HubSpot ID: ${contact.id}`
           if (props.city) {
@@ -11673,14 +11693,15 @@ app.post('/api/import/irbema', async (c) => {
           const leadId = `LEAD-IRBEMA-${String(nextLeadNumber).padStart(5, '0')}`
           nextLeadNumber++
 
-          // Inserisci lead
+          // Inserisci lead CON PREZZI
           const now = new Date().toISOString()
           await c.env.DB.prepare(`
             INSERT INTO leads (
               id, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito,
-              servizio, piano, tipoServizio, fonte, status, vuoleBrochure, vuoleContratto,
+              servizio, piano, tipoServizio, prezzo_anno, prezzo_rinnovo,
+              fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
@@ -11691,6 +11712,8 @@ app.post('/api/import/irbema', async (c) => {
             servizio,
             piano,
             servizio,    // tipoServizio (deprecated ma NOT NULL)
+            prezzoAnno,  // 💰 PREZZO ANNO (IVA esclusa)
+            prezzoRinnovo, // 💰 PREZZO RINNOVO (IVA esclusa)
             'IRBEMA',    // Fonte
             'NEW',       // Status
             'No',        // vuoleBrochure
