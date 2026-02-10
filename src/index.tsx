@@ -11543,6 +11543,9 @@ app.post('/api/import/irbema', async (c) => {
       }
     }
 
+    // ✅ USA API SEARCH con filtro data (non API LIST)
+    console.log(`🔍 [HUBSPOT] Uso API /search con filtro data >= ${campaignStartDate.toISOString()}`)
+    
     // Loop paginazione
     let after: string | null = null
     let hasMore = true
@@ -11551,23 +11554,37 @@ app.post('/api/import/irbema', async (c) => {
       totalPages++
       console.log(`📄 [HUBSPOT] Caricamento pagina ${totalPages}${after ? ` (after: ${after})` : ''}...`)
 
-      // Costruisci URL con paginazione - SOLO campi necessari + URL per filtro eCura
-      const params = new URLSearchParams({
-        limit: '100',
-        properties: 'firstname,lastname,email,mobilephone,city,servizio_di_interesse,piano_desiderato,message,createdate,hs_analytics_first_url,hs_analytics_last_url'
-      })
+      // ✅ USA SEARCH API con filtro data invece di GET API
+      const searchBody: any = {
+        filterGroups: [{
+          filters: [{
+            propertyName: 'createdate',
+            operator: 'GTE',
+            value: campaignStartDate.getTime().toString() // Timestamp in millisecondi
+          }]
+        }],
+        properties: [
+          'firstname', 'lastname', 'email', 'mobilephone', 'city',
+          'servizio_di_interesse', 'piano_desiderato', 'message', 'createdate',
+          'hs_analytics_first_url', 'hs_analytics_last_url'
+        ],
+        limit: 100,
+        sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }]
+      }
+      
       if (after) {
-        params.append('after', after)
+        searchBody.after = after
       }
 
-      const hubspotUrl = `https://api.hubapi.com/crm/v3/objects/contacts?${params}`
+      const hubspotUrl = `https://api.hubapi.com/crm/v3/objects/contacts/search`
 
       const response = await fetch(hubspotUrl, {
-        method: 'GET',
+        method: 'POST', // ✅ Cambiato da GET a POST per /search
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(searchBody) // ✅ Aggiungi body con filtri
       })
 
       if (!response.ok) {
@@ -11608,14 +11625,8 @@ app.post('/api/import/irbema', async (c) => {
             continue
           }
           
-          // 🗓️ FILTRO DATA: Solo lead creati dal 30/1/2026 in poi
+          // ✅ FILTRO DATA già applicato nell'API /search - non serve ricontrollare
           const createDate = new Date(props.createdate)
-          if (createDate < campaignStartDate) {
-            console.log(`⏭️ [HUBSPOT] Skip: lead pre-campagna (${createDate.toLocaleDateString('it-IT')}) - ${props.firstname || 'N/A'} ${props.lastname || ''}`)
-            totalFiltered++
-            continue
-          }
-          
           console.log(`✅ [HUBSPOT] Lead eCura trovato: ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'}) - Creato: ${createDate.toLocaleDateString('it-IT')}`)
 
           // Validazione campi obbligatori
