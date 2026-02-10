@@ -23,7 +23,9 @@ jobs:
           echo "1️⃣ Verifica switch 'Import Auto HubSpot'..."
           
           SWITCH_CHECK=$(curl -s "https://telemedcare-v12.pages.dev/api/settings/hubspot_auto_import_enabled")
-          SWITCH_VALUE=$(echo "$SWITCH_CHECK" | jq -r '.setting.value // "false"')
+          echo "📡 Response completo: $SWITCH_CHECK"
+          
+          SWITCH_VALUE=$(echo "$SWITCH_CHECK" | jq -r '.setting.value // "false"' 2>/dev/null || echo "false")
           
           echo "📊 Switch status: $SWITCH_VALUE"
           
@@ -41,16 +43,19 @@ jobs:
           echo "✅ Switch abilitato, procedo con sync..."
           echo ""
           
-          # Seconda verifica: esegui sync completa
-          echo "2️⃣ Esecuzione sync completa HubSpot (ultimi 7 giorni)..."
+          # Seconda verifica: esegui sync completa usando /api/hubspot/auto-import
+          echo "2️⃣ Esecuzione auto-import HubSpot (ultimi 24 ore, solo Form eCura)..."
+          echo "📡 Endpoint: POST /api/hubspot/auto-import"
+          echo "📤 Body: {enabled:true, startHour:0, onlyEcura:true, dryRun:false}"
           
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://telemedcare-v12.pages.dev/api/hubspot/sync" \
+            "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
             -H "Content-Type: application/json" \
             -d '{
-              "days": 7,
-              "dryRun": false,
-              "onlyEcura": true
+              "enabled": true,
+              "startHour": 0,
+              "onlyEcura": true,
+              "dryRun": false
             }')
           
           HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
@@ -63,28 +68,46 @@ jobs:
           
           if [ "$HTTP_CODE" -eq "200" ]; then
             echo ""
-            echo "✅ SYNC COMPLETATA CON SUCCESSO!"
+            echo "✅ AUTO-IMPORT COMPLETATO CON SUCCESSO!"
             
             # Estrai statistiche dalla response
-            CREATED=$(echo "$BODY" | jq -r '.results.created // 0')
-            SKIPPED=$(echo "$BODY" | jq -r '.results.skipped // 0')
-            ERRORS=$(echo "$BODY" | jq -r '.results.errors | length // 0')
+            SUCCESS=$(echo "$BODY" | jq -r '.success // false')
+            IMPORTED=$(echo "$BODY" | jq -r '.imported // 0')
+            SKIPPED=$(echo "$BODY" | jq -r '.skipped // 0')
+            ERRORS=$(echo "$BODY" | jq -r '.errors // 0')
+            MESSAGE=$(echo "$BODY" | jq -r '.message // "N/A"')
             
             echo ""
-            echo "📊 Statistiche Sync:"
-            echo "   - Lead importati: $CREATED"
+            echo "📊 Statistiche Auto-Import:"
+            echo "   - Success: $SUCCESS"
+            echo "   - Lead importati: $IMPORTED"
             echo "   - Lead già esistenti: $SKIPPED"
             echo "   - Errori: $ERRORS"
+            echo "   - Messaggio: $MESSAGE"
             
-            exit 0
+            if [ "$SUCCESS" = "true" ]; then
+              exit 0
+            else
+              echo ""
+              echo "⚠️  Import completato ma con errori"
+              exit 1
+            fi
           elif [ "$HTTP_CODE" -eq "403" ]; then
             echo ""
-            echo "⚠️  Sync disabilitata dalla dashboard (switch OFF)"
+            echo "⚠️  Auto-import disabilitato dalla dashboard (switch OFF)"
             exit 0
           else
             echo ""
-            echo "❌ ERRORE SYNC: HTTP $HTTP_CODE"
-            echo "💡 Controlla log Cloudflare o esegui manualmente tasto IRBEMA"
+            echo "❌ ERRORE AUTO-IMPORT: HTTP $HTTP_CODE"
+            echo "💡 Possibili cause:"
+            echo "   1. Credenziali HubSpot non configurate (HUBSPOT_ACCESS_TOKEN, HUBSPOT_PORTAL_ID)"
+            echo "   2. Database non raggiungibile"
+            echo "   3. Errore interno API"
+            echo ""
+            echo "💡 Azioni suggerite:"
+            echo "   1. Verifica variabili d'ambiente su Cloudflare Pages"
+            echo "   2. Controlla log Cloudflare Workers"
+            echo "   3. Esegui manualmente tasto IRBEMA per testare"
             exit 1
           fi
           
