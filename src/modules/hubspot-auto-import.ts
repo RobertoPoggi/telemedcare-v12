@@ -209,10 +209,10 @@ export async function executeAutoImport(
         console.log(`📧 [AUTO-IMPORT] Email: ${emailSafe}, Telefono: ${telefonoSafe}`)
         
         // Inserisci nel database con PREZZI (usa campi esistenti)
-        // ⚠️ IMPORTANTE: DB usa emailRichiedente/telefonoRichiedente, NON email/telefono
+        // ⚠️ IMPORTANTE: DB ha sia email che emailRichiedente (legacy compatibility)
         await db.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+            id, nomeRichiedente, cognomeRichiedente, email, emailRichiedente, telefono, telefonoRichiedente,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
             prezzo_anno, prezzo_rinnovo,
@@ -220,13 +220,15 @@ export async function executeAutoImport(
             vuoleContratto, vuoleBrochure, vuoleManuale,
             consensoPrivacy, consensoMarketing, consensoTerze,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           leadData.nomeRichiedente,
           leadData.cognomeRichiedente,
-          emailSafe, // ✅ FALLBACK per NOT NULL - Viene mappato a emailRichiedente
-          telefonoSafe, // Viene mappato a telefonoRichiedente
+          emailSafe, // ✅ email (campo legacy NOT NULL)
+          emailSafe, // ✅ emailRichiedente (campo nuovo)
+          telefonoSafe, // telefono (campo legacy)
+          telefonoSafe, // telefonoRichiedente (campo nuovo)
           leadData.nomeAssistito,
           leadData.cognomeAssistito,
           leadData.servizio,
