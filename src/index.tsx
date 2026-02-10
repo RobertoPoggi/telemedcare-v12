@@ -7997,6 +7997,22 @@ app.post('/api/leads/:id/complete', async (c) => {
         } else {
           binds.push(data[formField])
         }
+        
+        // 🔧 FIX: Popola ANCHE il campo legacy se è email o telefono
+        if (formField === 'email' || formField === 'emailRichiedente') {
+          // Aggiungi anche il campo 'email' (legacy NOT NULL)
+          if (!updateFields.includes('email = ?')) {
+            updateFields.push('email = ?')
+            binds.push(data[formField])
+          }
+        }
+        if (formField === 'telefono' || formField === 'telefonoRichiedente') {
+          // Aggiungi anche il campo 'telefono' (legacy)
+          if (!updateFields.includes('telefono = ?')) {
+            updateFields.push('telefono = ?')
+            binds.push(data[formField] || '')
+          }
+        }
       }
     }
     
