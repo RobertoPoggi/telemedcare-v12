@@ -10290,13 +10290,20 @@ app.post('/api/hubspot/sync', async (c) => {
     const days = body.days || 7
     const dryRun = body.dryRun || false
     const onlyEcura = body.onlyEcura !== false // ✅ Default TRUE - SEMPRE filtro eCura (anche IRBEMA)
+    const useFixedDate = body.useFixedDate !== false // ✅ Default TRUE - usa data fissa 30/01/2026
     
     const client = new HubSpotClient(accessToken, portalId)
     
-    const createdAfter = new Date()
-    createdAfter.setDate(createdAfter.getDate() - days)
-    
-    console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione ultimi ${days} giorni (dryRun: ${dryRun}, onlyEcura: ${onlyEcura})`)
+    // ✅ FILTRO DATA: usa 30/01/2026 per pulsante IRBEMA (campagna eCura)
+    let createdAfter: Date
+    if (useFixedDate) {
+      createdAfter = new Date('2026-01-30T00:00:00.000Z')
+      console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione dal 30/01/2026 (campagna eCura) - dryRun: ${dryRun}, onlyEcura: ${onlyEcura}`)
+    } else {
+      createdAfter = new Date()
+      createdAfter.setDate(createdAfter.getDate() - days)
+      console.log(`🔄 [HUBSPOT SYNC] Inizio sincronizzazione ultimi ${days} giorni (dryRun: ${dryRun}, onlyEcura: ${onlyEcura})`)
+    }
     
     // ✅ APPLICA FILTRO FORM ECURA
     const searchFilters: any = {
