@@ -10522,6 +10522,189 @@ app.get('/api/hubspot/auto-import/status', async (c) => {
   }
 })
 
+// GET /api/hubspot/verify-leads - Verifica lead specifici su HubSpot
+app.get('/api/hubspot/verify-leads', async (c) => {
+  try {
+    console.log('🔍 [HUBSPOT VERIFY] Inizio verifica lead su HubSpot...')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ 
+        success: false, 
+        error: 'Credenziali HubSpot non configurate',
+        hint: 'Aggiungi HUBSPOT_ACCESS_TOKEN e HUBSPOT_PORTAL_ID nelle variabili di ambiente'
+      }, 500)
+    }
+    
+    // Query parameters: names (comma-separated)
+    const namesParam = c.req.query('names') || 'Rita,Giovanna,Tina'
+    const names = namesParam.split(',').map(n => n.trim())
+    
+    console.log(`🔍 [HUBSPOT VERIFY] Cerca lead: ${names.join(', ')}`)
+    
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    const results = []
+    
+    for (const name of names) {
+      try {
+        console.log(`🔍 [HUBSPOT VERIFY] Ricerca contatto: ${name}`)
+        
+        // Cerca su HubSpot per nome
+        const searchResponse = await fetch(
+          `https://api.hubapi.com/crm/v3/objects/contacts/search`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              filterGroups: [{
+                filters: [{
+                  propertyName: 'firstname',
+                  operator: 'CONTAINS_TOKEN',
+                  value: name
+                }]
+              }],
+              properties: [
+                'firstname', 'lastname', 'email', 
+                'servizio_ecura', 'piano_ecura',
+                'hs_object_source_detail_1',
+                'createdate'
+              ],
+              limit: 10
+            })
+          }
+        )
+        
+        if (!searchResponse.ok) {
+          console.error(`❌ [HUBSPOT VERIFY] Errore ricerca ${name}: HTTP ${searchResponse.status}`)
+          results.push({
+            searchName: name,
+            found: false,
+            error: `HTTP ${searchResponse.status}`
+          })
+          continue
+        }
+        
+        const data = await searchResponse.json()
+        
+        console.log(`📊 [HUBSPOT VERIFY] Trovati ${data.results?.length || 0} contatti per "${name}"`)
+        
+        if (!data.results || data.results.length === 0) {
+          results.push({
+            searchName: name,
+            found: false,
+            message: 'Nessun contatto trovato su HubSpot'
+          })
+          continue
+        }
+        
+        // Processa ogni contatto trovato
+        for (const contact of data.results) {
+          const props = contact.properties
+          
+          // Calcola prezzo atteso se ha servizio/piano
+          let expectedPrice = null
+          let pricingError = null
+          
+          if (props.servizio_ecura && props.piano_ecura) {
+            try {
+              const { calculatePrice } = await import('./modules/pricing-calculator')
+              const pricing = calculatePrice(
+                props.servizio_ecura.toUpperCase(),
+                props.piano_ecura.toUpperCase()
+              )
+              expectedPrice = {
+                servizio: pricing.servizio,
+                piano: pricing.piano,
+                setupBase: pricing.setupBase,
+                rinnovoBase: pricing.rinnovoBase,
+                setupTotale: pricing.setupTotale,
+                rinnovoTotale: pricing.rinnovoTotale
+              }
+            } catch (error) {
+              pricingError = (error as Error).message
+            }
+          }
+          
+          // Verifica se esiste su TeleMedCare
+          const localLead = await c.env.DB.prepare(`
+            SELECT id, nomeRichiedente, cognomeRichiedente, 
+                   servizio, piano, prezzo_anno, prezzo_rinnovo,
+                   external_source_id
+            FROM leads
+            WHERE email = ? OR external_source_id = ?
+            LIMIT 1
+          `).bind(props.email, contact.id).first()
+          
+          results.push({
+            searchName: name,
+            found: true,
+            hubspot: {
+              id: contact.id,
+              firstname: props.firstname,
+              lastname: props.lastname,
+              email: props.email,
+              servizio_ecura: props.servizio_ecura || null,
+              piano_ecura: props.piano_ecura || null,
+              form_source: props.hs_object_source_detail_1 || null,
+              created: props.createdate
+            },
+            expectedPrice,
+            pricingError,
+            telemedcare: localLead ? {
+              id: localLead.id,
+              nome: `${localLead.nomeRichiedente} ${localLead.cognomeRichiedente}`,
+              servizio: localLead.servizio,
+              piano: localLead.piano,
+              prezzo_anno: localLead.prezzo_anno,
+              prezzo_rinnovo: localLead.prezzo_rinnovo,
+              needsFix: !localLead.prezzo_anno || localLead.prezzo_anno === 0
+            } : null
+          })
+        }
+        
+      } catch (error) {
+        console.error(`❌ [HUBSPOT VERIFY] Errore verifica ${name}:`, error)
+        results.push({
+          searchName: name,
+          found: false,
+          error: (error as Error).message
+        })
+      }
+    }
+    
+    console.log(`✅ [HUBSPOT VERIFY] Verifica completata: ${results.length} risultati`)
+    
+    return c.json({
+      success: true,
+      results,
+      summary: {
+        total: results.length,
+        found: results.filter(r => r.found).length,
+        notFound: results.filter(r => !r.found).length,
+        needsPriceFix: results.filter(r => r.telemedcare?.needsFix).length
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ [HUBSPOT VERIFY] Errore generale:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message
+    }, 500)
+  }
+})
+
 
 // ========================================
 // LEAD COMPLETION SYSTEM
