@@ -8173,24 +8173,174 @@ app.post('/api/leads/:id/complete', async (c) => {
   }
 })
 
-// 🔧 ALIAS: Supporta anche /api/lead/:id/complete (singolare) per retrocompatibilità con vecchi form email
-// NOTA: Questo è un DUPLICATO dell'endpoint /api/leads/:id/complete (plurale)
+// 🔧 ALIAS: /api/lead/:id/complete (SINGOLARE) - Per retrocompatibilità con form email vecchi
+// DUPLICATO COMPLETO dell'endpoint /api/leads/:id/complete perché fetch() interno non funziona in Workers
 app.post('/api/lead/:id/complete', async (c) => {
   const id = c.req.param('id')
-  console.log(`🔄 [ALIAS SINGOLARE] /api/lead/${id}/complete chiamato`)
+  console.log(`🔄 [ALIAS SINGOLARE] /api/lead/${id}/complete → Eseguo logica di /api/leads/:id/complete`)
   
-  // Reindirizza internamente all'endpoint /api/leads/:id/complete
-  // Cambia il path della richiesta
-  const newRequest = new Request(c.req.raw)
-  const url = new URL(newRequest.url)
-  url.pathname = `/api/leads/${id}/complete`
-  
-  return fetch(url.toString(), {
-    method: newRequest.method,
-    headers: newRequest.headers,
-    body: newRequest.body,
-    duplex: 'half'
-  } as any)
+  try {
+    // Supporta sia JSON che form-data
+    const contentType = c.req.header('content-type') || ''
+    let data: any
+    
+    if (contentType.includes('application/json')) {
+      data = await c.req.json()
+    } else {
+      // Form data da email
+      const formData = await c.req.formData()
+      data = {}
+      for (const [key, value] of formData.entries()) {
+        data[key] = value
+      }
+    }
+    
+    console.log(`📝 [COMPLETE ALIAS] Lead ${id} - Dati ricevuti:`, JSON.stringify(data, null, 2))
+    console.log(`📝 [COMPLETE ALIAS] Content-Type:`, contentType)
+    console.log(`📝 [COMPLETE ALIAS] DB disponibile:`, !!c.env?.DB)
+    
+    if (!c.env?.DB) {
+      return c.text('✅ Grazie! I tuoi dati sono stati salvati con successo. Ti contatteremo presto.', 200, {
+        'Content-Type': 'text/html; charset=utf-8'
+      })
+    }
+    
+    // Costruisci query UPDATE
+    const updateFields: string[] = []
+    const binds: any[] = []
+    
+    // Mapping campi form → DB
+    const fieldMapping: Record<string, string> = {
+      nomeRichiedente: 'nomeRichiedente',
+      cognomeRichiedente: 'cognomeRichiedente',
+      emailRichiedente: 'emailRichiedente',
+      telefonoRichiedente: 'telefonoRichiedente',
+      cfRichiedente: 'cfRichiedente',
+      indirizzoRichiedente: 'indirizzoRichiedente',
+      capRichiedente: 'capRichiedente',
+      cittaRichiedente: 'cittaRichiedente',
+      nomeAssistito: 'nomeAssistito',
+      cognomeAssistito: 'cognomeAssistito',
+      dataNascitaAssistito: 'dataNascitaAssistito',
+      luogoNascitaAssistito: 'luogoNascitaAssistito',
+      cittaAssistito: 'cittaAssistito',
+      cfAssistito: 'cfAssistito',
+      codiceFiscaleAssistito: 'cfAssistito',
+      indirizzoAssistito: 'indirizzoAssistito',
+      capAssistito: 'capAssistito',
+      condizioniSalute: 'condizioniSalute',
+      servizio: 'servizio',
+      piano: 'piano',
+      note: 'note',
+      gdprConsent: 'gdprConsent'
+    }
+    
+    for (const [formField, dbField] of Object.entries(fieldMapping)) {
+      if (data[formField] !== undefined && data[formField] !== '') {
+        updateFields.push(`${dbField} = ?`)
+        if (formField === 'gdprConsent') {
+          binds.push(data[formField] === '1' || data[formField] === 'true' || data[formField] === true ? 1 : 0)
+        } else {
+          binds.push(data[formField])
+        }
+      }
+    }
+    
+    // Gestione doppi campi email/telefono
+    const emailValue = data.email || data.emailRichiedente
+    if (emailValue) {
+      if (!updateFields.some(f => f.startsWith('email ='))) {
+        updateFields.push('email = ?')
+        binds.push(emailValue)
+      }
+      if (!updateFields.some(f => f.startsWith('emailRichiedente ='))) {
+        updateFields.push('emailRichiedente = ?')
+        binds.push(emailValue)
+      }
+    }
+    
+    const telefonoValue = data.telefono || data.telefonoRichiedente
+    if (telefonoValue) {
+      if (!updateFields.some(f => f.startsWith('telefono ='))) {
+        updateFields.push('telefono = ?')
+        binds.push(telefonoValue)
+      }
+      if (!updateFields.some(f => f.startsWith('telefonoRichiedente ='))) {
+        updateFields.push('telefonoRichiedente = ?')
+        binds.push(telefonoValue)
+      }
+    }
+    
+    console.log(`🔍 [COMPLETE ALIAS] Fields to update:`, updateFields)
+    console.log(`🔍 [COMPLETE ALIAS] Values:`, binds)
+    
+    if (updateFields.length === 0) {
+      return c.text('❌ Nessun dato da aggiornare', 400)
+    }
+    
+    binds.push(id)
+    const query = `UPDATE leads SET ${updateFields.join(', ')}, updated_at = datetime('now') WHERE id = ?`
+    
+    console.log('🔍 [COMPLETE ALIAS] Query UPDATE:', query)
+    console.log('🔍 [COMPLETE ALIAS] Binds:', binds)
+    
+    let result
+    try {
+      result = await c.env.DB.prepare(query).bind(...binds).run()
+      console.log('✅ [COMPLETE ALIAS] UPDATE eseguito con successo')
+    } catch (updateError) {
+      console.error('❌ [COMPLETE ALIAS] ERRORE UPDATE:', updateError)
+      throw new Error(`Errore aggiornamento database: ${updateError instanceof Error ? updateError.message : String(updateError)}`)
+    }
+    
+    if (result.meta?.changes === 0) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Trigger invio contratto (come endpoint principale)
+    try {
+      const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first()
+      if (updatedLead) {
+        const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
+        const { isLeadComplete } = await import('./modules/lead-completion')
+        
+        if (isLeadComplete(updatedLead)) {
+          const timestamp = Date.now()
+          const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+          const contractId = `contract-${timestamp}`
+          const servizio = (updatedLead as any).servizio || 'eCura PRO'
+          const piano = (updatedLead as any).piano || 'BASE'
+          
+          const contractData = {
+            contractId,
+            contractCode,
+            contractPdfUrl: '',
+            tipoServizio: piano,
+            servizio: servizio,
+            prezzoBase: piano === 'AVANZATO' ? 840 : 480,
+            prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
+          }
+          
+          const documentUrls: { brochure?: string; manuale?: string } = {}
+          if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+          } else if (servizio.includes('PREMIUM')) {
+            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+          }
+          
+          await inviaEmailContratto(updatedLead as any, contractData, c.env, documentUrls, c.env.DB)
+        }
+      }
+    } catch (triggerError) {
+      console.error('⚠️ [COMPLETE ALIAS] Errore trigger contratto:', triggerError)
+    }
+    
+    return c.json({ success: true, message: 'Dati salvati con successo', updated: result.meta?.changes || 0 })
+    
+  } catch (error) {
+    console.error('❌ [COMPLETE ALIAS] Errore:', error)
+    return c.json({ success: false, error: 'Errore salvataggio dati', message: error instanceof Error ? error.message : String(error) }, 500)
+  }
 })
 
 app.put('/api/leads/:id', async (c) => {
