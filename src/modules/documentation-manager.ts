@@ -428,7 +428,7 @@ npm run clone:environment
 Gestione lead in entrata
 - id (TEXT PRIMARY KEY)
 - nomeRichiedente, cognomeRichiedente
-- emailRichiedente, telefonoRichiedente
+- email, telefono
 - status, leadScore, created_at
 
 ### assistiti  

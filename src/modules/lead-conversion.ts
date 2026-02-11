@@ -34,8 +34,8 @@ export interface Assistito {
   // Dati richiedente (se diverso)
   nomeRichiedente: string
   cognomeRichiedente: string
-  emailRichiedente: string
-  telefonoRichiedente: string
+  email: string
+  telefono: string
   parentela?: string
   
   // Servizio attivato
@@ -261,8 +261,8 @@ export async function avviaConversioneCompleta(db: D1Database, leadId: string): 
       
       nomeRichiedente: lead.nomeRichiedente,
       cognomeRichiedente: lead.cognomeRichiedente,
-      emailRichiedente: lead.emailRichiedente,
-      telefonoRichiedente: lead.telefonoRichiedente || '',
+      email: lead.email,
+      telefono: lead.telefono || '',
       parentela: lead.parentelaAssistito,
       
       tipoServizio: determinaTipoServizio(lead.pacchetto),
@@ -439,7 +439,7 @@ async function validazioneLeadStep(db: D1Database, assistitoId: string): Promise
   }
   
   // Validazione dati obbligatori
-  const campiObbligatori = ['nome', 'cognome', 'emailRichiedente', 'nomeRichiedente']
+  const campiObbligatori = ['nome', 'cognome', 'email', 'nomeRichiedente']
   for (const campo of campiObbligatori) {
     if (!(assistito as any)[campo]) {
       return { success: false, error: `Campo obbligatorio mancante: ${campo}` }
@@ -448,7 +448,7 @@ async function validazioneLeadStep(db: D1Database, assistitoId: string): Promise
   
   // Validazione email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(assistito.emailRichiedente)) {
+  if (!emailRegex.test(assistito.email)) {
     return { success: false, error: 'Email non valida' }
   }
   
@@ -470,7 +470,7 @@ async function verificaDuplicatiStep(db: D1Database, assistitoId: string): Promi
     AND id != ?
     AND status IN ('ATTIVO', 'VALIDAZIONE', 'PAGAMENTO', 'ATTIVAZIONE')
   `).bind(
-    assistito.emailRichiedente,
+    assistito.email,
     assistito.nome,
     assistito.cognome,
     assistitoId
@@ -565,7 +565,7 @@ async function invioDocumentiStep(db: D1Database, assistitoId: string): Promise<
         language: 'it',
         customerInfo: {
           name: `${assistito.nomeRichiedente} ${assistito.cognomeRichiedente}`,
-          email: assistito.emailRichiedente,
+          email: assistito.email,
           leadId: assistito.leadId
         },
         deliveryMethod: 'email'
@@ -681,7 +681,7 @@ async function onboardingCompletoStep(db: D1Database, assistitoId: string): Prom
   
   try {
     // Invio email benvenuto
-    console.log(`📧 Email benvenuto inviata a ${assistito.emailRichiedente}`)
+    console.log(`📧 Email benvenuto inviata a ${assistito.email}`)
     
     // Invio email configurazione con form
     console.log(`📋 Email configurazione inviata per dispositivo ${assistito.deviceId || 'TBD'}`)
@@ -721,8 +721,8 @@ async function salvaAssistito(db: D1Database, assistito: Assistito): Promise<voi
   `).bind(
     assistito.id, assistito.leadId, assistito.nome, assistito.cognome, assistito.dataNascita,
     assistito.luogoNascita, assistito.sesso, assistito.codiceFiscale, assistito.indirizzo,
-    assistito.nomeRichiedente, assistito.cognomeRichiedente, assistito.emailRichiedente,
-    assistito.telefonoRichiedente, assistito.parentela,
+    assistito.nomeRichiedente, assistito.cognomeRichiedente, assistito.email,
+    assistito.telefono, assistito.parentela,
     assistito.tipoServizio, assistito.dataAtivazione, assistito.dataScadenza,
     assistito.costoTotale, assistito.costoMensile,
     assistito.metodoPagamento, assistito.statusPagamento, assistito.status, assistito.workflowStep,
@@ -753,8 +753,8 @@ function mapDatabaseToAssistito(row: any): Assistito {
     indirizzo: row.indirizzo,
     nomeRichiedente: row.nome_richiedente,
     cognomeRichiedente: row.cognome_richiedente,
-    emailRichiedente: row.email_richiedente,
-    telefonoRichiedente: row.telefono_richiedente,
+    email: row.email_richiedente,
+    telefono: row.telefono_richiedente,
     parentela: row.parentela,
     tipoServizio: row.tipo_servizio,
     dataAtivazione: row.data_attivazione,

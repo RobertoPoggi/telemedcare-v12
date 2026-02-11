@@ -56,8 +56,8 @@ export async function generateAndSendContract(
       leadId: leadData.id,
       nomeRichiedente: leadData.nomeRichiedente,
       cognomeRichiedente: leadData.cognomeRichiedente,
-      email: leadData.emailRichiedente,
-      telefono: leadData.telefonoRichiedente || '',
+      email: leadData.email,
+      telefono: leadData.telefono || '',
       tipoServizio: piano,
       servizio: servizio, // NUOVO: passa anche il servizio
       nomeAssistito: leadData.nomeAssistito,
@@ -156,7 +156,7 @@ export async function generateAndSendContract(
     }
 
     // 5. Invia email con template
-    console.log(`📧 [CONTRACT_WORKFLOW] Invio email contratto a ${leadData.emailRichiedente}`)
+    console.log(`📧 [CONTRACT_WORKFLOW] Invio email contratto a ${leadData.email}`)
     const emailService = new EmailService(env)
     const template = await loadEmailTemplate('email_invio_contratto', db)
     
@@ -181,7 +181,7 @@ export async function generateAndSendContract(
     }
 
     const sendResult = await emailService.sendEmail({
-      to: leadData.emailRichiedente,
+      to: leadData.email,
       from: 'info@telemedcare.it',
       subject: `📄 eCura - Il Tuo Contratto ${formatServiceName(servizio, piano)}`,
       html: emailHtml,
@@ -190,7 +190,7 @@ export async function generateAndSendContract(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_invio_contratto -> ${leadData.emailRichiedente}`)
+      result.emailsSent.push(`email_invio_contratto -> ${leadData.email}`)
       result.messageIds = [sendResult.messageId]
       
       // Aggiorna status lead

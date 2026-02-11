@@ -191,7 +191,7 @@ export class DocuSignWebhookHandler {
           contract.contract_code,
           lead.nome_richiedente || lead.nomeRichiedente || 'Cliente',
           lead.cognome_richiedente || lead.cognomeRichiedente || '',
-          lead.email_richiedente || lead.emailRichiedente || '',
+          lead.email_richiedente || lead.email || '',
           contract.servizio || lead.servizio || 'PRO',
           contract.tipo_servizio || lead.pacchetto || 'BASE'
         )

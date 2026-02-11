@@ -52,7 +52,7 @@ class EmailPreviewService {
       fileName: 'email_notifica_info.html',
       subject: '🚨 Nuova Richiesta TeleMedCare - {{nomeRichiedente}} {{cognomeRichiedente}} [{{pianoServizio}}]',
       description: 'Email di notifica interna a info@medicagb.it per nuove richieste',
-      requiredVariables: ['nomeRichiedente', 'cognomeRichiedente', 'emailRichiedente', 'pianoServizio', 'dataRichiesta', 'oraRichiesta'],
+      requiredVariables: ['nomeRichiedente', 'cognomeRichiedente', 'email', 'pianoServizio', 'dataRichiesta', 'oraRichiesta'],
       templateType: 'notifica'
     },
     {
@@ -259,7 +259,7 @@ class EmailPreviewService {
       'email_notifica_info': {
         nomeRichiedente: 'Mario',
         cognomeRichiedente: 'Rossi',
-        emailRichiedente: 'mario.rossi@test.com',
+        email: 'mario.rossi@test.com',
         pianoServizio: 'TeleAssistenza Avanzata',
         dataRichiesta: new Date().toLocaleDateString('it-IT'),
         oraRichiesta: new Date().toLocaleTimeString('it-IT')
@@ -334,7 +334,7 @@ class EmailPreviewService {
             <div style="background: #EBF8FF; padding: 20px; border-radius: 6px; margin: 20px 0;">
                 <h3>Dati Personalizzati:</h3>
                 <p>Nome Cliente: {{nomeCliente}} {{nomeRichiedente}}</p>
-                <p>Email: {{emailCliente}} {{emailRichiedente}}</p>
+                <p>Email: {{emailCliente}} {{email}}</p>
                 <p>Piano Servizio: {{pianoServizio}}</p>
                 <p>Codice Cliente: {{codiceCliente}}</p>
                 <p>Dispositivo ID: {{dispositivoId}}</p>

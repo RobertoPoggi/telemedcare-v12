@@ -1035,7 +1035,7 @@ app.get('/leads/dashboard', (c) => {
                                         <div class="font-medium text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</div>
                                         <div class="text-sm text-gray-500">Assistito: \${lead.nomeAssistito || 'N/A'}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${lead.emailRichiedente}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${lead.email}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">\${lead.pacchetto}</span>
                                     </td>

@@ -82,7 +82,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 const missingContainer = document.getElementById('missingFieldsContainer');
                 const fields = [];
                 
-                if (!lead.telefonoRichiedente) fields.push(createField('telefonoRichiedente', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
+                if (!lead.telefono) fields.push(createField('telefono', 'Telefono', 'tel', '+39 3XX XXX XXXX', true));
                 if (!lead.nomeAssistito) fields.push(createField('nomeAssistito', 'Nome Assistito', 'text', 'Nome', true));
                 if (!lead.cognomeAssistito) fields.push(createField('cognomeAssistito', 'Cognome Assistito', 'text', 'Cognome', true));
                 if (!lead.dataNascitaAssistito) fields.push(createField('dataNascitaAssistito', 'Data Nascita Assistito', 'date', '', true));

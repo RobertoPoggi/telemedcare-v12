@@ -196,7 +196,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario}</span> <span class="highlight">${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario}</span> - <span class="highlight">${capIntestatario}</span> <span class="highlight">${cittaIntestatario}</span> (<span class="highlight">${provinciaIntestatario}</span>) e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
         
         <p><strong>Riferimenti:</strong><br>
-        telefono <span class="highlight">${leadData.telefonoRichiedente || 'N/A'}</span> – e-mail <span class="highlight">${leadData.emailRichiedente}</span></p>
+        telefono <span class="highlight">${leadData.telefono || 'N/A'}</span> – e-mail <span class="highlight">${leadData.email}</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>
@@ -306,8 +306,8 @@ export interface LeadData {
   id: string
   nomeRichiedente: string
   cognomeRichiedente: string
-  emailRichiedente: string
-  telefonoRichiedente?: string
+  email: string
+  telefono?: string
   cittaRichiedente?: string
   nomeAssistito?: string
   cognomeAssistito?: string
@@ -352,7 +352,7 @@ export async function inviaEmailNotificaInfo(
 
   try {
     console.log(`📧 [WORKFLOW] STEP 1: Invio notifica nuovo lead a info@telemedcare.it`)
-    console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.emailRichiedente}`)
+    console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.email}`)
 
     const emailService = new EmailService(env)
     
@@ -380,8 +380,8 @@ export async function inviaEmailNotificaInfo(
     const templateData = {
       NOME_RICHIEDENTE: leadData.nomeRichiedente,
       COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
-      EMAIL_RICHIEDENTE: leadData.emailRichiedente,
-      TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || 'Non fornito',
+      EMAIL_RICHIEDENTE: leadData.email,
+      TELEFONO_RICHIEDENTE: leadData.telefono || 'Non fornito',
       CF_RICHIEDENTE: leadData.cfRichiedente || 'Non fornito',
       INDIRIZZO_RICHIEDENTE: leadData.indirizzoRichiedente || 'Non fornito',
       NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
@@ -425,7 +425,7 @@ export async function inviaEmailNotificaInfo(
       from: 'info@telemedcare.it',
       subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
       html: emailHtml,
-      text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.emailRichiedente}`
+      text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.email}`
     })
 
     if (sendResult.success) {
@@ -471,7 +471,7 @@ export async function inviaEmailDocumentiInformativi(
       return result
     }
 
-    console.log(`📧 [WORKFLOW] STEP 2A: Invio documenti informativi a ${leadData.emailRichiedente}`)
+    console.log(`📧 [WORKFLOW] STEP 2A: Invio documenti informativi a ${leadData.email}`)
     console.log(`Richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
 
     const emailService = new EmailService(env)
@@ -694,7 +694,7 @@ export async function inviaEmailDocumentiInformativi(
     // Invia email da info@telemedcare.it (richiesta documentazione informativa)
     // NOTA: Ora usiamo link download invece di allegati PDF
     const sendResult = await emailService.sendEmail({
-      to: leadData.emailRichiedente,
+      to: leadData.email,
       from: 'info@telemedcare.it',
       subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
       html: emailHtml
@@ -702,7 +702,7 @@ export async function inviaEmailDocumentiInformativi(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_documenti_informativi -> ${leadData.emailRichiedente}`)
+      result.emailsSent.push(`email_documenti_informativi -> ${leadData.email}`)
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email documenti inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -751,7 +751,7 @@ export async function inviaEmailContratto(
       return result
     }
 
-    console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.emailRichiedente}`)
+    console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.email}`)
 
     // ============================================
     // STEP 1: Crea record contratto nel DB
@@ -932,7 +932,7 @@ export async function inviaEmailContratto(
 
     // Invia email con allegati
     const sendResult = await emailService.sendEmail({
-      to: leadData.emailRichiedente,
+      to: leadData.email,
       from: 'info@telemedcare.it',
       subject: `📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`,
       html: emailHtml,
@@ -941,7 +941,7 @@ export async function inviaEmailContratto(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_invio_contratto -> ${leadData.emailRichiedente}`)
+      result.emailsSent.push(`email_invio_contratto -> ${leadData.email}`)
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email contratto inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -982,7 +982,7 @@ export async function inviaEmailProforma(
   }
 
   try {
-    console.log(`📧 [WORKFLOW] STEP 3: Invio proforma ${proformaData.numeroProforma} a ${leadData.emailRichiedente}`)
+    console.log(`📧 [WORKFLOW] STEP 3: Invio proforma ${proformaData.numeroProforma} a ${leadData.email}`)
 
     const emailService = new EmailService(env)
     
@@ -1014,7 +1014,7 @@ export async function inviaEmailProforma(
 
     // Invia email con allegato
     const sendResult = await emailService.sendEmail({
-      to: leadData.emailRichiedente,
+      to: leadData.email,
       from: 'info@telemedcare.it',
       subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
       html: emailHtml,
@@ -1023,7 +1023,7 @@ export async function inviaEmailProforma(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_invio_proforma -> ${leadData.emailRichiedente}`)
+      result.emailsSent.push(`email_invio_proforma -> ${leadData.email}`)
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email proforma inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -1055,7 +1055,7 @@ export async function inviaEmailBenvenuto(
   }
 
   try {
-    console.log(`📧 [WORKFLOW] STEP 4: Invio email benvenuto a ${clientData.emailRichiedente}`)
+    console.log(`📧 [WORKFLOW] STEP 4: Invio email benvenuto a ${clientData.email}`)
 
     const emailService = new EmailService(env)
     
@@ -1078,7 +1078,7 @@ export async function inviaEmailBenvenuto(
 
     // Invia email
     const sendResult = await emailService.sendEmail({
-      to: clientData.emailRichiedente,
+      to: clientData.email,
       from: 'info@telemedcare.it',
       subject: `🎉 Benvenuto/a in TeleMedCare, ${clientData.nomeRichiedente}!`,
       html: emailHtml
@@ -1086,7 +1086,7 @@ export async function inviaEmailBenvenuto(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_benvenuto -> ${clientData.emailRichiedente}`)
+      result.emailsSent.push(`email_benvenuto -> ${clientData.email}`)
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email benvenuto inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -1131,8 +1131,8 @@ export async function inviaEmailConfigurazione(
       NOME_CLIENTE: clientData.nomeRichiedente,
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
       CODICE_CLIENTE: clientData.codiceCliente,
-      EMAIL_CLIENTE: clientData.emailRichiedente,
-      TELEFONO_CLIENTE: clientData.telefonoRichiedente || 'Non fornito',
+      EMAIL_CLIENTE: clientData.email,
+      TELEFONO_CLIENTE: clientData.telefono || 'Non fornito',
       PIANO_SERVIZIO: clientData.pacchetto,
       DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT'),
       DATI_CONFIGURAZIONE: JSON.stringify(configData, null, 2)
@@ -1188,7 +1188,7 @@ export async function inviaEmailConfermaAttivazione(
   }
 
   try {
-    console.log(`📧 [WORKFLOW] STEP 6: Invio email conferma attivazione a ${clientData.emailRichiedente}`)
+    console.log(`📧 [WORKFLOW] STEP 6: Invio email conferma attivazione a ${clientData.email}`)
 
     const emailService = new EmailService(env)
     
@@ -1213,7 +1213,7 @@ export async function inviaEmailConfermaAttivazione(
 
     // Invia email
     const sendResult = await emailService.sendEmail({
-      to: clientData.emailRichiedente,
+      to: clientData.email,
       from: 'info@telemedcare.it',
       subject: `✅ TeleMedCare - Servizio Attivato!`,
       html: emailHtml
@@ -1221,7 +1221,7 @@ export async function inviaEmailConfermaAttivazione(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_conferma -> ${clientData.emailRichiedente}`)
+      result.emailsSent.push(`email_conferma -> ${clientData.email}`)
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email conferma attivazione inviata con successo: ${sendResult.messageId}`)
     } else {

@@ -477,8 +477,8 @@ export function prepareContractData(
       cittaAssistito: lead.cittaAssistito || 'Non specificata',
       provinciaAssistito: lead.provinciaAssistito || 'XX',
       codiceFiscaleAssistito: lead.codiceFiscaleAssistito || 'Non specificato',
-      telefonoAssistito: lead.telefono || lead.telefonoRichiedente || 'Non specificato',
-      emailAssistito: lead.email || lead.emailRichiedente || 'non-specificata@example.com',
+      telefonoAssistito: lead.telefono || lead.telefono || 'Non specificato',
+      emailAssistito: lead.email || lead.email || 'non-specificata@example.com',
       
       servizio,
       piano,

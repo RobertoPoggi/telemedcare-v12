@@ -185,8 +185,8 @@ export class ConfigurationFormService {
       // Dati richiedente (persona che compila il form)
       nomeRichiedente: formData.nome,
       cognomeRichiedente: formData.cognome,
-      emailRichiedente: formData.email,
-      telefonoRichiedente: formData.telefono,
+      email: formData.email,
+      telefono: formData.telefono,
       
       // Servizio
       tipoServizio,

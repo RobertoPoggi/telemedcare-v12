@@ -209,8 +209,8 @@ export function prepareDocxContractData(
     cittaAssistito: leadData.cittaAssistito || 'DA COMPLETARE',
     provinciaAssistito: leadData.provinciaAssistito || 'DA COMPLETARE',
     codiceFiscaleAssistito: leadData.cfAssistito || 'DA COMPLETARE',
-    telefonoAssistito: leadData.telefonoRichiedente || leadData.telefono || 'DA COMPLETARE',
-    emailAssistito: leadData.emailRichiedente || leadData.email,
+    telefonoAssistito: leadData.telefono || leadData.telefono || 'DA COMPLETARE',
+    emailAssistito: leadData.email || leadData.email,
     
     // Servizio e Piano
     servizio,

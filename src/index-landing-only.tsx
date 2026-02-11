@@ -297,7 +297,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
     if (!lead) return { success: false, error: 'Lead non trovato' }
     
-    console.log(`📧 INVIO REALE email benvenuto a ${lead.emailRichiedente}`)
+    console.log(`📧 INVIO REALE email benvenuto a ${lead.email}`)
     
     // Usa EmailService reale
     const EmailService = (await import('./modules/email-service')).default
@@ -316,7 +316,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
     // Invia email reale con template e environment context
     const result = await emailService.sendTemplateEmail(
       'BENVENUTO',
-      lead.emailRichiedente,
+      lead.email,
       variables,
       undefined, // attachments
       env        // 🔐 Pass environment for secure API keys
@@ -378,7 +378,7 @@ async function inviaEmailNotificaInfo(leadData: any) {
   try {
     console.log(`📧 Invio notifica nuovo lead a info@telemedcare.it`)
     console.log(`Template: email_notifica_info`)
-    console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.emailRichiedente}`)
+    console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.email}`)
     
     // In produzione, usare EmailService reale
     return { 
@@ -394,7 +394,7 @@ async function inviaEmailNotificaInfo(leadData: any) {
 // Invia documenti informativi (brochure/manuale)
 async function inviaEmailDocumentiInformativi(leadData: any) {
   try {
-    console.log(`📧 Invio documenti informativi a ${leadData.emailRichiedente}`)
+    console.log(`📧 Invio documenti informativi a ${leadData.email}`)
     console.log(`Template: email_documenti_informativi`)
     console.log(`Richiesti: Brochure=${leadData.vuoleBrochure}, Manuale=${leadData.vuoleManuale}`)
     
@@ -966,11 +966,11 @@ app.get('/', (c) => {
             <div class="grid md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Email *</label>
-                <input type="email" name="emailRichiedente" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Telefono *</label>
-                <input type="tel" name="telefonoRichiedente" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="tel" name="telefono" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
             </div>
 
@@ -3543,7 +3543,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
           language: 'it',
           customerInfo: {
             name: `${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-            email: leadData.emailRichiedente,
+            email: leadData.email,
             leadId: leadId
           },
           deliveryMethod: 'email'
@@ -3723,8 +3723,8 @@ app.post('/api/lead', async (c) => {
 
     // Normalizza i nomi dei campi (supporta sia nuovo che vecchio formato)
     const nome = leadData.nome || leadData.nomeRichiedente || ''
-    const email = leadData.email || leadData.emailRichiedente || ''
-    const telefono = leadData.telefono || leadData.telefonoRichiedente || ''
+    const email = leadData.email || leadData.email || ''
+    const telefono = leadData.telefono || leadData.telefono || ''
     const eta = leadData.eta || leadData.etaRichiedente || null
     const servizio = leadData.servizio || leadData.tipoServizio || 'BASIC'
     const azienda = leadData.azienda || leadData.aziendaRichiedente || null
@@ -3747,8 +3747,8 @@ app.post('/api/lead', async (c) => {
       // Dati Richiedente (supporta entrambi i formati)
       nomeRichiedente: String(nome).trim(),
       cognomeRichiedente: String(leadData.cognomeRichiedente || '').trim(),
-      emailRichiedente: String(email).toLowerCase().trim(),
-      telefonoRichiedente: String(telefono).replace(/[^\d+]/g, ''),
+      email: String(email).toLowerCase().trim(),
+      telefono: String(telefono).replace(/[^\d+]/g, ''),
 
       // Dati Assistito (supporta entrambi i formati)
       nomeAssistito: String(leadData.nomeAssistito || nome).trim(),
@@ -3802,8 +3802,8 @@ app.post('/api/lead', async (c) => {
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
         normalizedLead.cognomeRichiedente,
-        normalizedLead.emailRichiedente,
-        normalizedLead.telefonoRichiedente,
+        normalizedLead.email,
+        normalizedLead.telefono,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
         normalizedLead.etaAssistito ? parseInt(normalizedLead.etaAssistito) : null,
@@ -3893,7 +3893,7 @@ app.post('/api/admin/reset-and-regenerate', async (c) => {
       const leadId = `LEAD_TEST_${Date.now()}_${i}`;
       await c.env.DB.prepare(`
         INSERT INTO leads (
-          id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+          id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, pacchetto, priority,
           vuoleBrochure, vuoleManuale, vuoleContratto, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -5042,8 +5042,8 @@ app.post('/api/test/complete-workflow', async (c) => {
         const leadData = {
           partner: partner,
           nomeRichiedente: `Test User ${i + 1}`,
-          emailRichiedente: `test.user.${i + 1}@example.com`,
-          telefonoRichiedente: `+39 345 ${String(Math.floor(Math.random() * 9999999)).padStart(7, '0')}`,
+          email: `test.user.${i + 1}@example.com`,
+          telefono: `+39 345 ${String(Math.floor(Math.random() * 9999999)).padStart(7, '0')}`,
           eta: Math.floor(Math.random() * 40) + 25,
           patologia: partner === 'IRBEMA' ? 'Cardiologia' : partner === 'Luxottica' ? 'Oftalmologia' : 'Generale',
           provincia: ['Milano', 'Roma', 'Torino', 'Napoli'][Math.floor(Math.random() * 4)],

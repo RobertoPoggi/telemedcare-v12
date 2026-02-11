@@ -132,8 +132,8 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     // Dati Richiedente (obbligatori)
     nomeRichiedente: props.firstname || '',
     cognomeRichiedente: props.lastname || '',
-    emailRichiedente: props.email || '',
-    telefonoRichiedente: props.phone || undefined,
+    email: props.email || '',
+    telefono: props.phone || undefined,
     cittaRichiedente: props.city || undefined,
     
     // Dati Assistito (opzionali)
@@ -166,7 +166,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
       id: lead.id,
       nome: lead.nomeRichiedente,
       cognome: lead.cognomeRichiedente,
-      email: lead.emailRichiedente,
+      email: lead.email,
       pacchetto: lead.pacchetto,
       fonte: lead.fonte
     })
@@ -176,8 +176,8 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         id, 
         nomeRichiedente, 
         cognomeRichiedente, 
-        emailRichiedente, 
-        telefonoRichiedente,
+        email, 
+        telefono,
         cittaRichiedente,
         nomeAssistito, 
         cognomeAssistito, 
@@ -198,8 +198,8 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         lead.id,
         lead.nomeRichiedente,
         lead.cognomeRichiedente,
-        lead.emailRichiedente,
-        lead.telefonoRichiedente || '',
+        lead.email,
+        lead.telefono || '',
         lead.cittaRichiedente || null,
         lead.nomeAssistito || null,
         lead.cognomeAssistito || null,
@@ -235,7 +235,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
       leadData: {
         nomeRichiedente: lead.nomeRichiedente,
         cognomeRichiedente: lead.cognomeRichiedente,
-        emailRichiedente: lead.emailRichiedente,
+        email: lead.email,
         pacchetto: lead.pacchetto
       }
     }
@@ -279,7 +279,7 @@ export async function handleHubSpotWebhook(
     
     console.log('🔄 Lead mappato:', {
       id: leadData.id,
-      email: leadData.emailRichiedente,
+      email: leadData.email,
       servizio: leadData.pacchetto,
       vuoleBrochure: leadData.vuoleBrochure,
       vuoleContratto: leadData.vuoleContratto

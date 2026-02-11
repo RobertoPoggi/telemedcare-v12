@@ -28,8 +28,8 @@ export interface CustomerData {
   // Dati richiedente (se diverso dall'assistito)
   nomeRichiedente: string
   cognomeRichiedente: string
-  emailRichiedente: string
-  telefonoRichiedente: string
+  email: string
+  telefono: string
   codiceFiscaleRichiedente?: string
   indirizzoRichiedente?: string
   
@@ -486,11 +486,11 @@ export class ContractService {
       CAP_ASSISTITO: customerData.capAssistito || '',
       CITTA_ASSISTITO: customerData.cittaAssistito || '',
       PROVINCIA_ASSISTITO: customerData.provinciaAssistito || '',
-      TELEFONO_ASSISTITO: customerData.telefonoAssistito || customerData.telefonoRichiedente,
-      EMAIL_ASSISTITO: customerData.emailAssistito || customerData.emailRichiedente,
+      TELEFONO_ASSISTITO: customerData.telefonoAssistito || customerData.telefono,
+      EMAIL_ASSISTITO: customerData.emailAssistito || customerData.email,
 
       // Dati richiedente
-      EMAIL_RICHIEDENTE: customerData.emailRichiedente,
+      EMAIL_RICHIEDENTE: customerData.email,
       
       // Indirizzi
       INDIRIZZO_COMPLETO: customerData.indirizzoAssistito || customerData.indirizzoRichiedente || '',
@@ -577,7 +577,7 @@ export class ContractService {
       
       const emailResult = await emailService.sendTemplateEmail(
         'INVIO_CONTRATTO',
-        customerData.emailRichiedente,
+        customerData.email,
         {
           NOME_CLIENTE: `${customerData.nomeRichiedente} ${customerData.cognomeRichiedente}`,
           PIANO_SERVIZIO: `TeleAssistenza ${customerData.tipoServizio}`,
@@ -594,8 +594,8 @@ export class ContractService {
         'CONTRACT',
         {
           name: `${customerData.nomeRichiedente} ${customerData.cognomeRichiedente}`,
-          email: customerData.emailRichiedente,
-          phone: customerData.telefonoRichiedente
+          email: customerData.email,
+          phone: customerData.telefono
         },
         contract.documentUrl,
         signatureMethod

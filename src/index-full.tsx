@@ -1112,11 +1112,11 @@ app.get('/', (c) => {
             <div class="grid md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Email *</label>
-                <input type="email" name="emailRichiedente" required="" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="email" name="email" required="" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Telefono *</label>
-                <input type="tel" name="telefonoRichiedente" required="" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="tel" name="telefono" required="" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
             </div>
 
@@ -1722,7 +1722,7 @@ app.get('/', (c) => {
 
       // Validazione form completa
       function validateForm(formData) {
-        const required = ['nomeRichiedente', 'cognomeRichiedente', 'emailRichiedente', 'telefonoRichiedente', 'nomeAssistito', 'cognomeAssistito'];
+        const required = ['nomeRichiedente', 'cognomeRichiedente', 'email', 'telefono', 'nomeAssistito', 'cognomeAssistito'];
         
         for (let field of required) {
           if (!formData.get(field) || formData.get(field).trim() === '') {
@@ -1733,7 +1733,7 @@ app.get('/', (c) => {
         }
 
         // Validazione email
-        const email = formData.get('emailRichiedente');
+        const email = formData.get('email');
         const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
         if (!emailRegex.test(email)) {
           console.error('❌ TeleMedCare V12.0-Cloudflare: Email non valida:', email);
@@ -1849,7 +1849,7 @@ app.get('/', (c) => {
         console.log('🛠️ TeleMedCare V12.0-Cloudflare: Setup validazione campi');
         
         // Email validation
-        const emailField = document.querySelector('input[name="emailRichiedente"]');
+        const emailField = document.querySelector('input[name="email"]');
         if (emailField) {
           emailField.addEventListener('blur', function() {
             const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
@@ -1862,7 +1862,7 @@ app.get('/', (c) => {
         }
 
         // Phone validation
-        const phoneField = document.querySelector('input[name="telefonoRichiedente"]');
+        const phoneField = document.querySelector('input[name="telefono"]');
         if (phoneField) {
           phoneField.addEventListener('blur', function() {
             const phoneRegex = /^[+]?[0-9\\s\\-\\(\\)]{8,}$/;
@@ -2046,7 +2046,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
           language: 'it',
           customerInfo: {
             name: `${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-            email: leadData.emailRichiedente,
+            email: leadData.email,
             leadId: leadId
           },
           deliveryMethod: 'email'
@@ -2148,7 +2148,7 @@ app.post('/api/lead', async (c) => {
     console.log('📝 Dati lead ricevuti:', JSON.stringify(leadData, null, 2))
 
     // Validazione dati obbligatori
-    if (!leadData.nomeRichiedente || !leadData.emailRichiedente) {
+    if (!leadData.nomeRichiedente || !leadData.email) {
       return c.json({
         success: false,
         error: 'Campi obbligatori mancanti: nome richiedente e email sono richiesti'
@@ -2165,8 +2165,8 @@ app.post('/api/lead', async (c) => {
       // Dati Richiedente
       nomeRichiedente: String(leadData.nomeRichiedente || '').trim(),
       cognomeRichiedente: String(leadData.cognomeRichiedente || '').trim(),
-      emailRichiedente: String(leadData.emailRichiedente || '').toLowerCase().trim(),
-      telefonoRichiedente: String(leadData.telefonoRichiedente || '').replace(/\\D/g, ''),
+      email: String(leadData.email || '').toLowerCase().trim(),
+      telefono: String(leadData.telefono || '').replace(/\\D/g, ''),
 
       // Dati Assistito
       nomeAssistito: String(leadData.nomeAssistito || '').trim(),
@@ -2222,8 +2222,8 @@ app.post('/api/lead', async (c) => {
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
         normalizedLead.cognomeRichiedente,
-        normalizedLead.emailRichiedente,
-        normalizedLead.telefonoRichiedente,
+        normalizedLead.email,
+        normalizedLead.telefono,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
         normalizedLead.dataNascitaAssistito,
@@ -2443,8 +2443,8 @@ async function inviaEmailNotificaInfo(leadData: any, leadId: string): Promise<bo
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT'),
       NOME_RICHIEDENTE: leadData.nomeRichiedente || '',
       COGNOME_RICHIEDENTE: leadData.cognomeRichiedente || '',
-      EMAIL_RICHIEDENTE: leadData.emailRichiedente || '',
-      TELEFONO_RICHIEDENTE: leadData.telefonoRichiedente || '',
+      EMAIL_RICHIEDENTE: leadData.email || '',
+      TELEFONO_RICHIEDENTE: leadData.telefono || '',
       NOME_ASSISTITO: leadData.nomeAssistito || '',
       COGNOME_ASSISTITO: leadData.cognomeAssistito || '',
       CONDIZIONI_SALUTE: leadData.condizioniSalute || 'Non specificato',
@@ -2501,7 +2501,7 @@ async function inviaEmailBenvenuto(leadData: any, leadId: string): Promise<boole
     const htmlBody = sostituisciPlaceholder(EMAIL_TEMPLATES.BENVENUTO, emailData);
     const subject = `🎉 Benvenuto in TeleMedCare - Codice Cliente: ${leadId}`;
     
-    console.log('📨 EMAIL BENVENUTO DA INVIARE A:', leadData.emailRichiedente);
+    console.log('📨 EMAIL BENVENUTO DA INVIARE A:', leadData.email);
     console.log('📋 OGGETTO:', subject);
     console.log('📄 CORPO HTML:', htmlBody.substring(0, 200) + '...');
     
@@ -2589,7 +2589,7 @@ async function inviaEmailDocumentiInformativi(leadData: any, leadId: string): Pr
     const htmlBody = sostituisciPlaceholder(templateDocumenti, emailData);
     const subject = `📋 Documenti Informativi TeleMedCare - ${leadData.pacchetto} (${leadId})`;
     
-    console.log('📨 EMAIL DOCUMENTI DA INVIARE A:', leadData.emailRichiedente);
+    console.log('📨 EMAIL DOCUMENTI DA INVIARE A:', leadData.email);
     console.log('📋 OGGETTO:', subject);
     
     // TODO: Allegare PDF brochure e manuale se richiesto
@@ -2691,7 +2691,7 @@ async function inviaEmailContratto(leadData: any, leadId: string): Promise<boole
     const htmlBody = sostituisciPlaceholder(templateContratto, emailData);
     const subject = `📋 Contratto TeleMedCare - ${prezzi.nome} (${leadId})`;
     
-    console.log('📨 EMAIL CONTRATTO DA INVIARE A:', leadData.emailRichiedente);
+    console.log('📨 EMAIL CONTRATTO DA INVIARE A:', leadData.email);
     console.log('📋 OGGETTO:', subject);
     
     // TODO: Generare e allegare PDF contratto personalizzato
@@ -2728,7 +2728,7 @@ app.get('/api/admin/monitor', async (c) => {
     // Controllo database - ultimi lead
     try {
       const leads = await c.env.DB.prepare(`
-        SELECT id, nomeRichiedente, cognomeRichiedente, emailRichiedente, 
+        SELECT id, nomeRichiedente, cognomeRichiedente, email, 
                nomeAssistito, cognomeAssistito, created_at, status
         FROM leads 
         ORDER BY created_at DESC 
@@ -2794,8 +2794,8 @@ app.post('/api/admin/init-database', async (c) => {
         id TEXT PRIMARY KEY,
         nomeRichiedente TEXT NOT NULL,
         cognomeRichiedente TEXT NOT NULL,
-        emailRichiedente TEXT NOT NULL,
-        telefonoRichiedente TEXT NOT NULL,
+        email TEXT NOT NULL,
+        telefono TEXT NOT NULL,
         nomeAssistito TEXT NOT NULL,
         cognomeAssistito TEXT NOT NULL,
         dataNascitaAssistito DATE,
@@ -2836,7 +2836,7 @@ app.post('/api/admin/init-database', async (c) => {
     // Inserisce dati di test
     await c.env.DB.prepare(`
       INSERT OR IGNORE INTO leads (
-        id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+        id, nomeRichiedente, cognomeRichiedente, email, telefono,
         nomeAssistito, cognomeAssistito, dataNascitaAssistito, luogoNascitaAssistito, etaAssistito,
         pacchetto, priority, preferitoContatto, status
       ) VALUES 
@@ -3009,7 +3009,7 @@ app.get('/admin/monitor', async (c) => {
                                             <td class="px-4 py-2 text-sm text-gray-900">\${lead.id}</td>
                                             <td class="px-4 py-2 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
                                             <td class="px-4 py-2 text-sm text-gray-900">\${lead.nomeAssistito} \${lead.cognomeAssistito}</td>
-                                            <td class="px-4 py-2 text-sm text-gray-600">\${lead.emailRichiedente}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">\${lead.email}</td>
                                             <td class="px-4 py-2 text-sm text-gray-500">\${new Date(lead.created_at).toLocaleString('it-IT')}</td>
                                         </tr>
                                     \`).join('')}
@@ -4530,8 +4530,8 @@ app.post('/api/contracts/test', async (c) => {
       
       nomeRichiedente: customerName.split(' ')[0],
       cognomeRichiedente: customerName.split(' ')[1] || 'Rossi',
-      emailRichiedente: customerEmail,
-      telefonoRichiedente: '+39 333 123 4567',
+      email: customerEmail,
+      telefono: '+39 333 123 4567',
       
       tipoServizio: contractType as 'BASE' | 'AVANZATO',
       dataAtivazione: new Date().toISOString()
@@ -4739,7 +4739,7 @@ app.post('/api/forms/process-telemedcare-lead', async (c) => {
       const automationSchedule = {
         leadId: `LEAD_${Date.now()}`,
         customerName: `${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-        customerEmail: leadData.emailRichiedente,
+        customerEmail: leadData.email,
         serviceInterest: leadData.pacchetto || 'Informazioni generali',
         urgencyLevel: leadData.urgenza || 'normale',
         leadSource: 'telemedcare_landing',
@@ -5057,7 +5057,7 @@ app.get('/api/email/preview/:templateId', async (c) => {
     
     // Genera dati di test automatici
     const testData = emailService.generateTestData(templateId)
-    const recipientEmail = testData.emailCliente || testData.emailRichiedente || 'test@medicagb.it'
+    const recipientEmail = testData.emailCliente || testData.email || 'test@medicagb.it'
     
     const result = await emailService.renderEmailPreview(templateId, testData, recipientEmail)
     
@@ -5127,7 +5127,7 @@ app.get('/api/email/test-data/:templateId', async (c) => {
       success: true,
       template,
       testData,
-      recipientEmail: testData.emailCliente || testData.emailRichiedente || 'test@medicagb.it'
+      recipientEmail: testData.emailCliente || testData.email || 'test@medicagb.it'
     })
   } catch (error) {
     console.error('❌ Errore generazione dati test:', error)
@@ -5509,7 +5509,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
                     });
                     
                     if (response.data.success) {
@@ -5544,7 +5544,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/test-send/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
                     });
                     
                     const resultsDiv = document.getElementById('testResults');
@@ -5607,7 +5607,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.emailRichiedente || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
                     });
                     
                     if (response.data.success) {
@@ -6909,8 +6909,8 @@ app.get('/admin/data-dashboard', (c) => {
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-4 text-sm text-gray-900">\${lead.id}</td>
                             <td class="px-4 py-4 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
-                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.emailRichiedente}</td>
-                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefonoRichiedente}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.email}</td>
+                            <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefono}</td>
                             <td class="px-4 py-4 text-sm">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full \${lead.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : lead.status === 'CONVERTED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
                                     \${lead.status}
@@ -7045,8 +7045,8 @@ app.get('/admin/data-dashboard', (c) => {
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-4 text-sm text-gray-900">\${lead.id}</td>
                                 <td class="px-4 py-4 text-sm text-gray-900">\${lead.nomeRichiedente} \${lead.cognomeRichiedente}</td>
-                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.emailRichiedente}</td>
-                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefonoRichiedente}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.email}</td>
+                                <td class="px-4 py-4 text-sm text-gray-900">\${lead.telefono}</td>
                                 <td class="px-4 py-4 text-sm">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full \${lead.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : lead.status === 'CONVERTED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">
                                         \${lead.status}
@@ -7128,8 +7128,8 @@ app.get('/admin/data-dashboard', (c) => {
                             <div>
                                 <h4 class="font-semibold text-gray-800 mb-2">Dati Richiedente</h4>
                                 <p><strong>Nome:</strong> \${lead.nomeRichiedente} \${lead.cognomeRichiedente}</p>
-                                <p><strong>Email:</strong> \${lead.emailRichiedente}</p>
-                                <p><strong>Telefono:</strong> \${lead.telefonoRichiedente}</p>
+                                <p><strong>Email:</strong> \${lead.email}</p>
+                                <p><strong>Telefono:</strong> \${lead.telefono}</p>
                                 <p><strong>Codice Fiscale:</strong> \${lead.cfRichiedente || 'Non fornito'}</p>
                                 <p><strong>Indirizzo:</strong> \${lead.indirizzoRichiedente || 'Non fornito'}</p>
                             </div>

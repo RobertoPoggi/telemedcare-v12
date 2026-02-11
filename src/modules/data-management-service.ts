@@ -7,8 +7,8 @@ export interface Lead {
   id: string;
   nomeRichiedente: string;
   cognomeRichiedente: string;
-  emailRichiedente: string;
-  telefonoRichiedente: string;
+  email: string;
+  telefono: string;
   nomeAssistito: string;
   cognomeAssistito: string;
   dataNascitaAssistito: string;
@@ -152,7 +152,7 @@ export class DataManagementService {
     try {
       const result = await this.db.prepare(`
         SELECT * FROM leads 
-        WHERE nomeRichiedente LIKE ? OR cognomeRichiedente LIKE ? OR emailRichiedente LIKE ? OR telefonoRichiedente LIKE ? OR cfRichiedente LIKE ?
+        WHERE nomeRichiedente LIKE ? OR cognomeRichiedente LIKE ? OR email LIKE ? OR telefono LIKE ? OR cfRichiedente LIKE ?
         ORDER BY created_at DESC
         LIMIT 100
       `).bind(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`).all();
@@ -499,8 +499,8 @@ export class DataManagementService {
         leadId, codiceAssistito, 
         lead.nomeAssistito || lead.nomeRichiedente, 
         lead.cognomeAssistito || lead.cognomeRichiedente, 
-        lead.emailRichiedente, 
-        lead.telefonoRichiedente,
+        lead.email, 
+        lead.telefono,
         lead.dataNascitaAssistito || '1950-01-01',
         lead.cfAssistito || lead.cfRichiedente || '', 
         street, city, cap, province,

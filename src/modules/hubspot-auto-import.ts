@@ -209,10 +209,10 @@ export async function executeAutoImport(
         console.log(`📧 [AUTO-IMPORT] Email: ${emailSafe}, Telefono: ${telefonoSafe}`)
         
         // Inserisci nel database con PREZZI (usa campi esistenti)
-        // ⚠️ IMPORTANTE: DB ha sia email che emailRichiedente (legacy compatibility)
+        // ⚠️ IMPORTANTE: DB ha sia email che email (legacy compatibility)
         await db.prepare(`
           INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, emailRichiedente, telefono, telefonoRichiedente,
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
             nomeAssistito, cognomeAssistito,
             servizio, piano, tipoServizio,
             prezzo_anno, prezzo_rinnovo,
@@ -220,15 +220,13 @@ export async function executeAutoImport(
             vuoleContratto, vuoleBrochure, vuoleManuale,
             consensoPrivacy, consensoMarketing, consensoTerze,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           leadId,
           leadData.nomeRichiedente,
           leadData.cognomeRichiedente,
-          emailSafe, // ✅ email (campo legacy NOT NULL)
-          emailSafe, // ✅ emailRichiedente (campo nuovo)
-          telefonoSafe, // telefono (campo legacy)
-          telefonoSafe, // telefonoRichiedente (campo nuovo)
+          emailSafe, // ✅ email
+          telefonoSafe, // ✅ telefono
           leadData.nomeAssistito,
           leadData.cognomeAssistito,
           leadData.servizio,
@@ -352,7 +350,7 @@ export async function executeAutoImport(
               // Prepara lista campi mancanti con metadati per il form
               const fieldMetadata: Record<string, any> = {
                 'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
-                'telefonoRichiedente': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+                'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
                 'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
                 'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
                 'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
@@ -423,7 +421,7 @@ export async function executeAutoImport(
               // Invia email con EmailService (IDENTICO al pulsante manuale)
               const emailService = new EmailService(env)
               await emailService.sendEmail({
-                to: insertedLead.email || insertedLead.emailRichiedente,
+                to: insertedLead.email || insertedLead.email,
                 from: env?.EMAIL_FROM || 'info@telemedcare.it',
                 subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
                 html: emailHtml,

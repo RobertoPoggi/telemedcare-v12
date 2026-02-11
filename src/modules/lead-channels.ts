@@ -256,8 +256,8 @@ export async function inviaLeadIRBEMA(db: D1Database, leadData: Partial<Lead>): 
       cliente: {
         nome: leadData.nomeRichiedente,
         cognome: leadData.cognomeRichiedente,
-        email: leadData.emailRichiedente,
-        telefono: leadData.telefonoRichiedente
+        email: leadData.email,
+        telefono: leadData.telefono
       },
       assistito: {
         nome: leadData.nomeAssistito,
@@ -478,8 +478,8 @@ export async function handleWebhookEndered(db: D1Database, payload: any, signatu
         const mappedLead: Partial<Lead> = {
           nomeRichiedente: leadData.firstName || '',
           cognomeRichiedente: leadData.lastName || '',
-          emailRichiedente: leadData.email || '',
-          telefonoRichiedente: leadData.phone || '',
+          email: leadData.email || '',
+          telefono: leadData.phone || '',
           nomeAssistito: leadData.patientName || leadData.firstName || '',
           cognomeAssistito: leadData.patientLastName || leadData.lastName || '',
           pacchetto: mapEnderedPackageType(leadData.serviceType),
@@ -600,7 +600,7 @@ export async function importaFileLeads(db: D1Database, fileContent: string, file
         leadData.gdprConsent = true // Assume consenso per import file
         
         // Valida campi obbligatori
-        if (!leadData.nomeRichiedente || !leadData.emailRichiedente || !leadData.nomeAssistito) {
+        if (!leadData.nomeRichiedente || !leadData.email || !leadData.nomeAssistito) {
           errori++
           erroriDettagli.push(`Riga ${i + 1}: Campi obbligatori mancanti`)
           continue
@@ -766,12 +766,12 @@ function mappaColonneHeader(header: string[]): Record<string, number> {
     
     // Email
     if (colonna.includes('email') || colonna.includes('mail')) {
-      mapping.emailRichiedente = i
+      mapping.email = i
     }
     
     // Telefono
     if (colonna.includes('telefon') || colonna.includes('phone') || colonna.includes('cell')) {
-      mapping.telefonoRichiedente = i
+      mapping.telefono = i
     }
     
     // Nome assistito

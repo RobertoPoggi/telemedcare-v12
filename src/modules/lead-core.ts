@@ -20,8 +20,8 @@ export interface Lead {
   id: string
   nomeRichiedente: string
   cognomeRichiedente: string
-  emailRichiedente: string
-  telefonoRichiedente?: string
+  email: string
+  telefono?: string
   nomeAssistito: string
   cognomeAssistito: string
   dataNascitaAssistito?: string
@@ -179,8 +179,8 @@ const leadCache = new LeadCache()
  */
 function generaFingerprint(lead: Partial<Lead>): string {
   const elements = [
-    (lead.emailRichiedente || '').toLowerCase().trim(),
-    (lead.telefonoRichiedente || '').replace(/\D/g, ''),
+    (lead.email || '').toLowerCase().trim(),
+    (lead.telefono || '').replace(/\D/g, ''),
     (lead.nomeRichiedente || '').toLowerCase().trim(),
     (lead.cognomeRichiedente || '').toLowerCase().trim(),
     (lead.nomeAssistito || '').toLowerCase().trim(),
@@ -207,18 +207,18 @@ function calcolaSimilarity(lead1: Partial<Lead>, lead2: Partial<Lead>): number {
   let total = 0
   
   // Confronta email (peso alto)
-  if (lead1.emailRichiedente && lead2.emailRichiedente) {
+  if (lead1.email && lead2.email) {
     total += 3
-    if (lead1.emailRichiedente.toLowerCase() === lead2.emailRichiedente.toLowerCase()) {
+    if (lead1.email.toLowerCase() === lead2.email.toLowerCase()) {
       matches += 3
     }
   }
   
   // Confronta telefono (peso alto)
-  if (lead1.telefonoRichiedente && lead2.telefonoRichiedente) {
+  if (lead1.telefono && lead2.telefono) {
     total += 3
-    const tel1 = lead1.telefonoRichiedente.replace(/\D/g, '')
-    const tel2 = lead2.telefonoRichiedente.replace(/\D/g, '')
+    const tel1 = lead1.telefono.replace(/\D/g, '')
+    const tel2 = lead2.telefono.replace(/\D/g, '')
     if (tel1 === tel2 && tel1.length >= 6) {
       matches += 3
     }
@@ -265,8 +265,8 @@ function calcolaSimilarity(lead1: Partial<Lead>, lead2: Partial<Lead>): number {
 export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>): Promise<DuplicateCheck> {
   try {
     console.log('🔍 Rilevamento duplicati AI avviato', {
-      email: nuovoLead.emailRichiedente,
-      telefono: nuovoLead.telefonoRichiedente,
+      email: nuovoLead.email,
+      telefono: nuovoLead.telefono,
       assistito: `${nuovoLead.nomeAssistito} ${nuovoLead.cognomeAssistito}`
     })
     
@@ -275,8 +275,8 @@ export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>):
     
     // Cerca duplicati per fingerprint esatto
     const exactMatch = await db.prepare(`
-      SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente, 
-             nomeAssistito, cognomeAssistito, telefonoRichiedente
+      SELECT id, email, nomeRichiedente, cognomeRichiedente, 
+             nomeAssistito, cognomeAssistito, telefono
       FROM leads 
       WHERE fingerprintHash = ? 
       AND status != 'scartato'
@@ -301,30 +301,30 @@ export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>):
     // Cerca duplicati per email o telefono
     let similarLeads: any[] = []
     
-    if (nuovoLead.emailRichiedente) {
+    if (nuovoLead.email) {
       const emailMatches = await db.prepare(`
-        SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente,
-               nomeAssistito, cognomeAssistito, telefonoRichiedente
+        SELECT id, email, nomeRichiedente, cognomeRichiedente,
+               nomeAssistito, cognomeAssistito, telefono
         FROM leads 
-        WHERE LOWER(emailRichiedente) = LOWER(?)
+        WHERE LOWER(email) = LOWER(?)
         AND status != 'scartato'
         ORDER BY createdAt DESC
         LIMIT 5
-      `).bind(nuovoLead.emailRichiedente).all()
+      `).bind(nuovoLead.email).all()
       
       if (emailMatches.results) {
         similarLeads.push(...emailMatches.results)
       }
     }
     
-    if (nuovoLead.telefonoRichiedente) {
-      const phoneClean = nuovoLead.telefonoRichiedente.replace(/\D/g, '')
+    if (nuovoLead.telefono) {
+      const phoneClean = nuovoLead.telefono.replace(/\D/g, '')
       if (phoneClean.length >= 6) {
         const phoneMatches = await db.prepare(`
-          SELECT id, emailRichiedente, nomeRichiedente, cognomeRichiedente,
-                 nomeAssistito, cognomeAssistito, telefonoRichiedente
+          SELECT id, email, nomeRichiedente, cognomeRichiedente,
+                 nomeAssistito, cognomeAssistito, telefono
           FROM leads 
-          WHERE REPLACE(REPLACE(REPLACE(telefonoRichiedente, ' ', ''), '-', ''), '+', '') LIKE ?
+          WHERE REPLACE(REPLACE(REPLACE(telefono, ' ', ''), '-', ''), '+', '') LIKE ?
           AND status != 'scartato'
           ORDER BY createdAt DESC
           LIMIT 5
@@ -341,8 +341,8 @@ export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>):
     
     for (const similarLead of similarLeads) {
       const similarity = calcolaSimilarity(nuovoLead, {
-        emailRichiedente: similarLead.emailRichiedente,
-        telefonoRichiedente: similarLead.telefonoRichiedente,
+        email: similarLead.email,
+        telefono: similarLead.telefono,
         nomeRichiedente: similarLead.nomeRichiedente,
         cognomeRichiedente: similarLead.cognomeRichiedente,
         nomeAssistito: similarLead.nomeAssistito,
@@ -352,12 +352,12 @@ export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>):
       if (similarity >= 0.8) { // 80% soglia duplicato
         const matchedFields: string[] = []
         
-        if (nuovoLead.emailRichiedente?.toLowerCase() === similarLead.emailRichiedente?.toLowerCase()) {
+        if (nuovoLead.email?.toLowerCase() === similarLead.email?.toLowerCase()) {
           matchedFields.push('email')
         }
         
-        const tel1 = nuovoLead.telefonoRichiedente?.replace(/\D/g, '') || ''
-        const tel2 = similarLead.telefonoRichiedente?.replace(/\D/g, '') || ''
+        const tel1 = nuovoLead.telefono?.replace(/\D/g, '') || ''
+        const tel2 = similarLead.telefono?.replace(/\D/g, '') || ''
         if (tel1 && tel2 && tel1 === tel2) {
           matchedFields.push('telefono')
         }
@@ -419,16 +419,16 @@ export async function rilevaDuplicati(db: D1Database, nuovoLead: Partial<Lead>):
 export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise<{ success: boolean; leadId?: string; duplicate?: DuplicateCheck; error?: string }> {
   try {
     console.log('➕ Creazione nuovo lead', {
-      email: leadData.emailRichiedente,
+      email: leadData.email,
       assistito: `${leadData.nomeAssistito} ${leadData.cognomeAssistito}`
     })
     
     // Validazione campi obbligatori
-    if (!leadData.nomeRichiedente || !leadData.emailRichiedente || 
+    if (!leadData.nomeRichiedente || !leadData.email || 
         !leadData.nomeAssistito || !leadData.cognomeAssistito) {
       return {
         success: false,
-        error: 'Campi obbligatori mancanti: nomeRichiedente, emailRichiedente, nomeAssistito, cognomeAssistito'
+        error: 'Campi obbligatori mancanti: nomeRichiedente, email, nomeAssistito, cognomeAssistito'
       }
     }
     
@@ -451,8 +451,8 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       id: leadId,
       nomeRichiedente: leadData.nomeRichiedente,
       cognomeRichiedente: leadData.cognomeRichiedente || '',
-      emailRichiedente: leadData.emailRichiedente,
-      telefonoRichiedente: leadData.telefonoRichiedente || '',
+      email: leadData.email,
+      telefono: leadData.telefono || '',
       nomeAssistito: leadData.nomeAssistito,
       cognomeAssistito: leadData.cognomeAssistito,
       dataNascitaAssistito: leadData.dataNascitaAssistito || '',
@@ -495,7 +495,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
     // Salva nel database con nomenclatura camelCase corretta
     await db.prepare(`
       INSERT INTO leads (
-        id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+        id, nomeRichiedente, cognomeRichiedente, email, telefono,
         nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
         pacchetto, servizio, condizioniSalute, priority, preferitoContatto,
         vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
@@ -504,7 +504,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      lead.id, lead.nomeRichiedente, lead.cognomeRichiedente, lead.emailRichiedente, lead.telefonoRichiedente,
+      lead.id, lead.nomeRichiedente, lead.cognomeRichiedente, lead.email, lead.telefono,
       lead.nomeAssistito, lead.cognomeAssistito, lead.dataNascitaAssistito, lead.etaAssistito, lead.parentelaAssistito,
       lead.pacchetto, lead.servizio || 'PRO', lead.condizioniSalute, lead.priority, lead.preferenzaContatto,
       lead.vuoleContratto ? 'Si' : 'No', lead.intestazioneContratto, lead.cfRichiedente, lead.indirizzoRichiedente,
@@ -593,7 +593,7 @@ export async function aggiornaLead(db: D1Database, leadId: string, updates: Part
     }
     
     // Ricalcola fingerprint se campi critici sono stati modificati
-    if (updates.emailRichiedente || updates.telefonoRichiedente || 
+    if (updates.email || updates.telefono || 
         updates.nomeRichiedente || updates.cognomeRichiedente ||
         updates.nomeAssistito || updates.cognomeAssistito) {
       updatedLead.fingerprintHash = generaFingerprint(updatedLead)
@@ -602,7 +602,7 @@ export async function aggiornaLead(db: D1Database, leadId: string, updates: Part
     // Update database con nomenclatura camelCase corretta
     await db.prepare(`
       UPDATE leads SET
-        nomeRichiedente = ?, cognomeRichiedente = ?, emailRichiedente = ?, telefonoRichiedente = ?,
+        nomeRichiedente = ?, cognomeRichiedente = ?, email = ?, telefono = ?,
         nomeAssistito = ?, cognomeAssistito = ?, dataNascitaAssistito = ?, etaAssistito = ?, parentelaAssistito = ?,
         pacchetto = ?, condizioniSalute = ?, priority = ?, preferitoContatto = ?,
         vuoleContratto = ?, intestazioneContratto = ?, cfRichiedente = ?, indirizzoRichiedente = ?,
@@ -612,7 +612,7 @@ export async function aggiornaLead(db: D1Database, leadId: string, updates: Part
         updated_at = ?
       WHERE id = ?
     `).bind(
-      updatedLead.nomeRichiedente, updatedLead.cognomeRichiedente, updatedLead.emailRichiedente, updatedLead.telefonoRichiedente,
+      updatedLead.nomeRichiedente, updatedLead.cognomeRichiedente, updatedLead.email, updatedLead.telefono,
       updatedLead.nomeAssistito, updatedLead.cognomeAssistito, updatedLead.dataNascitaAssistito, updatedLead.etaAssistito, updatedLead.parentelaAssistito,
       updatedLead.pacchetto, updatedLead.condizioniSalute, updatedLead.priority, updatedLead.preferenzaContatto,
       updatedLead.vuoleContratto ? 'Si' : 'No', updatedLead.intestazioneContratto, updatedLead.cfRichiedente, updatedLead.indirizzoRichiedente,
@@ -739,8 +739,8 @@ function mapDatabaseToLead(row: any): Lead {
     id: row.id,
     nomeRichiedente: row.nomeRichiedente,
     cognomeRichiedente: row.cognomeRichiedente,
-    emailRichiedente: row.emailRichiedente,
-    telefonoRichiedente: row.telefonoRichiedente,
+    email: row.email,
+    telefono: row.telefono,
     nomeAssistito: row.nomeAssistito,
     cognomeAssistito: row.cognomeAssistito,
     dataNascitaAssistito: row.dataNascitaAssistito,

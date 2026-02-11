@@ -199,8 +199,8 @@ export class ContractManager {
       // Dati cliente (priorità: request > proforma > lead)
       cliente_nome: request.cliente_nome || proformaData?.cliente_nome || leadData.nomeRichiedente,
       cliente_cognome: request.cliente_cognome || proformaData?.cliente_cognome || leadData.cognomeRichiedente,
-      cliente_email: request.cliente_email || proformaData?.cliente_email || leadData.emailRichiedente,
-      cliente_telefono: request.cliente_telefono || proformaData?.cliente_telefono || leadData.telefonoRichiedente,
+      cliente_email: request.cliente_email || proformaData?.cliente_email || leadData.email,
+      cliente_telefono: request.cliente_telefono || proformaData?.cliente_telefono || leadData.telefono,
       cliente_indirizzo: request.cliente_indirizzo || proformaData?.cliente_indirizzo || leadData.indirizzoRichiedente || '',
       cliente_citta: request.cliente_citta || proformaData?.cliente_citta || '',
       cliente_cap: request.cliente_cap || proformaData?.cliente_cap || '',

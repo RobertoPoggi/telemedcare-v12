@@ -121,8 +121,8 @@ export async function processNewLead(
     
     console.log(`🔍 [ORCHESTRATOR] Lead email check:`, {
       leadEmailEnabled,
-      emailRichiedente: ctx.leadData.emailRichiedente,
-      hasEmail: !!ctx.leadData.emailRichiedente,
+      email: ctx.leadData.email,
+      hasEmail: !!ctx.leadData.email,
       leadId: ctx.leadData.id
     })
     
@@ -130,11 +130,11 @@ export async function processNewLead(
     
     // Usa SOLO il dashboard switch (ignora workflow switch per evitare conflitti)
     if (leadEmailEnabled) {
-      // Determina email destinatario (usa emailRichiedente o fallback su email)
-      const recipientEmail = ctx.leadData.emailRichiedente || ctx.leadData.email
+      // Determina email destinatario (usa email o fallback su email)
+      const recipientEmail = ctx.leadData.email || ctx.leadData.email
       
       console.log(`📧 [ORCHESTRATOR] Invio email completamento dati a ${recipientEmail}`)
-      console.log(`   emailRichiedente: ${ctx.leadData.emailRichiedente}`)
+      console.log(`   email: ${ctx.leadData.email}`)
       console.log(`   email: ${ctx.leadData.email}`)
       
       if (!recipientEmail) {
@@ -809,7 +809,7 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
       dataScadenza.toISOString().split('T')[0],
       ctx.leadData.nomeRichiedente || 'Cliente',
       ctx.leadData.cognomeRichiedente || '',
-      ctx.leadData.emailRichiedente || 'email@example.com',
+      ctx.leadData.email || 'email@example.com',
       tipoServizio,
       prezzoBase,
       12,

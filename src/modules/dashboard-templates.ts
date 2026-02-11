@@ -1488,8 +1488,8 @@ export const dashboard = `<!DOCTYPE html>
                 
                 // Estrai info assistito - prova vari nomi campo
                 const leadId = (assistito.id || '').toString().toUpperCase();
-                const emailRichiedente = (
-                    assistito.emailRichiedente || 
+                const email = (
+                    assistito.email || 
                     assistito.email || 
                     assistito.email_richiedente ||
                     assistito.emailrichiedente ||
@@ -1501,7 +1501,7 @@ export const dashboard = `<!DOCTYPE html>
                 // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
                 // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
                 if (nomeCompleto.includes('laura calvi') || 
-                    emailRichiedente.includes('stefania.rocca@medicagb.it')) {
+                    email.includes('stefania.rocca@medicagb.it')) {
                     canale = 'Networking';
                     console.log('✅ Networking:', nomeCompleto);
                 }
@@ -2683,14 +2683,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.emailRichiedente || lead.email || 'N/A')}</div>
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || lead.email || 'N/A')}</div>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.emailRichiedente || lead.email) || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || lead.email) || '-'}
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefonoRichiedente || lead.telefono) || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono || lead.telefono) || '-'}
                             </div>
                         </td>
                         <td class="py-3">
@@ -2903,8 +2903,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewLeadId').textContent = lead.id;
             document.getElementById('viewNome').textContent = lead.nomeRichiedente || '-';
             document.getElementById('viewCognome').textContent = lead.cognomeRichiedente || '-';
-            document.getElementById('viewEmail').textContent = lead.emailRichiedente || lead.email || '-';
-            document.getElementById('viewTelefono').textContent = lead.telefonoRichiedente || lead.telefono || '-';
+            document.getElementById('viewEmail').textContent = lead.email || lead.email || '-';
+            document.getElementById('viewTelefono').textContent = lead.telefono || lead.telefono || '-';
             document.getElementById('viewServizio').textContent = servizio;
             document.getElementById('viewPiano').textContent = piano;
             document.getElementById('viewNote').textContent = lead.note || '-';
@@ -2927,8 +2927,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Pre-compila TUTTI i campi
             document.getElementById('newNome').value = lead.nomeRichiedente || '';
             document.getElementById('newCognome').value = lead.cognomeRichiedente || '';
-            document.getElementById('newEmail').value = lead.emailRichiedente || lead.email || '';
-            document.getElementById('newTelefono').value = lead.telefonoRichiedente || lead.telefono || '';
+            document.getElementById('newEmail').value = lead.email || lead.email || '';
+            document.getElementById('newTelefono').value = lead.telefono || lead.telefono || '';
             
             document.getElementById('newNomeAssistito').value = lead.nomeAssistito || '';
             document.getElementById('newCognomeAssistito').value = lead.cognomeAssistito || '';
@@ -5023,7 +5023,7 @@ export const workflow_manager = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || lead.emailRichiedente || '-'}
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${lead.email || lead.email || '-'}
                             </div>
                         </td>
                         <td class="py-3 text-sm">

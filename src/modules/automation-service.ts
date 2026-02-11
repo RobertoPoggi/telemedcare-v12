@@ -104,7 +104,7 @@ class AutomationService {
           personalizedContent: {
             nomeRichiedente: schedule.customerName.split(' ')[0] || '',
             cognomeRichiedente: schedule.customerName.split(' ')[1] || '',
-            emailRichiedente: schedule.customerEmail,
+            email: schedule.customerEmail,
             pianoServizio: schedule.serviceInterest,
             dataRichiesta: now.toLocaleDateString('it-IT'),
             oraRichiesta: now.toLocaleTimeString('it-IT')

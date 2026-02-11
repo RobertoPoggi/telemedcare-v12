@@ -327,7 +327,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
     if (!lead) return { success: false, error: 'Lead non trovato' }
     
-    console.log(`📧 INVIO REALE email benvenuto a ${lead.emailRichiedente}`)
+    console.log(`📧 INVIO REALE email benvenuto a ${lead.email}`)
     
     // Usa EmailService reale
     const EmailService = (await import('./modules/email-service')).default
@@ -346,7 +346,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
     // Invia email reale con template e environment context
     const result = await emailService.sendTemplateEmail(
       'BENVENUTO',
-      lead.emailRichiedente,
+      lead.email,
       variables,
       undefined, // attachments
       env        // 🔐 Pass environment for secure API keys
@@ -1094,11 +1094,11 @@ app.get('/form-lead', (c) => {
             <div class="grid md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Email *</label>
-                <input type="email" name="emailRichiedente" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
               <div>
                 <label class="block text-gray-700 font-semibold mb-2">Telefono *</label>
-                <input type="tel" name="telefonoRichiedente" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="tel" name="telefono" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               </div>
             </div>
 
@@ -3504,7 +3504,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
           language: 'it',
           customerInfo: {
             name: `${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-            email: leadData.emailRichiedente,
+            email: leadData.email,
             leadId: leadId
           },
           deliveryMethod: 'email'
@@ -3684,8 +3684,8 @@ app.post('/api/lead', async (c) => {
 
     // Normalizza i nomi dei campi (supporta sia nuovo che vecchio formato)
     const nome = leadData.nome || leadData.nomeRichiedente || ''
-    const email = leadData.email || leadData.emailRichiedente || ''
-    const telefono = leadData.telefono || leadData.telefonoRichiedente || ''
+    const email = leadData.email || leadData.email || ''
+    const telefono = leadData.telefono || leadData.telefono || ''
     const eta = leadData.eta || leadData.etaRichiedente || null
     const servizio = leadData.servizio || leadData.tipoServizio || 'BASIC'
     const azienda = leadData.azienda || leadData.aziendaRichiedente || null
@@ -3716,8 +3716,8 @@ app.post('/api/lead', async (c) => {
       // Dati Richiedente (supporta entrambi i formati)
       nomeRichiedente: String(nome).trim(),
       cognomeRichiedente: String(leadData.cognomeRichiedente || '').trim(),
-      emailRichiedente: String(email).toLowerCase().trim(),
-      telefonoRichiedente: String(telefono).replace(/[^\d+]/g, ''),
+      email: String(email).toLowerCase().trim(),
+      telefono: String(telefono).replace(/[^\d+]/g, ''),
 
       // Dati Assistito (supporta entrambi i formati)
       nomeAssistito: String(leadData.nomeAssistito || nome).trim(),
@@ -3767,7 +3767,7 @@ app.post('/api/lead', async (c) => {
       // Mappa i dati al nuovo schema
       await c.env.DB.prepare(`
         INSERT INTO leads (
-          id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+          id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
           pacchetto, condizioniSalute, preferenzaContatto,
           vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
@@ -3779,8 +3779,8 @@ app.post('/api/lead', async (c) => {
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
         normalizedLead.cognomeRichiedente,
-        normalizedLead.emailRichiedente,
-        normalizedLead.telefonoRichiedente,
+        normalizedLead.email,
+        normalizedLead.telefono,
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
         normalizedLead.dataNascitaAssistito,
@@ -3822,8 +3822,8 @@ app.post('/api/lead', async (c) => {
           id: normalizedLead.id,
           nomeRichiedente: normalizedLead.nomeRichiedente,
           cognomeRichiedente: normalizedLead.cognomeRichiedente,
-          emailRichiedente: normalizedLead.emailRichiedente,
-          telefonoRichiedente: normalizedLead.telefonoRichiedente,
+          email: normalizedLead.email,
+          telefono: normalizedLead.telefono,
           nomeAssistito: normalizedLead.nomeAssistito,
           cognomeAssistito: normalizedLead.cognomeAssistito,
           etaAssistito: normalizedLead.etaAssistito,
@@ -4676,7 +4676,7 @@ app.post('/api/admin/reset-and-regenerate', async (c) => {
       const leadId = `LEAD_TEST_${Date.now()}_${i}`;
       await c.env.DB.prepare(`
         INSERT INTO leads (
-          id, nomeRichiedente, cognomeRichiedente, emailRichiedente, telefonoRichiedente,
+          id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, pacchetto, priority,
           vuoleBrochure, vuoleManuale, vuoleContratto, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -6524,8 +6524,8 @@ app.post('/api/payments', async (c) => {
         id: leadData.id,
         nomeRichiedente: leadData.nomeRichiedente,
         cognomeRichiedente: leadData.cognomeRichiedente,
-        emailRichiedente: leadData.email,
-        telefonoRichiedente: leadData.telefono,
+        email: leadData.email,
+        telefono: leadData.telefono,
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
         etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
@@ -6802,8 +6802,8 @@ app.post('/api/configurations', async (c) => {
         id: leadData.id,
         nomeRichiedente: leadData.nomeRichiedente,
         cognomeRichiedente: leadData.cognomeRichiedente,
-        emailRichiedente: leadData.email,
-        telefonoRichiedente: leadData.telefono,
+        email: leadData.email,
+        telefono: leadData.telefono,
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
         etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
@@ -6878,8 +6878,8 @@ app.post('/api/devices/associate', async (c) => {
         id: leadData.id,
         nomeRichiedente: leadData.nomeRichiedente,
         cognomeRichiedente: leadData.cognomeRichiedente,
-        emailRichiedente: leadData.email,
-        telefonoRichiedente: leadData.telefono,
+        email: leadData.email,
+        telefono: leadData.telefono,
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
         etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
@@ -7655,8 +7655,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       id: leadId,
       nomeRichiedente: lead.nomeRichiedente,
       cognomeRichiedente: lead.cognomeRichiedente,
-      emailRichiedente: lead.email,
-      telefonoRichiedente: lead.telefono || '',
+      email: lead.email,
+      telefono: lead.telefono || '',
       nomeAssistito: lead.nomeAssistito || lead.nomeRichiedente,
       cognomeAssistito: lead.cognomeAssistito || lead.cognomeRichiedente,
       luogoNascitaAssistito: lead.luogoNascitaAssistito || '',
@@ -7958,10 +7958,10 @@ app.post('/api/leads/:id/complete', async (c) => {
     const fieldMapping: Record<string, string> = {
       nomeRichiedente: 'nomeRichiedente',
       cognomeRichiedente: 'cognomeRichiedente',
-      emailRichiedente: 'emailRichiedente',
-      // email: 'emailRichiedente',  // ← RIMOSSO: gestiamo email separatamente
-      telefonoRichiedente: 'telefonoRichiedente',
-      // telefono: 'telefonoRichiedente',  // ← RIMOSSO: gestiamo telefono separatamente
+      email: 'email',
+      // email: 'email',  // ← RIMOSSO: gestiamo email separatamente
+      telefono: 'telefono',
+      // telefono: 'telefono',  // ← RIMOSSO: gestiamo telefono separatamente
       
       // Dati Intestatario (per la proposta)
       cfRichiedente: 'cfRichiedente',
@@ -8001,35 +8001,35 @@ app.post('/api/leads/:id/complete', async (c) => {
     }
     
     // 🔧 FIX CRITICO: Gestione doppi campi email/telefono
-    // Il DB ha sia 'email' (NOT NULL legacy) che 'emailRichiedente' (nuovo)
+    // Il DB ha sia 'email' (NOT NULL legacy) che 'email' (nuovo)
     // Dobbiamo popolare ENTRAMBI per evitare NOT NULL constraint
     
-    // Gestione EMAIL: popola sia 'email' che 'emailRichiedente'
-    const emailValue = data.email || data.emailRichiedente
+    // Gestione EMAIL: popola sia 'email' che 'email'
+    const emailValue = data.email || data.email
     if (emailValue) {
       // Aggiungi 'email' se non già presente
       if (!updateFields.some(f => f.startsWith('email ='))) {
         updateFields.push('email = ?')
         binds.push(emailValue)
       }
-      // Aggiungi 'emailRichiedente' se non già presente
-      if (!updateFields.some(f => f.startsWith('emailRichiedente ='))) {
-        updateFields.push('emailRichiedente = ?')
+      // Aggiungi 'email' se non già presente
+      if (!updateFields.some(f => f.startsWith('email ='))) {
+        updateFields.push('email = ?')
         binds.push(emailValue)
       }
     }
     
-    // Gestione TELEFONO: popola sia 'telefono' che 'telefonoRichiedente'
-    const telefonoValue = data.telefono || data.telefonoRichiedente
+    // Gestione TELEFONO: popola sia 'telefono' che 'telefono'
+    const telefonoValue = data.telefono || data.telefono
     if (telefonoValue) {
       // Aggiungi 'telefono' se non già presente
       if (!updateFields.some(f => f.startsWith('telefono ='))) {
         updateFields.push('telefono = ?')
         binds.push(telefonoValue)
       }
-      // Aggiungi 'telefonoRichiedente' se non già presente
-      if (!updateFields.some(f => f.startsWith('telefonoRichiedente ='))) {
-        updateFields.push('telefonoRichiedente = ?')
+      // Aggiungi 'telefono' se non già presente
+      if (!updateFields.some(f => f.startsWith('telefono ='))) {
+        updateFields.push('telefono = ?')
         binds.push(telefonoValue)
       }
     }
@@ -8213,8 +8213,8 @@ app.post('/api/lead/:id/complete', async (c) => {
     const fieldMapping: Record<string, string> = {
       nomeRichiedente: 'nomeRichiedente',
       cognomeRichiedente: 'cognomeRichiedente',
-      emailRichiedente: 'emailRichiedente',
-      telefonoRichiedente: 'telefonoRichiedente',
+      email: 'email',
+      telefono: 'telefono',
       cfRichiedente: 'cfRichiedente',
       indirizzoRichiedente: 'indirizzoRichiedente',
       capRichiedente: 'capRichiedente',
@@ -8247,26 +8247,26 @@ app.post('/api/lead/:id/complete', async (c) => {
     }
     
     // Gestione doppi campi email/telefono
-    const emailValue = data.email || data.emailRichiedente
+    const emailValue = data.email || data.email
     if (emailValue) {
       if (!updateFields.some(f => f.startsWith('email ='))) {
         updateFields.push('email = ?')
         binds.push(emailValue)
       }
-      if (!updateFields.some(f => f.startsWith('emailRichiedente ='))) {
-        updateFields.push('emailRichiedente = ?')
+      if (!updateFields.some(f => f.startsWith('email ='))) {
+        updateFields.push('email = ?')
         binds.push(emailValue)
       }
     }
     
-    const telefonoValue = data.telefono || data.telefonoRichiedente
+    const telefonoValue = data.telefono || data.telefono
     if (telefonoValue) {
       if (!updateFields.some(f => f.startsWith('telefono ='))) {
         updateFields.push('telefono = ?')
         binds.push(telefonoValue)
       }
-      if (!updateFields.some(f => f.startsWith('telefonoRichiedente ='))) {
-        updateFields.push('telefonoRichiedente = ?')
+      if (!updateFields.some(f => f.startsWith('telefono ='))) {
+        updateFields.push('telefono = ?')
         binds.push(telefonoValue)
       }
     }
@@ -9285,7 +9285,7 @@ app.post('/api/contracts/sign', async (c) => {
         )
         
         if (proformaResult.success) {
-          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} inviata con successo a ${lead.emailRichiedente}`)
+          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} inviata con successo a ${lead.email}`)
           console.log(`✅ [FIRMA→PROFORMA] Email IDs:`, proformaResult.messageIds)
         } else {
           console.error(`❌ [FIRMA→PROFORMA] Errore invio proforma:`, proformaResult.errors)
@@ -9594,7 +9594,7 @@ app.post('/api/leads', async (c) => {
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, 
         email, telefono,
-        emailRichiedente, telefonoRichiedente,
+        email, telefono,
         nomeAssistito, cognomeAssistito, 
         luogoNascitaAssistito, dataNascitaAssistito,
         indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
@@ -9611,8 +9611,8 @@ app.post('/api/leads', async (c) => {
       data.cognomeRichiedente,
       data.email, // Per retrocompatibilità con schema DB
       data.telefono || '', // Per retrocompatibilità con schema DB
-      data.email, // emailRichiedente
-      data.telefono || '', // telefonoRichiedente
+      data.email, // email
+      data.telefono || '', // telefono
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
       data.luogoNascitaAssistito ?? null,
@@ -9665,8 +9665,8 @@ app.post('/api/leads', async (c) => {
         id: leadId,
         nomeRichiedente: data.nomeRichiedente,
         cognomeRichiedente: data.cognomeRichiedente,
-        emailRichiedente: data.email,
-        telefonoRichiedente: data.telefono || '',
+        email: data.email,
+        telefono: data.telefono || '',
         nomeAssistito: data.nomeAssistito || '',  // FIX: No fallback a richiedente
         cognomeAssistito: data.cognomeAssistito || '',  // FIX: No fallback a richiedente
         luogoNascitaAssistito: data.luogoNascitaAssistito || '',
@@ -9910,7 +9910,7 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
     
     // Trova lead da cancellare
     const leadsToDelete = await c.env.DB.prepare(`
-      SELECT id, email, emailRichiedente, nomeRichiedente, cognomeRichiedente, created_at
+      SELECT id, email, nomeRichiedente, cognomeRichiedente, created_at
       FROM leads 
       WHERE id >= ? 
         AND fonte = 'IRBEMA'
@@ -9944,7 +9944,7 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
             console.warn(`⚠️ Skip ${lead.id}: ha ${contratti.count} contratti associati`)
             errors.push({
               id: lead.id,
-              email: lead.email || lead.emailRichiedente,
+              email: lead.email || lead.email,
               error: 'Ha contratti associati'
             })
             continue
@@ -9957,12 +9957,12 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
         // Cancella lead
         await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(lead.id).run()
         deletedIds.push(lead.id)
-        console.log(`✅ Cancellato: ${lead.id} - ${lead.email || lead.emailRichiedente}`)
+        console.log(`✅ Cancellato: ${lead.id} - ${lead.email || lead.email}`)
       } catch (error) {
         console.error(`❌ Errore cancellazione ${lead.id}:`, error)
         errors.push({
           id: lead.id,
-          email: lead.email || lead.emailRichiedente,
+          email: lead.email || lead.email,
           error: error instanceof Error ? error.message : String(error)
         })
       }
@@ -11029,7 +11029,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       // Prepara lista campi mancanti con metadati per il form
       const fieldMetadata: Record<string, any> = {
         'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
-        'telefonoRichiedente': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+        'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
         'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
         'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
         'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
@@ -11099,7 +11099,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       
       try {
         await emailService.sendEmail({
-          to: lead.email || lead.emailRichiedente,
+          to: lead.email || lead.email,
           from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml,
@@ -11172,7 +11172,7 @@ app.get('/api/completion/validate/:token', async (c) => {
         id: lead.id,
         nomeRichiedente: lead.nomeRichiedente,
         cognomeRichiedente: lead.cognomeRichiedente,
-        email: lead.email || lead.emailRichiedente,
+        email: lead.email || lead.email,
         telefono: lead.telefono,
         servizio: lead.servizio || lead.tipoServizio,
         piano: lead.piano || lead.pacchetto,
@@ -11278,7 +11278,7 @@ app.post('/api/leads/complete', async (c) => {
             })
             
             await emailService.sendEmail({
-              to: updatedLead.email || updatedLead.emailRichiedente,
+              to: updatedLead.email || updatedLead.email,
               from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
               subject: '📄 Brochure eCura - Documentazione Completa',
               html: brochureHtml,
@@ -11305,7 +11305,7 @@ app.post('/api/leads/complete', async (c) => {
             })
             
             await emailService.sendEmail({
-              to: updatedLead.email || updatedLead.emailRichiedente,
+              to: updatedLead.email || updatedLead.email,
               from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
               subject: '📝 Contratto eCura - Pronto per la Firma',
               html: contractHtml,
@@ -11846,8 +11846,8 @@ app.post('/api/import/irbema', async (c) => {
           // Verifica se già esiste (per email)
           if (email) {
             const existing = await c.env.DB.prepare(
-              'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
-            ).bind(email, email).first()
+              'SELECT id FROM leads WHERE email = ? LIMIT 1'
+            ).bind(email).first()
             
             if (existing) {
               console.log(`⏭️ [HUBSPOT] Lead già esistente (email): ${email}`)
@@ -11928,21 +11928,19 @@ app.post('/api/import/irbema', async (c) => {
           await c.env.DB.prepare(`
             INSERT INTO leads (
               id, nomeRichiedente, cognomeRichiedente, 
-              email, emailRichiedente, 
-              telefono, telefonoRichiedente, 
+              email, 
+              telefono, 
               cittaAssistito,
               servizio, piano, tipoServizio, prezzo_anno, prezzo_rinnovo,
               fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
             props.lastname || 'N/A',
-            emailSafe,      // ✅ email (campo legacy)
-            emailSafe,      // ✅ emailRichiedente (campo nuovo)
-            telefonoSafe,   // ✅ telefono (campo legacy)
-            telefonoSafe,   // ✅ telefonoRichiedente (campo nuovo)
+            emailSafe,      // ✅ email
+            telefonoSafe,   // ✅ telefono
             props.city || null,
             servizio,
             piano,
@@ -12215,8 +12213,8 @@ app.post('/api/import/irbema/spot', async (c) => {
 
         // Verifica se già esiste nel DB
         const existing = await c.env.DB.prepare(
-          'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
-        ).bind(email, email).first()
+          'SELECT id FROM leads WHERE email = ? LIMIT 1'
+        ).bind(email).first()
         
         if (existing) {
           console.log(`⏭️ [SPOT] Lead già esistente: ${email}`)
@@ -12426,7 +12424,7 @@ app.post('/api/import/irbema/manual', async (c) => {
       try {
         // Check duplicati (controllo su entrambi i campi email)
         const existing = await c.env.DB.prepare(
-          'SELECT id FROM leads WHERE email = ? OR emailRichiedente = ? LIMIT 1'
+          'SELECT id FROM leads WHERE email = ? OR email = ? LIMIT 1'
         ).bind(lead.email, lead.email).first()
 
         if (existing) {
@@ -14734,8 +14732,8 @@ app.post('/api/test/complete-workflow', async (c) => {
         const leadData = {
           partner: partner,
           nomeRichiedente: `Test User ${i + 1}`,
-          emailRichiedente: `test.user.${i + 1}@example.com`,
-          telefonoRichiedente: `+39 345 ${String(Math.floor(Math.random() * 9999999)).padStart(7, '0')}`,
+          email: `test.user.${i + 1}@example.com`,
+          telefono: `+39 345 ${String(Math.floor(Math.random() * 9999999)).padStart(7, '0')}`,
           eta: Math.floor(Math.random() * 40) + 25,
           patologia: partner === 'IRBEMA' ? 'Cardiologia' : partner === 'Luxottica' ? 'Oftalmologia' : 'Generale',
           provincia: ['Milano', 'Roma', 'Torino', 'Napoli'][Math.floor(Math.random() * 4)],
