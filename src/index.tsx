@@ -11858,7 +11858,9 @@ app.post('/api/import/irbema', async (c) => {
 
           // Mapping servizio_di_interesse → servizio
           let servizio = 'eCura PRO' // Default
-          console.log(`🔍 [IRBEMA INLINE] PRIMA DEL MAPPING: servizio_di_interesse = ${props.servizio_di_interesse || 'NULL'}`)          if (props.servizio_di_interesse) {
+          console.log(`🔍 [IRBEMA INLINE] PRIMA DEL MAPPING: servizio_di_interesse = ${props.servizio_di_interesse || 'NULL'}`)
+          
+          if (props.servizio_di_interesse) {
             const serviceLower = props.servizio_di_interesse.toLowerCase()
             console.log(`🔍 [IRBEMA INLINE] serviceLower = ${serviceLower}`)
             if (serviceLower.includes('family')) {
