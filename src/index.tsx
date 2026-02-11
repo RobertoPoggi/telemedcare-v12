@@ -8173,6 +8173,26 @@ app.post('/api/leads/:id/complete', async (c) => {
   }
 })
 
+// 🔧 ALIAS: Supporta anche /api/lead/:id/complete (singolare) per retrocompatibilità con vecchi form email
+// NOTA: Questo è un DUPLICATO dell'endpoint /api/leads/:id/complete (plurale)
+app.post('/api/lead/:id/complete', async (c) => {
+  const id = c.req.param('id')
+  console.log(`🔄 [ALIAS SINGOLARE] /api/lead/${id}/complete chiamato`)
+  
+  // Reindirizza internamente all'endpoint /api/leads/:id/complete
+  // Cambia il path della richiesta
+  const newRequest = new Request(c.req.raw)
+  const url = new URL(newRequest.url)
+  url.pathname = `/api/leads/${id}/complete`
+  
+  return fetch(url.toString(), {
+    method: newRequest.method,
+    headers: newRequest.headers,
+    body: newRequest.body,
+    duplex: 'half'
+  } as any)
+})
+
 app.put('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
   
