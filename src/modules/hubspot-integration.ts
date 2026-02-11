@@ -132,7 +132,8 @@ export class HubSpotClient {
         'firstname', 'lastname', 'email', 'phone', 'mobilephone',
         'company', 'address', 'city', 'state', 'zip', 'country',
         'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
-        'servizio_ecura', 'piano_ecura', 'hs_object_source_detail_1'
+        'servizio_ecura', 'piano_ecura', 'hs_object_source_detail_1',
+        'servizio_di_interesse', 'piano_desiderato' // ✅ Campi alternativi da form ecura.it
       ]
       defaultProps.forEach(prop => queryParams.append('properties', prop))
     }
@@ -207,7 +208,9 @@ export class HubSpotClient {
       'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
       'hs_object_source_detail_1', // Form source
       'servizio_ecura', // ✅ Custom property: FAMILY/PRO/PREMIUM
-      'piano_ecura' // ✅ Custom property: BASE/AVANZATO
+      'piano_ecura', // ✅ Custom property: BASE/AVANZATO
+      'servizio_di_interesse', // ✅ Campo alternativo da form ecura.it
+      'piano_desiderato' // ✅ Campo alternativo da form ecura.it
     ]
     
     const body = {
@@ -315,16 +318,50 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     .join(', ')
   
   // Servizio e piano (da custom properties eCura)
-  // ⚠️ SE HubSpot non manda il campo, usa default per evitare NOT NULL constraint
+  // ⚠️ FALLBACK: Prima servizio_ecura/piano_ecura, poi servizio_di_interesse/piano_desiderato
   console.log(`🔍 [HUBSPOT MAPPING] Contact ${props.firstname} ${props.lastname}:`)
   console.log(`🔍 [HUBSPOT MAPPING] - servizio_ecura (raw): ${props.servizio_ecura || 'NULL/EMPTY'}`)
   console.log(`🔍 [HUBSPOT MAPPING] - piano_ecura (raw): ${props.piano_ecura || 'NULL/EMPTY'}`)
+  console.log(`🔍 [HUBSPOT MAPPING] - servizio_di_interesse (raw): ${(props as any).servizio_di_interesse || 'NULL/EMPTY'}`)
+  console.log(`🔍 [HUBSPOT MAPPING] - piano_desiderato (raw): ${(props as any).piano_desiderato || 'NULL/EMPTY'}`)
   
-  const servizioEcura = props.servizio_ecura ? props.servizio_ecura.toUpperCase() : 'PRO'
-  const pianoEcura = props.piano_ecura ? props.piano_ecura.toUpperCase() : 'BASE'
+  // Determina servizio con fallback
+  let servizioEcura = 'PRO' // Default finale
+  if (props.servizio_ecura) {
+    servizioEcura = props.servizio_ecura.toUpperCase()
+    console.log(`🔍 [HUBSPOT MAPPING] - Servizio da servizio_ecura: ${servizioEcura}`)
+  } else if ((props as any).servizio_di_interesse) {
+    // Fallback: usa servizio_di_interesse (da form ecura.it)
+    const serviceLower = (props as any).servizio_di_interesse.toLowerCase()
+    if (serviceLower.includes('family')) {
+      servizioEcura = 'FAMILY'
+    } else if (serviceLower.includes('premium') || serviceLower.includes('vital')) {
+      servizioEcura = 'PREMIUM'
+    } else if (serviceLower.includes('pro')) {
+      servizioEcura = 'PRO'
+    }
+    console.log(`🔍 [HUBSPOT MAPPING] - Servizio da servizio_di_interesse: ${servizioEcura}`)
+  } else {
+    console.log(`🔍 [HUBSPOT MAPPING] - Servizio default: ${servizioEcura}`)
+  }
   
-  console.log(`🔍 [HUBSPOT MAPPING] - servizioEcura (after default): ${servizioEcura}`)
-  console.log(`🔍 [HUBSPOT MAPPING] - pianoEcura (after default): ${pianoEcura}`)
+  // Determina piano con fallback
+  let pianoEcura = 'BASE' // Default finale
+  if (props.piano_ecura) {
+    pianoEcura = props.piano_ecura.toUpperCase()
+    console.log(`🔍 [HUBSPOT MAPPING] - Piano da piano_ecura: ${pianoEcura}`)
+  } else if ((props as any).piano_desiderato) {
+    // Fallback: usa piano_desiderato (da form ecura.it)
+    const planLower = (props as any).piano_desiderato.toLowerCase()
+    if (planLower.includes('avanzato') || planLower.includes('advanced')) {
+      pianoEcura = 'AVANZATO'
+    }
+    console.log(`🔍 [HUBSPOT MAPPING] - Piano da piano_desiderato: ${pianoEcura}`)
+  } else {
+    console.log(`🔍 [HUBSPOT MAPPING] - Piano default: ${pianoEcura}`)
+  }
+  
+  console.log(`✅ [HUBSPOT MAPPING] - Servizio finale: ${servizioEcura}, Piano finale: ${pianoEcura}`)
   
   // Normalizza formato servizio per TeleMedCare
   const servizio = `eCura ${servizioEcura}`
