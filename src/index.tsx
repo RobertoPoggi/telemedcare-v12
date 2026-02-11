@@ -251,7 +251,9 @@ async function generaProformaDaContratto(contractId: string, db: any) {
 }
 
 // Invia email contratto - VERSIONE REALE con EmailService
-async function inviaEmailContratto(contract: any, env?: any) {
+// ❌ DEPRECATED: Funzione locale vecchia - NON USARE
+// Usare invece: inviaEmailContratto da './modules/workflow-email-manager'
+async function inviaEmailContrattoOLD_DEPRECATED(contract: any, env?: any) {
   try {
     console.log(`📧 INVIO REALE contratto ${contract.codice_contratto} a ${contract.email}`)
     
@@ -6349,20 +6351,52 @@ app.post('/api/contracts/send', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    // Recupera contratto e lead
+    // Recupera contratto
     const contract = await c.env.DB.prepare(`
-      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono
-      FROM contracts c
-      LEFT JOIN leads l ON c.leadId = l.id
-      WHERE c.id = ?
+      SELECT * FROM contracts WHERE id = ?
     `).bind(contractId).first()
     
     if (!contract) {
       return c.json({ success: false, error: 'Contratto non trovato' }, 404)
     }
     
-    // Invia email con template email_invio_contratto
-    const emailResult = await inviaEmailContratto(contract, c.env)
+    // Recupera lead completo
+    const lead = await c.env.DB.prepare(`
+      SELECT * FROM leads WHERE id = ?
+    `).bind(contract.leadId).first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Prepara dati contratto per la funzione
+    const contractData = {
+      contractId: contract.id,
+      contractCode: contract.codice_contratto,
+      contractPdfUrl: contract.pdf_url || '',
+      tipoServizio: contract.tipo_contratto || contract.piano,
+      servizio: contract.servizio,
+      prezzoBase: contract.prezzo_totale || 480,
+      prezzoIvaInclusa: (contract.prezzo_totale || 480) * 1.22
+    }
+    
+    // Determina URL brochure in base al servizio
+    const servizioNormalized = (contract.servizio || '').replace(/^eCura\s+/i, '').trim().toUpperCase()
+    const documentUrls = {
+      brochure: servizioNormalized === 'PREMIUM' 
+        ? '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+        : '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf',
+      manuale: ''
+    }
+    
+    // Invia email con template email_invio_contratto usando la funzione corretta
+    const emailResult = await inviaEmailContratto(
+      lead, 
+      contractData, 
+      c.env, 
+      documentUrls, 
+      c.env.DB
+    )
     
     if (emailResult.success) {
       // Aggiorna status contratto
