@@ -11858,16 +11858,25 @@ app.post('/api/import/irbema', async (c) => {
 
           // Mapping servizio_di_interesse → servizio
           let servizio = 'eCura PRO' // Default
-          if (props.servizio_di_interesse) {
+          console.log(`🔍 [IRBEMA INLINE] PRIMA DEL MAPPING: servizio_di_interesse = ${props.servizio_di_interesse || 'NULL'}`)          if (props.servizio_di_interesse) {
             const serviceLower = props.servizio_di_interesse.toLowerCase()
+            console.log(`🔍 [IRBEMA INLINE] serviceLower = ${serviceLower}`)
             if (serviceLower.includes('family')) {
               servizio = 'eCura FAMILY'
+              console.log(`🔍 [IRBEMA INLINE] MATCH: family → servizio = ${servizio}`)
             } else if (serviceLower.includes('premium') || serviceLower.includes('vital')) {
               servizio = 'eCura PREMIUM'
+              console.log(`🔍 [IRBEMA INLINE] MATCH: premium/vital → servizio = ${servizio}`)
             } else if (serviceLower.includes('pro')) {
               servizio = 'eCura PRO'
+              console.log(`🔍 [IRBEMA INLINE] MATCH: pro → servizio = ${servizio}`)
+            } else {
+              console.log(`🔍 [IRBEMA INLINE] NO MATCH → servizio resta = ${servizio}`)
             }
+          } else {
+            console.log(`🔍 [IRBEMA INLINE] servizio_di_interesse NULL → servizio default = ${servizio}`)
           }
+          console.log(`✅ [IRBEMA INLINE] SERVIZIO FINALE = ${servizio}`)
 
           // Mapping piano_desiderato → piano
           let piano = 'BASE' // Default
