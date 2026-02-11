@@ -71,7 +71,7 @@ export async function generateAndSendContract(
       capAssistito: (leadData as any).capAssistito,
       cittaAssistito: (leadData as any).cittaAssistito,
       provinciaAssistito: (leadData as any).provinciaAssistito,
-      codiceFiscaleAssistito: (leadData as any).cfAssistito || (leadData as any).codiceFiscaleAssistito,
+      cfAssistito: (leadData as any).cfAssistito || (leadData as any).cfAssistito,
       
       prezzoMensile: pricing.setupBase / 12,
       durataContratto: 12,

@@ -48,7 +48,7 @@ export interface OperationalWorkflowConfig {
   vuoleContratto?: boolean
   
   // Consensi
-  consensoPrivacy: boolean
+  gdprConsent: boolean
   consensoMarketing?: boolean
   consensoTerze?: boolean
   
@@ -130,7 +130,7 @@ export class OperationalWorkflowManager {
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, etaAssistito,
           fonte, tipoServizio, vuoleBrochure, vuoleManuale, vuoleContratto,
-          consensoPrivacy, consensoMarketing, consensoTerze,
+          gdprConsent, consensoMarketing, consensoTerze,
           external_source_id, external_data,
           status, created_at, updated_at
         ) VALUES (
@@ -156,7 +156,7 @@ export class OperationalWorkflowManager {
         config.vuoleBrochure ? 'Si' : 'No',
         config.vuoleManuale ? 'Si' : 'No',
         config.vuoleContratto ? 'Si' : 'No',
-        config.consensoPrivacy ? 1 : 0,
+        config.gdprConsent ? 1 : 0,
         config.consensoMarketing ? 1 : 0,
         config.consensoTerze ? 1 : 0,
         config.external_source_id || null,

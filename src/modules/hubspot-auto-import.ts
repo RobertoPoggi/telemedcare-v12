@@ -218,7 +218,7 @@ export async function executeAutoImport(
             prezzo_anno, prezzo_rinnovo,
             fonte, external_source_id, status, note,
             vuoleContratto, vuoleBrochure, vuoleManuale,
-            consensoPrivacy, consensoMarketing, consensoTerze,
+            gdprConsent, consensoMarketing, consensoTerze,
             created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
@@ -241,7 +241,7 @@ export async function executeAutoImport(
           leadData.vuoleContratto,
           leadData.vuoleBrochure,
           leadData.vuoleManuale,
-          leadData.consensoPrivacy ? 1 : 0,
+          leadData.gdprConsent ? 1 : 0,
           leadData.consensoMarketing ? 1 : 0,
           leadData.consensoTerze ? 1 : 0,
           new Date().toISOString(),

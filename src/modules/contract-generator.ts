@@ -44,7 +44,7 @@ export interface ContractData {
   capAssistito?: string
   cittaAssistito?: string
   provinciaAssistito?: string
-  codiceFiscaleAssistito?: string
+  cfAssistito?: string
   
   // Dati contrattuali
   prezzoMensile: number
@@ -196,7 +196,7 @@ export class ContractGenerator {
       CAP_ASSISTITO: data.capAssistito || 'DA COMPLETARE',
       CITTA_ASSISTITO: data.cittaAssistito || 'DA COMPLETARE',
       PROVINCIA_ASSISTITO: data.provinciaAssistito || 'DA COMPLETARE',
-      CODICE_FISCALE_ASSISTITO: data.codiceFiscaleAssistito || 'DA COMPLETARE',
+      CODICE_FISCALE_ASSISTITO: data.cfAssistito || 'DA COMPLETARE',
       TELEFONO_ASSISTITO: data.telefono || 'DA COMPLETARE',
       EMAIL_ASSISTITO: data.email,
       
@@ -693,7 +693,7 @@ export class ContractGenerator {
       CAP_ASSISTITO: data.capAssistito || 'DA COMPLETARE',
       CITTA_ASSISTITO: data.cittaAssistito || 'DA COMPLETARE',
       PROVINCIA_ASSISTITO: data.provinciaAssistito || 'DA COMPLETARE',
-      CODICE_FISCALE_ASSISTITO: data.codiceFiscaleAssistito || 'DA COMPLETARE',
+      CODICE_FISCALE_ASSISTITO: data.cfAssistito || 'DA COMPLETARE',
       TELEFONO_ASSISTITO: data.telefono || 'DA COMPLETARE',
       EMAIL_ASSISTITO: data.email,
       Servizio: servizioConfig.nomeCompleto,

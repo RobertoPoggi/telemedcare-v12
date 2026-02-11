@@ -23,7 +23,7 @@ export interface DocxContractData {
   capAssistito: string
   cittaAssistito: string
   provinciaAssistito: string
-  codiceFiscaleAssistito: string
+  cfAssistito: string
   telefonoAssistito: string
   emailAssistito: string
   
@@ -72,7 +72,7 @@ export async function generateContractFromDocx(
     CAP_ASSISTITO: data.capAssistito,
     CITTA_ASSISTITO: data.cittaAssistito,
     PROVINCIA_ASSISTITO: data.provinciaAssistito,
-    CODICE_FISCALE_ASSISTITO: data.codiceFiscaleAssistito,
+    CODICE_FISCALE_ASSISTITO: data.cfAssistito,
     TELEFONO_ASSISTITO: data.telefonoAssistito,
     EMAIL_ASSISTITO: data.emailAssistito,
     
@@ -208,7 +208,7 @@ export function prepareDocxContractData(
     capAssistito: leadData.capAssistito || 'DA COMPLETARE',
     cittaAssistito: leadData.cittaAssistito || 'DA COMPLETARE',
     provinciaAssistito: leadData.provinciaAssistito || 'DA COMPLETARE',
-    codiceFiscaleAssistito: leadData.cfAssistito || 'DA COMPLETARE',
+    cfAssistito: leadData.cfAssistito || 'DA COMPLETARE',
     telefonoAssistito: leadData.telefono || leadData.telefono || 'DA COMPLETARE',
     emailAssistito: leadData.email || leadData.email,
     

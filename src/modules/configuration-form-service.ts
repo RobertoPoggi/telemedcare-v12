@@ -26,14 +26,14 @@ export interface TeleMedCareFormData {
   relazioneAssistito?: string     // Campo "Relazione con l'assistito" (dropdown)
 
   // Campi dinamici per contratto (mostrati solo se richiede contratto)
-  codiceFiscaleRichiedente?: string   // CF Richiedente (se intestazione = "Richiedente")
+  cfRichiedente?: string   // CF Richiedente (se intestazione = "Richiedente")
   indirizzoRichiedente?: string       // Indirizzo Richiedente (se intestazione = "Richiedente")
   capRichiedente?: string             // CAP Richiedente
   cittaRichiedente?: string           // Città Richiedente
   provinciaRichiedente?: string       // Provincia Richiedente
   luogoNascitaRichiedente?: string    // Luogo Nascita Richiedente (da aggiungere)
   
-  codiceFiscaleAssistito?: string     // CF Assistito (se intestazione = "Assistito")
+  cfAssistito?: string     // CF Assistito (se intestazione = "Assistito")
   indirizzoAssistito?: string         // Indirizzo Assistito (se intestazione = "Assistito")
   capAssistito?: string               // CAP Assistito
   cittaAssistito?: string             // Città Assistito
@@ -53,7 +53,7 @@ export interface TeleMedCareFormData {
 
   // Informazioni aggiuntive
   messaggioAggiuntivo?: string    // Campo "Messaggio aggiuntivo"
-  consensoPrivacy: boolean        // Campo "Acconsento al trattamento dei dati personali" *
+  gdprConsent: boolean        // Campo "Acconsento al trattamento dei dati personali" *
 
   // Metadati (aggiunti automaticamente)
   timestamp?: string
@@ -94,7 +94,7 @@ export class ConfigurationFormService {
     // Campi obbligatori per il form base (incluso luogo nascita)
     const requiredFields = ['nome', 'cognome', 'email', 'telefono', 
                            'nomeAssistito', 'cognomeAssistito', 'dataNascitaAssistito', 
-                           'luogoNascitaAssistito', 'preferitoContatto', 'consensoPrivacy']
+                           'luogoNascitaAssistito', 'preferitoContatto', 'gdprConsent']
 
     requiredFields.forEach(field => {
       if (!formData[field as keyof TeleMedCareFormData]) {
@@ -125,7 +125,7 @@ export class ConfigurationFormService {
       if (intestazione === 'Richiedente') {
         // Se contratto intestato al richiedente, servono i suoi dati completi
         const richiedenteFields = [
-          'codiceFiscaleRichiedente', 'indirizzoRichiedente', 
+          'cfRichiedente', 'indirizzoRichiedente', 
           'capRichiedente', 'cittaRichiedente', 'provinciaRichiedente', 
           'luogoNascitaRichiedente'
         ]
@@ -138,7 +138,7 @@ export class ConfigurationFormService {
         // Se contratto intestato all'assistito, servono i suoi dati completi
         // NOTA: luogoNascitaAssistito ora è obbligatorio nella landing page
         const assistitoFields = [
-          'codiceFiscaleAssistito', 'indirizzoAssistito',
+          'cfAssistito', 'indirizzoAssistito',
           'capAssistito', 'cittaAssistito', 'provinciaAssistito'
         ]
         assistitoFields.forEach(field => {
@@ -176,7 +176,7 @@ export class ConfigurationFormService {
       cognomeAssistito: formData.cognomeAssistito,
       dataNascita: formData.dataNascitaAssistito,
       luogoNascita: formData.luogoNascitaAssistito,  // Ora sempre presente
-      codiceFiscaleAssistito: formData.codiceFiscaleAssistito,
+      cfAssistito: formData.cfAssistito,
       indirizzoAssistito: formData.indirizzoAssistito,
       capAssistito: formData.capAssistito,
       cittaAssistito: formData.cittaAssistito,
@@ -302,8 +302,8 @@ export class ConfigurationFormService {
         required: true,
         placeholder: 'Milano'
       },
-      codiceFiscaleAssistito: {
-        name: 'codiceFiscaleAssistito',
+      cfAssistito: {
+        name: 'cfAssistito',
         label: 'Codice Fiscale Assistito',
         type: 'text',
         required: true,
@@ -412,9 +412,9 @@ export class ConfigurationFormService {
   /**
    * Calcola età da data di nascita
    */
-  static calculateAge(birthDate: string): number {
+  static calculateAge(dataNascita: string): number {
     const today = new Date()
-    const birth = new Date(birthDate)
+    const birth = new Date(dataNascita)
     let age = today.getFullYear() - birth.getFullYear()
     const monthDiff = today.getMonth() - birth.getMonth()
     

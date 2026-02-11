@@ -1485,21 +1485,21 @@ app.get('/', (c) => {
               return;
             }
 
-            const birthDate = new Date(year, month, day);
+            const dataNascita = new Date(year, month, day);
             const today = new Date();
 
             // Verifica che la data non sia futura
-            if (birthDate > today) {
+            if (dataNascita > today) {
               console.warn('⚠️ TeleMedCare V12.0-Cloudflare: Data futura non consentita');
               if (etaInput) etaInput.value = '';
               return;
             }
 
             // Calcolo età preciso
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
+            let age = today.getFullYear() - dataNascita.getFullYear();
+            const monthDiff = today.getMonth() - dataNascita.getMonth();
 
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dataNascita.getDate())) {
               age--;
             }
 
@@ -4520,7 +4520,7 @@ app.post('/api/contracts/test', async (c) => {
       cognomeAssistito: 'Rossi',
       dataNascita: '15/03/1945',
       luogoNascita: 'Milano',
-      codiceFiscaleAssistito: 'RSSGPP45C15F205X',
+      cfAssistito: 'RSSGPP45C15F205X',
       indirizzoAssistito: 'Via Roma 123',
       capAssistito: '20121',
       cittaAssistito: 'Milano',
@@ -4770,16 +4770,16 @@ app.post('/api/forms/process-telemedcare-lead', async (c) => {
 })
 
 // Endpoint per calcolare età da data nascita
-app.get('/api/forms/calculate-age/:birthDate', async (c) => {
+app.get('/api/forms/calculate-age/:dataNascita', async (c) => {
   try {
-    const birthDate = c.req.param('birthDate')
+    const dataNascita = c.req.param('dataNascita')
     
     const ConfigurationFormService = (await import('./modules/configuration-form-service')).ConfigurationFormService
-    const age = ConfigurationFormService.calculateAge(birthDate)
+    const age = ConfigurationFormService.calculateAge(dataNascita)
     
     return c.json({
       success: true,
-      birthDate,
+      dataNascita,
       age,
       timestamp: new Date().toISOString()
     })
@@ -4813,7 +4813,7 @@ app.post('/api/forms/test', async (c) => {
       richiedeBrochure: true,
       richiedeManuale: true,
       messaggioAggiuntivo: 'Richiesta informazioni per mio padre',
-      consensoPrivacy: true
+      gdprConsent: true
     }
     
     const validation = ConfigurationFormService.validateFormData(testFormData)
@@ -4821,7 +4821,7 @@ app.post('/api/forms/test', async (c) => {
     const age = ConfigurationFormService.calculateAge(testFormData.dataNascitaAssistito)
     
     const formSchemaExample = ConfigurationFormService.generateMissingFieldsForm([
-      'codiceFiscaleAssistito', 'indirizzoAssistito'
+      'cfAssistito', 'indirizzoAssistito'
     ])
     
     return c.json({
@@ -7147,7 +7147,7 @@ app.get('/admin/data-dashboard', (c) => {
                             <p><strong>Stato:</strong> \${lead.status}</p>
                             <p><strong>Sorgente:</strong> \${lead.sourceUrl || 'Non specificata'}</p>
                             <p><strong>Data Registrazione:</strong> \${new Date(lead.created_at).toLocaleString('it-IT')}</p>
-                            <p><strong>Privacy:</strong> \${lead.consensoPrivacy === 'on' ? 'Accettato' : 'Non accettato'}</p>
+                            <p><strong>Privacy:</strong> \${lead.gdprConsent === 'on' ? 'Accettato' : 'Non accettato'}</p>
                             <p><strong>GDPR:</strong> \${lead.gdprConsent === 'on' ? 'Accettato' : 'Non accettato'}</p>
                             \${lead.note ? \`<p><strong>Note:</strong> \${lead.note}</p>\` : ''}
                         </div>

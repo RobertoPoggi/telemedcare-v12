@@ -24,7 +24,7 @@ export interface Lead {
   vuoleBrochure: string | null    // "Si" / "No"
   vuoleManuale: string | null     // "Si" / "No"
   vuoleContratto: string | null   // "Si" / "No"
-  consensoPrivacy: number         // 0 o 1
+  gdprConsent: number         // 0 o 1
   consensoMarketing: number       // 0 o 1
   consensoTerze: number           // 0 o 1
   status: string                  // nuovo, CONTRACT_SENT, CONTRACT_SIGNED, etc.
@@ -52,7 +52,7 @@ export const LEAD_EDITABLE_FIELDS = [
   'vuoleBrochure',
   'vuoleManuale',
   'vuoleContratto',
-  'consensoPrivacy',
+  'gdprConsent',
   'consensoMarketing',
   'consensoTerze',
   'status',

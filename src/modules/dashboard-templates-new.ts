@@ -2951,7 +2951,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newCapAssistito').value = lead.capAssistito || '';
             document.getElementById('newCittaAssistito').value = lead.cittaAssistito || '';
             document.getElementById('newProvinciaAssistito').value = lead.provinciaAssistito || '';
-            document.getElementById('newCodiceFiscale').value = lead.cfAssistito || lead.codiceFiscaleAssistito || '';
+            document.getElementById('newCodiceFiscale').value = lead.cfAssistito || lead.cfAssistito || '';
             document.getElementById('newCondizioniSalute').value = lead.condizioniSalute || '';
             
             // Intestatario contratto
@@ -2971,7 +2971,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newVuoleContratto').checked = (lead.vuoleContratto === 'Si');
             document.getElementById('newVuoleManuale').checked = (lead.vuoleManuale === 'Si');
             
-            document.getElementById('newConsensoPrivacy').checked = (lead.consensoPrivacy === 1);
+            document.getElementById('newConsensoPrivacy').checked = (lead.gdprConsent === 1);
             document.getElementById('newConsensoMarketing').checked = (lead.consensoMarketing === 'Si');
             document.getElementById('newConsensoTerze').checked = (lead.consensoTerze === 'Si');
             
@@ -3213,7 +3213,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 capAssistito: document.getElementById('newCapAssistito').value,
                 cittaAssistito: document.getElementById('newCittaAssistito').value,
                 provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
-                codiceFiscaleAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
+                cfAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
                 
                 // Intestatario contratto
                 intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
@@ -3233,7 +3233,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 vuoleManuale: document.getElementById('newVuoleManuale').checked ? 'Si' : 'No',
                 
                 // Consensi
-                consensoPrivacy: document.getElementById('newConsensoPrivacy').checked,
+                gdprConsent: document.getElementById('newConsensoPrivacy').checked,
                 consensoMarketing: document.getElementById('newConsensoMarketing').checked ? 'Si' : 'No',
                 consensoTerze: document.getElementById('newConsensoTerze').checked ? 'Si' : 'No',
                 
@@ -3253,7 +3253,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     return;
                 }
                 
-                if (!formData.consensoPrivacy) {
+                if (!formData.gdprConsent) {
                     alert("⚠️ Il consenso Privacy è obbligatorio");
                     return;
                 }

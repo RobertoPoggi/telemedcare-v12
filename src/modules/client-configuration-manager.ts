@@ -11,7 +11,7 @@ export interface ConfigurationData {
   nomeCompletoAssistito: string
   dataNascitaAssistito: string
   luogoNascitaAssistito?: string
-  codiceFiscaleAssistito?: string
+  cfAssistito?: string
   indirizzoCompletoAssistito: string
   cittaAssistito: string
   capAssistito: string

@@ -43,7 +43,7 @@ export interface MissingFields {
   cognomeAssistito?: boolean
   dataNascitaAssistito?: boolean
   luogoNascitaAssistito?: boolean
-  codiceFiscaleAssistito?: boolean
+  cfAssistito?: boolean
   indirizzoAssistito?: boolean
   condizioniSalute?: boolean
   // Aggiungi altri campi obbligatori
@@ -100,7 +100,7 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
     cognomeAssistito: 'Cognome Assistito',
     dataNascitaAssistito: 'Data di Nascita Assistito',
     luogoNascitaAssistito: 'Luogo di Nascita Assistito',
-    cfAssistito: 'Codice Fiscale Assistito',  // DB usa cfAssistito, non codiceFiscaleAssistito
+    cfAssistito: 'Codice Fiscale Assistito',  // DB usa cfAssistito, non cfAssistito
     indirizzoAssistito: 'Indirizzo Assistito',
     
     // Condizioni salute (importante per servizio)

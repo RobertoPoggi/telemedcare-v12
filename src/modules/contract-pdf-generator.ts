@@ -21,7 +21,7 @@ export interface ContractPDFData {
   capAssistito: string
   cittaAssistito: string
   provinciaAssistito: string
-  codiceFiscaleAssistito: string
+  cfAssistito: string
   telefonoAssistito: string
   emailAssistito: string
   
@@ -359,7 +359,7 @@ function replaceTemplateVariables(html: string, data: ContractPDFData): string {
     COGNOME_ASSISTITO: data.cognomeAssistito,
     DATA_NASCITA: data.dataNascita,
     LUOGO_NASCITA: data.luogoNascita,
-    CODICE_FISCALE_ASSISTITO: data.codiceFiscaleAssistito,
+    CODICE_FISCALE_ASSISTITO: data.cfAssistito,
     INDIRIZZO_ASSISTITO: data.indirizzoAssistito,
     CAP_ASSISTITO: data.capAssistito,
     CITTA_ASSISTITO: data.cittaAssistito,
@@ -476,7 +476,7 @@ export function prepareContractData(
       capAssistito: lead.capAssistito || '00000',
       cittaAssistito: lead.cittaAssistito || 'Non specificata',
       provinciaAssistito: lead.provinciaAssistito || 'XX',
-      codiceFiscaleAssistito: lead.codiceFiscaleAssistito || 'Non specificato',
+      cfAssistito: lead.cfAssistito || 'Non specificato',
       telefonoAssistito: lead.telefono || lead.telefono || 'Non specificato',
       emailAssistito: lead.email || lead.email || 'non-specificata@example.com',
       

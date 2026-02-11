@@ -454,7 +454,7 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     vuoleManuale: 0,
     
     // Privacy (default true per import da CRM)
-    consensoPrivacy: true,
+    gdprConsent: true,
     consensoMarketing: false,
     consensoTerze: false,
     

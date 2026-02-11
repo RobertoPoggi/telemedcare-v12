@@ -21,7 +21,7 @@ export interface Lead {
   note?: string;
   created_at: string;
   gdprConsent: string;
-  consensoPrivacy: string;
+  gdprConsent: string;
   sourceUrl?: string;
 }
 

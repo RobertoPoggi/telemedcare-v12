@@ -3796,7 +3796,7 @@ app.post('/api/lead', async (c) => {
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, etaAssistito, fonte, tipoServizio,
           vuoleBrochure, vuoleManuale, vuoleContratto,
-          consensoPrivacy, consensoMarketing, status, note
+          gdprConsent, consensoMarketing, status, note
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
@@ -4576,7 +4576,7 @@ app.post('/api/leads/external', async (c) => {
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            fonte, tipoServizio, vuoleContratto, consensoPrivacy, status,
+            fonte, tipoServizio, vuoleContratto, gdprConsent, status,
             external_source_id, external_data
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
@@ -5047,7 +5047,7 @@ app.post('/api/test/complete-workflow', async (c) => {
           eta: Math.floor(Math.random() * 40) + 25,
           patologia: partner === 'IRBEMA' ? 'Cardiologia' : partner === 'Luxottica' ? 'Oftalmologia' : 'Generale',
           provincia: ['Milano', 'Roma', 'Torino', 'Napoli'][Math.floor(Math.random() * 4)],
-          consensoPrivacy: true,
+          gdprConsent: true,
           consensoMarketing: true
         }
         

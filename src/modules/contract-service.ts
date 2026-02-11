@@ -17,7 +17,7 @@ export interface CustomerData {
   cognomeAssistito: string
   dataNascita?: string
   luogoNascita?: string
-  codiceFiscaleAssistito?: string
+  cfAssistito?: string
   indirizzoAssistito?: string
   capAssistito?: string
   cittaAssistito?: string
@@ -30,7 +30,7 @@ export interface CustomerData {
   cognomeRichiedente: string
   email: string
   telefono: string
-  codiceFiscaleRichiedente?: string
+  cfRichiedente?: string
   indirizzoRichiedente?: string
   
   // Servizio
@@ -480,8 +480,8 @@ export class ContractService {
       COGNOME_ASSISTITO: customerData.cognomeAssistito,
       LUOGO_NASCITA: customerData.luogoNascita || 'Milano',
       DATA_NASCITA: customerData.dataNascita || '01/01/1950',
-      CODICE_FISCALE: customerData.codiceFiscaleAssistito || '',
-      CODICE_FISCALE_ASSISTITO: customerData.codiceFiscaleAssistito || '',
+      CODICE_FISCALE: customerData.cfAssistito || '',
+      CODICE_FISCALE_ASSISTITO: customerData.cfAssistito || '',
       INDIRIZZO_ASSISTITO: customerData.indirizzoAssistito || '',
       CAP_ASSISTITO: customerData.capAssistito || '',
       CITTA_ASSISTITO: customerData.cittaAssistito || '',

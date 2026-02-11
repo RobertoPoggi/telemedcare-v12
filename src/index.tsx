@@ -6938,7 +6938,7 @@ app.post('/api/leads/external', async (c) => {
         await c.env.DB.prepare(`
           INSERT INTO leads (
             id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            fonte, tipoServizio, vuoleContratto, consensoPrivacy, status,
+            fonte, tipoServizio, vuoleContratto, gdprConsent, status,
             external_source_id, external_data
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
@@ -7665,7 +7665,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       capAssistito: lead.capAssistito || '',
       cittaAssistito: lead.cittaAssistito || '',
       provinciaAssistito: lead.provinciaAssistito || '',
-      cfAssistito: lead.codiceFiscaleAssistito || '',
+      cfAssistito: lead.cfAssistito || '',
       condizioniSalute: lead.condizioniSalute || '',
       pacchetto: piano,
       servizio: servizio,
@@ -7976,7 +7976,7 @@ app.post('/api/leads/:id/complete', async (c) => {
       luogoNascitaAssistito: 'luogoNascitaAssistito',
       cittaAssistito: 'cittaAssistito',
       cfAssistito: 'cfAssistito',  // DB usa cfAssistito
-      codiceFiscaleAssistito: 'cfAssistito',  // Alias
+      cfAssistito: 'cfAssistito',  // Alias
       indirizzoAssistito: 'indirizzoAssistito',
       capAssistito: 'capAssistito',
       condizioniSalute: 'condizioniSalute',  // Campo per trigger contratto
@@ -8225,7 +8225,7 @@ app.post('/api/lead/:id/complete', async (c) => {
       luogoNascitaAssistito: 'luogoNascitaAssistito',
       cittaAssistito: 'cittaAssistito',
       cfAssistito: 'cfAssistito',
-      codiceFiscaleAssistito: 'cfAssistito',
+      cfAssistito: 'cfAssistito',
       indirizzoAssistito: 'indirizzoAssistito',
       capAssistito: 'capAssistito',
       condizioniSalute: 'condizioniSalute',
@@ -8365,7 +8365,7 @@ app.put('/api/leads/:id', async (c) => {
       cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      codiceFiscaleRichiedente: 'codiceFiscaleRichiedente',
+      cfRichiedente: 'cfRichiedente',
       indirizzoRichiedente: 'indirizzoRichiedente',
       
       // Dati assistito
@@ -8377,7 +8377,7 @@ app.put('/api/leads/:id', async (c) => {
       capAssistito: 'capAssistito',
       cittaAssistito: 'cittaAssistito',
       provinciaAssistito: 'provinciaAssistito',
-      codiceFiscaleAssistito: 'codiceFiscaleAssistito',
+      cfAssistito: 'cfAssistito',
       cfAssistito: 'cfAssistito', // Alias per codice fiscale
       
       // Servizio
@@ -8392,7 +8392,7 @@ app.put('/api/leads/:id', async (c) => {
       vuoleManuale: 'vuoleManuale',
       
       // Consensi
-      consensoPrivacy: 'consensoPrivacy',
+      gdprConsent: 'gdprConsent',
       consensoMarketing: 'consensoMarketing',
       consensoTerze: 'consensoTerze',
       
@@ -9621,7 +9621,7 @@ app.post('/api/leads', async (c) => {
       data.capAssistito ?? null,
       data.cittaAssistito ?? null,
       data.provinciaAssistito ?? null,
-      data.cfAssistito ?? data.codiceFiscaleAssistito ?? null,  // Fix: usa cfAssistito
+      data.cfAssistito ?? data.cfAssistito ?? null,  // Fix: usa cfAssistito
       data.condizioniSalute || null,
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
@@ -9629,7 +9629,7 @@ app.post('/api/leads', async (c) => {
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      data.consensoPrivacy ? 1 : 0,  // Fix: semplificato
+      data.gdprConsent ? 1 : 0,  // Fix: semplificato
       data.intestatarioContratto || 'richiedente',
       data.note || '',
       data.fonte || data.canale || 'MANUAL_ENTRY',
@@ -9675,7 +9675,7 @@ app.post('/api/leads', async (c) => {
         capAssistito: data.capAssistito || '',
         cittaAssistito: data.cittaAssistito || '',
         provinciaAssistito: data.provinciaAssistito || '',
-        cfAssistito: data.codiceFiscaleAssistito || '',
+        cfAssistito: data.cfAssistito || '',
         condizioniSalute: data.condizioniSalute || '',
         pacchetto: data.piano || 'BASE', // BASE o AVANZATO
         servizio: data.servizio || 'eCura PRO', // Mantieni 'eCura' nel nome
@@ -9683,7 +9683,7 @@ app.post('/api/leads', async (c) => {
         vuoleBrochure: data.vuoleBrochure === 'Si',
         vuoleManuale: data.vuoleManuale === 'Si',
         vuoleContratto: data.vuoleContratto === 'Si',
-        cfRichiedente: data.codiceFiscaleRichiedente || '',
+        cfRichiedente: data.cfRichiedente || '',
         indirizzoRichiedente: data.indirizzoRichiedente || '',
         note: data.note || ''
       }
@@ -10587,7 +10587,7 @@ app.post('/api/hubspot/sync', async (c) => {
             prezzo_anno, prezzo_rinnovo,
             fonte, external_source_id, status, note,
             vuoleContratto, vuoleBrochure, vuoleManuale,
-            consensoPrivacy, consensoMarketing, consensoTerze,
+            gdprConsent, consensoMarketing, consensoTerze,
             created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
@@ -10610,7 +10610,7 @@ app.post('/api/hubspot/sync', async (c) => {
           leadData.vuoleContratto,
           leadData.vuoleBrochure,
           leadData.vuoleManuale,
-          leadData.consensoPrivacy ? 1 : 0,
+          leadData.gdprConsent ? 1 : 0,
           leadData.consensoMarketing ? 1 : 0,
           leadData.consensoTerze ? 1 : 0,
           new Date().toISOString(),
@@ -11180,7 +11180,7 @@ app.get('/api/completion/validate/:token', async (c) => {
         cognomeAssistito: lead.cognomeAssistito,
         dataNascitaAssistito: lead.dataNascitaAssistito,
         luogoNascitaAssistito: lead.luogoNascitaAssistito,
-        codiceFiscaleAssistito: lead.codiceFiscaleAssistito,
+        cfAssistito: lead.cfAssistito,
         indirizzoAssistito: lead.indirizzoAssistito,
         condizioniSalute: lead.condizioniSalute
       },
@@ -11229,7 +11229,7 @@ app.post('/api/leads/complete', async (c) => {
         cognomeAssistito = COALESCE(?, cognomeAssistito),
         dataNascitaAssistito = COALESCE(?, dataNascitaAssistito),
         luogoNascitaAssistito = COALESCE(?, luogoNascitaAssistito),
-        codiceFiscaleAssistito = COALESCE(?, codiceFiscaleAssistito),
+        cfAssistito = COALESCE(?, cfAssistito),
         indirizzoAssistito = COALESCE(?, indirizzoAssistito),
         condizioniSalute = COALESCE(?, condizioniSalute),
         updated_at = datetime('now')
@@ -11240,7 +11240,7 @@ app.post('/api/leads/complete', async (c) => {
       leadData.cognomeAssistito,
       leadData.dataNascitaAssistito,
       leadData.luogoNascitaAssistito,
-      leadData.codiceFiscaleAssistito,
+      leadData.cfAssistito,
       leadData.indirizzoAssistito,
       leadData.condizioniSalute,
       leadId
@@ -14044,7 +14044,7 @@ app.post('/api/migrate-schema', async (c) => {
       { name: 'capAssistito', type: 'TEXT', default: null },
       { name: 'cittaAssistito', type: 'TEXT', default: null },
       { name: 'provinciaAssistito', type: 'TEXT', default: null },
-      { name: 'codiceFiscaleAssistito', type: 'TEXT', default: null },
+      { name: 'cfAssistito', type: 'TEXT', default: null },
       { name: 'condizioniSalute', type: 'TEXT', default: null },
       { name: 'intestatarioContratto', type: 'TEXT', default: "'richiedente'" }
     ]
@@ -14737,7 +14737,7 @@ app.post('/api/test/complete-workflow', async (c) => {
           eta: Math.floor(Math.random() * 40) + 25,
           patologia: partner === 'IRBEMA' ? 'Cardiologia' : partner === 'Luxottica' ? 'Oftalmologia' : 'Generale',
           provincia: ['Milano', 'Roma', 'Torino', 'Napoli'][Math.floor(Math.random() * 4)],
-          consensoPrivacy: true,
+          gdprConsent: true,
           consensoMarketing: true
         }
         
