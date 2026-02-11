@@ -11913,29 +11913,37 @@ app.post('/api/import/irbema', async (c) => {
 
           // Inserisci lead CON PREZZI
           const now = new Date().toISOString()
+          const emailSafe = props.email || ''
+          const telefonoSafe = props.mobilephone || props.phone || ''
+          
           await c.env.DB.prepare(`
             INSERT INTO leads (
-              id, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito,
+              id, nomeRichiedente, cognomeRichiedente, 
+              email, emailRichiedente, 
+              telefono, telefonoRichiedente, 
+              cittaAssistito,
               servizio, piano, tipoServizio, prezzo_anno, prezzo_rinnovo,
               fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
             props.lastname || 'N/A',
-            props.email || '',
-            props.mobilephone || '',
+            emailSafe,      // ✅ email (campo legacy)
+            emailSafe,      // ✅ emailRichiedente (campo nuovo)
+            telefonoSafe,   // ✅ telefono (campo legacy)
+            telefonoSafe,   // ✅ telefonoRichiedente (campo nuovo)
             props.city || null,
             servizio,
             piano,
-            'eCura',     // ✅ FIX: tipoServizio sempre 'eCura', non duplicare servizio
+            'eCura',     // ✅ tipoServizio sempre 'eCura'
             prezzoAnno,  // 💰 PREZZO ANNO (IVA esclusa)
             prezzoRinnovo, // 💰 PREZZO RINNOVO (IVA esclusa)
             'IRBEMA',    // Fonte
             'NEW',       // Status
-            'No',        // vuoleBrochure
-            'No',        // vuoleContratto
+            1,           // ✅ vuoleBrochure = 1 (SEMPRE SI per eCura)
+            1,           // ✅ vuoleContratto = 1 (SEMPRE SI per eCura)
             note,
             now,
             now
@@ -11957,6 +11965,101 @@ app.post('/api/import/irbema', async (c) => {
             note,
             created_at: now
           }, c.env)
+          
+          // 📧 INVIA EMAIL COMPLETAMENTO AL LEAD (come auto-import)
+          try {
+            if (emailSafe) {
+              console.log(`📧 [IRBEMA] Invio email completamento a ${emailSafe}...`)
+              
+              const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
+              const EmailService = (await import('./modules/email-service')).default
+              const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+              
+              // Ottieni lead appena inserito
+              const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+                .bind(leadId).first()
+              
+              if (insertedLead) {
+                // Ottieni configurazione
+                const config = await getSystemConfig(c.env.DB)
+                
+                // Crea token
+                const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
+                
+                // Genera URL completamento
+                const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+                const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+                
+                // Prepara dati per email
+                const { missing, available } = getMissingFields(insertedLead)
+                
+                // Carica template
+                const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+                
+                const availableFieldsList = Object.entries(available).map(([label, value]) => ({
+                  FIELD_LABEL: label,
+                  FIELD_VALUE: value
+                }))
+                
+                const fieldMetadata: Record<string, any> = {
+                  'telefono': { label: 'Telefono', type: 'tel', required: true },
+                  'nomeAssistito': { label: 'Nome Assistito', type: 'text', required: true },
+                  'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', required: true },
+                  'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', required: true }
+                }
+                
+                const missingFieldsList = missing.map(fieldName => {
+                  const meta = fieldMetadata[fieldName] || { 
+                    label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1), 
+                    type: 'text', 
+                    required: false 
+                  }
+                  return {
+                    FIELD_ID: fieldName,
+                    FIELD_NAME: fieldName,
+                    FIELD_LABEL: meta.label,
+                    INPUT_TYPE: meta.type,
+                    IS_REQUIRED: meta.required,
+                    IS_INPUT: true,
+                    IS_SELECT: false,
+                    IS_TEXTAREA: false,
+                    OPTIONS: []
+                  }
+                })
+                
+                const templateData = {
+                  NOME_CLIENTE: insertedLead.nomeRichiedente,
+                  COGNOME_CLIENTE: insertedLead.cognomeRichiedente,
+                  SERVIZIO: servizio,
+                  PIANO: piano,
+                  LEAD_ID: leadId,
+                  API_ENDPOINT: baseUrl,
+                  COMPLETION_URL: completionUrl,
+                  BROCHURE_URL: `${baseUrl}/assets/brochures/brochure-ecura.pdf`,
+                  EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
+                  AVAILABLE_FIELDS: availableFieldsList,
+                  MISSING_FIELDS: missingFieldsList
+                }
+                
+                const emailHtml = renderTemplate(template, templateData)
+                
+                // Invia email
+                const emailService = new EmailService(c.env)
+                await emailService.sendEmail({
+                  to: emailSafe,
+                  from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+                  subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
+                  html: emailHtml,
+                  text: `Gentile ${props.firstname}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi.`
+                })
+                
+                console.log(`✅ [IRBEMA] Email completamento inviata a ${emailSafe}`)
+              }
+            }
+          } catch (emailCompletionError) {
+            console.error(`⚠️ [IRBEMA] Errore email completamento:`, emailCompletionError)
+            // Non bloccare l'import
+          }
 
         } catch (error) {
           const contactName = `${contact.properties?.firstname || 'N/A'} ${contact.properties?.lastname || ''}`
