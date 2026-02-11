@@ -1,0 +1,19 @@
+🧪 TEST 1: Form Completamento Lead
+
+URL di test:
+https://telemedcare-v12.pages.dev/api/form/LEAD-IRBEMA-00186?leadId=LEAD-IRBEMA-00186
+
+AZIONI:
+1. Apri il link nel browser
+2. Compila tutti i campi richiesti
+3. Invia il form
+
+RISULTATI ATTESI:
+✅ HTTP 200 (non 500)
+✅ Messaggio: 'Dati salvati con successo'
+✅ Email contratto ricevuta automaticamente
+✅ Email con ordine: BOX BROCHURE → BOX CONTRATTO
+✅ Prossimi passi: OPZIONE 1 (firma elettronica) + OPZIONE 2 (cartacea)
+✅ Menzione proforma e consegna 10 giorni
+
+---
