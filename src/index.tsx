@@ -7709,6 +7709,12 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       vuoleContratto: true
     }
     
+    // Calcola prezzi corretti
+    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    const pianoType = piano.toUpperCase()
+    const { calculatePrice } = await import('./modules/pricing-calculator')
+    const pricing = calculatePrice(servizioType, pianoType)
+    
     // Prepara contractData
     const contractData = {
       contractId: contractId,
@@ -7716,8 +7722,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       contractPdfUrl: '',
       tipoServizio: piano,
       servizio: servizio,
-      prezzoBase: piano === 'AVANZATO' ? 840 : 480,
-      prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
+      prezzoBase: pricing.setupBase,
+      prezzoIvaInclusa: pricing.setupTotale
     }
     
     // Usa workflow per inviare email contratto
@@ -8142,8 +8148,8 @@ app.post('/api/leads/:id/complete', async (c) => {
               contractPdfUrl: '',
               tipoServizio: piano,
               servizio: servizio,
-              prezzoBase: piano === 'AVANZATO' ? 840 : 480,
-              prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
+              prezzoBase: pricing.setupBase,
+              prezzoIvaInclusa: pricing.setupTotale
             }
             
             // Document URLs
@@ -8345,14 +8351,26 @@ app.post('/api/lead/:id/complete', async (c) => {
           const servizio = (updatedLead as any).servizio || 'eCura PRO'
           const piano = (updatedLead as any).piano || 'BASE'
           
+          // Calcola prezzi corretti in base al servizio
+          const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+          const pianoType = piano.toUpperCase()
+          
+          const { calculatePrice } = await import('./modules/pricing-calculator')
+          const pricing = calculatePrice(servizioType, pianoType)
+          
+          console.log(`💰 [CONTRATTO] Prezzi calcolati per ${servizioType} ${pianoType}:`, {
+            setupBase: pricing.setupBase,
+            setupTotale: pricing.setupTotale
+          })
+          
           const contractData = {
             contractId,
             contractCode,
             contractPdfUrl: '',
             tipoServizio: piano,
             servizio: servizio,
-            prezzoBase: piano === 'AVANZATO' ? 840 : 480,
-            prezzoIvaInclusa: piano === 'AVANZATO' ? 1024.80 : 585.60
+            prezzoBase: pricing.setupBase,
+            prezzoIvaInclusa: pricing.setupTotale
           }
           
           const documentUrls: { brochure?: string; manuale?: string } = {}
@@ -9806,8 +9824,8 @@ app.post('/api/leads', async (c) => {
             contractPdfUrl: '', // Non disponibile senza Puppeteer
             tipoServizio: leadData.pacchetto || 'BASE', // BASE o AVANZATO
             servizio: leadData.servizio || 'eCura PRO', // eCura PRO, eCura FAMILY, eCura PREMIUM
-            prezzoBase: leadData.pacchetto === 'AVANZATO' ? 840 : 480,
-            prezzoIvaInclusa: leadData.pacchetto === 'AVANZATO' ? 1024.80 : 585.60
+            prezzoBase: pricing.setupBase,
+            prezzoIvaInclusa: pricing.setupTotale
           }
           
           addDebugLog(`📋 [LEAD] contractData creato: ${contractData.contractId}`)
