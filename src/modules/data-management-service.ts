@@ -14,7 +14,7 @@ export interface Lead {
   dataNascitaAssistito: string;
   cfIntestatario: string;
   cfAssistito: string;
-  indirizzoRichiedente: string;
+  indirizzoIntestatario: string;
   indirizzoAssistito: string;
   pacchetto: string;
   status: string;
@@ -481,7 +481,7 @@ export class DataManagementService {
       const codiceAssistito = `ASS${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
       // Parse address from lead - assuming format "Via Roma 123, 20100 Milano MI"
-      const addressParts = (lead.indirizzoAssistito || lead.indirizzoRichiedente || '').split(',');
+      const addressParts = (lead.indirizzoAssistito || lead.indirizzoIntestatario || '').split(',');
       const street = addressParts[0]?.trim() || '';
       const cityInfo = addressParts[1]?.trim().split(' ') || [];
       const cap = cityInfo[0] || '';

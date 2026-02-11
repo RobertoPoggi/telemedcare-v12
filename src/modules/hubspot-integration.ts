@@ -418,7 +418,7 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     cognomeRichiedente,
     email,
     telefono,
-    indirizzoRichiedente: indirizzo,
+    indirizzoIntestatario: indirizzo,
     
     // Dati assistito (SOLO se forniti da HubSpot, altrimenti NULL)
     nomeAssistito: props.nome_assistito || null,

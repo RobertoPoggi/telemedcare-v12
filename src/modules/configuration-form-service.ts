@@ -27,9 +27,9 @@ export interface TeleMedCareFormData {
 
   // Campi dinamici per contratto (mostrati solo se richiede contratto)
   cfIntestatario?: string   // CF Richiedente (se intestazione = "Richiedente")
-  indirizzoRichiedente?: string       // Indirizzo Richiedente (se intestazione = "Richiedente")
-  capRichiedente?: string             // CAP Richiedente
-  cittaRichiedente?: string           // Città Richiedente
+  indirizzoIntestatario?: string       // Indirizzo Richiedente (se intestazione = "Richiedente")
+  capIntestatario?: string             // CAP Richiedente
+  cittaIntestatario?: string           // Città Richiedente
   provinciaRichiedente?: string       // Provincia Richiedente
   luogoNascitaRichiedente?: string    // Luogo Nascita Richiedente (da aggiungere)
   
@@ -125,8 +125,8 @@ export class ConfigurationFormService {
       if (intestazione === 'Richiedente') {
         // Se contratto intestato al richiedente, servono i suoi dati completi
         const richiedenteFields = [
-          'cfIntestatario', 'indirizzoRichiedente', 
-          'capRichiedente', 'cittaRichiedente', 'provinciaRichiedente', 
+          'cfIntestatario', 'indirizzoIntestatario', 
+          'capIntestatario', 'cittaIntestatario', 'provinciaRichiedente', 
           'luogoNascitaRichiedente'
         ]
         richiedenteFields.forEach(field => {

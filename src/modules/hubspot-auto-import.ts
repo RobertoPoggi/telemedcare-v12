@@ -351,7 +351,7 @@ export async function executeAutoImport(
               const fieldMetadata: Record<string, any> = {
                 'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
                 'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
-                'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+                'cittaIntestatario': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
                 'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
                 'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
                 'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },

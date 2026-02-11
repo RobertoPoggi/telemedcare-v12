@@ -1298,7 +1298,7 @@ app.get('/', (c) => {
                   </div>
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
-                    <textarea name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
+                    <textarea name="indirizzoIntestatario" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
                   </div>
                 </div>
 
@@ -2185,7 +2185,7 @@ app.post('/api/lead', async (c) => {
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || '').trim(),
       cfIntestatario: String(leadData.cfIntestatario || '').trim(),
-      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
+      indirizzoIntestatario: String(leadData.indirizzoIntestatario || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
       vuoleBrochure: leadData.vuoleBrochure === 'on' || leadData.vuoleBrochure === 'Si' || leadData.vuoleBrochure === true,
@@ -2236,7 +2236,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
         normalizedLead.cfIntestatario,
-        normalizedLead.indirizzoRichiedente,
+        normalizedLead.indirizzoIntestatario,
         normalizedLead.cfAssistito,
         normalizedLead.indirizzoAssistito,
         normalizedLead.vuoleBrochure ? 1 : 0,
@@ -7131,7 +7131,7 @@ app.get('/admin/data-dashboard', (c) => {
                                 <p><strong>Email:</strong> \${lead.email}</p>
                                 <p><strong>Telefono:</strong> \${lead.telefono}</p>
                                 <p><strong>Codice Fiscale:</strong> \${lead.cfIntestatario || 'Non fornito'}</p>
-                                <p><strong>Indirizzo:</strong> \${lead.indirizzoRichiedente || 'Non fornito'}</p>
+                                <p><strong>Indirizzo:</strong> \${lead.indirizzoIntestatario || 'Non fornito'}</p>
                             </div>
                             <div>
                                 <h4 class="font-semibold text-gray-800 mb-2">Dati Assistito</h4>

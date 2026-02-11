@@ -280,8 +280,8 @@ export const FORM_HTML = `<!DOCTYPE html>
             let html = '';
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
-            const needsIntestatario = !lead.cfIntestatario || !lead.indirizzoRichiedente || 
-                                     !lead.capRichiedente || !lead.cittaRichiedente;
+            const needsIntestatario = !lead.cfIntestatario || !lead.indirizzoIntestatario || 
+                                     !lead.capIntestatario || !lead.cittaIntestatario;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
@@ -298,36 +298,36 @@ export const FORM_HTML = `<!DOCTYPE html>
                 }
                 
                 // Indirizzo, CAP, Città sulla stessa riga
-                const hasAddressGaps = !lead.indirizzoRichiedente || !lead.capRichiedente || !lead.cittaRichiedente;
+                const hasAddressGaps = !lead.indirizzoIntestatario || !lead.capIntestatario || !lead.cittaIntestatario;
                 if (hasAddressGaps) {
                     html += '<div class="form-row cols-3">';
                     
-                    if (!lead.indirizzoRichiedente) {
+                    if (!lead.indirizzoIntestatario) {
                         html += \`
                             <div class="form-group">
-                                <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
-                                <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente" 
+                                <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
+                                <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario" 
                                        placeholder="Via/Piazza Nome, N." required>
                             </div>
                         \`;
                     }
                     
-                    if (!lead.capRichiedente) {
+                    if (!lead.capIntestatario) {
                         html += \`
                             <div class="form-group">
-                                <label for="capRichiedente">CAP <span class="required">*</span></label>
-                                <input type="text" id="capRichiedente" name="capRichiedente" 
+                                <label for="capIntestatario">CAP <span class="required">*</span></label>
+                                <input type="text" id="capIntestatario" name="capIntestatario" 
                                        placeholder="00000" required maxlength="5" 
                                        pattern="[0-9]*" inputmode="numeric">
                             </div>
                         \`;
                     }
                     
-                    if (!lead.cittaRichiedente) {
+                    if (!lead.cittaIntestatario) {
                         html += \`
                             <div class="form-group">
-                                <label for="cittaRichiedente">Città <span class="required">*</span></label>
-                                <input type="text" id="cittaRichiedente" name="cittaRichiedente" 
+                                <label for="cittaIntestatario">Città <span class="required">*</span></label>
+                                <input type="text" id="cittaIntestatario" name="cittaIntestatario" 
                                        placeholder="Es. Milano" required>
                             </div>
                         \`;

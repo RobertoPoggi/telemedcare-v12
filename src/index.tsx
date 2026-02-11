@@ -1280,7 +1280,7 @@ app.get('/form-lead', (c) => {
                   </div>
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
-                    <textarea name="indirizzoRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
+                    <textarea name="indirizzoIntestatario" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Inserisci l'indirizzo completo del Richiedente"></textarea>
                   </div>
                 </div>
 
@@ -3737,7 +3737,7 @@ app.post('/api/lead', async (c) => {
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
       cfIntestatario: String(leadData.cfIntestatario || '').trim(),
-      indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
+      indirizzoIntestatario: String(leadData.indirizzoIntestatario || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
       vuoleBrochure: leadData.vuoleBrochure === 'on' || leadData.vuoleBrochure === 'Si' || leadData.vuoleBrochure === true,
@@ -3770,7 +3770,7 @@ app.post('/api/lead', async (c) => {
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
           pacchetto, condizioniSalute, preferenzaContatto,
-          vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoRichiedente,
+          vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoIntestatario,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status,
           prezzo_anno, prezzo_rinnovo
@@ -3792,7 +3792,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
         normalizedLead.cfIntestatario,
-        normalizedLead.indirizzoRichiedente,
+        normalizedLead.indirizzoIntestatario,
         normalizedLead.cfAssistito,
         normalizedLead.indirizzoAssistito,
         normalizedLead.vuoleBrochure ? 1 : 0,
@@ -7965,9 +7965,9 @@ app.post('/api/leads/:id/complete', async (c) => {
       
       // Dati Intestatario (per la proposta)
       cfIntestatario: 'cfIntestatario',
-      indirizzoRichiedente: 'indirizzoRichiedente',
-      capRichiedente: 'capRichiedente',
-      cittaRichiedente: 'cittaRichiedente',
+      indirizzoIntestatario: 'indirizzoIntestatario',
+      capIntestatario: 'capIntestatario',
+      cittaIntestatario: 'cittaIntestatario',
       
       // Dati Assistito
       nomeAssistito: 'nomeAssistito',
@@ -8216,9 +8216,9 @@ app.post('/api/lead/:id/complete', async (c) => {
       email: 'email',
       telefono: 'telefono',
       cfIntestatario: 'cfIntestatario',
-      indirizzoRichiedente: 'indirizzoRichiedente',
-      capRichiedente: 'capRichiedente',
-      cittaRichiedente: 'cittaRichiedente',
+      indirizzoIntestatario: 'indirizzoIntestatario',
+      capIntestatario: 'capIntestatario',
+      cittaIntestatario: 'cittaIntestatario',
       nomeAssistito: 'nomeAssistito',
       cognomeAssistito: 'cognomeAssistito',
       dataNascitaAssistito: 'dataNascitaAssistito',
@@ -8366,7 +8366,7 @@ app.put('/api/leads/:id', async (c) => {
       email: 'email',
       telefono: 'telefono',
       cfIntestatario: 'cfIntestatario',
-      indirizzoRichiedente: 'indirizzoRichiedente',
+      indirizzoIntestatario: 'indirizzoIntestatario',
       
       // Dati assistito
       nomeAssistito: 'nomeAssistito',
@@ -9684,7 +9684,7 @@ app.post('/api/leads', async (c) => {
         vuoleManuale: data.vuoleManuale === 'Si',
         vuoleContratto: data.vuoleContratto === 'Si',
         cfIntestatario: data.cfIntestatario || '',
-        indirizzoRichiedente: data.indirizzoRichiedente || '',
+        indirizzoIntestatario: data.indirizzoIntestatario || '',
         note: data.note || ''
       }
       
@@ -11030,7 +11030,7 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       const fieldMetadata: Record<string, any> = {
         'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
         'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
-        'cittaRichiedente': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+        'cittaIntestatario': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
         'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
         'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
         'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },

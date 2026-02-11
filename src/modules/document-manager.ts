@@ -207,7 +207,7 @@ export class DocumentManager {
         cfAssistito: lead.cfAssistito,
         indirizzoAssistito: lead.indirizzoAssistito,
         cfIntestatario: lead.cfIntestatario,
-        indirizzoRichiedente: lead.indirizzoRichiedente,
+        indirizzoIntestatario: lead.indirizzoIntestatario,
         pacchetto: lead.pacchetto,
         vuoleContratto: lead.vuoleContratto,
         intestazioneContratto: lead.intestazioneContratto
@@ -289,7 +289,7 @@ export class DocumentManager {
         vuoleContratto: result.vuoleContratto === 'Si',
         intestazioneContratto: result.intestazioneContratto as string,
         cfIntestatario: result.cfIntestatario as string,
-        indirizzoRichiedente: result.indirizzoRichiedente as string,
+        indirizzoIntestatario: result.indirizzoIntestatario as string,
         cfAssistito: result.cfAssistito as string,
         indirizzoAssistito: result.indirizzoAssistito as string,
         vuoleBrochure: result.vuoleBrochure === 'Si',

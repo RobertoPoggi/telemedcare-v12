@@ -31,7 +31,7 @@ export interface CustomerData {
   email: string
   telefono: string
   cfIntestatario?: string
-  indirizzoRichiedente?: string
+  indirizzoIntestatario?: string
   
   // Servizio
   tipoServizio: 'BASE' | 'AVANZATO'
@@ -493,7 +493,7 @@ export class ContractService {
       EMAIL_RICHIEDENTE: customerData.email,
       
       // Indirizzi
-      INDIRIZZO_COMPLETO: customerData.indirizzoAssistito || customerData.indirizzoRichiedente || '',
+      INDIRIZZO_COMPLETO: customerData.indirizzoAssistito || customerData.indirizzoIntestatario || '',
       CITTA: customerData.cittaAssistito || '',
 
       // Date

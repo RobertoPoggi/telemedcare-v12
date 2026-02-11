@@ -134,7 +134,7 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     cognomeRichiedente: props.lastname || '',
     email: props.email || '',
     telefono: props.phone || undefined,
-    cittaRichiedente: props.city || undefined,
+    cittaIntestatario: props.city || undefined,
     
     // Dati Assistito (opzionali)
     nomeAssistito: props.nome_assistito || undefined,
@@ -178,7 +178,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         cognomeRichiedente, 
         email, 
         telefono,
-        cittaRichiedente,
+        cittaIntestatario,
         nomeAssistito, 
         cognomeAssistito, 
         etaAssistito,
@@ -200,7 +200,7 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         lead.cognomeRichiedente,
         lead.email,
         lead.telefono || '',
-        lead.cittaRichiedente || null,
+        lead.cittaIntestatario || null,
         lead.nomeAssistito || null,
         lead.cognomeAssistito || null,
         lead.etaAssistito || null,
