@@ -280,17 +280,17 @@ export const FORM_HTML = `<!DOCTYPE html>
             let html = '';
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
-            const needsIntestatario = !lead.cfRichiedente || !lead.indirizzoRichiedente || 
+            const needsIntestatario = !lead.cfIntestatario || !lead.indirizzoRichiedente || 
                                      !lead.capRichiedente || !lead.cittaRichiedente;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
                 
-                if (!lead.cfRichiedente) {
+                if (!lead.cfIntestatario) {
                     html += \`
                         <div class="form-group">
-                            <label for="cfRichiedente">Codice Fiscale <span class="required">*</span></label>
-                            <input type="text" id="cfRichiedente" name="cfRichiedente" 
+                            <label for="cfIntestatario">Codice Fiscale <span class="required">*</span></label>
+                            <input type="text" id="cfIntestatario" name="cfIntestatario" 
                                    placeholder="Es. RSSMRA80A01F205K" required 
                                    maxlength="16" style="text-transform: uppercase;">
                         </div>

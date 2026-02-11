@@ -1148,7 +1148,7 @@ app.get('/', (c) => {
                 <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
-                    <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
+                    <input type="text" name="cfIntestatario" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
                   </div>
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
@@ -3766,7 +3766,7 @@ app.post('/api/lead', async (c) => {
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      cfIntestatario: String(leadData.cfIntestatario || '').trim(),
       indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),

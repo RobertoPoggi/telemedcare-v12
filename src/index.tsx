@@ -1276,7 +1276,7 @@ app.get('/form-lead', (c) => {
                 <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
-                    <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
+                    <input type="text" name="cfIntestatario" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
                   </div>
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
@@ -3736,7 +3736,7 @@ app.post('/api/lead', async (c) => {
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      cfIntestatario: String(leadData.cfIntestatario || '').trim(),
       indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
@@ -3770,7 +3770,7 @@ app.post('/api/lead', async (c) => {
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
           pacchetto, condizioniSalute, preferenzaContatto,
-          vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
+          vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoRichiedente,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status,
           prezzo_anno, prezzo_rinnovo
@@ -3791,7 +3791,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
-        normalizedLead.cfRichiedente,
+        normalizedLead.cfIntestatario,
         normalizedLead.indirizzoRichiedente,
         normalizedLead.cfAssistito,
         normalizedLead.indirizzoAssistito,
@@ -7964,7 +7964,7 @@ app.post('/api/leads/:id/complete', async (c) => {
       // telefono: 'telefono',  // ← RIMOSSO: gestiamo telefono separatamente
       
       // Dati Intestatario (per la proposta)
-      cfRichiedente: 'cfRichiedente',
+      cfIntestatario: 'cfIntestatario',
       indirizzoRichiedente: 'indirizzoRichiedente',
       capRichiedente: 'capRichiedente',
       cittaRichiedente: 'cittaRichiedente',
@@ -8215,7 +8215,7 @@ app.post('/api/lead/:id/complete', async (c) => {
       cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      cfRichiedente: 'cfRichiedente',
+      cfIntestatario: 'cfIntestatario',
       indirizzoRichiedente: 'indirizzoRichiedente',
       capRichiedente: 'capRichiedente',
       cittaRichiedente: 'cittaRichiedente',
@@ -8365,7 +8365,7 @@ app.put('/api/leads/:id', async (c) => {
       cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      cfRichiedente: 'cfRichiedente',
+      cfIntestatario: 'cfIntestatario',
       indirizzoRichiedente: 'indirizzoRichiedente',
       
       // Dati assistito
@@ -9683,7 +9683,7 @@ app.post('/api/leads', async (c) => {
         vuoleBrochure: data.vuoleBrochure === 'Si',
         vuoleManuale: data.vuoleManuale === 'Si',
         vuoleContratto: data.vuoleContratto === 'Si',
-        cfRichiedente: data.cfRichiedente || '',
+        cfIntestatario: data.cfIntestatario || '',
         indirizzoRichiedente: data.indirizzoRichiedente || '',
         note: data.note || ''
       }

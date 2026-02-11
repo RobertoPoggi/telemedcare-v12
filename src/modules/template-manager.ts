@@ -196,7 +196,7 @@ export class TemplateManager {
       cliente_email: leadData.email || '',
       cliente_telefono: leadData.telefono || '',
       cliente_indirizzo: leadData.indirizzoRichiedente || '',
-      cliente_codice_fiscale: leadData.cfRichiedente || '',
+      cliente_codice_fiscale: leadData.cfIntestatario || '',
 
       // Dati assistito dal lead
       assistito_nome: leadData.nomeAssistito || '',
@@ -257,7 +257,7 @@ export class TemplateManager {
       cliente_cap: contractData.cliente_cap || '',
       cliente_citta: contractData.cliente_citta || '',
       cliente_provincia: contractData.cliente_provincia || '',
-      cliente_codice_fiscale: contractData.cliente_codice_fiscale || leadData.cfRichiedente || '',
+      cliente_codice_fiscale: contractData.cliente_codice_fiscale || leadData.cfIntestatario || '',
 
       // Dati assistito
       assistito_nome: contractData.assistito_nome || leadData.nomeAssistito || '',

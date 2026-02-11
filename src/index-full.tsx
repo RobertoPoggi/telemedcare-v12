@@ -1294,7 +1294,7 @@ app.get('/', (c) => {
                 <div id="campi_richiedente" style="display: none;" class="space-y-4 mt-4">
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Codice Fiscale Richiedente</label>
-                    <input type="text" name="cfRichiedente" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
+                    <input type="text" name="cfIntestatario" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Inserisci il Codice Fiscale del Richiedente">
                   </div>
                   <div>
                     <label class="block text-gray-700 font-semibold mb-2">Indirizzo Richiedente</label>
@@ -1875,7 +1875,7 @@ app.get('/', (c) => {
         }
 
         // Codice Fiscale validation
-        const cfFields = document.querySelectorAll('input[name="cfRichiedente"], input[name="cfAssistito"]');
+        const cfFields = document.querySelectorAll('input[name="cfIntestatario"], input[name="cfAssistito"]');
         cfFields.forEach(field => {
           field.addEventListener('blur', function() {
             const cfRegex = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/;
@@ -2184,7 +2184,7 @@ app.post('/api/lead', async (c) => {
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || '').trim(),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      cfIntestatario: String(leadData.cfIntestatario || '').trim(),
       indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
@@ -2235,7 +2235,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
-        normalizedLead.cfRichiedente,
+        normalizedLead.cfIntestatario,
         normalizedLead.indirizzoRichiedente,
         normalizedLead.cfAssistito,
         normalizedLead.indirizzoAssistito,
@@ -7130,7 +7130,7 @@ app.get('/admin/data-dashboard', (c) => {
                                 <p><strong>Nome:</strong> \${lead.nomeRichiedente} \${lead.cognomeRichiedente}</p>
                                 <p><strong>Email:</strong> \${lead.email}</p>
                                 <p><strong>Telefono:</strong> \${lead.telefono}</p>
-                                <p><strong>Codice Fiscale:</strong> \${lead.cfRichiedente || 'Non fornito'}</p>
+                                <p><strong>Codice Fiscale:</strong> \${lead.cfIntestatario || 'Non fornito'}</p>
                                 <p><strong>Indirizzo:</strong> \${lead.indirizzoRichiedente || 'Non fornito'}</p>
                             </div>
                             <div>

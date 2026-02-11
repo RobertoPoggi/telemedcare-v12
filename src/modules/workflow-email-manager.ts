@@ -318,7 +318,7 @@ export interface LeadData {
   vuoleManuale: boolean
   vuoleContratto: boolean
   fonte?: string
-  cfRichiedente?: string
+  cfIntestatario?: string
   indirizzoRichiedente?: string
   cfAssistito?: string
   indirizzoAssistito?: string
@@ -382,7 +382,7 @@ export async function inviaEmailNotificaInfo(
       COGNOME_RICHIEDENTE: leadData.cognomeRichiedente,
       EMAIL_RICHIEDENTE: leadData.email,
       TELEFONO_RICHIEDENTE: leadData.telefono || 'Non fornito',
-      CF_RICHIEDENTE: leadData.cfRichiedente || 'Non fornito',
+      CF_RICHIEDENTE: leadData.cfIntestatario || 'Non fornito',
       INDIRIZZO_RICHIEDENTE: leadData.indirizzoRichiedente || 'Non fornito',
       NOME_ASSISTITO: leadData.nomeAssistito || leadData.nomeRichiedente,
       COGNOME_ASSISTITO: leadData.cognomeAssistito || leadData.cognomeRichiedente,

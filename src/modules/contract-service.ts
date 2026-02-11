@@ -30,7 +30,7 @@ export interface CustomerData {
   cognomeRichiedente: string
   email: string
   telefono: string
-  cfRichiedente?: string
+  cfIntestatario?: string
   indirizzoRichiedente?: string
   
   // Servizio

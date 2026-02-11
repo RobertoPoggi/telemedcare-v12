@@ -205,7 +205,7 @@ export class ContractManager {
       cliente_citta: request.cliente_citta || proformaData?.cliente_citta || '',
       cliente_cap: request.cliente_cap || proformaData?.cliente_cap || '',
       cliente_provincia: request.cliente_provincia || proformaData?.cliente_provincia || '',
-      cliente_codice_fiscale: request.cliente_codice_fiscale || proformaData?.cliente_codice_fiscale || leadData.cfRichiedente || '',
+      cliente_codice_fiscale: request.cliente_codice_fiscale || proformaData?.cliente_codice_fiscale || leadData.cfIntestatario || '',
 
       // Dati assistito
       assistito_nome: leadData.nomeAssistito || '',

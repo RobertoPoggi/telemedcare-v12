@@ -776,7 +776,7 @@ app.post('/api/lead', async (c) => {
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
       intestazioneContratto: String(leadData.intestazioneContratto || '').trim(),
-      cfRichiedente: String(leadData.cfRichiedente || '').trim(),
+      cfIntestatario: String(leadData.cfIntestatario || '').trim(),
       indirizzoRichiedente: String(leadData.indirizzoRichiedente || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
       indirizzoAssistito: String(leadData.indirizzoAssistito || '').trim(),
@@ -827,7 +827,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
         normalizedLead.intestazioneContratto,
-        normalizedLead.cfRichiedente,
+        normalizedLead.cfIntestatario,
         normalizedLead.indirizzoRichiedente,
         normalizedLead.cfAssistito,
         normalizedLead.indirizzoAssistito,
@@ -5722,7 +5722,7 @@ app.get('/admin/data-dashboard', (c) => {
                                 <p><strong>Nome:</strong> \${lead.nomeRichiedente} \${lead.cognomeRichiedente}</p>
                                 <p><strong>Email:</strong> \${lead.email}</p>
                                 <p><strong>Telefono:</strong> \${lead.telefono}</p>
-                                <p><strong>Codice Fiscale:</strong> \${lead.cfRichiedente || 'Non fornito'}</p>
+                                <p><strong>Codice Fiscale:</strong> \${lead.cfIntestatario || 'Non fornito'}</p>
                                 <p><strong>Indirizzo:</strong> \${lead.indirizzoRichiedente || 'Non fornito'}</p>
                             </div>
                             <div>

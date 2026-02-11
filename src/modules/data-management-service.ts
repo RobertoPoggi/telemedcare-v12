@@ -12,7 +12,7 @@ export interface Lead {
   nomeAssistito: string;
   cognomeAssistito: string;
   dataNascitaAssistito: string;
-  cfRichiedente: string;
+  cfIntestatario: string;
   cfAssistito: string;
   indirizzoRichiedente: string;
   indirizzoAssistito: string;
@@ -152,7 +152,7 @@ export class DataManagementService {
     try {
       const result = await this.db.prepare(`
         SELECT * FROM leads 
-        WHERE nomeRichiedente LIKE ? OR cognomeRichiedente LIKE ? OR email LIKE ? OR telefono LIKE ? OR cfRichiedente LIKE ?
+        WHERE nomeRichiedente LIKE ? OR cognomeRichiedente LIKE ? OR email LIKE ? OR telefono LIKE ? OR cfIntestatario LIKE ?
         ORDER BY created_at DESC
         LIMIT 100
       `).bind(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`).all();
@@ -502,7 +502,7 @@ export class DataManagementService {
         lead.email, 
         lead.telefono,
         lead.dataNascitaAssistito || '1950-01-01',
-        lead.cfAssistito || lead.cfRichiedente || '', 
+        lead.cfAssistito || lead.cfIntestatario || '', 
         street, city, cap, province,
         tipoContratto, numeroContratto || null, valoreContratto || null,
         new Date().toISOString()

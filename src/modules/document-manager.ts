@@ -206,7 +206,7 @@ export class DocumentManager {
         luogoNascitaAssistito: lead.luogoNascita, // Field mapping
         cfAssistito: lead.cfAssistito,
         indirizzoAssistito: lead.indirizzoAssistito,
-        cfRichiedente: lead.cfRichiedente,
+        cfIntestatario: lead.cfIntestatario,
         indirizzoRichiedente: lead.indirizzoRichiedente,
         pacchetto: lead.pacchetto,
         vuoleContratto: lead.vuoleContratto,
@@ -288,7 +288,7 @@ export class DocumentManager {
         preferenzaContatto: result.preferitoContatto as string,
         vuoleContratto: result.vuoleContratto === 'Si',
         intestazioneContratto: result.intestazioneContratto as string,
-        cfRichiedente: result.cfRichiedente as string,
+        cfIntestatario: result.cfIntestatario as string,
         indirizzoRichiedente: result.indirizzoRichiedente as string,
         cfAssistito: result.cfAssistito as string,
         indirizzoAssistito: result.indirizzoAssistito as string,

@@ -37,7 +37,7 @@ export interface Lead {
   // Richieste aggiuntive
   vuoleContratto: boolean
   intestazioneContratto?: string
-  cfRichiedente?: string
+  cfIntestatario?: string
   indirizzoRichiedente?: string
   cfAssistito?: string
   indirizzoAssistito?: string
@@ -466,7 +466,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       
       vuoleContratto: leadData.vuoleContratto || false,
       intestazioneContratto: leadData.intestazioneContratto || '',
-      cfRichiedente: leadData.cfRichiedente || '',
+      cfIntestatario: leadData.cfIntestatario || '',
       indirizzoRichiedente: leadData.indirizzoRichiedente || '',
       cfAssistito: leadData.cfAssistito || '',
       indirizzoAssistito: leadData.indirizzoAssistito || '',
@@ -498,7 +498,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
         nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
         pacchetto, servizio, condizioniSalute, priority, preferitoContatto,
-        vuoleContratto, intestazioneContratto, cfRichiedente, indirizzoRichiedente,
+        vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoRichiedente,
         cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
         note, gdprConsent, sourceUrl, sistemaVersione, status,
         created_at, updated_at
@@ -507,7 +507,7 @@ export async function creaLead(db: D1Database, leadData: Partial<Lead>): Promise
       lead.id, lead.nomeRichiedente, lead.cognomeRichiedente, lead.email, lead.telefono,
       lead.nomeAssistito, lead.cognomeAssistito, lead.dataNascitaAssistito, lead.etaAssistito, lead.parentelaAssistito,
       lead.pacchetto, lead.servizio || 'PRO', lead.condizioniSalute, lead.priority, lead.preferenzaContatto,
-      lead.vuoleContratto ? 'Si' : 'No', lead.intestazioneContratto, lead.cfRichiedente, lead.indirizzoRichiedente,
+      lead.vuoleContratto ? 'Si' : 'No', lead.intestazioneContratto, lead.cfIntestatario, lead.indirizzoRichiedente,
       lead.cfAssistito, lead.indirizzoAssistito, lead.vuoleBrochure ? 'Si' : 'No', lead.vuoleManuale ? 'Si' : 'No',
       lead.note, lead.gdprConsent ? 'on' : 'off', lead.fonte || 'web', 'V12.0-Cloudflare', lead.status,
       lead.createdAt, lead.updatedAt
@@ -605,7 +605,7 @@ export async function aggiornaLead(db: D1Database, leadId: string, updates: Part
         nomeRichiedente = ?, cognomeRichiedente = ?, email = ?, telefono = ?,
         nomeAssistito = ?, cognomeAssistito = ?, dataNascitaAssistito = ?, etaAssistito = ?, parentelaAssistito = ?,
         pacchetto = ?, condizioniSalute = ?, priority = ?, preferitoContatto = ?,
-        vuoleContratto = ?, intestazioneContratto = ?, cfRichiedente = ?, indirizzoRichiedente = ?,
+        vuoleContratto = ?, intestazioneContratto = ?, cfIntestatario = ?, indirizzoRichiedente = ?,
         cfAssistito = ?, indirizzoAssistito = ?, vuoleBrochure = ?, vuoleManuale = ?,
         dataNascita = ?, luogoNascita = ?, sesso = ?,
         note = ?, gdprConsent = ?, status = ?, partnerId = ?,
@@ -615,7 +615,7 @@ export async function aggiornaLead(db: D1Database, leadId: string, updates: Part
       updatedLead.nomeRichiedente, updatedLead.cognomeRichiedente, updatedLead.email, updatedLead.telefono,
       updatedLead.nomeAssistito, updatedLead.cognomeAssistito, updatedLead.dataNascitaAssistito, updatedLead.etaAssistito, updatedLead.parentelaAssistito,
       updatedLead.pacchetto, updatedLead.condizioniSalute, updatedLead.priority, updatedLead.preferenzaContatto,
-      updatedLead.vuoleContratto ? 'Si' : 'No', updatedLead.intestazioneContratto, updatedLead.cfRichiedente, updatedLead.indirizzoRichiedente,
+      updatedLead.vuoleContratto ? 'Si' : 'No', updatedLead.intestazioneContratto, updatedLead.cfIntestatario, updatedLead.indirizzoRichiedente,
       updatedLead.cfAssistito, updatedLead.indirizzoAssistito, updatedLead.vuoleBrochure ? 'Si' : 'No', updatedLead.vuoleManuale ? 'Si' : 'No',
       updatedLead.dataNascita, updatedLead.luogoNascita, updatedLead.sesso,
       updatedLead.note, updatedLead.gdprConsent ? 'on' : 'off', updatedLead.status, updatedLead.partnerId,
@@ -754,7 +754,7 @@ function mapDatabaseToLead(row: any): Lead {
     
     vuoleContratto: Boolean(row.vuoleContratto),
     intestazioneContratto: row.intestazioneContratto,
-    cfRichiedente: row.cfRichiedente,
+    cfIntestatario: row.cfIntestatario,
     indirizzoRichiedente: row.indirizzoRichiedente,
     cfAssistito: row.cfAssistito,
     indirizzoAssistito: row.indirizzoAssistito,

@@ -138,7 +138,7 @@ export class ProformaManager {
       cliente_email: leadData.email,
       cliente_telefono: leadData.telefono,
       cliente_indirizzo: leadData.indirizzoRichiedente,
-      cliente_codice_fiscale: leadData.cfRichiedente,
+      cliente_codice_fiscale: leadData.cfIntestatario,
 
       // Dati assistito
       assistito_nome: leadData.nomeAssistito,
