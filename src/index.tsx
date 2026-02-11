@@ -11929,7 +11929,7 @@ app.post('/api/import/irbema', async (c) => {
             props.city || null,
             servizio,
             piano,
-            servizio,    // tipoServizio (deprecated ma NOT NULL)
+            'eCura',     // ✅ FIX: tipoServizio sempre 'eCura', non duplicare servizio
             prezzoAnno,  // 💰 PREZZO ANNO (IVA esclusa)
             prezzoRinnovo, // 💰 PREZZO RINNOVO (IVA esclusa)
             'IRBEMA',    // Fonte

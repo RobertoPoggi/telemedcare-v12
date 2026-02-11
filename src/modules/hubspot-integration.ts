@@ -428,7 +428,7 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     servizio,
     piano,
     pacchetto: piano,
-    tipoServizio: servizio,
+    tipoServizio: 'eCura', // ✅ FIX: Valore fisso, non duplicare servizio
     servizio_ecura: servizioEcura,
     piano_ecura: pianoEcura,
     
