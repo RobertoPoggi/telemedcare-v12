@@ -324,6 +324,9 @@ export async function getTokenForLead(
 
 /**
  * Ottiene token che necessitano reminder
+ * 
+ * FIX: Aggiunta protezione contro invii multipli nello stesso giorno
+ * Invia reminder SOLO se passate almeno 23 ore dall'ultimo invio
  */
 export async function getTokensNeedingReminder(
   db: D1Database,
@@ -333,6 +336,10 @@ export async function getTokensNeedingReminder(
   const reminderDate = new Date()
   reminderDate.setDate(reminderDate.getDate() - reminderDays)
   
+  // FIX: 23 ore di protezione contro doppi invii
+  const minTimeBetweenReminders = new Date()
+  minTimeBetweenReminders.setHours(minTimeBetweenReminders.getHours() - 23)
+  
   const result = await db.prepare(`
     SELECT * FROM lead_completion_tokens
     WHERE completed = 0
@@ -340,9 +347,12 @@ export async function getTokensNeedingReminder(
       AND reminder_count < ?
       AND (
         reminder_sent_at IS NULL
-        OR reminder_sent_at < ?
+        OR (
+          reminder_sent_at < ? 
+          AND reminder_sent_at < ?
+        )
       )
-  `).bind(maxReminders, reminderDate.toISOString()).all()
+  `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
   
   return result.results as LeadCompletionToken[]
 }
