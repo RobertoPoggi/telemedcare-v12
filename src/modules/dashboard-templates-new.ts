@@ -2400,18 +2400,18 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <table class="w-full">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Contatti</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo Anno</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Brochure</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">CM</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">CRUD</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-32">Lead ID</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-28">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-40">Contatti</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Prezzo Anno</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-16 text-center">Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-16 text-center">Brochure</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">CM</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-28">Azioni</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -2719,17 +2719,19 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
+                            <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${(lead.id || '').substring(0, 18)}</code>
                         </td>
-                        <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || lead.email || 'N/A')}</div>
+                        <td class="py-3">
+                            <div class="text-xs font-medium truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}">
+                                \${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || lead.email || 'N/A')}
+                            </div>
                         </td>
-                        <td class="py-3 text-sm">
-                            <div class="text-xs text-gray-600">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || lead.email) || '-'}
+                        <td class="py-3">
+                            <div class="text-xs text-gray-600 truncate" title="\${escapeHtml(lead.email || '')}">
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i><span class="text-xs">\${escapeHtml(lead.email || lead.email) || '-'}</span>
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono || lead.telefono) || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i><span class="text-xs">\${escapeHtml(lead.telefono || lead.telefono) || '-'}</span>
                             </div>
                         </td>
                         <td class="py-3">
@@ -2743,10 +2745,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </span>
                         </td>
                         <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
-                        <td class="py-3">
+                        <td class="py-3 text-center">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
-                        <td class="py-3">
+                        <td class="py-3 text-center">
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
