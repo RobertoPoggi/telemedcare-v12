@@ -8564,6 +8564,67 @@ app.post('/api/leads/:id/convert', async (c) => {
   }
 })
 
+// ADMIN: Cambia ID di un lead (per correggere import errati)
+app.post('/api/admin/leads/:oldId/change-id', async (c) => {
+  const oldId = c.req.param('oldId')
+  
+  try {
+    const { newId, fonte } = await c.req.json()
+    console.log(`🔄 ADMIN: Cambio ID lead da ${oldId} a ${newId}`)
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    // Verifica che il vecchio lead esista
+    const oldLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(oldId).first()
+    if (!oldLead) {
+      return c.json({ success: false, error: 'Lead originale non trovato' }, 404)
+    }
+    
+    // Verifica che il nuovo ID non esista già
+    const existing = await c.env.DB.prepare('SELECT id FROM leads WHERE id = ?').bind(newId).first()
+    if (existing) {
+      return c.json({ success: false, error: 'Nuovo ID già esistente' }, 400)
+    }
+    
+    // Copia il lead con il nuovo ID
+    await c.env.DB.prepare(`
+      INSERT INTO leads (
+        id, nomeRichiedente, cognomeRichiedente, email, telefono,
+        nomeAssistito, cognomeAssistito, fonte, servizio, piano,
+        vuoleBrochure, vuoleContratto, vuoleManuale,
+        gdprConsent, status, note, external_source_id,
+        created_at, updated_at, timestamp
+      )
+      SELECT 
+        ?, nomeRichiedente, cognomeRichiedente, email, telefono,
+        nomeAssistito, cognomeAssistito, ?, servizio, piano,
+        vuoleBrochure, vuoleContratto, vuoleManuale,
+        gdprConsent, status, note, external_source_id,
+        created_at, ?, timestamp
+      FROM leads WHERE id = ?
+    `).bind(newId, fonte || oldLead.fonte, new Date().toISOString(), oldId).run()
+    
+    // Elimina il vecchio lead
+    await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(oldId).run()
+    
+    console.log(`✅ Lead ${oldId} → ${newId}, fonte: ${fonte}`)
+    
+    return c.json({ 
+      success: true, 
+      message: `Lead ID cambiato da ${oldId} a ${newId}`,
+      oldId,
+      newId,
+      fonte
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore cambio ID lead:', error)
+    return c.json({ error: 'Errore cambio ID lead' }, 500)
+  }
+})
+
 // ========================================
 // FIRMA DIGITALE CONTRATTI
 // ========================================
