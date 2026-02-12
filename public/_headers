@@ -1,7 +1,13 @@
-/dashboard.html
-  Cache-Control: no-cache, no-store, must-revalidate
+# 🚨 ANTI-CACHE HEADERS - Prevent V11 rollback
+# Force revalidation for critical HTML files
+
+/contract-signature.html
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
   Pragma: no-cache
   Expires: 0
+  X-Content-Version: V12-PROTECTED
+  X-Cache-Strategy: ALWAYS-REVALIDATE
 
 /*.html
-  Cache-Control: public, max-age=300
+  Cache-Control: public, max-age=60, must-revalidate
+  X-Content-Type-Options: nosniff
