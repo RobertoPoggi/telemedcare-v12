@@ -2321,33 +2321,37 @@ export const leads_dashboard = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Canali -->
+            <!-- Fonti -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-bullhorn text-purple-500 mr-2"></i>
-                    Per Canale
+                    <i class="fas fa-source text-purple-500 mr-2"></i>
+                    Per Fonte
                 </h3>
                 <div id="channelsBreakdown">
                     <div class="space-y-2">
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Website</span>
-                            <span class="font-bold" id="channelWeb">-</span>
+                            <span class="text-gray-600">Privati IRBEMA</span>
+                            <span class="font-bold" id="sourcePrivatiIRBEMA">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Partner</span>
-                            <span class="font-bold" id="channelPartner">-</span>
+                            <span class="text-gray-600">Form eCura</span>
+                            <span class="font-bold" id="sourceFormECura">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Networking</span>
-                            <span class="font-bold" id="channelNetworking">-</span>
+                            <span class="text-gray-600">Form eCura x Test</span>
+                            <span class="font-bold" id="sourceFormECuraTest">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Email</span>
-                            <span class="font-bold" id="channelEmail">-</span>
+                            <span class="text-gray-600">B2B IRBEMA</span>
+                            <span class="font-bold" id="sourceB2BIRBEMA">-</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Telefono</span>
-                            <span class="font-bold" id="channelPhone">-</span>
+                            <span class="text-gray-600">Sito web Medica GB</span>
+                            <span class="font-bold" id="sourceSitoWebMedicaGB">-</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">NETWORKING</span>
+                            <span class="font-bold" id="sourceNetworking">-</span>
                         </div>
                     </div>
                 </div>
@@ -2564,98 +2568,74 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function updateChannelsBreakdown(leads) {
-            const channels = {};
+            const sources = {};
             leads.forEach(l => {
-                // TASK #3 FIX: Priorità corretta dei campi
-                const ch = l.canaleAcquisizione || l.fonte || l.canale || 'Non specificato';
-                channels[ch] = (channels[ch] || 0) + 1;
+                // PRIORITÀ: fonte è il campo principale
+                const fonte = l.fonte || 'Non specificato';
+                sources[fonte] = (sources[fonte] || 0) + 1;
             });
             
-            // Debug: mostra tutti i canali trovati
-            console.log('📊 Canali rilevati:', channels);
+            // Debug: mostra tutte le fonti trovate
+            console.log('📊 Fonti rilevate:', sources);
             console.log('📊 Total leads:', leads.length);
-            console.log('📊 Sample lead fields:', leads[0] ? Object.keys(leads[0]).filter(k => k.includes('fonte') || k.includes('canal') || k.includes('source')) : []);
             
-            // Debug: Cerca lead con fonte che inizia con WEB
-            const webLeads = leads.filter(l => {
-                const fonte = (l.canaleAcquisizione || l.fonte || l.canale || '').toLowerCase();
-                return fonte.includes('web') && !fonte.includes('doubleyou');
-            });
-            console.log('📊 Lead con "web" nella fonte:', webLeads.length, webLeads.map(l => ({ id: l.id, nome: l.nomeRichiedente + ' ' + l.cognomeRichiedente, fonte: l.fonte })));
-            
-            // Mostra i canali reali aggregati
-            // Web: Website, EXCEL_IMPORT, Excel, Landing Page, Web, website, WEB
-            // Partner: Irbema, AON, DoubleYou, CONTRATTO_PDF, Partner
-            // Networking: Networking, NETWORKING, Network
-            // Email: EMAIL, Email
-            // Telefono: TELEFONO, Telefono, Phone
-            
-            // Aggregazione intelligente dei canali
-            let webCount = 0;
-            let partnerCount = 0;
+            // Conta per le 6 fonti principali
+            let privatiIRBEMACount = 0;
+            let formECuraCount = 0;
+            let formECuraTestCount = 0;
+            let b2bIRBEMACount = 0;
+            let sitoWebMedicaGBCount = 0;
             let networkingCount = 0;
-            let emailCount = 0;
-            let phoneCount = 0;
-            let nonSpecificato = 0;
+            let altroCount = 0;
             
-            // Itera su tutti i canali e classifica in base al contenuto
-            Object.keys(channels).forEach(channel => {
-                const channelLower = channel.toLowerCase();
-                const count = channels[channel];
+            // Itera su tutte le fonti e classifica
+            Object.keys(sources).forEach(source => {
+                const count = sources[source];
                 
-                // Partner: IRBEMA, AON, DoubleYou, Partner
-                if (channelLower.includes('irbema') || 
-                    channelLower.includes('aon') || 
-                    channelLower.includes('doubleyou') || 
-                    channelLower.includes('partner') ||
-                    channelLower.includes('affiliato') ||
-                    channelLower.includes('contratto_pdf')) {
-                    partnerCount += count;
+                // Match esatto con le fonti definite
+                if (source === 'Privati IRBEMA') {
+                    privatiIRBEMACount += count;
                 }
-                // Web: Website, WEB, Landing, Test, Dashboard, Excel
-                else if (channelLower.includes('web') || 
-                         channelLower.includes('landing') || 
-                         channelLower.includes('website') ||
-                         channelLower.includes('test') ||
-                         channelLower.includes('dashboard') ||
-                         channelLower.includes('manual') ||
-                         channelLower.includes('excel')) {
-                    webCount += count;
+                else if (source === 'Form eCura') {
+                    formECuraCount += count;
                 }
-                // Networking: NETWORKING, Network
-                else if (channelLower.includes('network')) {
+                else if (source === 'Form eCura x Test') {
+                    formECuraTestCount += count;
+                }
+                else if (source === 'B2B IRBEMA') {
+                    b2bIRBEMACount += count;
+                }
+                else if (source === 'Sito web Medica GB') {
+                    sitoWebMedicaGBCount += count;
+                }
+                else if (source === 'NETWORKING') {
                     networkingCount += count;
                 }
-                // Email: EMAIL, Email
-                else if (channelLower.includes('email') || channelLower.includes('mail')) {
-                    emailCount += count;
-                }
-                // Telefono: TELEFONO, Phone
-                else if (channelLower.includes('telefono') || 
-                         channelLower.includes('phone') || 
-                         channelLower.includes('tel')) {
-                    phoneCount += count;
-                }
-                // Non specificato
-                else if (channelLower === 'non specificato' || channel === '') {
-                    nonSpecificato += count;
-                }
-                // Altro → aggiungi a Web (canale generico)
                 else {
-                    webCount += count;
+                    // Altre fonti non categorizzate
+                    altroCount += count;
                 }
             });
             
-            document.getElementById('channelWeb').textContent = webCount;
-            document.getElementById('channelPartner').textContent = partnerCount;
-            document.getElementById('channelNetworking').textContent = networkingCount;
-            document.getElementById('channelEmail').textContent = emailCount;
-            document.getElementById('channelPhone').textContent = phoneCount;
+            // Aggiorna i contatori nella dashboard
+            document.getElementById('sourcePrivatiIRBEMA').textContent = privatiIRBEMACount;
+            document.getElementById('sourceFormECura').textContent = formECuraCount;
+            document.getElementById('sourceFormECuraTest').textContent = formECuraTestCount;
+            document.getElementById('sourceB2BIRBEMA').textContent = b2bIRBEMACount;
+            document.getElementById('sourceSitoWebMedicaGB').textContent = sitoWebMedicaGBCount;
+            document.getElementById('sourceNetworking').textContent = networkingCount;
             
-            // Se tutto è zero, mostra messaggio debug
-            if (webCount === 0 && emailCount === 0 && phoneCount === 0 && partnerCount === 0) {
-                console.warn('⚠️ ATTENZIONE: Tutti i canali sono zero! Verifica che il campo "fonte" sia popolato nel DB.');
-                console.warn('⚠️ Leads senza fonte:', nonSpecificato);
+            // Log debug se ci sono fonti non categorizzate
+            if (altroCount > 0) {
+                console.warn('⚠️ ATTENZIONE: Ci sono ' + altroCount + ' lead con fonti non categorizzate.');
+                console.warn('📊 Fonti non categorizzate:', Object.keys(sources).filter(s => 
+                    s !== 'Privati IRBEMA' && 
+                    s !== 'Form eCura' && 
+                    s !== 'Form eCura x Test' && 
+                    s !== 'B2B IRBEMA' && 
+                    s !== 'Sito web Medica GB' && 
+                    s !== 'NETWORKING'
+                ));
             }
         }
 
