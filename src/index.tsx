@@ -17777,6 +17777,160 @@ app.post('/api/admin/update-fonte-batch', async (c) => {
   }
 })
 
+// ========== SYNC HUBSPOT FORM ECURA ==========
+// Trova e aggiorna lead da HubSpot con hs_object_source_detail_1 = "Form eCura"
+app.post('/api/admin/sync-form-ecura', async (c) => {
+  try {
+    console.log('🔄 SYNC FORM ECURA: Inizio processo')
+    
+    // Step 1: Verifica credenziali HubSpot
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    
+    if (!accessToken || !portalId) {
+      return c.json({ 
+        success: false, 
+        error: 'Credenziali HubSpot non configurate' 
+      }, 500)
+    }
+    
+    if (!c.env?.DB) {
+      return c.json({ 
+        success: false, 
+        error: 'Database non configurato' 
+      }, 500)
+    }
+    
+    console.log('✅ Credenziali verificate')
+    
+    // Step 2: Query HubSpot per lead Form eCura
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    const client = new HubSpotClient(accessToken, portalId)
+    
+    console.log('🔍 Query HubSpot: hs_object_source_detail_1 = "Form eCura"')
+    
+    const hubspotResponse = await client.searchContacts({
+      hs_object_source_detail_1: 'Form eCura',
+      createdAfter: '2026-01-01',
+      limit: 100
+    })
+    
+    console.log(`✅ Trovati ${hubspotResponse.total} lead HubSpot con Form eCura`)
+    
+    if (hubspotResponse.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun lead Form eCura trovato su HubSpot',
+        hubspotTotal: 0,
+        matched: 0,
+        updated: 0
+      })
+    }
+    
+    // Step 3: Ottieni tutti i lead dal database locale
+    const localLeads = await c.env.DB.prepare(
+      'SELECT id, external_source_id, fonte, email, created_at FROM leads WHERE external_source_id IS NOT NULL'
+    ).all()
+    
+    console.log(`📊 Lead locali con external_source_id: ${localLeads.results.length}`)
+    
+    // Step 4: Match per external_source_id
+    const matched = []
+    
+    for (const hubspotContact of hubspotResponse.results) {
+      const hubspotId = hubspotContact.id
+      
+      const localLead = localLeads.results.find(
+        (lead: any) => lead.external_source_id === hubspotId
+      )
+      
+      if (localLead) {
+        matched.push({
+          leadId: (localLead as any).id,
+          hubspotId,
+          email: (localLead as any).email,
+          fonteAttuale: (localLead as any).fonte || '(vuota)',
+          created_at: (localLead as any).created_at
+        })
+      }
+    }
+    
+    console.log(`✅ Matched: ${matched.length}/${hubspotResponse.results.length}`)
+    
+    if (matched.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessun lead matchato con il database locale',
+        hubspotTotal: hubspotResponse.total,
+        matched: 0,
+        updated: 0,
+        details: {
+          hubspotLeads: hubspotResponse.results.map((c: any) => ({
+            id: c.id,
+            email: c.properties.email,
+            name: `${c.properties.firstname} ${c.properties.lastname}`
+          }))
+        }
+      })
+    }
+    
+    // Step 5: Aggiorna fonte
+    let successCount = 0
+    let errorCount = 0
+    const errors = []
+    
+    for (const match of matched) {
+      try {
+        const result = await c.env.DB.prepare(
+          'UPDATE leads SET fonte = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).bind('Form eCura', match.leadId).run()
+        
+        if (result.success) {
+          successCount++
+        } else {
+          errorCount++
+          errors.push({ id: match.leadId, error: 'Update failed' })
+        }
+      } catch (error) {
+        errorCount++
+        errors.push({ 
+          id: match.leadId, 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+      }
+    }
+    
+    console.log(`✅ Sync completato: ${successCount}/${matched.length} aggiornati`)
+    
+    return c.json({
+      success: true,
+      message: `Sync completato: ${successCount}/${matched.length} lead aggiornati`,
+      hubspotTotal: hubspotResponse.total,
+      matched: matched.length,
+      updated: successCount,
+      errors: errorCount,
+      details: {
+        matchedLeads: matched.map(m => ({
+          leadId: m.leadId,
+          hubspotId: m.hubspotId,
+          email: m.email,
+          fonteVecchia: m.fonteAttuale,
+          fonteNuova: 'Form eCura'
+        })),
+        errorDetails: errors.length > 0 ? errors : undefined
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore sync Form eCura:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 500)
+  }
+})
+
 // ========== SYSTEM HEALTH & VERSION MONITORING ==========
 // Critical: Prevent rollback to V11 - 3x incidents in 24h
 app.get('/api/health', async (c) => {
