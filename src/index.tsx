@@ -511,6 +511,36 @@ app.use('*', async (c, next) => {
         }
       }
       
+      // Aggiungi colonna cm (Contact Manager) alla tabella leads
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN cm TEXT DEFAULT NULL`).run()
+        console.log('✅ Colonna cm (Contact Manager) aggiunta a leads')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna cm leads:', e.message)
+        }
+      }
+      
+      // Crea tabella lead_interactions per tracciare i contatti
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_interactions (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            data TEXT NOT NULL,
+            tipo TEXT NOT NULL,
+            nota TEXT,
+            azione TEXT,
+            operatore TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+          )
+        `).run()
+        console.log('✅ Tabella lead_interactions creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella lead_interactions:', e.message)
+      }
+      
       // Rinomina tipo_contratto in piano nella tabella contracts (se non esiste già)
       // Nota: SQLite non supporta RENAME COLUMN direttamente, quindi usiamo tipo_contratto come piano
       
@@ -8448,6 +8478,9 @@ app.put('/api/leads/:id', async (c) => {
       consensoMarketing: 'consensoMarketing',
       consensoTerze: 'consensoTerze',
       
+      // Contact Manager
+      cm: 'cm',
+      
       // Altri
       condizioniSalute: 'condizioniSalute',
       intestatarioContratto: 'intestatarioContratto',
@@ -8622,6 +8655,110 @@ app.post('/api/admin/leads/:oldId/change-id', async (c) => {
   } catch (error) {
     console.error('❌ Errore cambio ID lead:', error)
     return c.json({ error: 'Errore cambio ID lead', details: error.message }, 500)
+  }
+})
+
+// ========================================
+// LEAD INTERACTIONS (Tracciamento Contatti)
+// ========================================
+
+// POST /api/leads/:id/interactions - Aggiungi interazione
+app.post('/api/leads/:id/interactions', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    const { tipo, nota, azione, operatore } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    // Verifica che il lead esista
+    const lead = await c.env.DB.prepare('SELECT id FROM leads WHERE id = ?').bind(leadId).first()
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    const interactionId = `INT-${Date.now()}`
+    const now = new Date().toISOString()
+    
+    await c.env.DB.prepare(`
+      INSERT INTO lead_interactions (id, lead_id, data, tipo, nota, azione, operatore, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(interactionId, leadId, now, tipo, nota || null, azione || null, operatore || null, now).run()
+    
+    console.log(`✅ Interazione ${interactionId} creata per lead ${leadId}`)
+    
+    return c.json({
+      success: true,
+      interaction: {
+        id: interactionId,
+        lead_id: leadId,
+        data: now,
+        tipo,
+        nota,
+        azione,
+        operatore
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore creazione interazione:', error)
+    return c.json({ error: 'Errore creazione interazione' }, 500)
+  }
+})
+
+// GET /api/leads/:id/interactions - Ottieni tutte le interazioni di un lead
+app.get('/api/leads/:id/interactions', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ interactions: [] })
+    }
+    
+    const result = await c.env.DB.prepare(`
+      SELECT * FROM lead_interactions 
+      WHERE lead_id = ?
+      ORDER BY data DESC
+    `).bind(leadId).all()
+    
+    return c.json({
+      success: true,
+      interactions: result.results || []
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero interazioni:', error)
+    return c.json({ error: 'Errore recupero interazioni' }, 500)
+  }
+})
+
+// PUT /api/leads/:id/cm - Aggiorna Contact Manager
+app.put('/api/leads/:id/cm', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    const { cm } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    await c.env.DB.prepare(`
+      UPDATE leads 
+      SET cm = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(cm || null, new Date().toISOString(), leadId).run()
+    
+    console.log(`✅ Contact Manager aggiornato per lead ${leadId}: ${cm}`)
+    
+    return c.json({
+      success: true,
+      leadId,
+      cm
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento CM:', error)
+    return c.json({ error: 'Errore aggiornamento Contact Manager' }, 500)
   }
 })
 
