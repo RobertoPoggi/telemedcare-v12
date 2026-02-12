@@ -3158,7 +3158,122 @@ export const leads_dashboard = `<!DOCTYPE html>
                 field.removeAttribute('required');
             });
             
+            // Mostra sezione interazioni e carica lo storico
+            const interactionsSection = document.getElementById('editInteractionsSection');
+            if (interactionsSection) {
+                interactionsSection.classList.remove('hidden');
+                loadEditInteractions(leadId);
+            }
+            
             openModal('newLeadModal');
+        }
+        
+        async function loadEditInteractions(leadId) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`);
+                const data = await response.json();
+                
+                const container = document.getElementById('editInteractionsList');
+                
+                if (!data.success || data.interactions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-xs text-center py-4">Nessuna interazione registrata</p>';
+                    return;
+                }
+                
+                // Ordina per data decrescente (più recenti prima)
+                const interactions = data.interactions.sort((a, b) => 
+                    new Date(b.data).getTime() - new Date(a.data).getTime()
+                );
+                
+                container.innerHTML = interactions.map(int => {
+                    const date = new Date(int.data).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+                    const tipoIcon = {
+                        'telefono': 'fa-phone',
+                        'email': 'fa-envelope',
+                        'whatsapp': 'fa-whatsapp',
+                        'sms': 'fa-sms',
+                        'meeting': 'fa-handshake',
+                        'videocall': 'fa-video',
+                        'nota': 'fa-sticky-note',
+                        'follow-up': 'fa-clock'
+                    }[int.tipo] || 'fa-comment';
+                    
+                    const tipoColor = {
+                        'telefono': 'bg-blue-100 text-blue-700',
+                        'email': 'bg-green-100 text-green-700',
+                        'whatsapp': 'bg-green-100 text-green-700',
+                        'sms': 'bg-purple-100 text-purple-700',
+                        'meeting': 'bg-yellow-100 text-yellow-700',
+                        'videocall': 'bg-indigo-100 text-indigo-700',
+                        'nota': 'bg-gray-100 text-gray-700',
+                        'follow-up': 'bg-orange-100 text-orange-700'
+                    }[int.tipo] || 'bg-gray-100 text-gray-700';
+                    
+                    return \`
+                        <div class="border-l-4 border-blue-500 bg-white p-2 rounded-r mb-2 text-xs">
+                            <div class="flex items-start justify-between mb-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-0.5 \${tipoColor} text-xs rounded font-medium">
+                                        <i class="fas \${tipoIcon} mr-1"></i>\${int.tipo}
+                                    </span>
+                                    <span class="text-xs text-gray-500">\${date}</span>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">\${int.operatore || 'N/A'}</span>
+                            </div>
+                            <p class="text-xs text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
+                            \${int.azione ? \`<p class="text-xs text-gray-700"><strong>Azione:</strong> \${int.azione}</p>\` : ''}
+                        </div>
+                    \`;
+                }).join('');
+            } catch (error) {
+                console.error('Errore caricamento interazioni:', error);
+                document.getElementById('editInteractionsList').innerHTML = 
+                    '<p class="text-red-500 text-xs text-center py-4">Errore caricamento</p>';
+            }
+        }
+        
+        async function addEditInteraction() {
+            const leadId = window.editingLeadId;
+            if (!leadId) {
+                alert('❌ Lead ID non trovato');
+                return;
+            }
+            
+            const tipo = document.getElementById('editInteractionTipo').value;
+            const nota = document.getElementById('editInteractionNota').value.trim();
+            const azione = document.getElementById('editInteractionAzione').value.trim();
+            const operatore = document.getElementById('editInteractionOperatore').value;
+            
+            if (!nota) {
+                alert('⚠️ Inserisci una nota per l\\'interazione');
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, nota, azione, operatore })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reset form
+                    document.getElementById('editInteractionNota').value = '';
+                    document.getElementById('editInteractionAzione').value = '';
+                    
+                    // Ricarica interazioni
+                    await loadEditInteractions(leadId);
+                    
+                    alert('✅ Interazione aggiunta con successo');
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Impossibile aggiungere interazione'));
+                }
+            } catch (error) {
+                console.error('Errore aggiunta interazione:', error);
+                alert('❌ Errore di rete');
+            }
         }
         
         // saveEditLead() rimossa - ora usa saveNewLead() con modalità edit
@@ -3282,6 +3397,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const field = document.getElementById(fieldId);
                 if (field) field.setAttribute('required', 'required');
             });
+            
+            // Nascondi sezione interazioni (solo per Edit)
+            const interactionsSection = document.getElementById('editInteractionsSection');
+            if (interactionsSection) {
+                interactionsSection.classList.add('hidden');
+            }
             
             openModal('newLeadModal');
             // Aggiorna prezzi iniziali
@@ -3920,6 +4041,66 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
 
                 </form>
+                
+                <!-- SEZIONE INTERAZIONI (solo in modalità EDIT) -->
+                <div id="editInteractionsSection" class="hidden mt-6 border-t pt-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        💬 <span class="ml-2">Storico & Nuova Interazione</span>
+                    </h4>
+                    
+                    <!-- Storico Interazioni -->
+                    <div class="mb-4">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-2">📋 Storico Interazioni</h5>
+                        <div id="editInteractionsList" class="max-h-48 overflow-y-auto bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs text-center py-4">Caricamento...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Aggiungi Interazione -->
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-3">➕ Aggiungi Nuova Interazione</h5>
+                        <div class="grid grid-cols-2 gap-3 mb-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Tipo</label>
+                                <select id="editInteractionTipo" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                                    <option value="telefono">📞 Telefono</option>
+                                    <option value="email">📧 Email</option>
+                                    <option value="whatsapp">💬 WhatsApp</option>
+                                    <option value="sms">📱 SMS</option>
+                                    <option value="meeting">🤝 Meeting</option>
+                                    <option value="videocall">📹 Videocall</option>
+                                    <option value="nota">📝 Nota</option>
+                                    <option value="follow-up">🔔 Follow-up</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Operatore</label>
+                                <select id="editInteractionOperatore" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                                    <option value="Stefania Rocca">Stefania Rocca (SR)</option>
+                                    <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
+                                    <option value="Roberto Poggi">Roberto Poggi (RP)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
+                            <textarea id="editInteractionNota" rows="2" 
+                                      class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Descrivi cosa è successo..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Azione</label>
+                            <textarea id="editInteractionAzione" rows="2" 
+                                      class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Cosa fare successivamente? (opzionale)"></textarea>
+                        </div>
+                        <button onclick="addEditInteraction()" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
+                            💾 Salva Interazione
+                        </button>
+                    </div>
+                </div>
+                
             </div>
             
             <!-- FOOTER BUTTONS -->
@@ -3946,7 +4127,7 @@ export const leads_dashboard = `<!DOCTYPE html>
     <div id="viewLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-lg shadow-2xl max-w-6xl w-full my-8">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center sticky top-0 z-10">
-                <h3 class="text-xl font-bold">👤 Dettagli Lead & Interazioni</h3>
+                <h3 class="text-xl font-bold">👁️ Visualizza Lead & Storico Interazioni</h3>
                 <button onclick="closeModal('viewLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
@@ -3995,54 +4176,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
 
-                <!-- Storico Interazioni -->
+                <!-- Storico Interazioni (SOLO LETTURA) -->
                 <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">💬 Storico Interazioni</h4>
-                <div id="interactionsList" class="mb-4 max-h-48 overflow-y-auto">
+                <div id="interactionsList" class="mb-4 max-h-96 overflow-y-auto">
                     <p class="text-gray-500 text-xs text-center py-4">Caricamento...</p>
                 </div>
 
-                <!-- Form Nuova Interazione -->
-                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">➕ Aggiungi Nuova Interazione</h4>
-                <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                    <div class="grid grid-cols-2 gap-3 mb-2">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Tipo Interazione</label>
-                            <select id="interactionTipo" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="telefono">📞 Telefono</option>
-                                <option value="email">📧 Email</option>
-                                <option value="whatsapp">💬 WhatsApp</option>
-                                <option value="sms">📱 SMS</option>
-                                <option value="meeting">🤝 Meeting</option>
-                                <option value="videocall">📹 Videocall</option>
-                                <option value="nota">📝 Nota</option>
-                                <option value="follow-up">🔔 Follow-up</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Operatore</label>
-                            <select id="interactionOperatore" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="Stefania Rocca">Stefania Rocca (SR)</option>
-                                <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
-                                <option value="Roberto Poggi">Roberto Poggi (RP)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
-                        <textarea id="interactionNota" rows="2" 
-                                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Descrivi cosa è successo durante il contatto..."></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Azione da Intraprendere</label>
-                        <textarea id="interactionAzione" rows="2" 
-                                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Cosa fare successivamente? (opzionale)"></textarea>
-                    </div>
-                    <button onclick="addInteraction()" 
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
-                        💾 Salva Interazione
-                    </button>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4">
+                    <p class="text-sm text-blue-800">
+                        💡 <strong>Per aggiungere una nuova interazione</strong>, clicca sul bottone <strong>✏️ Modifica</strong> nella tabella.
+                    </p>
                 </div>
 
                 <div class="flex justify-end pt-2 border-t">
