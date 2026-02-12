@@ -2725,7 +2725,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${lead.id}">
-                        <td class="py-3 text-sm text-gray-600 font-medium">\${index + 1}</td>
+                        <td class="py-3 text-sm text-gray-600 font-medium">\${leads.length - index}</td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
