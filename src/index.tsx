@@ -8775,6 +8775,200 @@ app.put('/api/leads/:id/cm', async (c) => {
   }
 })
 
+// POST /api/admin/import-interactions - Importa interazioni da Excel
+app.post('/api/admin/import-interactions', async (c) => {
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('file') as File
+    
+    if (!file) {
+      return c.json({ success: false, error: 'Nessun file caricato' }, 400)
+    }
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    // Leggi il file Excel
+    const buffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(buffer)
+    
+    // Converti in base64 per passarlo a Python
+    const base64 = btoa(String.fromCharCode(...uint8Array))
+    
+    // Chiama script Python per parsare Excel (simulazione - in realtà dovremmo usare una libreria JS o API esterna)
+    // Per ora, implementiamo la logica direttamente qui
+    
+    const interactions: any[] = []
+    let imported = 0
+    let skipped = 0
+    let errors: string[] = []
+    
+    // TODO: Parsare Excel con una libreria JS come xlsx
+    // Per ora restituisco un messaggio che spiega come usare l'endpoint
+    
+    return c.json({
+      success: false,
+      error: 'Funzionalità in sviluppo. Per ora, usa il formato JSON per importare interazioni.',
+      message: 'Endpoint disponibile: POST /api/admin/import-interactions-json con body: { "interactions": [...] }',
+      format: {
+        data: '2026-01-12',
+        nome_azienda: 'Maria Carla Morroni',
+        contatto: '3314563888',
+        tipo_attivita: 'Telefonata',
+        esito: 'Non risponde',
+        prossimo_step: 'Email inviata',
+        note: 'Da ricontattare'
+      }
+    }, 501)
+  } catch (error) {
+    console.error('❌ Errore import interazioni:', error)
+    return c.json({ error: 'Errore durante l\'importazione' }, 500)
+  }
+})
+
+// POST /api/admin/import-interactions-json - Importa interazioni da JSON
+app.post('/api/admin/import-interactions-json', async (c) => {
+  try {
+    const { interactions, operatore } = await c.req.json()
+    
+    if (!Array.isArray(interactions) || interactions.length === 0) {
+      return c.json({ success: false, error: 'Nessuna interazione da importare' }, 400)
+    }
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    let imported = 0
+    let skipped = 0
+    const errors: string[] = []
+    
+    for (const inter of interactions) {
+      try {
+        const { data, nome_azienda, contatto, tipo_attivita, esito, prossimo_step, note } = inter
+        
+        if (!nome_azienda && !contatto) {
+          skipped++
+          errors.push(`Riga senza nome/contatto saltata`)
+          continue
+        }
+        
+        // Cerca il lead corrispondente per nome, email o telefono
+        let leadId: string | null = null
+        
+        // Prova a cercare per email se il contatto sembra un'email
+        if (contatto && contatto.includes('@')) {
+          const leadByEmail = await c.env.DB.prepare(`
+            SELECT id FROM leads WHERE email = ? LIMIT 1
+          `).bind(contatto).first()
+          
+          if (leadByEmail) {
+            leadId = leadByEmail.id as string
+          }
+        }
+        
+        // Se non trovato, prova per telefono (normalizza)
+        if (!leadId && contatto) {
+          const normalizedPhone = contatto.toString().replace(/[\s\-\+]/g, '')
+          const leadByPhone = await c.env.DB.prepare(`
+            SELECT id FROM leads 
+            WHERE REPLACE(REPLACE(REPLACE(telefono, ' ', ''), '-', ''), '+', '') LIKE ?
+            LIMIT 1
+          `).bind(`%${normalizedPhone}%`).first()
+          
+          if (leadByPhone) {
+            leadId = leadByPhone.id as string
+          }
+        }
+        
+        // Se non trovato, prova per nome e cognome
+        if (!leadId && nome_azienda) {
+          const nameParts = nome_azienda.trim().split(/\s+/)
+          if (nameParts.length >= 2) {
+            const firstName = nameParts[0]
+            const lastName = nameParts.slice(1).join(' ')
+            
+            const leadByName = await c.env.DB.prepare(`
+              SELECT id FROM leads 
+              WHERE (nomeRichiedente LIKE ? AND cognomeRichiedente LIKE ?)
+                 OR (nomeAssistito LIKE ? AND cognomeAssistito LIKE ?)
+              LIMIT 1
+            `).bind(`%${firstName}%`, `%${lastName}%`, `%${firstName}%`, `%${lastName}%`).first()
+            
+            if (leadByName) {
+              leadId = leadByName.id as string
+            }
+          }
+        }
+        
+        if (!leadId) {
+          skipped++
+          errors.push(`Lead non trovato per: ${nome_azienda || contatto}`)
+          continue
+        }
+        
+        // Mappa tipo attività Excel → tipo interazione DB
+        const tipoMap: Record<string, string> = {
+          'Telefonata': 'telefono',
+          'Email': 'email',
+          'Email ': 'email',
+          'WhatsApp': 'whatsapp',
+          'SMS': 'sms',
+          'Meeting': 'meeting',
+          'Videocall': 'videocall'
+        }
+        
+        const tipo = tipoMap[tipo_attivita] || 'telefono'
+        
+        // Costruisci la nota combinando esito e note
+        let notaCompleta = ''
+        if (esito) notaCompleta += `Esito: ${esito}. `
+        if (prossimo_step) notaCompleta += `Prossimo step: ${prossimo_step}. `
+        if (note) notaCompleta += `Note: ${note}`
+        
+        if (!notaCompleta) notaCompleta = tipo_attivita || 'Contatto registrato'
+        
+        // Crea l'interazione
+        const interactionId = `INT-${Date.now()}-${imported}`
+        const dataISO = data ? new Date(data).toISOString() : new Date().toISOString()
+        
+        await c.env.DB.prepare(`
+          INSERT INTO lead_interactions (id, lead_id, data, tipo, nota, azione, operatore, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          interactionId,
+          leadId,
+          dataISO,
+          tipo,
+          notaCompleta,
+          prossimo_step || null,
+          operatore || 'Ottavia Belfa',
+          new Date().toISOString()
+        ).run()
+        
+        imported++
+      } catch (err: any) {
+        skipped++
+        errors.push(`Errore riga: ${err.message}`)
+      }
+    }
+    
+    console.log(`✅ Import interazioni completato: ${imported} importate, ${skipped} saltate`)
+    
+    return c.json({
+      success: true,
+      imported,
+      skipped,
+      total: interactions.length,
+      errors: errors.length > 0 ? errors.slice(0, 10) : []
+    })
+  } catch (error) {
+    console.error('❌ Errore import interazioni JSON:', error)
+    return c.json({ error: 'Errore durante l\'importazione' }, 500)
+  }
+})
+
 // ========================================
 // FIRMA DIGITALE CONTRATTI
 // ========================================
