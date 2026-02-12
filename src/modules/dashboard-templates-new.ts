@@ -2758,7 +2758,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <td class="py-3 text-sm text-gray-500">\${date}</td>
                         <td class="py-3 text-sm">
                             <select 
-                                onchange="updateContactManager('\${lead.id}', this.value)"
+                                onchange="updateContactManager('\${escapeHtml(lead.id)}', this.value)"
                                 class="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
                                 style="min-width: 80px;">
                                 <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
@@ -2769,10 +2769,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-sm">
                             <select 
-                                onchange="updateLeadStatus('\${lead.id}', this.value)"
+                                onchange="updateLeadStatus('\${escapeHtml(lead.id)}', this.value)"
                                 class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-medium"
                                 style="min-width: 110px;"
-                                id="statusSelect-\${lead.id}">
+                                id="statusSelect-\${escapeHtml(lead.id)}">
                                 <option value="" \${!lead.stato ? 'selected' : ''}>Nessuno</option>
                                 <option value="nuovo" \${lead.stato === 'nuovo' ? 'selected' : ''} class="bg-blue-50">🆕 Nuovo</option>
                                 <option value="contattato" \${lead.stato === 'contattato' ? 'selected' : ''} class="bg-yellow-50">📞 Contattato</option>
@@ -2795,19 +2795,19 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     <span class="interactions-count-\${escapeHtml(lead.id)} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
                                 </button>
                                 <button 
-                                    onclick="sendContract('\${lead.id}', '\${piano}')" 
+                                    onclick="sendContract('\${escapeHtml(lead.id)}', '\${piano}')" 
                                     class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
                                     title="Invia Contratto \${piano}">
                                     <i class="fas fa-file-contract"></i>
                                 </button>
                                 <button 
-                                    onclick="sendBrochure('\${lead.id}')" 
+                                    onclick="sendBrochure('\${escapeHtml(lead.id)}')" 
                                     class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
                                     title="Invia Brochure">
                                     <i class="fas fa-book"></i>
                                 </button>
                                 <button 
-                                    onclick="requestCompletion('\${lead.id}')" 
+                                    onclick="requestCompletion('\${escapeHtml(lead.id)}')" 
                                     class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
                                     title="Richiedi Completamento">
                                     <i class="fas fa-paper-plane"></i>
@@ -2816,17 +2816,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3">
                             <div class="flex space-x-1">
-                                <button onclick="viewLead('\${lead.id}')" 
+                                <button onclick="viewLead('\${escapeHtml(lead.id)}')" 
                                         class="text-blue-600 hover:text-blue-800 px-1" 
                                         title="Visualizza">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="editLead('\${lead.id}')" 
+                                <button onclick="editLead('\${escapeHtml(lead.id)}')" 
                                         class="text-green-600 hover:text-green-800 px-1" 
                                         title="Modifica">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteLead('\${lead.id}')" 
+                                <button onclick="deleteLead('\${escapeHtml(lead.id)}')" 
                                         class="text-red-600 hover:text-red-800 px-1" 
                                         title="Elimina">
                                     <i class="fas fa-trash"></i>
@@ -5749,12 +5749,12 @@ export const workflow_manager = `<!DOCTYPE html>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">
                             <div class="flex space-x-1">
-                                <button onclick="quickAction('\${lead.id}', 'view')" 
+                                <button onclick="quickAction('\${escapeHtml(lead.id)}', 'view')" 
                                     class="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded" 
                                     title="Visualizza Dettagli">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="quickAction('\${lead.id}', 'payment')" 
+                                <button onclick="quickAction('\${escapeHtml(lead.id)}', 'payment')" 
                                     class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded" 
                                     title="Registra Pagamento">
                                     <i class="fas fa-euro-sign"></i>
