@@ -3943,71 +3943,71 @@ export const leads_dashboard = `<!DOCTYPE html>
     </div>
 
     <!-- MODAL: VIEW LEAD -->
-    <div id="viewLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+    <div id="viewLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-2xl max-w-6xl w-full my-8">
             <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center sticky top-0 z-10">
                 <h3 class="text-xl font-bold">👤 Dettagli Lead & Interazioni</h3>
                 <button onclick="closeModal('viewLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
-            <div class="p-6">
+            <div class="p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 <!-- Informazioni Lead -->
-                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">📋 Informazioni Lead</h4>
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2">📋 Informazioni Lead</h4>
+                <div class="grid grid-cols-3 gap-3 mb-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Lead ID</label>
-                        <p id="viewLeadId" class="text-gray-900 font-mono text-sm bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Lead ID</label>
+                        <p id="viewLeadId" class="text-gray-900 font-mono text-xs bg-gray-50 p-2 rounded">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Data Creazione</label>
-                        <p id="viewData" class="text-gray-900 bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Data Creazione</label>
+                        <p id="viewData" class="text-gray-900 bg-gray-50 p-2 text-xs rounded">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-                        <p id="viewNome" class="text-gray-900 bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Contact Manager</label>
+                        <p id="viewCM" class="text-gray-900 bg-blue-50 p-2 rounded font-semibold text-xs">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome</label>
-                        <p id="viewCognome" class="text-gray-900 bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Nome</label>
+                        <p id="viewNome" class="text-gray-900 bg-gray-50 p-2 text-xs rounded">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <p id="viewEmail" class="text-gray-900 bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Cognome</label>
+                        <p id="viewCognome" class="text-gray-900 bg-gray-50 p-2 text-xs rounded">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
-                        <p id="viewTelefono" class="text-gray-900 bg-gray-50 p-2 rounded">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                        <p id="viewEmail" class="text-gray-900 bg-gray-50 p-2 text-xs rounded truncate">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
-                        <p id="viewServizio" class="text-gray-900 bg-blue-50 p-2 rounded font-semibold">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Telefono</label>
+                        <p id="viewTelefono" class="text-gray-900 bg-gray-50 p-2 text-xs rounded">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
-                        <p id="viewPiano" class="text-gray-900 bg-purple-50 p-2 rounded font-semibold">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Servizio</label>
+                        <p id="viewServizio" class="text-gray-900 bg-blue-50 p-2 rounded font-semibold text-xs">-</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Contact Manager</label>
-                        <p id="viewCM" class="text-gray-900 bg-blue-50 p-2 rounded font-semibold">-</p>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Piano</label>
+                        <p id="viewPiano" class="text-gray-900 bg-purple-50 p-2 rounded font-semibold text-xs">-</p>
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
-                        <p id="viewNote" class="text-gray-900 bg-gray-50 p-3 rounded min-h-[60px] text-sm">-</p>
+                    <div class="col-span-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
+                        <p id="viewNote" class="text-gray-900 bg-gray-50 p-2 rounded min-h-[50px] text-xs">-</p>
                     </div>
                 </div>
 
                 <!-- Storico Interazioni -->
-                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 mt-6">💬 Storico Interazioni</h4>
-                <div id="interactionsList" class="mb-6 max-h-64 overflow-y-auto">
-                    <p class="text-gray-500 text-sm text-center py-4">Caricamento...</p>
+                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">💬 Storico Interazioni</h4>
+                <div id="interactionsList" class="mb-4 max-h-48 overflow-y-auto">
+                    <p class="text-gray-500 text-xs text-center py-4">Caricamento...</p>
                 </div>
 
                 <!-- Form Nuova Interazione -->
-                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 mt-6">➕ Aggiungi Nuova Interazione</h4>
-                <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                    <div class="grid grid-cols-2 gap-4 mb-3">
+                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">➕ Aggiungi Nuova Interazione</h4>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div class="grid grid-cols-2 gap-3 mb-2">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo Interazione</label>
-                            <select id="interactionTipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Tipo Interazione</label>
+                            <select id="interactionTipo" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="telefono">📞 Telefono</option>
                                 <option value="email">📧 Email</option>
                                 <option value="whatsapp">💬 WhatsApp</option>
@@ -4019,34 +4019,34 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Operatore</label>
-                            <select id="interactionOperatore" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Operatore</label>
+                            <select id="interactionOperatore" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="Stefania Rocca">Stefania Rocca (SR)</option>
                                 <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
                                 <option value="Roberto Poggi">Roberto Poggi (RP)</option>
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
-                        <textarea id="interactionNota" rows="3" 
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    <div class="mb-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
+                        <textarea id="interactionNota" rows="2" 
+                                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                   placeholder="Descrivi cosa è successo durante il contatto..."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Azione da Intraprendere</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Azione da Intraprendere</label>
                         <textarea id="interactionAzione" rows="2" 
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                   placeholder="Cosa fare successivamente? (opzionale)"></textarea>
                     </div>
                     <button onclick="addInteraction()" 
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
                         💾 Salva Interazione
                     </button>
                 </div>
 
-                <div class="flex justify-end">
-                    <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                <div class="flex justify-end pt-2 border-t">
+                    <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
                 </div>
