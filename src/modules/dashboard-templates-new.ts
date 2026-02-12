@@ -2393,6 +2393,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="BASE">BASE</option>
                         <option value="AVANZATO">AVANZATO</option>
                     </select>
+                    <select id="filterCM" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti i CM</option>
+                        <option value="nessuno">Nessuno</option>
+                        <option value="OB">OB</option>
+                        <option value="SR">SR</option>
+                        <option value="RP">RP</option>
+                    </select>
                 </div>
             </div>
 
@@ -2400,18 +2407,18 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <table class="w-full">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-32">Lead ID</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-28">Cliente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-40">Contatti</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Servizio</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">Piano</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Prezzo Anno</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-16 text-center">Contratto</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-16 text-center">Brochure</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-24">Data</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">CM</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-28">Azioni</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-20">CRUD</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 w-12">#</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Contatti</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Contratto</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Brochure</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">CM</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -2697,7 +2704,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
 
-            tbody.innerHTML = leads.map(lead => {
+            tbody.innerHTML = leads.map((lead, index) => {
                 // PRIORITY: piano > note > default BASE
                 // NOTA: tipoServizio contiene il SERVIZIO, NON il piano!
                 let piano = 'BASE';
@@ -2717,45 +2724,41 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
                 return \`
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded text-xs">\${(lead.id || '').substring(0, 18)}</code>
+                    <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${lead.id}">
+                        <td class="py-3 text-sm text-gray-600 font-medium">\${index + 1}</td>
+                        <td class="py-3 text-sm">
+                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
-                        <td class="py-3">
-                            <div class="text-xs font-medium truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}">
-                                \${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || lead.email || 'N/A')}
+                        <td class="py-3 text-sm">
+                            <div class="text-sm text-gray-600">
+                                <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || '') || '-'}
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono || '') || '-'}
                             </div>
                         </td>
-                        <td class="py-3">
-                            <div class="text-xs text-gray-600 truncate" title="\${escapeHtml(lead.email || '')}">
-                                <i class="fas fa-envelope text-gray-400 mr-1"></i><span class="text-xs">\${escapeHtml(lead.email || lead.email) || '-'}</span>
-                            </div>
-                            <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i><span class="text-xs">\${escapeHtml(lead.telefono || lead.telefono) || '-'}</span>
-                            </div>
-                        </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                        <td class="py-3 text-sm">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded font-medium">
                                 \${servizio}
                             </span>
                         </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
+                        <td class="py-3 text-sm">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded font-medium">
                                 \${piano}
                             </span>
                         </td>
                         <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
-                        <td class="py-3 text-center">
+                        <td class="py-3 text-center text-sm">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
-                        <td class="py-3 text-center">
+                        <td class="py-3 text-center text-sm">
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
-                        <td class="py-3 text-xs text-gray-500">\${date}</td>
-                        <td class="py-3">
+                        <td class="py-3 text-sm text-gray-500">\${date}</td>
+                        <td class="py-3 text-sm">
                             <select 
                                 onchange="updateContactManager('\${lead.id}', this.value)"
-                                class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
+                                class="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
                                 style="min-width: 80px;">
                                 <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
                                 <option value="OB" \${lead.cm === 'OB' ? 'selected' : ''}>OB</option>
@@ -2763,7 +2766,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="RP" \${lead.cm === 'RP' ? 'selected' : ''}>RP</option>
                             </select>
                         </td>
-                        <td class="py-3">
+                        <td class="py-3 text-sm">
                             <div class="flex space-x-1">
                                 <button 
                                     onclick="sendContract('\${lead.id}', '\${piano}')" 
@@ -2813,6 +2816,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const fonteFilter = document.getElementById('filterFonte').value;
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
+            const cmFilter = document.getElementById('filterCM').value;
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
@@ -2840,6 +2844,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
                 const matchPiano = !pianoFilter || leadPiano === pianoFilter;
                 
+                // Filtro CM: confronta con il campo cm del lead
+                const leadCM = lead.cm || '';
+                const matchCM = !cmFilter || 
+                    (cmFilter === 'nessuno' && !leadCM) || 
+                    (cmFilter !== 'nessuno' && leadCM === cmFilter);
+                
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
                 const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
                 const cognomeAssistito = (lead.cognomeAssistito || '').toLowerCase();
@@ -2847,7 +2857,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchServizio && matchPiano && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCM && matchCognome;
             });
 
             renderLeadsTable(filtered);
