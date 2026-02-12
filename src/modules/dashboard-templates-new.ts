@@ -2787,12 +2787,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <td class="py-3 text-sm">
                             <div class="flex space-x-1">
                                 <button 
-                                    onclick="openInteractionsModal('\${lead.id}')"
+                                    onclick="openInteractionsModal('\${escapeHtml(lead.id)}')"
                                     class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors relative"
                                     title="Gestisci Interazioni"
-                                    id="interactionsBtn-\${lead.id}">
+                                    id="interactionsBtn-\${escapeHtml(lead.id)}">
                                     💬
-                                    <span class="interactions-count-\${lead.id} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
+                                    <span class="interactions-count-\${escapeHtml(lead.id)} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
                                 </button>
                                 <button 
                                     onclick="sendContract('\${lead.id}', '\${piano}')" 
