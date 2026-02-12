@@ -2373,6 +2373,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca per cognome..."
                         onkeyup="applyFilters()"
                     />
+                    <select id="filterFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutte le Fonti</option>
+                        <option value="Privati IRBEMA">Privati IRBEMA</option>
+                        <option value="Form eCura">Form eCura</option>
+                        <option value="Form eCura x Test">Form eCura x Test</option>
+                        <option value="B2B IRBEMA">B2B IRBEMA</option>
+                        <option value="Sito web Medica GB">Sito web Medica GB</option>
+                        <option value="NETWORKING">NETWORKING</option>
+                    </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
                         <option value="FAMILY">FAMILY</option>
@@ -2787,11 +2796,16 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function applyFilters() {
+            const fonteFilter = document.getElementById('filterFonte').value;
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
+                // Filtro Fonte: match esatto con il campo fonte
+                const leadFonte = lead.fonte || '';
+                const matchFonte = !fonteFilter || leadFonte === fonteFilter;
+                
                 // Filtro Servizio: cerca nel campo servizio o tipoServizio del DB
                 // Normalizza: "eCura PRO" -> "PRO", "eCura FAMILY" -> "FAMILY"
                 let leadServizio = lead.servizio || lead.tipoServizio || '';
@@ -2819,7 +2833,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchServizio && matchPiano && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCognome;
             });
 
             renderLeadsTable(filtered);
