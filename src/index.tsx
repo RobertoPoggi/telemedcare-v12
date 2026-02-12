@@ -8588,23 +8588,23 @@ app.post('/api/admin/leads/:oldId/change-id', async (c) => {
       return c.json({ success: false, error: 'Nuovo ID già esistente' }, 400)
     }
     
-    // Copia il lead con il nuovo ID
+    // Get all column names from the old lead (escludi 'id')
+    const columns = Object.keys(oldLead).filter(col => col !== 'id')
+    const columnsList = columns.join(', ')
+    const placeholders = columns.map(() => '?').join(', ')
+    
+    // Prepara i valori, sostituendo 'fonte' e 'updated_at'
+    const values = columns.map(col => {
+      if (col === 'fonte') return fonte || oldLead.fonte
+      if (col === 'updated_at') return new Date().toISOString()
+      return oldLead[col]
+    })
+    
+    // Inserisci il nuovo record con il nuovo ID
     await c.env.DB.prepare(`
-      INSERT INTO leads (
-        id, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, fonte, servizio, piano,
-        vuoleBrochure, vuoleContratto, vuoleManuale,
-        gdprConsent, status, note, external_source_id,
-        created_at, updated_at, timestamp
-      )
-      SELECT 
-        ?, nomeRichiedente, cognomeRichiedente, email, telefono,
-        nomeAssistito, cognomeAssistito, ?, servizio, piano,
-        vuoleBrochure, vuoleContratto, vuoleManuale,
-        gdprConsent, status, note, external_source_id,
-        created_at, ?, timestamp
-      FROM leads WHERE id = ?
-    `).bind(newId, fonte || oldLead.fonte, new Date().toISOString(), oldId).run()
+      INSERT INTO leads (id, ${columnsList})
+      VALUES (?, ${placeholders})
+    `).bind(newId, ...values).run()
     
     // Elimina il vecchio lead
     await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(oldId).run()
@@ -8621,7 +8621,7 @@ app.post('/api/admin/leads/:oldId/change-id', async (c) => {
     
   } catch (error) {
     console.error('❌ Errore cambio ID lead:', error)
-    return c.json({ error: 'Errore cambio ID lead' }, 500)
+    return c.json({ error: 'Errore cambio ID lead', details: error.message }, 500)
   }
 })
 
