@@ -4987,7 +4987,7 @@ ${370+e.length}
             const operatore = document.getElementById('interactionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per l'interazione');
+                alert('⚠️ Inserisci una nota per l\\'interazione');
                 return;
             }
             
