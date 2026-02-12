@@ -270,7 +270,7 @@ export async function executeAutoImport(
               citta: undefined, // Non disponibile in leadData
               servizio: leadData.servizio,
               piano: leadData.piano,
-              fonte: 'IRBEMA',
+              fonte: 'Form eCura',
               note: leadData.note || '',
               created_at: new Date().toISOString()
             },

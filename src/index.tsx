@@ -4420,13 +4420,13 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    console.log('🔧 Correzione fonte: HUBSPOT → IRBEMA')
+    console.log('🔧 Correzione fonte: HUBSPOT → Form eCura')
     
     // Aggiorna tutti i lead con fonte HUBSPOT o vuota (solo per LEAD-IRBEMA-xxxxx)
     const result = await c.env.DB.prepare(`
       UPDATE leads 
-      SET fonte = 'IRBEMA'
-      WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '')
+      SET fonte = 'Form eCura'
+      WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '' OR fonte = 'IRBEMA')
         AND id LIKE 'LEAD-IRBEMA-%'
     `).run()
     
@@ -5273,8 +5273,8 @@ app.post('/api/leads/clean-import-from-excel', async (c) => {
             lead.cognomeRichiedente || '',
             lead.email || '',
             lead.telefono || '',
-            lead.fonte || lead.canale || 'IRBEMA',
-            lead.canale || 'IRBEMA',
+            lead.fonte || lead.canale || 'Form eCura',
+            lead.canale || 'Form eCura',
             lead.tipoServizio || 'eCura PRO',
             lead.status || 'NEW',
             lead.note || '',
@@ -10026,7 +10026,7 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
       SELECT id, email, nomeRichiedente, cognomeRichiedente, created_at
       FROM leads 
       WHERE id >= ? 
-        AND fonte = 'IRBEMA'
+        AND (fonte = 'IRBEMA' OR fonte = 'Form eCura')
         AND created_at < ?
       ORDER BY id
     `).bind(minLeadId, cutoffTimestamp).all()
@@ -12083,7 +12083,7 @@ app.post('/api/import/irbema', async (c) => {
             citta: props.city || undefined,
             servizio,
             piano,
-            fonte: 'IRBEMA',
+            fonte: 'Form eCura',
             note,
             created_at: now
           }, c.env)
@@ -12401,7 +12401,7 @@ app.post('/api/import/irbema/spot', async (c) => {
           citta: props.city || undefined,
           servizio,
           piano,
-          fonte: 'IRBEMA',
+          fonte: 'Form eCura',
           note,
           created_at: now
         }, c.env)
@@ -12590,7 +12590,7 @@ app.post('/api/import/irbema/manual', async (c) => {
           citta: lead.citta || undefined,
           servizio: 'eCura PRO',
           piano: 'BASE',
-          fonte: 'IRBEMA',
+          fonte: 'Form eCura',
           note: lead.note,
           created_at: now
         }, c.env)
@@ -12646,7 +12646,7 @@ app.post('/api/import/irbema/cleanup', async (c) => {
     // Conta lead IRBEMA >= 128 prima della pulizia
     const beforeCount = await c.env.DB.prepare(`
       SELECT COUNT(*) as count FROM leads 
-      WHERE fonte = 'IRBEMA' 
+      WHERE (fonte = 'IRBEMA' OR fonte = 'Form eCura') 
       AND (
         id >= 'LEAD-IRBEMA-00128'
         OR id LIKE 'LEAD-IRBEMA-001%'
@@ -12661,7 +12661,7 @@ app.post('/api/import/irbema/cleanup', async (c) => {
     const placeholders = keepEmails.map(() => '?').join(',')
     const deleteResult = await c.env.DB.prepare(`
       DELETE FROM leads 
-      WHERE fonte = 'IRBEMA' 
+      WHERE (fonte = 'IRBEMA' OR fonte = 'Form eCura') 
       AND (
         CAST(SUBSTR(id, 14) AS INTEGER) >= 128
       )
@@ -12670,7 +12670,7 @@ app.post('/api/import/irbema/cleanup', async (c) => {
 
     // Conta lead IRBEMA dopo la pulizia
     const afterTotalCount = await c.env.DB.prepare(
-      "SELECT COUNT(*) as count FROM leads WHERE fonte = 'IRBEMA'"
+      "SELECT COUNT(*) as count FROM leads WHERE fonte IN ('IRBEMA', 'Form eCura')"
     ).first()
 
     console.log(`✅ [CLEANUP] Lead IRBEMA eliminati: ${deleteResult.meta.changes || 0}`)
