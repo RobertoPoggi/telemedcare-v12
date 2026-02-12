@@ -521,6 +521,16 @@ app.use('*', async (c, next) => {
         }
       }
       
+      // Aggiungi colonna stato alla tabella leads
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN stato TEXT DEFAULT NULL`).run()
+        console.log('✅ Colonna stato aggiunta a leads')
+      } catch (e: any) {
+        if (!e.message?.includes('duplicate column')) {
+          console.warn('⚠️ Errore colonna stato leads:', e.message)
+        }
+      }
+      
       // Crea tabella lead_interactions per tracciare i contatti
       try {
         await c.env.DB.prepare(`
@@ -8480,6 +8490,9 @@ app.put('/api/leads/:id', async (c) => {
       
       // Contact Manager
       cm: 'cm',
+      
+      // Stato lead
+      stato: 'stato',
       
       // Altri
       condizioniSalute: 'condizioniSalute',

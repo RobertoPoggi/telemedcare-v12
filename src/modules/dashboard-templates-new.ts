@@ -2417,13 +2417,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Brochure</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">CM</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Stato</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="12" class="py-8 text-center text-gray-400">
+                            <td colspan="13" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento lead...</p>
                             </td>
@@ -2698,7 +2699,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             if (leads.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="12" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
+                        <td colspan="13" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
                     </tr>
                 \`;
                 return;
@@ -2767,7 +2768,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </select>
                         </td>
                         <td class="py-3 text-sm">
+                            <select 
+                                onchange="updateLeadStatus('\${lead.id}', this.value)"
+                                class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-medium"
+                                style="min-width: 110px;"
+                                id="statusSelect-\${lead.id}">
+                                <option value="" \${!lead.stato ? 'selected' : ''}>Nessuno</option>
+                                <option value="nuovo" \${lead.stato === 'nuovo' ? 'selected' : ''} class="bg-blue-50">🆕 Nuovo</option>
+                                <option value="contattato" \${lead.stato === 'contattato' ? 'selected' : ''} class="bg-yellow-50">📞 Contattato</option>
+                                <option value="interessato" \${lead.stato === 'interessato' ? 'selected' : ''} class="bg-green-50">✨ Interessato</option>
+                                <option value="in_trattativa" \${lead.stato === 'in_trattativa' ? 'selected' : ''} class="bg-indigo-50">💼 In Trattativa</option>
+                                <option value="convertito" \${lead.stato === 'convertito' ? 'selected' : ''} class="bg-green-100">✅ Convertito</option>
+                                <option value="perso" \${lead.stato === 'perso' ? 'selected' : ''} class="bg-red-50">❌ Perso</option>
+                                <option value="non_interessato" \${lead.stato === 'non_interessato' ? 'selected' : ''} class="bg-gray-100">⛔ Non Interessato</option>
+                                <option value="da_ricontattare" \${lead.stato === 'da_ricontattare' ? 'selected' : ''} class="bg-yellow-100">🔄 Da Ricontattare</option>
+                            </select>
+                        </td>
+                        <td class="py-3 text-sm">
                             <div class="flex space-x-1">
+                                <button 
+                                    onclick="openInteractionsModal('\${lead.id}')"
+                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors relative"
+                                    title="Gestisci Interazioni"
+                                    id="interactionsBtn-\${lead.id}">
+                                    💬
+                                    <span class="interactions-count-\${lead.id} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
+                                </button>
                                 <button 
                                     onclick="sendContract('\${lead.id}', '\${piano}')" 
                                     class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
@@ -3329,6 +3355,58 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert('❌ Errore di comunicazione: ' + error.message);
                 loadLeadsData(); // Ricarica per ripristinare il valore precedente
             }
+        }
+        
+        async function updateLeadStatus(leadId, stato) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}\`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ stato: stato || null })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Aggiorna il valore in allLeads
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) {
+                        lead.stato = stato || null;
+                    }
+                    
+                    // Aggiorna il colore dello sfondo del select
+                    const select = document.getElementById(\`statusSelect-\${leadId}\`);
+                    if (select) {
+                        const colors = {
+                            'nuovo': '#dbeafe',
+                            'contattato': '#fef3c7',
+                            'interessato': '#d1fae5',
+                            'in_trattativa': '#e0e7ff',
+                            'convertito': '#d1fae5',
+                            'perso': '#fee2e2',
+                            'non_interessato': '#f3f4f6',
+                            'da_ricontattare': '#fef3c7'
+                        };
+                        select.style.background = colors[stato] || '#fff';
+                    }
+                    
+                    console.log(\`✅ Stato aggiornato: \${leadId} → \${stato || 'nessuno'}\`);
+                } else {
+                    alert('❌ Errore aggiornamento stato: ' + result.error);
+                    loadLeadsData();
+                }
+            } catch (error) {
+                console.error('❌ Errore aggiornamento stato:', error);
+                alert('❌ Errore di comunicazione: ' + error.message);
+                loadLeadsData();
+            }
+        }
+        
+        function openInteractionsModal(leadId) {
+            // Apri il modal Edit che contiene la sezione interazioni
+            editLead(leadId);
         }
         
         function openModal(modalId) {
