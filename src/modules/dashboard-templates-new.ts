@@ -2396,9 +2396,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <select id="filterCM" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i CM</option>
                         <option value="nessuno">Nessuno</option>
-                        <option value="OB">OB</option>
-                        <option value="SR">SR</option>
-                        <option value="RP">RP</option>
+                        <option value="SR">SR - Stefania Rocca</option>
+                        <option value="OB">OB - Ottavia Belfa</option>
+                        <option value="RP">RP - Roberto Poggi</option>
                     </select>
                 </div>
             </div>
@@ -2976,8 +2976,115 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewPiano').textContent = piano;
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
+            document.getElementById('viewCM').textContent = lead.cm || 'Nessuno';
+            
+            // Carica lo storico interazioni
+            loadInteractions(leadId);
             
             openModal('viewLeadModal');
+        }
+        
+        async function loadInteractions(leadId) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`);
+                const data = await response.json();
+                
+                const container = document.getElementById('interactionsList');
+                
+                if (!data.success || data.interactions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Nessuna interazione registrata</p>';
+                    return;
+                }
+                
+                // Ordina per data decrescente (più recenti prima)
+                const interactions = data.interactions.sort((a, b) => 
+                    new Date(b.data).getTime() - new Date(a.data).getTime()
+                );
+                
+                container.innerHTML = interactions.map(int => {
+                    const date = new Date(int.data).toLocaleString('it-IT');
+                    const tipoIcon = {
+                        'telefono': 'fa-phone',
+                        'email': 'fa-envelope',
+                        'whatsapp': 'fa-whatsapp',
+                        'sms': 'fa-sms',
+                        'meeting': 'fa-handshake',
+                        'videocall': 'fa-video',
+                        'nota': 'fa-sticky-note',
+                        'follow-up': 'fa-clock'
+                    }[int.tipo] || 'fa-comment';
+                    
+                    const tipoColor = {
+                        'telefono': 'bg-blue-100 text-blue-700',
+                        'email': 'bg-green-100 text-green-700',
+                        'whatsapp': 'bg-green-100 text-green-700',
+                        'sms': 'bg-purple-100 text-purple-700',
+                        'meeting': 'bg-yellow-100 text-yellow-700',
+                        'videocall': 'bg-indigo-100 text-indigo-700',
+                        'nota': 'bg-gray-100 text-gray-700',
+                        'follow-up': 'bg-orange-100 text-orange-700'
+                    }[int.tipo] || 'bg-gray-100 text-gray-700';
+                    
+                    return \`
+                        <div class="border-l-4 border-blue-500 bg-gray-50 p-3 rounded-r mb-3">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-1 \${tipoColor} text-xs rounded font-medium">
+                                        <i class="fas \${tipoIcon} mr-1"></i>\${int.tipo}
+                                    </span>
+                                    <span class="text-xs text-gray-500">\${date}</span>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">\${int.operatore || 'N/A'}</span>
+                            </div>
+                            <p class="text-sm text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
+                            \${int.azione ? \`<p class="text-sm text-gray-700"><strong>Azione:</strong> \${int.azione}</p>\` : ''}
+                        </div>
+                    \`;
+                }).join('');
+            } catch (error) {
+                console.error('Errore caricamento interazioni:', error);
+                document.getElementById('interactionsList').innerHTML = 
+                    '<p class="text-red-500 text-sm text-center py-4">Errore caricamento interazioni</p>';
+            }
+        }
+        
+        async function addInteraction() {
+            const leadId = document.getElementById('viewLeadId').textContent;
+            const tipo = document.getElementById('interactionTipo').value;
+            const nota = document.getElementById('interactionNota').value.trim();
+            const azione = document.getElementById('interactionAzione').value.trim();
+            const operatore = document.getElementById('interactionOperatore').value;
+            
+            if (!nota) {
+                alert('⚠️ Inserisci una nota per l\'interazione');
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo, nota, azione, operatore })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reset form
+                    document.getElementById('interactionNota').value = '';
+                    document.getElementById('interactionAzione').value = '';
+                    
+                    // Ricarica interazioni
+                    await loadInteractions(leadId);
+                    
+                    alert('✅ Interazione aggiunta con successo');
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Impossibile aggiungere interazione'));
+                }
+            } catch (error) {
+                console.error('Errore aggiunta interazione:', error);
+                alert('❌ Errore di rete');
+            }
         }
         
         function editLead(leadId) {
@@ -3836,14 +3943,16 @@ export const leads_dashboard = `<!DOCTYPE html>
     </div>
 
     <!-- MODAL: VIEW LEAD -->
-    <div id="viewLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
-            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
-                <h3 class="text-xl font-bold">👤 Dettagli Lead</h3>
+    <div id="viewLeadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center sticky top-0 z-10">
+                <h3 class="text-xl font-bold">👤 Dettagli Lead & Interazioni</h3>
                 <button onclick="closeModal('viewLeadModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-2 gap-4">
+                <!-- Informazioni Lead -->
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">📋 Informazioni Lead</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Lead ID</label>
                         <p id="viewLeadId" class="text-gray-900 font-mono text-sm bg-gray-50 p-2 rounded">-</p>
@@ -3876,12 +3985,67 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
                         <p id="viewPiano" class="text-gray-900 bg-purple-50 p-2 rounded font-semibold">-</p>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Contact Manager</label>
+                        <p id="viewCM" class="text-gray-900 bg-blue-50 p-2 rounded font-semibold">-</p>
+                    </div>
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
-                        <p id="viewNote" class="text-gray-900 bg-gray-50 p-3 rounded min-h-[80px]">-</p>
+                        <p id="viewNote" class="text-gray-900 bg-gray-50 p-3 rounded min-h-[60px] text-sm">-</p>
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end">
+
+                <!-- Storico Interazioni -->
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 mt-6">💬 Storico Interazioni</h4>
+                <div id="interactionsList" class="mb-6 max-h-64 overflow-y-auto">
+                    <p class="text-gray-500 text-sm text-center py-4">Caricamento...</p>
+                </div>
+
+                <!-- Form Nuova Interazione -->
+                <h4 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 mt-6">➕ Aggiungi Nuova Interazione</h4>
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo Interazione</label>
+                            <select id="interactionTipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="telefono">📞 Telefono</option>
+                                <option value="email">📧 Email</option>
+                                <option value="whatsapp">💬 WhatsApp</option>
+                                <option value="sms">📱 SMS</option>
+                                <option value="meeting">🤝 Meeting</option>
+                                <option value="videocall">📹 Videocall</option>
+                                <option value="nota">📝 Nota</option>
+                                <option value="follow-up">🔔 Follow-up</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Operatore</label>
+                            <select id="interactionOperatore" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Stefania Rocca">Stefania Rocca (SR)</option>
+                                <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
+                                <option value="Roberto Poggi">Roberto Poggi (RP)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
+                        <textarea id="interactionNota" rows="3" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Descrivi cosa è successo durante il contatto..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Azione da Intraprendere</label>
+                        <textarea id="interactionAzione" rows="2" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Cosa fare successivamente? (opzionale)"></textarea>
+                    </div>
+                    <button onclick="addInteraction()" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                        💾 Salva Interazione
+                    </button>
+                </div>
+
+                <div class="flex justify-end">
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Chiudi
                     </button>
