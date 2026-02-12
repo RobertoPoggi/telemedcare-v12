@@ -8947,6 +8947,43 @@ app.post('/api/admin/import-interactions-json', async (c) => {
           new Date().toISOString()
         ).run()
         
+        // Mappa ESITO → STATO lead
+        const statoMap: Record<string, string> = {
+          'Non risponde': 'Da Ricontattare',
+          'Inviata': 'Contattato',
+          'Da ricontattare': 'Da Ricontattare',
+          'Interessato': 'Interessato',
+          'Interessata': 'Interessato',
+          'Intressata': 'Interessato',
+          'Non interessato': 'Non Interessato',
+          'Non interessata': 'Non Interessato',
+          'numero non attivo': 'Perso',
+          'da richiamare': 'Da Ricontattare'
+        }
+        
+        const stato = esito ? (statoMap[esito] || null) : null
+        
+        // Aggiorna lead: imposta CM="OB" se operatore è Ottavia e stato se mappato
+        const updateFields: string[] = []
+        const updateBinds: any[] = []
+        
+        if (operatore && operatore.includes('Ottavia')) {
+          updateFields.push('cm = ?')
+          updateBinds.push('OB')
+        }
+        
+        if (stato) {
+          updateFields.push('stato = ?')
+          updateBinds.push(stato)
+        }
+        
+        if (updateFields.length > 0) {
+          updateBinds.push(leadId)
+          await c.env.DB.prepare(`
+            UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?
+          `).bind(...updateBinds).run()
+        }
+        
         imported++
       } catch (err: any) {
         skipped++

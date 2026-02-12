@@ -3405,8 +3405,147 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
         
         function openInteractionsModal(leadId) {
-            // Apri il modal Edit che contiene la sezione interazioni
-            editLead(leadId);
+            window.currentInteractionLeadId = leadId;
+            const lead = allLeads.find(l => l.id === leadId);
+            if (!lead) {
+                alert('❌ Lead non trovato');
+                return;
+            }
+            
+            // Popola info lead nel modale
+            document.getElementById('intModalLeadName').textContent = 
+                (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '').trim() || lead.email;
+            document.getElementById('intModalLeadContact').textContent = 
+                (lead.email || '') + ' • ' + (lead.telefono || '');
+            document.getElementById('intModalLeadId').textContent = leadId;
+            
+            // Carica lo storico interazioni
+            loadInteractionsModal(leadId);
+            
+            // Reset form nuova interazione
+            document.getElementById('intModalTipo').value = 'telefono';
+            document.getElementById('intModalOperatore').value = 'Ottavia Belfa';
+            document.getElementById('intModalNota').value = '';
+            document.getElementById('intModalAzione').value = '';
+            
+            // Apri il modale
+            openModal('interactionsModal');
+        }
+        
+        async function loadInteractionsModal(leadId) {
+            try {
+                const response = await fetch('/api/leads/' + leadId + '/interactions');
+                const data = await response.json();
+                
+                const container = document.getElementById('intModalInteractionsList');
+                
+                if (!data.success || data.interactions.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-xs text-center py-4">📭 Nessuna interazione registrata per questo lead</p>';
+                    return;
+                }
+                
+                // Ordina per data decrescente (più recenti prima)
+                const interactions = data.interactions.sort((a, b) => 
+                    new Date(b.data).getTime() - new Date(a.data).getTime()
+                );
+                
+                container.innerHTML = interactions.map(int => {
+                    const date = new Date(int.data).toLocaleString('it-IT', { 
+                        dateStyle: 'short', 
+                        timeStyle: 'short' 
+                    });
+                    const tipoIcon = {
+                        'telefono': 'fa-phone',
+                        'email': 'fa-envelope',
+                        'whatsapp': 'fa-whatsapp',
+                        'sms': 'fa-sms',
+                        'meeting': 'fa-handshake',
+                        'videocall': 'fa-video',
+                        'nota': 'fa-sticky-note',
+                        'follow-up': 'fa-clock'
+                    }[int.tipo] || 'fa-comment';
+                    
+                    const tipoColor = {
+                        'telefono': 'bg-blue-100 text-blue-700 border-blue-300',
+                        'email': 'bg-green-100 text-green-700 border-green-300',
+                        'whatsapp': 'bg-green-100 text-green-700 border-green-300',
+                        'sms': 'bg-purple-100 text-purple-700 border-purple-300',
+                        'meeting': 'bg-yellow-100 text-yellow-700 border-yellow-300',
+                        'videocall': 'bg-indigo-100 text-indigo-700 border-indigo-300',
+                        'nota': 'bg-gray-100 text-gray-700 border-gray-300',
+                        'follow-up': 'bg-orange-100 text-orange-700 border-orange-300'
+                    }[int.tipo] || 'bg-gray-100 text-gray-700 border-gray-300';
+                    
+                    let html = '<div class="mb-3 p-3 bg-white border-l-4 ' + tipoColor + ' rounded-lg shadow-sm">';
+                    html += '<div class="flex justify-between items-start mb-2">';
+                    html += '<span class="inline-flex items-center px-2 py-1 text-xs font-medium ' + tipoColor + ' rounded">';
+                    html += '<i class="fas ' + tipoIcon + ' mr-1"></i> ' + int.tipo.toUpperCase();
+                    html += '</span>';
+                    html += '<span class="text-xs text-gray-500">' + date + '</span>';
+                    html += '</div>';
+                    html += '<p class="text-sm text-gray-800 mb-1"><strong>Nota:</strong> ' + (int.nota || '-') + '</p>';
+                    if (int.azione) {
+                        html += '<p class="text-sm text-blue-700"><strong>Azione:</strong> ' + int.azione + '</p>';
+                    }
+                    if (int.operatore) {
+                        html += '<p class="text-xs text-gray-600 mt-2"><i class="fas fa-user-circle"></i> <strong>' + int.operatore + '</strong></p>';
+                    }
+                    html += '</div>';
+                    return html;
+                }).join('');
+            } catch (error) {
+                console.error('Errore caricamento interazioni:', error);
+                document.getElementById('intModalInteractionsList').innerHTML = 
+                    '<p class="text-red-500 text-xs text-center py-4">❌ Errore nel caricamento delle interazioni</p>';
+            }
+        }
+        
+        async function addInteractionFromModal() {
+            const leadId = window.currentInteractionLeadId;
+            if (!leadId) {
+                alert('❌ Errore: ID lead non trovato');
+                return;
+            }
+            
+            const tipo = document.getElementById('intModalTipo').value;
+            const operatore = document.getElementById('intModalOperatore').value;
+            const nota = document.getElementById('intModalNota').value.trim();
+            const azione = document.getElementById('intModalAzione').value.trim();
+            
+            if (!nota) {
+                alert('⚠️ Inserisci una nota per l\'interazione');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/leads/' + leadId + '/interactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: new Date().toISOString(),
+                        tipo,
+                        nota,
+                        azione: azione || null,
+                        operatore
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Interazione salvata con successo!');
+                    // Ricarica lo storico
+                    loadInteractionsModal(leadId);
+                    // Reset form
+                    document.getElementById('intModalNota').value = '';
+                    document.getElementById('intModalAzione').value = '';
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                console.error('Errore salvataggio interazione:', error);
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
         }
         
         function openModal(modalId) {
@@ -4268,6 +4407,85 @@ export const leads_dashboard = `<!DOCTYPE html>
 
                 <div class="flex justify-end pt-2 border-t">
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
+                        Chiudi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: INTERACTIONS (Dedicated) -->
+    <div id="interactionsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full my-8">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center sticky top-0 z-10">
+                <h3 class="text-xl font-bold">💬 Gestione Interazioni Lead</h3>
+                <button onclick="closeModal('interactionsModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                <!-- Info Lead (compatta) -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-gray-800" id="intModalLeadName">-</p>
+                        <p class="text-sm text-gray-600" id="intModalLeadContact">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Lead ID</p>
+                        <p class="font-mono text-xs font-semibold text-gray-700" id="intModalLeadId">-</p>
+                    </div>
+                </div>
+
+                <!-- Storico Interazioni -->
+                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2">📋 Storico Interazioni</h4>
+                <div id="intModalInteractionsList" class="mb-6 max-h-64 overflow-y-auto bg-gray-50 rounded-lg p-3">
+                    <p class="text-gray-500 text-xs text-center py-4">Caricamento...</p>
+                </div>
+
+                <!-- Form Nuova Interazione -->
+                <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2">➕ Aggiungi Nuova Interazione</h4>
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo Interazione</label>
+                            <select id="intModalTipo" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="telefono">📞 Telefono</option>
+                                <option value="email">📧 Email</option>
+                                <option value="whatsapp">💬 WhatsApp</option>
+                                <option value="sms">📱 SMS</option>
+                                <option value="meeting">🤝 Meeting</option>
+                                <option value="videocall">📹 Videocall</option>
+                                <option value="nota">📝 Nota</option>
+                                <option value="follow-up">🔔 Follow-up</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Operatore</label>
+                            <select id="intModalOperatore" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Stefania Rocca">Stefania Rocca (SR)</option>
+                                <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
+                                <option value="Roberto Poggi">Roberto Poggi (RP)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nota <span class="text-red-500">*</span></label>
+                        <textarea id="intModalNota" rows="3" 
+                                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Descrivi cosa è successo durante il contatto..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Azione da Intraprendere</label>
+                        <textarea id="intModalAzione" rows="2" 
+                                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Cosa fare successivamente? (opzionale)"></textarea>
+                    </div>
+                    <button onclick="addInteractionFromModal()" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                        💾 Salva Interazione
+                    </button>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t mt-4">
+                    <button onclick="closeModal('interactionsModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Chiudi
                     </button>
                 </div>
