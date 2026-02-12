@@ -1,0 +1,82 @@
+{
+  "version": "V12",
+  "minCommit": "033b5c7",
+  "deployedAt": "2026-02-12T17:03:00Z",
+  "protectionLevel": "MAXIMUM",
+  "rollbackPrevention": {
+    "enabled": true,
+    "alertOnRollback": true,
+    "blockV11": true
+  },
+  "criticalFiles": {
+    "firma-contratto.html": {
+      "required": true,
+      "path": "/firma-contratto.html",
+      "description": "Contract signature page (renamed from contract-signature.html)",
+      "minSize": 19000,
+      "maxSize": 25000
+    },
+    "dashboard.html": {
+      "required": true,
+      "path": "/dashboard.html",
+      "description": "Main admin dashboard",
+      "minSize": 50000
+    },
+    "index.html": {
+      "required": true,
+      "path": "/index.html",
+      "description": "Landing page"
+    },
+    "_headers": {
+      "required": true,
+      "path": "/_headers",
+      "description": "Anti-cache headers for Cloudflare"
+    }
+  },
+  "healthcheck": {
+    "endpoint": "/api/health",
+    "expectedVersion": "V12",
+    "expectedCommit": "033b5c7",
+    "timeout": 5000,
+    "retries": 3
+  },
+  "antiRollbackFeatures": [
+    "Healthcheck endpoint with version validation",
+    "Version Guard middleware on all routes",
+    "Anti-cache headers (_headers file)",
+    "Query parameter versioning (?v=timestamp)",
+    "Meta tags injection in HTML files",
+    "GitHub Actions deployment validation",
+    "DEPLOY_LOCK.json checksum verification"
+  ],
+  "incidents": [
+    {
+      "date": "2026-02-12T08:00:00Z",
+      "type": "Rollback to V11",
+      "cause": "GitHub-Cloudflare integration broken",
+      "impact": "contract-signature.html returned 404"
+    },
+    {
+      "date": "2026-02-12T09:00:00Z",
+      "type": "Rollback to V11",
+      "cause": "Deploy failed silently",
+      "impact": "System served V11 for 3 hours"
+    },
+    {
+      "date": "2026-02-12T17:00:00Z",
+      "type": "Rollback to V11",
+      "cause": "Auto-deploy not triggered",
+      "impact": "CURRENT - implementing countermeasures"
+    }
+  ],
+  "documentation": {
+    "rootCause": "ROOT_CAUSE_ROLLBACK_V11.md",
+    "solutions": [
+      "Fix GitHub-Cloudflare integration",
+      "Manual deploy with Wrangler",
+      "GitHub Actions with version validation"
+    ],
+    "monitoring": "monitor-version.sh (check every 5 min)"
+  },
+  "lastUpdate": "2026-02-12T17:10:00Z"
+}

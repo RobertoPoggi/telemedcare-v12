@@ -17711,5 +17711,170 @@ app.post('/api/setup-intestatario-fields', async (c) => {
   }
 })
 
+// ========== BATCH UPDATE FONTE LEAD ==========
+app.post('/api/admin/update-fonte-batch', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const body = await c.req.json()
+    const { leadIds, fonte } = body
+    
+    if (!Array.isArray(leadIds) || leadIds.length === 0) {
+      return c.json({ success: false, error: 'leadIds array vuoto o non valido' }, 400)
+    }
+    
+    if (!fonte) {
+      return c.json({ success: false, error: 'fonte mancante' }, 400)
+    }
+    
+    console.log(`📝 Aggiornamento fonte per ${leadIds.length} lead a: "${fonte}"`)
+    
+    let successCount = 0
+    let errorCount = 0
+    const errors = []
+    
+    // Aggiorna lead uno alla volta (più sicuro per batch grandi)
+    for (const leadId of leadIds) {
+      try {
+        const result = await c.env.DB.prepare(
+          'UPDATE leads SET fonte = ?, updated_at = datetime(\'now\') WHERE id = ?'
+        ).bind(fonte, leadId).run()
+        
+        if (result.success) {
+          successCount++
+        } else {
+          errorCount++
+          errors.push({ id: leadId, error: 'Update failed' })
+        }
+      } catch (error) {
+        errorCount++
+        errors.push({ 
+          id: leadId, 
+          error: error instanceof Error ? error.message : String(error) 
+        })
+      }
+    }
+    
+    console.log(`✅ Aggiornamento completato: ${successCount}/${leadIds.length} successo`)
+    
+    return c.json({
+      success: true,
+      total: leadIds.length,
+      successCount,
+      errorCount,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Aggiornati ${successCount}/${leadIds.length} lead con fonte: "${fonte}"`
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore batch update fonte:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ========== SYSTEM HEALTH & VERSION MONITORING ==========
+// Critical: Prevent rollback to V11 - 3x incidents in 24h
+app.get('/api/health', async (c) => {
+  const SYSTEM_VERSION = 'V12'
+  const GIT_COMMIT = '033b5c7'
+  const BUILD_DATE = '2026-02-12T17:03:00Z'
+  
+  try {
+    // Check critical files existence
+    const criticalFiles = {
+      'firma-contratto.html': false,
+      'dashboard.html': false,
+      'index.html': false
+    }
+    
+    // Try to fetch each file from ASSETS binding
+    for (const file of Object.keys(criticalFiles)) {
+      try {
+        const response = await c.env.ASSETS.fetch(
+          new URL(`/${file}`, c.req.url)
+        )
+        criticalFiles[file] = response.ok
+      } catch (e) {
+        criticalFiles[file] = false
+      }
+    }
+    
+    // Check database connectivity
+    let dbStatus = 'disconnected'
+    try {
+      if (c.env?.DB) {
+        await c.env.DB.prepare('SELECT 1').first()
+        dbStatus = 'connected'
+      }
+    } catch (e) {
+      dbStatus = 'error'
+    }
+    
+    // Determine overall health
+    const isHealthy = criticalFiles['firma-contratto.html'] && 
+                     criticalFiles['dashboard.html'] &&
+                     dbStatus === 'connected'
+    
+    const healthStatus = {
+      status: isHealthy ? 'healthy' : 'degraded',
+      version: SYSTEM_VERSION,
+      commit: GIT_COMMIT,
+      buildDate: BUILD_DATE,
+      timestamp: new Date().toISOString(),
+      checks: {
+        files: criticalFiles,
+        database: dbStatus,
+        environment: {
+          hasDB: !!c.env?.DB,
+          hasASSETS: !!c.env?.ASSETS,
+          hasEmailService: !!c.env?.EMAIL_SERVICE,
+          hasTwilioSID: !!c.env?.TWILIO_ACCOUNT_SID
+        }
+      },
+      uptime: process.uptime ? `${Math.floor(process.uptime())}s` : 'N/A'
+    }
+    
+    // Add custom headers for monitoring
+    c.header('X-System-Version', SYSTEM_VERSION)
+    c.header('X-Git-Commit', GIT_COMMIT)
+    c.header('X-Build-Date', BUILD_DATE)
+    c.header('X-Health-Status', healthStatus.status)
+    
+    return c.json(healthStatus, isHealthy ? 200 : 503)
+  } catch (error) {
+    console.error('Health check error:', error)
+    return c.json({
+      status: 'error',
+      version: SYSTEM_VERSION,
+      commit: GIT_COMMIT,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, 500)
+  }
+})
+
+// Version Guard Middleware - Logs all requests with version info
+app.use('*', async (c, next) => {
+  const SYSTEM_VERSION = 'V12'
+  const GIT_COMMIT = '033b5c7'
+  
+  // Add version headers to ALL responses
+  c.header('X-System-Version', SYSTEM_VERSION)
+  c.header('X-Git-Commit', GIT_COMMIT)
+  c.header('X-Powered-By', 'TeleMedCare-V12-Protected')
+  
+  // Log request (only for API endpoints, avoid spam)
+  if (c.req.path.startsWith('/api/')) {
+    console.log(`[${SYSTEM_VERSION}] ${c.req.method} ${c.req.path}`)
+  }
+  
+  await next()
+})
+
 export default app
 // Cache bust 1770140183

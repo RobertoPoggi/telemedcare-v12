@@ -1,0 +1,192 @@
+============================================================================================================================================
+📋 LEAD FORM eCURA - Filtrati (Esclusi: Poggi, Ressa, Rocca, Bujari)
+============================================================================================================================================
+Totale lead nel sistema: 179
+Lead esclusi (test/business): 4 (Poggi Roberto, Ressa Rosaria, Stefania Rocca, Frederik Bujari)
+Lead eCura dopo filtri: 175
+============================================================================================================================================
+
+#     ID                      Nome Completo                  Email                               Telefono          Piano                Data             
+---------------------------------------------------------------------------------------------------------------------------------------------------
+1     LEAD-IRBEMA-00191       Giovanni Scacciavillani        gioscacciavillani@gmail.com         333 337 7532      eCura FAMILY         2026-02-12 11:25 
+2     LEAD-IRBEMA-00189       Giuseppe Pmiotta               giuseppeprinciotta84@gmail.com      3756664288        eCura FAMILY         2026-02-11 15:42 
+3     LEAD-IRBEMA-00187       Bruna Veronesi                 bruna.veronesi62@gmail.com          +393341495584     eCura FAMILY         2026-02-11 11:28 
+4     LEAD-IRBEMA-00185       Francesco Pizzichemi           pizzichemi1948@gmail.com            3278357164        eCura Family         2026-02-11 07:57 
+5     LEAD-IRBEMA-00182       Massimiliano Paoletti          paoletti.vet77@gmail.com            +393514026637     eCura FAMILY         2026-02-10 22:18 
+6     LEAD-IRBEMA-00181       Rita Galletto                  the.family.04@tiscali.it            3296411577        eCura Family         2026-02-10 20:23 
+7     LEAD-IRBEMA-00179       Giovanna Santamaria            giovanna31164@gmail.com             3384279476        eCura Family         2026-02-10 11:47 
+8     LEAD-IRBEMA-00180       Tina Zingale                   fortunatazingale@libero.it          3202638779        eCura Family         2026-02-10 11:47 
+9     LEAD-IRBEMA-00177       Giusy Di Napoli                giuseppadinapoli@gmail.com          3921579552        eCura Family         2026-02-09 21:20 
+10    LEAD-IRBEMA-00174       Alberto De Micheli             helpdesk@infrabo.esercito.difesa.i  3280060440        eCura PRO            2026-02-09 12:38 
+11    LEAD-IRBEMA-00173       Michela Isoscelli              michelaeliso@gmsil.com              3333592414        eCura PRO            2026-02-09 08:22 
+12    LEAD-IRBEMA-00168       Liviano Baido                  baido.liviano@libero.it             3898521124        eCura PRO            2026-02-08 11:54 
+13    LEAD-IRBEMA-00164       Maurizio Brugnaro              maurizio.brugnaro@gmail.com         +393517093135     eCura PRO            2026-02-08 09:55 
+14    LEAD-IRBEMA-00165       GIAN MARIO COCCO               zikoka@tiscali.it                   +393921880698     eCura PRO            2026-02-08 09:55 
+15    LEAD-IRBEMA-00162       Jonathan Pasqual               jonathanpasqual48@gmail.com         3515761679        eCura PREMIUM        2026-02-07 23:32 
+16    LEAD-IRBEMA-00161       Marco Olivieri                 marco.olivieri@baslerweb.com        348 828 1024      eCura FAMILY         2026-02-06 14:51 
+17    LEAD-IRBEMA-00159       Rossana Bettega                bettega@assistenzaviva.it           3517399650        eCura PRO            2026-02-06 14:51 
+18    LEAD-IRBEMA-00160       Roberta Ziliani                robertaziliani8@gmail.com           +393319390543     eCura PRO            2026-02-06 14:51 
+19    LEAD-IRBEMA-00157       Marco Porcu                    marco.porcu71@gmail.com             +393485276808     eCura PREMIUM        2026-02-06 09:14 
+20    LEAD-IRBEMA-00155       Francesco Celi                 fraceli@tiscali.it                  3802958496        eCura Family         2026-02-05 13:41 
+21    LEAD-IRBEMA-00153       Antonella Iurilli              a.iurilliduhamel@gmail.com          +393346416974     eCura FAMILY         2026-02-04 13:27 
+22    LEAD-IRBEMA-00154       Beatrice Casoni                bcsbianca@gmail.com                 +393471384403     eCura PRO            2026-02-04 13:27 
+23    LEAD-IRBEMA-00151       Mangano Palade                 marcostarsistem@hotmaip.com         +39351077404      eCura PRO            2026-02-03 18:45 
+24    LEAD-IRBEMA-00148       STEFANO VINCENZO NEGRI         stefanovincenzo.negri.71@gmail.com  3389175360        eCura PRO            2026-02-03 18:45 
+25    LEAD-IRBEMA-00149       Maria Ciano                    mariaciano1954@gmail.com            3516866454        eCura PRO            2026-02-03 18:45 
+26    LEAD-IRBEMA-00150       Leopoldo Giordano              leopoldo.giordano@gmail.com         3312280307        eCura PRO            2026-02-03 18:45 
+27    LEAD-IRBEMA-00146       Cristina De palma              dp@depalmadesigns.com               38951812128       eCura PRO            2026-02-03 18:45 
+28    LEAD-IRBEMA-00147       Luisa Foglia                   lfoglia52@gmail.com                 3292828549        eCura PRO            2026-02-03 18:45 
+29    LEAD-IRBEMA-00145       Luca Fregolent                 luk91677@gmail.com                  3758013690        eCura Family         2026-01-31 02:10 
+30    LEAD-IRBEMA-00143       Chiara Sperotto                sperotto24@gmail.com                3460588729        eCura PRO            2026-01-31 02:10 
+31    LEAD-IRBEMA-00144       Gianluigi Di Berardo           gianluigi1259@gmail.com             3386444224        eCura FAMILY         2026-01-31 02:10 
+32    LEAD-IRBEMA-00142       Alberto Locatelli              alboloc@gmail.com                   +393489587312     eCura PRO            2026-01-31 02:10 
+33    LEAD-IRBEMA-00140       Simone Parravicini             simo.parravicini@gmail.com          3387648224        eCura PRO            2026-01-31 02:10 
+34    LEAD-IRBEMA-00141       Calogero Nocera                lillonocera@libero.it               3881184173        eCura PREMIUM        2026-01-31 02:10 
+35    LEAD-IRBEMA-00139       Andrea Mercuri                 amercuri93@gmail.com                3663156266        eCura PREMIUM        2026-01-31 02:10 
+36    LEAD-IRBEMA-00138       Rosaria Serino Mormone         rosaria.serino@icloud.com           3479332334        eCura PRO            2026-01-31 02:10 
+37    LEAD-IRBEMA-00137       Andrea Fossi                   fossiandrea9@gmail.com              3492395104        eCura FAMILY         2026-01-31 02:10 
+38    LEAD-IRBEMA-00136       Anna Sarotto                   sarottoanna@gmail.com               N/A               eCura PRO            2026-01-31 00:43 
+39    LEAD-IRBEMA-00133       Giuliana Berardi               giuliberard@gmail.com               N/A               eCura PRO            2026-01-31 00:43 
+40    LEAD-IRBEMA-00134       Tiziana (Cognome non fornito)  tizianab953@gmail.com               N/A               eCura PRO            2026-01-31 00:43 
+41    LEAD-IRBEMA-00135       Flavia Farmè                   fiorenza.farne1@gmail.com           N/A               eCura PRO            2026-01-31 00:43 
+42    LEAD-IRBEMA-00132       Elisa Cattarossi               elisa@cattarossi.it                 N/A               eCura PRO            2026-01-31 00:43 
+43    LEAD-IRBEMA-00131       Lucio Comazza                  lucio.cam51@gmail.com               +393884287850     eCura PRO            2026-01-31 00:04 
+44    LEAD-IRBEMA-00129       Maria Carla Morroni            morroni.mariacarla55@gmail.com      +393314563888     eCura PRO            2026-01-31 00:04 
+45    LEAD-IRBEMA-00130       Laila Moustafa                 lailamoustafa.pia@gmail.com         +393394863927     eCura PRO            2026-01-31 00:04 
+46    LEAD-IRBEMA-00128       Michela Annunzi                amministrazione@europa92.it         +393476735218     eCura PRO            2026-01-31 00:04 
+47    LEAD-IRBEMA-00127       Roberto Bifulco                roberto.bif@libero.it               3360949528        eCura PRO            2025-12-17 00:00 
+48    LEAD-IRBEMA-00125       Giusy Pizzo                    pizzogiusy@libero.it                3458414686        eCura PRO            2025-12-14 00:00 
+49    LEAD-IRBEMA-00126       Giansanto Rizzotti             giansanto@rizzotti.it               393276246536      eCura PRO            2025-12-14 00:00 
+50    LEAD-IRBEMA-00124       Giuseppe Gaglioti              pinogaglioti@gmail.com              N/A               eCura PRO            2025-12-13 00:00 
+51    LEAD-WEB-00001          Francesca Grati                fgrati@gmail.com                    3429714170        eCura PRO            2025-11-30 00:00 
+52    LEAD-IRBEMA-00123       Enzo Gag                       enzogag@tin.it                      N/A               eCura PRO            2025-11-29 00:00 
+53    LEAD-IRBEMA-00122       Luca Catrini                   lucacatrini25@gmail.com             3476854422        eCura PRO            2025-11-26 00:00 
+54    LEAD-IRBEMA-00121       Emanuela (cognome non fornito  doc.emi@libero.it                   N/A               eCura PRO            2025-11-25 00:00 
+55    LEAD-IRBEMA-00120       Giorgio Ferranti               giorgio.ferranti@msn.com            3396935977        eCura PRO            2025-11-22 00:00 
+56    LEAD-IRBEMA-00118       Valeria Ramus                  valeria.ramus@gmail.com             3398179615        eCura PRO            2025-11-18 00:00 
+57    LEAD-IRBEMA-00119       Claudia Franceschini           franceschinicla@gmail.com           3465024760        eCura PRO            2025-11-18 00:00 
+58    LEAD-IRBEMA-00117       Giovanni Creton                giovannicreton@gmail.com            N/A               eCura PRO            2025-11-06 00:00 
+59    LEAD-IRBEMA-00116       Andrea Vergani                 andrea.s.vergani@gmail.com          +393357880251     eCura PRO            2025-11-02 00:00 
+60    LEAD-IRBEMA-00115       Francesco Prandoni             francescoprandoni@hotmail.it        +393394686011     eCura PRO            2025-10-31 00:00 
+61    LEAD-IRBEMA-00114       Silvia Brocadello              silviabrocadello72@yahoo.it         3343329422        eCura PRO            2025-10-30 00:00 
+62    LEAD-IRBEMA-00113       Serena Scilleri                Scilleri.serena@libero.it           N/A               eCura PRO            2025-10-21 00:00 
+63    LEAD-IRBEMA-00112       Deanna Mantovani               deannamant@outlook.it               +393454431743     eCura PRO            2025-10-13 00:00 
+64    LEAD-IRBEMA-00111       T Tafaro                       t.tafaro@virgilio.it                335 8303589       eCura PRO            2025-10-09 00:00 
+65    LEAD-IRBEMA-00110       Maria Mertel                   mertelmaria@gmail.com               N/A               eCura PRO            2025-10-06 00:00 
+66    LEAD-IRBEMA-00109       Angela Ronconi                 angelaronconi@libero.it             393401191079      eCura PRO            2025-09-25 00:00 
+67    LEAD-IRBEMA-00108       Daniele Brunelli               danielebrunelli.db@libero.it        3400873094        eCura PRO            2025-09-24 00:00 
+68    LEAD-IRBEMA-00107       Manu Cels - Simone             test@esempio.it                     N/A               eCura PRO            2025-09-18 00:00 
+69    LEAD-IRBEMA-00106       Maria Maglione                 mariamaglione4@gmail.com            3334464095        eCura PRO            2025-09-17 00:00 
+70    LEAD-IRBEMA-00105       Giuseppe Zonno                 gzonno@mediatipo.it                 +393333333430     eCura PRO            2025-09-15 00:00 
+71    LEAD-IRBEMA-00103       Giuliano Rapelli               rapelligiuliano@gmail.com           3518276853        eCura PRO            2025-09-14 00:00 
+72    LEAD-IRBEMA-00104       Eros Coghi                     eroscoghi@gmail.com                 +393474124442     eCura PRO            2025-09-14 00:00 
+73    LEAD-IRBEMA-00102       Andrea Dente                   aanderea@me.com                     3669785184        eCura PRO            2025-09-09 00:00 
+74    LEAD-IRBEMA-00101       Luca Nadali                    luca.nadali@gmail.com               +39 328 95 12 05  eCura PRO            2025-09-08 00:00 
+75    LEAD-IRBEMA-00100       Norma Zanetta                  zanetta.norma64@gmail.com           3409854064        eCura PRO            2025-09-07 00:00 
+76    LEAD-IRBEMA-00099       Maria Cristina Sorcini         cristinasorcini@yahoo.it            +393470562139     eCura PRO            2025-09-05 00:00 
+77    LEAD-IRBEMA-00098       Mauro Giumelli                 maurogiumelli1952@gmail.com         N/A               eCura PRO            2025-09-02 00:00 
+78    LEAD-IRBEMA-00097       francesco pepe                 cicciopepe@libero.it                +393317545440     eCura PRO            2025-09-01 00:00 
+79    LEAD-IRBEMA-00095       Adriana Mulassano              audrey.mulassano@gmail.com          N/A               eCura PRO            2025-08-31 00:00 
+80    LEAD-IRBEMA-00096       Ettore Destro                  ettoredestro@gmail.com              +393273118009     eCura PRO            2025-08-31 00:00 
+81    LEAD-IRBEMA-00093       Michele Lorieri                lorierimichele@gmail.it             N/A               eCura PRO            2025-08-29 00:00 
+82    LEAD-IRBEMA-00094       Ds Valerani                    dsvalerani@gmail.com                N/A               eCura PRO            2025-08-29 00:00 
+83    LEAD-IRBEMA-00092       Paola Scarpin                  N/A                                 3404686122        eCura PRO            2025-08-28 00:00 
+84    LEAD-IRBEMA-00090       Gabriella Azzaro               annamariagabriellaazzaro757@gmail.  3911858536        eCura PRO            2025-08-27 00:00 
+85    LEAD-IRBEMA-00091       Carla martini                  c.martini2009@libero.it             N/A               eCura PRO            2025-08-27 00:00 
+86    LEAD-IRBEMA-00089       Maria Ricciardelli             ricciardelli.ela@gmail.com          3496428227        eCura PRO            2025-08-25 00:00 
+87    LEAD-IRBEMA-00088       Cristiana Rugggeri             cristianaruggeri2611@gmail.com      N/A               eCura PRO            2025-08-04 00:00 
+88    LEAD-IRBEMA-00087       Valeria Zafon                  valeria.zaf@gmail.com               +393483725032     eCura PRO            2025-07-31 00:00 
+89    LEAD-IRBEMA-00085       Elia Citro                     eliocitro7@gmail.com                N/A               eCura PRO            2025-07-29 00:00 
+90    LEAD-IRBEMA-00086       Serena De Ponto                depontomariaserena@gmail.com        3514455108        eCura PRO            2025-07-29 00:00 
+91    LEAD-IRBEMA-00084       Norma Giannetti                N/A                                 3471226301        eCura PRO            2025-07-28 00:00 
+92    LEAD-IRBEMA-00083       Giovanni Dandraia              dandraia.g@gmail.com                3487282428        eCura PRO            2025-07-27 00:00 
+93    LEAD-IRBEMA-00082       Simonetta (cognome non fornit  N/A                                 3201965501        eCura PRO            2025-07-25 00:00 
+94    LEAD-IRBEMA-00081       Andrea Spelta                  speltaandrea@gmail.com              N/A               eCura PRO            2025-07-24 00:00 
+95    LEAD-IRBEMA-00078       Grazia Fiumana                 graziafiumana@gmail.com             N/A               eCura PRO            2025-07-21 00:00 
+96    LEAD-IRBEMA-00079       Stefania Albertin              albertinstefania@gmail.com          N/A               eCura PRO            2025-07-21 00:00 
+97    LEAD-IRBEMA-00080       Arianna Sichich                ari.sichich@gmail.com               3460789840        eCura PRO            2025-07-21 00:00 
+98    LEAD-IRBEMA-00077       Leonardo Perini                perini.spoleto@gmail.com            3336297471        eCura PRO            2025-07-16 00:00 
+99    LEAD-IRBEMA-00076       Lombardi Addolorata            presidelombardi@gmail.com           3382295587        eCura PRO            2025-07-15 00:00 
+100   LEAD-IRBEMA-00075       Barbara Campi                  campi.barbara@yahoo.it              N/A               eCura PRO            2025-07-14 00:00 
+101   LEAD-IRBEMA-00074       Claudio La Viola               clalav74@libero.it                  3270962223        eCura PRO            2025-07-12 00:00 
+102   LEAD-IRBEMA-00073       Diego Dainese                  studio2dvigonza@gmail.com           348999318         eCura PRO            2025-07-08 00:00 
+103   LEAD-IRBEMA-00072       Elisabetta Cattini             elisabettacattini@gmail.com         393200811667      eCura PRO            2025-07-07 00:00 
+104   LEAD-IRBEMA-00071       Antonella Barbone              N/A                                 3388821280        eCura PRO            2025-07-04 00:00 
+105   LEAD-IRBEMA-00070       Raffaella Casubolo             raffaellacasubolo71@gmail.com       N/A               eCura PRO            2025-07-03 00:00 
+106   LEAD-IRBEMA-00069       Carmen Tierno                  cartier.05@libero.it                3394745902        eCura PRO            2025-07-02 00:00 
+107   LEAD-IRBEMA-00068       Giulia Clementi                N/A                                 3494378160        eCura PRO            2025-07-01 00:00 
+108   LEAD-IRBEMA-00067       Michele Amoruso                ammiche@tiscali.it                  3472120496        eCura PRO            2025-06-27 00:00 
+109   LEAD-NETWORKING-00001   Laura Calvi                    N/A                                 N/A               eCura PRO            2025-06-25 00:00 
+110   LEAD-IRBEMA-00066       Aurora Teruggi                 a.teruggi@virgilio.it               3496156239        eCura PRO            2025-06-17 00:00 
+111   LEAD-IRBEMA-00064       Elena Bodini                   elenabodini5@gmail.com              3392045623        eCura PRO            2025-06-16 00:00 
+112   LEAD-IRBEMA-00065       Giuseppina Da Luiso            apinucciadaluiso@gmail.com          N/A               eCura PRO            2025-06-16 00:00 
+113   LEAD-IRBEMA-00063       Sindaco Delvigo                sindacodelvigo@gmail.com            3803263069        eCura PRO            2025-06-13 00:00 
+114   LEAD-IRBEMA-00060       Sig. Froilan                   usa.rossacroce@gmail.com            N/A               eCura PRO            2025-06-11 00:00 
+115   LEAD-IRBEMA-00061       Giorgio Riela                  gr@ecotorino.it                     0117395260        eCura PRO            2025-06-11 00:00 
+116   LEAD-IRBEMA-00062       Paolo Magri                    paolo@paolomagri.com                +41793311949      eCura PRO            2025-06-11 00:00 
+117   LEAD-IRBEMA-00057       Dorella Soatto                 dorellasoatto@libero.it             3382896878        eCura PRO            2025-06-09 00:00 
+118   LEAD-IRBEMA-00058       Elisabetta Ghidella            elisabettaghidella@gmail.com        3343442458        eCura PRO            2025-06-09 00:00 
+119   LEAD-IRBEMA-00059       Giancarlo Fissone              iguana710@gmail.com                 3927179250        eCura PRO            2025-06-09 00:00 
+120   LEAD-IRBEMA-00056       Paola Giacobelli               paolagiacobelli@yahoo.it            3348810542        eCura PRO            2025-06-05 00:00 
+121   LEAD-IRBEMA-00054       CONCETTA CINARDO               concettacinardo@gmail.com           N/A               eCura PRO            2025-06-04 00:00 
+122   LEAD-IRBEMA-00055       Antonella Robbiani             arobbiani@hotmail.com               335258091         eCura PRO            2025-06-04 00:00 
+123   LEAD-IRBEMA-00051       Silvia Grossi                  1967silvia@tiscali.it               3394296488        eCura PRO            2025-06-03 00:00 
+124   LEAD-IRBEMA-00052       GIOVANNI LOLLI                 giovanni.lollig@gmail.com           3247972835        eCura PRO            2025-06-03 00:00 
+125   LEAD-IRBEMA-00053       Maria Di Nuzzo                 amariadinuzzo358@gmail.com          N/A               eCura PRO            2025-06-03 00:00 
+126   LEAD-IRBEMA-00050       FRANCESA CAROFEI               fra.carofei@icloud.com              N/A               eCura PRO            2025-05-30 00:00 
+127   LEAD-IRBEMA-00049       MONICA TERRAGNI                terragni.monica@gmail.com           N/A               eCura PRO            2025-05-29 00:00 
+128   LEAD-IRBEMA-00047       Claudio Fontana                fontanaclaudio@hotmail.it           N/A               eCura PRO            2025-05-28 00:00 
+129   LEAD-IRBEMA-00048       Claudia Peron                  claudiaperon07@gmail.com            3498421721        eCura PRO            2025-05-28 00:00 
+130   LEAD-IRBEMA-00046       Giorgia Origa                  giorgiaoriga@gmail.com              3288610478        eCura PRO            2025-05-27 00:00 
+131   LEAD-IRBEMA-00045       MONICA MORELLI                 avv.morellimonica@gmail.com         3387318749        eCura PRO            2025-05-26 00:00 
+132   LEAD-IRBEMA-00044       Luciana garrisi                lucianagarrisi@libero.it            3349057602        eCura PRO            2025-05-25 00:00 
+133   LEAD-IRBEMA-00042       EMANUELA BALZAROTTI            emanuelabalzarotti@libero.it        3389414462        eCura PRO            2025-05-22 00:00 
+134   LEAD-IRBEMA-00043       TONINO FICICCHIA               toninoficicchia4@gmail.com          N/A               eCura PRO            2025-05-22 00:00 
+135   LEAD-IRBEMA-00041       Maria                          altamarea.2018@libero.it            N/A               eCura PRO            2025-05-21 00:00 
+136   LEAD-IRBEMA-00039       Giovanna Salvidio              avv.giovannasalvidio@gmail.com      3930620563        eCura PRO            2025-05-14 00:00 
+137   LEAD-IRBEMA-00040       CARLA MAGLIOCCHETTI            carla.magliocchetti@libero.it       3346452561        eCura PRO            2025-05-14 00:00 
+138   LEAD-IRBEMA-00037       Isabella Consoloni             isabella.consoloni@libero.it        3381714788        eCura PRO            2025-05-13 00:00 
+139   LEAD-IRBEMA-00038       Roberta Verazzo                verazzoroberta@yahoo.it             N/A               eCura PRO            2025-05-13 00:00 
+140   LEAD-IRBEMA-00036       Anna Posa                      annablu01@gmail.com                 N/A               eCura PRO            2025-05-04 00:00 
+141   LEAD-IRBEMA-00035       Barbara Camorani               barbara.camorani@regione.liguria.i  3405635515        eCura PRO            2025-05-03 00:00 
+142   LEAD-IRBEMA-00034       ANTONIA Bonavita               antobonavita@libero.it              3386484910        eCura PRO            2025-05-02 00:00 
+143   LEAD-IRBEMA-00033       Simona Pizzutto                simona.pizzutto@coopbarbarab.it     3450016665        eCura PRO            2025-05-01 00:00 
+144   LEAD-IRBEMA-00032       Nicola                         immobiliarenicola@gmail.com         3517011414        eCura PRO            2025-04-30 00:00 
+145   LEAD-IRBEMA-00031       Mauro Reggi                    N/A                                 3289051937        eCura PRO            2025-04-26 00:00 
+146   LEAD-IRBEMA-00030       Caterina D’Alterio             caterinadalterio108@gmail.com       3898006744        eCura PRO            2025-04-25 00:00 
+147   LEAD-IRBEMA-00029       Simone Corpino                 simonecorpino@gmail.com             3485650603        eCura PRO            2025-04-24 00:00 
+148   LEAD-IRBEMA-00025       Imma Grimaldi                  N/A                                 +393928995340     eCura PRO            2025-04-23 00:00 
+149   LEAD-IRBEMA-00026       Tatiana no cognome             N/A                                 +39 338 690 1311  eCura PRO            2025-04-23 00:00 
+150   LEAD-IRBEMA-00027       Gaetano Santamaria             N/A                                 +39 335 599 6265  eCura PRO            2025-04-23 00:00 
+151   LEAD-IRBEMA-00028       Mariaelena Torrisi             N/A                                 393402534586      eCura PRO            2025-04-23 00:00 
+152   LEAD-IRBEMA-00024       Sabina Pascuttini              passabi@gmail.com                   3318303852        eCura PRO            2025-04-10 00:00 
+153   LEAD-IRBEMA-00023       Raffaele Di martino            dimartino.raffaele@virgilio.it      3355292860        eCura PRO            2025-04-08 00:00 
+154   LEAD-IRBEMA-00020       Lead Anonimo - kimiamamisegua  kimiamamisegua@live.it              N/A               eCura PRO            2025-04-07 00:00 
+155   LEAD-IRBEMA-00021       Pierluigi Etzi                 pierluigietzi69@libero.it           N/A               eCura PRO            2025-04-07 00:00 
+156   LEAD-IRBEMA-00022       Tiziana Curto/ frisardi        tiziana.curto64@gmail.com           3356253956        eCura PRO            2025-04-07 00:00 
+157   LEAD-IRBEMA-00019       Elena Saglia                   elenasaglia@hotmail.com             3493416242        eCura PRO            2025-04-03 00:00 
+158   LEAD-IRBEMA-00018       Francesca Amaddeo              francescaamaddeo@gmail.com          N/A               eCura PRO            2025-04-02 00:00 
+159   LEAD-IRBEMA-00009       Anna Maria Avenia              aveniaannamaria@gmail.com           3280466133        eCura PRO            2025-03-31 00:00 
+160   LEAD-IRBEMA-00010       Alessandra PAVANELLO           alealzira@gmail.com                 34676198737       eCura PRO            2025-03-31 00:00 
+161   LEAD-IRBEMA-00011       Marilena Cardoni               marilenacardoni43@gmail.com         3382489222        eCura PRO            2025-03-31 00:00 
+162   LEAD-IRBEMA-00012       Angela Rotatori                angelarotatori@gmail.com            3478477590        eCura PRO            2025-03-31 00:00 
+163   LEAD-IRBEMA-00013       Emilio Martire                 emiliomartire1@gmail.com            3688049329        eCura PRO            2025-03-31 00:00 
+164   LEAD-IRBEMA-00014       Daniel Sutera                  daniel.sutera@virgilio.it           N/A               eCura PRO            2025-03-31 00:00 
+165   LEAD-IRBEMA-00015       Sig. Giuseppe Porretta         N/A                                 3662043768        eCura PRO            2025-03-31 00:00 
+166   LEAD-IRBEMA-00016       Alina Macii                    maciialina@gmail.com                3776759169        eCura PRO            2025-03-31 00:00 
+167   LEAD-IRBEMA-00017       Antonella Iacovitti            antonellaiacovitti@gmail.com        3385643188        eCura PRO            2025-03-31 00:00 
+168   LEAD-IRBEMA-00007       Manuela Poggi                  manuela.poggi1@icloud.com           N/A               eCura PRO            2025-03-22 00:00 
+169   LEAD-IRBEMA-00008       Katia Dondero                  katiadondero@gmail.com              N/A               eCura PRO            2025-03-22 00:00 
+170   LEAD-IRBEMA-00006       Giuseppe Porretta              N/A                                 3662043768        eCura PRO            2025-03-21 00:00 
+171   LEAD-IRBEMA-00005       Vivian Pontarini               vivianpontarin@gmail.com            N/A               eCura PRO            2025-03-20 00:00 
+172   LEAD-IRBEMA-00004       Maria Aldeghi                  vittoriaaldeghi@gmail.com           3332897971        eCura PRO            2025-03-13 00:00 
+173   LEAD-IRBEMA-00003       Anna Moro                      moro.annamaria@yahoo.it             3348389365        eCura PRO            2025-03-06 00:00 
+174   LEAD-IRBEMA-00001       Claudio Macchi                 claudio.macchi1@libero.it           3398183049        eCura PRO            2025-03-01 00:00 
+175   LEAD-IRBEMA-00002       Daniela Bisson                 bissondaniela2018@gmail.com         3336364976        eCura PRO            2025-03-01 00:00 
+
+============================================================================================================================================
+✅ Totale lead eCura: 175
+============================================================================================================================================
+
+Data estrazione: 2026-02-12 17:05 UTC
+File salvato: lead_ecura_filtrati.txt
