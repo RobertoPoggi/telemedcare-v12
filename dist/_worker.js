@@ -4340,13 +4340,14 @@ ${370+e.length}
                             <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Brochure</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">CM</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="11" class="py-8 text-center text-gray-400">
+                            <td colspan="12" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento lead...</p>
                             </td>
@@ -4621,7 +4622,7 @@ ${370+e.length}
             if (leads.length === 0) {
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="11" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
+                        <td colspan="12" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
                     </tr>
                 \`;
                 return;
@@ -4680,6 +4681,17 @@ ${370+e.length}
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
+                        <td class="py-3">
+                            <select 
+                                onchange="updateContactManager('\${lead.id}', this.value)"
+                                class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
+                                style="min-width: 80px;">
+                                <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
+                                <option value="OB" \${lead.cm === 'OB' ? 'selected' : ''}>OB</option>
+                                <option value="SR" \${lead.cm === 'SR' ? 'selected' : ''}>SR</option>
+                                <option value="RP" \${lead.cm === 'RP' ? 'selected' : ''}>RP</option>
+                            </select>
+                        </td>
                         <td class="py-3">
                             <div class="flex space-x-1">
                                 <button 
@@ -4983,6 +4995,36 @@ ${370+e.length}
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+        
+        async function updateContactManager(leadId, cm) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/cm\`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ cm: cm || null })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Aggiorna il valore in allLeads
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) {
+                        lead.cm = cm || null;
+                    }
+                    console.log(\`✅ Contact Manager aggiornato: \${leadId} → \${cm || 'nessuno'}\`);
+                } else {
+                    alert('❌ Errore aggiornamento CM: ' + result.error);
+                    loadLeadsData(); // Ricarica per ripristinare il valore precedente
+                }
+            } catch (error) {
+                console.error('❌ Errore aggiornamento CM:', error);
+                alert('❌ Errore di comunicazione: ' + error.message);
+                loadLeadsData(); // Ricarica per ripristinare il valore precedente
             }
         }
         
