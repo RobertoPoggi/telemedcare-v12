@@ -3642,7 +3642,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <select id="newServizio" required onchange="updatePrices()"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona servizio...</option>
-                                    <option value="eCura Family">eCura Family</option>
+                                    <option value="eCura FAMILY">eCura FAMILY</option>
                                     <option value="eCura PRO" selected>eCura PRO</option>
                                     <option value="eCura PREMIUM">eCura PREMIUM</option>
                                 </select>
