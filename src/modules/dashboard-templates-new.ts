@@ -3662,15 +3662,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Come ci hai conosciuto? *</label>
                                 <select id="newCanale" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
-                                    <option value="">Seleziona...</option>
-                                    <option value="Website">Sito Web eCura.it</option>
-                                    <option value="Partner">Tramite Partner</option>
-                                    <option value="Networking">Networking / Passaparola</option>
-                                    <option value="Phone">Chiamata Telefonica</option>
-                                    <option value="Email">Email</option>
-                                    <option value="Irbema">Irbema</option>
-                                    <option value="AON">AON</option>
-                                    <option value="Test" selected>Test</option>
+                                    <option value="">Seleziona fonte...</option>
+                                    <option value="Privati IRBEMA">Privati IRBEMA</option>
+                                    <option value="Form eCura">Form eCura</option>
+                                    <option value="Form eCura x Test">Form eCura x Test</option>
+                                    <option value="B2B IRBEMA">B2B IRBEMA</option>
+                                    <option value="Sito web Medica GB">Sito web Medica GB</option>
+                                    <option value="NETWORKING">NETWORKING</option>
                                 </select>
                             </div>
                         </div>
