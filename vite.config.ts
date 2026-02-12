@@ -59,8 +59,8 @@ function injectVersionPlugin() {
         
         console.log(`🏷️  Injecting version: ${JSON.stringify(version)}`)
         
-        // Inject into contract-signature.html
-        const targetFile = join(distDir, 'contract-signature.html')
+        // Inject into firma-contratto.html
+        const targetFile = join(distDir, 'firma-contratto.html')
         if (existsSync(targetFile)) {
           let content = readFileSync(targetFile, 'utf8')
           
@@ -75,7 +75,7 @@ function injectVersionPlugin() {
           
           content = content.replace('</head>', `${versionMeta}\n</head>`)
           writeFileSync(targetFile, content)
-          console.log(`✅ Version injected in contract-signature.html`)
+          console.log(`✅ Version injected in firma-contratto.html`)
         } else {
           console.warn(`⚠️  File not found: ${targetFile}`)
         }
