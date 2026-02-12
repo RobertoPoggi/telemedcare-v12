@@ -2510,22 +2510,60 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function updateServicesBreakdown(leads) {
-            const total = leads.length || 1;
+            const services = {};
             
-            // TUTTI i lead sono eCura PRO
-            const html = \`
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm font-medium">eCura PRO</span>
-                        <span class="text-sm font-bold">\${total} (100%)</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-purple-500 h-2 rounded-full" style="width: 100%"></div>
-                    </div>
-                </div>
-            \`;
+            // Conta i servizi effettivi dai lead
+            leads.forEach(l => {
+                // PRIORITY: servizio > tipoServizio > default
+                let service = l.servizio || l.tipoServizio || 'eCura PRO';
+                
+                // Normalizza i nomi dei servizi per consistenza
+                service = service.trim();
+                
+                // Normalizza varianti del nome
+                if (service.toLowerCase().includes('family')) {
+                    service = 'eCura FAMILY';
+                } else if (service.toLowerCase().includes('premium')) {
+                    service = 'eCura PREMIUM';
+                } else if (service.toLowerCase().includes('pro')) {
+                    service = 'eCura PRO';
+                } else if (service.toLowerCase().includes('professional')) {
+                    service = 'eCura PROFESSIONAL';
+                }
+                
+                services[service] = (services[service] || 0) + 1;
+            });
+            
+            // Debug: mostra servizi rilevati
+            console.log('📊 Servizi rilevati:', services);
+            
+            const total = leads.length || 1;
+            const colors = {
+                'eCura FAMILY': 'bg-green-500',
+                'eCura PRO': 'bg-purple-500',
+                'eCura PREMIUM': 'bg-blue-500',
+                'eCura PROFESSIONAL': 'bg-indigo-500'
+            };
 
-            document.getElementById('servicesBreakdown').innerHTML = html;
+            const html = Object.entries(services)
+                .sort(([,a], [,b]) => b - a) // Ordina per count decrescente
+                .map(([service, count]) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = colors[service] || 'bg-gray-500';
+                    return \`
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium">\${service}</span>
+                                <span class="text-sm font-bold">\${count} (\${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+
+            document.getElementById('servicesBreakdown').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun servizio disponibile</p>';
         }
 
         function updatePlansBreakdown(leads) {
