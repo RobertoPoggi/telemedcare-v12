@@ -2521,14 +2521,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 service = service.trim();
                 
                 // Normalizza varianti del nome
+                // IMPORTANTE: L'ordine è importante! Controlla "premium" prima di "pro"
                 if (service.toLowerCase().includes('family')) {
                     service = 'eCura FAMILY';
                 } else if (service.toLowerCase().includes('premium')) {
                     service = 'eCura PREMIUM';
                 } else if (service.toLowerCase().includes('pro')) {
                     service = 'eCura PRO';
-                } else if (service.toLowerCase().includes('professional')) {
-                    service = 'eCura PROFESSIONAL';
                 }
                 
                 services[service] = (services[service] || 0) + 1;
@@ -2541,8 +2540,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const colors = {
                 'eCura FAMILY': 'bg-green-500',
                 'eCura PRO': 'bg-purple-500',
-                'eCura PREMIUM': 'bg-blue-500',
-                'eCura PROFESSIONAL': 'bg-indigo-500'
+                'eCura PREMIUM': 'bg-blue-500'
             };
 
             const html = Object.entries(services)
