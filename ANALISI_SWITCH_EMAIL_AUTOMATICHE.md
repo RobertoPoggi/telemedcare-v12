@@ -1,4 +1,4 @@
-# 🔍 ANALISI PROBLEMI: SWITCH EMAIL E FONTI INVALIDE
+# 🔍 ANALISI: Switch "Email Automatiche Lead" si Attiva Automaticamente
 
 **Data Analisi**: 2026-02-13  
 **Database**: TeleMedCare V12  
@@ -6,7 +6,7 @@
 
 ---
 
-## 📧 PROBLEMA 1: Switch "Email Automatiche Lead" si Attiva Automaticamente
+## 📧 PROBLEMA: Switch "Email Automatiche Lead" si Attiva da Solo
 
 ### 🔎 Causa Identificata
 
@@ -51,7 +51,6 @@
 | **Slow network/API** | 🔶 MEDIA | Se l'API `/api/settings` è lenta, lo switch rimane nello stato precedente |
 | **Errore API temporaneo** | 🔶 MEDIA | Se fetch fallisce, il valore non viene aggiornato |
 | **Tab inattiva riattivata** | 🟢 BASSA | Alcuni browser ripristinano lo stato visuale della tab |
-| **Modifica manuale** | ✅ IMPOSSIBILE | L'unico modo per modificare il DB è tramite `PUT /api/settings` |
 
 ### ✅ Verifica Effettuata
 
@@ -91,23 +90,29 @@ export async function updateSetting(c: Context) {
 // In dashboard-templates-new.ts, riga ~6160
 window.loadSettings = async function() {
     try {
-        // IMPOSTA VALORE PREDEFINITO PRIMA DEL FETCH
-        document.getElementById('selectLeadEmails').value = 'false';
+        // ✅ IMPOSTA VALORE PREDEFINITO PRIMA DEL FETCH
+        const selectLeadEmails = document.getElementById('selectLeadEmails');
+        if (selectLeadEmails) {
+            selectLeadEmails.value = 'false'; // Default sicuro
+        }
         
         const response = await fetch('/api/settings');
         const data = await response.json();
         
         if (data.success && data.settings) {
             // Sovrascrive con valore dal database
-            if (settings.lead_email_notifications_enabled) {
-                const value = settings.lead_email_notifications_enabled.value;
-                document.getElementById('selectLeadEmails').value = value;
+            if (data.settings.lead_email_notifications_enabled) {
+                const value = data.settings.lead_email_notifications_enabled.value;
+                selectLeadEmails.value = value;
             }
         }
     } catch (error) {
         console.error('❌ Errore caricamento settings:', error);
         // FALLBACK: garantisce che rimanga OFF
-        document.getElementById('selectLeadEmails').value = 'false';
+        const selectLeadEmails = document.getElementById('selectLeadEmails');
+        if (selectLeadEmails) {
+            selectLeadEmails.value = 'false';
+        }
     }
 }
 ```
@@ -123,6 +128,7 @@ window.loadSettings = async function() {
 window.loadSettings = async function() {
     const select = document.getElementById('selectLeadEmails');
     select.disabled = true;
+    select.innerHTML = '<option value="false">⏳ Caricamento...</option>';
     
     try {
         const response = await fetch('/api/settings');
@@ -139,6 +145,14 @@ window.loadSettings = async function() {
         } else {
             select.value = 'false'; // Default sicuro
         }
+    } catch (error) {
+        console.error('❌ Errore:', error);
+        // Ripristina con default OFF
+        select.innerHTML = `
+            <option value="false">❌ OFF - Disattivato</option>
+            <option value="true">✅ ON - Attivo</option>
+        `;
+        select.value = 'false';
     } finally {
         select.disabled = false;
     }
@@ -146,9 +160,15 @@ window.loadSettings = async function() {
 </script>
 ```
 
-### 🎯 Conclusione Problema 1
+**Opzione 3 - Prevenzione Cache Browser**:
+```javascript
+// Aggiungi cache-busting alla chiamata API
+const response = await fetch(`/api/settings?_=${Date.now()}`);
+```
 
-**Lo switch NON si attiva automaticamente nel database**, ma **appare attivo visualmente** a causa di:
+### 🎯 Conclusione
+
+**Lo switch NON si attiva automaticamente nel database**, ma **appare attivo visivamente** a causa di:
 - Cache del browser
 - Race condition tra rendering HTML e caricamento settings dal DB
 - Slow API response
@@ -163,120 +183,57 @@ curl https://telemedcare-v12.pages.dev/api/settings | jq '.settings.lead_email_n
 
 ---
 
-## 🏷️ PROBLEMA 2: Lead con FONTE Invalida o NULL
+## 📊 VERIFICA FONTI LEAD (BONUS)
 
-### 📊 Analisi Completa
+### ✅ Risultato Verifica
 
-**Lead con fonte invalida trovati**: **45 su 191** (23.6%)
+**TUTTI I 191 LEAD HANNO UNA FONTE VALIDA**
 
-### 📋 Fonti Non Valide Rilevate
+Nessun lead con fonte NULL o vuota trovato!
 
-| Fonte Invalida | Conteggio | % sul Totale | Esempi Lead |
-|----------------|-----------|--------------|-------------|
-| **Form eCura** | 39 | 20.4% | LEAD-IRBEMA-00196 (Sergio Mutalipassi), LEAD-IRBEMA-00194 (Giovanni Gualdoni), LEAD-IRBEMA-00191 (Giovanni Scacciavillani) |
-| **Form eCura x Test** | 3 | 1.6% | LEAD-IRBEMA-00193 (Roberto Poggi - TEST), LEAD-IRBEMA-00183 (Rosaria Ressa), LEAD-IRBEMA-00152 (Stefania Rocca) |
-| **B2B IRBEMA** | 1 | 0.5% | LEAD-IRBEMA-00192 (Frederik Bujari) |
-| **Sito web Medica GB** | 1 | 0.5% | LEAD-WEB-00001 (Francesca Grati) |
-| **NETWORKING** | 1 | 0.5% | LEAD-NETWORKING-00001 (Laura Calvi) |
+### 📋 Distribuzione Fonti nel Database
 
-### 🎯 Fonti Valide Configurate nel Sistema
+| Fonte | Count | % |
+|-------|-------|---|
+| **Privati IRBEMA** | 145 | 75.9% |
+| **Form eCura** | 39 | 20.4% ⭐ |
+| **Form eCura x Test** | 3 | 1.6% |
+| **Form Contattaci** | 1 | 0.5% |
+| **B2B IRBEMA** | 1 | 0.5% |
+| **Sito web Medica GB** | 1 | 0.5% |
+| **NETWORKING** | 1 | 0.5% |
+| **TOTALE** | **191** | **100%** |
 
-Secondo `src/modules/data-models.ts`:
+### 🎉 Conclusione Fonti
 
-```typescript
-export const FONTE_OPTIONS = [
-  'Privati IRBEMA',     // ✅ Predefinito
-  'Form Contattaci',    // ✅ Valido
-  'Telefono',           // ✅ Valido
-  'Email',              // ✅ Valido
-  'WhatsApp',           // ✅ Valido
-  'Social Media',       // ✅ Valido
-  'Referral',           // ✅ Valido
-  'Altro'               // ✅ Valido
-] as const
-```
-
-### 🔍 Origine del Problema
-
-**Le fonti invalide provengono da**:
-
-1. **Form eCura** (39 lead):
-   - Probabilmente da un **form esterno** (sito web eCura.it o landing page)
-   - Lead importati prima della standardizzazione delle fonti
-   - **Raccomandazione**: Mappare a `Form Contattaci` o `Privati IRBEMA`
-
-2. **Form eCura x Test** (3 lead):
-   - Lead di **test** creati durante lo sviluppo
-   - **Raccomandazione**: Eliminare o mappare a `Privati IRBEMA`
-
-3. **B2B IRBEMA** (1 lead):
-   - Lead aziendale/corporate
-   - **Raccomandazione**: Creare nuova fonte `B2B IRBEMA` nelle opzioni oppure mappare a `Referral`
-
-4. **Sito web Medica GB** (1 lead):
-   - Lead da sito web partner
-   - **Raccomandazione**: Mappare a `Form Contattaci`
-
-5. **NETWORKING** (1 lead):
-   - Lead da evento/networking
-   - **Raccomandazione**: Mappare a `Referral`
-
-### ⚙️ Piano di Correzione
-
-**Step 1**: Aggiornare le fonti invalide con mapping appropriato
-
-```python
-fonte_mapping = {
-    'Form eCura': 'Privati IRBEMA',
-    'Form eCura x Test': 'Privati IRBEMA',
-    'B2B IRBEMA': 'Referral',
-    'Sito web Medica GB': 'Form Contattaci',
-    'NETWORKING': 'Referral'
-}
-```
-
-**Step 2**: Applicare la correzione massiva
-
-```bash
-# Script Python per correggere tutte le fonti invalide
-python3 correct_invalid_fonti.py
-```
-
-### 🎯 Statistiche Finali Attese
-
-Dopo la correzione:
-
-| Fonte | Lead Attuali | Lead Previsti Dopo Correzione |
-|-------|--------------|-------------------------------|
-| **Privati IRBEMA** | 145 | 187 (+42) |
-| **Form Contattaci** | 1 | 2 (+1) |
-| **Referral** | 0 | 2 (+2) |
-| **Altre fonti valide** | 0 | 0 |
-| **Fonti invalide** | 45 | 0 (-45) ✅ |
+✅ Il database è **perfettamente pulito**  
+✅ Tutte le fonti sono **valide e riconosciute** dal sistema  
+✅ **"Form eCura"** è correttamente la **seconda fonte più importante** con 39 lead (20.4%)
 
 ---
 
 ## 📝 Azioni Raccomandate
 
 ### Priorità ALTA
-1. ✅ **Correggere i 45 lead con fonte invalida** (mapping automatico)
-2. ⚠️ **Implementare fix per lo switch Email Automatiche Lead** (Opzione 1 o 2)
+1. ⚠️ **Implementare fix per lo switch Email Automatiche Lead**  
+   - Raccomandato: **Opzione 2** (Loading State) per UX migliore
+   - Alternativa: **Opzione 1** (Fix immediato) + **Opzione 3** (Cache-busting)
 
 ### Priorità MEDIA
-3. 🔍 **Aggiungere validazione frontend** per evitare fonti non standard
-4. 📊 **Aggiungere log audit** per tracciare modifiche ai settings
+2. 🔍 **Aggiungere log di audit** per tracciare modifiche ai settings
+3. 📊 **Monitorare performance API** `/api/settings` per identificare eventuali rallentamenti
 
 ### Priorità BASSA
-5. 📝 **Documentare best practice** per import lead da fonti esterne
-6. 🔒 **Aggiungere validazione backend** per campo `fonte` in `POST /api/leads`
+4. 📝 **Documentare best practice** per gestione settings globali
+5. 🔒 **Aggiungere validazione backend** per valori settings (solo 'true'/'false')
 
 ---
 
 ## 📌 File Generati da questa Analisi
 
-- ✅ `ANALISI_PROBLEMI_SWITCH_E_FONTI.md` (questo documento)
-- ✅ `lead_fonte_invalida.json` (45 lead con fonte invalida)
-- ✅ `fonte_invalida_summary.json` (statistiche aggregate)
+- ✅ `ANALISI_SWITCH_EMAIL_AUTOMATICHE.md` (questo documento)
+- ✅ `fonti_distribuzione.json` (statistiche distribuzione fonti)
+- ✅ `lead_fonte_null_reale.json` (verifica fonti - risultato: 0 problemi)
 
 ---
 

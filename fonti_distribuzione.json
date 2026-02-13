@@ -1,7 +1,9 @@
 {
-  "total_invalid": 45,
-  "unique_invalid_sources": 5,
-  "sources_breakdown": {
+  "total_leads": 191,
+  "unique_sources": 7,
+  "distribution": {
+    "Privati IRBEMA": 145,
+    "Form Contattaci": 1,
     "Form eCura": 39,
     "Form eCura x Test": 3,
     "B2B IRBEMA": 1,
