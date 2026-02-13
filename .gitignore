@@ -40,3 +40,7 @@ documents/proforma/*.docx
 documents/proforma/*.pdf
 documents/proforma/*.backup
 *.tar.gz
+
+# HubSpot check scripts (contain tokens)
+check_hubspot*.py
+hubspot_*
