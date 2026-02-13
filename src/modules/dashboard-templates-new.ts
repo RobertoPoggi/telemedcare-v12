@@ -1282,7 +1282,7 @@ export const dashboard = `<!DOCTYPE html>
                         return \`
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-3 text-sm">
-                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${lead.id}">\${formatLeadId(lead.id)}</code>
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${escapeHtml(lead.id)}">\${formatLeadId(lead.id)}</code>
                                 </td>
                                 <td class="py-3 text-sm">
                                     <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
@@ -2725,7 +2725,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
                 return \`
-                    <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${lead.id}">
+                    <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
                         <td class="py-3 text-sm text-gray-600 font-medium">\${leads.length - index}</td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
