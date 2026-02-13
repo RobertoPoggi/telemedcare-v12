@@ -1063,8 +1063,8 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Analisi Lead: Servizi, Piani e Canali (Compattati su 1 riga) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Analisi Lead: Servizi, Piani, Canali e Fonti (Compattati su 1 riga) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Distribuzione Servizi -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
@@ -1088,6 +1088,17 @@ export const dashboard = `<!DOCTYPE html>
             </div>
 
             <!-- Distribuzione per Canale -->\n            <div class=\"bg-white p-6 rounded-xl shadow-sm\">\n                <h3 class=\"text-lg font-bold text-gray-800 mb-4 flex items-center\">\n                    <i class=\"fas fa-network-wired text-orange-500 mr-2\"></i>\n                    Distribuzione per Canale\n                </h3>\n                <div id=\"channelsDistribution\" class=\"space-y-3\">\n                    <!-- Distribuzione canali verrà popolata dinamicamente -->\n                </div>\n            </div>
+
+            <!-- Distribuzione per Fonte -->
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-source text-teal-500 mr-2"></i>
+                    Distribuzione per Fonte
+                </h3>
+                <div id="fontesDistribution" class="space-y-3">
+                    <!-- Distribuzione fonti verrà popolata dinamicamente -->
+                </div>
+            </div>
         </div>
 
         <!-- Ultimi Lead Ricevuti -->
@@ -1588,6 +1599,56 @@ export const dashboard = `<!DOCTYPE html>
             }
             
             document.getElementById('channelsDistribution').innerHTML = html;
+        }
+
+        function updateFontesDistribution(leads) {
+            // Analizza le fonti dei lead
+            const fonteCounts = {};
+            const fonteColors = {
+                'Privati IRBEMA': 'bg-blue-500',
+                'Form eCura': 'bg-green-500',
+                'Form eCura x Test': 'bg-yellow-500',
+                'B2B IRBEMA': 'bg-purple-500',
+                'Sito web Medica GB': 'bg-pink-500',
+                'NETWORKING': 'bg-indigo-500',
+                'Form Contattaci': 'bg-teal-500'
+            };
+            
+            leads.forEach(lead => {
+                const fonte = lead.fonte || 'Non specificata';
+                fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
+            });
+            
+            console.log('📊 Distribuzione Fonti:', fonteCounts);
+            
+            const total = leads.length || 1;
+            let html = '';
+            
+            // Ordina per count discendente
+            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => b[1] - a[1]);
+            
+            if (sortedFontes.length === 0) {
+                html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
+            } else {
+                sortedFontes.forEach(([fonte, count]) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = fonteColors[fonte] || 'bg-gray-500';
+                    
+                    html += \`
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">\${fonte}</span>
+                                <span class="text-sm font-bold text-gray-900">\${count} (\${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
+                            </div>
+                        </div>
+                    \`;
+                });
+            }
+            
+            document.getElementById('fontesDistribution').innerHTML = html;
         }
 
         // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
@@ -2675,13 +2736,22 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
             });
             
-            // Aggiorna i contatori nella dashboard
-            document.getElementById('sourcePrivatiIRBEMA').textContent = privatiIRBEMACount;
-            document.getElementById('sourceFormECura').textContent = formECuraCount;
-            document.getElementById('sourceFormECuraTest').textContent = formECuraTestCount;
-            document.getElementById('sourceB2BIRBEMA').textContent = b2bIRBEMACount;
-            document.getElementById('sourceSitoWebMedicaGB').textContent = sitoWebMedicaGBCount;
-            document.getElementById('sourceNetworking').textContent = networkingCount;
+            // Calcola totale e percentuali
+            const totalLeads = leads.length || 1;
+            
+            // Aggiorna i contatori nella dashboard con percentuale
+            document.getElementById('sourcePrivatiIRBEMA').textContent = 
+                privatiIRBEMACount + ' (' + Math.round((privatiIRBEMACount / totalLeads) * 100) + '%)';
+            document.getElementById('sourceFormECura').textContent = 
+                formECuraCount + ' (' + Math.round((formECuraCount / totalLeads) * 100) + '%)';
+            document.getElementById('sourceFormECuraTest').textContent = 
+                formECuraTestCount + ' (' + Math.round((formECuraTestCount / totalLeads) * 100) + '%)';
+            document.getElementById('sourceB2BIRBEMA').textContent = 
+                b2bIRBEMACount + ' (' + Math.round((b2bIRBEMACount / totalLeads) * 100) + '%)';
+            document.getElementById('sourceSitoWebMedicaGB').textContent = 
+                sitoWebMedicaGBCount + ' (' + Math.round((sitoWebMedicaGBCount / totalLeads) * 100) + '%)';
+            document.getElementById('sourceNetworking').textContent = 
+                networkingCount + ' (' + Math.round((networkingCount / totalLeads) * 100) + '%)';
             
             // Log debug se ci sono fonti non categorizzate
             if (altroCount > 0) {
