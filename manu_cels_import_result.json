@@ -1,0 +1,55 @@
+{
+  "success": true,
+  "lead_id": "LEAD-MANUAL-1771019687987",
+  "nome": "Manu Cels Simone",
+  "email": "manucels.simone.1771019687@noreply.telemedcare.it",
+  "payload": {
+    "nomeRichiedente": "Manu Cels",
+    "cognomeRichiedente": "Simone",
+    "email": "manucels.simone.1771019687@noreply.telemedcare.it",
+    "fonte": "Privati IRBEMA",
+    "cm": "OB",
+    "status": "NON INTERESSATO",
+    "note": "📅 Data arrivo richiesta: 2025-09-18 00:00:00\n📧 Data invio offerta: 2025-09-18 00:00:00\n📝 NOTE SR: inviato whtsapp. Scritto il 23/09 hanno preso una badante\n⚠️ STATO ORIGINALE: DA NON CONTATTARE\n🔴 LEAD SENZA CONTATTI - Importato per completezza"
+  },
+  "response": {
+    "success": true,
+    "message": "Lead creato con successo",
+    "id": "LEAD-MANUAL-1771019687987",
+    "leadId": "LEAD-MANUAL-1771019687987",
+    "lead": {
+      "id": "LEAD-MANUAL-1771019687987",
+      "nomeRichiedente": "Manu Cels",
+      "cognomeRichiedente": "Simone",
+      "email": "manucels.simone.1771019687@noreply.telemedcare.it"
+    },
+    "emails": {
+      "notifica": {
+        "sent": true,
+        "error": null
+      },
+      "brochure": {
+        "sent": false,
+        "error": null
+      },
+      "contratto": {
+        "sent": false,
+        "error": null
+      }
+    },
+    "emailAutomation": {
+      "notifica": {
+        "sent": true,
+        "error": null
+      },
+      "brochure": {
+        "sent": false,
+        "error": null
+      },
+      "contratto": {
+        "sent": false,
+        "error": null
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-02-13 21:54:06",
+  "total": 13,
+  "successful": 13,
+  "failed": 0,
+  "successful_updates": [
+    {
+      "lead_id": "LEAD-IRBEMA-00037",
+      "nome": "Isabella Consoloni",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00040",
+      "nome": "CARLA MAGLIOCCHETTI",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00052",
+      "nome": "GIOVANNI LOLLI",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00057",
+      "nome": "Dorella Soatto",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00067",
+      "nome": "Michele Amoruso",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00071",
+      "nome": "Antonella Barbone",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00074",
+      "nome": "Claudio La Viola",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00099",
+      "nome": "Maria Cristina Sorcini",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00100",
+      "nome": "Norma Zanetta",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00101",
+      "nome": "Luca Nadali",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00103",
+      "nome": "Giuliano Rapelli",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00104",
+      "nome": "Eros Coghi",
+      "status_code": 200
+    },
+    {
+      "lead_id": "LEAD-IRBEMA-00106",
+      "nome": "Maria Maglione",
+      "status_code": 200
+    }
+  ],
+  "failed_updates": []
+}

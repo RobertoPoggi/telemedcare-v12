@@ -1,0 +1,62 @@
+[
+  {
+    "riga_excel": 7,
+    "numero": 5,
+    "data": "2026-01-15 00:00:00",
+    "ora": "10.15",
+    "nome": "Giansanto Rizzotti",
+    "telefono": "3276246536",
+    "email": "giansanto@rizzotti.it",
+    "canale": "Privato",
+    "stato": "Confermato",
+    "note": ""
+  },
+  {
+    "riga_excel": 8,
+    "numero": 6,
+    "data": "2026-01-15 00:00:00",
+    "ora": "14.30",
+    "nome": "Deanna Mantovani",
+    "telefono": "3454431743",
+    "email": "deannamant@outlook.it",
+    "canale": "privato",
+    "stato": "Confermato",
+    "note": "per avere un'idea"
+  },
+  {
+    "riga_excel": 9,
+    "numero": 7,
+    "data": "2026-01-23 00:00:00",
+    "ora": "10.00",
+    "nome": "Tafaro",
+    "telefono": "3358303589",
+    "email": "t.tafaro@virgilio.it",
+    "canale": "Privato",
+    "stato": "Da confermare",
+    "note": "copire meglio chi siamo, semestrale, lazio"
+  },
+  {
+    "riga_excel": 10,
+    "numero": 8,
+    "data": "2026-01-19 00:00:00",
+    "ora": "10.00",
+    "nome": "Francesco Pepe",
+    "telefono": "3317545440",
+    "email": "cicciopepe@libero.it",
+    "canale": "Privato",
+    "stato": "Da confermare",
+    "note": ""
+  },
+  {
+    "riga_excel": 11,
+    "numero": 9,
+    "data": "2026-01-19 00:00:00",
+    "ora": "11.00",
+    "nome": "Maria Ricciardelli",
+    "telefono": "3496428227",
+    "email": "ricciardelli.ela@gmail.com",
+    "canale": "Privato",
+    "stato": "Da confermare",
+    "note": "illustrazione prodotti e prezzi"
+  }
+]
