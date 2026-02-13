@@ -1,0 +1,218 @@
+
+==============================================================================================================
+🔍 RICERCA 12 LEAD IN HUBSPOT CON PAGINAZIONE COMPLETA
+==============================================================================================================
+
+📥 Scaricamento TUTTI i contatti da HubSpot con paginazione...
+   Pagina 1: 100 contatti (totale finora: 100, totale HS: N/A)
+   Pagina 2: 100 contatti (totale finora: 200, totale HS: N/A)
+   Pagina 3: 100 contatti (totale finora: 300, totale HS: N/A)
+   Pagina 4: 100 contatti (totale finora: 400, totale HS: N/A)
+   Pagina 5: 100 contatti (totale finora: 500, totale HS: N/A)
+   Pagina 6: 100 contatti (totale finora: 600, totale HS: N/A)
+   Pagina 7: 100 contatti (totale finora: 700, totale HS: N/A)
+   Pagina 8: 100 contatti (totale finora: 800, totale HS: N/A)
+   Pagina 9: 100 contatti (totale finora: 900, totale HS: N/A)
+   Pagina 10: 100 contatti (totale finora: 1000, totale HS: N/A)
+   Pagina 11: 100 contatti (totale finora: 1100, totale HS: N/A)
+   Pagina 12: 100 contatti (totale finora: 1200, totale HS: N/A)
+   Pagina 13: 100 contatti (totale finora: 1300, totale HS: N/A)
+   Pagina 14: 100 contatti (totale finora: 1400, totale HS: N/A)
+   Pagina 15: 100 contatti (totale finora: 1500, totale HS: N/A)
+   Pagina 16: 100 contatti (totale finora: 1600, totale HS: N/A)
+   Pagina 17: 100 contatti (totale finora: 1700, totale HS: N/A)
+   Pagina 18: 100 contatti (totale finora: 1800, totale HS: N/A)
+   Pagina 19: 100 contatti (totale finora: 1900, totale HS: N/A)
+   Pagina 20: 100 contatti (totale finora: 2000, totale HS: N/A)
+   Pagina 21: 100 contatti (totale finora: 2100, totale HS: N/A)
+   Pagina 22: 100 contatti (totale finora: 2200, totale HS: N/A)
+   Pagina 23: 100 contatti (totale finora: 2300, totale HS: N/A)
+   Pagina 24: 100 contatti (totale finora: 2400, totale HS: N/A)
+   Pagina 25: 100 contatti (totale finora: 2500, totale HS: N/A)
+   Pagina 26: 100 contatti (totale finora: 2600, totale HS: N/A)
+   Pagina 27: 100 contatti (totale finora: 2700, totale HS: N/A)
+   Pagina 28: 100 contatti (totale finora: 2800, totale HS: N/A)
+   Pagina 29: 100 contatti (totale finora: 2900, totale HS: N/A)
+   Pagina 30: 100 contatti (totale finora: 3000, totale HS: N/A)
+   Pagina 31: 100 contatti (totale finora: 3100, totale HS: N/A)
+   Pagina 32: 100 contatti (totale finora: 3200, totale HS: N/A)
+   Pagina 33: 100 contatti (totale finora: 3300, totale HS: N/A)
+   Pagina 34: 100 contatti (totale finora: 3400, totale HS: N/A)
+   Pagina 35: 100 contatti (totale finora: 3500, totale HS: N/A)
+   Pagina 36: 100 contatti (totale finora: 3600, totale HS: N/A)
+   Pagina 37: 100 contatti (totale finora: 3700, totale HS: N/A)
+   Pagina 38: 100 contatti (totale finora: 3800, totale HS: N/A)
+   Pagina 39: 100 contatti (totale finora: 3900, totale HS: N/A)
+   Pagina 40: 100 contatti (totale finora: 4000, totale HS: N/A)
+   Pagina 41: 100 contatti (totale finora: 4100, totale HS: N/A)
+   Pagina 42: 100 contatti (totale finora: 4200, totale HS: N/A)
+   Pagina 43: 100 contatti (totale finora: 4300, totale HS: N/A)
+   Pagina 44: 100 contatti (totale finora: 4400, totale HS: N/A)
+   Pagina 45: 88 contatti (totale finora: 4488, totale HS: N/A)
+✅ Totale contatti scaricati: 4488
+
+==============================================================================================================
+🔍 RICERCA DEI 12 LEAD IMPORTATI
+==============================================================================================================
+
+ 1. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Laura Bianchi
+   ID DB: LEAD-MANUAL-1770946050424
+   Telefono: 3409876543
+   Email: N/A
+   ❌ NON TROVATO
+
+ 2. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Paola Scarpin
+   ID DB: LEAD-MANUAL-1770946051660
+   Telefono: 3403686122
+   Email: N/A
+   ❌ NON TROVATO
+
+ 3. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Adriana Mulassano
+   ID DB: LEAD-MANUAL-1770946054097
+   Telefono: 3387205351
+   Email: N/A
+   ❌ NON TROVATO
+
+ 4. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Maria Chiara Baldassini
+   ID DB: LEAD-MANUAL-1770946055276
+   Telefono: 3922352447
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 671621029092
+      Nome: Maria Chiara Baldassini
+      Email: chiara.baldassini@gmail.com
+      Phone: 
+
+ 5. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Andrea Mercuri
+   ID DB: LEAD-MANUAL-1770946057712
+   Telefono: 366156266
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 672179573992
+      Nome: Andrea Mercuri
+      Email: amercuri93@gmail.com
+      Phone: None
+
+ 6. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Enzo Pedron
+   ID DB: LEAD-MANUAL-1770946058870
+   Telefono: 3484717119
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 676141858038
+      Nome: enzo Pedron
+      Email: enzo.pedron.62@gmail.com
+      Phone: +393484717119
+
+ 7. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Andrea Dindo
+   ID DB: LEAD-MANUAL-1770946060015
+   Telefono: N/A
+   Email: andreadindo1@gmail.com
+   ❌ NON TROVATO
+
+ 8. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Francesco Egiziano
+   ID DB: LEAD-MANUAL-1770946061218
+   Telefono: 3382933088
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 678450709720
+      Nome: Francesco Egiziano
+      Email: egizianofrancesco@libero.it
+      Phone: 3382933088
+
+ 9. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Mary De Sanctis
+   ID DB: LEAD-MANUAL-1770946062533
+   Telefono: 3396748762
+   Email: N/A
+   ❌ NON TROVATO
+
+10. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Giovanna Giordano
+   ID DB: LEAD-MANUAL-1770946063740
+   Telefono: 3381084344
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 682330208477
+      Nome: Giovanna Giordano
+      Email: giordano.gnn@gmail.com
+      Phone: 
+
+11. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Marco Olivieri
+   ID DB: LEAD-MANUAL-1770946064859
+   Telefono: 348828024
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 684675691736
+      Nome: Marco Olivieri
+      Email: marco.olivieri@baslerweb.com
+      Phone: None
+
+12. ────────────────────────────────────────────────────────────────────────────────────────────────────
+   📋 Alberto Avanzi
+   ID DB: LEAD-MANUAL-1770946067171
+   Telefono: 3295954873
+   Email: N/A
+   ✅ TROVATO! (1 match)
+
+   ⭐ Match 1:
+      HubSpot ID: 688331078853
+      Nome: Alberto Avanzi
+      Email: albertoavanzi@studioavanzi.it
+      Phone: +393295954873
+
+==============================================================================================================
+📊 RISULTATI FINALI:
+==============================================================================================================
+✅ Trovati in HubSpot: 7/12
+❌ Non trovati: 5/12
+📊 Totale contatti HubSpot: 4488
+==============================================================================================================
+
+✅ LEAD TROVATI IN HUBSPOT (7):
+
+   ✓ Maria Chiara Baldassini        | DB: LEAD-MANUAL-1770946055276           | HS: 671621029092
+      Nome HS: Maria Chiara Baldassini
+   ✓ Andrea Mercuri                 | DB: LEAD-MANUAL-1770946057712           | HS: 672179573992
+      Nome HS: Andrea Mercuri
+   ✓ Enzo Pedron                    | DB: LEAD-MANUAL-1770946058870           | HS: 676141858038
+      Nome HS: enzo Pedron
+   ✓ Francesco Egiziano             | DB: LEAD-MANUAL-1770946061218           | HS: 678450709720
+      Nome HS: Francesco Egiziano
+   ✓ Giovanna Giordano              | DB: LEAD-MANUAL-1770946063740           | HS: 682330208477
+      Nome HS: Giovanna Giordano
+   ✓ Marco Olivieri                 | DB: LEAD-MANUAL-1770946064859           | HS: 684675691736
+      Nome HS: Marco Olivieri
+   ✓ Alberto Avanzi                 | DB: LEAD-MANUAL-1770946067171           | HS: 688331078853
+      Nome HS: Alberto Avanzi
+
+❌ LEAD NON TROVATI (5):
+
+   ✗ Laura Bianchi                  | DB: LEAD-MANUAL-1770946050424
+   ✗ Paola Scarpin                  | DB: LEAD-MANUAL-1770946051660
+   ✗ Adriana Mulassano              | DB: LEAD-MANUAL-1770946054097
+   ✗ Andrea Dindo                   | DB: LEAD-MANUAL-1770946060015
+   ✗ Mary De Sanctis                | DB: LEAD-MANUAL-1770946062533
+
+==============================================================================================================
+

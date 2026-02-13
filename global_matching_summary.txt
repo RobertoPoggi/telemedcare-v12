@@ -1,0 +1,70 @@
+================================================================================
+🎯 MATCHING GLOBALE HUBSPOT - REPORT FINALE
+================================================================================
+
+📊 STATISTICHE GENERALI:
+- Lead processati:        173
+- ✅ Trovati in HubSpot:  98 (56.6%)
+- ❌ Non trovati:         75 (43.4%)
+- 🔄 Aggiornati con successo: 98
+- ❌ Errori aggiornamento: 0
+
+================================================================================
+✅ LEAD AGGIORNATI CON HUBSPOT ID (98)
+================================================================================
+
+I seguenti 98 lead sono stati abbinati con successo a HubSpot e il loro 
+external_source_id è stato aggiornato nel database TeleMedCare:
+
+1.  Alberto Avanzi → HS 688331078853
+2.  Marco Olivieri → HS 684675691736
+3.  Giovanna Giordano → HS 682330208477
+4.  Francesco Egiziano → HS 678450709720
+5.  Enzo Pedron → HS 676141858038
+6.  Andrea Mercuri → HS 672179573992
+7.  Maria Chiara Baldassini → HS 671621029092
+8.  Andrea d'Avella → HS 674973365475
+9.  Massimiliano Paoletti → HS 692116160720
+10. Rita Galletto → HS 692099584248
+
+... (altri 88 lead) ...
+
+================================================================================
+❌ LEAD NON TROVATI IN HUBSPOT (75)
+================================================================================
+
+I seguenti 75 lead NON sono stati trovati in HubSpot:
+
+LEAD OTTAVIA (5):
+- Mary De Sanctis (LEAD-MANUAL-1770946062533)
+- Andrea Dindo (LEAD-MANUAL-1770946060015)
+- Adriana Mulassano (LEAD-MANUAL-1770946054097)
+- Paola Scarpin (LEAD-MANUAL-1770946051660)
+- Laura Bianchi (LEAD-MANUAL-1770946050424)
+
+LEAD ESISTENTI (70):
+- Anna Sarotto, Giuliana Berardi, Tiziana (Cognome non fornito),
+  Flavia Farmè, Elisa Cattarossi, Giuseppe Gaglioti, Enzo Gag,
+  Emanuela (cognome non fornito), Serena Scilleri, Manu Cels - Simone,
+  ... (altri 60 lead)
+
+📝 NOTA: Questi lead potrebbero essere:
+1. Non presenti in HubSpot (contatti offline, referral, telefonate)
+2. Presenti con dati differenti (email diverse, nome scritto diversamente)
+3. Lead di test o temporanei
+
+================================================================================
+💡 RACCOMANDAZIONI
+================================================================================
+
+✅ COMPLETATO:
+- 98 lead ora hanno HubSpot ID
+- Matching al 56.6% (buon risultato considerando lead offline)
+- Nessun errore nell'aggiornamento
+
+📋 DA FARE:
+1. Verificare manualmente i 5 lead di Ottavia in HubSpot
+2. Valutare se alcuni dei 70 lead non trovati vadano puliti dal DB
+3. Per i lead con email, verificare se esistono in HubSpot con email diverse
+
+================================================================================

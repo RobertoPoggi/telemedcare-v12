@@ -1,0 +1,87 @@
+📋 Caricati 155 esiti dal foglio Excel
+
+📥 Caricamento lead dal database...
+✅ Caricati 193 lead
+
+==============================================================================================================
+🔄 AGGIORNAMENTO STATI DA FOGLIO EXCEL
+==============================================================================================================
+
+📋 Laura Bianchi                  | Stato attuale: NULL
+   📊 Esito Excel: Interessata → Stato: Interessato
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Paola Scarpin                  | Stato attuale: Da Ricontattare
+   ⏩ Stato già valorizzato, skip
+
+📋 Adriana Mulassano              | Stato attuale: Non Interessato
+   ⏩ Stato già valorizzato, skip
+
+📋 Maria Chiara Baldassini        | Stato attuale: NULL
+   📊 Esito Excel: Non risponde → Stato: Da Ricontattare
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Andrea Mercuri                 | Stato attuale: Da Ricontattare
+   ⏩ Stato già valorizzato, skip
+
+📋 Enzo Pedron                    | Stato attuale: non_interessato
+   ⏩ Stato già valorizzato, skip
+
+📋 Andrea Dindo                   | Stato attuale: NULL
+   📊 Esito Excel: Inviata → Stato: Contattato
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Francesco Egiziano             | Stato attuale: NULL
+   📊 Esito Excel: Da ricontattare → Stato: Da Ricontattare
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Mary De Sanctis                | Stato attuale: NULL
+   📊 Esito Excel: Non risponde → Stato: Da Ricontattare
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Giovanna Giordano              | Stato attuale: NULL
+   📊 Esito Excel: Non risponde → Stato: Da Ricontattare
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+📋 Marco Olivieri                 | Stato attuale: in_trattativa
+   ⏩ Stato già valorizzato, skip
+
+📋 Alberto Avanzi                 | Stato attuale: NULL
+   📊 Esito Excel: Non risponde → Stato: Da Ricontattare
+   🔄 Aggiornamento...
+   ✅ Aggiornato
+
+==============================================================================================================
+📊 RISULTATI AGGIORNAMENTO STATI:
+==============================================================================================================
+✅ Aggiornati: 7
+⏩ Già valorizzati (skip): 5
+⚠️  Non trovati in DB: 0
+==============================================================================================================
+
+✅ STATI AGGIORNATI:
+
+   ✓ Laura Bianchi                  | Esito: Interessata          → Stato: Interessato
+   ✓ Maria Chiara Baldassini        | Esito: Non risponde         → Stato: Da Ricontattare
+   ✓ Andrea Dindo                   | Esito: Inviata              → Stato: Contattato
+   ✓ Francesco Egiziano             | Esito: Da ricontattare      → Stato: Da Ricontattare
+   ✓ Mary De Sanctis                | Esito: Non risponde         → Stato: Da Ricontattare
+   ✓ Giovanna Giordano              | Esito: Non risponde         → Stato: Da Ricontattare
+   ✓ Alberto Avanzi                 | Esito: Non risponde         → Stato: Da Ricontattare
+
+⏩ STATI GIÀ VALORIZZATI (non modificati):
+
+   - Paola Scarpin
+   - Adriana Mulassano
+   - Andrea Mercuri
+   - Enzo Pedron
+   - Marco Olivieri
+
+==============================================================================================================
+
