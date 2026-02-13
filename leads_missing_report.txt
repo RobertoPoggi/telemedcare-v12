@@ -1,0 +1,45 @@
+📁 Verifico esistenza file Excel: /home/user/webapp/REPORT_SETTIMANALE_Ottavia_TEMPLATE.xlsx
+
+================================================================================
+🔍 VERIFICA COMPLETA LEAD MANCANTI (API CLOUDFLARE)
+================================================================================
+
+📥 Scaricando lead dall'API...
+✅ Caricati 181 lead dall'API
+   - 0 nomi unici
+   - 168 email uniche
+   - 136 telefoni unici
+✅ Header trovato alla riga 5
+✅ Caricati 158 lead dall'Excel
+
+================================================================================
+📊 RISULTATI:
+   - Lead nel DB (API): 181
+   - Lead nell'Excel: 158
+   - Lead trovati: 144
+   - Lead MANCANTI: 14
+   - % Match: 91.1%
+================================================================================
+
+
+❌ LEAD MANCANTI NEL DATABASE (14):
+
+  1. Riga   6 | Mario Rossi                    | 333-1234567               | Telefonata   | Non risponde         | 16/12/2025
+  2. Riga   7 | Azienda XYZ                    | hr@xyz.it                 | Email        | Inviata              | 16/12/2025
+  3. Riga   8 | Laura Bianchi                  | 340-9876543               | Telefonata   | Interessata          | 17/12/2025
+  4. Riga  39 | Paola Scarpin                  |                3403686122 | Telefonata   | Non risponde         | 14/01/2026
+  5. Riga  94 | Adriana Mulassano              |                3387205351 | Telefonata   | Non interessata      | 23/01/2026
+  6. Riga 124 | Maria Chiara Baldassini        |                3922352447 | Telefonata   | Non risponde         | 30/01/2026
+  7. Riga 132 | Andrea Mercuri                 |                 366156266 | Telefonata   | Non risponde         | 30/01/2026
+  8. Riga 140 | Enzo Pedron                    |                3484717119 | Telefonata   | Interessato          | 03/02/2026
+  9. Riga 141 | Andrea Dindo                   | andreadindo1@gmail.com    | Email        | Inviata              | 03/02/2026
+ 10. Riga 142 | Francesco Egiziano             |                3382933088 | Telefonata   | Da ricontattare      | 03/02/2026
+ 11. Riga 148 | Mary De Sanctis                |                3396748762 | Telefonata   | Non risponde         | 04/02/2026
+ 12. Riga 151 | Giovanna Giordano              |                3381084344 | Telefonata   | Non risponde         | 09/02/2026
+ 13. Riga 155 | Marco Olivieri                 |                 348828024 | Telefonata   | Interessato          | 09/02/2026
+ 14. Riga 160 | Alberto Avanzi                 |                3295954873 | Telefonata   | Non risponde         | 10/02/2026
+
+💾 Lista completa salvata in: /home/user/webapp/leads_mancanti_full.json
+
+================================================================================
+

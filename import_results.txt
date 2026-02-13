@@ -1,0 +1,161 @@
+
+====================================================================================================
+📥 IMPORTAZIONE 12 LEAD DA FOGLIO OTTAVIA
+====================================================================================================
+
+⚠️  Esclusi (test): Mario Rossi, Azienda XYZ
+✅ Fonte: Privati IRBEMA (tranne Pedron = SR)
+✅ CM: OB (Ottavia Belfa)
+✅ Stati mappati da ESITO
+
+
+ 1. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Laura Bianchi
+   📞 340-9876543 | Telefonata | Esito: Interessata
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Interessato
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946050424
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 2. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Paola Scarpin
+   📞 3403686122 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946051660
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 3. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Adriana Mulassano
+   📞 3387205351 | Telefonata | Esito: Non interessata
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Non Interessato
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946054097
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 4. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Maria Chiara Baldassini
+   📞 3922352447 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946055276
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 5. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Andrea Mercuri
+   📞 366156266 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946057712
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 6. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Enzo Pedron
+   📞 3484717119 | Telefonata | Esito: Interessato
+   🏢 Fonte: SR
+   📊 Stato: Interessato
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946058870
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 7. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Andrea Dindo
+   📞 andreadindo1@gmail.com | Email | Esito: Inviata
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Contattato
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946060015
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 8. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Francesco Egiziano
+   📞 3382933088 | Telefonata | Esito: Da ricontattare
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946061218
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+ 9. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Mary De Sanctis
+   📞 3396748762 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946062533
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+10. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Giovanna Giordano
+   📞 3381084344 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946063740
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+11. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Marco Olivieri
+   📞 348828024 | Telefonata | Esito: Interessato
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Interessato
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946064859
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+12. ──────────────────────────────────────────────────────────────────────────────────────────
+   📋 Alberto Avanzi
+   📞 3295954873 | Telefonata | Esito: Non risponde
+   🏢 Fonte: Privati IRBEMA
+   📊 Stato: Da Ricontattare
+   📤 Creazione lead...
+   ✅ Lead creato - ID: LEAD-MANUAL-1770946067171
+   📝 Aggiunta interazione...
+   ✅ Interazione aggiunta
+
+====================================================================================================
+📊 RISULTATI IMPORTAZIONE:
+====================================================================================================
+✅ Importati con successo: 12
+❌ Falliti: 0
+📊 Totale processati: 12
+====================================================================================================
+
+✅ LEAD IMPORTATI:
+
+   ✓ Laura Bianchi                  | ID: LEAD-MANUAL-1770946050424 | Fonte: Privati IRBEMA
+   ✓ Paola Scarpin                  | ID: LEAD-MANUAL-1770946051660 | Fonte: Privati IRBEMA
+   ✓ Adriana Mulassano              | ID: LEAD-MANUAL-1770946054097 | Fonte: Privati IRBEMA
+   ✓ Maria Chiara Baldassini        | ID: LEAD-MANUAL-1770946055276 | Fonte: Privati IRBEMA
+   ✓ Andrea Mercuri                 | ID: LEAD-MANUAL-1770946057712 | Fonte: Privati IRBEMA
+   ✓ Enzo Pedron                    | ID: LEAD-MANUAL-1770946058870 | Fonte: SR
+   ✓ Andrea Dindo                   | ID: LEAD-MANUAL-1770946060015 | Fonte: Privati IRBEMA
+   ✓ Francesco Egiziano             | ID: LEAD-MANUAL-1770946061218 | Fonte: Privati IRBEMA
+   ✓ Mary De Sanctis                | ID: LEAD-MANUAL-1770946062533 | Fonte: Privati IRBEMA
+   ✓ Giovanna Giordano              | ID: LEAD-MANUAL-1770946063740 | Fonte: Privati IRBEMA
+   ✓ Marco Olivieri                 | ID: LEAD-MANUAL-1770946064859 | Fonte: Privati IRBEMA
+   ✓ Alberto Avanzi                 | ID: LEAD-MANUAL-1770946067171 | Fonte: Privati IRBEMA
+
+====================================================================================================
+
+🎯 Dopo l'importazione, il DB avrà 193 lead totali
+🔍 Verifica su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
+
+====================================================================================================
+

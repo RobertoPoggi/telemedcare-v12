@@ -1,0 +1,1427 @@
+{
+  "operatore": "Ottavia Belfa",
+  "interactions": [
+    {
+      "data": "2025-12-16",
+      "nome_azienda": "Mario Rossi",
+      "contatto": "333-1234567",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde. Note: Richiamare venerdì"
+    },
+    {
+      "data": "2025-12-16",
+      "nome_azienda": "Azienda XYZ",
+      "contatto": "hr@xyz.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata. Note: Follow-up se non risponde"
+    },
+    {
+      "data": "2025-12-17",
+      "nome_azienda": "Laura Bianchi",
+      "contatto": "340-9876543",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessata. Note: Dir. Comm. ore 11:00"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Maria Carla Morroni",
+      "contatto": "3314563888",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Elisa Cattarossi",
+      "contatto": "elisa@cattarossi.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Michela Annunzi",
+      "contatto": "+393476735218",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Roberto Bifulco",
+      "contatto": "3360949528",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Giansanto Rizzotti",
+      "contatto": "393276246536",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. Ore 10.15"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Giuseppe",
+      "contatto": "pinogaglioti@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Giusy Pizzo",
+      "contatto": "3458414686",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Francesca Grati",
+      "contatto": "3429714170",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Da ricontattare",
+      "note": "Esito: Da ricontattare. Note: Da ricontattare tra un mese"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Enzo Gag",
+      "contatto": "enzogag@tin.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Luca Catrini",
+      "contatto": "3476854422",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Email brochure",
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Emanuela",
+      "contatto": "doc.emi@libero.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Giorgio Ferranti",
+      "contatto": "3396935977",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Da ricontattare",
+      "note": "Esito: Da ricontattare. Note: Da ricontattare tra un mese"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Claudia Franceschini",
+      "contatto": "3465024760",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Valeria Ramus",
+      "contatto": "3398179615",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Giovanni Creton",
+      "contatto": "giovannicreton@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Andrea Vergani",
+      "contatto": "3357880251",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "inivata brochure con nuovi modelli",
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Francesco Prandoni",
+      "contatto": "3394686011",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Tra una settimana",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Serena Scilleri",
+      "contatto": "scilleri.serena@libero.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-13",
+      "nome_azienda": "Deanna Mantovani",
+      "contatto": "3454431743",
+      "tipo_attivita": "Telefonata",
+      "esito": "Intressata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Intressata. Note: Dir.Comm. Ore 2.30"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Tafaro",
+      "contatto": "3358303589",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessata. Note: Dir. Comm. Ore 10.30"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Maria Mercel",
+      "contatto": "mertelmaria@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Angela Ronconi",
+      "contatto": "3401191079",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Giuseppe Zonno",
+      "contatto": "3333333430",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "il prima possibile (era in reunione)",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Daniele Brunelli",
+      "contatto": "3400873094",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "martedi (era in reunione)",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Andrea Dente",
+      "contatto": "3669785184",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Francesco Pepe",
+      "contatto": "3317545440",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir.comm. Ore 10.00"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Adriana Mulassano",
+      "contatto": "audrey.mulassano@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Ettore Destro",
+      "contatto": "3273118009",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-14",
+      "nome_azienda": "Paola Scarpin",
+      "contatto": "3403686122",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Nessuna email",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Valeriani",
+      "contatto": "dsvalerani@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Michele Lorieri",
+      "contatto": "lorierimichele@gmail.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Carla Martini",
+      "contatto": "c.martini2009@libero.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Gabriella Azzaro",
+      "contatto": "3911858536",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Maria Ricciardelli",
+      "contatto": "3496428227",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessata. Note: Dir. Comm. Ore 11.00"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Cristiana Ruggieri",
+      "contatto": "cristianaruggeri2611@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Valeria Zafon",
+      "contatto": "3483725032",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Serena De Ponto",
+      "contatto": "3514455108",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Elia Citro",
+      "contatto": "eliocitro7@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Norma Giannetti",
+      "contatto": "3471226301",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Numero inesistente no email",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Giovanni Dandraia",
+      "contatto": "3487282428",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "è ricoverato in ospedale tra una sett.",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Andrea Spelta",
+      "contatto": "speltaandrea@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Simonetta",
+      "contatto": "3201965501",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Nessuna email",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Arianna Sichich",
+      "contatto": "3460789840",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Nel pomeriggio era occupata",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Stefania Albertin",
+      "contatto": "albertinstefania@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Grazia Fiumana",
+      "contatto": "graziafiumana@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Leonardo Perini",
+      "contatto": "3336297471",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Addolorata Lomardi",
+      "contatto": "3382295587",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Non disponibile/inesistente",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Barbara Campi",
+      "contatto": "campi.barbara@yahoo.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Diego Dainese",
+      "contatto": "348999318",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Non disponibile/inesistente",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-16",
+      "nome_azienda": "Raffaella Casubolo",
+      "contatto": "raffaellacasubolo71@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Tiziana",
+      "contatto": "tizianab953@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Giuliana",
+      "contatto": "giuliberard@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Laila Moustafa",
+      "contatto": "3394863927",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Inivata brochure con nuovi modelli",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Giulia Clementi",
+      "contatto": "3494378160",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "inivata brochure con nuovi modelli",
+      "note": "Esito: Interessata"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Carmen Tierno",
+      "contatto": "3394745902",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Giuseppuina",
+      "contatto": "apinucciadaluiso@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Elena Bodini",
+      "contatto": "3392045623",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Aurora Teruggi",
+      "contatto": "3496156239",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Sindaco Delvigo",
+      "contatto": "3803263069",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-19",
+      "nome_azienda": "Sig. Froilan",
+      "contatto": "usa.rossacroce@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Claudio Fontana",
+      "contatto": "fontanaclaudio@hotmail.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Claudia Peron",
+      "contatto": "3498421721",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Francesca Carofei",
+      "contatto": "fra.carofei@icloud.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Monica Terragni",
+      "contatto": "terragni.monica@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Silvia Grossi",
+      "contatto": "3394296488",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Maria Di Nuzzo",
+      "contatto": "amariadinuzzo358@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Concetta",
+      "contatto": "concettacinardo@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Antonella Robbiani",
+      "contatto": "335258091",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Paola Giacobelli",
+      "contatto": "3348810542",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Elisabetta Ghidella",
+      "contatto": "3343442458",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-20",
+      "nome_azienda": "Giancarlo Fissone",
+      "contatto": "3927179250",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Occupato",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Monica Morelli",
+      "contatto": "3387318749",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Giorgia Origa",
+      "contatto": "3288610478",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Occupato",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Luciana garrisi",
+      "contatto": "3349057602",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Tonino Ficicchia",
+      "contatto": "toninoficicchia4@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Emanuela Balzarotti",
+      "contatto": "3389414462",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Maria",
+      "contatto": "altamarea.2018@libero.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Giovanna Salvidio",
+      "contatto": "3930620563",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": "Occupato",
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Roberta Verazzo",
+      "contatto": "verazzoroberta@yahoo.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Anna Posa",
+      "contatto": "annablu01@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-21",
+      "nome_azienda": "Barbara Camorani",
+      "contatto": "3405635515",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-22",
+      "nome_azienda": "Flavia Farmè",
+      "contatto": "fiorenza.farne1@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Adriana Mulassano",
+      "contatto": "3387205351",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessata",
+      "prossimo_step": null,
+      "note": "Esito: Non interessata"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Antonia Bonavita",
+      "contatto": "3386484910",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessata. Note: Dir. Comm. Ore 15.00"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Nicola",
+      "contatto": "3517011414",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Mauro Reggi",
+      "contatto": "3289051937",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "nessuna risposta e nessuna mail",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Simone Corpino",
+      "contatto": "3485650603",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Mariaelena Torrisi",
+      "contatto": "393402534586",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "mandare la mail con la brochure",
+      "note": "Esito: Interessata"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Gaetano Santamaria",
+      "contatto": "+39 335 599 6265",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Tatiana",
+      "contatto": "+39 338 690 1311",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Imma Grimaldi",
+      "contatto": "+393928995340",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Sabina Pascuttini",
+      "contatto": "3318303852",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Raffaele Di martino",
+      "contatto": "3355292860",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. Ore 10.00"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Tiziana Curto/ frisardi",
+      "contatto": "3356253956",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": "Numero sbagliato",
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "Pierluigi Etzi",
+      "contatto": "pierluigietzi69@libero.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-23",
+      "nome_azienda": "nessun nome",
+      "contatto": "kimiamamisegua@live.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Lucio Comazza",
+      "contatto": "3884287850",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Anna",
+      "contatto": "sarottoanna@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Francesca Amaddeo",
+      "contatto": "francescaamaddeo@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Daniel Sutera",
+      "contatto": "daniel.sutera@virgilio.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Katia Dondero",
+      "contatto": "katiadondero@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Manuela Poggi",
+      "contatto": "manuela.poggi1@icloud.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-26",
+      "nome_azienda": "Vivian Pontarini",
+      "contatto": "vivianpontarin@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Antonella Iacovitti",
+      "contatto": "3385643188",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Alina Macii",
+      "contatto": "3776759169",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Giuseppe Porretta",
+      "contatto": "3662043768",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": "Numero sbagliato",
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Emilio Martire",
+      "contatto": "3688049329",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Angela Rotatori",
+      "contatto": "3478477590",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": "per la ricerca di lavoro",
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Marilena Cardoni",
+      "contatto": "3382489222",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Alessandra PAVANELLO",
+      "contatto": "34676198737",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-28",
+      "nome_azienda": "Anna Maria Avenia",
+      "contatto": "3280466133",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inivata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Maria Chiara Baldassini",
+      "contatto": "3922352447",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Elena",
+      "contatto": "3758013690",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": null,
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Luca Fregolent",
+      "contatto": "3386444224",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Gianluigi Di Berardo",
+      "contatto": "3460588729",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Chiara Sperotto",
+      "contatto": "3489587312",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": null,
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Alberto Locatelli",
+      "contatto": "3489587312",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": null,
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Calogero Nocera",
+      "contatto": "3881184173",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Simone Parravicini",
+      "contatto": "3387648224",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Andrea Mercuri",
+      "contatto": "366156266",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": null,
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Andrea Fossi",
+      "contatto": "3492395104",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": null,
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-01-30",
+      "nome_azienda": "Rosaria Serino Mormone",
+      "contatto": "3479332334",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": null,
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Mangano Palade",
+      "contatto": "351077404",
+      "tipo_attivita": "Telefonata",
+      "esito": "numero non attivo",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: numero non attivo"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Andrea D'Avelia",
+      "contatto": "3394135995",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 18.45"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Maria Ciano",
+      "contatto": "3516866454",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Leopoldo Giordano",
+      "contatto": "3312280307",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Enzo Pedron",
+      "contatto": "3484717119",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 12.00"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Andrea Dindo",
+      "contatto": "andreadindo1@gmail.com",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Francesco Egiziano",
+      "contatto": "3382933088",
+      "tipo_attivita": "Telefonata",
+      "esito": "Da ricontattare",
+      "prossimo_step": null,
+      "note": "Esito: Da ricontattare"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Stefano Vincenzo Negri",
+      "contatto": "3389175360",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "mandare la mail con la brochure",
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Luisa Foglia",
+      "contatto": "3292828549",
+      "tipo_attivita": "Telefonata",
+      "esito": "numero non attivo",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: numero non attivo"
+    },
+    {
+      "data": "2026-02-03",
+      "nome_azienda": "Cristina De Plama",
+      "contatto": "38951812128",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-04",
+      "nome_azienda": "Antonella Iurilli",
+      "contatto": "3346416974",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-04",
+      "nome_azienda": "Beatrice Casoni",
+      "contatto": "3471384403",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 10.30"
+    },
+    {
+      "data": "2026-02-04",
+      "nome_azienda": "Mary De Sanctis",
+      "contatto": "3396748762",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-05",
+      "nome_azienda": "Francesco Celi",
+      "contatto": "3802958496",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Giovanna Giordano",
+      "contatto": "3381084344",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Luca Fregolent",
+      "contatto": "3758013690",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Marco Porcu",
+      "contatto": "3485276808",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 16.00"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Roberta Ziliani",
+      "contatto": "3319390543",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Marco Olivieri",
+      "contatto": "348828024",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 18.30"
+    },
+    {
+      "data": "2026-02-09",
+      "nome_azienda": "Jonathan Pasqual",
+      "contatto": "3515761679",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Gianmario Cocco",
+      "contatto": "3921880698",
+      "tipo_attivita": "Telefonata",
+      "esito": "da richiamare",
+      "prossimo_step": null,
+      "note": "Esito: da richiamare"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Maurizio Brugnaro",
+      "contatto": "3517093135",
+      "tipo_attivita": "Telefonata",
+      "esito": null,
+      "prossimo_step": null,
+      "note": "Contatto effettuato"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Liviano Baido",
+      "contatto": "3898521124",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Alberto Avanzi",
+      "contatto": "3295954873",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Michela Isoscelli",
+      "contatto": "3333592414",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Alberto De Micheli",
+      "contatto": "3280060440",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "valuta la brouchure",
+      "note": "Esito: Interessato"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Giusy Di Napoli",
+      "contatto": "3921579552",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessato",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessato. Note: Dir. Comm. 15.00"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Giovanna Santamaria",
+      "contatto": "3384279476",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-02-10",
+      "nome_azienda": "Tina Zingale",
+      "contatto": "3202638779",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-11",
+      "nome_azienda": "Rita Galletto",
+      "contatto": "3296411577",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-11",
+      "nome_azienda": "Massimilaino Paoletti",
+      "contatto": "3514026637",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non interessato",
+      "prossimo_step": null,
+      "note": "Esito: Non interessato"
+    },
+    {
+      "data": "2026-02-11",
+      "nome_azienda": "Francesco Pizzichemi",
+      "contatto": "3278357164",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-02-11",
+      "nome_azienda": "Bruna Veronesi",
+      "contatto": "3341495584",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Messagio Inviato",
+      "note": "Esito: Non risponde"
+    }
+  ]
+}

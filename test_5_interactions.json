@@ -1,0 +1,50 @@
+{
+  "operatore": "Ottavia Belfa",
+  "interactions": [
+    {
+      "data": "2025-12-16",
+      "nome_azienda": "Mario Rossi",
+      "contatto": "333-1234567",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde. Note: Richiamare venerd\u00ec"
+    },
+    {
+      "data": "2025-12-16",
+      "nome_azienda": "Azienda XYZ",
+      "contatto": "hr@xyz.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata. Note: Follow-up se non risponde"
+    },
+    {
+      "data": "2025-12-17",
+      "nome_azienda": "Laura Bianchi",
+      "contatto": "340-9876543",
+      "tipo_attivita": "Telefonata",
+      "esito": "Interessata",
+      "prossimo_step": "Appuntamento fissato",
+      "note": "Esito: Interessata. Note: Dir. Comm. ore 11:00"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Maria Carla Morroni",
+      "contatto": "3314563888",
+      "tipo_attivita": "Telefonata",
+      "esito": "Non risponde",
+      "prossimo_step": "Email inviata",
+      "note": "Esito: Non risponde"
+    },
+    {
+      "data": "2026-01-12",
+      "nome_azienda": "Elisa Cattarossi",
+      "contatto": "elisa@cattarossi.it",
+      "tipo_attivita": "Email",
+      "esito": "Inviata",
+      "prossimo_step": "Attendere risposta",
+      "note": "Esito: Inviata"
+    }
+  ]
+}

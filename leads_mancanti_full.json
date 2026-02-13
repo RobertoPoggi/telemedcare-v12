@@ -1,0 +1,156 @@
+[
+  {
+    "row": 6,
+    "data": "16/12/2025",
+    "nome": "Mario Rossi",
+    "contatto": "333-1234567",
+    "tipo": "Telefonata",
+    "esito": "Non risponde",
+    "prossimo_step": "Email inviata",
+    "data_followup": "19/12/2025",
+    "note": "Richiamare venerdì"
+  },
+  {
+    "row": 7,
+    "data": "16/12/2025",
+    "nome": "Azienda XYZ",
+    "contatto": "hr@xyz.it",
+    "tipo": "Email",
+    "esito": "Inviata",
+    "prossimo_step": "Attendere risposta",
+    "data_followup": "23/12/2025",
+    "note": "Follow-up se non risponde"
+  },
+  {
+    "row": 8,
+    "data": "17/12/2025",
+    "nome": "Laura Bianchi",
+    "contatto": "340-9876543",
+    "tipo": "Telefonata",
+    "esito": "Interessata",
+    "prossimo_step": "Appuntamento fissato",
+    "data_followup": "20/12/2025",
+    "note": "Dir. Comm. ore 11:00"
+  },
+  {
+    "row": 39,
+    "data": "2026-01-14 00:00:00",
+    "nome": "Paola Scarpin",
+    "contatto": 3403686122,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": "Nessuna email",
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 94,
+    "data": "2026-01-23 00:00:00",
+    "nome": "Adriana Mulassano",
+    "contatto": 3387205351,
+    "tipo": "Telefonata",
+    "esito": "Non interessata",
+    "prossimo_step": null,
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 124,
+    "data": "2026-01-30 00:00:00",
+    "nome": "Maria Chiara Baldassini",
+    "contatto": 3922352447,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": null,
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 132,
+    "data": "2026-01-30 00:00:00",
+    "nome": "Andrea Mercuri ",
+    "contatto": 366156266,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": null,
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 140,
+    "data": "2026-02-03 00:00:00",
+    "nome": "Enzo Pedron",
+    "contatto": 3484717119,
+    "tipo": "Telefonata",
+    "esito": "Interessato",
+    "prossimo_step": "Appuntamento fissato",
+    "data_followup": "2026-02-05 00:00:00",
+    "note": "Dir. Comm. 12.00"
+  },
+  {
+    "row": 141,
+    "data": "2026-02-03 00:00:00",
+    "nome": "Andrea Dindo",
+    "contatto": "andreadindo1@gmail.com",
+    "tipo": "Email",
+    "esito": "Inviata",
+    "prossimo_step": "Attendere risposta",
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 142,
+    "data": "2026-02-03 00:00:00",
+    "nome": "Francesco Egiziano",
+    "contatto": 3382933088,
+    "tipo": "Telefonata",
+    "esito": "Da ricontattare ",
+    "prossimo_step": null,
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 148,
+    "data": "2026-02-04 00:00:00",
+    "nome": "Mary De Sanctis",
+    "contatto": 3396748762,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": "Messagio Inviato",
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 151,
+    "data": "2026-02-09 00:00:00",
+    "nome": "Giovanna Giordano",
+    "contatto": 3381084344,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": "Messagio Inviato",
+    "data_followup": null,
+    "note": null
+  },
+  {
+    "row": 155,
+    "data": "2026-02-09 00:00:00",
+    "nome": "Marco Olivieri",
+    "contatto": 348828024,
+    "tipo": "Telefonata",
+    "esito": "Interessato",
+    "prossimo_step": "Appuntamento fissato",
+    "data_followup": "2026-02-12 00:00:00",
+    "note": "Dir. Comm. 18.30"
+  },
+  {
+    "row": 160,
+    "data": "2026-02-10 00:00:00",
+    "nome": "Alberto Avanzi",
+    "contatto": 3295954873,
+    "tipo": "Telefonata",
+    "esito": "Non risponde ",
+    "prossimo_step": "Messagio Inviato",
+    "data_followup": null,
+    "note": null
+  }
+]
