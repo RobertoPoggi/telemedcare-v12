@@ -1,0 +1,1590 @@
+================================================================================
+🎯 MATCHING PRECISO HUBSPOT
+================================================================================
+
+📥 Scaricamento lead senza HubSpot ID...
+✅ 173 lead da processare
+
+📥 Scaricamento contatti HubSpot con paginazione...
+   Pagina 1... +100
+   Pagina 2... +100
+   Pagina 3... +100
+   Pagina 4... +100
+   Pagina 5... +100
+   Pagina 6... +100
+   Pagina 7... +100
+   Pagina 8... +100
+   Pagina 9... +100
+   Pagina 10... +100
+   Pagina 11... +100
+   Pagina 12... +100
+   Pagina 13... +100
+   Pagina 14... +100
+   Pagina 15... +100
+   Pagina 16... +100
+   Pagina 17... +100
+   Pagina 18... +100
+   Pagina 19... +100
+   Pagina 20... +100
+   Pagina 21... +100
+   Pagina 22... +100
+   Pagina 23... +100
+   Pagina 24... +100
+   Pagina 25... +100
+   Pagina 26... +100
+   Pagina 27... +100
+   Pagina 28... +100
+   Pagina 29... +100
+   Pagina 30... +100
+   Pagina 31... +100
+   Pagina 32... +100
+   Pagina 33... +100
+   Pagina 34... +100
+   Pagina 35... +100
+   Pagina 36... +100
+   Pagina 37... +100
+   Pagina 38... +100
+   Pagina 39... +100
+   Pagina 40... +100
+   Pagina 41... +100
+   Pagina 42... +100
+   Pagina 43... +100
+   Pagina 44... +100
+   Pagina 45... +88
+✅ 4488 contatti HubSpot
+
+================================================================================
+🔍 MATCHING IN CORSO...
+================================================================================
+
+[1/173] Alberto Avanzi
+   ID: LEAD-MANUAL-1770946067171
+   Email: albertoavanzi@placeholder.com
+   Tel: +393295954873
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 688331078853
+      HubSpot: Alberto Avanzi
+      HubSpot Email: albertoavanzi@studioavanzi.it
+      HubSpot Phone: +393295954873
+      ✅ AGGIORNATO!
+
+[2/173] Marco Olivieri
+   ID: LEAD-MANUAL-1770946064859
+   Email: marcoolivieri@placeholder.com
+   Tel: +39348828024
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 684675691736
+      HubSpot: Marco Olivieri
+      HubSpot Email: marco.olivieri@baslerweb.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[3/173] Giovanna Giordano
+   ID: LEAD-MANUAL-1770946063740
+   Email: giovannagiordano@placeholder.com
+   Tel: +393381084344
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 682330208477
+      HubSpot: Giovanna Giordano
+      HubSpot Email: giordano.gnn@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[4/173] Mary De Sanctis
+   ID: LEAD-MANUAL-1770946062533
+   Email: marydesanctis@placeholder.com
+   Tel: +393396748762
+   ❌ NON TROVATO
+
+[5/173] Francesco Egiziano
+   ID: LEAD-MANUAL-1770946061218
+   Email: francescoegiziano@placeholder.com
+   Tel: +393382933088
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 678450709720
+      HubSpot: Francesco Egiziano
+      HubSpot Email: egizianofrancesco@libero.it
+      HubSpot Phone: 3382933088
+      ✅ AGGIORNATO!
+
+[6/173] Andrea Dindo
+   ID: LEAD-MANUAL-1770946060015
+   Email: andreadindo1@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[7/173] Enzo Pedron
+   ID: LEAD-MANUAL-1770946058870
+   Email: enzopedron@placeholder.com
+   Tel: +393484717119
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 676141858038
+      HubSpot: enzo Pedron
+      HubSpot Email: enzo.pedron.62@gmail.com
+      HubSpot Phone: +393484717119
+      ✅ AGGIORNATO!
+
+[8/173] Andrea Mercuri
+   ID: LEAD-MANUAL-1770946057712
+   Email: andreamercuri@placeholder.com
+   Tel: +39366156266
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672179573992
+      HubSpot: Andrea Mercuri
+      HubSpot Email: amercuri93@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[9/173] Maria Chiara Baldassini
+   ID: LEAD-MANUAL-1770946055276
+   Email: mariachiarabaldassini@placeholder.com
+   Tel: +393922352447
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 671621029092
+      HubSpot: Maria Chiara Baldassini
+      HubSpot Email: chiara.baldassini@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[10/173] Adriana Mulassano
+   ID: LEAD-MANUAL-1770946054097
+   Email: adrianamulassano@placeholder.com
+   Tel: +393387205351
+   ❌ NON TROVATO
+
+[11/173] Paola Scarpin
+   ID: LEAD-MANUAL-1770946051660
+   Email: paolascarpin@placeholder.com
+   Tel: +393403686122
+   ❌ NON TROVATO
+
+[12/173] Laura Bianchi
+   ID: LEAD-MANUAL-1770946050424
+   Email: laurabianchi@placeholder.com
+   Tel: +393409876543
+   ❌ NON TROVATO
+
+[13/173] Andrea d'Avella
+   ID: LEAD-IRBEMA-00195
+   Email: andrea.davella@gmail.com
+   Tel: 3394135995
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 674973365475
+      HubSpot: Andrea d'Avella
+      HubSpot Email: andrea.davella@gmail.com
+      HubSpot Phone: 3394135995
+      ✅ AGGIORNATO!
+
+[14/173] Massimiliano Paoletti
+   ID: LEAD-IRBEMA-00182
+   Email: paoletti.vet77@gmail.com
+   Tel: +393514026637
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 692116160720
+      HubSpot: Massimiliano Paoletti
+      HubSpot Email: paoletti.vet77@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[15/173] Rita Galletto
+   ID: LEAD-IRBEMA-00181
+   Email: the.family.04@tiscali.it
+   Tel: 3296411577
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 692099584248
+      HubSpot: Rita Galletto
+      HubSpot Email: the.family.04@tiscali.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[16/173] Giovanna Santamaria
+   ID: LEAD-IRBEMA-00179
+   Email: giovanna31164@gmail.com
+   Tel: 3384279476
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 690498223312
+      HubSpot: Giovanna Santamaria
+      HubSpot Email: giovanna31164@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[17/173] Tina Zingale
+   ID: LEAD-IRBEMA-00180
+   Email: fortunatazingale@libero.it
+   Tel: 3202638779
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 690877176046
+      HubSpot: Tina Zingale
+      HubSpot Email: fortunatazingale@libero.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[18/173] Giusy Di Napoli
+   ID: LEAD-IRBEMA-00177
+   Email: giuseppadinapoli@gmail.com
+   Tel: 3921579552
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 690420845812
+      HubSpot: Giusy Di Napoli
+      HubSpot Email: giuseppadinapoli@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[19/173] Alberto De Micheli
+   ID: LEAD-IRBEMA-00174
+   Email: helpdesk@infrabo.esercito.difesa.it
+   Tel: 3280060440
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 689435726024
+      HubSpot: Alberto De Micheli
+      HubSpot Email: helpdesk@infrabo.esercito.difesa.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[20/173] Michela Isoscelli
+   ID: LEAD-IRBEMA-00173
+   Email: michelaeliso@gmsil.com
+   Tel: 3333592414
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 689075370206
+      HubSpot: Michela Isoscelli
+      HubSpot Email: michelaeliso@gmsil.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[21/173] Jonathan Pasqual
+   ID: LEAD-IRBEMA-00162
+   Email: jonathanpasqual48@gmail.com
+   Tel: 3515761679
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 684992437434
+      HubSpot: Jonathan Pasqual
+      HubSpot Email: jonathanpasqual48@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[22/173] Marco Olivieri
+   ID: LEAD-IRBEMA-00161
+   Email: marco.olivieri@baslerweb.com
+   Tel: 348 828 1024
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 684675691736
+      HubSpot: Marco Olivieri
+      HubSpot Email: marco.olivieri@baslerweb.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[23/173] Rossana Bettega
+   ID: LEAD-IRBEMA-00159
+   Email: bettega@assistenzaviva.it
+   Tel: 3517399650
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 684362345682
+      HubSpot: Rossana Bettega
+      HubSpot Email: bettega@assistenzaviva.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[24/173] Roberta Ziliani
+   ID: LEAD-IRBEMA-00160
+   Email: robertaziliani8@gmail.com
+   Tel: +393319390543
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 684375317742
+      HubSpot: Roberta Ziliani
+      HubSpot Email: robertaziliani8@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[25/173] Marco Porcu
+   ID: LEAD-IRBEMA-00157
+   Email: marco.porcu71@gmail.com
+   Tel: +393485276808
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 683940719864
+      HubSpot: Marco Porcu
+      HubSpot Email: marco.porcu71@gmail.com
+      HubSpot Phone: +393485276808
+      ✅ AGGIORNATO!
+
+[26/173] Francesco Celi
+   ID: LEAD-IRBEMA-00155
+   Email: fraceli@tiscali.it
+   Tel: 3802958496
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 681872901364
+      HubSpot: Francesco Celi
+      HubSpot Email: fraceli@tiscali.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[27/173] Antonella Iurilli
+   ID: LEAD-IRBEMA-00153
+   Email: a.iurilliduhamel@gmail.com
+   Tel: +393346416974
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 680340952263
+      HubSpot: Antonella Iurilli
+      HubSpot Email: a.iurilliduhamel@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[28/173] Beatrice Casoni
+   ID: LEAD-IRBEMA-00154
+   Email: bcsbianca@gmail.com
+   Tel: +393471384403
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 680530248907
+      HubSpot: Beatrice Casoni
+      HubSpot Email: bcsbianca@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[29/173] Luca Fregolent
+   ID: LEAD-IRBEMA-00145
+   Email: luk91677@gmail.com
+   Tel: 3758013690
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672179573976
+      HubSpot: Luca Fregolent
+      HubSpot Email: luk91677@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[30/173] Chiara Sperotto
+   ID: LEAD-IRBEMA-00143
+   Email: sperotto24@gmail.com
+   Tel: 3460588729
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672173295849
+      HubSpot: Chiara Sperotto
+      HubSpot Email: sperotto24@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[31/173] Gianluigi Di Berardo
+   ID: LEAD-IRBEMA-00144
+   Email: gianluigi1259@gmail.com
+   Tel: 3386444224
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672175741154
+      HubSpot: Gianluigi Di Berardo
+      HubSpot Email: gianluigi1259@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[32/173] Alberto Locatelli
+   ID: LEAD-IRBEMA-00142
+   Email: alboloc@gmail.com
+   Tel: +393489587312
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672178472161
+      HubSpot: ALBERTO LOCATELLI
+      HubSpot Email: alboloc@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[33/173] Simone Parravicini
+   ID: LEAD-IRBEMA-00140
+   Email: simo.parravicini@gmail.com
+   Tel: 3387648224
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672172444896
+      HubSpot: Simone Parravicini
+      HubSpot Email: simo.parravicini@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[34/173] Calogero Nocera
+   ID: LEAD-IRBEMA-00141
+   Email: lillonocera@libero.it
+   Tel: 3881184173
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672172444883
+      HubSpot: calogero nocera
+      HubSpot Email: lillonocera@libero.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[35/173] Andrea Mercuri
+   ID: LEAD-IRBEMA-00139
+   Email: amercuri93@gmail.com
+   Tel: 3663156266
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672179573992
+      HubSpot: Andrea Mercuri
+      HubSpot Email: amercuri93@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[36/173] Rosaria Serino Mormone
+   ID: LEAD-IRBEMA-00138
+   Email: rosaria.serino@icloud.com
+   Tel: 3479332334
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672631327956
+      HubSpot: rosaria serino Mormone
+      HubSpot Email: rosaria.serino@icloud.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[37/173] Andrea Fossi
+   ID: LEAD-IRBEMA-00137
+   Email: fossiandrea9@gmail.com
+   Tel: 3492395104
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 672404749560
+      HubSpot: Andrea Fossi
+      HubSpot Email: fossiandrea9@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[38/173] Anna Sarotto
+   ID: LEAD-IRBEMA-00136
+   Email: sarottoanna@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[39/173] Giuliana Berardi
+   ID: LEAD-IRBEMA-00133
+   Email: giuliberard@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[40/173] Tiziana (Cognome non fornito)
+   ID: LEAD-IRBEMA-00134
+   Email: tizianab953@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[41/173] Flavia Farmè
+   ID: LEAD-IRBEMA-00135
+   Email: fiorenza.farne1@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[42/173] Elisa Cattarossi
+   ID: LEAD-IRBEMA-00132
+   Email: elisa@cattarossi.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[43/173] Lucio Comazza
+   ID: LEAD-IRBEMA-00131
+   Email: lucio.cam51@gmail.com
+   Tel: +393884287850
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 665218648311
+      HubSpot: Lucio Comazza
+      HubSpot Email: lucio.cam51@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[44/173] Maria Carla Morroni
+   ID: LEAD-IRBEMA-00129
+   Email: morroni.mariacarla55@gmail.com
+   Tel: +393314563888
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 598971135194
+      HubSpot: Maria Carla Morroni
+      HubSpot Email: morroni.mariacarla55@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[45/173] Laila Moustafa
+   ID: LEAD-IRBEMA-00130
+   Email: lailamoustafa.pia@gmail.com
+   Tel: +393394863927
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 649508678878
+      HubSpot: Laila Moustafa
+      HubSpot Email: lailamoustafa.pia@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[46/173] Michela Annunzi
+   ID: LEAD-IRBEMA-00128
+   Email: amministrazione@europa92.it
+   Tel: +393476735218
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 615327140087
+      HubSpot: Michela Annunzi
+      HubSpot Email: amministrazione@europa92.it
+      HubSpot Phone: +393476735218
+      ✅ AGGIORNATO!
+
+[47/173] Roberto Bifulco
+   ID: LEAD-IRBEMA-00127
+   Email: roberto.bif@libero.it
+   Tel: 3360949528
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 548937575660
+      HubSpot: Roberto Bifulco
+      HubSpot Email: roberto.bif@libero.it
+      HubSpot Phone: 360949528
+      ✅ AGGIORNATO!
+
+[48/173] Giusy Pizzo
+   ID: LEAD-IRBEMA-00125
+   Email: pizzogiusy@libero.it
+   Tel: 3458414686
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 597568670927
+      HubSpot: Giusy Pizzo
+      HubSpot Email: pizzogiusy@libero.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[49/173] Giansanto Rizzotti
+   ID: LEAD-IRBEMA-00126
+   Email: giansanto@rizzotti.it
+   Tel: 393276246536
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 595690738928
+      HubSpot: Giansanto Rizzotti
+      HubSpot Email: giansanto@rizzotti.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[50/173] Giuseppe Gaglioti
+   ID: LEAD-IRBEMA-00124
+   Email: pinogaglioti@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[51/173] Enzo Gag
+   ID: LEAD-IRBEMA-00123
+   Email: enzogag@tin.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[52/173] Luca Catrini
+   ID: LEAD-IRBEMA-00122
+   Email: lucacatrini25@gmail.com
+   Tel: 3476854422
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 564515541219
+      HubSpot: Lalla Catrini
+      HubSpot Email: lucacatrini25@gmail.com
+      HubSpot Phone: +393476854422
+      ✅ AGGIORNATO!
+
+[53/173] Emanuela (cognome non fornito)
+   ID: LEAD-IRBEMA-00121
+   Email: doc.emi@libero.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[54/173] Giorgio Ferranti
+   ID: LEAD-IRBEMA-00120
+   Email: giorgio.ferranti@msn.com
+   Tel: 3396935977
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 552808003824
+      HubSpot: Ferranti Giorgio
+      HubSpot Email: giorgio.ferranti@msn.com
+      HubSpot Phone: +393396935977
+      ✅ AGGIORNATO!
+
+[55/173] Valeria Ramus
+   ID: LEAD-IRBEMA-00118
+   Email: valeria.ramus@gmail.com
+   Tel: 3398179615
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 545886178532
+      HubSpot: Valeria Ramus
+      HubSpot Email: valeria.ramus@gmail.com
+      HubSpot Phone: +393398179615
+      ✅ AGGIORNATO!
+
+[56/173] Claudia Franceschini
+   ID: LEAD-IRBEMA-00119
+   Email: franceschinicla@gmail.com
+   Tel: 3465024760
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 540964200658
+      HubSpot: Claudia Franceschinj
+      HubSpot Email: franceschinicla@gmail.com
+      HubSpot Phone: 3465024760
+      ✅ AGGIORNATO!
+
+[57/173] Giovanni Creton
+   ID: LEAD-IRBEMA-00117
+   Email: giovannicreton@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 649679435977
+      HubSpot: Giovanni Creton
+      HubSpot Email: giovannicreton@gmail.com
+      HubSpot Phone: 3202895109
+      ✅ AGGIORNATO!
+
+[58/173] Andrea Vergani
+   ID: LEAD-IRBEMA-00116
+   Email: andrea.s.vergani@gmail.com
+   Tel: +393357880251
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 510476386534
+      HubSpot: Andrea Vergani
+      HubSpot Email: andrea.s.vergani@gmail.com
+      HubSpot Phone: +393357880251
+      ✅ AGGIORNATO!
+
+[59/173] Francesco Prandoni
+   ID: LEAD-IRBEMA-00115
+   Email: francescoprandoni@hotmail.it
+   Tel: +393394686011
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 487829187820
+      HubSpot: Francesco Prandoni
+      HubSpot Email: francescoprandoni@hotmail.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[60/173] Silvia Brocadello
+   ID: LEAD-IRBEMA-00114
+   Email: silviabrocadello72@yahoo.it
+   Tel: 3343329422
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 513293469907
+      HubSpot: Silvia Brocadello
+      HubSpot Email: silviabrocadello72@yahoo.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[61/173] Serena Scilleri
+   ID: LEAD-IRBEMA-00113
+   Email: Scilleri.serena@libero.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[62/173] Deanna Mantovani
+   ID: LEAD-IRBEMA-00112
+   Email: deannamant@outlook.it
+   Tel: +393454431743
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 452922378482
+      HubSpot: Deanna Mantovani
+      HubSpot Email: deannamant@outlook.it
+      HubSpot Phone: +393454431743
+      ✅ AGGIORNATO!
+
+[63/173] T Tafaro
+   ID: LEAD-IRBEMA-00111
+   Email: t.tafaro@virgilio.it
+   Tel: 335 8303589
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 474824183019
+      HubSpot: T. Tafaro
+      HubSpot Email: t.tafaro@virgilio.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[64/173] Maria Mertel
+   ID: LEAD-IRBEMA-00110
+   Email: mertelmaria@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 471940890861
+      HubSpot: None None
+      HubSpot Email: mertelmaria@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[65/173] Angela Ronconi
+   ID: LEAD-IRBEMA-00109
+   Email: angelaronconi@libero.it
+   Tel: 393401191079
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 455923102937
+      HubSpot: Angela Ronconi
+      HubSpot Email: angelaronconi@libero.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[66/173] Daniele Brunelli
+   ID: LEAD-IRBEMA-00108
+   Email: danielebrunelli.db@libero.it
+   Tel: 3400873094
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 454523289836
+      HubSpot: Daniele Brunelli
+      HubSpot Email: danielebrunelli.db@libero.it
+      HubSpot Phone: 3400873094
+      ✅ AGGIORNATO!
+
+[67/173] Manu Cels - Simone
+   ID: LEAD-IRBEMA-00107
+   Email: test@esempio.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[68/173] Maria Maglione
+   ID: LEAD-IRBEMA-00106
+   Email: mariamaglione4@gmail.com
+   Tel: 3334464095
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 444771654858
+      HubSpot: Maria Maglione
+      HubSpot Email: mariamaglione4@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[69/173] Giuseppe Zonno
+   ID: LEAD-IRBEMA-00105
+   Email: gzonno@mediatipo.it
+   Tel: +393333333430
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 431074291923
+      HubSpot: Giuseppe Zonno
+      HubSpot Email: gzonno@mediatipo.it
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[70/173] Giuliano Rapelli
+   ID: LEAD-IRBEMA-00103
+   Email: rapelligiuliano@gmail.com
+   Tel: 3518276853
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 441232219322
+      HubSpot: Giuliano Rapelli
+      HubSpot Email: rapelligiuliano@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[71/173] Eros Coghi
+   ID: LEAD-IRBEMA-00104
+   Email: eroscoghi@gmail.com
+   Tel: +393474124442
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 441402480850
+      HubSpot: Eros Coghi
+      HubSpot Email: eroscoghi@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[72/173] Andrea Dente
+   ID: LEAD-IRBEMA-00102
+   Email: aanderea@me.com
+   Tel: 3669785184
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 435498330312
+      HubSpot: Andrea Dente
+      HubSpot Email: aanderea@me.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[73/173] Luca Nadali
+   ID: LEAD-IRBEMA-00101
+   Email: luca.nadali@gmail.com
+   Tel: +39 328 95 12 054
+   ❌ NON TROVATO
+
+[74/173] Norma Zanetta
+   ID: LEAD-IRBEMA-00100
+   Email: zanetta.norma64@gmail.com
+   Tel: 3409854064
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 433491075259
+      HubSpot: Norma Zanetta
+      HubSpot Email: zanetta.norma64@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[75/173] Maria Cristina Sorcini
+   ID: LEAD-IRBEMA-00099
+   Email: cristinasorcini@yahoo.it
+   Tel: +393470562139
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 431971022057
+      HubSpot: Maria Sorcini
+      HubSpot Email: cristinasorcini@yahoo.it
+      HubSpot Phone: +393470562139
+      ✅ AGGIORNATO!
+
+[76/173] Mauro Giumelli
+   ID: LEAD-IRBEMA-00098
+   Email: maurogiumelli1952@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[77/173] francesco pepe
+   ID: LEAD-IRBEMA-00097
+   Email: cicciopepe@libero.it
+   Tel: +393317545440
+   ❌ NON TROVATO
+
+[78/173] Adriana Mulassano
+   ID: LEAD-IRBEMA-00095
+   Email: audrey.mulassano@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[79/173] Ettore Destro
+   ID: LEAD-IRBEMA-00096
+   Email: ettoredestro@gmail.com
+   Tel: +393273118009
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 424790147265
+      HubSpot: Ettore Destro
+      HubSpot Email: ettoredestro@gmail.com
+      HubSpot Phone: +393273118009
+      ✅ AGGIORNATO!
+
+[80/173] Michele Lorieri
+   ID: LEAD-IRBEMA-00093
+   Email: lorierimichele@gmail.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[81/173] Ds Valerani
+   ID: LEAD-IRBEMA-00094
+   Email: dsvalerani@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 420514509018
+      HubSpot: Ds Valerani
+      HubSpot Email: dsvalerani@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[82/173] Paola Scarpin
+   ID: LEAD-IRBEMA-00092
+   Email: N/A
+   Tel: 3404686122
+   ❌ NON TROVATO
+
+[83/173] Gabriella Azzaro
+   ID: LEAD-IRBEMA-00090
+   Email: annamariagabriellaazzaro757@gmail.com
+   Tel: 3911858536
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 400812402920
+      HubSpot: Gabriella Azzaro
+      HubSpot Email: annamariagabriellaazzaro757@gmail.com
+      HubSpot Phone: 
+      ✅ AGGIORNATO!
+
+[84/173] Carla martini
+   ID: LEAD-IRBEMA-00091
+   Email: c.martini2009@libero.it
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 426500179144
+      HubSpot: Carla Martini
+      HubSpot Email: c.martini2009@libero.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[85/173] Maria Ricciardelli
+   ID: LEAD-IRBEMA-00089
+   Email: ricciardelli.ela@gmail.com
+   Tel: 3496428227
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 373804875968
+      HubSpot: Maria Ricciardelli
+      HubSpot Email: ricciardelli.ela@gmail.com
+      HubSpot Phone: 3496428227
+      ✅ AGGIORNATO!
+
+[86/173] Cristiana Rugggeri
+   ID: LEAD-IRBEMA-00088
+   Email: cristianaruggeri2611@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 388880278736
+      HubSpot: Cristian Ruggeri
+      HubSpot Email: cristianaruggeri2611@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[87/173] Valeria Zafon
+   ID: LEAD-IRBEMA-00087
+   Email: valeria.zaf@gmail.com
+   Tel: +393483725032
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 386947373262
+      HubSpot: Valeria Zaffalon
+      HubSpot Email: valeria.zaf@gmail.com
+      HubSpot Phone: +393483725032
+      ✅ AGGIORNATO!
+
+[88/173] Elia Citro
+   ID: LEAD-IRBEMA-00085
+   Email: eliocitro7@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[89/173] Serena De Ponto
+   ID: LEAD-IRBEMA-00086
+   Email: depontomariaserena@gmail.com
+   Tel: 3514455108
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 383326892261
+      HubSpot: Serena De Ponto
+      HubSpot Email: depontomariaserena@gmail.com
+      HubSpot Phone: 3514455108
+      ✅ AGGIORNATO!
+
+[90/173] Norma Giannetti
+   ID: LEAD-IRBEMA-00084
+   Email: N/A
+   Tel: 3471226301
+   ❌ NON TROVATO
+
+[91/173] Giovanni Dandraia
+   ID: LEAD-IRBEMA-00083
+   Email: dandraia.g@gmail.com
+   Tel: 3487282428
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 381218010339
+      HubSpot: Giovanni Dandraia
+      HubSpot Email: dandraia.g@gmail.com
+      HubSpot Phone: +393487282428
+      ✅ AGGIORNATO!
+
+[92/173] Simonetta (cognome non fornito)
+   ID: LEAD-IRBEMA-00082
+   Email: N/A
+   Tel: 3201965501
+   ❌ NON TROVATO
+
+[93/173] Andrea Spelta
+   ID: LEAD-IRBEMA-00081
+   Email: speltaandrea@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[94/173] Grazia Fiumana
+   ID: LEAD-IRBEMA-00078
+   Email: graziafiumana@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[95/173] Stefania Albertin
+   ID: LEAD-IRBEMA-00079
+   Email: albertinstefania@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 369935419606
+      HubSpot: Stefania Albertin
+      HubSpot Email: albertinstefania@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[96/173] Arianna Sichich
+   ID: LEAD-IRBEMA-00080
+   Email: ari.sichich@gmail.com
+   Tel: 3460789840
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 312163066089
+      HubSpot: Arianna Sichich
+      HubSpot Email: ari.sichich@gmail.com
+      HubSpot Phone: 3460789840
+      ✅ AGGIORNATO!
+
+[97/173] Leonardo Perini
+   ID: LEAD-IRBEMA-00077
+   Email: perini.spoleto@gmail.com
+   Tel: 3336297471
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 365564918002
+      HubSpot: Leonardo Perini
+      HubSpot Email: perini.spoleto@gmail.com
+      HubSpot Phone: +393336297471
+      ✅ AGGIORNATO!
+
+[98/173] Lombardi Addolorata
+   ID: LEAD-IRBEMA-00076
+   Email: presidelombardi@gmail.com
+   Tel: 3382295587
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 364238873803
+      HubSpot: Dolores Lombardi
+      HubSpot Email: presidelombardi@gmail.com
+      HubSpot Phone: 3382295587
+      ✅ AGGIORNATO!
+
+[99/173] Barbara Campi
+   ID: LEAD-IRBEMA-00075
+   Email: campi.barbara@yahoo.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[100/173] Claudio La Viola
+   ID: LEAD-IRBEMA-00074
+   Email: clalav74@libero.it
+   Tel: 3270962223
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 361143207153
+      HubSpot: Claudio La Viola
+      HubSpot Email: clalav74@libero.it
+      HubSpot Phone: +393270962223
+      ✅ AGGIORNATO!
+
+[101/173] Diego Dainese
+   ID: LEAD-IRBEMA-00073
+   Email: studio2dvigonza@gmail.com
+   Tel: 348999318
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 355822400723
+      HubSpot: Diego Dainese
+      HubSpot Email: studio2dvigonza@gmail.com
+      HubSpot Phone: 348999318
+      ✅ AGGIORNATO!
+
+[102/173] Elisabetta Cattini
+   ID: LEAD-IRBEMA-00072
+   Email: elisabettacattini@gmail.com
+   Tel: 393200811667
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 354413987024
+      HubSpot: Elisabetta Cattini
+      HubSpot Email: elisabettacattini@gmail.com
+      HubSpot Phone: +393200811667
+      ✅ AGGIORNATO!
+
+[103/173] Antonella Barbone
+   ID: LEAD-IRBEMA-00071
+   Email: N/A
+   Tel: 3388821280
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 350977215731
+      HubSpot: Antonella Barbone
+      HubSpot Email: barbonepasquale@tiscali.it
+      HubSpot Phone: +393388821280
+      ✅ AGGIORNATO!
+
+[104/173] Raffaella Casubolo
+   ID: LEAD-IRBEMA-00070
+   Email: raffaellacasubolo71@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 307538497738
+      HubSpot: Raffaella Casubolo
+      HubSpot Email: raffaellacasubolo71@gmail.com
+      HubSpot Phone: +393391770766
+      ✅ AGGIORNATO!
+
+[105/173] Carmen Tierno
+   ID: LEAD-IRBEMA-00069
+   Email: cartier.05@libero.it
+   Tel: 3394745902
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 348826630346
+      HubSpot: Carmen Tierno
+      HubSpot Email: cartier.05@libero.it
+      HubSpot Phone: 3394745902
+      ✅ AGGIORNATO!
+
+[106/173] Giulia Clementi
+   ID: LEAD-IRBEMA-00068
+   Email: N/A
+   Tel: 3494378160
+   ❌ NON TROVATO
+
+[107/173] Michele Amoruso
+   ID: LEAD-IRBEMA-00067
+   Email: ammiche@tiscali.it
+   Tel: 3472120496
+   ❌ NON TROVATO
+
+[108/173] Aurora Teruggi
+   ID: LEAD-IRBEMA-00066
+   Email: a.teruggi@virgilio.it
+   Tel: 3496156239
+   ❌ NON TROVATO
+
+[109/173] Elena Bodini
+   ID: LEAD-IRBEMA-00064
+   Email: elenabodini5@gmail.com
+   Tel: 3392045623
+   ❌ NON TROVATO
+
+[110/173] Giuseppina Da Luiso
+   ID: LEAD-IRBEMA-00065
+   Email: apinucciadaluiso@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[111/173] Sindaco Delvigo
+   ID: LEAD-IRBEMA-00063
+   Email: sindacodelvigo@gmail.com
+   Tel: 3803263069
+   ❌ NON TROVATO
+
+[112/173] Sig. Froilan
+   ID: LEAD-IRBEMA-00060
+   Email: usa.rossacroce@gmail.com
+   Tel: N/A
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 324907977960
+      HubSpot: None Froilan
+      HubSpot Email: usa.rossacroce@gmail.com
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[113/173] Giorgio Riela
+   ID: LEAD-IRBEMA-00061
+   Email: gr@ecotorino.it
+   Tel: 0117395260
+   ❌ NON TROVATO
+
+[114/173] Paolo Magri
+   ID: LEAD-IRBEMA-00062
+   Email: paolo@paolomagri.com
+   Tel: +41793311949
+   ❌ NON TROVATO
+
+[115/173] Dorella Soatto
+   ID: LEAD-IRBEMA-00057
+   Email: dorellasoatto@libero.it
+   Tel: 3382896878
+   ❌ NON TROVATO
+
+[116/173] Elisabetta Ghidella
+   ID: LEAD-IRBEMA-00058
+   Email: elisabettaghidella@gmail.com
+   Tel: 3343442458
+   ❌ NON TROVATO
+
+[117/173] Giancarlo Fissone
+   ID: LEAD-IRBEMA-00059
+   Email: iguana710@gmail.com
+   Tel: 3927179250
+   ❌ NON TROVATO
+
+[118/173] Paola Giacobelli
+   ID: LEAD-IRBEMA-00056
+   Email: paolagiacobelli@yahoo.it
+   Tel: 3348810542
+   ❌ NON TROVATO
+
+[119/173] CONCETTA CINARDO
+   ID: LEAD-IRBEMA-00054
+   Email: concettacinardo@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[120/173] Antonella Robbiani
+   ID: LEAD-IRBEMA-00055
+   Email: arobbiani@hotmail.com
+   Tel: 335258091
+   ❌ NON TROVATO
+
+[121/173] Silvia Grossi
+   ID: LEAD-IRBEMA-00051
+   Email: 1967silvia@tiscali.it
+   Tel: 3394296488
+   ❌ NON TROVATO
+
+[122/173] GIOVANNI LOLLI
+   ID: LEAD-IRBEMA-00052
+   Email: giovanni.lollig@gmail.com
+   Tel: 3247972835
+   ❌ NON TROVATO
+
+[123/173] Maria Di Nuzzo
+   ID: LEAD-IRBEMA-00053
+   Email: amariadinuzzo358@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[124/173] FRANCESA CAROFEI
+   ID: LEAD-IRBEMA-00050
+   Email: fra.carofei@icloud.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[125/173] MONICA TERRAGNI
+   ID: LEAD-IRBEMA-00049
+   Email: terragni.monica@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[126/173] Claudio Fontana
+   ID: LEAD-IRBEMA-00047
+   Email: fontanaclaudio@hotmail.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[127/173] Claudia Peron
+   ID: LEAD-IRBEMA-00048
+   Email: claudiaperon07@gmail.com
+   Tel: 3498421721
+   ❌ NON TROVATO
+
+[128/173] Giorgia Origa
+   ID: LEAD-IRBEMA-00046
+   Email: giorgiaoriga@gmail.com
+   Tel: 3288610478
+   ❌ NON TROVATO
+
+[129/173] MONICA MORELLI
+   ID: LEAD-IRBEMA-00045
+   Email: avv.morellimonica@gmail.com
+   Tel: 3387318749
+   ❌ NON TROVATO
+
+[130/173] Luciana garrisi
+   ID: LEAD-IRBEMA-00044
+   Email: lucianagarrisi@libero.it
+   Tel: 3349057602
+   ❌ NON TROVATO
+
+[131/173] EMANUELA BALZAROTTI
+   ID: LEAD-IRBEMA-00042
+   Email: emanuelabalzarotti@libero.it
+   Tel: 3389414462
+   ❌ NON TROVATO
+
+[132/173] TONINO FICICCHIA
+   ID: LEAD-IRBEMA-00043
+   Email: toninoficicchia4@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[133/173] Maria 
+   ID: LEAD-IRBEMA-00041
+   Email: altamarea.2018@libero.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[134/173] Giovanna Salvidio
+   ID: LEAD-IRBEMA-00039
+   Email: avv.giovannasalvidio@gmail.com
+   Tel: 3930620563
+   ❌ NON TROVATO
+
+[135/173] CARLA MAGLIOCCHETTI
+   ID: LEAD-IRBEMA-00040
+   Email: carla.magliocchetti@libero.it
+   Tel: 3346452561
+   ❌ NON TROVATO
+
+[136/173] Isabella Consoloni
+   ID: LEAD-IRBEMA-00037
+   Email: isabella.consoloni@libero.it
+   Tel: 3381714788
+   ❌ NON TROVATO
+
+[137/173] Roberta Verazzo
+   ID: LEAD-IRBEMA-00038
+   Email: verazzoroberta@yahoo.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[138/173] Anna Posa
+   ID: LEAD-IRBEMA-00036
+   Email: annablu01@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[139/173] Barbara Camorani
+   ID: LEAD-IRBEMA-00035
+   Email: barbara.camorani@regione.liguria.it
+   Tel: 3405635515
+   ❌ NON TROVATO
+
+[140/173] ANTONIA Bonavita
+   ID: LEAD-IRBEMA-00034
+   Email: antobonavita@libero.it
+   Tel: 3386484910
+   ❌ NON TROVATO
+
+[141/173] Simona Pizzutto
+   ID: LEAD-IRBEMA-00033
+   Email: simona.pizzutto@coopbarbarab.it
+   Tel: 3450016665
+   ❌ NON TROVATO
+
+[142/173] Nicola 
+   ID: LEAD-IRBEMA-00032
+   Email: immobiliarenicola@gmail.com
+   Tel: 3517011414
+   ❌ NON TROVATO
+
+[143/173] Mauro Reggi
+   ID: LEAD-IRBEMA-00031
+   Email: N/A
+   Tel: 3289051937
+   ❌ NON TROVATO
+
+[144/173] Caterina D’Alterio
+   ID: LEAD-IRBEMA-00030
+   Email: caterinadalterio108@gmail.com
+   Tel: 3898006744
+   ❌ NON TROVATO
+
+[145/173] Simone Corpino
+   ID: LEAD-IRBEMA-00029
+   Email: simonecorpino@gmail.com
+   Tel: 3485650603
+   ❌ NON TROVATO
+
+[146/173] Imma Grimaldi
+   ID: LEAD-IRBEMA-00025
+   Email: N/A
+   Tel: +393928995340
+   ❌ NON TROVATO
+
+[147/173] Tatiana no cognome
+   ID: LEAD-IRBEMA-00026
+   Email: N/A
+   Tel: +39 338 690 1311
+   ❌ NON TROVATO
+
+[148/173] Gaetano Santamaria
+   ID: LEAD-IRBEMA-00027
+   Email: N/A
+   Tel: +39 335 599 6265
+   ❌ NON TROVATO
+
+[149/173] Mariaelena Torrisi
+   ID: LEAD-IRBEMA-00028
+   Email: N/A
+   Tel: 393402534586
+   ❌ NON TROVATO
+
+[150/173] Sabina Pascuttini
+   ID: LEAD-IRBEMA-00024
+   Email: passabi@gmail.com
+   Tel: 3318303852
+   ❌ NON TROVATO
+
+[151/173] Raffaele Di martino
+   ID: LEAD-IRBEMA-00023
+   Email: dimartino.raffaele@virgilio.it
+   Tel: 3355292860
+   ❌ NON TROVATO
+
+[152/173] Lead Anonimo - kimiamamisegua@live.it
+   ID: LEAD-IRBEMA-00020
+   Email: kimiamamisegua@live.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[153/173] Pierluigi Etzi
+   ID: LEAD-IRBEMA-00021
+   Email: pierluigietzi69@libero.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[154/173] Tiziana Curto/ frisardi
+   ID: LEAD-IRBEMA-00022
+   Email: tiziana.curto64@gmail.com
+   Tel: 3356253956
+   ❌ NON TROVATO
+
+[155/173] Elena Saglia
+   ID: LEAD-IRBEMA-00019
+   Email: elenasaglia@hotmail.com
+   Tel: 3493416242
+   ❌ NON TROVATO
+
+[156/173] Francesca Amaddeo
+   ID: LEAD-IRBEMA-00018
+   Email: francescaamaddeo@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[157/173] Anna Maria Avenia
+   ID: LEAD-IRBEMA-00009
+   Email: aveniaannamaria@gmail.com
+   Tel: 3280466133
+   ❌ NON TROVATO
+
+[158/173] Alessandra PAVANELLO
+   ID: LEAD-IRBEMA-00010
+   Email: alealzira@gmail.com
+   Tel: 34676198737
+   ❌ NON TROVATO
+
+[159/173] Marilena Cardoni
+   ID: LEAD-IRBEMA-00011
+   Email: marilenacardoni43@gmail.com
+   Tel: 3382489222
+   ❌ NON TROVATO
+
+[160/173] Angela Rotatori
+   ID: LEAD-IRBEMA-00012
+   Email: angelarotatori@gmail.com
+   Tel: 3478477590
+   ❌ NON TROVATO
+
+[161/173] Emilio Martire
+   ID: LEAD-IRBEMA-00013
+   Email: emiliomartire1@gmail.com
+   Tel: 3688049329
+   ❌ NON TROVATO
+
+[162/173] Daniel Sutera
+   ID: LEAD-IRBEMA-00014
+   Email: daniel.sutera@virgilio.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[163/173] Sig. Giuseppe Porretta
+   ID: LEAD-IRBEMA-00015
+   Email: N/A
+   Tel: 3662043768
+   ❌ NON TROVATO
+
+[164/173] Alina Macii
+   ID: LEAD-IRBEMA-00016
+   Email: maciialina@gmail.com
+   Tel: 3776759169
+   ❌ NON TROVATO
+
+[165/173] Antonella Iacovitti
+   ID: LEAD-IRBEMA-00017
+   Email: antonellaiacovitti@gmail.com
+   Tel: 3385643188
+   ❌ NON TROVATO
+
+[166/173] Manuela Poggi
+   ID: LEAD-IRBEMA-00007
+   Email: manuela.poggi1@icloud.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[167/173] Katia Dondero
+   ID: LEAD-IRBEMA-00008
+   Email: katiadondero@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[168/173] Giuseppe Porretta
+   ID: LEAD-IRBEMA-00006
+   Email: N/A
+   Tel: 3662043768
+   ❌ NON TROVATO
+
+[169/173] Vivian Pontarini
+   ID: LEAD-IRBEMA-00005
+   Email: vivianpontarin@gmail.com
+   Tel: N/A
+   ❌ NON TROVATO
+
+[170/173] Maria Aldeghi
+   ID: LEAD-IRBEMA-00004
+   Email: vittoriaaldeghi@gmail.com
+   Tel: 3332897971
+   ❌ NON TROVATO
+
+[171/173] Anna Moro
+   ID: LEAD-IRBEMA-00003
+   Email: moro.annamaria@yahoo.it
+   Tel: 3348389365
+   ❌ NON TROVATO
+
+[172/173] Claudio Macchi
+   ID: LEAD-IRBEMA-00001
+   Email: claudio.macchi1@libero.it
+   Tel: 3398183049
+   ✅ TROVATO in HubSpot!
+      HubSpot ID: 666255215862
+      HubSpot: Claudio Macchi
+      HubSpot Email: claudio.macchi1@libero.it
+      HubSpot Phone: None
+      ✅ AGGIORNATO!
+
+[173/173] Daniela Bisson
+   ID: LEAD-IRBEMA-00002
+   Email: bissondaniela2018@gmail.com
+   Tel: 3336364976
+   ❌ NON TROVATO
+
+================================================================================
+📊 REPORT FINALE
+================================================================================
+
+Lead processati:       173
+✅ Trovati e aggiornati: 80 (46.2%)
+❌ Errori aggiornamento: 0
+❌ Non trovati:          93 (53.8%)
+
+💾 Report salvato: precise_matching_report.json
+
+❌ LEAD NON TROVATI (93):
+================================================================================
+- Mary De Sanctis (ID: LEAD-MANUAL-1770946062533)
+  Email: marydesanctis@placeholder.com
+  Tel: +393396748762
+
+- Andrea Dindo (ID: LEAD-MANUAL-1770946060015)
+  Email: andreadindo1@gmail.com
+  Tel: N/A
+
+- Adriana Mulassano (ID: LEAD-MANUAL-1770946054097)
+  Email: adrianamulassano@placeholder.com
+  Tel: +393387205351
+
+- Paola Scarpin (ID: LEAD-MANUAL-1770946051660)
+  Email: paolascarpin@placeholder.com
+  Tel: +393403686122
+
+- Laura Bianchi (ID: LEAD-MANUAL-1770946050424)
+  Email: laurabianchi@placeholder.com
+  Tel: +393409876543
+
+- Anna Sarotto (ID: LEAD-IRBEMA-00136)
+  Email: sarottoanna@gmail.com
+  Tel: N/A
+
+- Giuliana Berardi (ID: LEAD-IRBEMA-00133)
+  Email: giuliberard@gmail.com
+  Tel: N/A
+
+- Tiziana (Cognome non fornito) (ID: LEAD-IRBEMA-00134)
+  Email: tizianab953@gmail.com
+  Tel: N/A
+
+- Flavia Farmè (ID: LEAD-IRBEMA-00135)
+  Email: fiorenza.farne1@gmail.com
+  Tel: N/A
+
+- Elisa Cattarossi (ID: LEAD-IRBEMA-00132)
+  Email: elisa@cattarossi.it
+  Tel: N/A
+
+- Giuseppe Gaglioti (ID: LEAD-IRBEMA-00124)
+  Email: pinogaglioti@gmail.com
+  Tel: N/A
+
+- Enzo Gag (ID: LEAD-IRBEMA-00123)
+  Email: enzogag@tin.it
+  Tel: N/A
+
+- Emanuela (cognome non fornito) (ID: LEAD-IRBEMA-00121)
+  Email: doc.emi@libero.it
+  Tel: N/A
+
+- Serena Scilleri (ID: LEAD-IRBEMA-00113)
+  Email: Scilleri.serena@libero.it
+  Tel: N/A
+
+- Manu Cels - Simone (ID: LEAD-IRBEMA-00107)
+  Email: test@esempio.it
+  Tel: N/A
+
+- Luca Nadali (ID: LEAD-IRBEMA-00101)
+  Email: luca.nadali@gmail.com
+  Tel: +39 328 95 12 054
+
+- Mauro Giumelli (ID: LEAD-IRBEMA-00098)
+  Email: maurogiumelli1952@gmail.com
+  Tel: N/A
+
+- francesco pepe (ID: LEAD-IRBEMA-00097)
+  Email: cicciopepe@libero.it
+  Tel: +393317545440
+
+- Adriana Mulassano (ID: LEAD-IRBEMA-00095)
+  Email: audrey.mulassano@gmail.com
+  Tel: N/A
+
+- Michele Lorieri (ID: LEAD-IRBEMA-00093)
+  Email: lorierimichele@gmail.it
+  Tel: N/A
+
