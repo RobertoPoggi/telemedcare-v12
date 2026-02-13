@@ -3483,6 +3483,22 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('intModalNota').value = '';
             document.getElementById('intModalAzione').value = '';
             
+            // Attach event listeners to modal buttons
+            setTimeout(() => {
+                const saveBtn = document.getElementById('saveInteractionBtn');
+                const closeBtn = document.getElementById('closeInteractionsModalBtn');
+                
+                if (saveBtn) {
+                    saveBtn.replaceWith(saveBtn.cloneNode(true)); // Remove old listeners
+                    document.getElementById('saveInteractionBtn').addEventListener('click', addInteractionFromModal);
+                }
+                
+                if (closeBtn) {
+                    closeBtn.replaceWith(closeBtn.cloneNode(true)); // Remove old listeners
+                    document.getElementById('closeInteractionsModalBtn').addEventListener('click', () => closeModal('interactionsModal'));
+                }
+            }, 0);
+            
             // Apri il modale
             openModal('interactionsModal');
         }
@@ -4533,14 +4549,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                   placeholder="Cosa fare successivamente? (opzionale)"></textarea>
                     </div>
-                    <button onclick="addInteractionFromModal()" 
+                    <button id="saveInteractionBtn" 
                             class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
                         💾 Salva Interazione
                     </button>
                 </div>
 
                 <div class="flex justify-end pt-4 border-t mt-4">
-                    <button onclick="closeModal('interactionsModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                    <button id="closeInteractionsModalBtn" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Chiudi
                     </button>
                 </div>
