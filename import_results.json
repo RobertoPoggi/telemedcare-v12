@@ -1,0 +1,1109 @@
+{
+  "stats": {
+    "found_on_hubspot": 150,
+    "not_found_on_hubspot": 8,
+    "already_in_telemedcare": 55,
+    "imported": 0,
+    "errors": 95
+  },
+  "results": [
+    {
+      "nome": "Mario Rossi",
+      "email": null,
+      "telefono": "333-1234567",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Azienda XYZ",
+      "email": "hr@xyz.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Laura Bianchi",
+      "email": null,
+      "telefono": "340-9876543",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Maria Carla Morroni",
+      "email": null,
+      "telefono": "3314563888",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Elisa Cattarossi",
+      "email": "elisa@cattarossi.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Michela Annunzi",
+      "email": null,
+      "telefono": "+393476735218",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Roberto Bifulco",
+      "email": null,
+      "telefono": "3360949528",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giansanto Rizzotti",
+      "email": null,
+      "telefono": "393276246536",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giuseppe",
+      "email": "pinogaglioti@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Giusy Pizzo",
+      "email": null,
+      "telefono": "3458414686",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Francesca Grati",
+      "email": null,
+      "telefono": "3429714170",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Enzo Gag",
+      "email": "enzogag@tin.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Luca Catrini",
+      "email": null,
+      "telefono": "3476854422",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Emanuela",
+      "email": "doc.emi@libero.it",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Giorgio Ferranti",
+      "email": null,
+      "telefono": "3396935977",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Claudia Franceschini",
+      "email": null,
+      "telefono": "3465024760",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Valeria Ramus",
+      "email": null,
+      "telefono": "3398179615",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giovanni Creton",
+      "email": "giovannicreton@gmail.com",
+      "telefono": null,
+      "hubspot_id": "649679435977",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Andrea Vergani",
+      "email": null,
+      "telefono": "3357880251",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Francesco Prandoni",
+      "email": null,
+      "telefono": "3394686011",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Serena Scilleri",
+      "email": "scilleri.serena@libero.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Deanna Mantovani",
+      "email": null,
+      "telefono": "3454431743",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Tafaro",
+      "email": null,
+      "telefono": "3358303589",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Maria Mercel",
+      "email": "mertelmaria@gmail.com",
+      "telefono": null,
+      "hubspot_id": "471940890861",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Angela Ronconi",
+      "email": null,
+      "telefono": "3401191079",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giuseppe Zonno",
+      "email": null,
+      "telefono": "3333333430",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Daniele Brunelli",
+      "email": null,
+      "telefono": "3400873094",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Andrea Dente",
+      "email": null,
+      "telefono": "3669785184",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Francesco Pepe",
+      "email": null,
+      "telefono": "3317545440",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Adriana Mulassano",
+      "email": "audrey.mulassano@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Ettore Destro",
+      "email": null,
+      "telefono": "3273118009",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Paola Scarpin",
+      "email": null,
+      "telefono": "3403686122",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Valeriani",
+      "email": "dsvalerani@gmail.com",
+      "telefono": null,
+      "hubspot_id": "420514509018",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Michele Lorieri",
+      "email": "lorierimichele@gmail.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Carla Martini",
+      "email": "c.martini2009@libero.it",
+      "telefono": null,
+      "hubspot_id": "426500179144",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Gabriella Azzaro",
+      "email": null,
+      "telefono": "3911858536",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Maria Ricciardelli",
+      "email": null,
+      "telefono": "3496428227",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Cristiana Ruggieri",
+      "email": "cristianaruggeri2611@gmail.com",
+      "telefono": null,
+      "hubspot_id": "388880278736",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Valeria Zafon",
+      "email": null,
+      "telefono": "3483725032",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Serena De Ponto",
+      "email": null,
+      "telefono": "3514455108",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Elia Citro",
+      "email": "eliocitro7@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Norma Giannetti",
+      "email": null,
+      "telefono": "3471226301",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giovanni Dandraia",
+      "email": null,
+      "telefono": "3487282428",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Andrea Spelta",
+      "email": "speltaandrea@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Simonetta",
+      "email": null,
+      "telefono": "3201965501",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Arianna Sichich",
+      "email": null,
+      "telefono": "3460789840",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Stefania Albertin",
+      "email": "albertinstefania@gmail.com",
+      "telefono": null,
+      "hubspot_id": "369935419606",
+      "status": "import_error"
+    },
+    {
+      "nome": "Grazia Fiumana",
+      "email": "graziafiumana@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Leonardo Perini",
+      "email": null,
+      "telefono": "3336297471",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Addolorata Lomardi",
+      "email": null,
+      "telefono": "3382295587",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Barbara Campi",
+      "email": "campi.barbara@yahoo.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Diego Dainese",
+      "email": null,
+      "telefono": "348999318",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Raffaella Casubolo",
+      "email": "raffaellacasubolo71@gmail.com",
+      "telefono": null,
+      "hubspot_id": "307538497738",
+      "status": "import_error"
+    },
+    {
+      "nome": "Tiziana",
+      "email": "tizianab953@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Giuliana",
+      "email": "giuliberard@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Laila Moustafa",
+      "email": null,
+      "telefono": "3394863927",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Giulia Clementi",
+      "email": null,
+      "telefono": "3494378160",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Carmen Tierno",
+      "email": null,
+      "telefono": "3394745902",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Giuseppuina",
+      "email": "apinucciadaluiso@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Elena Bodini",
+      "email": null,
+      "telefono": "3392045623",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Aurora Teruggi",
+      "email": null,
+      "telefono": "3496156239",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Sindaco Delvigo",
+      "email": null,
+      "telefono": "3803263069",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Sig. Froilan",
+      "email": "usa.rossacroce@gmail.com",
+      "telefono": null,
+      "hubspot_id": "324907977960",
+      "status": "import_error"
+    },
+    {
+      "nome": "Claudio Fontana",
+      "email": "fontanaclaudio@hotmail.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Claudia Peron",
+      "email": null,
+      "telefono": "3498421721",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Francesca Carofei",
+      "email": "fra.carofei@icloud.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Monica Terragni",
+      "email": "terragni.monica@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Silvia Grossi",
+      "email": null,
+      "telefono": "3394296488",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Maria Di Nuzzo",
+      "email": "amariadinuzzo358@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Concetta",
+      "email": "concettacinardo@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Antonella Robbiani",
+      "email": null,
+      "telefono": "335258091",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Paola Giacobelli",
+      "email": null,
+      "telefono": "3348810542",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Elisabetta Ghidella",
+      "email": null,
+      "telefono": "3343442458",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Giancarlo Fissone",
+      "email": null,
+      "telefono": "3927179250",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Monica Morelli",
+      "email": null,
+      "telefono": "3387318749",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Giorgia Origa",
+      "email": null,
+      "telefono": "3288610478",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Luciana garrisi",
+      "email": null,
+      "telefono": "3349057602",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Tonino Ficicchia",
+      "email": "toninoficicchia4@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Emanuela Balzarotti",
+      "email": null,
+      "telefono": "3389414462",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Maria",
+      "email": "altamarea.2018@libero.it",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Giovanna Salvidio",
+      "email": null,
+      "telefono": "3930620563",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Roberta Verazzo",
+      "email": "verazzoroberta@yahoo.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Anna Posa",
+      "email": "annablu01@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Barbara Camorani",
+      "email": null,
+      "telefono": "3405635515",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Flavia Farmè",
+      "email": "fiorenza.farne1@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Adriana Mulassano",
+      "email": null,
+      "telefono": "3387205351",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Antonia Bonavita",
+      "email": null,
+      "telefono": "3386484910",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Nicola",
+      "email": null,
+      "telefono": "3517011414",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Mauro Reggi",
+      "email": null,
+      "telefono": "3289051937",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Simone Corpino",
+      "email": null,
+      "telefono": "3485650603",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Mariaelena Torrisi",
+      "email": null,
+      "telefono": "393402534586",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Gaetano Santamaria",
+      "email": null,
+      "telefono": "+39 335 599 6265",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Tatiana",
+      "email": null,
+      "telefono": "+39 338 690 1311",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Imma Grimaldi",
+      "email": null,
+      "telefono": "+393928995340",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Sabina Pascuttini",
+      "email": null,
+      "telefono": "3318303852",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Raffaele Di martino",
+      "email": null,
+      "telefono": "3355292860",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Tiziana Curto/ frisardi",
+      "email": null,
+      "telefono": "3356253956",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Pierluigi Etzi",
+      "email": "pierluigietzi69@libero.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "nessun nome",
+      "email": "kimiamamisegua@live.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Lucio Comazza",
+      "email": null,
+      "telefono": "3884287850",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Anna",
+      "email": "sarottoanna@gmail.com",
+      "telefono": null,
+      "status": "not_found_on_hubspot"
+    },
+    {
+      "nome": "Francesca Amaddeo",
+      "email": "francescaamaddeo@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Daniel Sutera",
+      "email": "daniel.sutera@virgilio.it",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Katia Dondero",
+      "email": "katiadondero@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Manuela Poggi",
+      "email": "manuela.poggi1@icloud.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Vivian Pontarini",
+      "email": "vivianpontarin@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Antonella Iacovitti",
+      "email": null,
+      "telefono": "3385643188",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Alina Macii",
+      "email": null,
+      "telefono": "3776759169",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Giuseppe Porretta",
+      "email": null,
+      "telefono": "3662043768",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Emilio Martire",
+      "email": null,
+      "telefono": "3688049329",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Angela Rotatori",
+      "email": null,
+      "telefono": "3478477590",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Marilena Cardoni",
+      "email": null,
+      "telefono": "3382489222",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Alessandra PAVANELLO",
+      "email": null,
+      "telefono": "34676198737",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Anna Maria Avenia",
+      "email": null,
+      "telefono": "3280466133",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Maria Chiara Baldassini",
+      "email": null,
+      "telefono": "3922352447",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Elena",
+      "email": null,
+      "telefono": "3758013690",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Luca Fregolent",
+      "email": null,
+      "telefono": "3386444224",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Gianluigi Di Berardo",
+      "email": null,
+      "telefono": "3460588729",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Chiara Sperotto",
+      "email": null,
+      "telefono": "3489587312",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Alberto Locatelli",
+      "email": null,
+      "telefono": "3489587312",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Calogero Nocera",
+      "email": null,
+      "telefono": "3881184173",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Simone Parravicini",
+      "email": null,
+      "telefono": "3387648224",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Andrea Mercuri",
+      "email": null,
+      "telefono": "366156266",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Andrea Fossi",
+      "email": null,
+      "telefono": "3492395104",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Rosaria Serino Mormone",
+      "email": null,
+      "telefono": "3479332334",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Mangano Palade",
+      "email": null,
+      "telefono": "351077404",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Andrea D'Avelia",
+      "email": null,
+      "telefono": "3394135995",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Maria Ciano",
+      "email": null,
+      "telefono": "3516866454",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Leopoldo Giordano",
+      "email": null,
+      "telefono": "3312280307",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Enzo Pedron",
+      "email": null,
+      "telefono": "3484717119",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Andrea Dindo",
+      "email": "andreadindo1@gmail.com",
+      "telefono": null,
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Francesco Egiziano",
+      "email": null,
+      "telefono": "3382933088",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Stefano Vincenzo Negri",
+      "email": null,
+      "telefono": "3389175360",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Luisa Foglia",
+      "email": null,
+      "telefono": "3292828549",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Cristina De Plama",
+      "email": null,
+      "telefono": "38951812128",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Antonella Iurilli",
+      "email": null,
+      "telefono": "3346416974",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Beatrice Casoni",
+      "email": null,
+      "telefono": "3471384403",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "email": null,
+      "telefono": "3396748762",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Francesco Celi",
+      "email": null,
+      "telefono": "3802958496",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giovanna Giordano",
+      "email": null,
+      "telefono": "3381084344",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Luca Fregolent",
+      "email": null,
+      "telefono": "3758013690",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Marco Porcu",
+      "email": null,
+      "telefono": "3485276808",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Roberta Ziliani",
+      "email": null,
+      "telefono": "3319390543",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Marco Olivieri",
+      "email": null,
+      "telefono": "348828024",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Jonathan Pasqual",
+      "email": null,
+      "telefono": "3515761679",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Gianmario Cocco",
+      "email": null,
+      "telefono": "3921880698",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Maurizio Brugnaro",
+      "email": null,
+      "telefono": "3517093135",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Liviano Baido",
+      "email": null,
+      "telefono": "3898521124",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Alberto Avanzi",
+      "email": null,
+      "telefono": "3295954873",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Michela Isoscelli",
+      "email": null,
+      "telefono": "3333592414",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Alberto De Micheli",
+      "email": null,
+      "telefono": "3280060440",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giusy Di Napoli",
+      "email": null,
+      "telefono": "3921579552",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Giovanna Santamaria",
+      "email": null,
+      "telefono": "3384279476",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Tina Zingale",
+      "email": null,
+      "telefono": "3202638779",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Rita Galletto",
+      "email": null,
+      "telefono": "3296411577",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Massimilaino Paoletti",
+      "email": null,
+      "telefono": "3514026637",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    },
+    {
+      "nome": "Francesco Pizzichemi",
+      "email": null,
+      "telefono": "3278357164",
+      "hubspot_id": "697586271440",
+      "status": "already_exists"
+    },
+    {
+      "nome": "Bruna Veronesi",
+      "email": null,
+      "telefono": "3341495584",
+      "hubspot_id": "697586271440",
+      "status": "import_error"
+    }
+  ]
+}

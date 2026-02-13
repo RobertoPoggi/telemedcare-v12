@@ -1,0 +1,1266 @@
+[
+  {
+    "nome": "Mario Rossi",
+    "email": null,
+    "telefono": "333-1234567",
+    "data": "16/12/2025",
+    "canale": "Privati",
+    "note": "Richiamare venerdì"
+  },
+  {
+    "nome": "Azienda XYZ",
+    "email": "hr@xyz.it",
+    "telefono": null,
+    "data": "16/12/2025",
+    "canale": "Corporate",
+    "note": "Follow-up se non risponde"
+  },
+  {
+    "nome": "Laura Bianchi",
+    "email": null,
+    "telefono": "340-9876543",
+    "data": "17/12/2025",
+    "canale": "Privati",
+    "note": "Dir. Comm. ore 11:00"
+  },
+  {
+    "nome": "Maria Carla Morroni",
+    "email": null,
+    "telefono": "3314563888",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Elisa Cattarossi",
+    "email": "elisa@cattarossi.it",
+    "telefono": null,
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Michela Annunzi",
+    "email": null,
+    "telefono": "+393476735218",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Roberto Bifulco",
+    "email": null,
+    "telefono": "3360949528",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giansanto Rizzotti",
+    "email": null,
+    "telefono": "393276246536",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. Ore 10.15"
+  },
+  {
+    "nome": "Giuseppe",
+    "email": "pinogaglioti@gmail.com",
+    "telefono": null,
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giusy Pizzo",
+    "email": null,
+    "telefono": "3458414686",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesca Grati",
+    "email": null,
+    "telefono": "3429714170",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": "Da ricontattare tra un mese "
+  },
+  {
+    "nome": "Enzo Gag",
+    "email": "enzogag@tin.it",
+    "telefono": null,
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Luca Catrini",
+    "email": null,
+    "telefono": "3476854422",
+    "data": "2026-01-12 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Emanuela",
+    "email": "doc.emi@libero.it",
+    "telefono": null,
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giorgio Ferranti",
+    "email": null,
+    "telefono": "3396935977",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": "Da ricontattare tra un mese "
+  },
+  {
+    "nome": "Claudia Franceschini",
+    "email": null,
+    "telefono": "3465024760",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Valeria Ramus",
+    "email": null,
+    "telefono": "3398179615",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giovanni Creton",
+    "email": "giovannicreton@gmail.com",
+    "telefono": null,
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea Vergani",
+    "email": null,
+    "telefono": "3357880251",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesco Prandoni",
+    "email": null,
+    "telefono": "3394686011",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Serena Scilleri",
+    "email": "scilleri.serena@libero.it",
+    "telefono": null,
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Deanna Mantovani",
+    "email": null,
+    "telefono": "3454431743",
+    "data": "2026-01-13 00:00:00",
+    "canale": "Privati",
+    "note": "Dir.Comm. Ore 2.30"
+  },
+  {
+    "nome": "Tafaro",
+    "email": null,
+    "telefono": "3358303589",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. Ore 10.30"
+  },
+  {
+    "nome": "Maria Mercel",
+    "email": "mertelmaria@gmail.com",
+    "telefono": null,
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Angela Ronconi",
+    "email": null,
+    "telefono": "3401191079",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giuseppe Zonno",
+    "email": null,
+    "telefono": "3333333430",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Daniele Brunelli",
+    "email": null,
+    "telefono": "3400873094",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea Dente",
+    "email": null,
+    "telefono": "3669785184",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesco Pepe",
+    "email": null,
+    "telefono": "3317545440",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": "Dir.comm. Ore 10.00"
+  },
+  {
+    "nome": "Adriana Mulassano",
+    "email": "audrey.mulassano@gmail.com",
+    "telefono": null,
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Ettore Destro",
+    "email": null,
+    "telefono": "3273118009",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Paola Scarpin",
+    "email": null,
+    "telefono": "3403686122",
+    "data": "2026-01-14 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Valeriani",
+    "email": "dsvalerani@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Michele Lorieri",
+    "email": "lorierimichele@gmail.it",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Carla Martini",
+    "email": "c.martini2009@libero.it",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Gabriella Azzaro",
+    "email": null,
+    "telefono": "3911858536",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Maria Ricciardelli",
+    "email": null,
+    "telefono": "3496428227",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati ",
+    "note": "Dir. Comm. Ore 11.00"
+  },
+  {
+    "nome": "Cristiana Ruggieri",
+    "email": "cristianaruggeri2611@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Valeria Zafon",
+    "email": null,
+    "telefono": "3483725032",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Serena De Ponto",
+    "email": null,
+    "telefono": "3514455108",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Elia Citro",
+    "email": "eliocitro7@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Norma Giannetti",
+    "email": null,
+    "telefono": "3471226301",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giovanni Dandraia",
+    "email": null,
+    "telefono": "3487282428",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea Spelta",
+    "email": "speltaandrea@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Simonetta",
+    "email": null,
+    "telefono": "3201965501",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Arianna Sichich",
+    "email": null,
+    "telefono": "3460789840",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Stefania Albertin",
+    "email": "albertinstefania@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Grazia Fiumana",
+    "email": "graziafiumana@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Leonardo Perini",
+    "email": null,
+    "telefono": "3336297471",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Addolorata Lomardi",
+    "email": null,
+    "telefono": "3382295587",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Barbara Campi",
+    "email": "campi.barbara@yahoo.it",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Diego Dainese",
+    "email": null,
+    "telefono": "348999318",
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Raffaella Casubolo",
+    "email": "raffaellacasubolo71@gmail.com",
+    "telefono": null,
+    "data": "2026-01-16 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Tiziana",
+    "email": "tizianab953@gmail.com",
+    "telefono": null,
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giuliana",
+    "email": "giuliberard@gmail.com",
+    "telefono": null,
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Laila Moustafa",
+    "email": null,
+    "telefono": "3394863927",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giulia Clementi",
+    "email": null,
+    "telefono": "3494378160",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Carmen Tierno",
+    "email": null,
+    "telefono": "3394745902",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giuseppuina",
+    "email": "apinucciadaluiso@gmail.com",
+    "telefono": null,
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Elena Bodini",
+    "email": null,
+    "telefono": "3392045623",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Aurora Teruggi",
+    "email": null,
+    "telefono": "3496156239",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Sindaco Delvigo",
+    "email": null,
+    "telefono": "3803263069",
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Sig. Froilan",
+    "email": "usa.rossacroce@gmail.com",
+    "telefono": null,
+    "data": "2026-01-19 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Claudio Fontana",
+    "email": "fontanaclaudio@hotmail.it",
+    "telefono": null,
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Claudia Peron",
+    "email": null,
+    "telefono": "3498421721",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesca Carofei",
+    "email": "fra.carofei@icloud.com",
+    "telefono": null,
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Monica Terragni",
+    "email": "terragni.monica@gmail.com",
+    "telefono": null,
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Silvia Grossi",
+    "email": null,
+    "telefono": "3394296488",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Maria Di Nuzzo",
+    "email": "amariadinuzzo358@gmail.com",
+    "telefono": null,
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Concetta",
+    "email": "concettacinardo@gmail.com",
+    "telefono": null,
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Antonella Robbiani",
+    "email": null,
+    "telefono": "335258091",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Paola Giacobelli",
+    "email": null,
+    "telefono": "3348810542",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Elisabetta Ghidella",
+    "email": null,
+    "telefono": "3343442458",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Giancarlo Fissone",
+    "email": null,
+    "telefono": "3927179250",
+    "data": "2026-01-20 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Monica Morelli",
+    "email": null,
+    "telefono": "3387318749",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Non risponde ",
+    "note": null
+  },
+  {
+    "nome": "Giorgia Origa",
+    "email": null,
+    "telefono": "3288610478",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Luciana garrisi",
+    "email": null,
+    "telefono": "3349057602",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Tonino Ficicchia",
+    "email": "toninoficicchia4@gmail.com",
+    "telefono": null,
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Emanuela Balzarotti",
+    "email": null,
+    "telefono": "3389414462",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Maria",
+    "email": "altamarea.2018@libero.it",
+    "telefono": null,
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giovanna Salvidio",
+    "email": null,
+    "telefono": "3930620563",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Roberta Verazzo",
+    "email": "verazzoroberta@yahoo.it",
+    "telefono": null,
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Anna Posa",
+    "email": "annablu01@gmail.com",
+    "telefono": null,
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Barbara Camorani",
+    "email": null,
+    "telefono": "3405635515",
+    "data": "2026-01-21 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Flavia Farmè",
+    "email": "fiorenza.farne1@gmail.com",
+    "telefono": null,
+    "data": "2026-01-22 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Adriana Mulassano",
+    "email": null,
+    "telefono": "3387205351",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Antonia Bonavita",
+    "email": null,
+    "telefono": "3386484910",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": "Dir. Comm. Ore 15.00"
+  },
+  {
+    "nome": "Nicola",
+    "email": null,
+    "telefono": "3517011414",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Mauro Reggi",
+    "email": null,
+    "telefono": "3289051937",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Simone Corpino",
+    "email": null,
+    "telefono": "3485650603",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Mariaelena Torrisi",
+    "email": null,
+    "telefono": "393402534586",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Gaetano Santamaria",
+    "email": null,
+    "telefono": "+39 335 599 6265",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Tatiana",
+    "email": null,
+    "telefono": "+39 338 690 1311",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Imma Grimaldi",
+    "email": null,
+    "telefono": "+393928995340",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Sabina Pascuttini",
+    "email": null,
+    "telefono": "3318303852",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Raffaele Di martino",
+    "email": null,
+    "telefono": "3355292860",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": "Dir. Comm. Ore 10.00"
+  },
+  {
+    "nome": "Tiziana Curto/ frisardi",
+    "email": null,
+    "telefono": "3356253956",
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Pierluigi Etzi",
+    "email": "pierluigietzi69@libero.it",
+    "telefono": null,
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "nessun nome",
+    "email": "kimiamamisegua@live.it",
+    "telefono": null,
+    "data": "2026-01-23 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Lucio Comazza",
+    "email": null,
+    "telefono": "3884287850",
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Anna",
+    "email": "sarottoanna@gmail.com",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesca Amaddeo",
+    "email": "francescaamaddeo@gmail.com",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Daniel Sutera",
+    "email": "daniel.sutera@virgilio.it",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Katia Dondero",
+    "email": "katiadondero@gmail.com",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Manuela Poggi",
+    "email": "manuela.poggi1@icloud.com",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Vivian Pontarini",
+    "email": "vivianpontarin@gmail.com",
+    "telefono": null,
+    "data": "2026-01-26 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Antonella Iacovitti",
+    "email": null,
+    "telefono": "3385643188",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Alina Macii",
+    "email": null,
+    "telefono": "3776759169",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giuseppe Porretta",
+    "email": null,
+    "telefono": "3662043768",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Emilio Martire",
+    "email": null,
+    "telefono": "3688049329",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Angela Rotatori",
+    "email": null,
+    "telefono": "3478477590",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Marilena Cardoni",
+    "email": null,
+    "telefono": "3382489222",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Alessandra PAVANELLO",
+    "email": null,
+    "telefono": "34676198737",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Anna Maria Avenia",
+    "email": null,
+    "telefono": "3280466133",
+    "data": "2026-01-28 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Maria Chiara Baldassini",
+    "email": null,
+    "telefono": "3922352447",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Elena",
+    "email": null,
+    "telefono": "3758013690",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Luca Fregolent",
+    "email": null,
+    "telefono": "3386444224",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Gianluigi Di Berardo",
+    "email": null,
+    "telefono": "3460588729",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Chiara Sperotto",
+    "email": null,
+    "telefono": "3489587312",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Alberto Locatelli",
+    "email": null,
+    "telefono": "3489587312",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Calogero Nocera",
+    "email": null,
+    "telefono": "3881184173",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Simone Parravicini",
+    "email": null,
+    "telefono": "3387648224",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea Mercuri",
+    "email": null,
+    "telefono": "366156266",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea Fossi",
+    "email": null,
+    "telefono": "3492395104",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Rosaria Serino Mormone",
+    "email": null,
+    "telefono": "3479332334",
+    "data": "2026-01-30 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Mangano Palade",
+    "email": null,
+    "telefono": "351077404",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Andrea D'Avelia",
+    "email": null,
+    "telefono": "3394135995",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 18.45"
+  },
+  {
+    "nome": "Maria Ciano",
+    "email": null,
+    "telefono": "3516866454",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Leopoldo Giordano",
+    "email": null,
+    "telefono": "3312280307",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Enzo Pedron",
+    "email": null,
+    "telefono": "3484717119",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 12.00"
+  },
+  {
+    "nome": "Andrea Dindo",
+    "email": "andreadindo1@gmail.com",
+    "telefono": null,
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesco Egiziano",
+    "email": null,
+    "telefono": "3382933088",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Stefano Vincenzo Negri",
+    "email": null,
+    "telefono": "3389175360",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Luisa Foglia",
+    "email": null,
+    "telefono": "3292828549",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Cristina De Plama",
+    "email": null,
+    "telefono": "38951812128",
+    "data": "2026-02-03 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Antonella Iurilli",
+    "email": null,
+    "telefono": "3346416974",
+    "data": "2026-02-04 00:00:00",
+    "canale": "Privati ",
+    "note": null
+  },
+  {
+    "nome": "Beatrice Casoni",
+    "email": null,
+    "telefono": "3471384403",
+    "data": "2026-02-04 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 10.30"
+  },
+  {
+    "nome": "Mary De Sanctis",
+    "email": null,
+    "telefono": "3396748762",
+    "data": "2026-02-04 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesco Celi",
+    "email": null,
+    "telefono": "3802958496",
+    "data": "2026-02-05 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giovanna Giordano",
+    "email": null,
+    "telefono": "3381084344",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Luca Fregolent",
+    "email": null,
+    "telefono": "3758013690",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Marco Porcu",
+    "email": null,
+    "telefono": "3485276808",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 16.00"
+  },
+  {
+    "nome": "Roberta Ziliani",
+    "email": null,
+    "telefono": "3319390543",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Marco Olivieri",
+    "email": null,
+    "telefono": "348828024",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 18.30"
+  },
+  {
+    "nome": "Jonathan Pasqual",
+    "email": null,
+    "telefono": "3515761679",
+    "data": "2026-02-09 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Gianmario Cocco",
+    "email": null,
+    "telefono": "3921880698",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Maurizio Brugnaro",
+    "email": null,
+    "telefono": "3517093135",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Liviano Baido",
+    "email": null,
+    "telefono": "3898521124",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Alberto Avanzi",
+    "email": null,
+    "telefono": "3295954873",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Michela Isoscelli",
+    "email": null,
+    "telefono": "3333592414",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Alberto De Micheli",
+    "email": null,
+    "telefono": "3280060440",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Giusy Di Napoli",
+    "email": null,
+    "telefono": "3921579552",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": "Dir. Comm. 15.00"
+  },
+  {
+    "nome": "Giovanna Santamaria",
+    "email": null,
+    "telefono": "3384279476",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Tina Zingale",
+    "email": null,
+    "telefono": "3202638779",
+    "data": "2026-02-10 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Rita Galletto",
+    "email": null,
+    "telefono": "3296411577",
+    "data": "2026-02-11 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Massimilaino Paoletti",
+    "email": null,
+    "telefono": "3514026637",
+    "data": "2026-02-11 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Francesco Pizzichemi",
+    "email": null,
+    "telefono": "3278357164",
+    "data": "2026-02-11 00:00:00",
+    "canale": "Privati",
+    "note": null
+  },
+  {
+    "nome": "Bruna Veronesi",
+    "email": null,
+    "telefono": "3341495584",
+    "data": "2026-02-11 00:00:00",
+    "canale": "Privati",
+    "note": null
+  }
+]

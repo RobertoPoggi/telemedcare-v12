@@ -1,0 +1,941 @@
+{
+  "updated": [
+    {
+      "nome": "Maria Carla Morroni",
+      "lead_id": "LEAD-IRBEMA-00129",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Elisa Cattarossi",
+      "lead_id": "LEAD-IRBEMA-00132",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Michela Annunzi",
+      "lead_id": "LEAD-IRBEMA-00128",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Roberto Bifulco",
+      "lead_id": "LEAD-IRBEMA-00127",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Giansanto Rizzotti",
+      "lead_id": "LEAD-IRBEMA-00126",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giuseppe",
+      "lead_id": "LEAD-IRBEMA-00124",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Giusy Pizzo",
+      "lead_id": "LEAD-IRBEMA-00125",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Francesca Grati",
+      "lead_id": "LEAD-WEB-00001",
+      "updates": [
+        "external_source_id",
+        "cm"
+      ]
+    },
+    {
+      "nome": "Enzo Gag",
+      "lead_id": "LEAD-IRBEMA-00123",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Luca Catrini",
+      "lead_id": "LEAD-IRBEMA-00122",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Emanuela",
+      "lead_id": "LEAD-IRBEMA-00121",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Giorgio Ferranti",
+      "lead_id": "LEAD-IRBEMA-00120",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Claudia Franceschini",
+      "lead_id": "LEAD-IRBEMA-00119",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Valeria Ramus",
+      "lead_id": "LEAD-IRBEMA-00118",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giovanni Creton",
+      "lead_id": "LEAD-IRBEMA-00117",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Andrea Vergani",
+      "lead_id": "LEAD-IRBEMA-00116",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Francesco Prandoni",
+      "lead_id": "LEAD-IRBEMA-00115",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Serena Scilleri",
+      "lead_id": "LEAD-IRBEMA-00113",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Deanna Mantovani",
+      "lead_id": "LEAD-IRBEMA-00112",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Tafaro",
+      "lead_id": "LEAD-IRBEMA-00111",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Maria Mercel",
+      "lead_id": "LEAD-IRBEMA-00110",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Angela Ronconi",
+      "lead_id": "LEAD-IRBEMA-00109",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giuseppe Zonno",
+      "lead_id": "LEAD-IRBEMA-00105",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Daniele Brunelli",
+      "lead_id": "LEAD-IRBEMA-00108",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Andrea Dente",
+      "lead_id": "LEAD-IRBEMA-00102",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Francesco Pepe",
+      "lead_id": "LEAD-IRBEMA-00097",
+      "updates": [
+        "external_source_id",
+        "status"
+      ]
+    },
+    {
+      "nome": "Adriana Mulassano",
+      "lead_id": "LEAD-IRBEMA-00095",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Ettore Destro",
+      "lead_id": "LEAD-IRBEMA-00096",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Paola Scarpin",
+      "lead_id": "LEAD-IRBEMA-00092",
+      "updates": [
+        "external_source_id",
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Valeriani",
+      "lead_id": "LEAD-IRBEMA-00094",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Michele Lorieri",
+      "lead_id": "LEAD-IRBEMA-00093",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Carla Martini",
+      "lead_id": "LEAD-IRBEMA-00091",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Gabriella Azzaro",
+      "lead_id": "LEAD-IRBEMA-00090",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Maria Ricciardelli",
+      "lead_id": "LEAD-IRBEMA-00089",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Cristiana Ruggieri",
+      "lead_id": "LEAD-IRBEMA-00088",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Valeria Zafon",
+      "lead_id": "LEAD-IRBEMA-00087",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Serena De Ponto",
+      "lead_id": "LEAD-IRBEMA-00086",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Elia Citro",
+      "lead_id": "LEAD-IRBEMA-00085",
+      "updates": [
+        "cm",
+        "note"
+      ]
+    },
+    {
+      "nome": "Norma Giannetti",
+      "lead_id": "LEAD-IRBEMA-00084",
+      "updates": [
+        "external_source_id",
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giovanni Dandraia",
+      "lead_id": "LEAD-IRBEMA-00083",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Simonetta",
+      "lead_id": "LEAD-IRBEMA-00082",
+      "updates": [
+        "external_source_id",
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Tiziana",
+      "lead_id": "LEAD-IRBEMA-00134",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Giuliana",
+      "lead_id": "LEAD-IRBEMA-00133",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Laila Moustafa",
+      "lead_id": "LEAD-IRBEMA-00130",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Flavia Farm\u00e8",
+      "lead_id": "LEAD-IRBEMA-00135",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Adriana Mulassano",
+      "lead_id": "LEAD-IRBEMA-00095",
+      "updates": [
+        "external_source_id",
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Lucio Comazza",
+      "lead_id": "LEAD-IRBEMA-00131",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Anna",
+      "lead_id": "LEAD-IRBEMA-00136",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Elena",
+      "lead_id": "LEAD-IRBEMA-00145",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Luca Fregolent",
+      "lead_id": "LEAD-IRBEMA-00144",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Gianluigi Di Berardo",
+      "lead_id": "LEAD-IRBEMA-00143",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Chiara Sperotto",
+      "lead_id": "LEAD-IRBEMA-00142",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Alberto Locatelli",
+      "lead_id": "LEAD-IRBEMA-00142",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Calogero Nocera",
+      "lead_id": "LEAD-IRBEMA-00141",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Simone Parravicini",
+      "lead_id": "LEAD-IRBEMA-00140",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Andrea Mercuri",
+      "lead_id": "LEAD-IRBEMA-00139",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Andrea Fossi",
+      "lead_id": "LEAD-IRBEMA-00137",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Rosaria Serino Mormone",
+      "lead_id": "LEAD-IRBEMA-00138",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Mangano Palade",
+      "lead_id": "LEAD-IRBEMA-00151",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Andrea D'Avelia",
+      "lead_id": "LEAD-IRBEMA-00195",
+      "updates": [
+        "status"
+      ]
+    },
+    {
+      "nome": "Maria Ciano",
+      "lead_id": "LEAD-IRBEMA-00149",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Leopoldo Giordano",
+      "lead_id": "LEAD-IRBEMA-00150",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Stefano Vincenzo Negri",
+      "lead_id": "LEAD-IRBEMA-00148",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Luisa Foglia",
+      "lead_id": "LEAD-IRBEMA-00147",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Cristina De Plama",
+      "lead_id": "LEAD-IRBEMA-00146",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Antonella Iurilli",
+      "lead_id": "LEAD-IRBEMA-00153",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Beatrice Casoni",
+      "lead_id": "LEAD-IRBEMA-00154",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Francesco Celi",
+      "lead_id": "LEAD-IRBEMA-00155",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Luca Fregolent",
+      "lead_id": "LEAD-IRBEMA-00145",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Marco Porcu",
+      "lead_id": "LEAD-IRBEMA-00157",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Roberta Ziliani",
+      "lead_id": "LEAD-IRBEMA-00160",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Marco Olivieri",
+      "lead_id": "LEAD-IRBEMA-00161",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Jonathan Pasqual",
+      "lead_id": "LEAD-IRBEMA-00162",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Gianmario Cocco",
+      "lead_id": "LEAD-IRBEMA-00165",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Maurizio Brugnaro",
+      "lead_id": "LEAD-IRBEMA-00164",
+      "updates": [
+        "cm"
+      ]
+    },
+    {
+      "nome": "Liviano Baido",
+      "lead_id": "LEAD-IRBEMA-00168",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Michela Isoscelli",
+      "lead_id": "LEAD-IRBEMA-00173",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Alberto De Micheli",
+      "lead_id": "LEAD-IRBEMA-00174",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giusy Di Napoli",
+      "lead_id": "LEAD-IRBEMA-00177",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Giovanna Santamaria",
+      "lead_id": "LEAD-IRBEMA-00179",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Tina Zingale",
+      "lead_id": "LEAD-IRBEMA-00180",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Rita Galletto",
+      "lead_id": "LEAD-IRBEMA-00181",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Massimilaino Paoletti",
+      "lead_id": "LEAD-IRBEMA-00182",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Francesco Pizzichemi",
+      "lead_id": "LEAD-IRBEMA-00185",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    },
+    {
+      "nome": "Bruna Veronesi",
+      "lead_id": "LEAD-IRBEMA-00187",
+      "updates": [
+        "cm",
+        "status"
+      ]
+    }
+  ],
+  "imported": [],
+  "skipped": [],
+  "errors": [
+    {
+      "nome": "Andrea Spelta",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Arianna Sichich",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Stefania Albertin",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Grazia Fiumana",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Leonardo Perini",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Addolorata Lomardi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Barbara Campi",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Diego Dainese",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Raffaella Casubolo",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giulia Clementi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Carmen Tierno",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giuseppuina",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Elena Bodini",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Aurora Teruggi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Sindaco Delvigo",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Sig. Froilan",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Claudio Fontana",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Claudia Peron",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Francesca Carofei",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Monica Terragni",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Silvia Grossi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Maria Di Nuzzo",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Concetta",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Antonella Robbiani",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Paola Giacobelli",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Elisabetta Ghidella",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giancarlo Fissone",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Monica Morelli",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giorgia Origa",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Luciana garrisi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Tonino Ficicchia",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Emanuela Balzarotti",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Maria",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Giovanna Salvidio",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Roberta Verazzo",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Anna Posa",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Barbara Camorani",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Antonia Bonavita",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Nicola",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Mauro Reggi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Simone Corpino",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Mariaelena Torrisi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Gaetano Santamaria",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Tatiana",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Imma Grimaldi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Sabina Pascuttini",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Raffaele Di martino",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Tiziana Curto/ frisardi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Pierluigi Etzi",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "nessun nome",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Francesca Amaddeo",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Daniel Sutera",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Katia Dondero",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Manuela Poggi",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Vivian Pontarini",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Antonella Iacovitti",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Alina Macii",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giuseppe Porretta",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Emilio Martire",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Angela Rotatori",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Marilena Cardoni",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Alessandra PAVANELLO",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Anna Maria Avenia",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Maria Chiara Baldassini",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Enzo Pedron",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Andrea Dindo",
+      "errore": "Non trovato"
+    },
+    {
+      "nome": "Francesco Egiziano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giovanna Giordano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Alberto Avanzi",
+      "errore": "HTTP 404"
+    }
+  ],
+  "timestamp": "2026-02-13T19:57:42.751189"
+}

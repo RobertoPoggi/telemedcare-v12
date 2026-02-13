@@ -1,0 +1,90 @@
+[
+  {
+    "#": 1,
+    "DATA": "20/12/2025",
+    "ORA": "11:00",
+    "NOME/AZIENDA": "Laura Bianchi",
+    "TELEFONO": "340-9876543",
+    "EMAIL": "l.bianchi@email.it",
+    "CANALE": "Privati",
+    "STATO": "Confermato",
+    "NOTE": "Interessata a piano avanzato"
+  },
+  {
+    "#": 2,
+    "DATA": "20/12/2025",
+    "ORA": "15:30",
+    "NOME/AZIENDA": "Giuseppe Verdi",
+    "TELEFONO": "338-1122334",
+    "EMAIL": "g.verdi@email.it",
+    "CANALE": "Privati",
+    "STATO": "Da confermare",
+    "NOTE": "Richiamare giorno prima"
+  },
+  {
+    "#": 3,
+    "DATA": "21/12/2025",
+    "ORA": "10:00",
+    "NOME/AZIENDA": "Azienda ABC Srl",
+    "TELEFONO": "02-12345678",
+    "EMAIL": "hr@abc.it",
+    "CANALE": "Corporate",
+    "STATO": "Confermato",
+    "NOTE": "Welfare aziendale"
+  },
+  {
+    "#": 5,
+    "DATA": "2026-01-15 00:00:00",
+    "ORA": "10.15",
+    "NOME/AZIENDA": "Giansanto Rizzotti",
+    "TELEFONO": 3276246536,
+    "EMAIL": "giansanto@rizzotti.it",
+    "CANALE": "Privato",
+    "STATO": "Confermato",
+    "NOTE": null
+  },
+  {
+    "#": 6,
+    "DATA": "2026-01-15 00:00:00",
+    "ORA": "14.30",
+    "NOME/AZIENDA": "Deanna Mantovani",
+    "TELEFONO": 3454431743,
+    "EMAIL": "deannamant@outlook.it",
+    "CANALE": "privato",
+    "STATO": "Confermato",
+    "NOTE": "per avere un'idea "
+  },
+  {
+    "#": 7,
+    "DATA": "2026-01-23 00:00:00",
+    "ORA": "10.00",
+    "NOME/AZIENDA": "Tafaro",
+    "TELEFONO": 3358303589,
+    "EMAIL": "t.tafaro@virgilio.it",
+    "CANALE": "Privato",
+    "STATO": "Da confermare ",
+    "NOTE": "copire meglio chi siamo, semestrale, lazio"
+  },
+  {
+    "#": 8,
+    "DATA": "2026-01-19 00:00:00",
+    "ORA": "10.00",
+    "NOME/AZIENDA": "Francesco Pepe",
+    "TELEFONO": 3317545440,
+    "EMAIL": "cicciopepe@libero.it",
+    "CANALE": "Privato",
+    "STATO": "Da confermare",
+    "NOTE": null
+  },
+  {
+    "#": 9,
+    "DATA": "2026-01-19 00:00:00",
+    "ORA": "11.00",
+    "NOME/AZIENDA": "Maria Ricciardelli",
+    "TELEFONO": "3496428227",
+    "EMAIL": "\nricciardelli.ela@gmail.com",
+    "CANALE": "Privato",
+    "STATO": "Da confermare",
+    "NOTE": "illustrazione prodotti e prezzi"
+  }
+]

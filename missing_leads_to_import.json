@@ -1,0 +1,35 @@
+[
+  {
+    "#": 1,
+    "DATA": "20/12/2025",
+    "ORA": "11:00",
+    "NOME/AZIENDA": "Laura Bianchi",
+    "TELEFONO": "340-9876543",
+    "EMAIL": "l.bianchi@email.it",
+    "CANALE": "Privati",
+    "STATO": "Confermato",
+    "NOTE": "Interessata a piano avanzato"
+  },
+  {
+    "#": 2,
+    "DATA": "20/12/2025",
+    "ORA": "15:30",
+    "NOME/AZIENDA": "Giuseppe Verdi",
+    "TELEFONO": "338-1122334",
+    "EMAIL": "g.verdi@email.it",
+    "CANALE": "Privati",
+    "STATO": "Da confermare",
+    "NOTE": "Richiamare giorno prima"
+  },
+  {
+    "#": 3,
+    "DATA": "21/12/2025",
+    "ORA": "10:00",
+    "NOME/AZIENDA": "Azienda ABC Srl",
+    "TELEFONO": "02-12345678",
+    "EMAIL": "hr@abc.it",
+    "CANALE": "Corporate",
+    "STATO": "Confermato",
+    "NOTE": "Welfare aziendale"
+  }
+]

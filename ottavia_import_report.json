@@ -1,0 +1,40 @@
+{
+  "imported": [],
+  "skipped": [
+    {
+      "nome": "Giansanto Rizzotti",
+      "motivo": "Gi\u00e0 presente"
+    },
+    {
+      "nome": "Deanna Mantovani",
+      "motivo": "Gi\u00e0 presente"
+    },
+    {
+      "nome": "Tafaro",
+      "motivo": "Gi\u00e0 presente"
+    },
+    {
+      "nome": "Francesco Pepe",
+      "motivo": "Gi\u00e0 presente"
+    },
+    {
+      "nome": "Maria Ricciardelli",
+      "motivo": "Gi\u00e0 presente"
+    }
+  ],
+  "errors": [
+    {
+      "nome": "Laura Bianchi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giuseppe Verdi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Azienda ABC Srl",
+      "errore": "HTTP 404"
+    }
+  ],
+  "timestamp": "2026-02-13T19:41:06.594687"
+}

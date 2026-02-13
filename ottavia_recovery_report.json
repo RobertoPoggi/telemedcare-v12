@@ -1,0 +1,37 @@
+{
+  "imported": [],
+  "errors": [
+    {
+      "nome": "Alberto Avanzi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giovanna Giordano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Francesco Egiziano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Enzo Pedron",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Andrea Dindo",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Maria Chiara Baldassini",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Laura Bianchi",
+      "errore": "HTTP 404"
+    }
+  ]
+}
