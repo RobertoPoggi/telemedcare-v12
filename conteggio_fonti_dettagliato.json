@@ -1,0 +1,15 @@
+{
+  "total_leads": 191,
+  "leads_with_fonte": 191,
+  "leads_without_fonte": 0,
+  "fonte_distribution": {
+    "Privati IRBEMA": 145,
+    "Form Contattaci": 1,
+    "Form eCura": 39,
+    "Form eCura x Test": 3,
+    "B2B IRBEMA": 1,
+    "Sito web Medica GB": 1,
+    "NETWORKING": 1
+  },
+  "leads_senza_fonte": []
+}

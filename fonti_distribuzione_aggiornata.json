@@ -1,0 +1,18 @@
+{
+  "total_leads": 191,
+  "unique_sources": 6,
+  "distribution": {
+    "Privati IRBEMA": 146,
+    "Form eCura": 39,
+    "Form eCura x Test": 3,
+    "B2B IRBEMA": 1,
+    "Sito web Medica GB": 1,
+    "NETWORKING": 1
+  },
+  "update_timestamp": "2026-02-13T23:10:00Z",
+  "changes": {
+    "lead_id": "LEAD-MANUAL-1771014111283",
+    "old_fonte": "Form Contattaci",
+    "new_fonte": "Privati IRBEMA"
+  }
+}
