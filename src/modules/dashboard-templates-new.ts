@@ -2357,6 +2357,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <span class="text-gray-600">NETWORKING</span>
                             <span class="font-bold" id="sourceNetworking">-</span>
                         </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">SR</span>
+                            <span class="font-bold" id="sourceSR">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2385,6 +2389,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="B2B IRBEMA">B2B IRBEMA</option>
                         <option value="Sito web Medica GB">Sito web Medica GB</option>
                         <option value="NETWORKING">NETWORKING</option>
+                        <option value="SR">SR</option>
                     </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
@@ -2637,13 +2642,14 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('📊 Fonti rilevate:', sources);
             console.log('📊 Total leads:', leads.length);
             
-            // Conta per le 6 fonti principali
+            // Conta per le 7 fonti principali
             let privatiIRBEMACount = 0;
             let formECuraCount = 0;
             let formECuraTestCount = 0;
             let b2bIRBEMACount = 0;
             let sitoWebMedicaGBCount = 0;
             let networkingCount = 0;
+            let srCount = 0;
             let altroCount = 0;
             
             // Itera su tutte le fonti e classifica
@@ -2669,6 +2675,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 else if (source === 'NETWORKING') {
                     networkingCount += count;
                 }
+                else if (source === 'SR') {
+                    srCount += count;
+                }
                 else {
                     // Altre fonti non categorizzate
                     altroCount += count;
@@ -2682,6 +2691,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('sourceB2BIRBEMA').textContent = b2bIRBEMACount;
             document.getElementById('sourceSitoWebMedicaGB').textContent = sitoWebMedicaGBCount;
             document.getElementById('sourceNetworking').textContent = networkingCount;
+            document.getElementById('sourceSR').textContent = srCount;
             
             // Log debug se ci sono fonti non categorizzate
             if (altroCount > 0) {
@@ -2692,7 +2702,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     s !== 'Form eCura x Test' && 
                     s !== 'B2B IRBEMA' && 
                     s !== 'Sito web Medica GB' && 
-                    s !== 'NETWORKING'
+                    s !== 'NETWORKING' &&
+                    s !== 'SR'
                 ));
             }
         }
