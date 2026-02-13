@@ -1,0 +1,21 @@
+{
+  "imported": [
+    {
+      "nome": "Andrea Dindo",
+      "lead_id": "LEAD-MANUAL-1771016913982",
+      "email": "andreadindo1@gmail.com",
+      "phone": "",
+      "cm": "OB",
+      "status": "CONTACTED"
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "lead_id": "LEAD-MANUAL-1771016914907",
+      "email": "maryde.sanctis@placeholder.com",
+      "phone": "3396748762",
+      "cm": "OB",
+      "status": "CONTACTED"
+    }
+  ],
+  "errors": []
+}

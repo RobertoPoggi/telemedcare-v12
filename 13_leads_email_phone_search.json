@@ -1,0 +1,76 @@
+{
+  "found": [
+    {
+      "nome_tracker": "Addolorata Lomardi",
+      "contatto": "3382295587",
+      "hubspot_id": "364238873803",
+      "hubspot_name": "Dolores Lombardi",
+      "hubspot_email": "presidelombardi@gmail.com",
+      "hubspot_phone": "3382295587",
+      "match_type": "telefono",
+      "row": 55
+    }
+  ],
+  "not_found": [
+    {
+      "nome": "Giuseppuina",
+      "contatto": "apinucciadaluiso@gmail.com",
+      "row": 64
+    },
+    {
+      "nome": "Sindaco Delvigo",
+      "contatto": "3803263069",
+      "row": 67
+    },
+    {
+      "nome": "Concetta",
+      "contatto": "concettacinardo@gmail.com",
+      "row": 75
+    },
+    {
+      "nome": "Tonino Ficicchia",
+      "contatto": "toninoficicchia4@gmail.com",
+      "row": 83
+    },
+    {
+      "nome": "Antonia Bonavita",
+      "contatto": "3386484910",
+      "row": 92
+    },
+    {
+      "nome": "Mariaelena Torrisi",
+      "contatto": "393402534586",
+      "row": 96
+    },
+    {
+      "nome": "Imma Grimaldi",
+      "contatto": "+393928995340",
+      "row": 99
+    },
+    {
+      "nome": "nessun nome",
+      "contatto": "kimiamamisegua@live.it",
+      "row": 104
+    },
+    {
+      "nome": "Vivian Pontarini",
+      "contatto": "vivianpontarin@gmail.com",
+      "row": 111
+    },
+    {
+      "nome": "Alina Macii",
+      "contatto": "3776759169",
+      "row": 113
+    },
+    {
+      "nome": "Marilena Cardoni",
+      "contatto": "3382489222",
+      "row": 117
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "contatto": "3396748762",
+      "row": 143
+    }
+  ]
+}

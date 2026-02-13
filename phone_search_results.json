@@ -1,0 +1,79 @@
+{
+  "found": [],
+  "not_found": [
+    {
+      "name": "Sindaco Delvigo",
+      "email": null,
+      "phone": "3803263069",
+      "row": 67
+    },
+    {
+      "name": "Antonia Bonavita",
+      "email": null,
+      "phone": "3386484910",
+      "row": 92
+    },
+    {
+      "name": "Mariaelena Torrisi",
+      "email": null,
+      "phone": "393402534586",
+      "row": 96
+    },
+    {
+      "name": "Imma Grimaldi",
+      "email": null,
+      "phone": "+393928995340",
+      "row": 99
+    },
+    {
+      "name": "Alina Macii",
+      "email": null,
+      "phone": "3776759169",
+      "row": 113
+    },
+    {
+      "name": "Marilena Cardoni",
+      "email": null,
+      "phone": "3382489222",
+      "row": 117
+    },
+    {
+      "name": "Mary De Sanctis",
+      "email": null,
+      "phone": "3396748762",
+      "row": 143
+    }
+  ],
+  "no_phone": [
+    {
+      "name": "Giuseppuina",
+      "email": "apinucciadaluiso@gmail.com",
+      "phone": null,
+      "row": 64
+    },
+    {
+      "name": "Concetta",
+      "email": "concettacinardo@gmail.com",
+      "phone": null,
+      "row": 75
+    },
+    {
+      "name": "Tonino Ficicchia",
+      "email": "toninoficicchia4@gmail.com",
+      "phone": null,
+      "row": 83
+    },
+    {
+      "name": "nessun nome",
+      "email": "kimiamamisegua@live.it",
+      "phone": null,
+      "row": 104
+    },
+    {
+      "name": "Vivian Pontarini",
+      "email": "vivianpontarin@gmail.com",
+      "phone": null,
+      "row": 111
+    }
+  ]
+}

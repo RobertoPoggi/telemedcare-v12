@@ -1,0 +1,126 @@
+{
+  "found": [
+    {
+      "excel_data": {
+        "name": "Mariaelena Torrisi",
+        "lastname": "Torrisi",
+        "email": null,
+        "phone": "393402534586",
+        "row": 96
+      },
+      "hubspot_matches": [
+        {
+          "id": "335712595149",
+          "firstname": "Felice",
+          "lastname": "Torrisi",
+          "email": "ettappalti@gmail.com",
+          "phone": "095 8166070",
+          "mobilephone": null
+        }
+      ],
+      "duplicates": false
+    },
+    {
+      "excel_data": {
+        "name": "Imma Grimaldi",
+        "lastname": "Grimaldi",
+        "email": null,
+        "phone": "+393928995340",
+        "row": 99
+      },
+      "hubspot_matches": [
+        {
+          "id": "312110832878",
+          "firstname": null,
+          "lastname": "Grimaldi",
+          "email": "r.grimaldi@infosistemi.com",
+          "phone": "011 6054020",
+          "mobilephone": null
+        },
+        {
+          "id": "334384708831",
+          "firstname": "Patrizia",
+          "lastname": "Grimaldi",
+          "email": "patrizia.grimaldi-perilli@it.ey.com",
+          "phone": "366 9030885",
+          "mobilephone": "+39 366 9030885"
+        }
+      ],
+      "duplicates": true
+    }
+  ],
+  "not_found": [
+    {
+      "name": "Giuseppuina",
+      "lastname": "Giuseppuina",
+      "email": "apinucciadaluiso@gmail.com",
+      "phone": null,
+      "row": 64
+    },
+    {
+      "name": "Sindaco Delvigo",
+      "lastname": "Delvigo",
+      "email": null,
+      "phone": "3803263069",
+      "row": 67
+    },
+    {
+      "name": "Concetta",
+      "lastname": "Concetta",
+      "email": "concettacinardo@gmail.com",
+      "phone": null,
+      "row": 75
+    },
+    {
+      "name": "Tonino Ficicchia",
+      "lastname": "Ficicchia",
+      "email": "toninoficicchia4@gmail.com",
+      "phone": null,
+      "row": 83
+    },
+    {
+      "name": "Antonia Bonavita",
+      "lastname": "Bonavita",
+      "email": null,
+      "phone": "3386484910",
+      "row": 92
+    },
+    {
+      "name": "Vivian Pontarini",
+      "lastname": "Pontarini",
+      "email": "vivianpontarin@gmail.com",
+      "phone": null,
+      "row": 111
+    },
+    {
+      "name": "Alina Macii",
+      "lastname": "Macii",
+      "email": null,
+      "phone": "3776759169",
+      "row": 113
+    },
+    {
+      "name": "Marilena Cardoni",
+      "lastname": "Cardoni",
+      "email": null,
+      "phone": "3382489222",
+      "row": 117
+    },
+    {
+      "name": "Mary De Sanctis",
+      "lastname": "De Sanctis",
+      "email": null,
+      "phone": "3396748762",
+      "row": 143
+    }
+  ],
+  "no_lastname": [
+    {
+      "name": "nessun nome",
+      "lastname": "",
+      "email": "kimiamamisegua@live.it",
+      "phone": null,
+      "row": 104
+    }
+  ]
+}

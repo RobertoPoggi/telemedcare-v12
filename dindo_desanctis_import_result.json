@@ -1,0 +1,13 @@
+{
+  "imported": [],
+  "errors": [
+    {
+      "nome": "Andrea Dindo",
+      "errore": "HTTP 400 - {'success': False, 'error': 'Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email'}"
+    },
+    {
+      "nome": "Mary De Sanctis",
+      "errore": "HTTP 400 - {'success': False, 'error': 'Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email'}"
+    }
+  ]
+}
