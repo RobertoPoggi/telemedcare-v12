@@ -8494,6 +8494,9 @@ app.put('/api/leads/:id', async (c) => {
       // Stato lead
       stato: 'stato',
       
+      // HubSpot integration
+      external_source_id: 'external_source_id',
+      
       // Altri
       condizioniSalute: 'condizioniSalute',
       intestatarioContratto: 'intestatarioContratto',

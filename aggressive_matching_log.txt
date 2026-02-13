@@ -1,0 +1,1792 @@
+================================================================================
+🔥 MATCHING AGGRESSIVO HUBSPOT - 3 STRATEGIE
+================================================================================
+
+📥 Scaricamento lead senza HubSpot ID...
+✅ 173 lead da processare
+
+📥 Scaricamento contatti HubSpot...
+   Pagina 1... +100
+   Pagina 2... +100
+   Pagina 3... +100
+   Pagina 4... +100
+   Pagina 5... +100
+   Pagina 6... +100
+   Pagina 7... +100
+   Pagina 8... +100
+   Pagina 9... +100
+   Pagina 10... +100
+   Pagina 11... +100
+   Pagina 12... +100
+   Pagina 13... +100
+   Pagina 14... +100
+   Pagina 15... +100
+   Pagina 16... +100
+   Pagina 17... +100
+   Pagina 18... +100
+   Pagina 19... +100
+   Pagina 20... +100
+   Pagina 21... +100
+   Pagina 22... +100
+   Pagina 23... +100
+   Pagina 24... +100
+   Pagina 25... +100
+   Pagina 26... +100
+   Pagina 27... +100
+   Pagina 28... +100
+   Pagina 29... +100
+   Pagina 30... +100
+   Pagina 31... +100
+   Pagina 32... +100
+   Pagina 33... +100
+   Pagina 34... +100
+   Pagina 35... +100
+   Pagina 36... +100
+   Pagina 37... +100
+   Pagina 38... +100
+   Pagina 39... +100
+   Pagina 40... +100
+   Pagina 41... +100
+   Pagina 42... +100
+   Pagina 43... +100
+   Pagina 44... +100
+   Pagina 45... +88
+✅ 4488 contatti HubSpot
+
+================================================================================
+🔍 FASE 1: RICERCA PER COGNOME
+================================================================================
+
+[1/173] Alberto Avanzi (ID: LEAD-MANUAL-1770946067171)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 688331078853
+      HubSpot: Alberto Avanzi
+      ✅ Aggiornato!
+
+[2/173] Marco Olivieri (ID: LEAD-MANUAL-1770946064859)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 684675691736
+      HubSpot: Marco Olivieri
+      ✅ Aggiornato!
+
+[3/173] Giovanna Giordano (ID: LEAD-MANUAL-1770946063740)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 682330208477
+      HubSpot: Giovanna Giordano
+      ✅ Aggiornato!
+
+[4/173] Mary De Sanctis (ID: LEAD-MANUAL-1770946062533)
+   ⏭️  Non trovato per cognome
+
+[5/173] Francesco Egiziano (ID: LEAD-MANUAL-1770946061218)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 678450709720
+      HubSpot: Francesco Egiziano
+      ✅ Aggiornato!
+
+[6/173] Andrea Dindo (ID: LEAD-MANUAL-1770946060015)
+   ⏭️  Non trovato per cognome
+
+[7/173] Enzo Pedron (ID: LEAD-MANUAL-1770946058870)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 676141858038
+      HubSpot: enzo Pedron
+      ✅ Aggiornato!
+
+[8/173] Andrea Mercuri (ID: LEAD-MANUAL-1770946057712)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672179573992
+      HubSpot: Andrea Mercuri
+      ✅ Aggiornato!
+
+[9/173] Maria Chiara Baldassini (ID: LEAD-MANUAL-1770946055276)
+   ⏭️  Non trovato per cognome
+
+[10/173] Adriana Mulassano (ID: LEAD-MANUAL-1770946054097)
+   ⏭️  Non trovato per cognome
+
+[11/173] Paola Scarpin (ID: LEAD-MANUAL-1770946051660)
+   ⏭️  Non trovato per cognome
+
+[12/173] Laura Bianchi (ID: LEAD-MANUAL-1770946050424)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312101538028
+      HubSpot: Luigi Bianchi
+      ✅ Aggiornato!
+
+[13/173] Andrea d'Avella (ID: LEAD-IRBEMA-00195)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 674973365475
+      HubSpot: Andrea d'Avella
+      ✅ Aggiornato!
+
+[14/173] Massimiliano Paoletti (ID: LEAD-IRBEMA-00182)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 692116160720
+      HubSpot: Massimiliano Paoletti
+      ✅ Aggiornato!
+
+[15/173] Rita Galletto (ID: LEAD-IRBEMA-00181)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 692099584248
+      HubSpot: Rita Galletto
+      ✅ Aggiornato!
+
+[16/173] Giovanna Santamaria (ID: LEAD-IRBEMA-00179)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 690498223312
+      HubSpot: Giovanna Santamaria
+      ✅ Aggiornato!
+
+[17/173] Tina Zingale (ID: LEAD-IRBEMA-00180)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 690877176046
+      HubSpot: Tina Zingale
+      ✅ Aggiornato!
+
+[18/173] Giusy Di Napoli (ID: LEAD-IRBEMA-00177)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 690420845812
+      HubSpot: Giusy Di Napoli
+      ✅ Aggiornato!
+
+[19/173] Alberto De Micheli (ID: LEAD-IRBEMA-00174)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 689435726024
+      HubSpot: Alberto De Micheli
+      ✅ Aggiornato!
+
+[20/173] Michela Isoscelli (ID: LEAD-IRBEMA-00173)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 689075370206
+      HubSpot: Michela Isoscelli
+      ✅ Aggiornato!
+
+[21/173] Jonathan Pasqual (ID: LEAD-IRBEMA-00162)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 684992437434
+      HubSpot: Jonathan Pasqual
+      ✅ Aggiornato!
+
+[22/173] Marco Olivieri (ID: LEAD-IRBEMA-00161)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 684675691736
+      HubSpot: Marco Olivieri
+      ✅ Aggiornato!
+
+[23/173] Rossana Bettega (ID: LEAD-IRBEMA-00159)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 684362345682
+      HubSpot: Rossana Bettega
+      ✅ Aggiornato!
+
+[24/173] Roberta Ziliani (ID: LEAD-IRBEMA-00160)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 684375317742
+      HubSpot: Roberta Ziliani
+      ✅ Aggiornato!
+
+[25/173] Marco Porcu (ID: LEAD-IRBEMA-00157)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 683940719864
+      HubSpot: Marco Porcu
+      ✅ Aggiornato!
+
+[26/173] Francesco Celi (ID: LEAD-IRBEMA-00155)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 681872901364
+      HubSpot: Francesco Celi
+      ✅ Aggiornato!
+
+[27/173] Antonella Iurilli (ID: LEAD-IRBEMA-00153)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 680340952263
+      HubSpot: Antonella Iurilli
+      ✅ Aggiornato!
+
+[28/173] Beatrice Casoni (ID: LEAD-IRBEMA-00154)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 680530248907
+      HubSpot: Beatrice Casoni
+      ✅ Aggiornato!
+
+[29/173] Luca Fregolent (ID: LEAD-IRBEMA-00145)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672179573976
+      HubSpot: Luca Fregolent
+      ✅ Aggiornato!
+
+[30/173] Chiara Sperotto (ID: LEAD-IRBEMA-00143)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672173295849
+      HubSpot: Chiara Sperotto
+      ✅ Aggiornato!
+
+[31/173] Gianluigi Di Berardo (ID: LEAD-IRBEMA-00144)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672175741154
+      HubSpot: Gianluigi Di Berardo
+      ✅ Aggiornato!
+
+[32/173] Alberto Locatelli (ID: LEAD-IRBEMA-00142)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672178472161
+      HubSpot: ALBERTO LOCATELLI
+      ✅ Aggiornato!
+
+[33/173] Simone Parravicini (ID: LEAD-IRBEMA-00140)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335758285013
+      HubSpot: Simone Parravicini
+      ✅ Aggiornato!
+
+[34/173] Calogero Nocera (ID: LEAD-IRBEMA-00141)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672172444883
+      HubSpot: calogero nocera
+      ✅ Aggiornato!
+
+[35/173] Andrea Mercuri (ID: LEAD-IRBEMA-00139)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672179573992
+      HubSpot: Andrea Mercuri
+      ✅ Aggiornato!
+
+[36/173] Rosaria Serino Mormone (ID: LEAD-IRBEMA-00138)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672631327956
+      HubSpot: rosaria serino Mormone
+      ✅ Aggiornato!
+
+[37/173] Andrea Fossi (ID: LEAD-IRBEMA-00137)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 672404749560
+      HubSpot: Andrea Fossi
+      ✅ Aggiornato!
+
+[38/173] Anna Sarotto (ID: LEAD-IRBEMA-00136)
+   ⏭️  Non trovato per cognome
+
+[39/173] Giuliana Berardi (ID: LEAD-IRBEMA-00133)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335755782366
+      HubSpot: Gianni Berardi
+      ✅ Aggiornato!
+
+[40/173] Tiziana (Cognome non fornito) (ID: LEAD-IRBEMA-00134)
+   ⏭️  Non trovato per cognome
+
+[41/173] Flavia Farmè (ID: LEAD-IRBEMA-00135)
+   ⏭️  Non trovato per cognome
+
+[42/173] Elisa Cattarossi (ID: LEAD-IRBEMA-00132)
+   ⏭️  Non trovato per cognome
+
+[43/173] Lucio Comazza (ID: LEAD-IRBEMA-00131)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 665218648311
+      HubSpot: Lucio Comazza
+      ✅ Aggiornato!
+
+[44/173] Maria Carla Morroni (ID: LEAD-IRBEMA-00129)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 598971135194
+      HubSpot: Maria Carla Morroni
+      ✅ Aggiornato!
+
+[45/173] Laila Moustafa (ID: LEAD-IRBEMA-00130)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 649508678878
+      HubSpot: Laila Moustafa
+      ✅ Aggiornato!
+
+[46/173] Michela Annunzi (ID: LEAD-IRBEMA-00128)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 615327140087
+      HubSpot: Michela Annunzi
+      ✅ Aggiornato!
+
+[47/173] Roberto Bifulco (ID: LEAD-IRBEMA-00127)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 548937575660
+      HubSpot: Roberto Bifulco
+      ✅ Aggiornato!
+
+[48/173] Giusy Pizzo (ID: LEAD-IRBEMA-00125)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 597568670927
+      HubSpot: Giusy Pizzo
+      ✅ Aggiornato!
+
+[49/173] Giansanto Rizzotti (ID: LEAD-IRBEMA-00126)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 595690738928
+      HubSpot: Giansanto Rizzotti
+      ✅ Aggiornato!
+
+[50/173] Giuseppe Gaglioti (ID: LEAD-IRBEMA-00124)
+   ⏭️  Non trovato per cognome
+
+[51/173] Enzo Gag (ID: LEAD-IRBEMA-00123)
+   ⏭️  Non trovato per cognome
+
+[52/173] Luca Catrini (ID: LEAD-IRBEMA-00122)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 564515541219
+      HubSpot: Lalla Catrini
+      ✅ Aggiornato!
+
+[53/173] Emanuela (cognome non fornito) (ID: LEAD-IRBEMA-00121)
+   ⏭️  Non trovato per cognome
+
+[54/173] Giorgio Ferranti (ID: LEAD-IRBEMA-00120)
+   ⏭️  Non trovato per cognome
+
+[55/173] Valeria Ramus (ID: LEAD-IRBEMA-00118)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 545886178532
+      HubSpot: Valeria Ramus
+      ✅ Aggiornato!
+
+[56/173] Claudia Franceschini (ID: LEAD-IRBEMA-00119)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335735121125
+      HubSpot: Massimo Franceschini
+      ✅ Aggiornato!
+
+[57/173] Giovanni Creton (ID: LEAD-IRBEMA-00117)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 649679435977
+      HubSpot: Giovanni Creton
+      ✅ Aggiornato!
+
+[58/173] Andrea Vergani (ID: LEAD-IRBEMA-00116)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 510476386534
+      HubSpot: Andrea Vergani
+      ✅ Aggiornato!
+
+[59/173] Francesco Prandoni (ID: LEAD-IRBEMA-00115)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 487829187820
+      HubSpot: Francesco Prandoni
+      ✅ Aggiornato!
+
+[60/173] Silvia Brocadello (ID: LEAD-IRBEMA-00114)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 513293469907
+      HubSpot: Silvia Brocadello
+      ✅ Aggiornato!
+
+[61/173] Serena Scilleri (ID: LEAD-IRBEMA-00113)
+   ⏭️  Non trovato per cognome
+
+[62/173] Deanna Mantovani (ID: LEAD-IRBEMA-00112)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 452922378482
+      HubSpot: Deanna Mantovani
+      ✅ Aggiornato!
+
+[63/173] T Tafaro (ID: LEAD-IRBEMA-00111)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 474824183019
+      HubSpot: T. Tafaro
+      ✅ Aggiornato!
+
+[64/173] Maria Mertel (ID: LEAD-IRBEMA-00110)
+   ⏭️  Non trovato per cognome
+
+[65/173] Angela Ronconi (ID: LEAD-IRBEMA-00109)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 455923102937
+      HubSpot: Angela Ronconi
+      ✅ Aggiornato!
+
+[66/173] Daniele Brunelli (ID: LEAD-IRBEMA-00108)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 454523289836
+      HubSpot: Daniele Brunelli
+      ✅ Aggiornato!
+
+[67/173] Manu Cels - Simone (ID: LEAD-IRBEMA-00107)
+   ⏭️  Non trovato per cognome
+
+[68/173] Maria Maglione (ID: LEAD-IRBEMA-00106)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 444771654858
+      HubSpot: Maria Maglione
+      ✅ Aggiornato!
+
+[69/173] Giuseppe Zonno (ID: LEAD-IRBEMA-00105)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 431074291923
+      HubSpot: Giuseppe Zonno
+      ✅ Aggiornato!
+
+[70/173] Giuliano Rapelli (ID: LEAD-IRBEMA-00103)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 441232219322
+      HubSpot: Giuliano Rapelli
+      ✅ Aggiornato!
+
+[71/173] Eros Coghi (ID: LEAD-IRBEMA-00104)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 441402480850
+      HubSpot: Eros Coghi
+      ✅ Aggiornato!
+
+[72/173] Andrea Dente (ID: LEAD-IRBEMA-00102)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 435498330312
+      HubSpot: Andrea Dente
+      ✅ Aggiornato!
+
+[73/173] Luca Nadali (ID: LEAD-IRBEMA-00101)
+   ⏭️  Non trovato per cognome
+
+[74/173] Norma Zanetta (ID: LEAD-IRBEMA-00100)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 433491075259
+      HubSpot: Norma Zanetta
+      ✅ Aggiornato!
+
+[75/173] Maria Cristina Sorcini (ID: LEAD-IRBEMA-00099)
+   ⏭️  Non trovato per cognome
+
+[76/173] Mauro Giumelli (ID: LEAD-IRBEMA-00098)
+   ⏭️  Non trovato per cognome
+
+[77/173] francesco pepe (ID: LEAD-IRBEMA-00097)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312139678967
+      HubSpot: Mario Pepe
+      ✅ Aggiornato!
+
+[78/173] Adriana Mulassano (ID: LEAD-IRBEMA-00095)
+   ⏭️  Non trovato per cognome
+
+[79/173] Ettore Destro (ID: LEAD-IRBEMA-00096)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 424790147265
+      HubSpot: Ettore Destro
+      ✅ Aggiornato!
+
+[80/173] Michele Lorieri (ID: LEAD-IRBEMA-00093)
+   ⏭️  Non trovato per cognome
+
+[81/173] Ds Valerani (ID: LEAD-IRBEMA-00094)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 420514509018
+      HubSpot: Ds Valerani
+      ✅ Aggiornato!
+
+[82/173] Paola Scarpin (ID: LEAD-IRBEMA-00092)
+   ⏭️  Non trovato per cognome
+
+[83/173] Gabriella Azzaro (ID: LEAD-IRBEMA-00090)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 400812402920
+      HubSpot: Gabriella Azzaro
+      ✅ Aggiornato!
+
+[84/173] Carla martini (ID: LEAD-IRBEMA-00091)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 426500179144
+      HubSpot: Carla Martini
+      ✅ Aggiornato!
+
+[85/173] Maria Ricciardelli (ID: LEAD-IRBEMA-00089)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 373804875968
+      HubSpot: Maria Ricciardelli
+      ✅ Aggiornato!
+
+[86/173] Cristiana Rugggeri (ID: LEAD-IRBEMA-00088)
+   ⏭️  Non trovato per cognome
+
+[87/173] Valeria Zafon (ID: LEAD-IRBEMA-00087)
+   ⏭️  Non trovato per cognome
+
+[88/173] Elia Citro (ID: LEAD-IRBEMA-00085)
+   ⏭️  Non trovato per cognome
+
+[89/173] Serena De Ponto (ID: LEAD-IRBEMA-00086)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 383326892261
+      HubSpot: Serena De Ponto
+      ✅ Aggiornato!
+
+[90/173] Norma Giannetti (ID: LEAD-IRBEMA-00084)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 382548641997
+      HubSpot: Matteo Giannetti
+      ✅ Aggiornato!
+
+[91/173] Giovanni Dandraia (ID: LEAD-IRBEMA-00083)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 381218010339
+      HubSpot: Giovanni Dandraia
+      ✅ Aggiornato!
+
+[92/173] Simonetta (cognome non fornito) (ID: LEAD-IRBEMA-00082)
+   ⏭️  Non trovato per cognome
+
+[93/173] Andrea Spelta (ID: LEAD-IRBEMA-00081)
+   ⏭️  Non trovato per cognome
+
+[94/173] Grazia Fiumana (ID: LEAD-IRBEMA-00078)
+   ⏭️  Non trovato per cognome
+
+[95/173] Stefania Albertin (ID: LEAD-IRBEMA-00079)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 369935419606
+      HubSpot: Stefania Albertin
+      ✅ Aggiornato!
+
+[96/173] Arianna Sichich (ID: LEAD-IRBEMA-00080)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312163066089
+      HubSpot: Arianna Sichich
+      ✅ Aggiornato!
+
+[97/173] Leonardo Perini (ID: LEAD-IRBEMA-00077)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 365564918002
+      HubSpot: Leonardo Perini
+      ✅ Aggiornato!
+
+[98/173] Lombardi Addolorata (ID: LEAD-IRBEMA-00076)
+   ⏭️  Non trovato per cognome
+
+[99/173] Barbara Campi (ID: LEAD-IRBEMA-00075)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312156541129
+      HubSpot: Ivan Campi
+      ✅ Aggiornato!
+
+[100/173] Claudio La Viola (ID: LEAD-IRBEMA-00074)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 361143207153
+      HubSpot: Claudio La Viola
+      ✅ Aggiornato!
+
+[101/173] Diego Dainese (ID: LEAD-IRBEMA-00073)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 355822400723
+      HubSpot: Diego Dainese
+      ✅ Aggiornato!
+
+[102/173] Elisabetta Cattini (ID: LEAD-IRBEMA-00072)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 354413987024
+      HubSpot: Elisabetta Cattini
+      ✅ Aggiornato!
+
+[103/173] Antonella Barbone (ID: LEAD-IRBEMA-00071)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 350977215731
+      HubSpot: Antonella Barbone
+      ✅ Aggiornato!
+
+[104/173] Raffaella Casubolo (ID: LEAD-IRBEMA-00070)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 307538497738
+      HubSpot: Raffaella Casubolo
+      ✅ Aggiornato!
+
+[105/173] Carmen Tierno (ID: LEAD-IRBEMA-00069)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 348826630346
+      HubSpot: Carmen Tierno
+      ✅ Aggiornato!
+
+[106/173] Giulia Clementi (ID: LEAD-IRBEMA-00068)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 509628103886
+      HubSpot: Claudio Clementi
+      ✅ Aggiornato!
+
+[107/173] Michele Amoruso (ID: LEAD-IRBEMA-00067)
+   ⏭️  Non trovato per cognome
+
+[108/173] Aurora Teruggi (ID: LEAD-IRBEMA-00066)
+   ⏭️  Non trovato per cognome
+
+[109/173] Elena Bodini (ID: LEAD-IRBEMA-00064)
+   ⏭️  Non trovato per cognome
+
+[110/173] Giuseppina Da Luiso (ID: LEAD-IRBEMA-00065)
+   ⏭️  Non trovato per cognome
+
+[111/173] Sindaco Delvigo (ID: LEAD-IRBEMA-00063)
+   ⏭️  Non trovato per cognome
+
+[112/173] Sig. Froilan (ID: LEAD-IRBEMA-00060)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 324907977960
+      HubSpot: None Froilan
+      ✅ Aggiornato!
+
+[113/173] Giorgio Riela (ID: LEAD-IRBEMA-00061)
+   ⏭️  Non trovato per cognome
+
+[114/173] Paolo Magri (ID: LEAD-IRBEMA-00062)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 200649496768
+      HubSpot: Alessandro Magri
+      ✅ Aggiornato!
+
+[115/173] Dorella Soatto (ID: LEAD-IRBEMA-00057)
+   ⏭️  Non trovato per cognome
+
+[116/173] Elisabetta Ghidella (ID: LEAD-IRBEMA-00058)
+   ⏭️  Non trovato per cognome
+
+[117/173] Giancarlo Fissone (ID: LEAD-IRBEMA-00059)
+   ⏭️  Non trovato per cognome
+
+[118/173] Paola Giacobelli (ID: LEAD-IRBEMA-00056)
+   ⏭️  Non trovato per cognome
+
+[119/173] CONCETTA CINARDO (ID: LEAD-IRBEMA-00054)
+   ⏭️  Non trovato per cognome
+
+[120/173] Antonella Robbiani (ID: LEAD-IRBEMA-00055)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312186892532
+      HubSpot: ANDREA ROBBIANI
+      ✅ Aggiornato!
+
+[121/173] Silvia Grossi (ID: LEAD-IRBEMA-00051)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312135062753
+      HubSpot: Gianluca Grossi
+      ✅ Aggiornato!
+
+[122/173] GIOVANNI LOLLI (ID: LEAD-IRBEMA-00052)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335735120091
+      HubSpot: C. Lolli
+      ✅ Aggiornato!
+
+[123/173] Maria Di Nuzzo (ID: LEAD-IRBEMA-00053)
+   ⏭️  Non trovato per cognome
+
+[124/173] FRANCESA CAROFEI (ID: LEAD-IRBEMA-00050)
+   ⏭️  Non trovato per cognome
+
+[125/173] MONICA TERRAGNI (ID: LEAD-IRBEMA-00049)
+   ⏭️  Non trovato per cognome
+
+[126/173] Claudio Fontana (ID: LEAD-IRBEMA-00047)
+   ⏭️  Non trovato per cognome
+
+[127/173] Claudia Peron (ID: LEAD-IRBEMA-00048)
+   ⏭️  Non trovato per cognome
+
+[128/173] Giorgia Origa (ID: LEAD-IRBEMA-00046)
+   ⏭️  Non trovato per cognome
+
+[129/173] MONICA MORELLI (ID: LEAD-IRBEMA-00045)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335753484506
+      HubSpot: Lucio Morelli
+      ✅ Aggiornato!
+
+[130/173] Luciana garrisi (ID: LEAD-IRBEMA-00044)
+   ⏭️  Non trovato per cognome
+
+[131/173] EMANUELA BALZAROTTI (ID: LEAD-IRBEMA-00042)
+   ⏭️  Non trovato per cognome
+
+[132/173] TONINO FICICCHIA (ID: LEAD-IRBEMA-00043)
+   ⏭️  Non trovato per cognome
+
+[133/173] Maria  (ID: LEAD-IRBEMA-00041)
+   ⏭️  Non trovato per cognome
+
+[134/173] Giovanna Salvidio (ID: LEAD-IRBEMA-00039)
+   ⏭️  Non trovato per cognome
+
+[135/173] CARLA MAGLIOCCHETTI (ID: LEAD-IRBEMA-00040)
+   ⏭️  Non trovato per cognome
+
+[136/173] Isabella Consoloni (ID: LEAD-IRBEMA-00037)
+   ⏭️  Non trovato per cognome
+
+[137/173] Roberta Verazzo (ID: LEAD-IRBEMA-00038)
+   ⏭️  Non trovato per cognome
+
+[138/173] Anna Posa (ID: LEAD-IRBEMA-00036)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 511732609231
+      HubSpot: Fabio Posa
+      ✅ Aggiornato!
+
+[139/173] Barbara Camorani (ID: LEAD-IRBEMA-00035)
+   ⏭️  Non trovato per cognome
+
+[140/173] ANTONIA Bonavita (ID: LEAD-IRBEMA-00034)
+   ⏭️  Non trovato per cognome
+
+[141/173] Simona Pizzutto (ID: LEAD-IRBEMA-00033)
+   ⏭️  Non trovato per cognome
+
+[142/173] Nicola  (ID: LEAD-IRBEMA-00032)
+   ⏭️  Non trovato per cognome
+
+[143/173] Mauro Reggi (ID: LEAD-IRBEMA-00031)
+   ⏭️  Non trovato per cognome
+
+[144/173] Caterina D’Alterio (ID: LEAD-IRBEMA-00030)
+   ⏭️  Non trovato per cognome
+
+[145/173] Simone Corpino (ID: LEAD-IRBEMA-00029)
+   ⏭️  Non trovato per cognome
+
+[146/173] Imma Grimaldi (ID: LEAD-IRBEMA-00025)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312110832878
+      HubSpot: None Grimaldi
+      ✅ Aggiornato!
+
+[147/173] Tatiana no cognome (ID: LEAD-IRBEMA-00026)
+   ⏭️  Non trovato per cognome
+
+[148/173] Gaetano Santamaria (ID: LEAD-IRBEMA-00027)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 690498223312
+      HubSpot: Giovanna Santamaria
+      ✅ Aggiornato!
+
+[149/173] Mariaelena Torrisi (ID: LEAD-IRBEMA-00028)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335712595149
+      HubSpot: Felice Torrisi
+      ✅ Aggiornato!
+
+[150/173] Sabina Pascuttini (ID: LEAD-IRBEMA-00024)
+   ⏭️  Non trovato per cognome
+
+[151/173] Raffaele Di martino (ID: LEAD-IRBEMA-00023)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312156541165
+      HubSpot: Marco Di Martino
+      ✅ Aggiornato!
+
+[152/173] Lead Anonimo - kimiamamisegua@live.it (ID: LEAD-IRBEMA-00020)
+   ⏭️  Non trovato per cognome
+
+[153/173] Pierluigi Etzi (ID: LEAD-IRBEMA-00021)
+   ⏭️  Non trovato per cognome
+
+[154/173] Tiziana Curto/ frisardi (ID: LEAD-IRBEMA-00022)
+   ⏭️  Non trovato per cognome
+
+[155/173] Elena Saglia (ID: LEAD-IRBEMA-00019)
+   ⏭️  Non trovato per cognome
+
+[156/173] Francesca Amaddeo (ID: LEAD-IRBEMA-00018)
+   ⏭️  Non trovato per cognome
+
+[157/173] Anna Maria Avenia (ID: LEAD-IRBEMA-00009)
+   ⏭️  Non trovato per cognome
+
+[158/173] Alessandra PAVANELLO (ID: LEAD-IRBEMA-00010)
+   ⏭️  Non trovato per cognome
+
+[159/173] Marilena Cardoni (ID: LEAD-IRBEMA-00011)
+   ⏭️  Non trovato per cognome
+
+[160/173] Angela Rotatori (ID: LEAD-IRBEMA-00012)
+   ⏭️  Non trovato per cognome
+
+[161/173] Emilio Martire (ID: LEAD-IRBEMA-00013)
+   ⏭️  Non trovato per cognome
+
+[162/173] Daniel Sutera (ID: LEAD-IRBEMA-00014)
+   ⏭️  Non trovato per cognome
+
+[163/173] Sig. Giuseppe Porretta (ID: LEAD-IRBEMA-00015)
+   ⏭️  Non trovato per cognome
+
+[164/173] Alina Macii (ID: LEAD-IRBEMA-00016)
+   ⏭️  Non trovato per cognome
+
+[165/173] Antonella Iacovitti (ID: LEAD-IRBEMA-00017)
+   ⏭️  Non trovato per cognome
+
+[166/173] Manuela Poggi (ID: LEAD-IRBEMA-00007)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 335712596156
+      HubSpot: Cinzia Poggi
+      ✅ Aggiornato!
+
+[167/173] Katia Dondero (ID: LEAD-IRBEMA-00008)
+   ⏭️  Non trovato per cognome
+
+[168/173] Giuseppe Porretta (ID: LEAD-IRBEMA-00006)
+   ⏭️  Non trovato per cognome
+
+[169/173] Vivian Pontarini (ID: LEAD-IRBEMA-00005)
+   ⏭️  Non trovato per cognome
+
+[170/173] Maria Aldeghi (ID: LEAD-IRBEMA-00004)
+   ⏭️  Non trovato per cognome
+
+[171/173] Anna Moro (ID: LEAD-IRBEMA-00003)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 312110832882
+      HubSpot: Paolo Moro
+      ✅ Aggiornato!
+
+[172/173] Claudio Macchi (ID: LEAD-IRBEMA-00001)
+   ✅ TROVATO per COGNOME!
+      HubSpot ID: 666255215862
+      HubSpot: Claudio Macchi
+      ✅ Aggiornato!
+
+[173/173] Daniela Bisson (ID: LEAD-IRBEMA-00002)
+   ⏭️  Non trovato per cognome
+
+================================================================================
+🔍 FASE 2: RICERCA PER EMAIL (lead rimanenti)
+================================================================================
+
+[1/82] Mary De Sanctis
+   Email: marydesanctis@placeholder.com
+   ⏭️  Non trovato per email
+
+[2/82] Andrea Dindo
+   Email: andreadindo1@gmail.com
+   ⏭️  Non trovato per email
+
+[3/82] Maria Chiara Baldassini
+   Email: mariachiarabaldassini@placeholder.com
+   ⏭️  Non trovato per email
+
+[4/82] Adriana Mulassano
+   Email: adrianamulassano@placeholder.com
+   ⏭️  Non trovato per email
+
+[5/82] Paola Scarpin
+   Email: paolascarpin@placeholder.com
+   ⏭️  Non trovato per email
+
+[6/82] Anna Sarotto
+   Email: sarottoanna@gmail.com
+   ⏭️  Non trovato per email
+
+[7/82] Tiziana (Cognome non fornito)
+   Email: tizianab953@gmail.com
+   ⏭️  Non trovato per email
+
+[8/82] Flavia Farmè
+   Email: fiorenza.farne1@gmail.com
+   ⏭️  Non trovato per email
+
+[9/82] Elisa Cattarossi
+   Email: elisa@cattarossi.it
+   ⏭️  Non trovato per email
+
+[10/82] Giuseppe Gaglioti
+   Email: pinogaglioti@gmail.com
+   ⏭️  Non trovato per email
+
+[11/82] Enzo Gag
+   Email: enzogag@tin.it
+   ⏭️  Non trovato per email
+
+[12/82] Emanuela (cognome non fornito)
+   Email: doc.emi@libero.it
+   ⏭️  Non trovato per email
+
+[13/82] Giorgio Ferranti
+   Email: giorgio.ferranti@msn.com
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 552808003824
+      HubSpot: giorgio.ferranti@msn.com
+      ✅ Aggiornato!
+
+[14/82] Serena Scilleri
+   Email: Scilleri.serena@libero.it
+   ⏭️  Non trovato per email
+
+[15/82] Maria Mertel
+   Email: mertelmaria@gmail.com
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 471940890861
+      HubSpot: mertelmaria@gmail.com
+      ✅ Aggiornato!
+
+[16/82] Manu Cels - Simone
+   Email: test@esempio.it
+   ⏭️  Non trovato per email
+
+[17/82] Luca Nadali
+   Email: luca.nadali@gmail.com
+   ⏭️  Non trovato per email
+
+[18/82] Maria Cristina Sorcini
+   Email: cristinasorcini@yahoo.it
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 431971022057
+      HubSpot: cristinasorcini@yahoo.it
+      ✅ Aggiornato!
+
+[19/82] Mauro Giumelli
+   Email: maurogiumelli1952@gmail.com
+   ⏭️  Non trovato per email
+
+[20/82] Adriana Mulassano
+   Email: audrey.mulassano@gmail.com
+   ⏭️  Non trovato per email
+
+[21/82] Michele Lorieri
+   Email: lorierimichele@gmail.it
+   ⏭️  Non trovato per email
+
+[22/82] Paola Scarpin
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[23/82] Cristiana Rugggeri
+   Email: cristianaruggeri2611@gmail.com
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 388880278736
+      HubSpot: cristianaruggeri2611@gmail.com
+      ✅ Aggiornato!
+
+[24/82] Valeria Zafon
+   Email: valeria.zaf@gmail.com
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 386947373262
+      HubSpot: valeria.zaf@gmail.com
+      ✅ Aggiornato!
+
+[25/82] Elia Citro
+   Email: eliocitro7@gmail.com
+   ⏭️  Non trovato per email
+
+[26/82] Simonetta (cognome non fornito)
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[27/82] Andrea Spelta
+   Email: speltaandrea@gmail.com
+   ⏭️  Non trovato per email
+
+[28/82] Grazia Fiumana
+   Email: graziafiumana@gmail.com
+   ⏭️  Non trovato per email
+
+[29/82] Lombardi Addolorata
+   Email: presidelombardi@gmail.com
+   ✅ TROVATO per EMAIL!
+      HubSpot ID: 364238873803
+      HubSpot: presidelombardi@gmail.com
+      ✅ Aggiornato!
+
+[30/82] Michele Amoruso
+   Email: ammiche@tiscali.it
+   ⏭️  Non trovato per email
+
+[31/82] Aurora Teruggi
+   Email: a.teruggi@virgilio.it
+   ⏭️  Non trovato per email
+
+[32/82] Elena Bodini
+   Email: elenabodini5@gmail.com
+   ⏭️  Non trovato per email
+
+[33/82] Giuseppina Da Luiso
+   Email: apinucciadaluiso@gmail.com
+   ⏭️  Non trovato per email
+
+[34/82] Sindaco Delvigo
+   Email: sindacodelvigo@gmail.com
+   ⏭️  Non trovato per email
+
+[35/82] Giorgio Riela
+   Email: gr@ecotorino.it
+   ⏭️  Non trovato per email
+
+[36/82] Dorella Soatto
+   Email: dorellasoatto@libero.it
+   ⏭️  Non trovato per email
+
+[37/82] Elisabetta Ghidella
+   Email: elisabettaghidella@gmail.com
+   ⏭️  Non trovato per email
+
+[38/82] Giancarlo Fissone
+   Email: iguana710@gmail.com
+   ⏭️  Non trovato per email
+
+[39/82] Paola Giacobelli
+   Email: paolagiacobelli@yahoo.it
+   ⏭️  Non trovato per email
+
+[40/82] CONCETTA CINARDO
+   Email: concettacinardo@gmail.com
+   ⏭️  Non trovato per email
+
+[41/82] Maria Di Nuzzo
+   Email: amariadinuzzo358@gmail.com
+   ⏭️  Non trovato per email
+
+[42/82] FRANCESA CAROFEI
+   Email: fra.carofei@icloud.com
+   ⏭️  Non trovato per email
+
+[43/82] MONICA TERRAGNI
+   Email: terragni.monica@gmail.com
+   ⏭️  Non trovato per email
+
+[44/82] Claudio Fontana
+   Email: fontanaclaudio@hotmail.it
+   ⏭️  Non trovato per email
+
+[45/82] Claudia Peron
+   Email: claudiaperon07@gmail.com
+   ⏭️  Non trovato per email
+
+[46/82] Giorgia Origa
+   Email: giorgiaoriga@gmail.com
+   ⏭️  Non trovato per email
+
+[47/82] Luciana garrisi
+   Email: lucianagarrisi@libero.it
+   ⏭️  Non trovato per email
+
+[48/82] EMANUELA BALZAROTTI
+   Email: emanuelabalzarotti@libero.it
+   ⏭️  Non trovato per email
+
+[49/82] TONINO FICICCHIA
+   Email: toninoficicchia4@gmail.com
+   ⏭️  Non trovato per email
+
+[50/82] Maria 
+   Email: altamarea.2018@libero.it
+   ⏭️  Non trovato per email
+
+[51/82] Giovanna Salvidio
+   Email: avv.giovannasalvidio@gmail.com
+   ⏭️  Non trovato per email
+
+[52/82] CARLA MAGLIOCCHETTI
+   Email: carla.magliocchetti@libero.it
+   ⏭️  Non trovato per email
+
+[53/82] Isabella Consoloni
+   Email: isabella.consoloni@libero.it
+   ⏭️  Non trovato per email
+
+[54/82] Roberta Verazzo
+   Email: verazzoroberta@yahoo.it
+   ⏭️  Non trovato per email
+
+[55/82] Barbara Camorani
+   Email: barbara.camorani@regione.liguria.it
+   ⏭️  Non trovato per email
+
+[56/82] ANTONIA Bonavita
+   Email: antobonavita@libero.it
+   ⏭️  Non trovato per email
+
+[57/82] Simona Pizzutto
+   Email: simona.pizzutto@coopbarbarab.it
+   ⏭️  Non trovato per email
+
+[58/82] Nicola 
+   Email: immobiliarenicola@gmail.com
+   ⏭️  Non trovato per email
+
+[59/82] Mauro Reggi
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[60/82] Caterina D’Alterio
+   Email: caterinadalterio108@gmail.com
+   ⏭️  Non trovato per email
+
+[61/82] Simone Corpino
+   Email: simonecorpino@gmail.com
+   ⏭️  Non trovato per email
+
+[62/82] Tatiana no cognome
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[63/82] Sabina Pascuttini
+   Email: passabi@gmail.com
+   ⏭️  Non trovato per email
+
+[64/82] Lead Anonimo - kimiamamisegua@live.it
+   Email: kimiamamisegua@live.it
+   ⏭️  Non trovato per email
+
+[65/82] Pierluigi Etzi
+   Email: pierluigietzi69@libero.it
+   ⏭️  Non trovato per email
+
+[66/82] Tiziana Curto/ frisardi
+   Email: tiziana.curto64@gmail.com
+   ⏭️  Non trovato per email
+
+[67/82] Elena Saglia
+   Email: elenasaglia@hotmail.com
+   ⏭️  Non trovato per email
+
+[68/82] Francesca Amaddeo
+   Email: francescaamaddeo@gmail.com
+   ⏭️  Non trovato per email
+
+[69/82] Anna Maria Avenia
+   Email: aveniaannamaria@gmail.com
+   ⏭️  Non trovato per email
+
+[70/82] Alessandra PAVANELLO
+   Email: alealzira@gmail.com
+   ⏭️  Non trovato per email
+
+[71/82] Marilena Cardoni
+   Email: marilenacardoni43@gmail.com
+   ⏭️  Non trovato per email
+
+[72/82] Angela Rotatori
+   Email: angelarotatori@gmail.com
+   ⏭️  Non trovato per email
+
+[73/82] Emilio Martire
+   Email: emiliomartire1@gmail.com
+   ⏭️  Non trovato per email
+
+[74/82] Daniel Sutera
+   Email: daniel.sutera@virgilio.it
+   ⏭️  Non trovato per email
+
+[75/82] Sig. Giuseppe Porretta
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[76/82] Alina Macii
+   Email: maciialina@gmail.com
+   ⏭️  Non trovato per email
+
+[77/82] Antonella Iacovitti
+   Email: antonellaiacovitti@gmail.com
+   ⏭️  Non trovato per email
+
+[78/82] Katia Dondero
+   Email: katiadondero@gmail.com
+   ⏭️  Non trovato per email
+
+[79/82] Giuseppe Porretta
+   Email: N/A
+   ⏭️  Non trovato per email
+
+[80/82] Vivian Pontarini
+   Email: vivianpontarin@gmail.com
+   ⏭️  Non trovato per email
+
+[81/82] Maria Aldeghi
+   Email: vittoriaaldeghi@gmail.com
+   ⏭️  Non trovato per email
+
+[82/82] Daniela Bisson
+   Email: bissondaniela2018@gmail.com
+   ⏭️  Non trovato per email
+
+================================================================================
+🔍 FASE 3: RICERCA PER TELEFONO (lead rimanenti)
+================================================================================
+
+[1/76] Mary De Sanctis
+   Tel: +393396748762
+   ❌ NON TROVATO
+
+[2/76] Andrea Dindo
+   Tel: N/A
+   ❌ NON TROVATO
+
+[3/76] Maria Chiara Baldassini
+   Tel: +393922352447
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 671621029092
+      HubSpot: 
+      ✅ Aggiornato!
+
+[4/76] Adriana Mulassano
+   Tel: +393387205351
+   ❌ NON TROVATO
+
+[5/76] Paola Scarpin
+   Tel: +393403686122
+   ❌ NON TROVATO
+
+[6/76] Anna Sarotto
+   Tel: N/A
+   ❌ NON TROVATO
+
+[7/76] Tiziana (Cognome non fornito)
+   Tel: N/A
+   ❌ NON TROVATO
+
+[8/76] Flavia Farmè
+   Tel: N/A
+   ❌ NON TROVATO
+
+[9/76] Elisa Cattarossi
+   Tel: N/A
+   ❌ NON TROVATO
+
+[10/76] Giuseppe Gaglioti
+   Tel: N/A
+   ❌ NON TROVATO
+
+[11/76] Enzo Gag
+   Tel: N/A
+   ❌ NON TROVATO
+
+[12/76] Emanuela (cognome non fornito)
+   Tel: N/A
+   ❌ NON TROVATO
+
+[13/76] Serena Scilleri
+   Tel: N/A
+   ❌ NON TROVATO
+
+[14/76] Manu Cels - Simone
+   Tel: N/A
+   ❌ NON TROVATO
+
+[15/76] Luca Nadali
+   Tel: +39 328 95 12 054
+   ❌ NON TROVATO
+
+[16/76] Mauro Giumelli
+   Tel: N/A
+   ❌ NON TROVATO
+
+[17/76] Adriana Mulassano
+   Tel: N/A
+   ❌ NON TROVATO
+
+[18/76] Michele Lorieri
+   Tel: N/A
+   ❌ NON TROVATO
+
+[19/76] Paola Scarpin
+   Tel: 3404686122
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[20/76] Elia Citro
+   Tel: N/A
+   ❌ NON TROVATO
+
+[21/76] Simonetta (cognome non fornito)
+   Tel: 3201965501
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[22/76] Andrea Spelta
+   Tel: N/A
+   ❌ NON TROVATO
+
+[23/76] Grazia Fiumana
+   Tel: N/A
+   ❌ NON TROVATO
+
+[24/76] Michele Amoruso
+   Tel: 3472120496
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[25/76] Aurora Teruggi
+   Tel: 3496156239
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[26/76] Elena Bodini
+   Tel: 3392045623
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[27/76] Giuseppina Da Luiso
+   Tel: N/A
+   ❌ NON TROVATO
+
+[28/76] Sindaco Delvigo
+   Tel: 3803263069
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[29/76] Giorgio Riela
+   Tel: 0117395260
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[30/76] Dorella Soatto
+   Tel: 3382896878
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[31/76] Elisabetta Ghidella
+   Tel: 3343442458
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[32/76] Giancarlo Fissone
+   Tel: 3927179250
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[33/76] Paola Giacobelli
+   Tel: 3348810542
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[34/76] CONCETTA CINARDO
+   Tel: N/A
+   ❌ NON TROVATO
+
+[35/76] Maria Di Nuzzo
+   Tel: N/A
+   ❌ NON TROVATO
+
+[36/76] FRANCESA CAROFEI
+   Tel: N/A
+   ❌ NON TROVATO
+
+[37/76] MONICA TERRAGNI
+   Tel: N/A
+   ❌ NON TROVATO
+
+[38/76] Claudio Fontana
+   Tel: N/A
+   ❌ NON TROVATO
+
+[39/76] Claudia Peron
+   Tel: 3498421721
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[40/76] Giorgia Origa
+   Tel: 3288610478
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[41/76] Luciana garrisi
+   Tel: 3349057602
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[42/76] EMANUELA BALZAROTTI
+   Tel: 3389414462
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[43/76] TONINO FICICCHIA
+   Tel: N/A
+   ❌ NON TROVATO
+
+[44/76] Maria 
+   Tel: N/A
+   ❌ NON TROVATO
+
+[45/76] Giovanna Salvidio
+   Tel: 3930620563
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[46/76] CARLA MAGLIOCCHETTI
+   Tel: 3346452561
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[47/76] Isabella Consoloni
+   Tel: 3381714788
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[48/76] Roberta Verazzo
+   Tel: N/A
+   ❌ NON TROVATO
+
+[49/76] Barbara Camorani
+   Tel: 3405635515
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[50/76] ANTONIA Bonavita
+   Tel: 3386484910
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[51/76] Simona Pizzutto
+   Tel: 3450016665
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[52/76] Nicola 
+   Tel: 3517011414
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[53/76] Mauro Reggi
+   Tel: 3289051937
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[54/76] Caterina D’Alterio
+   Tel: 3898006744
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[55/76] Simone Corpino
+   Tel: 3485650603
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[56/76] Tatiana no cognome
+   Tel: +39 338 690 1311
+   ❌ NON TROVATO
+
+[57/76] Sabina Pascuttini
+   Tel: 3318303852
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[58/76] Lead Anonimo - kimiamamisegua@live.it
+   Tel: N/A
+   ❌ NON TROVATO
+
+[59/76] Pierluigi Etzi
+   Tel: N/A
+   ❌ NON TROVATO
+
+[60/76] Tiziana Curto/ frisardi
+   Tel: 3356253956
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[61/76] Elena Saglia
+   Tel: 3493416242
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[62/76] Francesca Amaddeo
+   Tel: N/A
+   ❌ NON TROVATO
+
+[63/76] Anna Maria Avenia
+   Tel: 3280466133
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[64/76] Alessandra PAVANELLO
+   Tel: 34676198737
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[65/76] Marilena Cardoni
+   Tel: 3382489222
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[66/76] Angela Rotatori
+   Tel: 3478477590
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[67/76] Emilio Martire
+   Tel: 3688049329
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[68/76] Daniel Sutera
+   Tel: N/A
+   ❌ NON TROVATO
+
+[69/76] Sig. Giuseppe Porretta
+   Tel: 3662043768
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[70/76] Alina Macii
+   Tel: 3776759169
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[71/76] Antonella Iacovitti
+   Tel: 3385643188
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[72/76] Katia Dondero
+   Tel: N/A
+   ❌ NON TROVATO
+
+[73/76] Giuseppe Porretta
+   Tel: 3662043768
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[74/76] Vivian Pontarini
+   Tel: N/A
+   ❌ NON TROVATO
+
+[75/76] Maria Aldeghi
+   Tel: 3332897971
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+[76/76] Daniela Bisson
+   Tel: 3336364976
+   ✅ TROVATO per TELEFONO!
+      HubSpot ID: 335716903109
+      HubSpot: NON INDICATO
+      ✅ Aggiornato!
+
+================================================================================
+📊 REPORT FINALE - 3 STRATEGIE
+================================================================================
+
+🎯 TOTALI:
+   Lead processati:       173
+   ✅ Trovati e aggiornati: 137 (79.2%)
+   ❌ Non trovati:          36 (20.8%)
+
+📈 DETTAGLIO PER STRATEGIA:
+   🔤 Per COGNOME:  91 aggiornati
+   ✉️  Per EMAIL:    6 aggiornati
+   📞 Per TELEFONO: 40 aggiornati
+
+💾 Report salvato: aggressive_matching_report.json
+
+================================================================================
+❌ LEAD NON TROVATI (36):
+================================================================================
+- Mary De Sanctis (ID: LEAD-MANUAL-1770946062533)
+  Email: marydesanctis@placeholder.com
+  Tel: +393396748762
+
+- Andrea Dindo (ID: LEAD-MANUAL-1770946060015)
+  Email: andreadindo1@gmail.com
+  Tel: N/A
+
+- Adriana Mulassano (ID: LEAD-MANUAL-1770946054097)
+  Email: adrianamulassano@placeholder.com
+  Tel: +393387205351
+
+- Paola Scarpin (ID: LEAD-MANUAL-1770946051660)
+  Email: paolascarpin@placeholder.com
+  Tel: +393403686122
+
+- Anna Sarotto (ID: LEAD-IRBEMA-00136)
+  Email: sarottoanna@gmail.com
+  Tel: N/A
+
+- Tiziana (Cognome non fornito) (ID: LEAD-IRBEMA-00134)
+  Email: tizianab953@gmail.com
+  Tel: N/A
+
+- Flavia Farmè (ID: LEAD-IRBEMA-00135)
+  Email: fiorenza.farne1@gmail.com
+  Tel: N/A
+
+- Elisa Cattarossi (ID: LEAD-IRBEMA-00132)
+  Email: elisa@cattarossi.it
+  Tel: N/A
+
+- Giuseppe Gaglioti (ID: LEAD-IRBEMA-00124)
+  Email: pinogaglioti@gmail.com
+  Tel: N/A
+
+- Enzo Gag (ID: LEAD-IRBEMA-00123)
+  Email: enzogag@tin.it
+  Tel: N/A
+
+- Emanuela (cognome non fornito) (ID: LEAD-IRBEMA-00121)
+  Email: doc.emi@libero.it
+  Tel: N/A
+
+- Serena Scilleri (ID: LEAD-IRBEMA-00113)
+  Email: Scilleri.serena@libero.it
+  Tel: N/A
+
+- Manu Cels - Simone (ID: LEAD-IRBEMA-00107)
+  Email: test@esempio.it
+  Tel: N/A
+
+- Luca Nadali (ID: LEAD-IRBEMA-00101)
+  Email: luca.nadali@gmail.com
+  Tel: +39 328 95 12 054
+
+- Mauro Giumelli (ID: LEAD-IRBEMA-00098)
+  Email: maurogiumelli1952@gmail.com
+  Tel: N/A
+
+- Adriana Mulassano (ID: LEAD-IRBEMA-00095)
+  Email: audrey.mulassano@gmail.com
+  Tel: N/A
+
+- Michele Lorieri (ID: LEAD-IRBEMA-00093)
+  Email: lorierimichele@gmail.it
+  Tel: N/A
+
+- Elia Citro (ID: LEAD-IRBEMA-00085)
+  Email: eliocitro7@gmail.com
+  Tel: N/A
+
+- Andrea Spelta (ID: LEAD-IRBEMA-00081)
+  Email: speltaandrea@gmail.com
+  Tel: N/A
+
+- Grazia Fiumana (ID: LEAD-IRBEMA-00078)
+  Email: graziafiumana@gmail.com
+  Tel: N/A
+
+- Giuseppina Da Luiso (ID: LEAD-IRBEMA-00065)
+  Email: apinucciadaluiso@gmail.com
+  Tel: N/A
+
+- CONCETTA CINARDO (ID: LEAD-IRBEMA-00054)
+  Email: concettacinardo@gmail.com
+  Tel: N/A
+
+- Maria Di Nuzzo (ID: LEAD-IRBEMA-00053)
+  Email: amariadinuzzo358@gmail.com
+  Tel: N/A
+
+- FRANCESA CAROFEI (ID: LEAD-IRBEMA-00050)
+  Email: fra.carofei@icloud.com
+  Tel: N/A
+
+- MONICA TERRAGNI (ID: LEAD-IRBEMA-00049)
+  Email: terragni.monica@gmail.com
+  Tel: N/A
+
+- Claudio Fontana (ID: LEAD-IRBEMA-00047)
+  Email: fontanaclaudio@hotmail.it
+  Tel: N/A
+
+- TONINO FICICCHIA (ID: LEAD-IRBEMA-00043)
+  Email: toninoficicchia4@gmail.com
+  Tel: N/A
+
+- Maria  (ID: LEAD-IRBEMA-00041)
+  Email: altamarea.2018@libero.it
+  Tel: N/A
+
+- Roberta Verazzo (ID: LEAD-IRBEMA-00038)
+  Email: verazzoroberta@yahoo.it
+  Tel: N/A
+
+- Tatiana no cognome (ID: LEAD-IRBEMA-00026)
+  Email: N/A
+  Tel: +39 338 690 1311
+
+- Lead Anonimo - kimiamamisegua@live.it (ID: LEAD-IRBEMA-00020)
+  Email: kimiamamisegua@live.it
+  Tel: N/A
+
+- Pierluigi Etzi (ID: LEAD-IRBEMA-00021)
+  Email: pierluigietzi69@libero.it
+  Tel: N/A
+
+- Francesca Amaddeo (ID: LEAD-IRBEMA-00018)
+  Email: francescaamaddeo@gmail.com
+  Tel: N/A
+
+- Daniel Sutera (ID: LEAD-IRBEMA-00014)
+  Email: daniel.sutera@virgilio.it
+  Tel: N/A
+
+- Katia Dondero (ID: LEAD-IRBEMA-00008)
+  Email: katiadondero@gmail.com
+  Tel: N/A
+
+- Vivian Pontarini (ID: LEAD-IRBEMA-00005)
+  Email: vivianpontarin@gmail.com
+  Tel: N/A
+
