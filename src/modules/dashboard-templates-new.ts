@@ -2694,6 +2694,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function renderLeadsTable(leads) {
+            console.log('🔧 renderLeadsTable v2026-02-13-00:05 - escapeHtml FULLY APPLIED');
             const tbody = document.getElementById('leadsTableBody');
             
             if (leads.length === 0) {
