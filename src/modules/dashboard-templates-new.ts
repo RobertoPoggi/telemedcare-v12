@@ -2392,33 +2392,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <i class="fas fa-source text-purple-500 mr-2"></i>
                     Per Fonte
                 </h3>
-                <div id="channelsBreakdown">
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Privati IRBEMA</span>
-                            <span class="font-bold" id="sourcePrivatiIRBEMA">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Form eCura</span>
-                            <span class="font-bold" id="sourceFormECura">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Form eCura x Test</span>
-                            <span class="font-bold" id="sourceFormECuraTest">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">B2B IRBEMA</span>
-                            <span class="font-bold" id="sourceB2BIRBEMA">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">Sito web Medica GB</span>
-                            <span class="font-bold" id="sourceSitoWebMedicaGB">-</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-gray-600">NETWORKING</span>
-                            <span class="font-bold" id="sourceNetworking">-</span>
-                        </div>
-                    </div>
+                <div id="channelsBreakdown" class="space-y-3">
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </div>
@@ -2698,73 +2673,39 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('📊 Fonti rilevate:', sources);
             console.log('📊 Total leads:', leads.length);
             
-            // Conta per le 6 fonti principali
-            let privatiIRBEMACount = 0;
-            let formECuraCount = 0;
-            let formECuraTestCount = 0;
-            let b2bIRBEMACount = 0;
-            let sitoWebMedicaGBCount = 0;
-            let networkingCount = 0;
-            let altroCount = 0;
+            const total = leads.length || 1;
             
-            // Itera su tutte le fonti e classifica
-            Object.keys(sources).forEach(source => {
-                const count = sources[source];
-                
-                // Match esatto con le fonti definite
-                if (source === 'Privati IRBEMA') {
-                    privatiIRBEMACount += count;
-                }
-                else if (source === 'Form eCura') {
-                    formECuraCount += count;
-                }
-                else if (source === 'Form eCura x Test') {
-                    formECuraTestCount += count;
-                }
-                else if (source === 'B2B IRBEMA') {
-                    b2bIRBEMACount += count;
-                }
-                else if (source === 'Sito web Medica GB') {
-                    sitoWebMedicaGBCount += count;
-                }
-                else if (source === 'NETWORKING') {
-                    networkingCount += count;
-                }
-                else {
-                    // Altre fonti non categorizzate (incluso SR che non è una fonte)
-                    altroCount += count;
-                }
-            });
+            // Colori per le fonti
+            const fonteColors = {
+                'Privati IRBEMA': 'bg-blue-500',
+                'Form eCura': 'bg-green-500',
+                'Form eCura x Test': 'bg-yellow-500',
+                'B2B IRBEMA': 'bg-purple-500',
+                'Sito web Medica GB': 'bg-pink-500',
+                'NETWORKING': 'bg-indigo-500',
+                'Form Contattaci': 'bg-teal-500'
+            };
             
-            // Calcola totale e percentuali
-            const totalLeads = leads.length || 1;
+            // Genera HTML con barre colorate come gli altri box
+            const html = Object.entries(sources)
+                .sort(([,a], [,b]) => b - a) // Ordina per count decrescente
+                .map(([fonte, count]) => {
+                    const percentage = Math.round((count / total) * 100);
+                    const color = fonteColors[fonte] || 'bg-gray-500';
+                    return \`
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-medium">\${fonte}</span>
+                                <span class="text-sm font-bold">\${count} (\${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
             
-            // Aggiorna i contatori nella dashboard con percentuale
-            document.getElementById('sourcePrivatiIRBEMA').textContent = 
-                privatiIRBEMACount + ' (' + Math.round((privatiIRBEMACount / totalLeads) * 100) + '%)';
-            document.getElementById('sourceFormECura').textContent = 
-                formECuraCount + ' (' + Math.round((formECuraCount / totalLeads) * 100) + '%)';
-            document.getElementById('sourceFormECuraTest').textContent = 
-                formECuraTestCount + ' (' + Math.round((formECuraTestCount / totalLeads) * 100) + '%)';
-            document.getElementById('sourceB2BIRBEMA').textContent = 
-                b2bIRBEMACount + ' (' + Math.round((b2bIRBEMACount / totalLeads) * 100) + '%)';
-            document.getElementById('sourceSitoWebMedicaGB').textContent = 
-                sitoWebMedicaGBCount + ' (' + Math.round((sitoWebMedicaGBCount / totalLeads) * 100) + '%)';
-            document.getElementById('sourceNetworking').textContent = 
-                networkingCount + ' (' + Math.round((networkingCount / totalLeads) * 100) + '%)';
-            
-            // Log debug se ci sono fonti non categorizzate
-            if (altroCount > 0) {
-                console.warn('⚠️ ATTENZIONE: Ci sono ' + altroCount + ' lead con fonti non categorizzate.');
-                console.warn('📊 Fonti non categorizzate:', Object.keys(sources).filter(s => 
-                    s !== 'Privati IRBEMA' && 
-                    s !== 'Form eCura' && 
-                    s !== 'Form eCura x Test' && 
-                    s !== 'B2B IRBEMA' && 
-                    s !== 'Sito web Medica GB' && 
-                    s !== 'NETWORKING'
-                ));
-            }
+            document.getElementById('channelsBreakdown').innerHTML = html || '<p class="text-gray-400 text-sm">Nessuna fonte disponibile</p>';
         }
 
         function renderLeadsTable(leads) {
