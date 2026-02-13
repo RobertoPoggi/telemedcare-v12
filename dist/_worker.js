@@ -3257,12 +3257,16 @@ ${370+e.length}
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
                             <p class="font-bold">Errore nel caricamento dei dati</p>
                             <p class="text-xs mt-2">\${errorMsg}</p>
-                            <button onclick="loadDashboardData()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            <button id="retryLoadDashboard" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                                 <i class="fas fa-redo mr-2"></i>Riprova
                             </button>
                         </td>
                     </tr>
                 \`;
+                setTimeout(() => {
+                    const retryBtn = document.getElementById('retryLoadDashboard');
+                    if (retryBtn) retryBtn.addEventListener('click', loadDashboardData);
+                }, 0);
             } finally {
                 isLoading = false;
             }
