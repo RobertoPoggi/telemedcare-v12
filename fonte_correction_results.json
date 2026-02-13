@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-02-13 22:38:44",
+  "total": 5,
+  "successful": 5,
+  "failed": 0,
+  "successful_ids": [
+    "LEAD-MANUAL-1771013366982",
+    "LEAD-MANUAL-1771013366561",
+    "LEAD-MANUAL-1771013366156",
+    "LEAD-MANUAL-1771013365614",
+    "LEAD-MANUAL-1771013365207"
+  ],
+  "failed_updates": []
+}
