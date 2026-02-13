@@ -4690,8 +4690,8 @@ ${370+e.length}
                         <td class="py-3 text-sm text-gray-500">\${date}</td>
                         <td class="py-3 text-sm">
                             <select 
-                                onchange="updateContactManager('\${escapeHtml(lead.id)}', this.value)"
-                                class="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
+                                data-lead-id="\${lead.id}"
+                                class="cm-select text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
                                 style="min-width: 80px;">
                                 <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
                                 <option value="OB" \${lead.cm === 'OB' ? 'selected' : ''}>OB</option>
@@ -4701,10 +4701,9 @@ ${370+e.length}
                         </td>
                         <td class="py-3 text-sm">
                             <select 
-                                onchange="updateLeadStatus('\${escapeHtml(lead.id)}', this.value)"
-                                class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-medium"
-                                style="min-width: 110px;"
-                                id="statusSelect-\${escapeHtml(lead.id)}">
+                                data-lead-id="\${lead.id}"
+                                class="status-select text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-medium"
+                                style="min-width: 110px;">
                                 <option value="" \${!lead.stato ? 'selected' : ''}>Nessuno</option>
                                 <option value="nuovo" \${lead.stato === 'nuovo' ? 'selected' : ''} class="bg-blue-50">🆕 Nuovo</option>
                                 <option value="contattato" \${lead.stato === 'contattato' ? 'selected' : ''} class="bg-yellow-50">📞 Contattato</option>
@@ -4719,28 +4718,32 @@ ${370+e.length}
                         <td class="py-3 text-sm">
                             <div class="flex space-x-1">
                                 <button 
-                                    onclick="openInteractionsModal('\${escapeHtml(lead.id)}')"
-                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors relative"
-                                    title="Gestisci Interazioni"
-                                    id="interactionsBtn-\${escapeHtml(lead.id)}">
+                                    data-action="interactions"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors relative action-btn"
+                                    title="Gestisci Interazioni">
                                     💬
-                                    <span class="interactions-count-\${escapeHtml(lead.id)} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
+                                    <span class="interactions-count-\${lead.id} hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold" style="font-size: 9px;"></span>
                                 </button>
                                 <button 
-                                    onclick="sendContract('\${escapeHtml(lead.id)}', '\${piano}')" 
-                                    class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                                    data-action="contract"
+                                    data-lead-id="\${lead.id}"
+                                    data-piano="\${piano}"
+                                    class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors action-btn"
                                     title="Invia Contratto \${piano}">
                                     <i class="fas fa-file-contract"></i>
                                 </button>
                                 <button 
-                                    onclick="sendBrochure('\${escapeHtml(lead.id)}')" 
-                                    class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                                    data-action="brochure"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors action-btn"
                                     title="Invia Brochure">
                                     <i class="fas fa-book"></i>
                                 </button>
                                 <button 
-                                    onclick="requestCompletion('\${escapeHtml(lead.id)}')" 
-                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
+                                    data-action="completion"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors action-btn"
                                     title="Richiedi Completamento">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
@@ -4748,18 +4751,18 @@ ${370+e.length}
                         </td>
                         <td class="py-3">
                             <div class="flex space-x-1">
-                                <button onclick="viewLead('\${escapeHtml(lead.id)}')" 
-                                        class="text-blue-600 hover:text-blue-800 px-1" 
+                                <button data-action="view" data-lead-id="\${lead.id}" 
+                                        class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
                                         title="Visualizza">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button onclick="editLead('\${escapeHtml(lead.id)}')" 
-                                        class="text-green-600 hover:text-green-800 px-1" 
+                                <button data-action="edit" data-lead-id="\${lead.id}" 
+                                        class="text-green-600 hover:text-green-800 px-1 crud-btn" 
                                         title="Modifica">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteLead('\${escapeHtml(lead.id)}')" 
-                                        class="text-red-600 hover:text-red-800 px-1" 
+                                <button data-action="delete" data-lead-id="\${lead.id}" 
+                                        class="text-red-600 hover:text-red-800 px-1 crud-btn" 
                                         title="Elimina">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -4768,6 +4771,53 @@ ${370+e.length}
                     </tr>
                 \`;
             }).join('');
+            
+            // Attach event listeners to dynamically created buttons
+            setTimeout(() => {
+                // Action buttons (contract, brochure, completion, interactions)
+                document.querySelectorAll('.action-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const action = this.getAttribute('data-action');
+                        const leadId = this.getAttribute('data-lead-id');
+                        const piano = this.getAttribute('data-piano');
+                        
+                        if (action === 'interactions') openInteractionsModal(leadId);
+                        else if (action === 'contract') sendContract(leadId, piano);
+                        else if (action === 'brochure') sendBrochure(leadId);
+                        else if (action === 'completion') requestCompletion(leadId);
+                    });
+                });
+                
+                // CRUD buttons (view, edit, delete)
+                document.querySelectorAll('.crud-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const action = this.getAttribute('data-action');
+                        const leadId = this.getAttribute('data-lead-id');
+                        
+                        if (action === 'view') viewLead(leadId);
+                        else if (action === 'edit') editLead(leadId);
+                        else if (action === 'delete') deleteLead(leadId);
+                    });
+                });
+                
+                // CM select dropdowns
+                document.querySelectorAll('.cm-select').forEach(select => {
+                    select.addEventListener('change', function() {
+                        const leadId = this.getAttribute('data-lead-id');
+                        const value = this.value;
+                        updateContactManager(leadId, value);
+                    });
+                });
+                
+                // Status select dropdowns
+                document.querySelectorAll('.status-select').forEach(select => {
+                    select.addEventListener('change', function() {
+                        const leadId = this.getAttribute('data-lead-id');
+                        const value = this.value;
+                        updateLeadStatus(leadId, value);
+                    });
+                });
+            }, 0);
         }
 
         function applyFilters() {
