@@ -4953,7 +4953,7 @@ ${370+e.length}
                 } else {
                     // Gestisci caso lead già completo
                     if (result.error && result.error.includes('già completo')) {
-                        alert('ℹ️ Tutti i dati del lead sono già completi.\\n\\nNon è necessario inviare l\\'email di richiesta completamento.');
+                        alert('ℹ️ Tutti i dati del lead sono già completi.\\n\\nNon è necessario inviare una email di richiesta completamento.');
                     } else {
                         alert('❌ Errore: ' + result.error);
                     }
@@ -5068,7 +5068,7 @@ ${370+e.length}
             const operatore = document.getElementById('interactionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per l\\'interazione');
+                alert('⚠️ Inserisci una nota per la interazione');
                 return;
             }
             
@@ -5257,7 +5257,7 @@ ${370+e.length}
             const operatore = document.getElementById('editInteractionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per l\\'interazione');
+                alert('⚠️ Inserisci una nota per la interazione');
                 return;
             }
             
@@ -5515,7 +5515,7 @@ ${370+e.length}
             const azione = document.getElementById('intModalAzione').value.trim();
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per l'interazione');
+                alert('⚠️ Inserisci una nota per la interazione');
                 return;
             }
             
@@ -7913,7 +7913,7 @@ PUT /api/contratti/\${contractId}\`);
                 
             } catch (error) {
                 console.error('Errore apertura archivio:', error);
-                alert('❌ Errore nel caricamento dell\\'archivio.\\n\\n' + error.message);
+                alert('❌ Errore nel caricamento archivio.\\n\\n' + error.message);
             }
         }
         window.openArchive = openArchive;  // Esponi globalmente
