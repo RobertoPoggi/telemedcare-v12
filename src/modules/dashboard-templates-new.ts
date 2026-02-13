@@ -3137,7 +3137,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const operatore = document.getElementById('interactionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             
@@ -3326,7 +3326,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const operatore = document.getElementById('editInteractionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             
@@ -3584,7 +3584,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const azione = document.getElementById('intModalAzione').value.trim();
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             

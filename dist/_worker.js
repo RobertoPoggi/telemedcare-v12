@@ -5068,7 +5068,7 @@ ${370+e.length}
             const operatore = document.getElementById('interactionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             
@@ -5257,7 +5257,7 @@ ${370+e.length}
             const operatore = document.getElementById('editInteractionOperatore').value;
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             
@@ -5515,7 +5515,7 @@ ${370+e.length}
             const azione = document.getElementById('intModalAzione').value.trim();
             
             if (!nota) {
-                alert('⚠️ Inserisci una nota per la interazione');
+                alert('⚠️ Inserisci una nota per questa interazione');
                 return;
             }
             
