@@ -1,0 +1,40 @@
+{
+  "imported": [
+    {
+      "nome": "Alberto Avanzi",
+      "hubspot_id": "688331078853",
+      "lead_id": "LEAD-MANUAL-1771013365207",
+      "email": "albertoavanzi@studioavanzi.it",
+      "phone": "+393295954873"
+    },
+    {
+      "nome": "Giovanna Giordano",
+      "hubspot_id": "682330208477",
+      "lead_id": "LEAD-MANUAL-1771013365614",
+      "email": "giordano.gnn@gmail.com",
+      "phone": ""
+    },
+    {
+      "nome": "Francesco Egiziano",
+      "hubspot_id": "678450709720",
+      "lead_id": "LEAD-MANUAL-1771013366156",
+      "email": "egizianofrancesco@libero.it",
+      "phone": "3382933088"
+    },
+    {
+      "nome": "Enzo Pedron",
+      "hubspot_id": "676141858038",
+      "lead_id": "LEAD-MANUAL-1771013366561",
+      "email": "enzo.pedron.62@gmail.com",
+      "phone": "+393484717119"
+    },
+    {
+      "nome": "Maria Chiara Baldassini",
+      "hubspot_id": "671621029092",
+      "lead_id": "LEAD-MANUAL-1771013366982",
+      "email": "chiara.baldassini@gmail.com",
+      "phone": ""
+    }
+  ],
+  "errors": []
+}

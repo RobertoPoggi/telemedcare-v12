@@ -1,0 +1,37 @@
+{
+  "total_hubspot_contacts": 4496,
+  "imported": [],
+  "already_exists": [
+    "Marco Olivieri",
+    "Andrea Mercuri",
+    "Adriana Mulassano",
+    "Paola Scarpin"
+  ],
+  "not_found": [
+    "Mary De Sanctis",
+    "Andrea Dindo",
+    "Laura Bianchi"
+  ],
+  "errors": [
+    {
+      "nome": "Alberto Avanzi",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Giovanna Giordano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Francesco Egiziano",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Enzo Pedron",
+      "errore": "HTTP 404"
+    },
+    {
+      "nome": "Maria Chiara Baldassini",
+      "errore": "HTTP 404"
+    }
+  ]
+}
