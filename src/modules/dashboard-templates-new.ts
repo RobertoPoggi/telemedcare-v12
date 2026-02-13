@@ -2408,22 +2408,22 @@ export const leads_dashboard = `<!DOCTYPE html>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full table-fixed">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-sm font-semibold text-gray-600 w-12">#</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Contatti</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Contratto</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Brochure</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">CM</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Stato</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 3%;">#</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -2731,40 +2731,40 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
-                        <td class="py-3 text-sm text-gray-600 font-medium">\${leads.length - index}</td>
-                        <td class="py-3 text-sm">
-                            <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
+                        <td class="py-2 text-xs text-gray-600 font-medium">\${leads.length - index}</td>
+                        <td class="py-2 text-xs truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || '')}">
+                            <div class="font-medium truncate">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
-                        <td class="py-3 text-sm">
-                            <div class="text-sm text-gray-600">
+                        <td class="py-2 text-xs">
+                            <div class="text-xs text-gray-600 truncate" title="\${escapeHtml(lead.email || '')}">
                                 <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || '') || '-'}
                             </div>
-                            <div class="text-sm text-gray-600 mt-1">
+                            <div class="text-xs text-gray-600 mt-1">
                                 <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono || '') || '-'}
                             </div>
                         </td>
-                        <td class="py-3 text-sm">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded font-medium">
+                        <td class="py-2 text-xs">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
                                 \${servizio}
                             </span>
                         </td>
-                        <td class="py-3 text-sm">
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded font-medium">
+                        <td class="py-2 text-xs">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
                                 \${piano}
                             </span>
                         </td>
-                        <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
-                        <td class="py-3 text-center text-sm">
+                        <td class="py-2 text-xs font-bold text-green-600">€\${prezzo}</td>
+                        <td class="py-2 text-center text-xs">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
-                        <td class="py-3 text-center text-sm">
+                        <td class="py-2 text-center text-xs">
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
-                        <td class="py-3 text-sm text-gray-500">\${date}</td>
-                        <td class="py-3 text-sm">
+                        <td class="py-2 text-xs text-gray-500">\${date}</td>
+                        <td class="py-2 text-xs">
                             <select 
                                 data-lead-id="\${lead.id}"
-                                class="cm-select text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
+                                class="cm-select text-xs px-1 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
                                 style="min-width: 80px;">
                                 <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
                                 <option value="OB" \${lead.cm === 'OB' ? 'selected' : ''}>OB</option>
