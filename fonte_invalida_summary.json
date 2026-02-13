@@ -1,0 +1,11 @@
+{
+  "total_invalid": 45,
+  "unique_invalid_sources": 5,
+  "sources_breakdown": {
+    "Form eCura": 39,
+    "Form eCura x Test": 3,
+    "B2B IRBEMA": 1,
+    "Sito web Medica GB": 1,
+    "NETWORKING": 1
+  }
+}
