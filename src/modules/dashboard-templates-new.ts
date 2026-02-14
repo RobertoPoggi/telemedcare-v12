@@ -2477,6 +2477,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="perso">❌ Perso</option>
                         <option value="non_interessato">⛔ Non Interessato</option>
                         <option value="da_ricontattare">🔄 Da Ricontattare</option>
+                        <option value="non_risponde">📵 Non Risponde</option>
+                        <option value="numero_non_attivo">🚫 Numero Non Attivo</option>
+                        <option value="inps">🏛️ INPS</option>
+                        <option value="problemi_economici">💰 Problemi Economici</option>
                     </select>
                 </div>
             </div>
@@ -2840,6 +2844,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="perso" \${lead.stato === 'perso' ? 'selected' : ''} class="bg-red-50">❌ Perso</option>
                                 <option value="non_interessato" \${lead.stato === 'non_interessato' ? 'selected' : ''} class="bg-gray-100">⛔ Non Interessato</option>
                                 <option value="da_ricontattare" \${lead.stato === 'da_ricontattare' ? 'selected' : ''} class="bg-yellow-100">🔄 Da Ricontattare</option>
+                                <option value="non_risponde" \${lead.stato === 'non_risponde' ? 'selected' : ''} class="bg-orange-50">📵 Non Risponde</option>
+                                <option value="numero_non_attivo" \${lead.stato === 'numero_non_attivo' ? 'selected' : ''} class="bg-red-100">🚫 Numero Non Attivo</option>
+                                <option value="inps" \${lead.stato === 'inps' ? 'selected' : ''} class="bg-purple-50">🏛️ INPS</option>
+                                <option value="problemi_economici" \${lead.stato === 'problemi_economici' ? 'selected' : ''} class="bg-pink-50">💰 Problemi Economici</option>
                             </select>
                         </td>
                         <td class="py-3 text-sm">
