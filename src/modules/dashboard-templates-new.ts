@@ -2467,6 +2467,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="OB">OB - Ottavia Belfa</option>
                         <option value="RP">RP - Roberto Poggi</option>
                     </select>
+                    <select id="filterStato" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti gli Stati</option>
+                        <option value="nuovo">🆕 Nuovo</option>
+                        <option value="contattato">📞 Contattato</option>
+                        <option value="interessato">✨ Interessato</option>
+                        <option value="in_trattativa">💼 In Trattativa</option>
+                        <option value="convertito">✅ Convertito</option>
+                        <option value="perso">❌ Perso</option>
+                        <option value="non_interessato">⛔ Non Interessato</option>
+                        <option value="da_ricontattare">🔄 Da Ricontattare</option>
+                    </select>
                 </div>
             </div>
 
@@ -2941,6 +2952,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
             const cmFilter = document.getElementById('filterCM').value;
+            const statoFilter = document.getElementById('filterStato').value;
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
@@ -2974,6 +2986,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     (cmFilter === 'nessuno' && !leadCM) || 
                     (cmFilter !== 'nessuno' && leadCM === cmFilter);
                 
+                // Filtro Stato: confronta con il campo stato del lead
+                const leadStato = (lead.stato || '').toLowerCase();
+                const matchStato = !statoFilter || leadStato === statoFilter.toLowerCase();
+                
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
                 const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
                 const cognomeAssistito = (lead.cognomeAssistito || '').toLowerCase();
@@ -2981,7 +2997,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchServizio && matchPiano && matchCM && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
             });
 
             renderLeadsTable(filtered);
