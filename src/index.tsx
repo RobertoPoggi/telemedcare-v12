@@ -5012,6 +5012,47 @@ app.post('/api/admin/clear-database', async (c) => {
   }
 });
 
+// 🔄 Helper function: Auto-aggiorna stato lead a "non_risponde"
+async function checkAndUpdateNonRispondeStatus(db: any, leadId: string): Promise<void> {
+  try {
+    console.log(`🔍 Controllo stato "non risponde" per lead ${leadId}`)
+    
+    // 1. Controlla il campo note del lead
+    const lead = await db.prepare('SELECT note FROM leads WHERE id = ?').bind(leadId).first()
+    const note = (lead?.note || '').toLowerCase()
+    
+    if (note.includes('non risponde')) {
+      console.log(`📵 Trovato "non risponde" nelle note del lead ${leadId}`)
+      await db.prepare('UPDATE leads SET stato = ?, updated_at = ? WHERE id = ?')
+        .bind('non_risponde', new Date().toISOString(), leadId).run()
+      console.log(`✅ Stato aggiornato a "non_risponde" per lead ${leadId}`)
+      return
+    }
+    
+    // 2. Controlla tutte le interazioni del lead
+    const interactions = await db.prepare(
+      'SELECT nota, azione FROM lead_interactions WHERE lead_id = ? ORDER BY data DESC'
+    ).bind(leadId).all()
+    
+    for (const interaction of interactions.results || []) {
+      const notaInt = (interaction.nota || '').toLowerCase()
+      const azioneInt = (interaction.azione || '').toLowerCase()
+      
+      if (notaInt.includes('non risponde') || azioneInt.includes('non risponde')) {
+        console.log(`📵 Trovato "non risponde" nelle interazioni del lead ${leadId}`)
+        await db.prepare('UPDATE leads SET stato = ?, updated_at = ? WHERE id = ?')
+          .bind('non_risponde', new Date().toISOString(), leadId).run()
+        console.log(`✅ Stato aggiornato a "non_risponde" per lead ${leadId}`)
+        return
+      }
+    }
+    
+    console.log(`ℹ️ Nessun "non risponde" trovato per lead ${leadId}`)
+  } catch (error) {
+    console.error(`❌ Errore controllo stato "non risponde" per lead ${leadId}:`, error)
+  }
+}
+
 // API endpoint per recuperare i lead (admin)
 app.get('/api/leads', async (c) => {
   try {
@@ -8555,6 +8596,9 @@ app.put('/api/leads/:id', async (c) => {
     const result = await c.env.DB.prepare(query).bind(...binds).run()
     console.log(`✅ Lead aggiornato:`, id, '- Rows affected:', result.meta?.changes || 0)
     
+    // 🔄 Controlla e aggiorna stato "non_risponde" se necessario (dopo l'update)
+    await checkAndUpdateNonRispondeStatus(c.env.DB, id)
+    
     return c.json({ success: true, message: 'Lead aggiornato con successo' })
   } catch (error) {
     console.error('❌ Errore aggiornamento lead:', error)
@@ -8705,19 +8749,8 @@ app.post('/api/leads/:id/interactions', async (c) => {
     
     console.log(`✅ Interazione ${interactionId} creata per lead ${leadId}`)
     
-    // 🔄 Auto-aggiornamento stato: "Non Risponde" se nella nota c'è "non risponde"
-    const notaLower = (nota || '').toLowerCase()
-    const azioneLower = (azione || '').toLowerCase()
-    
-    if (notaLower.includes('non risponde') || azioneLower.includes('non risponde')) {
-      await c.env.DB.prepare(`
-        UPDATE leads 
-        SET stato = ?, updated_at = ?
-        WHERE id = ?
-      `).bind('non_risponde', now, leadId).run()
-      
-      console.log(`📵 Auto-aggiornamento stato: impostato "non_risponde" per lead ${leadId}`)
-    }
+    // 🔄 Controlla e aggiorna stato "non_risponde" se necessario
+    await checkAndUpdateNonRispondeStatus(c.env.DB, leadId)
     
     return c.json({
       success: true,
