@@ -5017,9 +5017,11 @@ async function checkAndUpdateNonRispondeStatus(db: any, leadId: string): Promise
   try {
     console.log(`🔍 Controllo stato "non risponde" per lead ${leadId}`)
     
-    // 1. Controlla il campo note del lead
-    const lead = await db.prepare('SELECT note FROM leads WHERE id = ?').bind(leadId).first()
-    const note = (lead?.note || '').toLowerCase()
+    // 1. Controlla il campo note/notes del lead (prova entrambi i nomi)
+    const lead = await db.prepare('SELECT note, notes FROM leads WHERE id = ?').bind(leadId).first()
+    const note = (lead?.note || lead?.notes || '').toLowerCase()
+    
+    console.log(`🔍 Note del lead ${leadId}: "${note.substring(0, 100)}"`)
     
     if (note.includes('non risponde')) {
       console.log(`📵 Trovato "non risponde" nelle note del lead ${leadId}`)
@@ -5034,9 +5036,13 @@ async function checkAndUpdateNonRispondeStatus(db: any, leadId: string): Promise
       'SELECT nota, azione FROM lead_interactions WHERE lead_id = ? ORDER BY data DESC'
     ).bind(leadId).all()
     
+    console.log(`🔍 Trovate ${interactions.results?.length || 0} interazioni per lead ${leadId}`)
+    
     for (const interaction of interactions.results || []) {
       const notaInt = (interaction.nota || '').toLowerCase()
       const azioneInt = (interaction.azione || '').toLowerCase()
+      
+      console.log(`🔍 Interazione: nota="${notaInt.substring(0, 50)}", azione="${azioneInt.substring(0, 50)}"`)
       
       if (notaInt.includes('non risponde') || azioneInt.includes('non risponde')) {
         console.log(`📵 Trovato "non risponde" nelle interazioni del lead ${leadId}`)
