@@ -3033,14 +3033,14 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         // Funzioni per invio manuale documenti
         async function sendContract(leadId, piano) {
-            if (!confirm(`Generare e inviare contratto ${piano || 'BASE'} al lead?`)) {
+            if (!confirm('Generare e inviare contratto ' + (piano || 'BASE') + ' al lead?')) {
                 return;
             }
             
             console.log('📄 Invio contratto - leadId:', leadId, 'piano:', piano);
             
             try {
-                const response = await fetch(`/api/leads/${leadId}/send-contract`, {
+                const response = await fetch('/api/leads/' + leadId + '/send-contract', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tipoContratto: piano || 'BASE' })
