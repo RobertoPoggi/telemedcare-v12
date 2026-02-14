@@ -8705,6 +8705,20 @@ app.post('/api/leads/:id/interactions', async (c) => {
     
     console.log(`✅ Interazione ${interactionId} creata per lead ${leadId}`)
     
+    // 🔄 Auto-aggiornamento stato: "Non Risponde" se nella nota c'è "non risponde"
+    const notaLower = (nota || '').toLowerCase()
+    const azioneLower = (azione || '').toLowerCase()
+    
+    if (notaLower.includes('non risponde') || azioneLower.includes('non risponde')) {
+      await c.env.DB.prepare(`
+        UPDATE leads 
+        SET stato = ?, updated_at = ?
+        WHERE id = ?
+      `).bind('non_risponde', now, leadId).run()
+      
+      console.log(`📵 Auto-aggiornamento stato: impostato "non_risponde" per lead ${leadId}`)
+    }
+    
     return c.json({
       success: true,
       interaction: {

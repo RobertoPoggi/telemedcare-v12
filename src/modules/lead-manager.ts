@@ -411,6 +411,16 @@ export class LeadManager {
 
       await this.saveLead(lead)
 
+      // 🔄 Auto-aggiornamento stato: "Non Risponde" se nelle note c'è "non risponde"
+      const content = (interactionData.content || '').toLowerCase()
+      const subject = (interactionData.subject || '').toLowerCase()
+      
+      if (content.includes('non risponde') || subject.includes('non risponde')) {
+        console.log(`📵 Auto-aggiornamento stato: impostato "non_risponde" per lead ${leadId}`)
+        lead.stato = 'non_risponde'
+        await this.saveLead(lead)
+      }
+
       // Ricalcola score se interazione positiva
       if (interactionData.outcome === 'POSITIVE') {
         await this.recalculateLeadScore(leadId)
