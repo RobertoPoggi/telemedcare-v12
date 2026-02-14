@@ -1207,7 +1207,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Carica TUTTI i lead (limite massimo 999999)
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const allLeadsResponse = await fetch(`/api/leads?limit=999999&_=${cacheBuster}`);
+                const allLeadsResponse = await fetch(\`/api/leads?limit=999999&_=\${cacheBuster}\`);
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -2554,7 +2554,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Carica lead
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(`/api/leads?limit=200&_=${cacheBuster}`);
+                const leadsResponse = await fetch(\`/api/leads?limit=200&_=\${cacheBuster}\`);
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -4925,7 +4925,7 @@ export const data_dashboard = `<!DOCTYPE html>
                 // Carica lead per calcolare statistiche reali
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(`/api/leads?limit=200&_=${cacheBuster}`);
+                const leadsResponse = await fetch(\`/api/leads?limit=200&_=\${cacheBuster}\`);
                 if (!leadsResponse.ok) throw new Error('Errore caricamento leads');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
