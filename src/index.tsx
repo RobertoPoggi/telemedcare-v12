@@ -7846,6 +7846,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     }
     
     // Usa workflow per inviare email contratto
+    console.log('📧 Import workflow-email-manager...')
     const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
     
     const documentUrls: { brochure?: string; manuale?: string } = {}
@@ -7855,9 +7856,27 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
     }
     
-    const result = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
+    console.log('📧 Chiamata inviaEmailContratto con:', {
+      leadId: leadData.id,
+      email: leadData.email,
+      servizio: contractData.servizio,
+      piano: contractData.tipoServizio,
+      documentUrls
+    })
     
-    console.log('📧 Risultato invio email contratto:', result)
+    let result
+    try {
+      result = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
+      console.log('📧 Risultato invio email contratto:', result)
+    } catch (emailError) {
+      console.error('❌ ERRORE in inviaEmailContratto:', emailError)
+      console.error('❌ Stack:', emailError instanceof Error ? emailError.stack : 'N/A')
+      return c.json({
+        success: false,
+        error: 'Errore durante invio email',
+        details: emailError instanceof Error ? emailError.message : String(emailError)
+      }, 500)
+    }
     
     if (result.success) {
       // Aggiorna lead

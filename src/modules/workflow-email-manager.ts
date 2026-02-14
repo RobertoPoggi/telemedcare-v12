@@ -745,9 +745,11 @@ export async function inviaEmailContratto(
   try {
     // 🔴 CONTROLLO SWITCH: Verifica se email automatiche ai lead sono abilitate
     const emailLeadsEnabled = await getSetting(db, 'lead_email_notifications_enabled')
+    console.log(`🔍 [WORKFLOW] Email automatiche lead: ${emailLeadsEnabled ? 'ABILITATE ✅' : 'DISABILITATE ❌'}`)
+    
     if (!emailLeadsEnabled) {
       console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
-      result.errors.push('Email automatiche ai lead disabilitate nelle impostazioni sistema')
+      result.errors.push('⚠️ Email automatiche ai lead DISABILITATE nelle impostazioni sistema. Vai su Impostazioni > Email Lead per abilitarle.')
       return result
     }
 
