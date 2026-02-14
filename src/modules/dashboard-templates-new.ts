@@ -817,7 +817,7 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
@@ -2338,7 +2338,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
         <!-- Statistiche Lead -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
@@ -2475,13 +2475,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 3%;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 15%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 16%;">Contatti</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th>
+                            <!-- Nascoste: Brochure e Manuale non servono per ora -->
+                            <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th> -->
+                            <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th> -->
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Stato</th>
@@ -2491,7 +2492,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="13" class="py-8 text-center text-gray-400">
+                            <td colspan="11" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento lead...</p>
                             </td>
@@ -2689,6 +2690,8 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function updateChannelsBreakdown(leads) {
+            console.log('🔍 updateChannelsBreakdown chiamata con leads:', leads.length);
+            
             const sources = {};
             leads.forEach(l => {
                 // PRIORITÀ: fonte è il campo principale
@@ -2699,6 +2702,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Debug: mostra tutte le fonti trovate
             console.log('📊 Fonti rilevate:', sources);
             console.log('📊 Total leads:', leads.length);
+            console.log('📊 Primo lead esempio:', leads[0]);
             
             const total = leads.length || 1;
             
@@ -2792,12 +2796,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </span>
                         </td>
                         <td class="py-2 text-xs font-bold text-green-600">€\${prezzo}</td>
-                        <td class="py-2 text-center text-xs">
+                        <!-- Nascoste: celle Contratto e Brochure -->
+                        <!-- <td class="py-2 text-center text-xs">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
                         <td class="py-2 text-center text-xs">
                             <i class="fas fa-\${lead.vuoleBrochure === 'Si' ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
-                        </td>
+                        </td> -->
                         <td class="py-2 text-xs text-gray-500">\${date}</td>
                         <td class="py-2 text-xs">
                             <select 
@@ -4656,7 +4661,7 @@ export const data_dashboard = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
         <!-- KPI Principali -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
@@ -5545,7 +5550,7 @@ export const workflow_manager = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-6 py-8">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
         <!-- Workflow Steps Overview -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
