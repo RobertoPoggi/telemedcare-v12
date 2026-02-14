@@ -7762,6 +7762,32 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     }
     
     console.log('📄 Creazione contratto per lead:', leadId)
+    console.log('📄 Lead data:', { 
+      email: lead.email, 
+      nome: lead.nomeRichiedente, 
+      cognome: lead.cognomeRichiedente,
+      servizio: lead.servizio,
+      piano: lead.piano
+    })
+    
+    // ✅ VALIDAZIONE CAMPI OBBLIGATORI
+    if (!lead.email) {
+      console.error('❌ Email mancante per lead:', leadId)
+      return c.json({ 
+        success: false, 
+        error: 'Email mancante',
+        details: 'Il lead non ha un indirizzo email valido. Impossibile inviare il contratto.'
+      }, 400)
+    }
+    
+    if (!lead.nomeRichiedente || !lead.cognomeRichiedente) {
+      console.error('❌ Nome/Cognome mancante per lead:', leadId)
+      return c.json({ 
+        success: false, 
+        error: 'Dati incompleti',
+        details: 'Nome o cognome del richiedente mancanti. Completa il profilo del lead prima di inviare il contratto.'
+      }, 400)
+    }
     
     // Ottieni tipoContratto dal body se presente
     const body = await c.req.json().catch(() => ({}))
@@ -7831,6 +7857,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     
     const result = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
     
+    console.log('📧 Risultato invio email contratto:', result)
+    
     if (result.success) {
       // Aggiorna lead
       await c.env.DB.prepare(`
@@ -7841,6 +7869,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
         WHERE id = ?
       `).bind(new Date().toISOString(), leadId).run()
       
+      console.log('✅ Lead aggiornato, contratto inviato con successo')
+      
       return c.json({
         success: true,
         message: 'Contratto inviato con successo',
@@ -7848,15 +7878,17 @@ app.post('/api/leads/:id/send-contract', async (c) => {
         contractCode: contractCode
       })
     } else {
+      console.error('❌ Errore invio email contratto:', result.errors)
       return c.json({
         success: false,
         error: 'Errore invio contratto',
-        details: result.errors.join(', ')
+        details: result.errors && result.errors.length > 0 ? result.errors.join(', ') : 'Errore sconosciuto durante invio email'
       }, 500)
     }
     
   } catch (error) {
-    console.error('❌ Errore invio contratto:', error)
+    console.error('❌ Errore invio contratto (catch):', error)
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A')
     return c.json({
       success: false,
       error: 'Errore invio contratto',
