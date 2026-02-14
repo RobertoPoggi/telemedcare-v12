@@ -1205,7 +1205,9 @@ export const dashboard = `<!DOCTYPE html>
                 }
                 
                 // Carica TUTTI i lead (limite massimo 999999)
-                const allLeadsResponse = await fetch('/api/leads?limit=999999');
+                // ✅ Aggiungi timestamp per evitare cache del browser
+                const cacheBuster = Date.now();
+                const allLeadsResponse = await fetch(`/api/leads?limit=999999&_=${cacheBuster}`);
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -2550,7 +2552,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
 
                 // Carica lead
-                const leadsResponse = await fetch('/api/leads?limit=200');
+                // ✅ Aggiungi timestamp per evitare cache del browser
+                const cacheBuster = Date.now();
+                const leadsResponse = await fetch(`/api/leads?limit=200&_=${cacheBuster}`);
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -2755,7 +2759,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function renderLeadsTable(leads) {
-            console.log('🔧 renderLeadsTable v2026-02-13-00:05 - escapeHtml FULLY APPLIED');
+            console.log('🔧 renderLeadsTable v2026-02-14-01:30 - SORT DESC + cache-buster');
             const tbody = document.getElementById('leadsTableBody');
             
             if (leads.length === 0) {
@@ -2767,7 +2771,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                 return;
             }
 
-            tbody.innerHTML = leads.map((lead, index) => {
+            // ✅ ORDINA PER DATA CREAZIONE DESC (più recenti prima)
+            const sortedLeads = [...leads].sort((a, b) => {
+                const dateA = new Date(a.created_at || a.timestamp || 0);
+                const dateB = new Date(b.created_at || b.timestamp || 0);
+                return dateB - dateA; // DESC
+            });
+
+            tbody.innerHTML = sortedLeads.map((lead, index) => {
                 // PRIORITY: piano > note > default BASE
                 // NOTA: tipoServizio contiene il SERVIZIO, NON il piano!
                 let piano = 'BASE';
@@ -4912,7 +4923,9 @@ export const data_dashboard = `<!DOCTYPE html>
         async function loadDataDashboard() {
             try {
                 // Carica lead per calcolare statistiche reali
-                const leadsResponse = await fetch('/api/leads?limit=200');
+                // ✅ Aggiungi timestamp per evitare cache del browser
+                const cacheBuster = Date.now();
+                const leadsResponse = await fetch(`/api/leads?limit=200&_=${cacheBuster}`);
                 if (!leadsResponse.ok) throw new Error('Errore caricamento leads');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
