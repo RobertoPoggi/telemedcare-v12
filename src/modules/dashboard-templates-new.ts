@@ -1085,8 +1085,8 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Analisi Lead: Servizi, Piani, Canali e Fonti (Compattati su 1 riga) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 mb-8">
+        <!-- Analisi Lead: Servizi, Piani e Fonti (Compattati su 1 riga) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 mb-8">
             <!-- Distribuzione Servizi -->
             <div class="bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
@@ -1109,7 +1109,6 @@ export const dashboard = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Distribuzione per Canale -->\n            <div class=\"bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm\">\n                <h3 class=\"text-lg font-bold text-gray-800 mb-4 flex items-center\">\n                    <i class=\"fas fa-network-wired text-orange-500 mr-2\"></i>\n                    Distribuzione per Canale\n                </h3>\n                <div id=\"channelsDistribution\" class=\"space-y-3\">\n                    <!-- Distribuzione canali verrà popolata dinamicamente -->\n                </div>\n            </div>
 
             <!-- Distribuzione per Fonte -->
             <div class="bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm">
@@ -1268,8 +1267,14 @@ export const dashboard = `<!DOCTYPE html>
                     return isRecent && notConverted;
                 });
                 
-                // Ultimi 10 lead recenti non convertiti per la tabella
-                const leads = recentLeads.slice(0, 10);
+                // Ultimi 10 lead recenti non convertiti per la tabella (ordinati dal più recente)
+                const leads = recentLeads
+                    .sort((a, b) => {
+                        const dateA = new Date(a.created_at || a.timestamp);
+                        const dateB = new Date(b.created_at || b.timestamp);
+                        return dateB - dateA; // DESC: più recenti prima
+                    })
+                    .slice(0, 10);
 
                 // Popola tabella lead
                 const tbody = document.getElementById('leadsTable');
@@ -1341,7 +1346,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici: servizi basati su ASSISTITI, piani basati su ASSISTITI
                 updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
                 updatePlansChart(allLeads);
-                updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
+                //                 updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
