@@ -283,20 +283,42 @@ export class EmailService {
 <div style="background:#0b63a5;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📋 TeleMedCare</h1></div>
 <div style="padding:24px;">
 <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
-<p>Siamo lieti di accompagnarLa in questo importante passo! In allegato trova il <strong>contratto per il servizio {{PIANO_SERVIZIO}}</strong>.</p>
+<p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova la brochure del dispositivo prescelto con tutti i dettagli delle sue caratteristiche innovative nonché il contratto per il servizio {{PIANO_SERVIZIO}} che ha selezionato tra le sue preferenze.</p>
+
+<div style="background:#e6f7ff;border:1px solid #91d5ff;padding:16px;border-radius:6px;margin:16px 0;">
+<h3 style="margin:0 0 8px;color:#1890ff;">📘 Brochure Dispositivo</h3>
+<p style="margin:4px 0;">Trova in allegato la brochure completa con tutte le caratteristiche tecniche e innovative del dispositivo.</p>
+</div>
+
 <div style="background:#f8fbff;border:1px solid #e6f0fa;padding:16px;border-radius:6px;margin:16px 0;">
-<h3 style="margin:0 0 8px;color:#0b63a5;">📋 Riepilogo Servizio</h3>
+<h3 style="margin:0 0 8px;color:#0b63a5;">📋 Contratto Servizio</h3>
 <strong>Piano:</strong> {{PIANO_SERVIZIO}}<br>
 <strong>Investimento:</strong> {{PREZZO_PIANO}}<br>
 <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
 </div>
-<h3 style="color:#0b63a5;">🚀 Prossimi Passi:</h3>
-<ol style="margin-left:18px;">
-<li>Legga attentamente il contratto allegato</li>
-<li>Firmi in ogni pagina richiesta</li>
-<li>Ci invii il contratto firmato via email</li>
-<li>Riceverà il dispositivo entro 10 giorni</li>
+
+<h3 style="color:#0b63a5;">🚀 Prossimi passi per l'attivazione:</h3>
+
+<div style="background:#fff7e6;border-left:4px solid #ffa940;padding:12px 16px;margin:12px 0;">
+<p style="margin:0;font-weight:bold;color:#d46b08;">Opzione 1: Firma Elettronica (Consigliata)</p>
+<ol style="margin:8px 0 0 18px;padding:0;">
+<li>Dopo averlo letto ed esaminato, firmi in modo elettronico il contratto (usando il mouse del PC o il dito su tablet o sul cellulare)</li>
+<li>Prema invio per conferma e riceverà rapidamente la proforma con tutte le informazioni per effettuare il bonifico</li>
 </ol>
+</div>
+
+<div style="background:#f6ffed;border-left:4px solid #52c41a;padding:12px 16px;margin:12px 0;">
+<p style="margin:0;font-weight:bold;color:#389e0d;">Oppure - Opzione 2: Firma Cartacea</p>
+<ol style="margin:8px 0 0 18px;padding:0;">
+<li>Provveda a stampare e leggere attentamente il contratto allegato</li>
+<li>Firmi in ogni pagina richiesta e nell'ultima pagina</li>
+<li>Ci invii il contratto firmato via email o WhatsApp</li>
+<li>Appena possibile riceverà la proforma con tutte le informazioni per effettuare il bonifico</li>
+</ol>
+</div>
+
+<p style="margin-top:16px;padding:12px;background:#fafafa;border-radius:6px;"><strong>📦 Consegna:</strong> In ogni caso riceverà il dispositivo entro 10 giorni lavorativi dall'arrivo del pagamento.</p>
+
 <p style="margin-top:20px;"><strong>Grazie per la fiducia!</strong><br>Il Team TeleMedCare</p>
 </div></div></body></html>`
 
