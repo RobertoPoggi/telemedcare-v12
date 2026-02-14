@@ -7763,13 +7763,19 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     
     console.log('📄 Creazione contratto per lead:', leadId)
     
+    // Ottieni tipoContratto dal body se presente
+    const body = await c.req.json().catch(() => ({}))
+    const pianoRichiesto = body.tipoContratto || body.piano
+    
     const timestamp = Date.now()
     const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     const contractId = `contract-${timestamp}`
     
-    // Determina servizio e piano
+    // Determina servizio e piano (usa quello richiesto se presente, altrimenti quello del lead)
     const servizio = lead.servizio || 'eCura PRO'
-    const piano = lead.piano || 'BASE'
+    const piano = pianoRichiesto || lead.piano || 'BASE'
+    
+    console.log('📄 Piano contratto:', piano, '(richiesto:', pianoRichiesto, 'lead:', lead.piano, ')')
     
     // Prepara leadData per workflow
     const leadData = {

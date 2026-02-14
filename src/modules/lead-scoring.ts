@@ -343,7 +343,7 @@ export class TeleMedCareScoring {
       'artrite', 'osteoporosi', 'tiroidite'
     ];
     
-    const patologieRilevate = fattori.patologiePrincipali.filter(p => 
+    const patologieRilevate = (fattori.patologiePrincipali || []).filter(p => 
       patologieCroniche.some(pc => p.toLowerCase().includes(pc))
     );
     
@@ -437,9 +437,10 @@ export class TeleMedCareScoring {
     }
     
     // Disponibilità oraria ampia = flessibilità
-    if (fattori.disponibilitaOraria.length >= 4) {
+    const disponibilita = fattori.disponibilitaOraria || [];
+    if (disponibilita.length >= 4) {
       score += 20;
-    } else if (fattori.disponibilitaOraria.length >= 2) {
+    } else if (disponibilita.length >= 2) {
       score += 10;
     }
     
@@ -456,7 +457,7 @@ export class TeleMedCareScoring {
       const hasFattoriObbligatori = this.regoleSegmentazione.hot.fattoriObbligatori.every(fattore => {
         switch (fattore) {
           case 'patologiePrincipali':
-            return fattori.patologiePrincipali.length > 0;
+            return (fattori.patologiePrincipali || []).length > 0;
           case 'graditaMedica':
             return fattori.graditaMedica >= 5;
           case 'capacitaDiSpesa':
@@ -518,7 +519,7 @@ export class TeleMedCareScoring {
       
       // Premium add-ons basati su profilo
       if (fattori.fasciaDiReddito === 'ALTA') valore += 200;
-      if (fattori.patologiePrincipali.length >= 2) valore += 150; // Multi-patologie
+      if ((fattori.patologiePrincipali || []).length >= 2) valore += 150; // Multi-patologie
       if (fattori.frequenzaVisite >= 6) valore += 100; // High-maintenance
       
       return {
@@ -692,7 +693,7 @@ export class TeleMedCareScoring {
   private identificaFattoriMancanti(fattori: ScoringFactors): string[] {
     const fattoriMancanti: string[] = [];
     
-    if (!fattori.patologiePrincipali || fattori.patologiePrincipali.length === 0) {
+    if (!(fattori.patologiePrincipali || []).length) {
       fattoriMancanti.push('patologiePrincipali');
     }
     
@@ -708,7 +709,7 @@ export class TeleMedCareScoring {
       fattoriMancanti.push('capacitaDiSpesa');
     }
     
-    if (!fattori.disponibilitaOraria || fattori.disponibilitaOraria.length === 0) {
+    if (!(fattori.disponibilitaOraria || []).length) {
       fattoriMancanti.push('disponibilitaOraria');
     }
     
