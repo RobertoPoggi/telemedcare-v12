@@ -38,12 +38,34 @@ export const home = `<!DOCTYPE html>
             0%, 100% { opacity: 1; }
             50% { opacity: .5; }
         }
+        
+        /* 📐 Responsiveness migliorata */
+        @media (max-width: 640px) {
+            .container { padding-left: 1rem; padding-right: 1rem; }
+        }
+        @media (min-width: 1536px) {
+            .container { max-width: 1400px; }
+        }
+        
+        /* 📊 Layout tabelle migliorato */
+        table { border-collapse: separate; border-spacing: 0; }
+        .overflow-x-auto { 
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: thin;
+        }
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 6px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="gradient-hero text-white shadow-2xl">
-        <div class="container mx-auto px-6 py-6">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="bg-white bg-opacity-20 backdrop-blur p-3 rounded-xl">
@@ -69,8 +91,8 @@ export const home = `<!DOCTYPE html>
     </header>
 
     <!-- Hero Stats -->
-    <section class="container mx-auto px-6 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <section class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 mb-8">
             <!-- Lead Oggi -->
             <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
                 <div class="flex items-center justify-between">
@@ -1064,9 +1086,9 @@ export const dashboard = `<!DOCTYPE html>
         </div>
 
         <!-- Analisi Lead: Servizi, Piani, Canali e Fonti (Compattati su 1 riga) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 mb-8">
             <!-- Distribuzione Servizi -->
-            <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
                     Distribuzione Servizi
@@ -1077,7 +1099,7 @@ export const dashboard = `<!DOCTYPE html>
             </div>
 
             <!-- Piano BASE vs AVANZATO -->
-            <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-chart-bar text-blue-500 mr-2"></i>
                     Piano BASE vs AVANZATO
@@ -1087,10 +1109,10 @@ export const dashboard = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Distribuzione per Canale -->\n            <div class=\"bg-white p-6 rounded-xl shadow-sm\">\n                <h3 class=\"text-lg font-bold text-gray-800 mb-4 flex items-center\">\n                    <i class=\"fas fa-network-wired text-orange-500 mr-2\"></i>\n                    Distribuzione per Canale\n                </h3>\n                <div id=\"channelsDistribution\" class=\"space-y-3\">\n                    <!-- Distribuzione canali verrà popolata dinamicamente -->\n                </div>\n            </div>
+            <!-- Distribuzione per Canale -->\n            <div class=\"bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm\">\n                <h3 class=\"text-lg font-bold text-gray-800 mb-4 flex items-center\">\n                    <i class=\"fas fa-network-wired text-orange-500 mr-2\"></i>\n                    Distribuzione per Canale\n                </h3>\n                <div id=\"channelsDistribution\" class=\"space-y-3\">\n                    <!-- Distribuzione canali verrà popolata dinamicamente -->\n                </div>\n            </div>
 
             <!-- Distribuzione per Fonte -->
-            <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="bg-white p-5 sm:p-6 lg:p-7 rounded-xl shadow-sm">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <i class="fas fa-source text-teal-500 mr-2"></i>
                     Distribuzione per Fonte
@@ -1102,7 +1124,7 @@ export const dashboard = `<!DOCTYPE html>
         </div>
 
         <!-- Ultimi Lead Ricevuti -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 lg:p-8">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center">
                     <i class="fas fa-clock text-green-500 mr-2"></i>
@@ -1112,18 +1134,18 @@ export const dashboard = `<!DOCTYPE html>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full table-auto">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Lead ID</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Cliente</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Dispositivo</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Contratto</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Lead ID</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 min-w-[180px]">Cliente</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Telefono</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Servizio</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Piano</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Dispositivo</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Prezzo</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Contratto</th>
+                            <th class="pb-3 px-2 text-sm font-semibold text-gray-600 whitespace-nowrap">Data</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTable">
@@ -1292,22 +1314,22 @@ export const dashboard = `<!DOCTYPE html>
 
                         return \`
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="py-3 text-sm">
+                                <td class="py-3 px-2 text-sm whitespace-nowrap">
                                     <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${escapeHtml(lead.id)}">\${formatLeadId(lead.id)}</code>
                                 </td>
-                                <td class="py-3 text-sm">
+                                <td class="py-3 px-2 text-sm min-w-[180px]">
                                     <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
                                     <div class="text-xs text-gray-500">\${escapeHtml(lead.email)}</div>
                                 </td>
-                                <td class="py-3 text-sm text-gray-600">\${telefono}</td>
-                                <td class="py-3 text-sm font-medium text-purple-600">\${servizio}</td>
-                                <td class="py-3 text-sm">\${piano}</td>
-                                <td class="py-3 text-sm text-gray-600">\${dispositivo}</td>
-                                <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
-                                <td class="py-3">
-                                    <span class="status-badge \${statusClass}">\${statusText}</span>
+                                <td class="py-3 px-2 text-sm text-gray-600" whitespace-nowrap>\${telefono}</td>
+                                <td class="py-3 px-2 text-sm font-medium text-purple-600" whitespace-nowrap>\${servizio}</td>
+                                <td class="py-3 px-2 text-sm" whitespace-nowrap>\${piano}</td>
+                                <td class="py-3 px-2 text-sm text-gray-600" whitespace-nowrap>\${dispositivo}</td>
+                                <td class="py-3 px-2 text-sm font-bold text-green-600" whitespace-nowrap>€\${prezzo}</td>
+                                <td class="py-3 px-2" whitespace-nowrap>
+                                    <span class="status-badge \${statusClass}" whitespace-nowrap>\${statusText}</span>
                                 </td>
-                                <td class="py-3 text-xs text-gray-500">\${date}</td>
+                                <td class="py-3 px-2 text-xs text-gray-500" whitespace-nowrap>\${date}</td>
                             </tr>
                         \`;
                     }).join('');
