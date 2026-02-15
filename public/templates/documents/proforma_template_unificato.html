@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Forma Medica GB - {{NUMERO_PROFORMA}}</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+            background-color: #fff;
+        }
+        
+        .letterhead {
+            border-top: 3px solid #0066cc;
+            border-bottom: 3px solid #0066cc;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+        
+        .letterhead-logo {
+            flex-shrink: 0;
+            margin-right: 30px;
+        }
+        
+        .letterhead-logo img {
+            max-width: 180px;
+            height: auto;
+        }
+        
+        .letterhead-info {
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        .letterhead-info h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        
+        .letterhead-info p {
+            font-size: 11px;
+            margin: 3px 0;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            color: #0066cc;
+        }
+        
+        .data {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            color: #0066cc;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 5px;
+        }
+        
+        .field-row {
+            margin: 12px 0;
+            padding: 8px 0;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 200px;
+        }
+        
+        .field-value {
+            display: inline-block;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #0066cc;
+        }
+        
+        .device-description {
+            font-size: 14px;
+            line-height: 1.8;
+            margin: 15px 0;
+            text-align: justify;
+        }
+        
+        .costi-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .costi-table th,
+        .costi-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .costi-table th {
+            background-color: #0066cc;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .costi-table .totale {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .payment-details {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .payment-details h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .note {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            margin-top: 20px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #0066cc;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .footer p {
+            margin: 5px 0;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .payment-details {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Carta intestata Medica GB -->
+    <div class="letterhead">
+        <div class="letterhead-logo">
+            <img src="/images/medicagb-logo.png" alt="Medica GB Logo">
+        </div>
+        <div class="letterhead-info">
+            <h3>Medica GB S.r.l.</h3>
+            <p>Corso Garibaldi 34 – 20121 Milano</p>
+            <p>PEC: medicagbsrl@pecimprese.it</p>
+            <p>E.mail: info@medicagb.it</p>
+            <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
+            <p>www.medicagb.it</p>
+        </div>
+    </div>
+    
+    <h1>PRO FORMA MEDICA GB SRL</h1>
+    <div class="data">Milano, {{DATA_EMISSIONE}}</div>
+    
+    <!-- Anagrafica Paziente -->
+    <h2>Anagrafica Paziente</h2>
+    <div class="section">
+        <div class="field-row">
+            <span class="field-label">NOME:</span>
+            <span class="field-value">{{NOME_ASSISTITO}}</span>
+        </div>
+        <div class="field-row">
+            <span class="field-label">COGNOME:</span>
+            <span class="field-value">{{COGNOME_ASSISTITO}}</span>
+        </div>
+        <div class="field-row">
+            <span class="field-label">C.F.:</span>
+            <span class="field-value">{{CF_ASSISTITO}}</span>
+        </div>
+        <div class="field-row">
+            <span class="field-label">RESIDENTE IN:</span>
+            <span class="field-value">{{INDIRIZZO_COMPLETO}}</span>
+        </div>
+        <div class="field-row">
+            <span class="field-label">E.MAIL X INVIO FATTURAZIONE:</span>
+            <span class="field-value">{{EMAIL_CLIENTE}}</span>
+        </div>
+    </div>
+    
+    <!-- Note -->
+    <h2>Note</h2>
+    <div class="section">
+        <p>{{NOTE}}</p>
+    </div>
+    
+    <!-- Tipologia Prestazione -->
+    <h2>Tipologia Prestazione Erogata</h2>
+    <div class="section">
+        <div class="field-row">
+            <span class="field-label">DATA ATTIVAZIONE:</span>
+            <span class="field-value">{{DATA_ATTIVAZIONE}}</span>
+        </div>
+        <div class="field-row">
+            <span class="field-label">TIPO DI PRESTAZIONE:</span>
+            <span class="field-value">{{TIPO_PRESTAZIONE}}</span>
+        </div>
+        
+        <div class="device-description">
+            <p><strong>Descrizione del Servizio:</strong></p>
+            <p>{{DESCRIZIONE_SERVIZIO}}</p>
+        </div>
+    </div>
+    
+    <!-- Riepilogo Costi -->
+    <h2>Riepilogo Costi</h2>
+    <table class="costi-table">
+        <thead>
+            <tr>
+                <th>Descrizione</th>
+                <th style="width: 150px; text-align: right;">Importo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{TIPO_PRESTAZIONE}} - Primo anno (include dispositivo)</td>
+                <td style="text-align: right;">€ {{PREZZO_BASE}}</td>
+            </tr>
+            <tr>
+                <td>IVA 22%</td>
+                <td style="text-align: right;">€ {{IMPORTO_IVA}}</td>
+            </tr>
+            <tr class="totale">
+                <td><strong>TOTALE DA PAGARE</strong></td>
+                <td style="text-align: right;"><strong>€ {{IMPORTO_TOTALE}}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Modalità di Pagamento -->
+    <div class="payment-details">
+        <h3>💰 Modalità di Pagamento</h3>
+        
+        <p><strong>Intestatario:</strong> Medica GB Srl</p>
+        <p><strong>IBAN:</strong> IT97L0503401727000000003519</p>
+        <p><strong>Banca:</strong> Banca Popolare di Milano</p>
+        <p><strong>Causale:</strong> {{CAUSALE_PAGAMENTO}}</p>
+        <p><strong>Importo:</strong> € {{IMPORTO_TOTALE}}</p>
+        <p><strong>Scadenza:</strong> {{DATA_SCADENZA}}</p>
+        
+        <p style="margin-top: 15px; font-weight: bold; color: #856404;">
+            ⚠️ Il servizio verrà attivato entro 2-3 giorni lavorativi dall'accredito del pagamento.
+        </p>
+    </div>
+    
+    <!-- Nota Rinnovo -->
+    <div class="note">
+        <p><strong>Nota:</strong> Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il 
+        "Servizio di Continuità di TeleAssistenza {{PIANO_SERVIZIO}}" sarà pari a € {{PREZZO_RINNOVO}} 
+        ({{PREZZO_RINNOVO_MENSILE}}€/mese) + IVA 22% con inclusi:</p>
+        <ul>
+            <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+            <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        </ul>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Medica GB S.r.l.</strong></p>
+        <p>Corso Garibaldi 34 – 20121 Milano</p>
+        <p>PEC: medicagbsrl@pecimprese.it</p>
+        <p>E.mail: info@medicagb.it</p>
+        <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
+        <p>www.medicagb.it</p>
+    </div>
+</body>
+</html>
