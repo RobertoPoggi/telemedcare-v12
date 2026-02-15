@@ -4984,24 +4984,10 @@ export const data_dashboard = `<!DOCTYPE html>
 
         async function loadDataDashboard() {
             try {
-                // Carica statistiche generali
-                const statsResponse = await fetch('/api/data/stats');
-                const stats = await statsResponse.json();
-
-                document.getElementById('kpiLeads').textContent = stats.totalLeads || '0';
-                document.getElementById('kpiContracts').textContent = stats.totalContracts || '0';
-                document.getElementById('kpiRevenue').textContent = stats.totalRevenue ? \`€\${stats.totalRevenue}\` : '€0';
-                document.getElementById('kpiConversion').textContent = stats.conversionRate || '0%';
-                document.getElementById('kpiAov').textContent = stats.averageOrderValue ? \`€\${stats.averageOrderValue}\` : '€0';
-
                 // Carica lead per servizio
                 const leadsResponse = await fetch('/api/leads?limit=200');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
-
-                // Analizza per servizio
-                const serviceData = analyzeByService(leads);
-                updateServiceMetrics(serviceData);
 
                 // Carica contratti
                 const contractsResponse = await fetch('/api/contratti?limit=200');
@@ -5011,6 +4997,24 @@ export const data_dashboard = `<!DOCTYPE html>
                 // Salva i contratti globalmente per i filtri
                 window.allContracts = contracts;
                 
+                // Calcola KPI dai contratti reali
+                const totalLeads = leads.length;
+                const totalContracts = contracts.length;
+                const totalRevenue = contracts.reduce((sum, c) => sum + (parseFloat(c.prezzo_totale) || 0), 0);
+                const conversionRate = totalLeads > 0 ? ((totalContracts / totalLeads) * 100).toFixed(1) + '%' : '0%';
+                const averageOrderValue = totalContracts > 0 ? (totalRevenue / totalContracts).toFixed(2) : '0';
+
+                // Aggiorna KPI
+                document.getElementById('kpiLeads').textContent = totalLeads;
+                document.getElementById('kpiContracts').textContent = totalContracts;
+                document.getElementById('kpiRevenue').textContent = \`€\${totalRevenue.toFixed(0)}\`;
+                document.getElementById('kpiConversion').textContent = conversionRate;
+                document.getElementById('kpiAov').textContent = \`€\${averageOrderValue}\`;
+
+                // Analizza per servizio (LEADS + CONTRATTI)
+                const serviceData = analyzeByServiceWithContracts(leads, contracts);
+                updateServiceMetrics(serviceData);
+
                 renderContractsTable(contracts);
                 
                 // Aggiungi event listeners per i filtri
@@ -5034,11 +5038,14 @@ export const data_dashboard = `<!DOCTYPE html>
 
             let filtered = window.allContracts || [];
 
-            // Filtro cognome
+            // Filtro cognome - supporta multiple field names
             if (filters.cognome) {
-                filtered = filtered.filter(c => 
-                    (c.cliente_cognome || '').toLowerCase().includes(filters.cognome)
-                );
+                filtered = filtered.filter(c => {
+                    const cognome = (c.cliente_cognome || c.cognomeRichiedente || c.cognome_richiedente || '').toLowerCase();
+                    const nome = (c.cliente_nome || c.nomeRichiedente || c.nome_richiedente || '').toLowerCase();
+                    const fullName = \`\${nome} \${cognome}\`.toLowerCase();
+                    return cognome.includes(filters.cognome) || nome.includes(filters.cognome) || fullName.includes(filters.cognome);
+                });
             }
 
             // Filtro stato
@@ -5046,21 +5053,25 @@ export const data_dashboard = `<!DOCTYPE html>
                 filtered = filtered.filter(c => c.status === filters.stato);
             }
 
-            // Filtro dispositivo
+            // Filtro dispositivo - normalizza servizio
             if (filters.dispositivo) {
                 filtered = filtered.filter(c => {
-                    const dispositivo = getDispositivoForService(c.servizio || c.tipo_servizio);
-                    return dispositivo.includes(filters.dispositivo);
+                    const servizioNormalized = normalizeServizio(c.servizio || c.tipo_servizio);
+                    const dispositivo = servizioNormalized === 'PREMIUM' ? 'SIDLY VITAL CARE' : 'SIDLY CARE PRO';
+                    return dispositivo.includes(filters.dispositivo) || filters.dispositivo.includes(dispositivo);
                 });
             }
 
             // Filtro data scadenza
             if (filters.scadenza) {
                 const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
                 filtered = filtered.filter(c => {
                     if (!c.data_scadenza) return false;
                     
                     const scadenza = new Date(c.data_scadenza);
+                    scadenza.setHours(0, 0, 0, 0);
                     const diffTime = scadenza - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -5084,6 +5095,54 @@ export const data_dashboard = `<!DOCTYPE html>
             renderContractsTable(window.allContracts || []);
         }
 
+        function normalizeServizio(servizio) {
+            if (!servizio) return null;
+            const s = servizio.toUpperCase();
+            if (s.includes('FAMILY')) return 'FAMILY';
+            if (s.includes('PRO') && !s.includes('PREMIUM')) return 'PRO';
+            if (s.includes('PREMIUM')) return 'PREMIUM';
+            return null;
+        }
+
+        function analyzeByServiceWithContracts(leads, contracts) {
+            const data = {
+                FAMILY: { leads: 0, contracts: 0, base: 0, avanzato: 0, revenue: 0 },
+                PRO: { leads: 0, contracts: 0, base: 0, avanzato: 0, revenue: 0 },
+                PREMIUM: { leads: 0, contracts: 0, base: 0, avanzato: 0, revenue: 0 }
+            };
+
+            // Conta i lead per servizio
+            leads.forEach(lead => {
+                const servizioNormalized = normalizeServizio(lead.servizio);
+                if (servizioNormalized && data[servizioNormalized]) {
+                    data[servizioNormalized].leads++;
+                }
+            });
+
+            // Conta i contratti per servizio
+            contracts.forEach(contract => {
+                const servizioNormalized = normalizeServizio(contract.servizio || contract.tipo_servizio);
+                const piano = (contract.piano || contract.tipo_contratto || 'BASE').toUpperCase();
+                const prezzo = parseFloat(contract.prezzo_totale) || 0;
+                
+                if (servizioNormalized && data[servizioNormalized]) {
+                    data[servizioNormalized].contracts++;
+                    data[servizioNormalized].revenue += prezzo;
+                    
+                    if (piano.includes('BASE')) {
+                        data[servizioNormalized].base++;
+                    } else if (piano.includes('AVANZATO')) {
+                        data[servizioNormalized].avanzato++;
+                    } else {
+                        // Default to BASE if unknown
+                        data[servizioNormalized].base++;
+                    }
+                }
+            });
+
+            return data;
+        }
+
         function analyzeByService(leads) {
             const data = {
                 FAMILY: { leads: 0, base: 0, avanzato: 0, revenue: 0 },
@@ -5096,16 +5155,6 @@ export const data_dashboard = `<!DOCTYPE html>
                 'PRO': { 'BASE': 480, 'AVANZATO': 840 },
                 'PREMIUM': { 'BASE': 590, 'AVANZATO': 990 }
             };
-
-            // Funzione per normalizzare il nome del servizio
-            function normalizeServizio(servizio) {
-                if (!servizio) return null;
-                const s = servizio.toUpperCase();
-                if (s.includes('FAMILY')) return 'FAMILY';
-                if (s.includes('PRO') && !s.includes('PREMIUM')) return 'PRO';
-                if (s.includes('PREMIUM')) return 'PREMIUM';
-                return null;
-            }
 
             leads.forEach(lead => {
                 const servizioNormalized = normalizeServizio(lead.servizio);
@@ -5132,21 +5181,21 @@ export const data_dashboard = `<!DOCTYPE html>
         function updateServiceMetrics(data) {
             // FAMILY
             document.getElementById('familyLeads').textContent = data.FAMILY.leads;
-            document.getElementById('familyContracts').textContent = data.FAMILY.base + data.FAMILY.avanzato;
+            document.getElementById('familyContracts').textContent = data.FAMILY.contracts || (data.FAMILY.base + data.FAMILY.avanzato);
             document.getElementById('familyRevenue').textContent = \`€\${data.FAMILY.revenue.toFixed(0)}\`;
             document.getElementById('familyBase').textContent = data.FAMILY.base;
             document.getElementById('familyAvanzato').textContent = data.FAMILY.avanzato;
 
             // PRO
             document.getElementById('proLeads').textContent = data.PRO.leads;
-            document.getElementById('proContracts').textContent = data.PRO.base + data.PRO.avanzato;
+            document.getElementById('proContracts').textContent = data.PRO.contracts || (data.PRO.base + data.PRO.avanzato);
             document.getElementById('proRevenue').textContent = \`€\${data.PRO.revenue.toFixed(0)}\`;
             document.getElementById('proBase').textContent = data.PRO.base;
             document.getElementById('proAvanzato').textContent = data.PRO.avanzato;
 
             // PREMIUM
             document.getElementById('premiumLeads').textContent = data.PREMIUM.leads;
-            document.getElementById('premiumContracts').textContent = data.PREMIUM.base + data.PREMIUM.avanzato;
+            document.getElementById('premiumContracts').textContent = data.PREMIUM.contracts || (data.PREMIUM.base + data.PREMIUM.avanzato);
             document.getElementById('premiumRevenue').textContent = \`€\${data.PREMIUM.revenue.toFixed(0)}\`;
             document.getElementById('premiumBase').textContent = data.PREMIUM.base;
             document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
