@@ -37,31 +37,110 @@
           <!-- Body -->
           <tr>
             <td class="content" style="padding:24px; background-color:#ffffff;">
-              <p style="margin:0 0 16px; font-size:15px;">Gentile {{NOME_CLIENTE}},</p>
+              <p style="margin:0 0 16px; font-size:15px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
 
               <p style="margin:0 0 18px; font-size:15px; line-height:1.5;">
-                È con grande piacere che Le inviamo la <strong>Pro-forma TeleMedCare</strong>, una soluzione innovativa che rappresenta un vero cambiamento di paradigma nell'assistenza socio-sanitaria.
+                Grazie per aver firmato il contratto! Siamo lieti di inviarLe la <strong>fattura proforma</strong> per procedere con l'attivazione del Suo servizio TeleMedCare.
               </p>
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:18px 0; background-color:#f8fbff; border:1px solid #e6f0fb; border-radius:6px;">
+              <!-- Riepilogo Proforma -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin:18px 0; background-color:#f8fbff; border:2px solid #0b63a5; border-radius:8px;">
                 <tr>
-                  <td style="padding:16px;">
-                    <p style="margin:0 0 8px; font-size:14px;">
-                      <strong>📝 Pro-forma {{PIANO_SERVIZIO}}</strong>
+                  <td style="padding:20px;">
+                    <p style="margin:0 0 12px; font-size:18px; font-weight:600; color:#0b63a5;">
+                      📄 Fattura Proforma
                     </p>
-                    <p style="margin:0 0 6px; font-size:14px;"><strong>Numero Pro-forma:</strong> {{NUMERO_PROFORMA}}</p>
-                    <p style="margin:0 0 6px; font-size:16px; font-weight:600; color:#0b63a5;">{{PREZZO_PIANO}}</p>
-                    <p style="margin:10px 0 0; font-size:13px; color:#666666;"><em>Investimento annuale per la Sua sicurezza e tranquillità</em></p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Numero:</strong> {{NUMERO_PROFORMA}}</p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Data emissione:</strong> {{DATA_INVIO}}</p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Scadenza pagamento:</strong> {{SCADENZA_PAGAMENTO}}</p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</p>
+                    <hr style="border:none; border-top:1px solid #ccc; margin:12px 0;">
+                    <p style="margin:0 0 6px; font-size:18px; font-weight:700; color:#0b63a5;">
+                      Totale da pagare: {{IMPORTO_TOTALE}}
+                    </p>
+                    <p style="margin:0; font-size:12px; color:#666;">(IVA 22% inclusa)</p>
                   </td>
                 </tr>
               </table>
 
-              <h3 style="margin:18px 0 8px; font-size:16px;">⭐ La Nostra Mission Sociale</h3>
-              <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
-                <strong>Medica GB</strong> nasce dal desiderio di apportare innovazione in ambito socio-sanitario, modificando il paradigma tradizionale: <em>non più le persone che si recano nei luoghi di cura, ma la tecnologia che arriva direttamente dove c'è necessità di assistenza.</em>
+              <!-- Opzione 1: Pagamento Stripe -->
+              <div style="margin:24px 0; padding:20px; background-color:#e8f5e9; border-radius:8px; border-left:4px solid #4caf50;">
+                <h3 style="margin:0 0 12px; font-size:16px; color:#2e7d32;">
+                  ✅ Opzione 1: Pagamento Immediato con Carta (CONSIGLIATO)
+                </h3>
+                <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
+                  Il metodo più veloce e sicuro per attivare il servizio:
+                </p>
+                <ul style="margin:0 0 16px; padding-left:20px; font-size:14px;">
+                  <li>✨ Pagamento sicuro con Stripe</li>
+                  <li>🚀 Attivazione immediata del servizio</li>
+                  <li>💳 Accettiamo tutte le carte di credito/debito</li>
+                  <li>🔒 Transazione protetta e certificata</li>
+                </ul>
+                <div style="text-align:center; margin:16px 0;">
+                  <a href="{{LINK_PAGAMENTO}}" 
+                     style="display:inline-block; 
+                            padding:14px 32px; 
+                            background:linear-gradient(135deg, #4caf50 0%, #45a049 100%); 
+                            color:#ffffff; 
+                            text-decoration:none; 
+                            border-radius:6px; 
+                            font-size:16px; 
+                            font-weight:600;
+                            box-shadow:0 4px 8px rgba(76,175,80,0.3);">
+                    💳 PAGA ORA CON STRIPE
+                  </a>
+                </div>
+              </div>
+
+              <!-- Opzione 2: Bonifico Bancario -->
+              <div style="margin:24px 0; padding:20px; background-color:#fff3e0; border-radius:8px; border-left:4px solid #ff9800;">
+                <h3 style="margin:0 0 12px; font-size:16px; color:#e65100;">
+                  🏦 Opzione 2: Bonifico Bancario
+                </h3>
+                <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
+                  Puoi effettuare il pagamento tramite bonifico bancario:
+                </p>
+                <table width="100%" cellpadding="6" cellspacing="0" border="0" style="font-size:13px; background-color:#ffffff; border:1px solid #ddd; border-radius:4px;">
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">Beneficiario:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;">Medica GB S.r.l.</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">IBAN:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;">{{IBAN}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">Causale:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;"><strong>{{CAUSALE}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600;">Importo:</td>
+                    <td style="padding:8px; font-weight:700; color:#e65100;">{{IMPORTO_TOTALE}}</td>
+                  </tr>
+                </table>
+                <p style="margin:12px 0 0; font-size:13px; color:#e65100;">
+                  ⚠️ <strong>Importante:</strong> L'attivazione del servizio avverrà entro 2-3 giorni lavorativi dall'accredito del bonifico.
+                </p>
+              </div>
+
+              <!-- Prossimi Passi -->
+              <div style="margin:24px 0; padding:16px; background-color:#f5f5f5; border-radius:6px;">
+                <h3 style="margin:0 0 10px; font-size:15px;">📋 Cosa succede dopo il pagamento?</h3>
+                <ol style="margin:0; padding-left:20px; font-size:14px; line-height:1.8;">
+                  <li>Riceverai conferma di pagamento via email</li>
+                  <li>Ti invieremo il dispositivo SiDLY entro 3-5 giorni lavorativi</li>
+                  <li>Riceverai le istruzioni per l'attivazione e configurazione</li>
+                  <li>Il nostro team ti contatterà per supporto iniziale</li>
+                </ol>
+              </div>
+
+              <p style="margin:22px 0 0; font-size:14px;">
+                Per qualsiasi domanda, non esiti a contattarci a 
+                <a href="mailto:info@medicagb.it" style="color:#0b63a5;">info@medicagb.it</a>
               </p>
 
-              <p style="margin:22px 0 0; font-size:14px;">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+              <p style="margin:16px 0 0; font-size:14px;">Cordiali saluti,<br><strong>Il Team Medica GB</strong></p>
               <p style="margin:6px 0 0; font-size:12px; color:#888888;"><em>"La tecnologia che Le salva salute e vita"</em></p>
             </td>
           </tr>
@@ -69,8 +148,11 @@
           <!-- Footer -->
           <tr>
             <td style="padding:14px 24px; background-color:#fafafa; text-align:center; font-size:12px; color:#888888;">
-              Medica GB · TeleMedCare<br>
-              Per assistenza: <a href="mailto:support@telemedcare.it" style="color:#0b63a5;">support@telemedcare.it</a>
+              <strong>Medica GB S.r.l.</strong><br>
+              Corso Garibaldi 34 – 20121 Milano<br>
+              P.IVA: 12435130963 | PEC: medicagbsrl@pecimprese.it<br>
+              <a href="mailto:info@medicagb.it" style="color:#0b63a5;">info@medicagb.it</a> | 
+              <a href="https://www.medicagb.it" style="color:#0b63a5;">www.medicagb.it</a>
             </td>
           </tr>
 

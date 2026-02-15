@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Dashboard - TeleMedCare V11.0</title>
+    <!-- v2.1 - Fix conteggio servizi + filtri contratti -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -213,8 +214,72 @@
         <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
                 <i class="fas fa-file-contract text-green-500 mr-2"></i>
-                Ultimi Contratti Generati
+                Contratti
             </h3>
+            
+            <!-- Filtri Contratti -->
+            <div class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-calendar mr-1"></i> Data Scadenza
+                    </label>
+                    <select id="filterScadenza" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Tutte</option>
+                        <option value="expired">Scaduti</option>
+                        <option value="30">Prossimi 30 giorni</option>
+                        <option value="60">Prossimi 60 giorni</option>
+                        <option value="90">Prossimi 90 giorni</option>
+                        <option value="180">Prossimi 6 mesi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-user mr-1"></i> Cognome Cliente
+                    </label>
+                    <input 
+                        type="text" 
+                        id="filterCognome" 
+                        placeholder="Cerca per cognome..."
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-check-circle mr-1"></i> Stato
+                    </label>
+                    <select id="filterStato" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Tutti</option>
+                        <option value="SIGNED">Firmato</option>
+                        <option value="SENT">Inviato</option>
+                        <option value="DRAFT">Bozza</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                        <i class="fas fa-mobile-alt mr-1"></i> Dispositivo
+                    </label>
+                    <select id="filterDispositivo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Tutti</option>
+                        <option value="SIDLY VITAL CARE">SiDLY VITAL CARE</option>
+                        <option value="SIDLY CARE PRO">SiDLY CARE PRO</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contatore risultati e reset filtri -->
+            <div class="mb-4 flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    <span id="contractsCount">0</span> contratti trovati
+                </div>
+                <button 
+                    id="resetFilters" 
+                    class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    onclick="resetContractFilters()"
+                >
+                    <i class="fas fa-redo mr-1"></i> Reset Filtri
+                </button>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
@@ -227,11 +292,12 @@
                             <th class="pb-3 text-sm font-semibold text-gray-600">Valore</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">Scadenza</th>
                         </tr>
                     </thead>
                     <tbody id="contractsTable">
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-gray-400">
+                            <td colspan="9" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento contratti...</p>
                             </td>
@@ -280,14 +346,84 @@
                 updateServiceMetrics(serviceData);
 
                 // Carica contratti
-                const contractsResponse = await fetch('/api/contratti?limit=20');
+                const contractsResponse = await fetch('/api/contratti?limit=200');
                 const contractsData = await contractsResponse.json();
                 const contracts = contractsData.contratti || [];
+                
+                // Salva i contratti globalmente per i filtri
+                window.allContracts = contracts;
+                
                 renderContractsTable(contracts);
+                
+                // Aggiungi event listeners per i filtri
+                document.getElementById('filterScadenza').addEventListener('change', applyContractFilters);
+                document.getElementById('filterCognome').addEventListener('input', applyContractFilters);
+                document.getElementById('filterStato').addEventListener('change', applyContractFilters);
+                document.getElementById('filterDispositivo').addEventListener('change', applyContractFilters);
 
             } catch (error) {
                 console.error('Errore caricamento data dashboard:', error);
             }
+        }
+
+        function applyContractFilters() {
+            const filters = {
+                scadenza: document.getElementById('filterScadenza').value,
+                cognome: document.getElementById('filterCognome').value.toLowerCase().trim(),
+                stato: document.getElementById('filterStato').value,
+                dispositivo: document.getElementById('filterDispositivo').value
+            };
+
+            let filtered = window.allContracts || [];
+
+            // Filtro cognome
+            if (filters.cognome) {
+                filtered = filtered.filter(c => 
+                    (c.cliente_cognome || '').toLowerCase().includes(filters.cognome)
+                );
+            }
+
+            // Filtro stato
+            if (filters.stato) {
+                filtered = filtered.filter(c => c.status === filters.stato);
+            }
+
+            // Filtro dispositivo
+            if (filters.dispositivo) {
+                filtered = filtered.filter(c => {
+                    const dispositivo = getDispositivoForService(c.servizio || c.tipo_servizio);
+                    return dispositivo.includes(filters.dispositivo);
+                });
+            }
+
+            // Filtro data scadenza
+            if (filters.scadenza) {
+                const today = new Date();
+                filtered = filtered.filter(c => {
+                    if (!c.data_scadenza) return false;
+                    
+                    const scadenza = new Date(c.data_scadenza);
+                    const diffTime = scadenza - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (filters.scadenza === 'expired') {
+                        return diffDays < 0;
+                    } else {
+                        const days = parseInt(filters.scadenza);
+                        return diffDays >= 0 && diffDays <= days;
+                    }
+                });
+            }
+
+            renderContractsTable(filtered);
+        }
+
+        function resetContractFilters() {
+            document.getElementById('filterScadenza').value = '';
+            document.getElementById('filterCognome').value = '';
+            document.getElementById('filterStato').value = '';
+            document.getElementById('filterDispositivo').value = '';
+            renderContractsTable(window.allContracts || []);
         }
 
         function analyzeByService(leads) {
@@ -303,21 +439,31 @@
                 'PREMIUM': { 'BASE': 590, 'AVANZATO': 990 }
             };
 
+            // Funzione per normalizzare il nome del servizio
+            function normalizeServizio(servizio) {
+                if (!servizio) return null;
+                const s = servizio.toUpperCase();
+                if (s.includes('FAMILY')) return 'FAMILY';
+                if (s.includes('PRO') && !s.includes('PREMIUM')) return 'PRO';
+                if (s.includes('PREMIUM')) return 'PREMIUM';
+                return null;
+            }
+
             leads.forEach(lead => {
-                const servizio = lead.servizio;
+                const servizioNormalized = normalizeServizio(lead.servizio);
                 const piano = lead.pacchetto || 'BASE';
                 
-                if (data[servizio]) {
-                    data[servizio].leads++;
+                if (servizioNormalized && data[servizioNormalized]) {
+                    data[servizioNormalized].leads++;
                     
                     if (piano === 'BASE') {
-                        data[servizio].base++;
+                        data[servizioNormalized].base++;
                     } else {
-                        data[servizio].avanzato++;
+                        data[servizioNormalized].avanzato++;
                     }
 
-                    if (lead.contratto_inviato && prezzi[servizio]?.[piano]) {
-                        data[servizio].revenue += prezzi[servizio][piano];
+                    if (lead.contratto_inviato && prezzi[servizioNormalized]?.[piano]) {
+                        data[servizioNormalized].revenue += prezzi[servizioNormalized][piano];
                     }
                 }
             });
@@ -350,11 +496,15 @@
 
         function renderContractsTable(contracts) {
             const tbody = document.getElementById('contractsTable');
+            const countElement = document.getElementById('contractsCount');
+            
+            // Aggiorna contatore
+            countElement.textContent = contracts.length;
             
             if (contracts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
+                        <td colspan="9" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
                     </tr>
                 `;
                 return;
@@ -363,6 +513,31 @@
             tbody.innerHTML = contracts.map(contract => {
                 const dispositivo = getDispositivoForService(contract.servizio || contract.tipo_servizio);
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
+                
+                // Data scadenza con evidenziazione
+                let scadenzaHtml = '<span class="text-gray-400 text-xs">N/A</span>';
+                if (contract.data_scadenza) {
+                    const scadenza = new Date(contract.data_scadenza);
+                    const today = new Date();
+                    const diffTime = scadenza - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let colorClass = 'text-gray-600';
+                    let icon = '';
+                    
+                    if (diffDays < 0) {
+                        colorClass = 'text-red-600 font-bold';
+                        icon = '<i class="fas fa-exclamation-triangle mr-1"></i>';
+                    } else if (diffDays <= 30) {
+                        colorClass = 'text-orange-600 font-semibold';
+                        icon = '<i class="fas fa-clock mr-1"></i>';
+                    } else if (diffDays <= 90) {
+                        colorClass = 'text-yellow-600';
+                        icon = '<i class="fas fa-calendar-check mr-1"></i>';
+                    }
+                    
+                    scadenzaHtml = `<span class="${colorClass} text-xs">${icon}${scadenza.toLocaleDateString('it-IT')}</span>`;
+                }
                 
                 return `
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -392,6 +567,7 @@
                             </span>
                         </td>
                         <td class="py-3 text-xs text-gray-500">${date}</td>
+                        <td class="py-3">${scadenzaHtml}</td>
                     </tr>
                 `;
             }).join('');

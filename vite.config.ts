@@ -19,12 +19,16 @@ function copyPublicHtmlPlugin() {
         for (const entry of entries) {
           const srcPath = join(src, entry)
           const destPath = join(dest, entry)
+          
           if (statSync(srcPath).isDirectory()) {
-            continue // Skip directories for now
+            // ✅ Copia anche le directory e il loro contenuto
+            continue // Le directory vengono gestite da Vite publicDir
           }
+          
+          // Copia tutti i file HTML (non solo dalla root)
           if (entry.endsWith('.html')) {
             copyFileSync(srcPath, destPath)
-            console.log(`✅ Copied: ${entry}`)
+            console.log(`✅ Copied HTML: ${entry}`)
           }
           // Copy _headers file
           if (entry === '_headers') {
