@@ -10177,6 +10177,53 @@ app.get('/api/contracts/:id', async (c) => {
   }
 })
 
+// DELETE /api/contracts/:id - Elimina contratto
+app.delete('/api/contracts/:id', async (c) => {
+  try {
+    const contractId = c.req.param('id')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log(`🗑️ [DELETE CONTRACT] Richiesta eliminazione contratto: ${contractId}`)
+    
+    // Verifica che il contratto esista
+    const contract = await c.env.DB.prepare('SELECT id, leadId, codice_contratto FROM contracts WHERE id = ?')
+      .bind(contractId).first() as any
+    
+    if (!contract) {
+      console.log(`⚠️ [DELETE CONTRACT] Contratto ${contractId} non trovato`)
+      return c.json({ 
+        success: false, 
+        error: 'Contratto non trovato' 
+      }, 404)
+    }
+    
+    console.log(`📋 [DELETE CONTRACT] Trovato contratto: ${contract.codice_contratto} per lead ${contract.leadId}`)
+    
+    // Elimina il contratto
+    await c.env.DB.prepare('DELETE FROM contracts WHERE id = ?')
+      .bind(contractId).run()
+    
+    console.log(`✅ [DELETE CONTRACT] Contratto ${contractId} eliminato con successo`)
+    
+    return c.json({ 
+      success: true,
+      message: `Contratto ${contract.codice_contratto} eliminato con successo`,
+      deletedId: contractId
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore eliminazione contratto:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore durante l\'eliminazione del contratto',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ========================================
 // CRUD COMPLETO - LEADS
 // ========================================
