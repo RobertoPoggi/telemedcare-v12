@@ -8284,7 +8284,6 @@ app.post('/api/leads/:id/complete', async (c) => {
           if (true) {
             // Genera contratto
             const timestamp = Date.now()
-            const timestamp = Date.now()
             const cognome = (assistito.cognome || richiedente.cognome || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
             const anno = new Date().getFullYear()
             const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
@@ -8497,7 +8496,6 @@ app.post('/api/lead/:id/complete', async (c) => {
         const { isLeadComplete } = await import('./modules/lead-completion')
         
         if (isLeadComplete(updatedLead)) {
-          const timestamp = Date.now()
           const timestamp = Date.now()
           const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
           const anno = new Date().getFullYear()
