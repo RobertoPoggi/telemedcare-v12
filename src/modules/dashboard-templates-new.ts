@@ -5284,32 +5284,51 @@ export const data_dashboard = `<!DOCTYPE html>
             }
 
             tbody.innerHTML = contracts.map(contract => {
-                const dispositivo = getDispositivoForService(contract.servizio || contract.tipo_servizio);
+                // Fix: usa normalizeServizio per mappare dispositivo corretto
+                const servizioNormalized = normalizeServizio(contract.servizio || contract.tipo_servizio);
+                const dispositivo = servizioNormalized === 'PREMIUM' ? 'SiDLY VITAL CARE' : 
+                                   servizioNormalized ? 'SiDLY CARE PRO' : 'N/A';
+                
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
                 
                 // Data scadenza con evidenziazione
                 let scadenzaHtml = '<span class="text-gray-400 text-xs">N/A</span>';
+                
+                // Debug: log data_scadenza
+                if (contract.codice_contratto) {
+                    console.log(\`📅 [RENDER] \${contract.codice_contratto}: data_scadenza = "\${contract.data_scadenza}" (tipo: \${typeof contract.data_scadenza})\`);
+                }
+                
                 if (contract.data_scadenza) {
-                    const scadenza = new Date(contract.data_scadenza);
-                    const today = new Date();
-                    const diffTime = scadenza - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    let colorClass = 'text-gray-600';
-                    let icon = '';
-                    
-                    if (diffDays < 0) {
-                        colorClass = 'text-red-600 font-bold';
-                        icon = '<i class="fas fa-exclamation-triangle mr-1"></i>';
-                    } else if (diffDays <= 30) {
-                        colorClass = 'text-orange-600 font-semibold';
-                        icon = '<i class="fas fa-clock mr-1"></i>';
-                    } else if (diffDays <= 90) {
-                        colorClass = 'text-yellow-600';
-                        icon = '<i class="fas fa-calendar-check mr-1"></i>';
+                    try {
+                        const scadenza = new Date(contract.data_scadenza);
+                        
+                        if (!isNaN(scadenza.getTime())) {
+                            const today = new Date();
+                            const diffTime = scadenza - today;
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            let colorClass = 'text-gray-600';
+                            let icon = '';
+                            
+                            if (diffDays < 0) {
+                                colorClass = 'text-red-600 font-bold';
+                                icon = '<i class="fas fa-exclamation-triangle mr-1"></i>';
+                            } else if (diffDays <= 30) {
+                                colorClass = 'text-orange-600 font-semibold';
+                                icon = '<i class="fas fa-clock mr-1"></i>';
+                            } else if (diffDays <= 90) {
+                                colorClass = 'text-yellow-600';
+                                icon = '<i class="fas fa-calendar-check mr-1"></i>';
+                            }
+                            
+                            scadenzaHtml = \`<span class="\${colorClass} text-xs">\${icon}\${scadenza.toLocaleDateString('it-IT')}</span>\`;
+                        } else {
+                            console.warn(\`⚠️ [RENDER] Data scadenza invalida per \${contract.codice_contratto}: \${contract.data_scadenza}\`);
+                        }
+                    } catch (e) {
+                        console.error(\`❌ [RENDER] Errore parsing data per \${contract.codice_contratto}:\`, e);
                     }
-                    
-                    scadenzaHtml = \`<span class="\${colorClass} text-xs">\${icon}\${scadenza.toLocaleDateString('it-IT')}</span>\`;
                 }
                 
                 return \`
