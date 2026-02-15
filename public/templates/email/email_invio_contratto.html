@@ -40,10 +40,17 @@
             <td class="content">
               <p>Gentile <span class="highlight">{{NOME_CLIENTE}}</span>,</p>
 
-              <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova il <strong>contratto per il servizio {{PIANO_SERVIZIO}}</strong> e la brochure aziendale con tutti i dettagli sui nostri servizi innovativi.</p>
+              <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova la brochure del dispositivo prescelto con tutti i dettagli delle sue caratteristiche innovative nonché il contratto per il servizio {{PIANO_SERVIZIO}} che ha selezionato tra le sue preferenze.</p>
 
+              <!-- Box Brochure PRIMA del Contratto -->
+              <div style="background:#e6f7ff;border:1px solid #91d5ff;padding:16px;border-radius:6px;margin:16px 0;">
+                <h3 style="margin:0 0 8px;color:#1890ff;font-size:16px;">📘 Brochure Dispositivo {{DISPOSITIVO}}</h3>
+                <p style="margin:4px 0;color:#333;">Trova in allegato la brochure completa con tutte le caratteristiche tecniche e innovative del dispositivo.</p>
+              </div>
+
+              <!-- Box Contratto -->
               <div class="card" role="article" aria-label="Dettagli piano">
-                <h2 style="font-size:16px; margin-bottom:8px;">Il Suo piano TeleMedCare: <span style="color:#0b63a5;">{{PIANO_SERVIZIO}}</span></h2>
+                <h2 style="font-size:16px; margin-bottom:8px;">📋 Il Suo Contratto: <span style="color:#0b63a5;">{{PIANO_SERVIZIO}}</span></h2>
                 <div class="meta">
                   <div><strong>Piano:</strong> {{PIANO_SERVIZIO}}</div>
                   <div><strong>Investimento:</strong> {{PREZZO_PIANO}}</div>
@@ -52,55 +59,42 @@
                 </div>
               </div>
 
-              <!-- Pulsante Firma Contratto -->
-              <div style="background:#f0f9ff; border:2px solid #10b981; border-radius:8px; padding:20px; margin:20px 0; text-align:center;">
-                <h3 style="margin:0 0 10px; color:#047857; font-size:18px;">✍️ Firma il Contratto</h3>
-                <p style="margin:0 0 15px; font-size:14px; color:#666;">Clicca sul pulsante per leggere e firmare digitalmente il contratto</p>
-                <table cellpadding="0" cellspacing="0" border="0" align="center">
-                  <tr>
-                    <td style="background-color:#10b981; border-radius:6px; text-align:center;">
-                      <a href="{{LINK_FIRMA}}" style="display:inline-block; color:#ffffff; text-decoration:none; padding:16px 40px; font-weight:bold; font-size:18px; font-family:Arial,sans-serif;">✍️ FIRMA IL CONTRATTO ORA</a>
-                    </td>
-                  </tr>
-                </table>
-                <p style="margin:15px 0 5px; font-size:12px; color:#666;">Codice Contratto: <strong>{{CODICE_CONTRATTO}}</strong></p>
-                <p style="margin:5px 0 0; font-size:11px; color:#999;">
-                  Firma digitale sicura - Nessuna installazione richiesta<br>
-                  Se il pulsante non funziona, copi questo link:<br>
-                  <a href="{{LINK_FIRMA}}" style="color:#10b981; word-break:break-all;">{{LINK_FIRMA}}</a>
-                </p>
+              <h3 style="color:#0b63a5;font-size:18px;margin-top:24px;">🚀 Prossimi passi per l'attivazione:</h3>
+
+              <!-- Opzione 1: Firma Elettronica -->
+              <div style="background:#fff7e6;border-left:4px solid #ffa940;padding:16px;margin:12px 0;border-radius:4px;">
+                <p style="margin:0 0 8px;font-weight:bold;color:#d46b08;font-size:16px;">📱 Opzione 1: Firma Elettronica (Consigliata)</p>
+                <ol style="margin:8px 0 0 18px;padding:0;color:#333;">
+                  <li style="margin-bottom:8px;">Dopo averlo letto ed esaminato, firmi in modo elettronico il contratto (usando il mouse del PC o il dito su tablet o sul cellulare)</li>
+                  <li style="margin-bottom:8px;">Prema invio per conferma e riceverà rapidamente la proforma con tutte le informazioni per effettuare il bonifico</li>
+                </ol>
+                
+                <!-- Pulsante Firma Digitale -->
+                <div style="text-align:center;margin-top:16px;">
+                  <table cellpadding="0" cellspacing="0" border="0" align="center">
+                    <tr>
+                      <td style="background-color:#10b981; border-radius:6px; text-align:center;">
+                        <a href="{{LINK_FIRMA}}" style="display:inline-block; color:#ffffff; text-decoration:none; padding:14px 30px; font-weight:bold; font-size:16px; font-family:Arial,sans-serif;">✍️ FIRMA IL CONTRATTO ORA</a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
               </div>
 
-              <h3>Perché ha fatto la scelta giusta</h3>
-              <ul class="list" style="margin-left:18px;">
-                <li><strong>Innovazione Sociale:</strong> Sta supportando una startup innovativa a vocazione sociale che cambia il paradigma della cura tradizionale.</li>
-                <li><strong>Assistenza Domiciliare:</strong> Riceve cure e monitoraggio direttamente dove serve, senza doversi spostare.</li>
-                <li><strong>Tecnologia Avanzata:</strong> Dispositivo medicale certificato Classe IIa con funzionalità all'avanguardia.</li>
-              </ul>
+              <!-- Opzione 2: Firma Cartacea -->
+              <div style="background:#f6ffed;border-left:4px solid #52c41a;padding:16px;margin:12px 0;border-radius:4px;">
+                <p style="margin:0 0 8px;font-weight:bold;color:#389e0d;font-size:16px;">📄 Oppure - Opzione 2: Firma Cartacea</p>
+                <ol style="margin:8px 0 0 18px;padding:0;color:#333;">
+                  <li style="margin-bottom:8px;">Provveda a stampare e leggere attentamente il contratto allegato</li>
+                  <li style="margin-bottom:8px;">Firmi in ogni pagina richiesta e nell'ultima pagina</li>
+                  <li style="margin-bottom:8px;">Ci invii il contratto firmato via email o WhatsApp</li>
+                  <li style="margin-bottom:8px;">Appena possibile riceverà la proforma con tutte le informazioni per effettuare il bonifico</li>
+                </ol>
+              </div>
 
-              <h3>Prossimi passi per l'attivazione</h3>
-              <ol class="steps">
-                <li>Legga attentamente il contratto allegato.</li>
-                <li>Firmi in ogni pagina richiesta e nell'ultima pagina.</li>
-                <li>Ci invii il contratto firmato via email o WhatsApp.</li>
-                <li>Riceverà il dispositivo entro 10 giorni lavorativi.</li>
-              </ol>
-
-              <!-- Download Brochure Button -->
-              <div style="background:#f0f9ff; border:2px solid #3b82f6; border-radius:8px; padding:20px; margin:20px 0; text-align:center;">
-                <h3 style="margin:0 0 10px; color:#1e40af; font-size:16px;">📄 Documentazione Tecnica</h3>
-                <p style="margin:0 0 15px; font-size:14px; color:#666;">Scarichi la brochure del dispositivo {{DISPOSITIVO}}</p>
-                <table cellpadding="0" cellspacing="0" border="0" align="center">
-                  <tr>
-                    <td style="background-color:#3b82f6; border-radius:6px; text-align:center;">
-                      <a href="{{LINK_BROCHURE}}" style="display:inline-block; color:#ffffff; text-decoration:none; padding:14px 32px; font-weight:bold; font-size:16px; font-family:Arial,sans-serif;">📥 Scarica Brochure {{DISPOSITIVO}}</a>
-                    </td>
-                  </tr>
-                </table>
-                <p style="margin:15px 0 0; font-size:11px; color:#999;">
-                  Se il pulsante non funziona, copi questo link:<br>
-                  <a href="{{LINK_BROCHURE}}" style="color:#3b82f6; word-break:break-all;">{{LINK_BROCHURE}}</a>
-                </p>
+              <!-- Nota Consegna -->
+              <div style="background:#fafafa;border-radius:6px;padding:14px;margin:16px 0;border:1px solid #e0e0e0;">
+                <p style="margin:0;color:#333;"><strong>📦 Consegna:</strong> In ogni caso riceverà il dispositivo entro <strong>10 giorni lavorativi</strong> dall'arrivo del pagamento.</p>
               </div>
 
               <h3>Vantaggi economici e fiscali</h3>
