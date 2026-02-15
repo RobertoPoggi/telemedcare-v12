@@ -186,17 +186,19 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p>Con la presente scrittura privata da valere a tutti gli effetti e conseguenze di legge tra:</p>
     
     <div class="party">
-        <p><strong>Medica GB S.r.l.</strong>, con sede in Corso Giuseppe Garibaldi, 34 – 20121 Milano e con Partita IVA e registro imprese 12435130963, in persona dell'Amministratore Stefania Rocca</p>
+        <p><strong>Medica GB S.r.l.</strong>, con sede in Corso Garibaldi 34 a Milano 20121 e con Partita IVA e registro imprese 12435130963, in persona dell'Amministratore Roberto Poggi</p>
         <p class="breviter">(breviter Medica GB)</p>
     </div>
     
     <p style="text-align: center; font-weight: bold;">e</p>
     
     <div class="party">
-        <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario}</span> <span class="highlight">${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario}</span> - <span class="highlight">${capIntestatario}</span> <span class="highlight">${cittaIntestatario}</span> (<span class="highlight">${provinciaIntestatario}</span>) e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+        <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario}</span> n__________ - <span class="highlight">${capIntestatario}</span> <span class="highlight">${cittaIntestatario}</span> (<span class="highlight">${provinciaIntestatario}</span>) e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+        
+        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span></p>
         
         <p><strong>Riferimenti:</strong><br>
-        telefono <span class="highlight">${leadData.telefono || 'N/A'}</span> – e-mail <span class="highlight">${leadData.email}</span></p>
+        Signor <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> – telefono <span class="highlight">${leadData.telefono || 'N/A'}</span> – e-mail <span class="highlight">${leadData.email}</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>
@@ -215,54 +217,53 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p>La premessa che precede costituisce parte integrante del presente Contratto.</p>
     
     <h2>Oggetto del Contratto</h2>
-    <p>L'oggetto del presente Contratto è l'erogazione del Servizio <span class="highlight">${servizioNome}</span> mediante l'utilizzo del Dispositivo <span class="highlight">${dispositivo}</span> e con il supporto del Piano <span class="highlight">${pianoNome}</span>.</p>
-    
-    <p>Le funzioni del dispositivo <span class="highlight">${dispositivo}</span> sono le seguenti:</p>
+    <p>L'oggetto del presente Contratto è l'erogazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" mediante l'utilizzo del Dispositivo ${dispositivo}. Le funzioni del Dispositivo ${dispositivo} sono le seguenti:</p>
     
     <div class="feature-list">
-        <p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma i contatti dei familiari oltre a quelli della Centrale Operativa ove prevista; dopo l'invio dell'allarme i familiari e/o la Centrale Operativa (piano avanzato) ricevono una chiamata dal dispositivo e possono parlare con l'assistito; in qualsiasi momento i familiari e/o la Centrale Operativa (piano avanzato) possono contattare l'assistito tramite il dispositivo.</p>
+        <p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms ai familiari. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
         
-        <p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta, ai Care Givers e Famigliari (Piano Base) e alla Centrale Operativa (Piano Avanzato) e invia una notifica tramite sms ai familiari e, nel piano avanzato anche alla Centrale Operativa. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
+        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (in caso di mancata risposta, in cascata, ai successivi contatti di emergenza configurati) ed inviare una notifica di emergenza (SMS geolocalizzato) ai familiari configurati in Piattaforma).</p>
         
-        <p><strong>Posizione GPS e GPS-assistito:</strong> consente di localizzare l'assistito quando viene inviato l'allarme. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing).</p>
+        <p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma ${dispositivo} i contatti dei familiari; dopo l'invio dell'allarme i familiari (configurati in Piattaforma) ricevono una chiamata dal bracciale e possono parlare con l'assistito; inoltre, in qualsiasi momento, i familiari (configurati in Piattaforma) possono contattare l'assistito tramite il bracciale.</p>
         
-        <p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari e/o Centrale Operativa (ove prevista) tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>
+        <p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing) con invio automatico dell'allarme in caso di uscita dalla zona sicura.</p>
         
-        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS per circa 3 secondi è possibile effettuare una chiamata vocale ai care giver / famigliari (piano base) o alla Centrale Operativa (piano avanzato) e inviare una notifica di emergenza (geolocalizzata) ai familiari o alla Centrale Operativa stessa.</p>
+        <p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari tramite APP quando i valori rilevati vanno oltre le soglie impostate in piattaforma (comunicate dal proprio Medico di Base).</p>
         
-        <p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione dispositivo, messa in carica del dispositivo, segnalazione di batteria scarica, ecc.</p>
+        <p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione bracciale, messa in carica del bracciale, segnalazione di batteria scarica, ecc.</p>
         
         <p><strong>Promemoria per l'assunzione dei farmaci:</strong> un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>
+        
+        <p><strong>Registrazione dei passi:</strong> aiuta a valutare quanto sei attivo durante la giornata. Inoltre, monitorando le calorie bruciate, aiuta a mantenere una dieta sana.</p>
     </div>
     
+    <p>L'integrazione di queste funzioni consente l'elaborazione di consigli sanitari personalizzati per le esigenze dell'Assistito da parte del Medico di Medicina Generale.</p>
+    
     <h2>Durata del Servizio</h2>
-    <p>Il Servizio di TeleAssistenza <span class="highlight">${servizioNome}</span> ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>.</p>
-    <p>Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
+    <p>Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
     
     <h2>Tariffa del Servizio</h2>
-    <p>La tariffa annuale per il primo anno di attivazione del Servizio <span class="highlight">${servizioNome}</span> è pari a Euro <span class="highlight">${importoPrimoAnno},00</span> + IVA 22% e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA 22% (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * 1.22)} € inclusa iva</span>) e include:</p>
     
     <ul>
-        <li>Dispositivo <span class="highlight">${dispositivo}</span></li>
-        <li>Configurazione del Dispositivo e del Processo di Comunicazione con la Centrale Operativa (ove previsto) e/o uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>Dispositivo ${dispositivo} (hardware)</li>
+        <li>Configurazione del Dispositivo e del Processo di Comunicazione con uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
-        <li>Piano <span class="highlight">${pianoNome}</span></li>
     </ul>
     
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio <span class="highlight">${servizioNome}</span> sarà pari a Euro <span class="highlight">${importoAnniSuccessivi},00</span> + IVA 22% con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(50€/mese)'} + IVA 22% con inclusi:</p>
     
     <ul>
-        <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
-        <li>Piano <span class="highlight">${pianoNome}</span></li>
     </ul>
     
     <h2>Metodo di pagamento</h2>
     <p>Medica GB emetterà fattura anticipata di 12 mesi all'attivazione del Servizio e il Cliente procederà al pagamento a ricevimento della fattura stessa tramite bonifico bancario</p>
     
     <div class="payment-details">
-        <p><strong>Intestato a:</strong> Medica GB S.r.l.</p>
-        <p><strong>Causale:</strong> Servizio ${servizioNome} ${pianoNome} con Dispositivo ${dispositivo}</p>
+        <p><strong>Intestato a:</strong> Medica GB Srl</p>
+        <p><strong>Causale:</strong> (NOME E COGNOME ASSISTITO) - SERVIZI PER ${dispositivo.toUpperCase()}</p>
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
     
