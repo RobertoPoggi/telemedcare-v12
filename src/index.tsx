@@ -9842,6 +9842,128 @@ app.get('/test-insert-manual-contracts', async (c) => {
   `)
 })
 
+// GET /test-update-contracts-dates - Pagina aggiornamento date contratti
+app.get('/test-update-contracts-dates', async (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aggiorna Date Contratti</title>
+  <style>
+    body { font-family: Arial; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #667eea; margin-bottom: 30px; }
+    button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result { margin-top: 20px; padding: 15px; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px; }
+    .contract-list { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+    .contract-item { padding: 10px; margin: 5px 0; background: white; border-left: 3px solid #667eea; font-size: 14px; }
+    .renewal-warning { background: #ffe5e5; padding: 15px; border-left: 4px solid #ff4444; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📅 Aggiorna Date Contratti Esistenti</h1>
+    
+    <div class="warning">
+      <strong>⚠️ Importante:</strong> Questo tool aggiorna le date di firma e scadenza dei contratti esistenti.<br>
+      Le date corrette sono fondamentali per la gestione dei rinnovi.
+    </div>
+    
+    <div class="contract-list">
+      <h3>Contratti da aggiornare (6 in scadenza prossimamente):</h3>
+      <div class="contract-item">
+        <strong>1. Maria Capone</strong><br>
+        Data firma: 30/06/2025 → Scadenza: 30/06/2026
+      </div>
+      <div class="contract-item">
+        <strong>2. Rita Pennacchio</strong><br>
+        Data firma: 12/05/2025 → Scadenza: 11/05/2026
+      </div>
+      <div class="contract-item">
+        <strong>3. Giuseppina Cozzi</strong><br>
+        Data firma: 14/07/2025 → Scadenza: 13/07/2026
+      </div>
+      <div class="contract-item">
+        <strong>4. Eileen King</strong><br>
+        Data firma: 08/05/2025 → Scadenza: 07/05/2026
+      </div>
+      <div class="contract-item">
+        <strong>5. Gianni Paolo Pizzutto</strong><br>
+        Data firma: 12/05/2025 → Scadenza: 11/05/2026
+      </div>
+      <div class="contract-item">
+        <strong>6. Giuseppina Balzarotti (richiedente: Paolo Magri)</strong><br>
+        Data firma: 13/06/2025 → Scadenza: 12/06/2026
+      </div>
+    </div>
+
+    <div class="renewal-warning">
+      <strong>🔔 Gestione Rinnovi:</strong><br>
+      Questi 6 assistiti necessiteranno di rinnovo nei prossimi mesi (2026).<br>
+      Dopo l'aggiornamento, le date corrette saranno visibili nella dashboard.
+    </div>
+
+    <button id="updateBtn" onclick="updateDates()">🔄 Aggiorna Date Contratti</button>
+    <button onclick="window.location.href='/admin/leads-dashboard'">📊 Vai alla Dashboard</button>
+    
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function updateDates() {
+      const btn = document.getElementById('updateBtn')
+      const resultDiv = document.getElementById('result')
+      
+      btn.disabled = true
+      btn.textContent = '⏳ Aggiornamento in corso...'
+      resultDiv.innerHTML = ''
+      
+      const contracts = [
+        { nome: 'Maria', cognome: 'CAPONE', data_firma: '2025-06-30', data_scadenza: '2026-06-30' },
+        { nome: 'Rita', cognome: 'PENNACCHIO', data_firma: '2025-05-12', data_scadenza: '2026-05-11' },
+        { nome: 'Giuseppina', cognome: 'COZZI', data_firma: '2025-07-14', data_scadenza: '2026-07-13' },
+        { nome: 'Eileen', cognome: 'KING', data_firma: '2025-05-08', data_scadenza: '2026-05-07' },
+        { nome: 'Gianni Paolo', cognome: 'PIZZUTTO', data_firma: '2025-05-12', data_scadenza: '2026-05-11' },
+        { nome: 'Giuseppina', cognome: 'BALZAROTTI', richiedente_nome: 'Paolo', richiedente_cognome: 'MAGRI', data_firma: '2025-06-13', data_scadenza: '2026-06-12' }
+      ]
+      
+      try {
+        const response = await fetch('/api/contracts/update-dates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contracts })
+        })
+        
+        const data = await response.json()
+        
+        if (data.success) {
+          resultDiv.className = 'result success'
+          resultDiv.textContent = \`✅ \${data.message}\\n\\nDettagli:\\n\${JSON.stringify(data.results, null, 2)}\`
+        } else {
+          resultDiv.className = 'result error'
+          resultDiv.textContent = \`❌ Errore: \${data.error || 'Errore sconosciuto'}\\n\\n\${JSON.stringify(data, null, 2)}\`
+        }
+      } catch (error) {
+        resultDiv.className = 'result error'
+        resultDiv.textContent = \`❌ Errore di rete: \${error.message}\`
+      } finally {
+        btn.disabled = false
+        btn.textContent = '🔄 Aggiorna Date Contratti'
+      }
+    }
+  </script>
+</body>
+</html>
+  `)
+})
+
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
   try {
@@ -10548,6 +10670,127 @@ app.post('/api/contracts/bulk-manual', async (c) => {
     return c.json({
       success: false,
       error: 'Errore durante l\'inserimento dei contratti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/contracts/update-dates - Aggiorna date contratti esistenti
+app.post('/api/contracts/update-dates', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { contracts } = await c.req.json<{ contracts: any[] }>()
+    
+    if (!Array.isArray(contracts) || contracts.length === 0) {
+      return c.json({ success: false, error: 'Array contracts vuoto o non valido' }, 400)
+    }
+
+    console.log(`📅 [UPDATE DATES] Aggiornamento date per ${contracts.length} contratti...`)
+    
+    const results = []
+    
+    for (const contractData of contracts) {
+      try {
+        // Cerca il lead (assistito o richiedente)
+        let lead = null
+        
+        // Caso 1: cerca per nome assistito (es: Balzarotti ha richiedente Magri)
+        if (contractData.richiedente_nome && contractData.richiedente_cognome) {
+          lead = await c.env.DB.prepare(`
+            SELECT * FROM leads 
+            WHERE UPPER(nomeRichiedente) = UPPER(?) 
+              AND UPPER(cognomeRichiedente) = UPPER(?)
+            LIMIT 1
+          `).bind(contractData.richiedente_nome, contractData.richiedente_cognome).first() as any
+          
+          if (lead) {
+            console.log(`✅ Lead trovato tramite richiedente: ${contractData.richiedente_nome} ${contractData.richiedente_cognome} per assistito ${contractData.nome} ${contractData.cognome}`)
+          }
+        }
+        
+        // Caso 2: cerca per nome/cognome diretto
+        if (!lead) {
+          lead = await c.env.DB.prepare(`
+            SELECT * FROM leads 
+            WHERE (UPPER(nomeRichiedente) = UPPER(?) AND UPPER(cognomeRichiedente) = UPPER(?))
+               OR (UPPER(nomeAssistito) = UPPER(?) AND UPPER(cognomeAssistito) = UPPER(?))
+            LIMIT 1
+          `).bind(
+            contractData.nome, contractData.cognome,
+            contractData.nome, contractData.cognome
+          ).first() as any
+        }
+
+        if (!lead) {
+          throw new Error(`❌ Lead NON TROVATO per ${contractData.nome} ${contractData.cognome}`)
+        }
+        
+        console.log(`📋 Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+
+        // Cerca il contratto per questo lead
+        const contract = await c.env.DB.prepare(`
+          SELECT * FROM contracts 
+          WHERE leadId = ?
+          LIMIT 1
+        `).bind(lead.id).first() as any
+
+        if (!contract) {
+          throw new Error(`❌ Contratto NON TROVATO per lead ${lead.id}`)
+        }
+
+        console.log(`📄 Contratto trovato: ${contract.codice_contratto}`)
+
+        // Aggiorna le date
+        await c.env.DB.prepare(`
+          UPDATE contracts 
+          SET data_firma = ?,
+              data_scadenza = ?,
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          contractData.data_firma,
+          contractData.data_scadenza,
+          contract.id
+        ).run()
+
+        console.log(`✅ Date aggiornate per contratto ${contract.codice_contratto}: ${contractData.data_firma} → ${contractData.data_scadenza}`)
+        
+        results.push({
+          success: true,
+          leadId: lead.id,
+          contractId: contract.id,
+          contractCode: contract.codice_contratto,
+          cliente: `${contractData.nome} ${contractData.cognome}`,
+          dataFirma: contractData.data_firma,
+          dataScadenza: contractData.data_scadenza
+        })
+        
+      } catch (error) {
+        console.error(`❌ Errore aggiornamento date per ${contractData.nome} ${contractData.cognome}:`, error)
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          cliente: `${contractData.nome} ${contractData.cognome}`
+        })
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length
+    
+    return c.json({
+      success: true,
+      message: `Aggiornati ${successCount}/${contracts.length} contratti`,
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ Errore bulk update date contratti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'aggiornamento delle date',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }

@@ -1,0 +1,42 @@
+{
+  "contracts": [
+    {
+      "nome": "Maria",
+      "cognome": "CAPONE",
+      "data_firma": "2025-06-30",
+      "data_scadenza": "2026-06-30"
+    },
+    {
+      "nome": "Rita",
+      "cognome": "PENNACCHIO",
+      "data_firma": "2025-05-12",
+      "data_scadenza": "2026-05-11"
+    },
+    {
+      "nome": "Giuseppina",
+      "cognome": "COZZI",
+      "data_firma": "2025-07-14",
+      "data_scadenza": "2026-07-13"
+    },
+    {
+      "nome": "Eileen",
+      "cognome": "KING",
+      "data_firma": "2025-05-08",
+      "data_scadenza": "2026-05-07"
+    },
+    {
+      "nome": "Gianni Paolo",
+      "cognome": "PIZZUTTO",
+      "data_firma": "2025-05-12",
+      "data_scadenza": "2026-05-11"
+    },
+    {
+      "nome": "Giuseppina",
+      "cognome": "BALZAROTTI",
+      "richiedente_nome": "Paolo",
+      "richiedente_cognome": "MAGRI",
+      "data_firma": "2025-06-13",
+      "data_scadenza": "2026-06-12"
+    }
+  ]
+}
