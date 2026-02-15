@@ -10224,7 +10224,7 @@ app.delete('/api/contracts/:id', async (c) => {
   }
 })
 
-// POST /api/contracts/bulk-manual - Inserimento contratti manuali
+// POST /api/contracts/bulk-manual - Inserimento contratti manuali per lead esistenti
 app.post('/api/contracts/bulk-manual', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -10237,41 +10237,44 @@ app.post('/api/contracts/bulk-manual', async (c) => {
       return c.json({ success: false, error: 'Array contracts vuoto o non valido' }, 400)
     }
 
-    console.log(`📝 [BULK MANUAL CONTRACTS] Inserimento ${contracts.length} contratti manuali...`)
+    console.log(`📝 [BULK MANUAL CONTRACTS] Inserimento ${contracts.length} contratti manuali per lead esistenti...`)
     
     const results = []
     
     for (const contractData of contracts) {
       try {
-        // 1. Crea o verifica il lead
-        const leadId = `LEAD-MANUAL-${contractData.cognome.toUpperCase()}-${Date.now()}`
-        
-        await c.env.DB.prepare(`
-          INSERT OR IGNORE INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            servizio, piano, dispositivo, vuoleContratto, statoLead, dataCreazione
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'COMPLETO', ?)
-        `).bind(
-          leadId,
-          contractData.nome,
-          contractData.cognome,
-          contractData.email || `${contractData.nome.toLowerCase()}.${contractData.cognome.toLowerCase()}@example.com`,
-          contractData.telefono || '+39 333 0000000',
-          contractData.servizio || 'eCura PRO',
-          contractData.piano || 'BASE',
-          contractData.dispositivo || 'SIDLY VITAL CARE',
-          contractData.dataFirma
-        ).run()
-
-        // 2. Recupera il lead (appena creato o esistente)
+        // 1. Recupera il lead esistente (NO creazione)
         const lead = await c.env.DB.prepare(`
-          SELECT id FROM leads 
-          WHERE cognomeRichiedente = ? AND nomeRichiedente = ?
+          SELECT * FROM leads 
+          WHERE UPPER(cognomeRichiedente) = UPPER(?) 
+            AND UPPER(nomeRichiedente) = UPPER(?)
           LIMIT 1
         `).bind(contractData.cognome, contractData.nome).first() as any
 
         if (!lead) {
-          throw new Error(`Lead non trovato per ${contractData.nome} ${contractData.cognome}`)
+          throw new Error(`❌ Lead NON TROVATO per ${contractData.nome} ${contractData.cognome}. Il lead deve esistere prima di creare il contratto.`)
+        }
+        
+        console.log(`✅ Lead trovato: ${lead.id} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+
+        // 2. Verifica se esiste già un contratto per questo lead
+        const existingContract = await c.env.DB.prepare(`
+          SELECT id, codice_contratto, status FROM contracts 
+          WHERE leadId = ?
+          LIMIT 1
+        `).bind(lead.id).first() as any
+
+        if (existingContract) {
+          console.log(`⚠️ Contratto già esistente per ${contractData.nome} ${contractData.cognome}: ${existingContract.codice_contratto}`)
+          results.push({
+            success: false,
+            error: `Contratto già esistente: ${existingContract.codice_contratto} (status: ${existingContract.status})`,
+            leadId: lead.id,
+            existingContractId: existingContract.id,
+            existingContractCode: existingContract.codice_contratto,
+            cliente: `${contractData.nome} ${contractData.cognome}`
+          })
+          continue // Salta questo contratto e passa al prossimo
         }
 
         // 3. Crea il contratto
