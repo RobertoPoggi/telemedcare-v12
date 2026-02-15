@@ -1052,9 +1052,9 @@ export async function inviaEmailProforma(
       NUMERO_PROFORMA: proformaData.numeroProforma,
       IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2)}`,
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
-      IBAN: 'IT02X0306909606100000061231',
-      CAUSALE: `Proforma ${proformaData.numeroProforma} - TeleMedCare`,
-      LINK_PAGAMENTO: `${env.PUBLIC_URL || 'https://telemedcare.it'}/pagamento?proformaId=${proformaData.proformaId}`,
+      IBAN: 'IT97L0503401727000000003519',
+      CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
