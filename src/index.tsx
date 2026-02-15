@@ -15927,6 +15927,44 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
 // DISPOSITIVI & MAGAZZINO DM ENDPOINTS
 // ============================================
 
+// POST /api/dispositivi/setup-table - Crea tabella dispositivi
+app.post('/api/dispositivi/setup-table', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Crea tabella dispositivi
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS dispositivi (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        serial_number TEXT UNIQUE NOT NULL,
+        modello TEXT NOT NULL,
+        status TEXT DEFAULT 'inventory',
+        lead_id TEXT,
+        assigned_at TEXT,
+        activated_at TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (lead_id) REFERENCES leads(id)
+      )
+    `).run()
+
+    console.log('✅ Tabella dispositivi creata')
+
+    return c.json({ 
+      success: true, 
+      message: 'Tabella dispositivi creata con successo'
+    })
+  } catch (error) {
+    console.error('❌ Errore creazione tabella dispositivi:', error)
+    return c.json({
+      success: false,
+      error: 'Errore creazione tabella',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // GET /api/dispositivi - Lista dispositivi
 app.get('/api/dispositivi', async (c) => {
   try {

@@ -12984,7 +12984,19 @@ startxref
           telefono = ?,
           imei = '862608066560916'
         WHERE nome = 'Anna De Marco'
-      `).bind(r.emailRichiedente||null,r.telefonoRichiedente||null).run(),e.push({nome:"Anna De Marco",email:r.emailRichiedente,telefono:r.telefonoRichiedente,imei:"862608066560916",dispositivo:"CARE"})),console.log("✅ 3 assistiti aggiornati con dati completi"),t.json({success:!0,message:"Aggiornati 3 assistiti con dati da leads + IMEI",updates:e})}catch(e){return console.error("❌ Errore aggiornamento assistiti:",e),t.json({success:!1,error:"Errore aggiornamento assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.get("/api/dispositivi",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const{results:e}=await t.env.DB.prepare(`
+      `).bind(r.emailRichiedente||null,r.telefonoRichiedente||null).run(),e.push({nome:"Anna De Marco",email:r.emailRichiedente,telefono:r.telefonoRichiedente,imei:"862608066560916",dispositivo:"CARE"})),console.log("✅ 3 assistiti aggiornati con dati completi"),t.json({success:!0,message:"Aggiornati 3 assistiti con dati da leads + IMEI",updates:e})}catch(e){return console.error("❌ Errore aggiornamento assistiti:",e),t.json({success:!1,error:"Errore aggiornamento assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/dispositivi/setup-table",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(await t.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS dispositivi (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        serial_number TEXT UNIQUE NOT NULL,
+        modello TEXT NOT NULL,
+        status TEXT DEFAULT 'inventory',
+        lead_id TEXT,
+        assigned_at TEXT,
+        activated_at TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (lead_id) REFERENCES leads(id)
+      )
+    `).run(),console.log("✅ Tabella dispositivi creata"),t.json({success:!0,message:"Tabella dispositivi creata con successo"})):t.json({success:!1,error:"Database non configurato"},500)}catch(e){return console.error("❌ Errore creazione tabella dispositivi:",e),t.json({success:!1,error:"Errore creazione tabella",details:e instanceof Error?e.message:String(e)},500)}});x.get("/api/dispositivi",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const{results:e}=await t.env.DB.prepare(`
       SELECT 
         d.id,
         d.serial_number as imei,
