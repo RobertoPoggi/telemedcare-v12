@@ -9842,6 +9842,136 @@ app.get('/test-insert-manual-contracts', async (c) => {
   `)
 })
 
+// GET /test-fix-3-contracts - Pagina correzione 3 contratti sbagliati
+app.get('/test-fix-3-contracts', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔧 Correggi 3 Contratti Manuali</title>
+  <style>
+    body { font-family: Arial; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #ff4444; margin-bottom: 30px; }
+    button { background: linear-gradient(135deg, #ff4444 0%, #ff6b6b 100%); color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-right: 10px; }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result { margin-top: 20px; padding: 15px; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px; }
+    .error-box { background: #ffe5e5; padding: 15px; border-left: 4px solid #ff4444; margin-bottom: 20px; }
+    .contract-list { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+    .contract-item { padding: 10px; margin: 5px 0; background: white; border-left: 3px solid #ff4444; font-size: 14px; }
+    .fix-info { background: #e8f5e9; padding: 15px; border-left: 4px solid #4caf50; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Correzione 3 Contratti Manuali</h1>
+    
+    <div class="error-box">
+      <strong>🚨 Problema Rilevato:</strong><br>
+      I 3 contratti inseriti manualmente hanno ID e codice_contratto NON corrispondenti al formato richiesto dal database.<br>
+      <br>
+      <strong>Errori:</strong>
+      <ul>
+        <li>ID sbagliato: <code>contract-locatelli-...</code> invece di <code>CONTRACT_CTR-LOCATELLI-2026_...</code></li>
+        <li>codice_contratto corretto ma ID sbagliato</li>
+        <li>Date non corrispondenti ai PDF</li>
+        <li>PDF non collegati</li>
+      </ul>
+    </div>
+    
+    <div class="contract-list">
+      <h3>📋 Contratti da CORREGGERE:</h3>
+      <div class="contract-item">
+        <strong>1. Alberto Locatelli (per assistito Giovanni)</strong><br>
+        ❌ ID vecchio: <code>contract-locatelli-1771122740756</code><br>
+        ✅ ID corretto: <code>CONTRACT_CTR-LOCATELLI-2026_[timestamp]</code><br>
+        Data firma: <strong>03/02/2026</strong> → Scadenza: <strong>02/02/2027</strong><br>
+        PDF: <code>03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf</code>
+      </div>
+      <div class="contract-item">
+        <strong>2. Francesco Pepe</strong><br>
+        ❌ ID vecchio: <code>contract-pepe-1771122740794</code><br>
+        ✅ ID corretto: <code>CONTRACT_CTR-PEPE-2026_[timestamp]</code><br>
+        Data firma: <strong>27/01/2026</strong> → Scadenza: <strong>26/01/2027</strong><br>
+        PDF: <code>27.01.2026_Pepe Francesco Contratto.pdf</code>
+      </div>
+      <div class="contract-item">
+        <strong>3. Claudio Macchi</strong><br>
+        ❌ ID vecchio: <code>contract-macchi-1771122740833</code><br>
+        ✅ ID corretto: <code>CONTRACT_CTR-MACCHI-2026_[timestamp]</code><br>
+        Data firma: <strong>01/02/2026</strong> → Scadenza: <strong>31/01/2027</strong><br>
+        PDF: <code>Documento x Claudio Macchi.pdf</code>
+      </div>
+    </div>
+
+    <div class="fix-info">
+      <strong>✅ Cosa farà questo tool:</strong>
+      <ol>
+        <li>Cancella i 3 contratti con ID sbagliati</li>
+        <li>Re-inserisce i contratti con:
+          <ul>
+            <li>ID corretto = codice_contratto (formato <code>CONTRACT_CTR-COGNOME-ANNO_TIMESTAMP</code>)</li>
+            <li>Date corrette dai PDF</li>
+            <li>Scadenza calcolata (data firma + 12 mesi - 1 giorno)</li>
+            <li>Collegamento ai PDF originali</li>
+          </ul>
+        </li>
+        <li>Mantiene il collegamento ai lead esistenti</li>
+      </ol>
+    </div>
+
+    <button id="fixBtn" onclick="fixContracts()">🔧 Correggi i 3 Contratti</button>
+    <button onclick="window.location.href='/admin/leads-dashboard'">📊 Vai alla Dashboard</button>
+    
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function fixContracts() {
+      const btn = document.getElementById('fixBtn');
+      const resultDiv = document.getElementById('result');
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ Correzione in corso...';
+      resultDiv.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/contracts/fix-manual-3', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = '✅ ' + data.message + '\\n\\nDettagli:\\n' + 
+            data.results.map((r, i) => 
+              \`- \${r.cliente}: \${r.success ? '✅ OK' : '❌ ' + r.error}\\n  ID: \${r.contractId || 'N/A'}\\n  Code: \${r.contractCode || 'N/A'}\\n  Data firma: \${r.dataFirma || 'N/A'} → Scadenza: \${r.dataScadenza || 'N/A'}\\n  PDF: \${r.pdfUrl || 'N/A'}\`
+            ).join('\\n\\n');
+        } else {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = '❌ ' + data.message + '\\n\\nDettagli:\\n' + 
+            data.results.map((r, i) => \`- \${r.cliente}: \${r.error || 'Unknown error'}\`).join('\\n');
+        }
+      } catch (error) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = '❌ Errore di rete: ' + error.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔧 Correggi i 3 Contratti';
+      }
+    }
+  </script>
+</body>
+</html>`)
+})
+
 // GET /test-update-contracts-dates - Pagina aggiornamento date contratti
 app.get('/test-update-contracts-dates', async (c) => {
   return c.html(`
@@ -10605,8 +10735,10 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         }
 
         // 3. Crea il contratto
-        const contractId = `contract-${contractData.cognome.toLowerCase()}-${Date.now()}`
-        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${new Date(contractData.dataFirma).getFullYear()}_${Date.now()}`
+        // IMPORTANTE: id e codice_contratto devono essere UGUALI!
+        const timestamp = Date.now()
+        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${new Date(contractData.dataFirma).getFullYear()}_${timestamp}`
+        const contractId = contractCode // ID = codice_contratto
         
         // Calcola prezzo mensile (totale / 12 mesi)
         const prezzoTotale = contractData.prezzoTotale || 585.60
@@ -10621,16 +10753,19 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         const piano = contractData.piano || 'BASE'
         const templateName = `Template_Contratto_${piano}_TeleMedCare`
 
+        // URL del PDF (se fornito)
+        const pdfUrl = contractData.pdfUrl || ''
+        
         await c.env.DB.prepare(`
           INSERT INTO contracts (
             id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
             contenuto_html, servizio, piano,
             prezzo_mensile, durata_mesi, prezzo_totale, 
-            data_scadenza, status, 
+            data_scadenza, status, pdf_url,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', datetime('now'), datetime('now'))
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', ?, datetime('now'), datetime('now'))
         `).bind(
-          contractId,
+          contractId, // ID = codice_contratto
           lead.id,
           contractCode,
           piano, // tipo_contratto = piano (BASE/AVANZATO)
@@ -10640,7 +10775,8 @@ app.post('/api/contracts/bulk-manual', async (c) => {
           piano,
           parseFloat(prezzoMensile),
           prezzoTotale,
-          dataScadenza.toISOString().split('T')[0] // data_scadenza in formato YYYY-MM-DD
+          dataScadenza.toISOString().split('T')[0], // data_scadenza in formato YYYY-MM-DD
+          pdfUrl // PDF del contratto
         ).run()
 
         console.log(`✅ Contratto inserito: ${contractCode} per ${contractData.nome} ${contractData.cognome}`)
@@ -10799,6 +10935,178 @@ app.post('/api/contracts/update-dates', async (c) => {
     return c.json({
       success: false,
       error: 'Errore durante l\'aggiornamento delle date',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/contracts/fix-manual-3 - Cancella e re-inserisce i 3 contratti sbagliati
+app.post('/api/contracts/fix-manual-3', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 [FIX MANUAL 3] Cancellazione e re-inserimento 3 contratti...')
+
+    // Step 1: Cancella i 3 contratti sbagliati
+    const wrongContractIds = [
+      'contract-locatelli-1771122740756',
+      'contract-pepe-1771122740794',
+      'contract-macchi-1771122740833'
+    ]
+
+    for (const wrongId of wrongContractIds) {
+      try {
+        await c.env.DB.prepare(`DELETE FROM contracts WHERE id = ?`).bind(wrongId).run()
+        console.log(`🗑️ Cancellato contratto sbagliato: ${wrongId}`)
+      } catch (err) {
+        console.log(`⚠️ Contratto ${wrongId} non trovato o già cancellato`)
+      }
+    }
+
+    // Step 2: Prepara i dati corretti dei 3 contratti
+    const correctContracts = [
+      {
+        nome: 'Alberto',
+        cognome: 'Locatelli',
+        nomeAssistito: 'Giovanni',
+        cognomeAssistito: 'Locatelli',
+        email: 'alberto.locatelli@example.com',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        dispositivo: 'SIDLY VITAL CARE',
+        dataFirma: '2026-02-03', // 03/02/2026
+        prezzoBase: 480.00,
+        prezzoTotale: 585.60,
+        pdfUrl: '/uploaded_files/03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf'
+      },
+      {
+        nome: 'Francesco',
+        cognome: 'Pepe',
+        nomeAssistito: 'Francesco',
+        cognomeAssistito: 'Pepe',
+        email: 'francesco.pepe@example.com',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        dispositivo: 'SIDLY VITAL CARE',
+        dataFirma: '2026-01-27', // 27/01/2026
+        prezzoBase: 480.00,
+        prezzoTotale: 585.60,
+        pdfUrl: '/uploaded_files/27.01.2026_Pepe Francesco Contratto.pdf'
+      },
+      {
+        nome: 'Claudio',
+        cognome: 'Macchi',
+        nomeAssistito: 'Claudio',
+        cognomeAssistito: 'Macchi',
+        email: 'claudio.macchi@example.com',
+        servizio: 'eCura PRO',
+        piano: 'BASE',
+        dispositivo: 'SIDLY VITAL CARE',
+        dataFirma: '2026-02-01', // 01/02/2026 (stimata)
+        prezzoBase: 480.00,
+        prezzoTotale: 585.60,
+        pdfUrl: '/uploaded_files/Documento x Claudio Macchi.pdf'
+      }
+    ]
+
+    // Step 3: Re-inserisci i contratti con i dati corretti
+    const results = []
+
+    for (const contractData of correctContracts) {
+      try {
+        // Trova il lead esistente
+        const lead = await c.env.DB.prepare(`
+          SELECT * FROM leads 
+          WHERE UPPER(cognomeRichiedente) = UPPER(?) 
+            AND UPPER(nomeRichiedente) = UPPER(?)
+          LIMIT 1
+        `).bind(contractData.cognome, contractData.nome).first() as any
+
+        if (!lead) {
+          throw new Error(`❌ Lead NON TROVATO per ${contractData.nome} ${contractData.cognome}`)
+        }
+
+        // Genera ID corretto (ID = codice_contratto!)
+        const timestamp = Date.now()
+        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}`
+        const contractId = contractCode // ID = codice_contratto
+
+        // Calcola prezzo mensile
+        const prezzoMensile = (contractData.prezzoTotale / 12).toFixed(2)
+
+        // Calcola data scadenza (firma + 1 anno - 1 giorno)
+        const dataFirma = new Date(contractData.dataFirma)
+        const dataScadenza = new Date(dataFirma)
+        dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
+        dataScadenza.setDate(dataScadenza.getDate() - 1)
+
+        const templateName = `Template_Contratto_${contractData.piano}_TeleMedCare`
+
+        // Inserisci il contratto corretto
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+            contenuto_html, servizio, piano,
+            prezzo_mensile, durata_mesi, prezzo_totale, 
+            data_scadenza, status, pdf_url,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', ?, datetime('now'), datetime('now'))
+        `).bind(
+          contractId, // ID = codice_contratto
+          lead.id,
+          contractCode,
+          contractData.piano,
+          templateName,
+          '',
+          contractData.servizio,
+          contractData.piano,
+          parseFloat(prezzoMensile),
+          contractData.prezzoTotale,
+          dataScadenza.toISOString().split('T')[0],
+          contractData.pdfUrl
+        ).run()
+
+        console.log(`✅ Contratto corretto inserito: ${contractCode}`)
+        console.log(`   Lead: ${lead.id} - ${contractData.nome} ${contractData.cognome}`)
+        console.log(`   Data firma: ${contractData.dataFirma} → Scadenza: ${dataScadenza.toISOString().split('T')[0]}`)
+        console.log(`   PDF: ${contractData.pdfUrl}`)
+
+        results.push({
+          success: true,
+          leadId: lead.id,
+          contractId: contractId,
+          contractCode: contractCode,
+          cliente: `${contractData.nome} ${contractData.cognome}`,
+          dataFirma: contractData.dataFirma,
+          dataScadenza: dataScadenza.toISOString().split('T')[0],
+          pdfUrl: contractData.pdfUrl
+        })
+
+      } catch (error) {
+        console.error(`❌ Errore inserimento contratto per ${contractData.nome} ${contractData.cognome}:`, error)
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          cliente: `${contractData.nome} ${contractData.cognome}`
+        })
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length
+
+    return c.json({
+      success: successCount === 3,
+      message: `✅ Corretti ${successCount}/3 contratti`,
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ Errore fix manual 3 contratti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante la correzione dei contratti',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
