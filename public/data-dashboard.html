@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Dashboard - TeleMedCare V11.0</title>
-    <!-- Deploy forzato: 2026-02-15 09:58 - Fix filtri contratti -->
+    <!-- v2.1 - Fix conteggio servizi + filtri contratti -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -439,21 +439,31 @@
                 'PREMIUM': { 'BASE': 590, 'AVANZATO': 990 }
             };
 
+            // Funzione per normalizzare il nome del servizio
+            function normalizeServizio(servizio) {
+                if (!servizio) return null;
+                const s = servizio.toUpperCase();
+                if (s.includes('FAMILY')) return 'FAMILY';
+                if (s.includes('PRO') && !s.includes('PREMIUM')) return 'PRO';
+                if (s.includes('PREMIUM')) return 'PREMIUM';
+                return null;
+            }
+
             leads.forEach(lead => {
-                const servizio = lead.servizio;
+                const servizioNormalized = normalizeServizio(lead.servizio);
                 const piano = lead.pacchetto || 'BASE';
                 
-                if (data[servizio]) {
-                    data[servizio].leads++;
+                if (servizioNormalized && data[servizioNormalized]) {
+                    data[servizioNormalized].leads++;
                     
                     if (piano === 'BASE') {
-                        data[servizio].base++;
+                        data[servizioNormalized].base++;
                     } else {
-                        data[servizio].avanzato++;
+                        data[servizioNormalized].avanzato++;
                     }
 
-                    if (lead.contratto_inviato && prezzi[servizio]?.[piano]) {
-                        data[servizio].revenue += prezzi[servizio][piano];
+                    if (lead.contratto_inviato && prezzi[servizioNormalized]?.[piano]) {
+                        data[servizioNormalized].revenue += prezzi[servizioNormalized][piano];
                     }
                 }
             });
