@@ -10224,6 +10224,125 @@ app.delete('/api/contracts/:id', async (c) => {
   }
 })
 
+// POST /api/contracts/bulk-manual - Inserimento contratti manuali
+app.post('/api/contracts/bulk-manual', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { contracts } = await c.req.json<{ contracts: any[] }>()
+    
+    if (!Array.isArray(contracts) || contracts.length === 0) {
+      return c.json({ success: false, error: 'Array contracts vuoto o non valido' }, 400)
+    }
+
+    console.log(`📝 [BULK MANUAL CONTRACTS] Inserimento ${contracts.length} contratti manuali...`)
+    
+    const results = []
+    
+    for (const contractData of contracts) {
+      try {
+        // 1. Crea o verifica il lead
+        const leadId = `LEAD-MANUAL-${contractData.cognome.toUpperCase()}-${Date.now()}`
+        
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            servizio, piano, dispositivo, vuoleContratto, statoLead, dataCreazione
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'COMPLETO', ?)
+        `).bind(
+          leadId,
+          contractData.nome,
+          contractData.cognome,
+          contractData.email || `${contractData.nome.toLowerCase()}.${contractData.cognome.toLowerCase()}@example.com`,
+          contractData.telefono || '+39 333 0000000',
+          contractData.servizio || 'eCura PRO',
+          contractData.piano || 'BASE',
+          contractData.dispositivo || 'SIDLY VITAL CARE',
+          contractData.dataFirma
+        ).run()
+
+        // 2. Recupera il lead (appena creato o esistente)
+        const lead = await c.env.DB.prepare(`
+          SELECT id FROM leads 
+          WHERE cognomeRichiedente = ? AND nomeRichiedente = ?
+          LIMIT 1
+        `).bind(contractData.cognome, contractData.nome).first() as any
+
+        if (!lead) {
+          throw new Error(`Lead non trovato per ${contractData.nome} ${contractData.cognome}`)
+        }
+
+        // 3. Crea il contratto
+        const contractId = `contract-${contractData.cognome.toLowerCase()}-${Date.now()}`
+        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${new Date(contractData.dataFirma).getFullYear()}_${Date.now()}`
+        
+        // Calcola data scadenza (1 anno dalla firma)
+        const dataInizio = new Date(contractData.dataFirma)
+        const dataScadenza = new Date(dataInizio)
+        dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
+        dataScadenza.setDate(dataScadenza.getDate() - 1)
+
+        await c.env.DB.prepare(`
+          INSERT INTO contracts (
+            id, leadId, codice_contratto, servizio, piano, dispositivo,
+            prezzo_base, prezzo_totale, status, 
+            data_creazione, data_firma, data_inizio_validita, data_scadenza_validita
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SIGNED', ?, ?, ?, ?)
+        `).bind(
+          contractId,
+          lead.id,
+          contractCode,
+          contractData.servizio || 'eCura PRO',
+          contractData.piano || 'BASE',
+          contractData.dispositivo || 'SIDLY VITAL CARE',
+          contractData.prezzoBase || 480.00,
+          contractData.prezzoTotale || 585.60,
+          contractData.dataFirma,
+          contractData.dataFirma,
+          dataInizio.toISOString().split('T')[0],
+          dataScadenza.toISOString().split('T')[0]
+        ).run()
+
+        console.log(`✅ Contratto inserito: ${contractCode} per ${contractData.nome} ${contractData.cognome}`)
+        
+        results.push({
+          success: true,
+          leadId: lead.id,
+          contractId,
+          contractCode,
+          cliente: `${contractData.nome} ${contractData.cognome}`
+        })
+        
+      } catch (error) {
+        console.error(`❌ Errore inserimento contratto per ${contractData.nome} ${contractData.cognome}:`, error)
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          cliente: `${contractData.nome} ${contractData.cognome}`
+        })
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length
+    
+    return c.json({
+      success: true,
+      message: `Inseriti ${successCount}/${contracts.length} contratti`,
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ Errore bulk insert contratti manuali:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante l\'inserimento dei contratti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ========================================
 // CRUD COMPLETO - LEADS
 // ========================================
