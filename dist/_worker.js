@@ -7028,6 +7028,8 @@ ${370+e.length}
         }
 
         function applyContractFilters() {
+            console.log('🔍 [FILTER] applyContractFilters chiamata');
+            
             const filters = {
                 scadenza: document.getElementById('filterScadenza').value,
                 cognome: document.getElementById('filterCognome').value.toLowerCase().trim(),
@@ -7035,30 +7037,39 @@ ${370+e.length}
                 dispositivo: document.getElementById('filterDispositivo').value
             };
 
+            console.log('🔍 [FILTER] Filtri attivi:', filters);
+
             let filtered = window.allContracts || [];
+            console.log('🔍 [FILTER] Contratti totali:', filtered.length);
 
             // Filtro cognome - supporta multiple field names
             if (filters.cognome) {
+                console.log('🔍 [FILTER] Applicando filtro cognome:', filters.cognome);
                 filtered = filtered.filter(c => {
                     const cognome = (c.cliente_cognome || c.cognomeRichiedente || c.cognome_richiedente || '').toLowerCase();
                     const nome = (c.cliente_nome || c.nomeRichiedente || c.nome_richiedente || '').toLowerCase();
                     const fullName = \`\${nome} \${cognome}\`.toLowerCase();
                     return cognome.includes(filters.cognome) || nome.includes(filters.cognome) || fullName.includes(filters.cognome);
                 });
+                console.log('🔍 [FILTER] Dopo filtro cognome:', filtered.length);
             }
 
             // Filtro stato
             if (filters.stato) {
+                console.log('🔍 [FILTER] Applicando filtro stato:', filters.stato);
                 filtered = filtered.filter(c => c.status === filters.stato);
+                console.log('🔍 [FILTER] Dopo filtro stato:', filtered.length);
             }
 
             // Filtro dispositivo - normalizza servizio
             if (filters.dispositivo) {
+                console.log('🔍 [FILTER] Applicando filtro dispositivo:', filters.dispositivo);
                 filtered = filtered.filter(c => {
                     const servizioNormalized = normalizeServizio(c.servizio || c.tipo_servizio);
                     const dispositivo = servizioNormalized === 'PREMIUM' ? 'SIDLY VITAL CARE' : 'SIDLY CARE PRO';
                     return dispositivo.includes(filters.dispositivo) || filters.dispositivo.includes(dispositivo);
                 });
+                console.log('🔍 [FILTER] Dopo filtro dispositivo:', filtered.length);
             }
 
             // Filtro data scadenza
@@ -7066,12 +7077,20 @@ ${370+e.length}
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
-                console.log('[FILTER SCADENZA] Filtro attivo:', filters.scadenza);
-                console.log('[FILTER SCADENZA] Contratti prima del filtro:', filtered.length);
+                console.log('📅 [FILTER SCADENZA] ==========================================');
+                console.log('📅 [FILTER SCADENZA] Filtro attivo:', filters.scadenza);
+                console.log('📅 [FILTER SCADENZA] Oggi:', today.toISOString().split('T')[0]);
+                console.log('📅 [FILTER SCADENZA] Contratti prima del filtro:', filtered.length);
+                
+                // Log TUTTE le date prima di filtrare
+                console.log('📅 [FILTER SCADENZA] Date disponibili:');
+                filtered.forEach((c, idx) => {
+                    console.log(\`  [\${idx}] \${c.codice_contratto || c.id}: data_scadenza = "\${c.data_scadenza}" (tipo: \${typeof c.data_scadenza})\`);
+                });
                 
                 filtered = filtered.filter(c => {
                     if (!c.data_scadenza) {
-                        console.log('[FILTER SCADENZA] Contratto senza data_scadenza:', c.codice_contratto);
+                        console.log('❌ [FILTER SCADENZA] Contratto senza data_scadenza:', c.codice_contratto);
                         return false;
                     }
                     
@@ -7090,17 +7109,18 @@ ${370+e.length}
                                 const month = parseInt(parts[1]) - 1;  // Month is 0-indexed
                                 const year = parseInt(parts[2]);
                                 scadenza = new Date(year, month, day);
+                                console.log(\`🔄 [FILTER SCADENZA] Parsed manualmente: "\${c.data_scadenza}" → \${scadenza.toISOString().split('T')[0]}\`);
                             }
                         }
                     } else if (c.data_scadenza instanceof Date) {
                         scadenza = c.data_scadenza;
                     } else {
-                        console.warn('[FILTER SCADENZA] Formato data non riconosciuto:', c.data_scadenza, 'contratto:', c.codice_contratto);
+                        console.warn('⚠️ [FILTER SCADENZA] Formato data non riconosciuto:', c.data_scadenza, 'contratto:', c.codice_contratto);
                         return false;
                     }
                     
                     if (isNaN(scadenza.getTime())) {
-                        console.warn('[FILTER SCADENZA] Data invalida:', c.data_scadenza, 'contratto:', c.codice_contratto);
+                        console.warn('⚠️ [FILTER SCADENZA] Data invalida:', c.data_scadenza, 'contratto:', c.codice_contratto);
                         return false;
                     }
                     
@@ -7108,19 +7128,23 @@ ${370+e.length}
                     const diffTime = scadenza - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                    console.log('[FILTER SCADENZA] Contratto:', c.codice_contratto, 'Scadenza:', c.data_scadenza, 'Giorni rimanenti:', diffDays);
-
+                    let match = false;
                     if (filters.scadenza === 'expired') {
-                        return diffDays < 0;
+                        match = diffDays < 0;
                     } else {
                         const days = parseInt(filters.scadenza);
-                        return diffDays >= 0 && diffDays <= days;
+                        match = diffDays >= 0 && diffDays <= days;
                     }
+
+                    console.log(\`\${match ? '✅' : '❌'} [FILTER SCADENZA] \${c.codice_contratto}: scadenza=\${scadenza.toISOString().split('T')[0]}, giorni=\${diffDays}, match=\${match}\`);
+                    return match;
                 });
                 
-                console.log('[FILTER SCADENZA] Contratti dopo filtro:', filtered.length);
+                console.log('📅 [FILTER SCADENZA] Contratti dopo filtro:', filtered.length);
+                console.log('📅 [FILTER SCADENZA] ==========================================');
             }
 
+            console.log('🎯 [FILTER] RENDERING', filtered.length, 'contratti');
             renderContractsTable(filtered);
         }
 
