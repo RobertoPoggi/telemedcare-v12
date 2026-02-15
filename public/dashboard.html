@@ -2,7 +2,18 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="eCura">
+    <meta name="theme-color" content="#667eea">
+    
     <title>Dashboard Operativa - TeleMedCare V12.1 🔴 4-SWITCH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
@@ -223,19 +234,19 @@
                     </button>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
+            <div class="overflow-x-auto -mx-6 px-6">
+                <table class="w-full min-w-[1000px]">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Assistito</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">IMEI Dispositivo</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Email</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Telefono</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Assistito</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">IMEI Dispositivo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Email</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Telefono</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Piano</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="assistitiTable">

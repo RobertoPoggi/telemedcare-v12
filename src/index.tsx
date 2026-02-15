@@ -15796,6 +15796,276 @@ app.post('/api/assistiti/add-three', async (c) => {
   }
 })
 
+// POST /api/assistiti/update-three-with-data - Aggiorna i 3 assistiti con dati da leads + IMEI
+app.post('/api/assistiti/update-three-with-data', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const updates = []
+
+    // 1. Giovanni Locatelli - IMEI 862346607387161 (VITAL CARE dalla screenshot)
+    const leadAlberto = await c.env.DB.prepare(`
+      SELECT 
+        id,
+        emailRichiedente,
+        telefonoRichiedente,
+        nomeRichiedente,
+        cognomeRichiedente
+      FROM leads 
+      WHERE nomeRichiedente LIKE '%Alberto%' AND cognomeRichiedente LIKE '%Locatelli%' 
+      LIMIT 1
+    `).first()
+
+    if (leadAlberto) {
+      await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET 
+          email = ?,
+          telefono = ?,
+          imei = '862346607387161'
+        WHERE nome = 'Giovanni Locatelli'
+      `).bind(
+        leadAlberto.emailRichiedente || null,
+        leadAlberto.telefonoRichiedente || null
+      ).run()
+
+      updates.push({ 
+        nome: 'Giovanni Locatelli', 
+        email: leadAlberto.emailRichiedente,
+        telefono: leadAlberto.telefonoRichiedente,
+        imei: '862346607387161',
+        dispositivo: 'VITAL CARE'
+      })
+    }
+
+    // 2. Claudio Macchi - IMEI 862608061148517 (CARE dalla screenshot)
+    const leadClaudio = await c.env.DB.prepare(`
+      SELECT 
+        id,
+        emailRichiedente,
+        telefonoRichiedente
+      FROM leads 
+      WHERE nomeRichiedente LIKE '%Claudio%' AND cognomeRichiedente LIKE '%Macchi%' 
+      LIMIT 1
+    `).first()
+
+    if (leadClaudio) {
+      await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET 
+          email = ?,
+          telefono = ?,
+          imei = '862608061148517'
+        WHERE nome = 'Claudio Macchi'
+      `).bind(
+        leadClaudio.emailRichiedente || null,
+        leadClaudio.telefonoRichiedente || null
+      ).run()
+
+      updates.push({ 
+        nome: 'Claudio Macchi', 
+        email: leadClaudio.emailRichiedente,
+        telefono: leadClaudio.telefonoRichiedente,
+        imei: '862608061148517',
+        dispositivo: 'CARE'
+      })
+    }
+
+    // 3. Anna De Marco - IMEI 862608066560916 (CARE dalla screenshot)
+    const leadFrancesco = await c.env.DB.prepare(`
+      SELECT 
+        id,
+        emailRichiedente,
+        telefonoRichiedente
+      FROM leads 
+      WHERE nomeRichiedente LIKE '%Francesco%' AND cognomeRichiedente LIKE '%Pepe%' 
+      LIMIT 1
+    `).first()
+
+    if (leadFrancesco) {
+      await c.env.DB.prepare(`
+        UPDATE assistiti 
+        SET 
+          email = ?,
+          telefono = ?,
+          imei = '862608066560916'
+        WHERE nome = 'Anna De Marco'
+      `).bind(
+        leadFrancesco.emailRichiedente || null,
+        leadFrancesco.telefonoRichiedente || null
+      ).run()
+
+      updates.push({ 
+        nome: 'Anna De Marco', 
+        email: leadFrancesco.emailRichiedente,
+        telefono: leadFrancesco.telefonoRichiedente,
+        imei: '862608066560916',
+        dispositivo: 'CARE'
+      })
+    }
+
+    console.log('✅ 3 assistiti aggiornati con dati completi')
+
+    return c.json({ 
+      success: true, 
+      message: 'Aggiornati 3 assistiti con dati da leads + IMEI',
+      updates
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento assistiti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiornamento assistiti',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// ============================================
+// DISPOSITIVI & MAGAZZINO DM ENDPOINTS
+// ============================================
+
+// GET /api/dispositivi - Lista dispositivi
+app.get('/api/dispositivi', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT 
+        d.id,
+        d.serial_number as imei,
+        d.modello as dispositivo,
+        d.status,
+        d.assigned_at,
+        d.activated_at,
+        d.created_at,
+        l.nomeRichiedente || ' ' || l.cognomeRichiedente as assegnato_a
+      FROM dispositivi d
+      LEFT JOIN leads l ON d.lead_id = l.id
+      ORDER BY d.created_at DESC
+      LIMIT 100
+    `).all()
+
+    return c.json({ 
+      success: true, 
+      dispositivi: results,
+      count: results.length
+    })
+  } catch (error) {
+    console.error('❌ Errore fetch dispositivi:', error)
+    return c.json({
+      success: false,
+      error: 'Errore caricamento dispositivi',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/dispositivi - Aggiungi dispositivo
+app.post('/api/dispositivi', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const data = await c.req.json()
+    const timestamp = new Date().toISOString()
+
+    await c.env.DB.prepare(`
+      INSERT INTO dispositivi (serial_number, modello, status, created_at)
+      VALUES (?, ?, 'inventory', ?)
+    `).bind(
+      data.serial_number,
+      data.modello || 'SiDLY CARE PRO',
+      timestamp
+    ).run()
+
+    return c.json({ 
+      success: true, 
+      message: 'Dispositivo aggiunto al magazzino'
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiunta dispositivo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiunta dispositivo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// PUT /api/dispositivi/:id/assign - Assegna dispositivo a lead
+app.put('/api/dispositivi/:id/assign', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const id = c.req.param('id')
+    const { lead_id } = await c.req.json()
+    const timestamp = new Date().toISOString()
+
+    await c.env.DB.prepare(`
+      UPDATE dispositivi 
+      SET 
+        lead_id = ?,
+        status = 'assigned',
+        assigned_at = ?
+      WHERE id = ?
+    `).bind(lead_id, timestamp, id).run()
+
+    return c.json({ 
+      success: true, 
+      message: 'Dispositivo assegnato'
+    })
+  } catch (error) {
+    console.error('❌ Errore assegnazione dispositivo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore assegnazione dispositivo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/magazzino - Lista dispositivi in magazzino (disponibili)
+app.get('/api/magazzino', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT 
+        id,
+        serial_number as imei,
+        modello as dispositivo,
+        status,
+        created_at
+      FROM dispositivi
+      WHERE status = 'inventory'
+      ORDER BY created_at DESC
+    `).all()
+
+    return c.json({ 
+      success: true, 
+      magazzino: results,
+      disponibili: results.length
+    })
+  } catch (error) {
+    console.error('❌ Errore fetch magazzino:', error)
+    return c.json({
+      success: false,
+      error: 'Errore caricamento magazzino',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
