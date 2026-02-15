@@ -6334,7 +6334,10 @@ app.post('/api/contracts', async (c) => {
     
     // Genera ID e codice contratto
     const contractId = `CONTRACT_${Date.now()}_${Math.random().toString(36).substring(7)}`
-    const codiceContratto = `TMC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
+    const timestamp = Date.now()
+    const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+    const anno = new Date().getFullYear()
+    const codiceContratto = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
     
     // Calcola prezzi
     const prezzi = {
@@ -7794,7 +7797,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const pianoRichiesto = body.tipoContratto || body.piano
     
     const timestamp = Date.now()
-    const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+    const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+    const anno = new Date().getFullYear()
+    const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
     const contractId = `contract-${timestamp}`
     
     // Determina servizio e piano (usa quello richiesto se presente, altrimenti quello del lead)
@@ -8279,7 +8284,10 @@ app.post('/api/leads/:id/complete', async (c) => {
           if (true) {
             // Genera contratto
             const timestamp = Date.now()
-            const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+            const timestamp = Date.now()
+            const cognome = (assistito.cognome || richiedente.cognome || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+            const anno = new Date().getFullYear()
+            const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
             const contractId = `contract-${timestamp}`
             
             const servizio = (updatedLead as any).servizio || 'eCura PRO'
@@ -8490,7 +8498,10 @@ app.post('/api/lead/:id/complete', async (c) => {
         
         if (isLeadComplete(updatedLead)) {
           const timestamp = Date.now()
-          const contractCode = `TMC-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+          const timestamp = Date.now()
+          const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+          const anno = new Date().getFullYear()
+          const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
           const contractId = `contract-${timestamp}`
           const servizio = (updatedLead as any).servizio || 'eCura PRO'
           const piano = (updatedLead as any).piano || 'BASE'
@@ -10375,7 +10386,7 @@ app.post('/api/leads', async (c) => {
           // Crea contractData
           const contractData = {
             contractId: `contract-${Date.now()}`,
-            contractCode: `TMC-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            contractCode: `CONTRACT_CTR-MOCK-${new Date().getFullYear()}_${Date.now()}`,
             contractPdfUrl: '', // Non disponibile senza Puppeteer
             tipoServizio: leadData.pacchetto || 'BASE', // BASE o AVANZATO
             servizio: leadData.servizio || 'eCura PRO', // eCura PRO, eCura FAMILY, eCura PREMIUM
