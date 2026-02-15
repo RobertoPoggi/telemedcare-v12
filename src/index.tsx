@@ -10950,19 +10950,26 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
 
     console.log('🔧 [FIX MANUAL 3] Cancellazione e re-inserimento 3 contratti...')
 
-    // Step 1: Cancella i 3 contratti sbagliati
-    const wrongContractIds = [
-      'contract-locatelli-1771122740756',
-      'contract-pepe-1771122740794',
-      'contract-macchi-1771122740833'
-    ]
-
-    for (const wrongId of wrongContractIds) {
+    // Step 1: Cancella TUTTI i contratti esistenti per Locatelli, Pepe, Macchi
+    // (sia con ID vecchio che con codice_contratto nuovo)
+    const leadSurnames = ['LOCATELLI', 'PEPE', 'MACCHI']
+    
+    for (const surname of leadSurnames) {
       try {
-        await c.env.DB.prepare(`DELETE FROM contracts WHERE id = ?`).bind(wrongId).run()
-        console.log(`🗑️ Cancellato contratto sbagliato: ${wrongId}`)
+        // Cancella per ID vecchio (contract-locatelli-...)
+        await c.env.DB.prepare(`DELETE FROM contracts WHERE id LIKE ?`).bind(`contract-${surname.toLowerCase()}-%`).run()
+        console.log(`🗑️ Cancellati contratti con ID vecchio: contract-${surname.toLowerCase()}-*`)
+        
+        // Cancella per ID nuovo (CONTRACT_CTR-LOCATELLI-2026_...)
+        await c.env.DB.prepare(`DELETE FROM contracts WHERE id LIKE ?`).bind(`CONTRACT_CTR-${surname}-2026_%`).run()
+        console.log(`🗑️ Cancellati contratti con ID nuovo: CONTRACT_CTR-${surname}-2026_*`)
+        
+        // Cancella per codice_contratto (CTR-LOCATELLI-2026)
+        await c.env.DB.prepare(`DELETE FROM contracts WHERE codice_contratto = ?`).bind(`CTR-${surname}-2026`).run()
+        console.log(`🗑️ Cancellati contratti con codice: CTR-${surname}-2026`)
+        
       } catch (err) {
-        console.log(`⚠️ Contratto ${wrongId} non trovato o già cancellato`)
+        console.log(`⚠️ Errore cancellazione per ${surname}:`, err)
       }
     }
 
