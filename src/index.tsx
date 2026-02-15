@@ -11004,86 +11004,93 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
         const existingContract = await c.env.DB.prepare(`
           SELECT id, codice_contratto, status, data_scadenza, pdf_url FROM contracts 
           WHERE leadId = ?
+          ORDER BY created_at DESC
           LIMIT 1
         `).bind(lead.id).first() as any
 
-        if (existingContract) {
-          // UPDATE del contratto esistente (preserva tutti gli altri dati!)
-          console.log(`✏️ Aggiorno contratto esistente: ${existingContract.id} → ${contractData.codiceContratto}`)
+        if (!existingContract) {
+          throw new Error(`❌ Nessun contratto trovato per ${contractData.nome} ${contractData.cognome}`)
+        }
+
+        // 3. Verifica se il codice contratto è già corretto
+        if (existingContract.codice_contratto === contractData.codiceContratto) {
+          console.log(`✅ Contratto già corretto per ${contractData.nome} ${contractData.cognome}: ${contractData.codiceContratto}`)
           
+          // Aggiorna solo PDF e date se necessario
           await c.env.DB.prepare(`
             UPDATE contracts
             SET 
-              codice_contratto = ?,
               data_scadenza = ?,
+              pdf_url = ?,
               prezzo_totale = ?,
               prezzo_mensile = ?,
-              pdf_url = ?,
               updated_at = datetime('now')
             WHERE id = ?
           `).bind(
-            contractData.codiceContratto,
             contractData.dataScadenza,
+            contractData.pdfUrl,
             contractData.prezzoTotale,
             contractData.prezzoMensile,
-            contractData.pdfUrl,
             existingContract.id
           ).run()
 
           results.push({
             success: true,
-            action: 'UPDATE',
+            action: 'UPDATE_MINOR',
             contractId: existingContract.id,
             contractCode: contractData.codiceContratto,
-            oldCode: existingContract.codice_contratto,
             cliente: `${contractData.nome} ${contractData.cognome}`,
             dataScadenza: contractData.dataScadenza,
             pdfUrl: contractData.pdfUrl,
-            note: `Aggiornato contratto esistente (preservati: status, firma_digitale, data_invio, etc.)`
+            note: `Codice già corretto, aggiornati solo PDF/date`
           })
-
-        } else {
-          // INSERT nuovo contratto (se non esiste)
-          console.log(`➕ Creo nuovo contratto per ${contractData.nome} ${contractData.cognome}`)
-          
-          const timestamp = Date.now()
-          const contractId = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}`
-          const templateName = `Template_Contratto_BASE_TeleMedCare`
-
-          await c.env.DB.prepare(`
-            INSERT INTO contracts (
-              id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
-              contenuto_html, servizio, piano,
-              prezzo_mensile, durata_mesi, prezzo_totale, 
-              data_scadenza, status, pdf_url,
-              created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', ?, datetime('now'), datetime('now'))
-          `).bind(
-            contractId,
-            lead.id,
-            contractData.codiceContratto,
-            'BASE',
-            templateName,
-            '',
-            'eCura PRO',
-            'BASE',
-            contractData.prezzoMensile,
-            contractData.prezzoTotale,
-            contractData.dataScadenza,
-            contractData.pdfUrl
-          ).run()
-
-          results.push({
-            success: true,
-            action: 'INSERT',
-            contractId: contractId,
-            contractCode: contractData.codiceContratto,
-            cliente: `${contractData.nome} ${contractData.cognome}`,
-            dataScadenza: contractData.dataScadenza,
-            pdfUrl: contractData.pdfUrl,
-            note: 'Nuovo contratto creato'
-          })
+          continue
         }
+
+        // 4. Verifica se esiste un ALTRO contratto con il codice corretto (duplicato!)
+        const duplicateContract = await c.env.DB.prepare(`
+          SELECT id, codice_contratto FROM contracts 
+          WHERE codice_contratto = ? AND leadId != ?
+          LIMIT 1
+        `).bind(contractData.codiceContratto, lead.id).first() as any
+
+        if (duplicateContract) {
+          throw new Error(`❌ DUPLICATO RILEVATO: Codice ${contractData.codiceContratto} già usato da contratto ${duplicateContract.id} (lead diverso!)`)
+        }
+
+        // 5. Aggiorna il contratto esistente con il nuovo codice
+        console.log(`✏️ Aggiorno contratto: ${existingContract.codice_contratto} → ${contractData.codiceContratto}`)
+        
+        await c.env.DB.prepare(`
+          UPDATE contracts
+          SET 
+            codice_contratto = ?,
+            data_scadenza = ?,
+            prezzo_totale = ?,
+            prezzo_mensile = ?,
+            pdf_url = ?,
+            updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          contractData.codiceContratto,
+          contractData.dataScadenza,
+          contractData.prezzoTotale,
+          contractData.prezzoMensile,
+          contractData.pdfUrl,
+          existingContract.id
+        ).run()
+
+        results.push({
+          success: true,
+          action: 'UPDATE',
+          contractId: existingContract.id,
+          contractCode: contractData.codiceContratto,
+          oldCode: existingContract.codice_contratto,
+          cliente: `${contractData.nome} ${contractData.cognome}`,
+          dataScadenza: contractData.dataScadenza,
+          pdfUrl: contractData.pdfUrl,
+          note: `Aggiornato da ${existingContract.codice_contratto} a ${contractData.codiceContratto}`
+        })
 
       } catch (error) {
         console.error(`❌ Errore per ${contractData.nome} ${contractData.cognome}:`, error)
