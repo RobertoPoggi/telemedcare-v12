@@ -12858,9 +12858,9 @@ startxref
       ORDER BY a.created_at DESC
     `).bind(...i).all();return o.json({success:!0,count:r.results.length,assistiti:r.results})}catch(e){return console.error("❌ Errore recupero assistiti:",e),o.json({success:!1,error:"Errore recupero assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);const e=await o.req.json();if(!e.nome||!e.cognome)return o.json({success:!1,error:"Campi obbligatori mancanti: nome, cognome"},400);const a=`ASS-${e.cognome.toUpperCase()}-${Date.now()}`,i=new Date().toISOString();return await o.env.DB.prepare(`
       INSERT INTO assistiti (
-        codice, nome, email, telefono, imei, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?)
-    `).bind(a,`${e.nome} ${e.cognome}`,e.email||"",e.telefono||"",e.imei||"",i).run(),console.log("✅ Assistito creato:",a),o.json({success:!0,message:"Assistito creato con successo",codice:a,assistito:{codice:a,nome:`${e.nome} ${e.cognome}`,email:e.email,telefono:e.telefono,imei:e.imei}})}catch(e){return console.error("❌ Errore creazione assistito:",e),o.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});x.put("/api/assistiti/:id",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);const e=o.req.param("id"),a=await o.req.json();if(!await o.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return o.json({success:!1,error:"Assistito non trovato"},404);let r=!1;try{await o.env.DB.prepare(`
+        codice, nome, email, telefono, imei, status, lead_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+    `).bind(a,`${e.nome} ${e.cognome}`,e.email||"",e.telefono||"",e.imei||"",e.lead_id||null,i).run(),console.log("✅ Assistito creato:",a),o.json({success:!0,message:"Assistito creato con successo",codice:a,assistito:{codice:a,nome:`${e.nome} ${e.cognome}`,email:e.email,telefono:e.telefono,imei:e.imei}})}catch(e){return console.error("❌ Errore creazione assistito:",e),o.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});x.put("/api/assistiti/:id",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);const e=o.req.param("id"),a=await o.req.json();if(!await o.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return o.json({success:!1,error:"Assistito non trovato"},404);let r=!1;try{await o.env.DB.prepare(`
         UPDATE assistiti 
         SET nome = ?, 
             nome_assistito = ?, 
@@ -12912,7 +12912,22 @@ startxref
       `).run();i.changes&&i.changes>0?e.push(`✅ Eileen aggiornata a AVANZATO (${i.changes} record)`):e.push("ℹ️ Eileen non trovata o già aggiornata")}catch(i){e.push(`⚠️ Errore aggiornamento Eileen: ${i.message}`)}const a=[{name:"luogoNascitaAssistito",type:"TEXT",default:null},{name:"dataNascitaAssistito",type:"TEXT",default:null},{name:"indirizzoAssistito",type:"TEXT",default:null},{name:"capAssistito",type:"TEXT",default:null},{name:"cittaAssistito",type:"TEXT",default:null},{name:"provinciaAssistito",type:"TEXT",default:null},{name:"cfAssistito",type:"TEXT",default:null},{name:"condizioniSalute",type:"TEXT",default:null},{name:"intestatarioContratto",type:"TEXT",default:"'richiedente'"}];for(const i of a)try{const r=i.default?`DEFAULT ${i.default}`:"";await o.env.DB.prepare(`
           ALTER TABLE leads 
           ADD COLUMN ${i.name} ${i.type} ${r}
-        `).run(),e.push(`✅ Colonna ${i.name} aggiunta a leads`),console.log(`✅ Colonna ${i.name} aggiunta a leads`)}catch(r){r.message&&r.message.includes("duplicate column")?(e.push(`ℹ️ Colonna ${i.name} già esiste`),console.log(`ℹ️ Colonna ${i.name} già esiste`)):e.push(`⚠️ Errore colonna ${i.name}: ${r.message}`)}return o.json({success:!0,message:"Migrazione schema completata",migrations:e})}catch(e){return console.error("❌ Errore migrazione schema:",e),o.json({success:!1,error:"Errore migrazione schema",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/debug-eileen",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await o.env.DB.prepare(`
+        `).run(),e.push(`✅ Colonna ${i.name} aggiunta a leads`),console.log(`✅ Colonna ${i.name} aggiunta a leads`)}catch(r){r.message&&r.message.includes("duplicate column")?(e.push(`ℹ️ Colonna ${i.name} già esiste`),console.log(`ℹ️ Colonna ${i.name} già esiste`)):e.push(`⚠️ Errore colonna ${i.name}: ${r.message}`)}return o.json({success:!0,message:"Migrazione schema completata",migrations:e})}catch(e){return console.error("❌ Errore migrazione schema:",e),o.json({success:!1,error:"Errore migrazione schema",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/add-three",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);const e=new Date().toISOString(),a=[],i=await o.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' LIMIT 1), 
+        ?)
+    `).bind(`ASS-LOCATELLI-GIOVANNI-${Date.now()}`,"Giovanni Locatelli","","","",e).run();a.push({nome:"Giovanni Locatelli",lead_cognome:"Locatelli Alberto"}),await new Promise(l=>setTimeout(l,100));const r=await o.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' LIMIT 1), 
+        ?)
+    `).bind(`ASS-MACCHI-CLAUDIO-${Date.now()}`,"Claudio Macchi","","","",e).run();a.push({nome:"Claudio Macchi",lead_cognome:"Macchi Claudio"}),await new Promise(l=>setTimeout(l,100));const s=await o.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' LIMIT 1), 
+        ?)
+    `).bind(`ASS-DEMARCO-ANNA-${Date.now()}`,"Anna De Marco","","","",e).run();return a.push({nome:"Anna De Marco",lead_cognome:"Pepe Francesco"}),console.log("✅ 3 assistiti aggiunti con successo"),o.json({success:!0,message:"Aggiunti 3 assistiti",assistiti:a})}catch(e){return console.error("❌ Errore aggiunta assistiti:",e),o.json({success:!1,error:"Errore aggiunta assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/debug-eileen",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await o.env.DB.prepare(`
       SELECT * 
       FROM assistiti 
       WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')

@@ -15357,14 +15357,15 @@ app.post('/api/assistiti', async (c) => {
 
     await c.env.DB.prepare(`
       INSERT INTO assistiti (
-        codice, nome, email, telefono, imei, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?)
+        codice, nome, email, telefono, imei, status, lead_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
     `).bind(
       codice,
       `${data.nome} ${data.cognome}`,
       data.email || '',
       data.telefono || '',
       data.imei || '',
+      data.lead_id || null,
       timestamp
     ).run()
 
@@ -15646,6 +15647,89 @@ app.post('/api/migrate-schema', async (c) => {
     return c.json({
       success: false,
       error: 'Errore migrazione schema',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/assistiti/add-three - Aggiunge i 3 assistiti richiesti
+app.post('/api/assistiti/add-three', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const timestamp = new Date().toISOString()
+    const assistiti = []
+
+    // 1. Giovanni Locatelli (assistito di Alberto Locatelli)
+    const giovanni = await c.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' LIMIT 1), 
+        ?)
+    `).bind(
+      `ASS-LOCATELLI-GIOVANNI-${Date.now()}`,
+      'Giovanni Locatelli',
+      '',
+      '',
+      '',
+      timestamp
+    ).run()
+
+    assistiti.push({ nome: 'Giovanni Locatelli', lead_cognome: 'Locatelli Alberto' })
+
+    // Pausa 100ms per evitare timestamp identici
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // 2. Claudio Macchi (lead con stesso cognome)
+    const claudio = await c.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' LIMIT 1), 
+        ?)
+    `).bind(
+      `ASS-MACCHI-CLAUDIO-${Date.now()}`,
+      'Claudio Macchi',
+      '',
+      '',
+      '',
+      timestamp
+    ).run()
+
+    assistiti.push({ nome: 'Claudio Macchi', lead_cognome: 'Macchi Claudio' })
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // 3. Anna De Marco (assistita di Francesco Pepe)
+    const anna = await c.env.DB.prepare(`
+      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
+        (SELECT id FROM leads WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' LIMIT 1), 
+        ?)
+    `).bind(
+      `ASS-DEMARCO-ANNA-${Date.now()}`,
+      'Anna De Marco',
+      '',
+      '',
+      '',
+      timestamp
+    ).run()
+
+    assistiti.push({ nome: 'Anna De Marco', lead_cognome: 'Pepe Francesco' })
+
+    console.log('✅ 3 assistiti aggiunti con successo')
+
+    return c.json({ 
+      success: true, 
+      message: 'Aggiunti 3 assistiti',
+      assistiti
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiunta assistiti:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiunta assistiti',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
