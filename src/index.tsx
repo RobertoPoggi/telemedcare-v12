@@ -15659,6 +15659,15 @@ app.post('/api/assistiti/add-three', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
+    // 🧹 CLEANUP: Cancella eventuali assistiti duplicati con IMEI vuoto
+    await c.env.DB.prepare(`
+      DELETE FROM assistiti 
+      WHERE nome IN ('Giovanni Locatelli', 'Claudio Macchi', 'Anna De Marco')
+        AND (imei IS NULL OR imei = '')
+    `).run()
+
+    console.log('✅ Cleanup assistiti duplicati completato')
+
     const timestamp = new Date().toISOString()
     const assistiti = []
 
