@@ -9763,12 +9763,7 @@ app.post('/api/contracts/sign', async (c) => {
               
               <p>Grazie per aver firmato il contratto <strong>${contract.codice_contratto}</strong>!</p>
               
-              <p>In allegato trovi:</p>
-              <ul>
-                <li>📄 Copia del contratto firmato digitalmente</li>
-                <li>✍️ La tua firma digitale</li>
-                <li>🏢 Controfirma di Medica GB S.r.l.</li>
-              </ul>
+              <p>✅ <strong>La tua firma digitale è stata registrata con successo.</strong></p>
               
               <p><strong>Dettagli Contratto:</strong></p>
               <ul>
@@ -9778,7 +9773,14 @@ app.post('/api/contracts/sign', async (c) => {
                 <li>Data firma: ${new Date().toLocaleDateString('it-IT')}</li>
               </ul>
               
-              <p>Il tuo servizio eCura verrà attivato entro 24-48 ore. Riceverai una email con le istruzioni per configurare il dispositivo SiDLY.</p>
+              <p><strong>📬 Prossimi Passi:</strong></p>
+              <ol>
+                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un'email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
+                <li><strong>Attivazione servizio</strong> - Dopo il pagamento, il servizio verrà attivato entro 24-48 ore</li>
+                <li><strong>Configurazione dispositivo</strong> - Riceverai le istruzioni per configurare il dispositivo SiDLY</li>
+              </ol>
+              
+              <p>💡 <em>Il contratto firmato sarà disponibile nel tuo pannello personale e verrà incluso nella prossima comunicazione.</em></p>
               
               <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
               
