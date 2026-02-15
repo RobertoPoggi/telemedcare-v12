@@ -16067,6 +16067,54 @@ app.post('/api/dispositivi/setup-table', async (c) => {
   }
 })
 
+// POST /api/leads/test-notification - Test invio notifica email (DEBUG)
+app.post('/api/leads/test-notification', async (c) => {
+  try {
+    const data = await c.req.json()
+    
+    console.log('🔍 [TEST-NOTIFICATION] Inizio test notifica email...')
+    console.log('🔍 [TEST-NOTIFICATION] Dati ricevuti:', JSON.stringify(data, null, 2))
+    
+    // Importa la funzione
+    const { sendNewLeadNotification } = await import('./utils/lead-notifications')
+    
+    // Chiama la funzione di notifica
+    await sendNewLeadNotification(
+      data.leadId || 'TEST-LEAD-001',
+      {
+        nomeRichiedente: data.nomeRichiedente || 'Test',
+        cognomeRichiedente: data.cognomeRichiedente || 'User',
+        email: data.email,
+        telefono: data.telefono,
+        citta: data.citta,
+        servizio: data.servizio || 'eCura PRO',
+        piano: data.piano || 'BASE',
+        fonte: data.fonte || 'Test Debug',
+        note: data.note,
+        created_at: new Date().toISOString()
+      },
+      c.env
+    )
+    
+    console.log('✅ [TEST-NOTIFICATION] Test completato')
+    
+    return c.json({ 
+      success: true, 
+      message: 'Notifica email test inviata',
+      leadId: data.leadId,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ [TEST-NOTIFICATION] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore test notifica',
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, 500)
+  }
+})
+
 // GET /api/dispositivi - Lista dispositivi
 app.get('/api/dispositivi', async (c) => {
   try {
