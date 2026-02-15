@@ -5071,13 +5071,49 @@ export const data_dashboard = `<!DOCTYPE html>
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 
+                console.log('[FILTER SCADENZA] Filtro attivo:', filters.scadenza);
+                console.log('[FILTER SCADENZA] Contratti prima del filtro:', filtered.length);
+                
                 filtered = filtered.filter(c => {
-                    if (!c.data_scadenza) return false;
+                    if (!c.data_scadenza) {
+                        console.log('[FILTER SCADENZA] Contratto senza data_scadenza:', c.codice_contratto);
+                        return false;
+                    }
                     
-                    const scadenza = new Date(c.data_scadenza);
+                    // Supporta diversi formati data
+                    let scadenza;
+                    if (typeof c.data_scadenza === 'string') {
+                        // Prova parsing diretto ISO
+                        scadenza = new Date(c.data_scadenza);
+                        
+                        // Se fallisce, prova a parsare manualmente DD/MM/YYYY o DD-MM-YYYY
+                        if (isNaN(scadenza.getTime())) {
+                            const parts = c.data_scadenza.split(/[\\/\\-]/);
+                            if (parts.length === 3) {
+                                // Assume DD/MM/YYYY o DD-MM-YYYY
+                                const day = parseInt(parts[0]);
+                                const month = parseInt(parts[1]) - 1;  // Month is 0-indexed
+                                const year = parseInt(parts[2]);
+                                scadenza = new Date(year, month, day);
+                            }
+                        }
+                    } else if (c.data_scadenza instanceof Date) {
+                        scadenza = c.data_scadenza;
+                    } else {
+                        console.warn('[FILTER SCADENZA] Formato data non riconosciuto:', c.data_scadenza, 'contratto:', c.codice_contratto);
+                        return false;
+                    }
+                    
+                    if (isNaN(scadenza.getTime())) {
+                        console.warn('[FILTER SCADENZA] Data invalida:', c.data_scadenza, 'contratto:', c.codice_contratto);
+                        return false;
+                    }
+                    
                     scadenza.setHours(0, 0, 0, 0);
                     const diffTime = scadenza - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    console.log('[FILTER SCADENZA] Contratto:', c.codice_contratto, 'Scadenza:', c.data_scadenza, 'Giorni rimanenti:', diffDays);
 
                     if (filters.scadenza === 'expired') {
                         return diffDays < 0;
@@ -5086,6 +5122,8 @@ export const data_dashboard = `<!DOCTYPE html>
                         return diffDays >= 0 && diffDays <= days;
                     }
                 });
+                
+                console.log('[FILTER SCADENZA] Contratti dopo filtro:', filtered.length);
             }
 
             renderContractsTable(filtered);
