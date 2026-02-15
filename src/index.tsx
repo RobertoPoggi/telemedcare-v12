@@ -15666,7 +15666,7 @@ app.post('/api/assistiti/add-three', async (c) => {
     // Prima trova il lead_id
     const leadAlberto = await c.env.DB.prepare(`
       SELECT id FROM leads 
-      WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' 
+      WHERE nomeRichiedente LIKE '%Alberto%' AND cognomeRichiedente LIKE '%Locatelli%' 
       LIMIT 1
     `).first()
 
@@ -15703,7 +15703,7 @@ app.post('/api/assistiti/add-three', async (c) => {
     // 2. Claudio Macchi (lead con stesso cognome)
     const leadClaudio = await c.env.DB.prepare(`
       SELECT id FROM leads 
-      WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' 
+      WHERE nomeRichiedente LIKE '%Claudio%' AND cognomeRichiedente LIKE '%Macchi%' 
       LIMIT 1
     `).first()
 
@@ -15739,7 +15739,7 @@ app.post('/api/assistiti/add-three', async (c) => {
     // 3. Anna De Marco (assistita di Francesco Pepe)
     const leadFrancesco = await c.env.DB.prepare(`
       SELECT id FROM leads 
-      WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' 
+      WHERE nomeRichiedente LIKE '%Francesco%' AND cognomeRichiedente LIKE '%Pepe%' 
       LIMIT 1
     `).first()
 
