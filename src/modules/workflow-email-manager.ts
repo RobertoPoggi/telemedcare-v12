@@ -160,22 +160,38 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         .letterhead {
             border-top: 3px solid #0066cc;
             border-bottom: 3px solid #0066cc;
-            padding: 20px 0;
+            padding: 20px;
             margin-bottom: 30px;
-            text-align: center;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
         }
         
-        .letterhead h3 {
+        .letterhead-logo {
+            flex-shrink: 0;
+            margin-right: 30px;
+        }
+        
+        .letterhead-logo img {
+            max-width: 180px;
+            height: auto;
+        }
+        
+        .letterhead-info {
+            flex-grow: 1;
+            text-align: right;
+        }
+        
+        .letterhead-info h3 {
             font-size: 18px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 0 0 10px 0;
             color: #0066cc;
         }
         
-        .letterhead p {
+        .letterhead-info p {
             font-size: 11px;
             margin: 3px 0;
-            text-align: center;
         }
         
         .footer {
@@ -204,12 +220,17 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
 <body>
     <!-- Carta intestata ufficiale Medica GB -->
     <div class="letterhead">
-        <h3>Medica GB S.r.l.</h3>
-        <p>Corso Garibaldi 34 – 20121 Milano</p>
-        <p>PEC: medicagbsrl@pecimprese.it</p>
-        <p>E.mail: info@medicagb.it</p>
-        <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
-        <p>www.medicagb.it</p>
+        <div class="letterhead-logo">
+            <img src="/images/medicagb-logo.png" alt="Medica GB Logo">
+        </div>
+        <div class="letterhead-info">
+            <h3>Medica GB S.r.l.</h3>
+            <p>Corso Garibaldi 34 – 20121 Milano</p>
+            <p>PEC: medicagbsrl@pecimprese.it</p>
+            <p>E.mail: info@medicagb.it</p>
+            <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
+            <p>www.medicagb.it</p>
+        </div>
     </div>
     
     <h1>SCRITTURA PRIVATA</h1>
