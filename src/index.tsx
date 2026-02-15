@@ -10611,24 +10611,33 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         // Calcola prezzo mensile (totale / 12 mesi)
         const prezzoTotale = contractData.prezzoTotale || 585.60
         const prezzoMensile = (prezzoTotale / 12).toFixed(2)
+        
+        // Calcola data scadenza (1 anno dalla firma - 1 giorno)
+        const dataFirma = new Date(contractData.dataFirma)
+        const dataScadenza = new Date(dataFirma)
+        dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
+        dataScadenza.setDate(dataScadenza.getDate() - 1)
 
         await c.env.DB.prepare(`
           INSERT INTO contracts (
-            id, leadId, codice_contratto, servizio, piano,
+            id, leadId, codice_contratto, tipo_contratto, servizio, piano,
             prezzo_mensile, durata_mesi, prezzo_totale, 
-            status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, 12, ?, 'SIGNED', datetime('now'), datetime('now'))
+            data_scadenza, status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', datetime('now'), datetime('now'))
         `).bind(
           contractId,
           lead.id,
           contractCode,
+          contractData.piano || 'BASE', // tipo_contratto = piano (BASE/AVANZATO)
           contractData.servizio || 'eCura PRO',
           contractData.piano || 'BASE',
           parseFloat(prezzoMensile),
-          prezzoTotale
+          prezzoTotale,
+          dataScadenza.toISOString().split('T')[0] // data_scadenza in formato YYYY-MM-DD
         ).run()
 
         console.log(`✅ Contratto inserito: ${contractCode} per ${contractData.nome} ${contractData.cognome}`)
+        console.log(`   Data firma: ${contractData.dataFirma} → Scadenza: ${dataScadenza.toISOString().split('T')[0]}`)
         
         results.push({
           success: true,
@@ -10636,7 +10645,8 @@ app.post('/api/contracts/bulk-manual', async (c) => {
           contractId,
           contractCode,
           cliente: `${contractData.nome} ${contractData.cognome}`,
-          note: `Date firma/scadenza da aggiornare manualmente: ${contractData.dataFirma}`
+          dataFirma: contractData.dataFirma,
+          dataScadenza: dataScadenza.toISOString().split('T')[0]
         })
         
       } catch (error) {
@@ -10735,14 +10745,19 @@ app.post('/api/contracts/update-dates', async (c) => {
 
         console.log(`📄 Contratto trovato: ${contract.codice_contratto}`)
 
-        // NOTA: Il DB live non ha campi data_firma/data_scadenza nello schema corrente
-        // Le date sono tracciate solo in created_at e signed_at
-        // Per ora salviamo solo un log, le date andranno gestite in altro modo
-        
-        console.log(`⚠️ AVVISO: Date firma/scadenza NON salvate nel DB (campi non presenti)`)
-        console.log(`   Data firma richiesta: ${contractData.data_firma}`)
-        console.log(`   Data scadenza richiesta: ${contractData.data_scadenza}`)
-        console.log(`   Soluzione: aggiungere campi allo schema o usare signed_at`)
+        // Aggiorna data_scadenza (campo esistente nel DB)
+        await c.env.DB.prepare(`
+          UPDATE contracts 
+          SET data_scadenza = ?,
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(
+          contractData.data_scadenza,
+          contract.id
+        ).run()
+
+        console.log(`✅ Data scadenza aggiornata per contratto ${contract.codice_contratto}: ${contractData.data_scadenza}`)
+        console.log(`   Nota: data_firma non salvata (campo non presente in DB, usa created_at)`)
         
         results.push({
           success: true,
@@ -10750,8 +10765,9 @@ app.post('/api/contracts/update-dates', async (c) => {
           contractId: contract.id,
           contractCode: contract.codice_contratto,
           cliente: `${contractData.nome} ${contractData.cognome}`,
-          warning: 'Date NON salvate - schema DB non supporta data_firma/data_scadenza',
-          dataRichiesta: {
+          dataScadenza: contractData.data_scadenza,
+          note: `Data scadenza aggiornata. Data firma: ${contractData.data_firma} (non salvata, usa created_at)`
+        })
             firma: contractData.data_firma,
             scadenza: contractData.data_scadenza
           }
