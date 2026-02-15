@@ -15796,16 +15796,25 @@ app.post('/api/assistiti/add-three', async (c) => {
   }
 })
 
-// POST /api/assistiti/update-three-with-data - Aggiorna i 3 assistiti con dati da leads + IMEI
+// POST /api/assistiti/update-three-with-data - Aggiorna i 3 assistiti con dati da leads + IMEI + Servizio + Piano
 app.post('/api/assistiti/update-three-with-data', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
+    // Verifica se colonne servizio e piano esistono, altrimenti aggiungile
+    try {
+      await c.env.DB.prepare('SELECT servizio, piano FROM assistiti LIMIT 1').first()
+    } catch {
+      console.log('🔧 Aggiunta colonne servizio e piano...')
+      await c.env.DB.prepare('ALTER TABLE assistiti ADD COLUMN servizio TEXT').run()
+      await c.env.DB.prepare('ALTER TABLE assistiti ADD COLUMN piano TEXT').run()
+    }
+
     const updates = []
 
-    // 1. Giovanni Locatelli - IMEI 862346607387161 (VITAL CARE dalla screenshot)
+    // 1. Giovanni Locatelli - eCura PREMIUM BASE - IMEI 862346607387161 (VITAL CARE)
     const leadAlberto = await c.env.DB.prepare(`
       SELECT 
         id,
@@ -15824,7 +15833,9 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         SET 
           email = ?,
           telefono = ?,
-          imei = '862346607387161'
+          imei = '862346607387161',
+          servizio = 'eCura PREMIUM',
+          piano = 'BASE'
         WHERE nome = 'Giovanni Locatelli'
       `).bind(
         leadAlberto.emailRichiedente || null,
@@ -15836,11 +15847,13 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         email: leadAlberto.emailRichiedente,
         telefono: leadAlberto.telefonoRichiedente,
         imei: '862346607387161',
-        dispositivo: 'VITAL CARE'
+        servizio: 'eCura PREMIUM',
+        piano: 'BASE',
+        dispositivo: 'SiDLY VITAL CARE'
       })
     }
 
-    // 2. Claudio Macchi - IMEI 862608061148517 (CARE dalla screenshot)
+    // 2. Claudio Macchi - eCura CARE PRO AVANZATO - IMEI 862608061148517 (CARE PRO)
     const leadClaudio = await c.env.DB.prepare(`
       SELECT 
         id,
@@ -15857,7 +15870,9 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         SET 
           email = ?,
           telefono = ?,
-          imei = '862608061148517'
+          imei = '862608061148517',
+          servizio = 'eCura CARE PRO',
+          piano = 'AVANZATO'
         WHERE nome = 'Claudio Macchi'
       `).bind(
         leadClaudio.emailRichiedente || null,
@@ -15869,11 +15884,13 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         email: leadClaudio.emailRichiedente,
         telefono: leadClaudio.telefonoRichiedente,
         imei: '862608061148517',
-        dispositivo: 'CARE'
+        servizio: 'eCura CARE PRO',
+        piano: 'AVANZATO',
+        dispositivo: 'SiDLY CARE PRO'
       })
     }
 
-    // 3. Anna De Marco - IMEI 862608066560916 (CARE dalla screenshot)
+    // 3. Anna De Marco - IMEI 862608066560916 (CARE PRO)
     const leadFrancesco = await c.env.DB.prepare(`
       SELECT 
         id,
@@ -15890,7 +15907,9 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         SET 
           email = ?,
           telefono = ?,
-          imei = '862608066560916'
+          imei = '862608066560916',
+          servizio = 'eCura CARE PRO',
+          piano = 'BASE'
         WHERE nome = 'Anna De Marco'
       `).bind(
         leadFrancesco.emailRichiedente || null,
@@ -15902,15 +15921,17 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
         email: leadFrancesco.emailRichiedente,
         telefono: leadFrancesco.telefonoRichiedente,
         imei: '862608066560916',
-        dispositivo: 'CARE'
+        servizio: 'eCura CARE PRO',
+        piano: 'BASE',
+        dispositivo: 'SiDLY CARE PRO'
       })
     }
 
-    console.log('✅ 3 assistiti aggiornati con dati completi')
+    console.log('✅ 3 assistiti aggiornati con dati completi + servizio + piano')
 
     return c.json({ 
       success: true, 
-      message: 'Aggiornati 3 assistiti con dati da leads + IMEI',
+      message: 'Aggiornati 3 assistiti con dati completi, servizio e piano',
       updates
     })
   } catch (error) {

@@ -12937,7 +12937,7 @@ startxref
     `).first();return s?(await t.env.DB.prepare(`
         INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
         VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
-      `).bind(`ASS-DEMARCO-ANNA-${Date.now()}`,"Anna De Marco",null,null,null,s.id,e).run(),a.push({nome:"Anna De Marco",lead:"Francesco Pepe",lead_id:s.id})):a.push({nome:"Anna De Marco",lead:"Francesco Pepe",error:"Lead non trovato"}),console.log("✅ 3 assistiti aggiunti con successo"),t.json({success:!0,message:"Aggiunti 3 assistiti",assistiti:a})}catch(e){return console.error("❌ Errore aggiunta assistiti:",e),t.json({success:!1,error:"Errore aggiunta assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/update-three-with-data",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=[],a=await t.env.DB.prepare(`
+      `).bind(`ASS-DEMARCO-ANNA-${Date.now()}`,"Anna De Marco",null,null,null,s.id,e).run(),a.push({nome:"Anna De Marco",lead:"Francesco Pepe",lead_id:s.id})):a.push({nome:"Anna De Marco",lead:"Francesco Pepe",error:"Lead non trovato"}),console.log("✅ 3 assistiti aggiunti con successo"),t.json({success:!0,message:"Aggiunti 3 assistiti",assistiti:a})}catch(e){return console.error("❌ Errore aggiunta assistiti:",e),t.json({success:!1,error:"Errore aggiunta assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/update-three-with-data",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);try{await t.env.DB.prepare("SELECT servizio, piano FROM assistiti LIMIT 1").first()}catch{console.log("🔧 Aggiunta colonne servizio e piano..."),await t.env.DB.prepare("ALTER TABLE assistiti ADD COLUMN servizio TEXT").run(),await t.env.DB.prepare("ALTER TABLE assistiti ADD COLUMN piano TEXT").run()}const e=[],a=await t.env.DB.prepare(`
       SELECT 
         id,
         emailRichiedente,
@@ -12952,9 +12952,11 @@ startxref
         SET 
           email = ?,
           telefono = ?,
-          imei = '862346607387161'
+          imei = '862346607387161',
+          servizio = 'eCura PREMIUM',
+          piano = 'BASE'
         WHERE nome = 'Giovanni Locatelli'
-      `).bind(a.emailRichiedente||null,a.telefonoRichiedente||null).run(),e.push({nome:"Giovanni Locatelli",email:a.emailRichiedente,telefono:a.telefonoRichiedente,imei:"862346607387161",dispositivo:"VITAL CARE"}));const i=await t.env.DB.prepare(`
+      `).bind(a.emailRichiedente||null,a.telefonoRichiedente||null).run(),e.push({nome:"Giovanni Locatelli",email:a.emailRichiedente,telefono:a.telefonoRichiedente,imei:"862346607387161",servizio:"eCura PREMIUM",piano:"BASE",dispositivo:"SiDLY VITAL CARE"}));const i=await t.env.DB.prepare(`
       SELECT 
         id,
         emailRichiedente,
@@ -12967,9 +12969,11 @@ startxref
         SET 
           email = ?,
           telefono = ?,
-          imei = '862608061148517'
+          imei = '862608061148517',
+          servizio = 'eCura CARE PRO',
+          piano = 'AVANZATO'
         WHERE nome = 'Claudio Macchi'
-      `).bind(i.emailRichiedente||null,i.telefonoRichiedente||null).run(),e.push({nome:"Claudio Macchi",email:i.emailRichiedente,telefono:i.telefonoRichiedente,imei:"862608061148517",dispositivo:"CARE"}));const r=await t.env.DB.prepare(`
+      `).bind(i.emailRichiedente||null,i.telefonoRichiedente||null).run(),e.push({nome:"Claudio Macchi",email:i.emailRichiedente,telefono:i.telefonoRichiedente,imei:"862608061148517",servizio:"eCura CARE PRO",piano:"AVANZATO",dispositivo:"SiDLY CARE PRO"}));const r=await t.env.DB.prepare(`
       SELECT 
         id,
         emailRichiedente,
@@ -12982,9 +12986,11 @@ startxref
         SET 
           email = ?,
           telefono = ?,
-          imei = '862608066560916'
+          imei = '862608066560916',
+          servizio = 'eCura CARE PRO',
+          piano = 'BASE'
         WHERE nome = 'Anna De Marco'
-      `).bind(r.emailRichiedente||null,r.telefonoRichiedente||null).run(),e.push({nome:"Anna De Marco",email:r.emailRichiedente,telefono:r.telefonoRichiedente,imei:"862608066560916",dispositivo:"CARE"})),console.log("✅ 3 assistiti aggiornati con dati completi"),t.json({success:!0,message:"Aggiornati 3 assistiti con dati da leads + IMEI",updates:e})}catch(e){return console.error("❌ Errore aggiornamento assistiti:",e),t.json({success:!1,error:"Errore aggiornamento assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/dispositivi/setup-table",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(await t.env.DB.prepare(`
+      `).bind(r.emailRichiedente||null,r.telefonoRichiedente||null).run(),e.push({nome:"Anna De Marco",email:r.emailRichiedente,telefono:r.telefonoRichiedente,imei:"862608066560916",servizio:"eCura CARE PRO",piano:"BASE",dispositivo:"SiDLY CARE PRO"})),console.log("✅ 3 assistiti aggiornati con dati completi + servizio + piano"),t.json({success:!0,message:"Aggiornati 3 assistiti con dati completi, servizio e piano",updates:e})}catch(e){return console.error("❌ Errore aggiornamento assistiti:",e),t.json({success:!1,error:"Errore aggiornamento assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/dispositivi/setup-table",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(await t.env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS dispositivi (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         serial_number TEXT UNIQUE NOT NULL,
