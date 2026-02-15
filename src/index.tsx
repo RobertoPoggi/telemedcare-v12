@@ -10980,7 +10980,7 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
         dataFirma: '2026-02-03', // 03/02/2026
         prezzoBase: 480.00,
         prezzoTotale: 585.60,
-        pdfUrl: '/contratti_firmati/03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf'
+        pdfUrl: '/contratti/03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf'
       },
       {
         nome: 'Francesco',
@@ -10994,7 +10994,7 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
         dataFirma: '2026-01-27', // 27/01/2026
         prezzoBase: 480.00,
         prezzoTotale: 585.60,
-        pdfUrl: '/contratti_firmati/27.01.2026_Pepe Francesco Contratto.pdf'
+        pdfUrl: '/contratti/27.01.2026_Pepe Francesco Contratto.pdf'
       },
       {
         nome: 'Claudio',
@@ -11008,7 +11008,7 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
         dataFirma: '2026-02-01', // 01/02/2026 (stimata)
         prezzoBase: 480.00,
         prezzoTotale: 585.60,
-        pdfUrl: '/contratti_firmati/Documento x Claudio Macchi.pdf'
+        pdfUrl: '/contratti/Documento x Claudio Macchi.pdf'
       }
     ]
 
