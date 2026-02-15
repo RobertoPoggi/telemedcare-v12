@@ -10489,17 +10489,16 @@ app.post('/api/contracts/bulk-manual', async (c) => {
 
         await c.env.DB.prepare(`
           INSERT INTO contracts (
-            id, leadId, codice_contratto, servizio, piano, dispositivo,
+            id, leadId, codice_contratto, servizio, piano,
             prezzo_base, prezzo_totale, status, 
             data_creazione, data_firma, data_inizio_validita, data_scadenza_validita
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'SIGNED', ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'SIGNED', ?, ?, ?, ?)
         `).bind(
           contractId,
           lead.id,
           contractCode,
           contractData.servizio || 'eCura PRO',
           contractData.piano || 'BASE',
-          contractData.dispositivo || 'SIDLY VITAL CARE',
           contractData.prezzoBase || 480.00,
           contractData.prezzoTotale || 585.60,
           contractData.dataFirma,
