@@ -6987,15 +6987,18 @@ ${370+e.length}
                 // Carica contratti
                 const contractsResponse = await fetch('/api/contratti?limit=200');
                 const contractsData = await contractsResponse.json();
-                const contracts = contractsData.contratti || [];
+                const allContracts = contractsData.contratti || [];
                 
-                // Salva i contratti globalmente per i filtri
-                window.allContracts = contracts;
+                // Salva TUTTI i contratti globalmente per i filtri (inclusi SENT)
+                window.allContracts = allContracts;
                 
-                // Calcola KPI dai contratti reali
+                // Filtra SOLO contratti SIGNED per KPI e revenue
+                const signedContracts = allContracts.filter(c => c.status === 'SIGNED');
+                
+                // Calcola KPI dai contratti FIRMATI
                 const totalLeads = leads.length;
-                const totalContracts = contracts.length;
-                const totalRevenue = contracts.reduce((sum, c) => sum + (parseFloat(c.prezzo_totale) || 0), 0);
+                const totalContracts = signedContracts.length;
+                const totalRevenue = signedContracts.reduce((sum, c) => sum + (parseFloat(c.prezzo_totale) || 0), 0);
                 const conversionRate = totalLeads > 0 ? ((totalContracts / totalLeads) * 100).toFixed(1) + '%' : '0%';
                 const averageOrderValue = totalContracts > 0 ? (totalRevenue / totalContracts).toFixed(2) : '0';
 
@@ -7006,11 +7009,12 @@ ${370+e.length}
                 document.getElementById('kpiConversion').textContent = conversionRate;
                 document.getElementById('kpiAov').textContent = \`€\${averageOrderValue}\`;
 
-                // Analizza per servizio (LEADS + CONTRATTI)
-                const serviceData = analyzeByServiceWithContracts(leads, contracts);
+                // Analizza per servizio (LEADS + CONTRATTI SIGNED)
+                const serviceData = analyzeByServiceWithContracts(leads, signedContracts);
                 updateServiceMetrics(serviceData);
 
-                renderContractsTable(contracts);
+                // Mostra TUTTI i contratti nella tabella (inclusi SENT)
+                renderContractsTable(allContracts);
                 
                 // Aggiungi event listeners per i filtri
                 document.getElementById('filterScadenza').addEventListener('change', applyContractFilters);
