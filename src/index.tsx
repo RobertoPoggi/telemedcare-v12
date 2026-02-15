@@ -10486,29 +10486,32 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         const contractId = `contract-${contractData.cognome.toLowerCase()}-${Date.now()}`
         const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${new Date(contractData.dataFirma).getFullYear()}_${Date.now()}`
         
+        // Calcola prezzo mensile (totale / 12 mesi)
+        const prezzoTotale = contractData.prezzoTotale || 585.60
+        const prezzoMensile = (prezzoTotale / 12).toFixed(2)
+        
         // Calcola data scadenza (1 anno dalla firma)
-        const dataInizio = new Date(contractData.dataFirma)
-        const dataScadenza = new Date(dataInizio)
+        const dataFirma = new Date(contractData.dataFirma)
+        const dataScadenza = new Date(dataFirma)
         dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
         dataScadenza.setDate(dataScadenza.getDate() - 1)
 
         await c.env.DB.prepare(`
           INSERT INTO contracts (
             id, leadId, codice_contratto, servizio, piano,
-            prezzo_base, prezzo_totale, status, 
-            data_creazione, data_firma, data_inizio_validita, data_scadenza_validita
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'SIGNED', ?, ?, ?, ?)
+            prezzo_mensile, durata_mesi, prezzo_totale, 
+            status, data_firma, data_scadenza,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, 12, ?, 'SIGNED', ?, ?, datetime('now'), datetime('now'))
         `).bind(
           contractId,
           lead.id,
           contractCode,
           contractData.servizio || 'eCura PRO',
           contractData.piano || 'BASE',
-          contractData.prezzoBase || 480.00,
-          contractData.prezzoTotale || 585.60,
+          parseFloat(prezzoMensile),
+          prezzoTotale,
           contractData.dataFirma,
-          contractData.dataFirma,
-          dataInizio.toISOString().split('T')[0],
           dataScadenza.toISOString().split('T')[0]
         ).run()
 
