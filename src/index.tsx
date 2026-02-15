@@ -15677,9 +15677,9 @@ app.post('/api/assistiti/add-three', async (c) => {
       `).bind(
         `ASS-LOCATELLI-GIOVANNI-${Date.now()}`,
         'Giovanni Locatelli',
-        '',
-        '',
-        '',
+        null,
+        null,
+        null,
         leadAlberto.id,
         timestamp
       ).run()
@@ -15714,9 +15714,9 @@ app.post('/api/assistiti/add-three', async (c) => {
       `).bind(
         `ASS-MACCHI-CLAUDIO-${Date.now()}`,
         'Claudio Macchi',
-        '',
-        '',
-        '',
+        null,
+        null,
+        null,
         leadClaudio.id,
         timestamp
       ).run()
@@ -15750,9 +15750,9 @@ app.post('/api/assistiti/add-three', async (c) => {
       `).bind(
         `ASS-DEMARCO-ANNA-${Date.now()}`,
         'Anna De Marco',
-        '',
-        '',
-        '',
+        null,
+        null,
+        null,
         leadFrancesco.id,
         timestamp
       ).run()
