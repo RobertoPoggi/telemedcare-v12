@@ -10941,90 +10941,54 @@ app.post('/api/contracts/update-dates', async (c) => {
   }
 })
 
-// POST /api/contracts/fix-manual-3 - Cancella e re-inserisce i 3 contratti sbagliati
+// POST /api/contracts/fix-manual-3 - Aggiorna i 3 contratti esistenti (NO cancellazione!)
 app.post('/api/contracts/fix-manual-3', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
-    console.log('🔧 [FIX MANUAL 3] Cancellazione e re-inserimento 3 contratti...')
+    console.log('🔧 [FIX MANUAL 3] Aggiornamento 3 contratti esistenti (senza cancellazione)...')
 
-    // Step 1: Cancella TUTTI i contratti esistenti per Locatelli, Pepe, Macchi
-    // (sia con ID vecchio che con codice_contratto nuovo)
-    const leadSurnames = ['LOCATELLI', 'PEPE', 'MACCHI']
-    
-    for (const surname of leadSurnames) {
-      try {
-        // Cancella per ID vecchio (contract-locatelli-...)
-        await c.env.DB.prepare(`DELETE FROM contracts WHERE id LIKE ?`).bind(`contract-${surname.toLowerCase()}-%`).run()
-        console.log(`🗑️ Cancellati contratti con ID vecchio: contract-${surname.toLowerCase()}-*`)
-        
-        // Cancella per ID nuovo (CONTRACT_CTR-LOCATELLI-2026_...)
-        await c.env.DB.prepare(`DELETE FROM contracts WHERE id LIKE ?`).bind(`CONTRACT_CTR-${surname}-2026_%`).run()
-        console.log(`🗑️ Cancellati contratti con ID nuovo: CONTRACT_CTR-${surname}-2026_*`)
-        
-        // Cancella per codice_contratto (CTR-LOCATELLI-2026)
-        await c.env.DB.prepare(`DELETE FROM contracts WHERE codice_contratto = ?`).bind(`CTR-${surname}-2026`).run()
-        console.log(`🗑️ Cancellati contratti con codice: CTR-${surname}-2026`)
-        
-      } catch (err) {
-        console.log(`⚠️ Errore cancellazione per ${surname}:`, err)
-      }
-    }
-
-    // Step 2: Prepara i dati corretti dei 3 contratti
+    // Dati corretti dei 3 contratti
     const correctContracts = [
       {
         nome: 'Alberto',
         cognome: 'Locatelli',
-        nomeAssistito: 'Giovanni',
-        cognomeAssistito: 'Locatelli',
-        email: 'alberto.locatelli@example.com',
-        servizio: 'eCura PRO',
-        piano: 'BASE',
-        dispositivo: 'SIDLY VITAL CARE',
+        codiceContratto: 'CTR-LOCATELLI-2026',
         dataFirma: '2026-02-03', // 03/02/2026
-        prezzoBase: 480.00,
+        dataScadenza: '2027-02-02', // +12 mesi -1 giorno
         prezzoTotale: 585.60,
+        prezzoMensile: 48.80,
         pdfUrl: '/contratti/03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf'
       },
       {
         nome: 'Francesco',
         cognome: 'Pepe',
-        nomeAssistito: 'Francesco',
-        cognomeAssistito: 'Pepe',
-        email: 'francesco.pepe@example.com',
-        servizio: 'eCura PRO',
-        piano: 'BASE',
-        dispositivo: 'SIDLY VITAL CARE',
+        codiceContratto: 'CTR-PEPE-2026',
         dataFirma: '2026-01-27', // 27/01/2026
-        prezzoBase: 480.00,
+        dataScadenza: '2027-01-26', // +12 mesi -1 giorno
         prezzoTotale: 585.60,
+        prezzoMensile: 48.80,
         pdfUrl: '/contratti/27.01.2026_Pepe Francesco Contratto.pdf'
       },
       {
         nome: 'Claudio',
         cognome: 'Macchi',
-        nomeAssistito: 'Claudio',
-        cognomeAssistito: 'Macchi',
-        email: 'claudio.macchi@example.com',
-        servizio: 'eCura PRO',
-        piano: 'BASE',
-        dispositivo: 'SIDLY VITAL CARE',
-        dataFirma: '2026-02-01', // 01/02/2026 (stimata)
-        prezzoBase: 480.00,
+        codiceContratto: 'CTR-MACCHI-2026',
+        dataFirma: '2026-02-01', // 01/02/2026
+        dataScadenza: '2027-01-31', // +12 mesi -1 giorno
         prezzoTotale: 585.60,
+        prezzoMensile: 48.80,
         pdfUrl: '/contratti/Documento x Claudio Macchi.pdf'
       }
     ]
 
-    // Step 3: Re-inserisci i contratti con i dati corretti
     const results = []
 
     for (const contractData of correctContracts) {
       try {
-        // Trova il lead esistente
+        // 1. Trova il lead esistente
         const lead = await c.env.DB.prepare(`
           SELECT * FROM leads 
           WHERE UPPER(cognomeRichiedente) = UPPER(?) 
@@ -11036,65 +11000,93 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
           throw new Error(`❌ Lead NON TROVATO per ${contractData.nome} ${contractData.cognome}`)
         }
 
-        // Genera ID e codice contratto nel formato corretto
-        // Formato: CTR-COGNOME-ANNO (es: CTR-LOCATELLI-2026)
-        const timestamp = Date.now()
-        const contractCode = `CTR-${contractData.cognome.toUpperCase()}-2026`
-        const contractId = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}` // ID univoco
+        // 2. Verifica se esiste già un contratto per questo lead
+        const existingContract = await c.env.DB.prepare(`
+          SELECT id, codice_contratto, status, data_scadenza, pdf_url FROM contracts 
+          WHERE leadId = ?
+          LIMIT 1
+        `).bind(lead.id).first() as any
 
-        // Calcola prezzo mensile
-        const prezzoMensile = (contractData.prezzoTotale / 12).toFixed(2)
+        if (existingContract) {
+          // UPDATE del contratto esistente (preserva tutti gli altri dati!)
+          console.log(`✏️ Aggiorno contratto esistente: ${existingContract.id} → ${contractData.codiceContratto}`)
+          
+          await c.env.DB.prepare(`
+            UPDATE contracts
+            SET 
+              codice_contratto = ?,
+              data_scadenza = ?,
+              prezzo_totale = ?,
+              prezzo_mensile = ?,
+              pdf_url = ?,
+              updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(
+            contractData.codiceContratto,
+            contractData.dataScadenza,
+            contractData.prezzoTotale,
+            contractData.prezzoMensile,
+            contractData.pdfUrl,
+            existingContract.id
+          ).run()
 
-        // Calcola data scadenza (firma + 1 anno - 1 giorno)
-        const dataFirma = new Date(contractData.dataFirma)
-        const dataScadenza = new Date(dataFirma)
-        dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
-        dataScadenza.setDate(dataScadenza.getDate() - 1)
+          results.push({
+            success: true,
+            action: 'UPDATE',
+            contractId: existingContract.id,
+            contractCode: contractData.codiceContratto,
+            oldCode: existingContract.codice_contratto,
+            cliente: `${contractData.nome} ${contractData.cognome}`,
+            dataScadenza: contractData.dataScadenza,
+            pdfUrl: contractData.pdfUrl,
+            note: `Aggiornato contratto esistente (preservati: status, firma_digitale, data_invio, etc.)`
+          })
 
-        const templateName = `Template_Contratto_${contractData.piano}_TeleMedCare`
+        } else {
+          // INSERT nuovo contratto (se non esiste)
+          console.log(`➕ Creo nuovo contratto per ${contractData.nome} ${contractData.cognome}`)
+          
+          const timestamp = Date.now()
+          const contractId = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}`
+          const templateName = `Template_Contratto_BASE_TeleMedCare`
 
-        // Inserisci il contratto corretto
-        await c.env.DB.prepare(`
-          INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
-            contenuto_html, servizio, piano,
-            prezzo_mensile, durata_mesi, prezzo_totale, 
-            data_scadenza, status, pdf_url,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', ?, datetime('now'), datetime('now'))
-        `).bind(
-          contractId, // ID = codice_contratto
-          lead.id,
-          contractCode,
-          contractData.piano,
-          templateName,
-          '',
-          contractData.servizio,
-          contractData.piano,
-          parseFloat(prezzoMensile),
-          contractData.prezzoTotale,
-          dataScadenza.toISOString().split('T')[0],
-          contractData.pdfUrl
-        ).run()
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+              contenuto_html, servizio, piano,
+              prezzo_mensile, durata_mesi, prezzo_totale, 
+              data_scadenza, status, pdf_url,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', ?, datetime('now'), datetime('now'))
+          `).bind(
+            contractId,
+            lead.id,
+            contractData.codiceContratto,
+            'BASE',
+            templateName,
+            '',
+            'eCura PRO',
+            'BASE',
+            contractData.prezzoMensile,
+            contractData.prezzoTotale,
+            contractData.dataScadenza,
+            contractData.pdfUrl
+          ).run()
 
-        console.log(`✅ Contratto corretto inserito: ${contractCode}`)
-        console.log(`   Lead: ${lead.id} - ${contractData.nome} ${contractData.cognome}`)
-        console.log(`   Data firma: ${contractData.dataFirma} → Scadenza: ${dataScadenza.toISOString().split('T')[0]}`)
-        console.log(`   PDF: ${contractData.pdfUrl}`)
-
-        results.push({
-          success: true,
-          leadId: lead.id,
-          contractId: contractId,
-          contractCode: contractCode,
-          cliente: `${contractData.nome} ${contractData.cognome}`,
-          dataFirma: contractData.dataFirma,
-          dataScadenza: dataScadenza.toISOString().split('T')[0],
-          pdfUrl: contractData.pdfUrl
-        })
+          results.push({
+            success: true,
+            action: 'INSERT',
+            contractId: contractId,
+            contractCode: contractData.codiceContratto,
+            cliente: `${contractData.nome} ${contractData.cognome}`,
+            dataScadenza: contractData.dataScadenza,
+            pdfUrl: contractData.pdfUrl,
+            note: 'Nuovo contratto creato'
+          })
+        }
 
       } catch (error) {
-        console.error(`❌ Errore inserimento contratto per ${contractData.nome} ${contractData.cognome}:`, error)
+        console.error(`❌ Errore per ${contractData.nome} ${contractData.cognome}:`, error)
         results.push({
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -11107,7 +11099,7 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
 
     return c.json({
       success: successCount === 3,
-      message: `✅ Corretti ${successCount}/3 contratti`,
+      message: `✅ Aggiornati ${successCount}/3 contratti (senza perdita dati)`,
       results
     })
 
@@ -11115,7 +11107,7 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
     console.error('❌ Errore fix manual 3 contratti:', error)
     return c.json({
       success: false,
-      error: 'Errore durante la correzione dei contratti',
+      error: 'Errore durante l\'aggiornamento dei contratti',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
