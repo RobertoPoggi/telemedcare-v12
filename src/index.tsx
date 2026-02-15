@@ -10735,10 +10735,11 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         }
 
         // 3. Crea il contratto
-        // IMPORTANTE: id e codice_contratto devono essere UGUALI!
+        // Formato corretto: codice = CTR-COGNOME-ANNO, id = CONTRACT_CTR-COGNOME-ANNO_TIMESTAMP
         const timestamp = Date.now()
-        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${new Date(contractData.dataFirma).getFullYear()}_${timestamp}`
-        const contractId = contractCode // ID = codice_contratto
+        const anno = new Date(contractData.dataFirma).getFullYear()
+        const contractCode = `CTR-${contractData.cognome.toUpperCase()}-${anno}`
+        const contractId = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-${anno}_${timestamp}` // ID univoco
         
         // Calcola prezzo mensile (totale / 12 mesi)
         const prezzoTotale = contractData.prezzoTotale || 585.60
@@ -11028,10 +11029,11 @@ app.post('/api/contracts/fix-manual-3', async (c) => {
           throw new Error(`❌ Lead NON TROVATO per ${contractData.nome} ${contractData.cognome}`)
         }
 
-        // Genera ID corretto (ID = codice_contratto!)
+        // Genera ID e codice contratto nel formato corretto
+        // Formato: CTR-COGNOME-ANNO (es: CTR-LOCATELLI-2026)
         const timestamp = Date.now()
-        const contractCode = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}`
-        const contractId = contractCode // ID = codice_contratto
+        const contractCode = `CTR-${contractData.cognome.toUpperCase()}-2026`
+        const contractId = `CONTRACT_CTR-${contractData.cognome.toUpperCase()}-2026_${timestamp}` // ID univoco
 
         // Calcola prezzo mensile
         const prezzoMensile = (contractData.prezzoTotale / 12).toFixed(2)
