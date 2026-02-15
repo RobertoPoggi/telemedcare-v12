@@ -10617,20 +10617,27 @@ app.post('/api/contracts/bulk-manual', async (c) => {
         const dataScadenza = new Date(dataFirma)
         dataScadenza.setFullYear(dataScadenza.getFullYear() + 1)
         dataScadenza.setDate(dataScadenza.getDate() - 1)
+        
+        const piano = contractData.piano || 'BASE'
+        const templateName = `Template_Contratto_${piano}_TeleMedCare`
 
         await c.env.DB.prepare(`
           INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, servizio, piano,
+            id, leadId, codice_contratto, tipo_contratto, template_utilizzato,
+            contenuto_html, servizio, piano,
             prezzo_mensile, durata_mesi, prezzo_totale, 
-            data_scadenza, status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', datetime('now'), datetime('now'))
+            data_scadenza, status, 
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 'SIGNED', datetime('now'), datetime('now'))
         `).bind(
           contractId,
           lead.id,
           contractCode,
-          contractData.piano || 'BASE', // tipo_contratto = piano (BASE/AVANZATO)
+          piano, // tipo_contratto = piano (BASE/AVANZATO)
+          templateName, // Template_Contratto_BASE_TeleMedCare
+          '', // contenuto_html vuoto per ora
           contractData.servizio || 'eCura PRO',
-          contractData.piano || 'BASE',
+          piano,
           parseFloat(prezzoMensile),
           prezzoTotale,
           dataScadenza.toISOString().split('T')[0] // data_scadenza in formato YYYY-MM-DD
