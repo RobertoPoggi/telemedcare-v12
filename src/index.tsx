@@ -9731,19 +9731,22 @@ app.get('/test-insert-manual-contracts', async (c) => {
     <div class="contract-list">
       <h3>Contratti da inserire per lead esistenti:</h3>
       <div class="contract-item">
-        <strong>1. Giovanni Locatelli</strong><br>
+        <strong>1. Giovanni Locatelli (assistito)</strong><br>
+        Lead: Alberto Locatelli (figlio/richiedente)<br>
         Servizio: eCura PRO BASE - SIDLY VITAL CARE<br>
         Data firma: 03/02/2026<br>
         Prezzo: €480.00 + IVA = €585.60
       </div>
       <div class="contract-item">
         <strong>2. Francesco Pepe</strong><br>
+        Lead: Francesco Pepe (intestatario = richiedente)<br>
         Servizio: eCura PRO BASE<br>
         Data firma: 27/01/2026<br>
         Prezzo: €480.00 + IVA = €585.60
       </div>
       <div class="contract-item">
         <strong>3. Claudio Macchi</strong><br>
+        Lead: Claudio Macchi (intestatario = richiedente)<br>
         Servizio: eCura PRO BASE<br>
         Data firma: 01/02/2026<br>
         Prezzo: €480.00 + IVA = €585.60
@@ -9767,9 +9770,11 @@ app.get('/test-insert-manual-contracts', async (c) => {
       
       const contracts = [
         {
-          nome: 'Giovanni',
+          nome: 'Alberto',
           cognome: 'LOCATELLI',
-          email: 'giovanni.locatelli@example.com',
+          nomeAssistito: 'Giovanni',
+          cognomeAssistito: 'LOCATELLI',
+          email: 'alberto.locatelli@example.com',
           telefono: '+39 333 1234001',
           servizio: 'eCura PRO',
           piano: 'BASE',
