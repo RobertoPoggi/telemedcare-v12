@@ -10768,10 +10768,6 @@ app.post('/api/contracts/update-dates', async (c) => {
           dataScadenza: contractData.data_scadenza,
           note: `Data scadenza aggiornata. Data firma: ${contractData.data_firma} (non salvata, usa created_at)`
         })
-            firma: contractData.data_firma,
-            scadenza: contractData.data_scadenza
-          }
-        })
         
       } catch (error) {
         console.error(`❌ Errore aggiornamento date per ${contractData.nome} ${contractData.cognome}:`, error)
