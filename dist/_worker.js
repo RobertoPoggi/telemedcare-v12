@@ -12913,21 +12913,27 @@ startxref
           ALTER TABLE leads 
           ADD COLUMN ${i.name} ${i.type} ${r}
         `).run(),e.push(`✅ Colonna ${i.name} aggiunta a leads`),console.log(`✅ Colonna ${i.name} aggiunta a leads`)}catch(r){r.message&&r.message.includes("duplicate column")?(e.push(`ℹ️ Colonna ${i.name} già esiste`),console.log(`ℹ️ Colonna ${i.name} già esiste`)):e.push(`⚠️ Errore colonna ${i.name}: ${r.message}`)}return o.json({success:!0,message:"Migrazione schema completata",migrations:e})}catch(e){return console.error("❌ Errore migrazione schema:",e),o.json({success:!1,error:"Errore migrazione schema",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/add-three",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);const e=new Date().toISOString(),a=[],i=await o.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' LIMIT 1), 
-        ?)
-    `).bind(`ASS-LOCATELLI-GIOVANNI-${Date.now()}`,"Giovanni Locatelli","","","",e).run();a.push({nome:"Giovanni Locatelli",lead_cognome:"Locatelli Alberto"}),await new Promise(l=>setTimeout(l,100));const r=await o.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' LIMIT 1), 
-        ?)
-    `).bind(`ASS-MACCHI-CLAUDIO-${Date.now()}`,"Claudio Macchi","","","",e).run();a.push({nome:"Claudio Macchi",lead_cognome:"Macchi Claudio"}),await new Promise(l=>setTimeout(l,100));const s=await o.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' LIMIT 1), 
-        ?)
-    `).bind(`ASS-DEMARCO-ANNA-${Date.now()}`,"Anna De Marco","","","",e).run();return a.push({nome:"Anna De Marco",lead_cognome:"Pepe Francesco"}),console.log("✅ 3 assistiti aggiunti con successo"),o.json({success:!0,message:"Aggiunti 3 assistiti",assistiti:a})}catch(e){return console.error("❌ Errore aggiunta assistiti:",e),o.json({success:!1,error:"Errore aggiunta assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/debug-eileen",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await o.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' 
+      LIMIT 1
+    `).first();i?(await o.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(`ASS-LOCATELLI-GIOVANNI-${Date.now()}`,"Giovanni Locatelli","","","",i.id,e).run(),a.push({nome:"Giovanni Locatelli",lead:"Alberto Locatelli",lead_id:i.id})):a.push({nome:"Giovanni Locatelli",lead:"Alberto Locatelli",error:"Lead non trovato"}),await new Promise(l=>setTimeout(l,100));const r=await o.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' 
+      LIMIT 1
+    `).first();r?(await o.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(`ASS-MACCHI-CLAUDIO-${Date.now()}`,"Claudio Macchi","","","",r.id,e).run(),a.push({nome:"Claudio Macchi",lead:"Claudio Macchi",lead_id:r.id})):a.push({nome:"Claudio Macchi",lead:"Claudio Macchi",error:"Lead non trovato"}),await new Promise(l=>setTimeout(l,100));const s=await o.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' 
+      LIMIT 1
+    `).first();return s?(await o.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(`ASS-DEMARCO-ANNA-${Date.now()}`,"Anna De Marco","","","",s.id,e).run(),a.push({nome:"Anna De Marco",lead:"Francesco Pepe",lead_id:s.id})):a.push({nome:"Anna De Marco",lead:"Francesco Pepe",error:"Lead non trovato"}),console.log("✅ 3 assistiti aggiunti con successo"),o.json({success:!0,message:"Aggiunti 3 assistiti",assistiti:a})}catch(e){return console.error("❌ Errore aggiunta assistiti:",e),o.json({success:!1,error:"Errore aggiunta assistiti",details:e instanceof Error?e.message:String(e)},500)}});x.post("/api/assistiti/debug-eileen",async o=>{var t;try{if(!((t=o.env)!=null&&t.DB))return o.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await o.env.DB.prepare(`
       SELECT * 
       FROM assistiti 
       WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')

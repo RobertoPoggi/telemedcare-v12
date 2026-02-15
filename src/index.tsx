@@ -15663,60 +15663,112 @@ app.post('/api/assistiti/add-three', async (c) => {
     const assistiti = []
 
     // 1. Giovanni Locatelli (assistito di Alberto Locatelli)
-    const giovanni = await c.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' LIMIT 1), 
-        ?)
-    `).bind(
-      `ASS-LOCATELLI-GIOVANNI-${Date.now()}`,
-      'Giovanni Locatelli',
-      '',
-      '',
-      '',
-      timestamp
-    ).run()
+    // Prima trova il lead_id
+    const leadAlberto = await c.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Alberto%' AND cognome LIKE '%Locatelli%' 
+      LIMIT 1
+    `).first()
 
-    assistiti.push({ nome: 'Giovanni Locatelli', lead_cognome: 'Locatelli Alberto' })
+    if (leadAlberto) {
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(
+        `ASS-LOCATELLI-GIOVANNI-${Date.now()}`,
+        'Giovanni Locatelli',
+        '',
+        '',
+        '',
+        leadAlberto.id,
+        timestamp
+      ).run()
+
+      assistiti.push({ 
+        nome: 'Giovanni Locatelli', 
+        lead: 'Alberto Locatelli',
+        lead_id: leadAlberto.id
+      })
+    } else {
+      assistiti.push({ 
+        nome: 'Giovanni Locatelli', 
+        lead: 'Alberto Locatelli',
+        error: 'Lead non trovato'
+      })
+    }
 
     // Pausa 100ms per evitare timestamp identici
     await new Promise(resolve => setTimeout(resolve, 100))
 
     // 2. Claudio Macchi (lead con stesso cognome)
-    const claudio = await c.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' LIMIT 1), 
-        ?)
-    `).bind(
-      `ASS-MACCHI-CLAUDIO-${Date.now()}`,
-      'Claudio Macchi',
-      '',
-      '',
-      '',
-      timestamp
-    ).run()
+    const leadClaudio = await c.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Claudio%' AND cognome LIKE '%Macchi%' 
+      LIMIT 1
+    `).first()
 
-    assistiti.push({ nome: 'Claudio Macchi', lead_cognome: 'Macchi Claudio' })
+    if (leadClaudio) {
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(
+        `ASS-MACCHI-CLAUDIO-${Date.now()}`,
+        'Claudio Macchi',
+        '',
+        '',
+        '',
+        leadClaudio.id,
+        timestamp
+      ).run()
+
+      assistiti.push({ 
+        nome: 'Claudio Macchi', 
+        lead: 'Claudio Macchi',
+        lead_id: leadClaudio.id
+      })
+    } else {
+      assistiti.push({ 
+        nome: 'Claudio Macchi', 
+        lead: 'Claudio Macchi',
+        error: 'Lead non trovato'
+      })
+    }
 
     await new Promise(resolve => setTimeout(resolve, 100))
 
     // 3. Anna De Marco (assistita di Francesco Pepe)
-    const anna = await c.env.DB.prepare(`
-      INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
-      VALUES (?, ?, ?, ?, ?, 'ATTIVO', 
-        (SELECT id FROM leads WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' LIMIT 1), 
-        ?)
-    `).bind(
-      `ASS-DEMARCO-ANNA-${Date.now()}`,
-      'Anna De Marco',
-      '',
-      '',
-      '',
-      timestamp
-    ).run()
+    const leadFrancesco = await c.env.DB.prepare(`
+      SELECT id FROM leads 
+      WHERE nome LIKE '%Francesco%' AND cognome LIKE '%Pepe%' 
+      LIMIT 1
+    `).first()
 
-    assistiti.push({ nome: 'Anna De Marco', lead_cognome: 'Pepe Francesco' })
+    if (leadFrancesco) {
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (codice, nome, email, telefono, imei, status, lead_id, created_at)
+        VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(
+        `ASS-DEMARCO-ANNA-${Date.now()}`,
+        'Anna De Marco',
+        '',
+        '',
+        '',
+        leadFrancesco.id,
+        timestamp
+      ).run()
+
+      assistiti.push({ 
+        nome: 'Anna De Marco', 
+        lead: 'Francesco Pepe',
+        lead_id: leadFrancesco.id
+      })
+    } else {
+      assistiti.push({ 
+        nome: 'Anna De Marco', 
+        lead: 'Francesco Pepe',
+        error: 'Lead non trovato'
+      })
+    }
 
     console.log('✅ 3 assistiti aggiunti con successo')
 
