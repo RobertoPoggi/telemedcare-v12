@@ -5779,6 +5779,7 @@ app.get('/api/contratti', async (c) => {
         c.piano,
         c.servizio,
         c.data_invio,
+        c.data_scadenza,
         c.prezzo_totale,
         c.created_at,
         l.nomeRichiedente,
@@ -5796,8 +5797,12 @@ app.get('/api/contratti', async (c) => {
       count: contratti.results.length,
       contratti: contratti.results.map(c => ({
         ...c,
-        cliente_nome: `${c.nomeRichiedente} ${c.cognomeRichiedente}`,
+        codice_contratto: c.codice,
+        tipo_contratto: c.tipo,
+        cliente_nome: c.nomeRichiedente,
+        cliente_cognome: c.cognomeRichiedente,
         data_firma: c.data_firma || null,
+        data_scadenza: c.data_scadenza || null,
         status_italiano: c.status === 'SIGNED' ? 'Firmato' : 
                         c.status === 'SENT' ? 'Inviato' : 
                         c.status === 'DRAFT' ? 'Bozza' : 'In attesa'
