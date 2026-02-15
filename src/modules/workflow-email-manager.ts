@@ -157,6 +157,27 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
             text-align: center;
         }
         
+        .letterhead {
+            border-top: 3px solid #0066cc;
+            border-bottom: 3px solid #0066cc;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .letterhead h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #0066cc;
+        }
+        
+        .letterhead p {
+            font-size: 11px;
+            margin: 3px 0;
+            text-align: center;
+        }
+        
         .footer {
             margin-top: 50px;
             padding-top: 20px;
@@ -181,12 +202,22 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     </style>
 </head>
 <body>
+    <!-- Carta intestata ufficiale Medica GB -->
+    <div class="letterhead">
+        <h3>Medica GB S.r.l.</h3>
+        <p>Corso Garibaldi 34 – 20121 Milano</p>
+        <p>PEC: medicagbsrl@pecimprese.it</p>
+        <p>E.mail: info@medicagb.it</p>
+        <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
+        <p>www.medicagb.it</p>
+    </div>
+    
     <h1>SCRITTURA PRIVATA</h1>
     
     <p>Con la presente scrittura privata da valere a tutti gli effetti e conseguenze di legge tra:</p>
     
     <div class="party">
-        <p><strong>Medica GB S.r.l.</strong>, con sede in Corso Garibaldi 34 a Milano 20121 e con Partita IVA e registro imprese 12435130963, in persona dell'Amministratore Roberto Poggi</p>
+        <p><strong>Medica GB S.r.l.</strong>, con sede in Corso Garibaldi 34 a Milano 20121 e con Partita IVA e registro imprese 12435130963, in persona dell'Amministratore Stefania Rocca</p>
         <p class="breviter">(breviter Medica GB)</p>
     </div>
     
@@ -291,11 +322,11 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     
     <div class="footer">
         <p><strong>Medica GB S.r.l.</strong></p>
-        <p>Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
-        <p>PEC: [email protected]</p>
-        <p>E-mail: [email protected]</p>
+        <p>Corso Garibaldi 34 – 20121 Milano</p>
+        <p>PEC: medicagbsrl@pecimprese.it</p>
+        <p>E.mail: info@medicagb.it</p>
         <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
-        <p>www.medicagb.it www.ecura.it</p>
+        <p>www.medicagb.it</p>
     </div>
 </body>
 </html>
