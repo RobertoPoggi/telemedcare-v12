@@ -15944,6 +15944,87 @@ app.post('/api/assistiti/update-three-with-data', async (c) => {
   }
 })
 
+// POST /api/assistiti/update-giovanni-full - Aggiorna Giovanni Locatelli con dati completi da Excel
+app.post('/api/assistiti/update-giovanni-full', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Verifica se colonne esistono, altrimenti aggiungile
+    const columnsToAdd = [
+      'indirizzo', 'comune', 'data_nascita', 'codice_fiscale', 'sesso', 
+      'peso', 'altezza', 'caregiver_nome', 'caregiver_telefono'
+    ]
+    
+    for (const col of columnsToAdd) {
+      try {
+        await c.env.DB.prepare(`SELECT ${col} FROM assistiti LIMIT 1`).first()
+      } catch {
+        console.log(`🔧 Aggiunta colonna ${col}...`)
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN ${col} TEXT`).run()
+      }
+    }
+
+    // Aggiorna Giovanni Locatelli con tutti i dati
+    await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET 
+        telefono = ?,
+        indirizzo = ?,
+        comune = ?,
+        data_nascita = ?,
+        codice_fiscale = ?,
+        sesso = ?,
+        peso = ?,
+        altezza = ?,
+        caregiver_nome = ?,
+        caregiver_telefono = ?
+      WHERE nome = 'Giovanni Locatelli'
+    `).bind(
+      '347 09 37 955',
+      'Viale Caterina da Forlì 32',
+      'Milano',
+      '1942-04-24',
+      'LCTGN42D24F205H',
+      'M',
+      '73',
+      '1,75',
+      'Anna Locatelli (moglie), Alberto Locatelli (figlio), Andrea Locatelli (figlio)',
+      '348 34 02 668'
+    ).run()
+
+    console.log('✅ Giovanni Locatelli aggiornato con dati completi da Excel')
+
+    return c.json({ 
+      success: true, 
+      message: 'Giovanni Locatelli aggiornato con dati completi',
+      data: {
+        nome: 'Giovanni Locatelli',
+        telefono: '347 09 37 955',
+        indirizzo: 'Viale Caterina da Forlì 32',
+        comune: 'Milano',
+        data_nascita: '1942-04-24',
+        codice_fiscale: 'LCTGN42D24F205H',
+        sesso: 'M',
+        peso: '73 kg',
+        altezza: '1,75 m',
+        caregiver: 'Anna Locatelli (moglie), Alberto/Andrea (figli)',
+        imei: '862346607387161',
+        servizio: 'eCura PREMIUM',
+        piano: 'BASE'
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento Giovanni:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiornamento Giovanni',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ============================================
 // DISPOSITIVI & MAGAZZINO DM ENDPOINTS
 // ============================================
