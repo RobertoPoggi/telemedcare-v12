@@ -223,8 +223,8 @@
                 document.getElementById('totalValue').textContent = stats.totalValue ? `€${stats.totalValue}` : '€0';
                 document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
 
-                // Carica lead
-                const leadsResponse = await fetch('/api/leads?limit=100');
+                // Carica lead (aumentato a 500 per mostrare tutti i lead)
+                const leadsResponse = await fetch('/api/leads?limit=500');
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
 
