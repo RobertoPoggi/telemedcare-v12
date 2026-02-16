@@ -16257,6 +16257,84 @@ app.get('/api/magazzino', async (c) => {
   }
 })
 
+// POST /api/dispositivi/populate - Popola dispositivi dai 3 assistiti
+app.post('/api/dispositivi/populate', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('📦 Popolamento dispositivi da assistiti...')
+
+    // Dispositivi dei 3 assistiti
+    const dispositivi = [
+      {
+        imei: '862346607387161',
+        modello: 'SiDLY VITAL CARE',
+        lead_id: 'LEAD-IRBEMA-00142', // Giovanni Locatelli
+        status: 'assigned'
+      },
+      {
+        imei: '862608061148517',
+        modello: 'SiDLY CARE PRO',
+        lead_id: 'LEAD-IRBEMA-00001', // Claudio Macchi
+        status: 'assigned'
+      },
+      {
+        imei: '862608066560916',
+        modello: 'SiDLY CARE PRO',
+        lead_id: 'LEAD-IRBEMA-00097', // Anna De Marco (lead Francesco Pepe)
+        status: 'assigned'
+      }
+    ]
+
+    const inserted = []
+
+    for (const device of dispositivi) {
+      // Verifica se esiste già
+      const existing = await c.env.DB.prepare(
+        'SELECT id FROM dispositivi WHERE serial_number = ?'
+      ).bind(device.imei).first()
+
+      if (existing) {
+        console.log(`⏭️  Dispositivo ${device.imei} già esistente`)
+        continue
+      }
+
+      // Inserisci dispositivo
+      const now = new Date().toISOString()
+      await c.env.DB.prepare(`
+        INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        device.imei,
+        device.modello,
+        device.status,
+        device.lead_id,
+        now,
+        now
+      ).run()
+
+      inserted.push(device)
+      console.log(`✅ Inserito dispositivo ${device.imei} (${device.modello})`)
+    }
+
+    return c.json({
+      success: true,
+      message: `Inseriti ${inserted.length} dispositivi`,
+      dispositivi: inserted
+    })
+
+  } catch (error) {
+    console.error('❌ Errore popolamento dispositivi:', error)
+    return c.json({
+      success: false,
+      error: 'Errore popolamento dispositivi',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
