@@ -2554,7 +2554,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Carica lead
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);
+                const leadsResponse = await fetch(\`/api/leads?limit=99999&_=\${cacheBuster}\`);
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -4985,12 +4985,12 @@ export const data_dashboard = `<!DOCTYPE html>
         async function loadDataDashboard() {
             try {
                 // Carica lead per servizio
-                const leadsResponse = await fetch('/api/leads?limit=500');
+                const leadsResponse = await fetch('/api/leads?limit=99999');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
 
                 // Carica contratti
-                const contractsResponse = await fetch('/api/contratti?limit=500');
+                const contractsResponse = await fetch('/api/contratti?limit=99999');
                 const contractsData = await contractsResponse.json();
                 const allContracts = contractsData.contratti || [];
                 

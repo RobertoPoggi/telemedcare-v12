@@ -224,7 +224,7 @@
                 document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
 
                 // Carica lead (aumentato a 500 per mostrare tutti i lead)
-                const leadsResponse = await fetch('/api/leads?limit=500');
+                const leadsResponse = await fetch('/api/leads?limit=99999');
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
 
