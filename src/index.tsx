@@ -16335,6 +16335,59 @@ app.post('/api/dispositivi/populate', async (c) => {
   }
 })
 
+// POST /api/dispositivi/add-inventory - Aggiungi dispositivo in magazzino
+app.post('/api/dispositivi/add-inventory', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { imei, modello } = await c.req.json()
+
+    if (!imei || !modello) {
+      return c.json({ 
+        success: false, 
+        error: 'IMEI e modello richiesti' 
+      }, 400)
+    }
+
+    // Verifica se esiste già
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first()
+
+    if (existing) {
+      return c.json({ 
+        success: false, 
+        error: 'Dispositivo già esistente' 
+      }, 400)
+    }
+
+    // Inserisci in magazzino (status = inventory)
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      INSERT INTO dispositivi (serial_number, modello, status, created_at)
+      VALUES (?, ?, 'inventory', ?)
+    `).bind(imei, modello, now).run()
+
+    console.log(`✅ Aggiunto dispositivo in magazzino: ${imei} (${modello})`)
+
+    return c.json({
+      success: true,
+      message: `Dispositivo ${imei} aggiunto al magazzino`,
+      dispositivo: { imei, modello, status: 'inventory' }
+    })
+
+  } catch (error) {
+    console.error('❌ Errore aggiunta dispositivo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiunta dispositivo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
