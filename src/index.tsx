@@ -10103,9 +10103,11 @@ app.get('/test-update-contracts-dates', async (c) => {
 app.post('/api/contracts/sign', async (c) => {
   try {
     const data = await c.req.json()
-    const { contractId, signatureData, timestamp, userAgent, screenResolution } = data
+    // ✅ Accetta sia signatureData (form firma) che firmaDigitale (workflow manager)
+    const { contractId, signatureData, firmaDigitale, timestamp, userAgent, screenResolution, ipAddress } = data
+    const signature = signatureData || firmaDigitale || 'Firma Manuale'
     
-    if (!contractId || !signatureData) {
+    if (!contractId || !signature) {
       return c.json({ 
         success: false, 
         error: 'Dati firma mancanti' 
@@ -10153,8 +10155,8 @@ app.post('/api/contracts/sign', async (c) => {
           signature_method = 'inline'
       WHERE id = ?
     `).bind(
-      signatureData,
-      ipAddress,
+      signature,
+      ipAddress || c.req.header('cf-connecting-ip') || 'workflow-manual',
       timestamp || new Date().toISOString(),
       userAgent || '',
       screenResolution || '',
@@ -10180,10 +10182,10 @@ app.post('/api/contracts/sign', async (c) => {
             <div style="display: flex; justify-content: space-between; gap: 40px;">
               <div style="flex: 1; text-align: center;">
                 <p style="font-weight: bold; margin-bottom: 20px;">Il Cliente</p>
-                <img src="${signatureData}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">
+                ${signature.startsWith('data:image') ? `<img src="${signature}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">` : `<p style="font-style: italic;">${signature}</p>`}
                 <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                  Firma digitale apposta il ${new Date(timestamp).toLocaleString('it-IT')}<br>
-                  IP: ${ipAddress}
+                  Firma digitale apposta il ${new Date(timestamp || Date.now()).toLocaleString('it-IT')}<br>
+                  IP: ${ipAddress || 'workflow-manual'}
                 </p>
               </div>
               <div style="flex: 1; text-align: center;">
