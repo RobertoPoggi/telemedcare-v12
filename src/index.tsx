@@ -10136,8 +10136,9 @@ app.post('/api/contracts/sign', async (c) => {
       }, 400)
     }
     
-    // Ottieni IP del cliente
-    const ipAddress = c.req.header('cf-connecting-ip') || 
+    // Ottieni IP del cliente (usa quello dal form o fallback agli headers)
+    const clientIp = ipAddress || 
+                     c.req.header('cf-connecting-ip') || 
                      c.req.header('x-forwarded-for') || 
                      c.req.header('x-real-ip') || 
                      'unknown'
@@ -10156,7 +10157,7 @@ app.post('/api/contracts/sign', async (c) => {
       WHERE id = ?
     `).bind(
       signature,
-      ipAddress || c.req.header('cf-connecting-ip') || 'workflow-manual',
+      clientIp,
       timestamp || new Date().toISOString(),
       userAgent || '',
       screenResolution || '',
@@ -10164,7 +10165,7 @@ app.post('/api/contracts/sign', async (c) => {
       contractId
     ).run()
     
-    console.log(`✅ Contratto firmato: ${contractId} da IP ${ipAddress}`)
+    console.log(`✅ Contratto firmato: ${contractId} da IP ${clientIp}`)
     
     // Recupera lead per inviare email
     try {
@@ -10185,7 +10186,7 @@ app.post('/api/contracts/sign', async (c) => {
                 ${signature.startsWith('data:image') ? `<img src="${signature}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">` : `<p style="font-style: italic;">${signature}</p>`}
                 <p style="margin-top: 10px; font-size: 12px; color: #666;">
                   Firma digitale apposta il ${new Date(timestamp || Date.now()).toLocaleString('it-IT')}<br>
-                  IP: ${ipAddress || 'workflow-manual'}
+                  IP: ${clientIp}
                 </p>
               </div>
               <div style="flex: 1; text-align: center;">
