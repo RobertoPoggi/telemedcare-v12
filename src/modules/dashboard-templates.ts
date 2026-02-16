@@ -2432,7 +2432,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('leadsGrowth').textContent = stats.leadsGrowth || '+0%';
 
                 // Carica lead
-                const leadsResponse = await fetch('/api/leads?limit=200');
+                const leadsResponse = await fetch('/api/leads?limit=500');
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -4071,7 +4071,7 @@ export const data_dashboard = `<!DOCTYPE html>
         async function loadDataDashboard() {
             try {
                 // Carica lead per calcolare statistiche reali
-                const leadsResponse = await fetch('/api/leads?limit=200');
+                const leadsResponse = await fetch('/api/leads?limit=500');
                 if (!leadsResponse.ok) throw new Error('Errore caricamento leads');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
@@ -4452,7 +4452,7 @@ PUT /api/contratti/\${contractId}\`);
         
         async function loadLeadsForContract() {
             try {
-                const response = await fetch('/api/leads?limit=200');
+                const response = await fetch('/api/leads?limit=500');
                 const data = await response.json();
                 const leads = data.leads || [];
                 
