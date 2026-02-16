@@ -4487,6 +4487,45 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT: Aggiorna fonte per lead di TEST (con 'TEST' nelle note)
+app.post('/api/admin/fix-test-leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Aggiornamento fonte lead di TEST → Form eCura x Test')
+    
+    // Aggiorna tutti i lead con 'TEST' nelle note o email di test
+    const result = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET fonte = 'Form eCura x Test'
+      WHERE (
+        UPPER(note) LIKE '%TEST%'
+        OR email LIKE '%test%'
+        OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
+        OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
+      )
+      AND fonte != 'Form eCura x Test'
+    `).run()
+    
+    console.log(`✅ Fonte aggiornata per ${result.meta.changes} lead di test`)
+    
+    return c.json({
+      success: true,
+      message: 'Lead di TEST aggiornati a fonte "Form eCura x Test"',
+      leadsUpdated: result.meta.changes
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore aggiornamento lead test:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔧 ENDPOINT ADMIN: Converti valori settings da '1'/'0' a 'true'/'false'
 app.post('/api/admin/normalize-settings-values', async (c) => {
   try {
