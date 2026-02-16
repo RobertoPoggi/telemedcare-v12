@@ -11122,14 +11122,17 @@ ${370+e.length}
       UPDATE leads 
       SET fonte = 'Form eCura x Test'
       WHERE (
-        (UPPER(note) LIKE '% TEST %' OR UPPER(note) LIKE 'TEST %' OR UPPER(note) LIKE '% TEST')
-        OR email LIKE '%test@%'
-        OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
+        (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
         OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
         OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
       )
       AND fonte != 'Form eCura x Test'
-    `).run();return console.log(`✅ Fonte aggiornata per ${e.meta.changes} lead di test`),t.json({success:!0,message:'Lead di TEST aggiornati a fonte "Form eCura x Test"',leadsUpdated:e.meta.changes})}catch(e){return console.error("❌ Errore aggiornamento lead test:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});x.post("/api/admin/normalize-settings-values",async t=>{var o,e,a;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Normalizzazione valori settings: 1/0 → true/false");const i=await t.env.DB.prepare(`
+    `).run();return console.log(`✅ Fonte aggiornata per ${e.meta.changes} lead di test`),t.json({success:!0,message:'Lead di TEST aggiornati a fonte "Form eCura x Test"',leadsUpdated:e.meta.changes})}catch(e){return console.error("❌ Errore aggiornamento lead test:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});x.post("/api/admin/restore-real-leads",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Ripristino lead reali erroneamente marcati come test");const e=await t.env.DB.prepare(`
+      UPDATE leads 
+      SET fonte = 'Privati IRBEMA'
+      WHERE id IN ('LEAD-IRBEMA-00107', 'LEAD-IRBEMA-00051')
+        AND fonte = 'Form eCura x Test'
+    `).run();return console.log(`✅ Ripristinati ${e.meta.changes} lead reali`),t.json({success:!0,message:'Lead reali ripristinati a fonte "Privati IRBEMA"',leadsRestored:e.meta.changes,restoredIds:["LEAD-IRBEMA-00107","LEAD-IRBEMA-00051"]})}catch(e){return console.error("❌ Errore ripristino lead reali:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});x.post("/api/admin/normalize-settings-values",async t=>{var o,e,a;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Normalizzazione valori settings: 1/0 → true/false");const i=await t.env.DB.prepare(`
       UPDATE settings SET value = 'true' WHERE value IN ('1', 1)
     `).run(),r=await t.env.DB.prepare(`
       UPDATE settings SET value = 'false' WHERE value IN ('0', 0)

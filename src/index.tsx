@@ -4496,14 +4496,12 @@ app.post('/api/admin/fix-test-leads', async (c) => {
     
     console.log('🔧 Aggiornamento fonte lead di TEST → Form eCura x Test')
     
-    // Aggiorna tutti i lead con 'TEST' nelle note o email di test
+    // Aggiorna SOLO i 3 lead di test specifici
     const result = await c.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'Form eCura x Test'
       WHERE (
-        (UPPER(note) LIKE '% TEST %' OR UPPER(note) LIKE 'TEST %' OR UPPER(note) LIKE '% TEST')
-        OR email LIKE '%test@%'
-        OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
+        (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
         OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
         OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
       )
@@ -4520,6 +4518,41 @@ app.post('/api/admin/fix-test-leads', async (c) => {
     
   } catch (error) {
     console.error('❌ Errore aggiornamento lead test:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// 🔧 ENDPOINT: Ripristina lead NON-test erroneamente marcati come test
+app.post('/api/admin/restore-real-leads', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔧 Ripristino lead reali erroneamente marcati come test')
+    
+    // Ripristina Manu Cels - Simone e Silvia Grossi a fonte "Privati IRBEMA"
+    const result = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET fonte = 'Privati IRBEMA'
+      WHERE id IN ('LEAD-IRBEMA-00107', 'LEAD-IRBEMA-00051')
+        AND fonte = 'Form eCura x Test'
+    `).run()
+    
+    console.log(`✅ Ripristinati ${result.meta.changes} lead reali`)
+    
+    return c.json({
+      success: true,
+      message: 'Lead reali ripristinati a fonte "Privati IRBEMA"',
+      leadsRestored: result.meta.changes,
+      restoredIds: ['LEAD-IRBEMA-00107', 'LEAD-IRBEMA-00051']
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore ripristino lead reali:', error)
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : String(error)
