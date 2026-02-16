@@ -16388,6 +16388,80 @@ app.post('/api/dispositivi/add-inventory', async (c) => {
   }
 })
 
+// POST /api/dispositivi/assign - Assegna dispositivo a lead
+app.post('/api/dispositivi/assign', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { imei, lead_id } = await c.req.json()
+
+    if (!imei || !lead_id) {
+      return c.json({ 
+        success: false, 
+        error: 'IMEI e lead_id richiesti' 
+      }, 400)
+    }
+
+    // Verifica che il dispositivo esista
+    const device = await c.env.DB.prepare(
+      'SELECT id, status FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first()
+
+    if (!device) {
+      return c.json({ 
+        success: false, 
+        error: 'Dispositivo non trovato' 
+      }, 404)
+    }
+
+    // Verifica che il lead esista
+    const lead = await c.env.DB.prepare(
+      'SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE id = ?'
+    ).bind(lead_id).first() as any
+
+    if (!lead) {
+      return c.json({ 
+        success: false, 
+        error: 'Lead non trovato' 
+      }, 404)
+    }
+
+    // Aggiorna dispositivo: assegna a lead
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      UPDATE dispositivi 
+      SET status = 'assigned',
+          lead_id = ?,
+          assigned_at = ?
+      WHERE serial_number = ?
+    `).bind(lead_id, now, imei).run()
+
+    console.log(`✅ Dispositivo ${imei} assegnato a ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+
+    return c.json({
+      success: true,
+      message: `Dispositivo ${imei} assegnato a ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+      dispositivo: {
+        imei,
+        lead_id,
+        lead_name: `${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+        status: 'assigned',
+        assigned_at: now
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Errore assegnazione dispositivo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore assegnazione dispositivo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
