@@ -13518,7 +13518,7 @@ app.post('/api/import/irbema', async (c) => {
             'eCura',     // ✅ tipoServizio sempre 'eCura'
             prezzoAnno,  // 💰 PREZZO ANNO (IVA esclusa)
             prezzoRinnovo, // 💰 PREZZO RINNOVO (IVA esclusa)
-            'IRBEMA',    // Fonte
+            'Form eCura',    // Fonte (filtro eCura da HubSpot)
             'NEW',       // Status
             1,           // ✅ vuoleBrochure = 1 (SEMPRE SI per eCura)
             1,           // ✅ vuoleContratto = 1 (SEMPRE SI per eCura)
@@ -13835,7 +13835,7 @@ app.post('/api/import/irbema/spot', async (c) => {
           servizio,
           piano,
           piano, // tipoServizio
-          'IRBEMA',
+          'Form eCura',
           'NEW',
           'No',
           'No',
@@ -14024,7 +14024,7 @@ app.post('/api/import/irbema/manual', async (c) => {
           'eCura PRO',
           'BASE',
           'BASE', // tipoServizio
-          'IRBEMA',
+          'Form eCura',
           'NEW',
           'No',
           'No',
@@ -19955,7 +19955,7 @@ app.post('/api/import/irbema/force', async (c) => {
           'eCura PRO',
           'BASE',
           'eCura PRO',  // tipoServizio (deprecated ma NOT NULL)
-          'IRBEMA',
+          'Form eCura',
           'NEW',
           'No',
           'No',
