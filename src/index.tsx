@@ -16462,6 +16462,69 @@ app.post('/api/dispositivi/assign', async (c) => {
   }
 })
 
+// POST /api/dispositivi/return - Segna dispositivo come restituito
+app.post('/api/dispositivi/return', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { imei, reason } = await c.req.json()
+
+    if (!imei) {
+      return c.json({ 
+        success: false, 
+        error: 'IMEI richiesto' 
+      }, 400)
+    }
+
+    // Verifica che il dispositivo esista
+    const device = await c.env.DB.prepare(
+      'SELECT id, status, modello FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first() as any
+
+    if (!device) {
+      return c.json({ 
+        success: false, 
+        error: 'Dispositivo non trovato' 
+      }, 404)
+    }
+
+    // Aggiorna dispositivo: marca come restituito
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      UPDATE dispositivi 
+      SET status = 'returned',
+          lead_id = NULL,
+          activated_at = NULL,
+          updated_at = ?
+      WHERE serial_number = ?
+    `).bind(now, imei).run()
+
+    console.log(`📦 Dispositivo ${imei} marcato come restituito. Motivo: ${reason || 'Non specificato'}`)
+
+    return c.json({
+      success: true,
+      message: `Dispositivo ${imei} restituito`,
+      dispositivo: {
+        imei,
+        modello: device.modello,
+        status: 'returned',
+        reason: reason || 'Non specificato',
+        returned_at: now
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Errore restituzione dispositivo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore restituzione dispositivo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
