@@ -4496,7 +4496,11 @@ app.post('/api/admin/fix-test-leads', async (c) => {
     
     console.log('🔧 Aggiornamento fonte lead di TEST → Form eCura x Test')
     
-    // Aggiorna SOLO i 3 lead di test specifici
+    // Aggiorna SOLO i 4 lead di test specifici:
+    // 1. Rosaria Ressa (LEAD-IRBEMA-00210)
+    // 2. Roberto Poggi (LEAD-IRBEMA-00209)
+    // 3. Stefania Rocca (LEAD-IRBEMA-00152)
+    // 4. Manu Cels - Simone (LEAD-IRBEMA-00107) - email test@esempio.it
     const result = await c.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'Form eCura x Test'
@@ -4504,6 +4508,7 @@ app.post('/api/admin/fix-test-leads', async (c) => {
         (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
         OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
         OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
+        OR id = 'LEAD-IRBEMA-00107'
       )
       AND fonte != 'Form eCura x Test'
     `).run()
@@ -4526,6 +4531,8 @@ app.post('/api/admin/fix-test-leads', async (c) => {
 })
 
 // 🔧 ENDPOINT: Ripristina lead NON-test erroneamente marcati come test
+// ⚠️  ATTENZIONE: Non confondere "TESTA", "TESTI", "TESTO" con "TEST"
+// Esempio: "mal di testa" ≠ lead di test!
 app.post('/api/admin/restore-real-leads', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -4534,12 +4541,14 @@ app.post('/api/admin/restore-real-leads', async (c) => {
     
     console.log('🔧 Ripristino lead reali erroneamente marcati come test')
     
-    // Ripristina Manu Cels - Simone e Silvia Grossi a fonte "Privati IRBEMA"
+    // Ripristina Silvia Grossi a fonte "Privati IRBEMA"
+    // IMPORTANTE: Silvia Grossi ha "mal di testa" nelle note - NON è un lead di test!
+    // La parola "testa" non deve essere confusa con "TEST"
     const result = await c.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'Privati IRBEMA'
-      WHERE id IN ('LEAD-IRBEMA-00107', 'LEAD-IRBEMA-00051')
-        AND fonte = 'Form eCura x Test'
+      WHERE id = 'LEAD-IRBEMA-00051'
+        AND fonte != 'Privati IRBEMA'
     `).run()
     
     console.log(`✅ Ripristinati ${result.meta.changes} lead reali`)
@@ -4548,7 +4557,7 @@ app.post('/api/admin/restore-real-leads', async (c) => {
       success: true,
       message: 'Lead reali ripristinati a fonte "Privati IRBEMA"',
       leadsRestored: result.meta.changes,
-      restoredIds: ['LEAD-IRBEMA-00107', 'LEAD-IRBEMA-00051']
+      restoredIds: ['LEAD-IRBEMA-00051']
     })
     
   } catch (error) {
