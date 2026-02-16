@@ -4501,10 +4501,11 @@ app.post('/api/admin/fix-test-leads', async (c) => {
       UPDATE leads 
       SET fonte = 'Form eCura x Test'
       WHERE (
-        UPPER(note) LIKE '%TEST%'
-        OR email LIKE '%test%'
+        (UPPER(note) LIKE '% TEST %' OR UPPER(note) LIKE 'TEST %' OR UPPER(note) LIKE '% TEST')
+        OR email LIKE '%test@%'
         OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
         OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
+        OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
       )
       AND fonte != 'Form eCura x Test'
     `).run()
