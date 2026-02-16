@@ -4621,7 +4621,7 @@ app.get('/api/admin/debug-env', async (c) => {
 // 🔍 ENDPOINT DEBUG: Test diretto Resend API
 app.get('/api/admin/debug-resend', async (c) => {
   try {
-    const resendKey = c.env.RESEND_API_KEY || 're_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2';
+    const resendKey = c.env.RESEND_API_KEY;
     
     console.log('🔍 [DEBUG RESEND] Testing Resend API...');
     console.log('🔑 API Key presente:', resendKey ? 'SI' : 'NO');
