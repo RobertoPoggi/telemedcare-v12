@@ -12269,7 +12269,159 @@ app.post('/api/hubspot/sync', async (c) => {
         ).run()
         
         console.log(`✅ [HUBSPOT SYNC] Lead creato: ${leadId} from HubSpot ${contact.id}`)
+        console.log(`🔔 [HUBSPOT SYNC] >>> INIZIO BLOCCO EMAIL <<<`)
         results.created++
+        
+        // 📧 INVIA EMAIL DI NOTIFICA ADMIN usando la funzione ufficiale (COPIATO DA AUTO-IMPORT)
+        try {
+          console.log(`📧 [HUBSPOT SYNC] Invio email notifica tramite sendNewLeadNotification per ${leadId}...`)
+          
+          // Import della funzione ufficiale di notifica
+          const { sendNewLeadNotification } = await import('./utils/lead-notifications')
+          
+          // Chiama la funzione ufficiale che usa il template NOTIFICA_INFO
+          await sendNewLeadNotification(
+            leadId,
+            {
+              nomeRichiedente: leadData.nomeRichiedente || 'N/A',
+              cognomeRichiedente: leadData.cognomeRichiedente || '',
+              email: emailSafe || undefined,
+              telefono: leadData.telefono || undefined,
+              citta: undefined, // Non disponibile in leadData
+              servizio: leadData.servizio,
+              piano: leadData.piano,
+              fonte: 'Form eCura',
+              note: leadData.note || '',
+              created_at: new Date().toISOString()
+            },
+            c.env
+          )
+          
+          console.log(`✅ [HUBSPOT SYNC] Email notifica admin inviata con successo per ${leadId}`)
+        } catch (emailError) {
+          console.error(`⚠️ [HUBSPOT SYNC] Errore invio email notifica admin:`, emailError)
+          console.error(`⚠️ [HUBSPOT SYNC] Error details:`, {
+            message: (emailError as Error).message,
+            stack: (emailError as Error).stack,
+            leadId
+          })
+          // Non bloccare l'import se l'email fallisce
+        }
+        
+        // 📧 INVIA EMAIL COMPLETAMENTO DATI AL LEAD (COPIATO DA AUTO-IMPORT)
+        try {
+          // Verifica se le email ai lead sono abilitate
+          const leadEmailSetting = await c.env.DB.prepare(
+            "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
+          ).first()
+          
+          const leadEmailEnabled = leadEmailSetting?.value === 'true'
+          
+          console.log(`🔍 [HUBSPOT SYNC] Check email conditions:`, {
+            leadEmailEnabled,
+            hasEmail: !!emailSafe,
+            email: emailSafe,
+            leadId
+          })
+          
+          if (leadEmailEnabled && emailSafe) {
+            console.log(`🚨🚨🚨 [HUBSPOT SYNC] INIZIO INVIO EMAIL AL LEAD 🚨🚨🚨`)
+            console.log(`📧 [HUBSPOT SYNC] Email destinatario: ${emailSafe}`)
+            console.log(`📧 Switch abilitato: ${leadEmailEnabled}`)
+            
+            // ✅ SOLUZIONE: Usa ESATTAMENTE lo stesso codice del pulsante manuale
+            try {
+              const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
+              const EmailService = (await import('./modules/email-service')).default
+              const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+              
+              // Ottieni lead appena inserito dal database
+              const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+                .bind(leadId).first()
+              
+              if (!insertedLead) {
+                console.error(`❌ [HUBSPOT SYNC] Lead ${leadId} non trovato in DB dopo inserimento`)
+                throw new Error('Lead not found after insert')
+              }
+              
+              // Ottieni configurazione
+              const config = await getSystemConfig(c.env.DB)
+              
+              // Crea token
+              const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
+              console.log(`✅ [HUBSPOT SYNC] Token creato: ${token.token}`)
+              
+              // Genera URL completamento - USA ENDPOINT API con query parameter!
+              const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+              const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+              
+              // Prepara dati per email
+              const { missing, available } = getMissingFields(insertedLead)
+              
+              // Carica template dal database
+              const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+              
+              // Prepara lista campi disponibili
+              const availableFieldsList = Object.entries(available).map(([label, value]) => ({
+                FIELD_LABEL: label,
+                FIELD_VALUE: value
+              }))
+              
+              // Prepara lista campi mancanti con metadati
+              const fieldMetadata: Record<string, any> = {
+                'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+                'cittaIntestatario': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+                'citta': { label: 'Città', type: 'text', placeholder: 'Es. Milano', required: true },
+                'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
+                'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },
+                'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', placeholder: '', required: true },
+                'cittaAssistito': { label: 'Città Assistito', type: 'text', placeholder: 'Es. Roma', required: true }
+              }
+              
+              const missingFieldsList = missing.map((field: string) => ({
+                FIELD_NAME: field,
+                FIELD_LABEL: fieldMetadata[field]?.label || field,
+                FIELD_TYPE: fieldMetadata[field]?.type || 'text',
+                FIELD_PLACEHOLDER: fieldMetadata[field]?.placeholder || '',
+                FIELD_REQUIRED: fieldMetadata[field]?.required ? 'required' : ''
+              }))
+              
+              // Render template
+              const html = renderTemplate(template.content || '', {
+                NOME_RICHIEDENTE: insertedLead.nomeRichiedente || '',
+                COGNOME_RICHIEDENTE: insertedLead.cognomeRichiedente || '',
+                LEAD_ID: leadId,
+                COMPLETION_URL: completionUrl,
+                AVAILABLE_FIELDS: availableFieldsList,
+                MISSING_FIELDS: missingFieldsList,
+                DAYS_VALID: config.auto_completion_token_days.toString()
+              })
+              
+              // Invia email
+              await EmailService.send({
+                to: emailSafe,
+                from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
+                subject: template.subject || 'Completa i tuoi dati - TeleMedCare',
+                html
+              }, c.env)
+              
+              console.log(`✅ [HUBSPOT SYNC] Email completamento inviata a: ${emailSafe}`)
+              
+            } catch (innerError) {
+              console.error(`❌ [HUBSPOT SYNC] Errore invio email completamento:`, innerError)
+              console.error(`❌ [HUBSPOT SYNC] Stack trace:`, (innerError as Error).stack)
+            }
+          } else {
+            console.log(`⏭️ [HUBSPOT SYNC] Email completamento NON inviata:`, {
+              reason: !leadEmailEnabled ? 'Switch disabilitato' : 'Email mancante',
+              leadEmailEnabled,
+              hasEmail: !!emailSafe
+            })
+          }
+        } catch (emailError) {
+          console.error(`⚠️ [HUBSPOT SYNC] Errore email workflow per ${leadId}:`, emailError)
+          // Non bloccare l'import se le email falliscono
+        }
         
       } catch (error) {
         console.error(`❌ [HUBSPOT SYNC] Errore sync contact ${contact.id}:`, error)
