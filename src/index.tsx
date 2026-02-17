@@ -8371,13 +8371,17 @@ app.post('/api/leads/:id/complete', async (c) => {
           if (true) {
             // Genera contratto
             const timestamp = Date.now()
-            const cognome = (assistito.cognome || richiedente.cognome || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+            const cognome = ((updatedLead as any).cognomeAssistito || (updatedLead as any).cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
             const anno = new Date().getFullYear()
             const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
             const contractId = `contract-${timestamp}`
             
             const servizio = (updatedLead as any).servizio || 'eCura PRO'
             const piano = (updatedLead as any).piano || 'BASE'
+            
+            // Calcola pricing
+            const { getPricing } = await import('./modules/ecura-pricing')
+            const pricing = getPricing(servizio, piano)
             
             // Prepara contractData
             const contractData = {
