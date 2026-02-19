@@ -12844,7 +12844,7 @@ startxref
             prezzo_totale, imei_dispositivo, created_at,
             template_utilizzato, contenuto_html, prezzo_mensile, durata_mesi
           ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, ?, 'BASE', '', ?, 12)
-        `).bind(g,c,d,s.piano,m,s.imei,l,s.piano==="AVANZATO"?69:39).run(),i++,console.log(`✅ Contratto creato: ${d} per ${s.nome} ${s.cognome}`)}}return t.json({success:!0,message:"FORCE INIT completato con UPDATE contratti",stats:{leadsCreated:a,contractsCreated:i,contractsUpdated:r,assistitiTotali:e.length}})}catch(e){return console.error("❌ FORCE ERROR:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.get("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.query("id");let a="WHERE a.status = 'ATTIVO'";const i=[];e&&(a+=" AND a.id = ?",i.push(parseInt(e)));const r=await t.env.DB.prepare(`
+        `).bind(g,c,d,s.piano,m,s.imei,l,s.piano==="AVANZATO"?69:39).run(),i++,console.log(`✅ Contratto creato: ${d} per ${s.nome} ${s.cognome}`)}}return t.json({success:!0,message:"FORCE INIT completato con UPDATE contratti",stats:{leadsCreated:a,contractsCreated:i,contractsUpdated:r,assistitiTotali:e.length}})}catch(e){return console.error("❌ FORCE ERROR:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.get("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.query("id");let i=(t.req.query("status")||"ATTIVO").toUpperCase()==="ALL"?"WHERE 1=1":"WHERE a.status = 'ATTIVO'";const r=[];e&&(i+=" AND a.id = ?",r.push(parseInt(e)));const s=await t.env.DB.prepare(`
       SELECT 
         a.id,
         a.codice,
@@ -12869,9 +12869,9 @@ startxref
         c.status as contratto_status
       FROM assistiti a
       LEFT JOIN contracts c ON a.lead_id = c.leadId
-      ${a}
+      ${i}
       ORDER BY a.created_at DESC
-    `).bind(...i).all();return t.json({success:!0,count:r.results.length,assistiti:r.results})}catch(e){return console.error("❌ Errore recupero assistiti:",e),t.json({success:!1,error:"Errore recupero assistiti",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=await t.req.json();if(!e.nome||!e.cognome)return t.json({success:!1,error:"Campi obbligatori mancanti: nome, cognome"},400);const a=`ASS-${e.cognome.toUpperCase()}-${Date.now()}`,i=new Date().toISOString();return await t.env.DB.prepare(`
+    `).bind(...r).all();return t.json({success:!0,count:s.results.length,assistiti:s.results})}catch(e){return console.error("❌ Errore recupero assistiti:",e),t.json({success:!1,error:"Errore recupero assistiti",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=await t.req.json();if(!e.nome||!e.cognome)return t.json({success:!1,error:"Campi obbligatori mancanti: nome, cognome"},400);const a=`ASS-${e.cognome.toUpperCase()}-${Date.now()}`,i=new Date().toISOString();return await t.env.DB.prepare(`
       INSERT INTO assistiti (
         codice, nome, email, telefono, imei, status, lead_id, created_at
       ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)

@@ -15524,7 +15524,9 @@ app.get('/api/assistiti', async (c) => {
 
     // Query parameter per filtrare singolo assistito
     const idFilter = c.req.query('id')
-    let whereClause = "WHERE a.status = 'ATTIVO'"
+    const statusFilter = c.req.query('status') || 'ATTIVO'
+    
+    let whereClause = statusFilter.toUpperCase() === 'ALL' ? 'WHERE 1=1' : "WHERE a.status = 'ATTIVO'"
     const bindings = []
     
     if (idFilter) {
