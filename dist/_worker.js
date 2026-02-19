@@ -12888,9 +12888,10 @@ startxref
             imei = ?,
             servizio = ?,
             piano = ?,
+            lead_id = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",a.servizio||"eCura PRO",a.piano||"BASE",e).run(),r=!0,console.log(`✅ Assistito aggiornato con servizio: ${a.servizio||"eCura PRO"}, piano: ${a.piano||"BASE"}`)}catch(s){if(s.message&&(s.message.includes("no column named piano")||s.message.includes("no column named servizio")))console.warn("⚠️ Colonne piano/servizio non trovate, provo UPDATE base"),await t.env.DB.prepare(`
+      `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",a.servizio||"eCura PRO",a.piano||"BASE",a.lead_id||null,e).run(),r=!0,console.log(`✅ Assistito aggiornato con servizio: ${a.servizio||"eCura PRO"}, piano: ${a.piano||"BASE"}`)}catch(s){if(s.message&&(s.message.includes("no column named piano")||s.message.includes("no column named servizio")))console.warn("⚠️ Colonne piano/servizio non trovate, provo UPDATE base"),await t.env.DB.prepare(`
           UPDATE assistiti 
           SET nome = ?, 
               nome_assistito = ?, 
@@ -12901,9 +12902,10 @@ startxref
               email = ?, 
               telefono = ?, 
               imei = ?,
+              lead_id = ?,
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",e).run(),r=!0,console.log("✅ Assistito aggiornato (senza piano/servizio)");else throw s}return console.log("✅ Assistito aggiornato:",e),t.json({success:!0,message:"Assistito aggiornato con successo"})}catch(e){return console.error("❌ Errore aggiornamento assistito:",e),t.json({success:!1,error:"Errore aggiornamento assistito",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/setup-email-counter",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(console.log("📊 Setup email counter..."),await t.env.DB.prepare(`
+        `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",a.lead_id||null,e).run(),r=!0,console.log("✅ Assistito aggiornato (senza piano/servizio)");else throw s}return console.log("✅ Assistito aggiornato:",e),t.json({success:!0,message:"Assistito aggiornato con successo"})}catch(e){return console.error("❌ Errore aggiornamento assistito:",e),t.json({success:!1,error:"Errore aggiornamento assistito",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/setup-email-counter",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(console.log("📊 Setup email counter..."),await t.env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS stats (
         id INTEGER PRIMARY KEY DEFAULT 1,
         emails_sent_30days INTEGER DEFAULT 0,

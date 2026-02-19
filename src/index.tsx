@@ -15669,6 +15669,7 @@ app.put('/api/assistiti/:id', async (c) => {
             imei = ?,
             servizio = ?,
             piano = ?,
+            lead_id = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).bind(
@@ -15683,6 +15684,7 @@ app.put('/api/assistiti/:id', async (c) => {
         data.imei || '',
         data.servizio || 'eCura PRO',
         data.piano || 'BASE',
+        data.lead_id || null,
         id
       ).run()
       
@@ -15704,6 +15706,7 @@ app.put('/api/assistiti/:id', async (c) => {
               email = ?, 
               telefono = ?, 
               imei = ?,
+              lead_id = ?,
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).bind(
@@ -15716,6 +15719,7 @@ app.put('/api/assistiti/:id', async (c) => {
           data.email || '',
           data.telefono || '',
           data.imei || '',
+          data.lead_id || null,
           id
         ).run()
         
