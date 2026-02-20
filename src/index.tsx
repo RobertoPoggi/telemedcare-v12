@@ -8075,7 +8075,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
     
     // Carica template dal database
-    const template = await loadEmailTemplate('email_invio_brochure', c.env.DB, c.env)
+    const template = await loadEmailTemplate('email_brochure', c.env.DB, c.env)
     
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
@@ -8125,7 +8125,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       `).bind(
         leadId,
         lead.email,
-        'email_invio_brochure',
+        'email_brochure',
         `eCura - Brochure ${servizio}`,
         result.success ? 'SENT' : 'SIMULATED',
         new Date().toISOString()
