@@ -3633,6 +3633,7 @@ ${370+e.length}
             // Analizza le fonti dei lead
             const fonteCounts = {};
             const fonteColors = {
+                'Sito www.eCura.it': 'bg-cyan-500',
                 'Privati IRBEMA': 'bg-blue-500',
                 'Form eCura': 'bg-green-500',
                 'Form eCura x Test': 'bg-yellow-500',
@@ -4441,6 +4442,7 @@ ${370+e.length}
                     />
                     <select id="filterFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutte le Fonti</option>
+                        <option value="Sito www.eCura.it">Sito www.eCura.it</option>
                         <option value="Privati IRBEMA">Privati IRBEMA</option>
                         <option value="Form eCura">Form eCura</option>
                         <option value="Form eCura x Test">Form eCura x Test</option>
@@ -4724,6 +4726,7 @@ ${370+e.length}
             
             // Colori per le fonti
             const fonteColors = {
+                'Sito www.eCura.it': 'bg-cyan-500',
                 'Privati IRBEMA': 'bg-blue-500',
                 'Form eCura': 'bg-green-500',
                 'Form eCura x Test': 'bg-yellow-500',
