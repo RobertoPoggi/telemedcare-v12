@@ -8366,13 +8366,20 @@ app.post('/api/leads/:id/complete', async (c) => {
         .bind(id)
         .first()
       
+      console.log(`🔍 [COMPLETAMENTO] Lead aggiornato trovato: ${!!updatedLead}`)
+      
       if (updatedLead) {
         // Importa funzioni workflow
         const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
         const { isLeadComplete } = await import('./modules/lead-completion')
         
+        console.log(`🔍 [COMPLETAMENTO] Verifica completezza lead...`)
+        
         // Verifica se lead è completo
-        if (isLeadComplete(updatedLead)) {
+        const leadComplete = isLeadComplete(updatedLead)
+        console.log(`🔍 [COMPLETAMENTO] isLeadComplete() = ${leadComplete}`)
+        
+        if (leadComplete) {
           console.log('✅ [COMPLETAMENTO] Lead completo → Invio contratto e brochure automatico')
           
           // SEMPRE ATTIVO: invio contratto e brochure dopo completamento dati
