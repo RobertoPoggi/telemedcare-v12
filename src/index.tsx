@@ -367,7 +367,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
 async function inviaEmailConfermaAttivazione(leadId: string, deviceId: number, db: any) {
   try {
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
-    const device = await db.prepare('SELECT * FROM devices WHERE id = ?').bind(deviceId).first()
+    const device = await db.prepare('SELECT * FROM dispositivi WHERE id = ?').bind(deviceId).first()
     
     if (!lead || !device) return { success: false, error: 'Lead o dispositivo non trovato' }
     
