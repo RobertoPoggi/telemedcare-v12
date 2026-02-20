@@ -8271,11 +8271,11 @@ app.post('/api/leads/:id/complete', async (c) => {
       cognomeAssistito: 'cognomeAssistito',
       dataNascitaAssistito: 'dataNascitaAssistito',
       luogoNascitaAssistito: 'luogoNascitaAssistito',
-      cittaAssistito: 'cittaAssistito',
-      cfAssistito: 'cfAssistito',  // DB usa cfAssistito
-      cfAssistito: 'cfAssistito',  // Alias
       indirizzoAssistito: 'indirizzoAssistito',
       capAssistito: 'capAssistito',
+      cittaAssistito: 'cittaAssistito',
+      provinciaAssistito: 'provinciaAssistito',  // ✅ FIX: aggiunto campo provincia
+      cfAssistito: 'cfAssistito',
       condizioniSalute: 'condizioniSalute',  // Campo per trigger contratto
       
       servizio: 'servizio',
@@ -10360,7 +10360,7 @@ app.post('/api/contracts/sign', async (c) => {
               </ol>
               
               <p><strong>📄 Contratto Firmato:</strong><br>
-              Il contratto firmato è disponibile per il download nella tua dashboard personale o <a href="https://telemedcare-v12.pages.dev/firma-contratto.html?contractId=${contractId}&view=signed" style="color: #0066cc; text-decoration: none;">cliccando qui</a>.</p>
+              Il contratto firmato è disponibile <a href="https://telemedcare-v12.pages.dev/api/contracts/${contractId}/pdf" style="color: #0066cc; text-decoration: none; font-weight: bold;">cliccando qui per scaricarlo</a>.</p>
               
               <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
               
@@ -10780,6 +10780,75 @@ app.get('/api/contracts/:id', async (c) => {
       error: 'Errore recupero contratto',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// GET /api/contracts/:id/pdf - Scarica contratto firmato come HTML
+app.get('/api/contracts/:id/pdf', async (c) => {
+  try {
+    const contractId = c.req.param('id')
+    
+    if (!c.env?.DB) {
+      return c.html('<h1>Errore: Database non configurato</h1>', 500)
+    }
+    
+    const contract = await c.env.DB.prepare('SELECT * FROM contracts WHERE id = ?')
+      .bind(contractId).first() as any
+    
+    if (!contract) {
+      return c.html('<h1>Errore: Contratto non trovato</h1>', 404)
+    }
+    
+    if (contract.status !== 'SIGNED') {
+      return c.html('<h1>Errore: Contratto non ancora firmato</h1>', 400)
+    }
+    
+    // Recupera HTML del contratto
+    let contractHtml = contract.contenuto_html || ''
+    
+    // Se esiste firma, aggiungi sezione firme
+    if (contract.signature_data) {
+      const signatureSection = `
+        <div style="margin-top: 60px; page-break-inside: avoid;">
+          <h2 style="text-align: center; margin-bottom: 40px;">Firme</h2>
+          <div style="display: flex; justify-content: space-between; gap: 40px;">
+            <div style="flex: 1; text-align: center;">
+              <p style="font-weight: bold; margin-bottom: 20px;">Il Cliente</p>
+              ${contract.signature_data.startsWith('data:image') ? `<img src="${contract.signature_data}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">` : `<p style="font-style: italic;">${contract.signature_data}</p>`}
+              <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                Firma digitale apposta il ${new Date(contract.signature_timestamp || contract.signed_at || Date.now()).toLocaleString('it-IT')}<br>
+                IP: ${contract.signature_ip || 'N/A'}
+              </p>
+            </div>
+            <div style="flex: 1; text-align: center;">
+              <p style="font-weight: bold; margin-bottom: 20px;">Per Medica GB S.r.l.</p>
+              <p style="margin-top: 80px; font-size: 14px;">
+                <strong>Stefania Rocca</strong><br>
+                Amministratore Delegato<br>
+                Medica GB S.r.l.
+              </p>
+              <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                Firma depositata presso sede legale<br>
+                Corso Giuseppe Garibaldi, 34 – 20121 Milano
+              </p>
+            </div>
+          </div>
+        </div>
+      `
+      
+      // Inserisci firma prima del tag </body>
+      contractHtml = contractHtml.replace('</body>', signatureSection + '</body>')
+    }
+    
+    // Restituisci HTML con header per download
+    return c.html(contractHtml, 200, {
+      'Content-Disposition': `attachment; filename="Contratto_Firmato_${contract.codice_contratto || contractId}.html"`,
+      'Content-Type': 'text/html; charset=utf-8'
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore download contratto:', error)
+    return c.html(`<h1>Errore: ${error instanceof Error ? error.message : String(error)}</h1>`, 500)
   }
 })
 

@@ -227,7 +227,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <!-- Carta intestata ufficiale Medica GB -->
     <div class="letterhead">
         <div class="letterhead-logo">
-            <img src="https://telemedcare-v12.pages.dev/images/medicagb-logo.png" alt="Medica GB Logo">
+            <img src="/images/medicagb-logo.png" alt="Medica GB Logo">
         </div>
         <div class="letterhead-info">
             <h3>Medica GB S.r.l.</h3>
