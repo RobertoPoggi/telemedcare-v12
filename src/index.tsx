@@ -11574,22 +11574,25 @@ app.delete('/api/leads/:id', async (c) => {
       // Continua comunque con l'eliminazione
     }
     
-    // WORKAROUND: Disabilita FOREIGN KEY checks temporaneamente per evitare errori con devices obsoleti
+    // Elimina record correlati PRIMA del lead per evitare problemi FK
     try {
-      await c.env.DB.prepare('PRAGMA foreign_keys = OFF').run()
+      // Elimina configurations associate (se esistono)
+      await c.env.DB.prepare('DELETE FROM configurations WHERE leadId = ?').bind(id).run()
+      console.log('✅ Configurations associate eliminate')
     } catch (e) {
-      console.warn('⚠️ Impossibile disabilitare FK checks:', e)
+      console.log('ℹ️ Nessuna configuration o tabella non esiste:', e)
+    }
+    
+    try {
+      // Elimina assistiti associati (se esistono)
+      await c.env.DB.prepare('DELETE FROM assistiti WHERE lead_id = ?').bind(id).run()
+      console.log('✅ Assistiti associati eliminati')
+    } catch (e) {
+      console.log('ℹ️ Nessun assistito o tabella non esiste:', e)
     }
     
     // Elimina il lead
     await c.env.DB.prepare('DELETE FROM leads WHERE id = ?').bind(id).run()
-    
-    // Riabilita FOREIGN KEY checks
-    try {
-      await c.env.DB.prepare('PRAGMA foreign_keys = ON').run()
-    } catch (e) {
-      console.warn('⚠️ Impossibile riabilitare FK checks:', e)
-    }
     
     console.log('✅ Lead eliminato:', id)
     
