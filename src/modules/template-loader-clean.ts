@@ -13,11 +13,30 @@ export async function loadEmailTemplate(
   db: D1Database,
   env?: any
 ): Promise<string> {
+  // 🔄 PRIORITÀ 1: Carica dal DATABASE
+  try {
+    console.log(`📂 [TEMPLATE] Tentativo caricamento da DB: "${templateName}"`)
+    const dbTemplate = await db.prepare('SELECT id, name, subject, content FROM email_templates WHERE name = ?')
+      .bind(templateName)
+      .first()
+    
+    if (dbTemplate && (dbTemplate as any).content) {
+      console.log(`✅ [TEMPLATE] Caricato dal DB: "${templateName}" (${((dbTemplate as any).content as string).length} chars)`)
+      return (dbTemplate as any).content as string
+    }
+    
+    console.log(`⚠️ [TEMPLATE] Template "${templateName}" non trovato nel DB, provo file statico...`)
+  } catch (dbError) {
+    console.error(`❌ [TEMPLATE] Errore caricamento DB:`, dbError)
+    console.log(`⚠️ [TEMPLATE] Fallback a file statico...`)
+  }
+  
+  // 🔄 FALLBACK: Carica da file statico
   const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
   const templatePath = `/templates/email/${templateName}.html`
   const templateUrl = `${baseUrl}${templatePath}`
   
-  console.log(`📂 [TEMPLATE] Loading "${templateName}" from: ${templateUrl}`)
+  console.log(`📂 [TEMPLATE] Loading from file: ${templateUrl}`)
   
   try {
     const response = await fetch(templateUrl)
@@ -27,12 +46,12 @@ export async function loadEmailTemplate(
     }
     
     const html = await response.text()
-    console.log(`✅ [TEMPLATE] Loaded "${templateName}" (${html.length} chars)`)
+    console.log(`✅ [TEMPLATE] Loaded from file: "${templateName}" (${html.length} chars)`)
     return html
     
   } catch (error) {
     console.error(`❌ [TEMPLATE] Error loading "${templateName}":`, error)
-    throw new Error(`Template "${templateName}" not found at ${templateUrl}`)
+    throw new Error(`Template "${templateName}" not found in DB or at ${templateUrl}`)
   }
 }
 
