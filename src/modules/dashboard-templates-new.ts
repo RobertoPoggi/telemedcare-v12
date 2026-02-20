@@ -3843,7 +3843,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             // Prezzi per servizio (primo anno / rinnovo) - AGGIORNATI da ecura.it
             const prices = {
-                'eCura Family': {
+                'eCura FAMILY': {
                     BASE: { primo: 390, rinnovo: 200 },
                     AVANZATO: { primo: 690, rinnovo: 500 }
                 },
@@ -4300,7 +4300,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Piano *</label>
-                                <select id="newPiano" required 
+                                <select id="newPiano" required onchange="updatePrices()"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="BASE">Piano BASE - €480/anno (rinnovo €200/anno)</option>
                                     <option value="AVANZATO">Piano AVANZATO - €840/anno (rinnovo €600/anno)</option>
@@ -4314,6 +4314,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <select id="newCanale" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona fonte...</option>
+                                    <option value="Sito www.eCura.it">Sito www.eCura.it</option>
                                     <option value="Privati IRBEMA">Privati IRBEMA</option>
                                     <option value="Form eCura">Form eCura</option>
                                     <option value="Form eCura x Test">Form eCura x Test</option>
