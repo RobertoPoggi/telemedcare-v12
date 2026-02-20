@@ -10554,6 +10554,29 @@ app.get('/api/debug/env', async (c) => {
   })
 })
 
+// DEBUG: List all email templates in database
+app.get('/api/debug/email-templates', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database not configured' }, 500)
+    }
+    
+    const templates = await c.env.DB.prepare('SELECT id, name, subject, LENGTH(content) as content_length, created_at, updated_at FROM email_templates ORDER BY name')
+      .all()
+    
+    return c.json({
+      success: true,
+      count: templates.results.length,
+      templates: templates.results
+    })
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 app.post('/api/debug/test-contract-save', async (c) => {
   try {
     if (!c.env?.DB) {
