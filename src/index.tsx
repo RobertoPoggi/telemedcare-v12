@@ -12071,6 +12071,82 @@ app.post('/api/db/migrate', async (c) => {
       migrations.push(`Errore rimozione devices: ${error}`)
     }
 
+    // Migrazione CRITICA: Ricrea configurations senza FK a devices
+    try {
+      console.log('🔧 Verifica tabella configurations...')
+      
+      // Verifica se configurations ha FK a devices
+      const configExists = await c.env.DB.prepare(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='configurations'
+      `).first()
+      
+      if (configExists) {
+        console.log('⚠️ Ricreazione configurations senza FK a devices...')
+        
+        // Backup dati
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS configurations_backup AS SELECT * FROM configurations
+        `).run()
+        console.log('✅ Backup configurations creato')
+        
+        // Drop vecchia configurations
+        await c.env.DB.prepare(`DROP TABLE IF EXISTS configurations`).run()
+        console.log('✅ Vecchia configurations droppata')
+        
+        // Ricrea senza FK a devices
+        await c.env.DB.prepare(`
+          CREATE TABLE configurations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            leadId TEXT NOT NULL,
+            device_id INTEGER,
+            contract_id TEXT,
+            contatto_emergenza_1_nome TEXT,
+            contatto_emergenza_1_telefono TEXT,
+            contatto_emergenza_1_relazione TEXT,
+            contatto_emergenza_2_nome TEXT,
+            contatto_emergenza_2_telefono TEXT,
+            contatto_emergenza_2_relazione TEXT,
+            medico_curante_nome TEXT,
+            medico_curante_telefono TEXT,
+            centro_medico_riferimento TEXT,
+            allergie TEXT,
+            patologie_croniche TEXT,
+            farmaci_assunti TEXT,
+            modalita_utilizzo TEXT,
+            orari_attivazione TEXT,
+            status TEXT DEFAULT 'PENDING',
+            data_completamento DATETIME,
+            form_inviato BOOLEAN DEFAULT FALSE,
+            email_benvenuto_inviata BOOLEAN DEFAULT FALSE,
+            email_conferma_inviata BOOLEAN DEFAULT FALSE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE,
+            FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+          )
+        `).run()
+        console.log('✅ Nuova configurations creata (senza FK devices)')
+        
+        // Ripristina dati
+        await c.env.DB.prepare(`
+          INSERT INTO configurations SELECT * FROM configurations_backup
+        `).run()
+        console.log('✅ Dati configurations ripristinati')
+        
+        // Drop backup
+        await c.env.DB.prepare(`DROP TABLE configurations_backup`).run()
+        console.log('✅ Backup configurations rimosso')
+        
+        migrations.push('Tabella configurations ricreata senza FK a devices')
+      } else {
+        console.log('ℹ️ Tabella configurations non trovata')
+        migrations.push('Tabella configurations non trovata')
+      }
+    } catch (error) {
+      console.error('❌ Errore fix configurations:', error)
+      migrations.push(`Errore fix configurations: ${error}`)
+    }
+
     return c.json({
       success: true,
       message: 'Migrazioni completate',
