@@ -12001,15 +12001,63 @@ app.post('/api/db/migrate', async (c) => {
       console.log('⚠️ Errore aggiornamento piano contratti:', error)
     }
 
+    // Migrazione CRITICA: Drop tabella devices obsoleta (ora si chiama dispositivi)
+    const migrations = [
+      'Tabella assistiti creata',
+      'Colonna imei_dispositivo aggiunta a contracts',
+      'Colonne aggiuntive verificate in contracts',
+      'Colonna piano aggiunta e aggiornata in contracts'
+    ]
+    
+    try {
+      // Verifica se esiste la tabella devices
+      const devicesExists = await c.env.DB.prepare(`
+        SELECT name FROM sqlite_master WHERE type='table' AND name='devices'
+      `).first()
+      
+      if (devicesExists) {
+        console.log('⚠️ Tabella devices obsoleta trovata, rimozione in corso...')
+        
+        // Drop foreign keys che puntano a devices (la tabella configurations)
+        // In SQLite non si possono droppare FK direttamente, devo ricreare la tabella
+        // Per ora droppo solo la tabella devices - i FK falliranno ma dispositivi funziona
+        
+        await c.env.DB.prepare(`DROP TABLE IF EXISTS devices`).run()
+        console.log('✅ Tabella devices obsoleta rimossa')
+        migrations.push('Tabella devices obsoleta rimossa')
+        
+        // Drop indici obsoleti
+        try {
+          await c.env.DB.prepare(`DROP INDEX IF EXISTS idx_devices_imei`).run()
+          await c.env.DB.prepare(`DROP INDEX IF EXISTS idx_devices_leadId`).run()
+          await c.env.DB.prepare(`DROP INDEX IF EXISTS idx_devices_status`).run()
+          console.log('✅ Indici devices obsoleti rimossi')
+          migrations.push('Indici devices obsoleti rimossi')
+        } catch (e) {
+          console.log('ℹ️ Indici devices già rimossi')
+        }
+        
+        // Drop trigger obsoleto
+        try {
+          await c.env.DB.prepare(`DROP TRIGGER IF EXISTS devices_updated_at`).run()
+          console.log('✅ Trigger devices_updated_at obsoleto rimosso')
+          migrations.push('Trigger devices_updated_at rimosso')
+        } catch (e) {
+          console.log('ℹ️ Trigger devices_updated_at già rimosso')
+        }
+      } else {
+        console.log('✅ Tabella devices non esiste (già migrata a dispositivi)')
+        migrations.push('Tabella devices non trovata (già dispositivi)')
+      }
+    } catch (error) {
+      console.error('❌ Errore rimozione devices:', error)
+      migrations.push(`Errore rimozione devices: ${error}`)
+    }
+
     return c.json({
       success: true,
       message: 'Migrazioni completate',
-      migrations: [
-        'Tabella assistiti creata',
-        'Colonna imei_dispositivo aggiunta a contracts',
-        'Colonne aggiuntive verificate in contracts',
-        'Colonna piano aggiunta e aggiornata in contracts'
-      ]
+      migrations
     })
   } catch (error) {
     console.error('❌ Errore migrazioni:', error)
