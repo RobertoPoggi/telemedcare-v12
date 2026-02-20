@@ -800,13 +800,11 @@ export async function inviaEmailContratto(
     const emailLeadsEnabled = await getSetting(db, 'lead_email_notifications_enabled')
     console.log(`🔍 [WORKFLOW] Email automatiche lead: ${emailLeadsEnabled ? 'ABILITATE ✅' : 'DISABILITATE ❌'}`)
     
-    // ✅ BYPASS TEMPORANEO: Sempre attivo per testing
-    // if (!emailLeadsEnabled) {
-    //   console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
-    //   result.errors.push('⚠️ Email automatiche ai lead DISABILITATE nelle impostazioni sistema. Vai su Impostazioni > Email Lead per abilitarle.')
-    //   return result
-    // }
-    console.log(`✅ [WORKFLOW] Invio contratto SEMPRE attivo (bypass switch per testing)`)
+    if (!emailLeadsEnabled) {
+      console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
+      result.errors.push('⚠️ Email automatiche ai lead DISABILITATE nelle impostazioni sistema. Vai su Impostazioni > Email Lead per abilitarle.')
+      return result
+    }
 
     console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.email}`)
 
@@ -891,7 +889,9 @@ export async function inviaEmailContratto(
     const emailService = new EmailService(env)
     
     // Carica template email_invio_contratto (UNICO per BASE e AVANZATO)
+    console.log(`📧 [CONTRATTO] Caricamento template email_invio_contratto...`)
     const template = await loadEmailTemplate('email_invio_contratto', db, env)
+    console.log(`📧 [CONTRATTO] Template caricato (${template.length} chars)`)
     
     // Prepara i dati per il template
     const servizioNome = contractData.servizio || leadData.servizio || 'eCura PRO' // eCura PRO, eCura FAMILY, eCura PREMIUM
@@ -923,8 +923,11 @@ export async function inviaEmailContratto(
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
+    console.log(`📧 [CONTRATTO] Template data:`, JSON.stringify(templateData, null, 2))
+
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
+    console.log(`📧 [CONTRATTO] Template renderizzato (${emailHtml.length} chars)`)
 
     // Prepara allegati: Brochure PDF usando ASSETS binding
     const attachments = []
@@ -988,6 +991,11 @@ export async function inviaEmailContratto(
     }
 
     // Invia email con allegati
+    console.log(`📧 [CONTRATTO] Invio email a: ${leadData.email}`)
+    console.log(`📧 [CONTRATTO] Subject: 📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`)
+    console.log(`📧 [CONTRATTO] Allegati: ${attachments.length}`)
+    console.log(`📧 [CONTRATTO] HTML length: ${emailHtml.length}`)
+    
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: 'info@telemedcare.it',
@@ -995,6 +1003,8 @@ export async function inviaEmailContratto(
       html: emailHtml,
       attachments: attachments
     })
+    
+    console.log(`📧 [CONTRATTO] Send result:`, JSON.stringify(sendResult, null, 2))
 
     if (sendResult.success) {
       result.success = true
