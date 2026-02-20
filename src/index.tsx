@@ -8074,8 +8074,8 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     const EmailServiceClass = (await import('./modules/email-service')).default
     const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
     
-    // Carica template dal database
-    const template = await loadEmailTemplate('email_brochure', c.env.DB, c.env)
+    // Carica template dal database (restituisce solo HTML string)
+    const templateHtml = await loadEmailTemplate('email_brochure', c.env.DB, c.env)
     
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
@@ -8088,14 +8088,17 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     }
     
     // Render template con variabili
-    const htmlContent = renderTemplate(template.content || '', variables)
+    const htmlContent = renderTemplate(templateHtml, variables)
     
     console.log('📧 [BROCHURE] Invio email con allegato brochure...')
+    console.log('📧 [BROCHURE] HTML content length:', htmlContent.length)
+    console.log('📧 [BROCHURE] To:', lead.email)
+    
     const emailService = new EmailServiceClass(c.env)
     const result = await emailService.sendEmail({
       to: lead.email,
       from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
-      subject: template.subject || `eCura - Brochure ${servizio}`,
+      subject: `eCura - Brochure ${servizio}`,
       html: htmlContent,
       attachments
     })
