@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS payments (
 -- =====================================
 -- TABELLA DEVICES (Dispositivi TeleMedCare)
 -- =====================================
-CREATE TABLE IF NOT EXISTS devices (
+CREATE TABLE IF NOT EXISTS dispositivi (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     
     -- Identificazione dispositivo
@@ -295,7 +295,7 @@ CREATE TABLE IF NOT EXISTS configurations (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE,
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    FOREIGN KEY (device_id) REFERENCES dispositivi(id) ON DELETE CASCADE,
     FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
 );
 
@@ -369,9 +369,9 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_payments_transaction_id ON payments(transaction_id);
 
 -- Indici devices
-CREATE INDEX IF NOT EXISTS idx_devices_imei ON devices(imei);
-CREATE INDEX IF NOT EXISTS idx_devices_leadId ON devices(leadId);
-CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status);
+CREATE INDEX IF NOT EXISTS idx_dispositivi_imei ON dispositivi(imei);
+CREATE INDEX IF NOT EXISTS idx_dispositivi_leadId ON dispositivi(leadId);
+CREATE INDEX IF NOT EXISTS idx_dispositivi_status ON dispositivi(status);
 
 -- Indici configurations
 CREATE INDEX IF NOT EXISTS idx_configurations_leadId ON configurations(leadId);
@@ -423,12 +423,12 @@ BEGIN
 END;
 
 -- Trigger per devices
-CREATE TRIGGER IF NOT EXISTS devices_updated_at 
-    AFTER UPDATE ON devices 
+CREATE TRIGGER IF NOT EXISTS dispositivi_updated_at 
+    AFTER UPDATE ON dispositivi 
     FOR EACH ROW 
     WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-    UPDATE devices SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    UPDATE dispositivi SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
 -- Trigger per configurations
