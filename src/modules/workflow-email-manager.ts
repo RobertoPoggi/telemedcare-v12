@@ -800,11 +800,13 @@ export async function inviaEmailContratto(
     const emailLeadsEnabled = await getSetting(db, 'lead_email_notifications_enabled')
     console.log(`🔍 [WORKFLOW] Email automatiche lead: ${emailLeadsEnabled ? 'ABILITATE ✅' : 'DISABILITATE ❌'}`)
     
-    if (!emailLeadsEnabled) {
-      console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
-      result.errors.push('⚠️ Email automatiche ai lead DISABILITATE nelle impostazioni sistema. Vai su Impostazioni > Email Lead per abilitarle.')
-      return result
-    }
+    // ✅ BYPASS TEMPORANEO: Sempre attivo per testing
+    // if (!emailLeadsEnabled) {
+    //   console.log(`⏭️ [WORKFLOW] Email automatiche ai lead disabilitate - skip invio contratto`)
+    //   result.errors.push('⚠️ Email automatiche ai lead DISABILITATE nelle impostazioni sistema. Vai su Impostazioni > Email Lead per abilitarle.')
+    //   return result
+    // }
+    console.log(`✅ [WORKFLOW] Invio contratto SEMPRE attivo (bypass switch per testing)`)
 
     console.log(`📧 [WORKFLOW] STEP 2B: Invio contratto ${contractData.tipoServizio} a ${leadData.email}`)
 

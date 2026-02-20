@@ -8092,16 +8092,13 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     console.log('📧 [BROCHURE] Invio email con allegato brochure...')
     const emailService = new EmailServiceClass(c.env)
-    const result = await emailService.sendEmail(
-      {
-        to: lead.email,
-        from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
-        subject: template.subject || `eCura - Brochure ${servizio}`,
-        html: htmlContent,
-        attachments
-      },
-      c.env
-    )
+    const result = await emailService.sendEmail({
+      to: lead.email,
+      from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
+      subject: template.subject || `eCura - Brochure ${servizio}`,
+      html: htmlContent,
+      attachments
+    })
     
     // 3. AGGIORNA DATABASE
     if (result.success) {
