@@ -8071,7 +8071,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     }
     
     // 2. INVIA EMAIL CON BROCHURE usando template DB
-    const EmailService = (await import('./modules/email-service')).default
+    const EmailServiceClass = (await import('./modules/email-service')).default
     const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
     
     // Carica template dal database
@@ -8091,7 +8091,8 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     const htmlContent = renderTemplate(template.content || '', variables)
     
     console.log('📧 [BROCHURE] Invio email con allegato brochure...')
-    const result = await EmailService.send(
+    const emailService = new EmailServiceClass(c.env)
+    const result = await emailService.sendEmail(
       {
         to: lead.email,
         from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
