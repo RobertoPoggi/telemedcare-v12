@@ -8100,6 +8100,14 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       attachments
     })
     
+    // Log DEMO MODE warning
+    if ((result as any).demoMode) {
+      console.error('🚨 [BROCHURE] ⚠️ DEMO MODE ATTIVO - Email NON inviata realmente!')
+      console.error('🚨 [BROCHURE] Configura RESEND_API_KEY o SENDGRID_API_KEY su Cloudflare Pages')
+      console.error('🚨 [BROCHURE] Warning:', (result as any).warning)
+      console.error('🚨 [BROCHURE] Errors:', JSON.stringify((result as any).errors, null, 2))
+    }
+    
     // 3. AGGIORNA DATABASE
     if (result.success) {
       // Aggiorna lead
@@ -8135,7 +8143,9 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
         success: true,
         message: `Brochure ${brochureFilename} inviata a ${lead.email}`,
         emailStatus: result.success ? 'sent' : 'simulated',
-        attachments: attachments.length
+        attachments: attachments.length,
+        demoMode: (result as any).demoMode || false,
+        warning: (result as any).demoMode ? '⚠️ DEMO MODE: Email NON inviata realmente! Configura RESEND_API_KEY' : undefined
       })
     } else {
       return c.json({

@@ -537,6 +537,7 @@ export class EmailService {
         messageId: `DEMO_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         timestamp: new Date().toISOString(),
         warning: '⚠️ DEMO MODE: Email NON inviata realmente! Configura RESEND_API_KEY o SENDGRID_API_KEY',
+        demoMode: true,  // ← Flag per identificare DEMO MODE
         errors: {
           resend: resendError?.message || String(resendError),
           sendgrid: sendgridError?.message || String(sendgridError)
