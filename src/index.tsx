@@ -7886,8 +7886,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const timestamp = Date.now()
     const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
     const anno = new Date().getFullYear()
-    const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
-    const contractId = `contract-${timestamp}`
+    const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+    const contractCode = `CTR-${cognome}-${anno}`
     
     // Determina servizio e piano (usa quello richiesto se presente, altrimenti quello del lead)
     const servizio = lead.servizio || 'eCura PRO'
@@ -8401,8 +8401,8 @@ app.post('/api/leads/:id/complete', async (c) => {
             const timestamp = Date.now()
             const cognome = ((updatedLead as any).cognomeAssistito || (updatedLead as any).cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
             const anno = new Date().getFullYear()
-            const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
-            const contractId = `contract-${timestamp}`
+            const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+            const contractCode = `CTR-${cognome}-${anno}`
             
             const servizio = (updatedLead as any).servizio || 'eCura PRO'
             const piano = (updatedLead as any).piano || 'BASE'
@@ -8618,8 +8618,8 @@ app.post('/api/lead/:id/complete', async (c) => {
           const timestamp = Date.now()
           const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
           const anno = new Date().getFullYear()
-          const contractCode = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
-          const contractId = `contract-${timestamp}`
+          const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+          const contractCode = `CTR-${cognome}-${anno}`
           const servizio = (updatedLead as any).servizio || 'eCura PRO'
           const piano = (updatedLead as any).piano || 'BASE'
           
