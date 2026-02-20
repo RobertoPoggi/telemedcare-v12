@@ -41,10 +41,10 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataInizioServizio = new Date().toLocaleDateString('it-IT')
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
-  // Determina intestatario contratto (richiedente o assistito)
-  const useRichiedente = !leadData.intestatarioContratto || leadData.intestatarioContratto === 'richiedente'
-  const nomeIntestatario = useRichiedente ? leadData.nomeRichiedente : (leadData.nomeAssistito || leadData.nomeRichiedente)
-  const cognomeIntestatario = useRichiedente ? leadData.cognomeRichiedente : (leadData.cognomeAssistito || leadData.cognomeRichiedente)
+  // ✅ CORRETTO: Intestatario contratto è SEMPRE l'assistito (il servizio è per lui/lei)
+  // Il richiedente/caregiver va nei "Riferimenti"
+  const nomeIntestatario = leadData.nomeAssistito || leadData.nomeRichiedente || 'N/A'
+  const cognomeIntestatario = leadData.cognomeAssistito || leadData.cognomeRichiedente || 'N/A'
   const luogoNascitaIntestatario = leadData.luogoNascitaAssistito || 'N/A'
   const dataNascitaIntestatario = leadData.dataNascitaAssistito || 'N/A'
   const indirizzoIntestatario = leadData.indirizzoAssistito || 'N/A'
@@ -52,6 +52,12 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const cittaIntestatario = leadData.cittaAssistito || 'N/A'
   const provinciaIntestatario = leadData.provinciaAssistito || 'N/A'
   const cfIntestatario = leadData.cfAssistito || 'N/A'
+  
+  // Care giver (richiedente) per i riferimenti
+  const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
+  const cognomeCareGiver = leadData.cognomeRichiedente || cognomeIntestatario
+  const telefonoCareGiver = leadData.telefono || 'N/A'
+  const emailCareGiver = leadData.email || 'N/A'
   
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
@@ -221,7 +227,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <!-- Carta intestata ufficiale Medica GB -->
     <div class="letterhead">
         <div class="letterhead-logo">
-            <img src="/images/medicagb-logo.png" alt="Medica GB Logo">
+            <img src="https://telemedcare-v12.pages.dev/images/medicagb-logo.png" alt="Medica GB Logo">
         </div>
         <div class="letterhead-info">
             <h3>Medica GB S.r.l.</h3>
@@ -250,7 +256,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span></p>
         
         <p><strong>Riferimenti:</strong><br>
-        Signor <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> – telefono <span class="highlight">${leadData.telefono || 'N/A'}</span> – e-mail <span class="highlight">${leadData.email}</span></p>
+        Signor <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>
@@ -315,7 +321,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     
     <div class="payment-details">
         <p><strong>Intestato a:</strong> Medica GB Srl</p>
-        <p><strong>Causale:</strong> (NOME E COGNOME ASSISTITO) - SERVIZI PER ${dispositivo.toUpperCase()}</p>
+        <p><strong>Causale:</strong> ${cognomeIntestatario} ${nomeIntestatario} - SERVIZI PER ${dispositivo.toUpperCase()}</p>
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
     

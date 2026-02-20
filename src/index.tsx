@@ -10348,18 +10348,16 @@ app.post('/api/contracts/sign', async (c) => {
               <ul>
                 <li>Servizio: ${contract.servizio || 'eCura PRO'}</li>
                 <li>Piano: ${contract.piano || 'BASE'}</li>
-                <li>Investimento: €${contract.prezzo_totale || '585.60'}/anno</li>
+                <li>Investimento: €${contract.prezzo_totale || '480'}/anno + iva 22%</li>
                 <li>Data firma: ${new Date().toLocaleDateString('it-IT')}</li>
               </ul>
               
               <p><strong>📬 Prossimi Passi:</strong></p>
               <ol>
-                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un'email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
-                <li><strong>Attivazione servizio</strong> - Dopo il pagamento, il servizio verrà attivato entro 24-48 ore</li>
+                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un’email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
+                <li><strong>Attivazione servizio</strong> - Dopo il pagamento, il servizio verrà attivato al più presto</li>
                 <li><strong>Configurazione dispositivo</strong> - Riceverai le istruzioni per configurare il dispositivo SiDLY</li>
               </ol>
-              
-              <p>💡 <em>Il contratto firmato sarà disponibile nel tuo pannello personale e verrà incluso nella prossima comunicazione.</em></p>
               
               <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
               
@@ -10373,6 +10371,10 @@ app.post('/api/contracts/sign', async (c) => {
           </html>
         `
         
+        // ✅ Converti HTML del contratto firmato in base64 per allegarlo
+        const contractHtmlBuffer = Buffer.from(contractHtmlWithSignatures, 'utf-8')
+        const contractHtmlBase64 = contractHtmlBuffer.toString('base64')
+        
         const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -10384,7 +10386,14 @@ app.post('/api/contracts/sign', async (c) => {
             to: [lead.email],
             cc: ['info@telemedcare.it'],
             subject: `✅ Contratto Firmato - ${contract.codice_contratto}`,
-            html: emailHtml
+            html: emailHtml,
+            attachments: [
+              {
+                filename: `Contratto_Firmato_${contract.codice_contratto}.html`,
+                content: contractHtmlBase64,
+                content_type: 'text/html'
+              }
+            ]
           })
         })
         
