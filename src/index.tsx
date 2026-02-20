@@ -8070,12 +8070,16 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       return c.json({ success: false, error: 'Servizio non valido' }, 400)
     }
     
-    // 2. INVIA EMAIL CON BROCHURE
+    // 2. INVIA EMAIL CON BROCHURE usando template DB
     const EmailService = (await import('./modules/email-service')).default
-    const emailService = EmailService.getInstance()
+    const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+    
+    // Carica template dal database
+    const template = await loadEmailTemplate('email_invio_brochure', c.env.DB, c.env)
     
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
+      COGNOME_CLIENTE: lead.cognomeRichiedente || '',
       LEAD_ID: leadId,
       SERVIZIO: `eCura ${servizio}`,
       PIANO: piano === 'AVANZATO' ? 'Avanzato' : 'Base',
@@ -8083,12 +8087,18 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       COGNOME_ASSISTITO: lead.cognomeAssistito || lead.cognomeRichiedente || ''
     }
     
+    // Render template con variabili
+    const htmlContent = renderTemplate(template.content || '', variables)
+    
     console.log('📧 [BROCHURE] Invio email con allegato brochure...')
-    const result = await emailService.sendTemplateEmail(
-      'DOCUMENTI_INFORMATIVI',
-      lead.email,
-      variables,
-      attachments,
+    const result = await EmailService.send(
+      {
+        to: lead.email,
+        from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
+        subject: template.subject || `eCura - Brochure ${servizio}`,
+        html: htmlContent,
+        attachments
+      },
       c.env
     )
     
