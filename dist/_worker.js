@@ -5725,14 +5725,13 @@ ${370+e.length}
                     submitButton.innerHTML = '✉️ Invia Richiesta';
                 }
                 
-                // Ripristina i required solo sui campi principali
-                const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono'];
+                // Ripristina i required
+                const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
+                    'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
                 requiredFields.forEach(fieldId => {
                     const field = document.getElementById(fieldId);
                     if (field) field.setAttribute('required', 'required');
                 });
-                
-                // Servizio e Piano sono obbligatori di default nei select
             }
         }
         
@@ -5759,14 +5758,13 @@ ${370+e.length}
                 submitButton.innerHTML = '✉️ Invia Richiesta';
             }
             
-            // Ripristina i required solo sui campi principali
-            const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono'];
+            // Ripristina i required sui campi obbligatori
+            const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
+                'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
             requiredFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) field.setAttribute('required', 'required');
             });
-            
-            // Servizio e Piano sono obbligatori di default nei select
             
             // Nascondi sezione interazioni (solo per Edit)
             const interactionsSection = document.getElementById('editInteractionsSection');
@@ -6182,58 +6180,58 @@ ${370+e.length}
                         
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome Assistito</label>
-                                <input type="text" id="newNomeAssistito" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome Assistito *</label>
+                                <input type="text" id="newNomeAssistito" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Giuseppe">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome Assistito</label>
-                                <input type="text" id="newCognomeAssistito" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome Assistito *</label>
+                                <input type="text" id="newCognomeAssistito" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Rossi">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Luogo di Nascita</label>
-                                <input type="text" id="newLuogoNascita" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Luogo di Nascita *</label>
+                                <input type="text" id="newLuogoNascita" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Milano">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita</label>
-                                <input type="text" id="newDataNascita" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita *</label>
+                                <input type="text" id="newDataNascita" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="15/03/1950"
                                     onblur="calculateAge()" onchange="calculateAge()">
                                 <div id="etaCalcolata" class="text-sm text-gray-500 mt-1"></div>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo</label>
-                                <input type="text" id="newIndirizzoAssistito" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo *</label>
+                                <input type="text" id="newIndirizzoAssistito" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Via Roma 123">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP</label>
-                                <input type="text" id="newCapAssistito" maxlength="5"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP *</label>
+                                <input type="text" id="newCapAssistito" required maxlength="5"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="20121">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città</label>
-                                <input type="text" id="newCittaAssistito" 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città *</label>
+                                <input type="text" id="newCittaAssistito" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Milano">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia</label>
-                                <input type="text" id="newProvinciaAssistito" maxlength="2"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia *</label>
+                                <input type="text" id="newProvinciaAssistito" required maxlength="2"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
                                     placeholder="MI">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale</label>
-                                <input type="text" id="newCodiceFiscale" maxlength="16"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale *</label>
+                                <input type="text" id="newCodiceFiscale" required maxlength="16"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
                                     placeholder="RSSGPP50C15F205X">
                             </div>
@@ -12540,7 +12538,7 @@ startxref
             pdf_url = ?,
             updated_at = datetime('now')
           WHERE id = ?
-        `).bind(r.codiceContratto,r.dataScadenza,r.prezzoTotale,r.prezzoMensile,r.pdfUrl,l.id).run(),a.push({success:!0,action:"UPDATE",contractId:l.id,contractCode:r.codiceContratto,oldCode:l.codice_contratto,cliente:`${r.nome} ${r.cognome}`,dataScadenza:r.dataScadenza,pdfUrl:r.pdfUrl,note:`Aggiornato da ${l.codice_contratto} a ${r.codiceContratto}`})}catch(s){console.error(`❌ Errore per ${r.nome} ${r.cognome}:`,s),a.push({success:!1,error:s instanceof Error?s.message:String(s),cliente:`${r.nome} ${r.cognome}`})}const i=a.filter(r=>r.success).length;return t.json({success:i===3,message:`✅ Aggiornati ${i}/3 contratti (senza perdita dati)`,results:a})}catch(e){return console.error("❌ Errore fix manual 3 contratti:",e),t.json({success:!1,error:"Errore durante l'aggiornamento dei contratti",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/leads",async t=>{var o;try{const e=await t.req.json();if(console.log("🔍 [DEBUG POST /api/leads] Payload ricevuto:",JSON.stringify(e,null,2)),console.log("🔍 [DEBUG] luogoNascitaAssistito:",e.luogoNascitaAssistito,"type:",typeof e.luogoNascitaAssistito),console.log("🔍 [DEBUG] dataNascitaAssistito:",e.dataNascitaAssistito,"type:",typeof e.dataNascitaAssistito),!((o=t.env)!=null&&o.DB))return t.json({success:!0,message:"Lead creato (mock)",id:"LEAD-MOCK-"+Date.now()});if(!e.nomeRichiedente||!e.cognomeRichiedente||!e.email||!e.telefono||!e.servizio||!e.piano)return t.json({success:!1,error:"Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano"},400);const a=`LEAD-MANUAL-${Date.now()}`,i=new Date().toISOString();await t.env.DB.prepare(`
+        `).bind(r.codiceContratto,r.dataScadenza,r.prezzoTotale,r.prezzoMensile,r.pdfUrl,l.id).run(),a.push({success:!0,action:"UPDATE",contractId:l.id,contractCode:r.codiceContratto,oldCode:l.codice_contratto,cliente:`${r.nome} ${r.cognome}`,dataScadenza:r.dataScadenza,pdfUrl:r.pdfUrl,note:`Aggiornato da ${l.codice_contratto} a ${r.codiceContratto}`})}catch(s){console.error(`❌ Errore per ${r.nome} ${r.cognome}:`,s),a.push({success:!1,error:s instanceof Error?s.message:String(s),cliente:`${r.nome} ${r.cognome}`})}const i=a.filter(r=>r.success).length;return t.json({success:i===3,message:`✅ Aggiornati ${i}/3 contratti (senza perdita dati)`,results:a})}catch(e){return console.error("❌ Errore fix manual 3 contratti:",e),t.json({success:!1,error:"Errore durante l'aggiornamento dei contratti",details:e instanceof Error?e.message:String(e)},500)}});I.post("/api/leads",async t=>{var o;try{const e=await t.req.json();if(console.log("🔍 [DEBUG POST /api/leads] Payload ricevuto:",JSON.stringify(e,null,2)),console.log("🔍 [DEBUG] luogoNascitaAssistito:",e.luogoNascitaAssistito,"type:",typeof e.luogoNascitaAssistito),console.log("🔍 [DEBUG] dataNascitaAssistito:",e.dataNascitaAssistito,"type:",typeof e.dataNascitaAssistito),!((o=t.env)!=null&&o.DB))return t.json({success:!0,message:"Lead creato (mock)",id:"LEAD-MOCK-"+Date.now()});if(!e.nomeRichiedente||!e.cognomeRichiedente||!e.email)return t.json({success:!1,error:"Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email"},400);const a=`LEAD-MANUAL-${Date.now()}`,i=new Date().toISOString();await t.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, 
         email, telefono,

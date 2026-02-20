@@ -11284,12 +11284,10 @@ app.post('/api/leads', async (c) => {
     }
     
     // Validazione campi obbligatori
-    // SOLO i campi essenziali sono obbligatori per la creazione lead
-    // Campi obbligatori: nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano
-    if (!data.nomeRichiedente || !data.cognomeRichiedente || !data.email || !data.telefono || !data.servizio || !data.piano) {
+    if (!data.nomeRichiedente || !data.cognomeRichiedente || !data.email) {
       return c.json({ 
         success: false, 
-        error: 'Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano' 
+        error: 'Campi obbligatori mancanti: nomeRichiedente, cognomeRichiedente, email' 
       }, 400)
     }
     
