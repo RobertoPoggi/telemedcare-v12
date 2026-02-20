@@ -10354,10 +10354,13 @@ app.post('/api/contracts/sign', async (c) => {
               
               <p><strong>📬 Prossimi Passi:</strong></p>
               <ol>
-                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un’email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
+                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un'email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
                 <li><strong>Attivazione servizio</strong> - Dopo il pagamento, il servizio verrà attivato al più presto</li>
                 <li><strong>Configurazione dispositivo</strong> - Riceverai le istruzioni per configurare il dispositivo SiDLY</li>
               </ol>
+              
+              <p><strong>📄 Contratto Firmato:</strong><br>
+              Il contratto firmato è disponibile per il download nella tua dashboard personale o <a href="https://telemedcare-v12.pages.dev/firma-contratto.html?contractId=${contractId}&view=signed" style="color: #0066cc; text-decoration: none;">cliccando qui</a>.</p>
               
               <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
               
@@ -10371,9 +10374,6 @@ app.post('/api/contracts/sign', async (c) => {
           </html>
         `
         
-        // ✅ Converti HTML del contratto firmato in base64 per allegarlo
-        const contractHtmlBuffer = Buffer.from(contractHtmlWithSignatures, 'utf-8')
-        const contractHtmlBase64 = contractHtmlBuffer.toString('base64')
         
         const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -10386,14 +10386,9 @@ app.post('/api/contracts/sign', async (c) => {
             to: [lead.email],
             cc: ['info@telemedcare.it'],
             subject: `✅ Contratto Firmato - ${contract.codice_contratto}`,
-            html: emailHtml,
-            attachments: [
-              {
-                filename: `Contratto_Firmato_${contract.codice_contratto}.html`,
-                content: contractHtmlBase64,
-                content_type: 'text/html'
-              }
-            ]
+            html: emailHtml
+            // ❌ RIMOSSO allegato HTML - non compatibile con tutti i client email
+            // Il contratto firmato è accessibile tramite link nella email
           })
         })
         
