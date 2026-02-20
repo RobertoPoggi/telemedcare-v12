@@ -3728,9 +3728,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     submitButton.innerHTML = '✉️ Invia Richiesta';
                 }
                 
-                // Ripristina i required
-                const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
-                    'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
+                // Ripristina i required solo sui campi principali
+                const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono'];
                 requiredFields.forEach(fieldId => {
                     const field = document.getElementById(fieldId);
                     if (field) field.setAttribute('required', 'required');
@@ -3761,9 +3760,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 submitButton.innerHTML = '✉️ Invia Richiesta';
             }
             
-            // Ripristina i required sui campi obbligatori
-            const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono', 
-                'newNomeAssistito', 'newCognomeAssistito', 'newLuogoNascita', 'newDataNascita'];
+            // Ripristina i required solo sui campi principali
+            const requiredFields = ['newNome', 'newCognome', 'newEmail', 'newTelefono'];
             requiredFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) field.setAttribute('required', 'required');
@@ -4183,58 +4181,58 @@ export const leads_dashboard = `<!DOCTYPE html>
                         
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome Assistito *</label>
-                                <input type="text" id="newNomeAssistito" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nome Assistito</label>
+                                <input type="text" id="newNomeAssistito" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Giuseppe">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome Assistito *</label>
-                                <input type="text" id="newCognomeAssistito" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Cognome Assistito</label>
+                                <input type="text" id="newCognomeAssistito" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Rossi">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Luogo di Nascita *</label>
-                                <input type="text" id="newLuogoNascita" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Luogo di Nascita</label>
+                                <input type="text" id="newLuogoNascita" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Milano">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita *</label>
-                                <input type="text" id="newDataNascita" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Data di Nascita</label>
+                                <input type="text" id="newDataNascita" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="15/03/1950"
                                     onblur="calculateAge()" onchange="calculateAge()">
                                 <div id="etaCalcolata" class="text-sm text-gray-500 mt-1"></div>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo *</label>
-                                <input type="text" id="newIndirizzoAssistito" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Completo</label>
+                                <input type="text" id="newIndirizzoAssistito" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Via Roma 123">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP *</label>
-                                <input type="text" id="newCapAssistito" required maxlength="5"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP</label>
+                                <input type="text" id="newCapAssistito" maxlength="5"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="20121">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città *</label>
-                                <input type="text" id="newCittaAssistito" required 
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città</label>
+                                <input type="text" id="newCittaAssistito" 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
                                     placeholder="Milano">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia *</label>
-                                <input type="text" id="newProvinciaAssistito" required maxlength="2"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia</label>
+                                <input type="text" id="newProvinciaAssistito" maxlength="2"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
                                     placeholder="MI">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale *</label>
-                                <input type="text" id="newCodiceFiscale" required maxlength="16"
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale</label>
+                                <input type="text" id="newCodiceFiscale" maxlength="16"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
                                     placeholder="RSSGPP50C15F205X">
                             </div>
