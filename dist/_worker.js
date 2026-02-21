@@ -11144,7 +11144,11 @@ ${370+e.length}
         ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
         ('lead_email_notifications_enabled', 'true', 'Abilita invio email automatiche ai lead (ATTIVO PER DEFAULT)', datetime('now')),
         ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it', datetime('now'))
-    `).run();return console.log(`✅ Settings inizializzati (changes: ${((e=i.meta)==null?void 0:e.changes)||0})`),t.json({success:!0,message:"Settings inizializzati correttamente",settingsAdded:((a=i.meta)==null?void 0:a.changes)||0})}catch(i){return console.error("❌ Errore inizializzazione settings:",i),t.json({success:!1,error:i instanceof Error?i.message:String(i)},500)}});I.post("/api/admin/update-template/:templateId",async t=>{var o;try{const e=t.req.param("templateId"),{html_content:a}=await t.req.json();if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);if(!a)return t.json({success:!1,error:"html_content richiesto"},400);console.log(`📝 Aggiornamento template: ${e} (${a.length} chars)`);const i=await t.env.DB.prepare(`
+    `).run();return await t.env.DB.prepare(`
+      UPDATE settings 
+      SET value = 'true', updated_at = datetime('now')
+      WHERE key = 'lead_email_notifications_enabled' AND value = 'false'
+    `).run(),console.log(`✅ Settings inizializzati (changes: ${((e=i.meta)==null?void 0:e.changes)||0})`),t.json({success:!0,message:"Settings inizializzati correttamente",settingsAdded:((a=i.meta)==null?void 0:a.changes)||0})}catch(i){return console.error("❌ Errore inizializzazione settings:",i),t.json({success:!1,error:i instanceof Error?i.message:String(i)},500)}});I.post("/api/admin/update-template/:templateId",async t=>{var o;try{const e=t.req.param("templateId"),{html_content:a}=await t.req.json();if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);if(!a)return t.json({success:!1,error:"html_content richiesto"},400);console.log(`📝 Aggiornamento template: ${e} (${a.length} chars)`);const i=await t.env.DB.prepare(`
       UPDATE document_templates 
       SET html_content = ?,
           updated_at = CURRENT_TIMESTAMP
