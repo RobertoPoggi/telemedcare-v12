@@ -8451,9 +8451,9 @@ app.post('/api/leads/:id/complete', async (c) => {
             
             // Document URLs
             const documentUrls: { brochure?: string; manuale?: string } = {}
-            if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+            if (servizioRaw.includes('PRO') || servizioRaw.includes('FAMILY')) {
               documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-            } else if (servizio.includes('PREMIUM')) {
+            } else if (servizioRaw.includes('PREMIUM')) {
               documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
             }
             
@@ -21022,9 +21022,9 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
     }
     
     const documentUrls: { brochure?: string } = {}
-    if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+    if (servizioRaw.includes('PRO') || servizioRaw.includes('FAMILY')) {
       documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-    } else if (servizio.includes('PREMIUM')) {
+    } else if (servizioRaw.includes('PREMIUM')) {
       documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
     }
     
