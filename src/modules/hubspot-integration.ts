@@ -423,6 +423,14 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     // Dati assistito (SOLO se forniti da HubSpot, altrimenti NULL)
     nomeAssistito: props.nome_assistito || null,
     cognomeAssistito: props.cognome_assistito || null,
+    dataNascitaAssistito: props.data_nascita_assistito || null,
+    luogoNascitaAssistito: props.luogo_nascita_assistito || null,
+    indirizzoAssistito: props.indirizzo_assistito || null,
+    capAssistito: props.cap_assistito || null,
+    cittaAssistito: props.citta_assistito || null,  // ✅ FIX: Campo città assistito separato
+    provinciaAssistito: props.provincia_assistito || null,
+    cfAssistito: props.cf_assistito || null,
+    condizioniSalute: props.condizioni_salute || null,
     
     // Servizio (può essere NULL se HubSpot non lo manda)
     servizio,
