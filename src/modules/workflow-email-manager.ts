@@ -8,6 +8,15 @@
  * 2b. Se chiede contratto → Genera e invia contratto + documenti
  * 3. Lead firma contratto → Genera e invia proforma
  * 4. Lead paga → Email benvenuto + form configurazione
+ */
+
+// ========================================
+// IMPORTS
+// ========================================
+import { MEDICAGB_LOGO_BASE64 } from './medicagb-logo'
+
+/**
+ * CONTINUATION
  * 5. Cliente compila config → Email config a info@
  * 6. Operatore associa dispositivo → Email conferma attivazione
  */
@@ -227,7 +236,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <!-- Carta intestata ufficiale Medica GB -->
     <div class="letterhead">
         <div class="letterhead-logo">
-            <img src="/images/medicagb-logo.png" alt="Medica GB Logo">
+            <img src="${MEDICAGB_LOGO_BASE64}" alt="Medica GB Logo">
         </div>
         <div class="letterhead-info">
             <h3>Medica GB S.r.l.</h3>
