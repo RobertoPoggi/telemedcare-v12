@@ -432,36 +432,36 @@ export const FORM_HTML = `<!DOCTYPE html>
                 if (hasAssistitoAddressGaps) {
                     html += '<div class="form-row cols-3">';
                     
-                    if (!lead.indirizzoAssistito) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="indirizzoAssistito">Indirizzo <span class="required">*</span></label>
-                                <input type="text" id="indirizzoAssistito" name="indirizzoAssistito" 
-                                       placeholder="Via/Piazza Nome, N." required>
-                            </div>
-                        \`;
-                    }
+                    // ✅ SEMPRE mostra indirizzo (anche se già compilato) per correggere errori import
+                    html += \`
+                        <div class="form-group">
+                            <label for="indirizzoAssistito">Indirizzo <span class="required">*</span></label>
+                            <input type="text" id="indirizzoAssistito" name="indirizzoAssistito" 
+                                   value="\${lead.indirizzoAssistito || ''}"
+                                   placeholder="Via/Piazza Nome, N." required>
+                        </div>
+                    \`;
                     
-                    if (!lead.capAssistito) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="capAssistito">CAP <span class="required">*</span></label>
-                                <input type="text" id="capAssistito" name="capAssistito" 
-                                       placeholder="00000" required maxlength="5" 
-                                       pattern="[0-9]*" inputmode="numeric">
-                            </div>
-                        \`;
-                    }
+                    // ✅ SEMPRE mostra CAP
+                    html += \`
+                        <div class="form-group">
+                            <label for="capAssistito">CAP <span class="required">*</span></label>
+                            <input type="text" id="capAssistito" name="capAssistito" 
+                                   value="\${lead.capAssistito || ''}"
+                                   placeholder="00000" required maxlength="5" 
+                                   pattern="[0-9]*" inputmode="numeric">
+                        </div>
+                    \`;
                     
-                    if (!lead.cittaAssistito) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="cittaAssistito">Città <span class="required">*</span></label>
-                                <input type="text" id="cittaAssistito" name="cittaAssistito" 
-                                       placeholder="Es. Roma" required>
-                            </div>
-                        \`;
-                    }
+                    // ✅ SEMPRE mostra città (per correggere Milano→Genova in IRBEMA)
+                    html += \`
+                        <div class="form-group">
+                            <label for="cittaAssistito">Città <span class="required">*</span></label>
+                            <input type="text" id="cittaAssistito" name="cittaAssistito" 
+                                   value="\${lead.cittaAssistito || ''}"
+                                   placeholder="Es. Roma" required>
+                        </div>
+                    \`;
                     
                     html += '</div>';
                 }
