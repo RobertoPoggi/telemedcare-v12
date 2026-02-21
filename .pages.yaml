@@ -1,0 +1,34 @@
+# Cloudflare Pages Configuration
+# Auto-deploy da GitHub: https://github.com/RobertoPoggi/telemedcare-v12
+
+# Build Configuration
+build:
+  command: npm run build
+  output_directory: dist
+  
+# Environment Variables (Production)
+production:
+  environment_variables:
+    NODE_VERSION: "18"
+    EMAIL_FROM: "info@telemedcare.it"
+    EMAIL_TO_INFO: "info@telemedcare.it"
+    ENVIRONMENT: "production"
+    HUBSPOT_PORTAL_ID: "145726645"
+  
+  # D1 Database Bindings
+  d1_databases:
+    - binding: DB
+      database_name: telemedcare-leads
+      database_id: e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f
+
+# Preview/Staging Environment  
+preview:
+  environment_variables:
+    NODE_VERSION: "18"
+    ENVIRONMENT: "preview"
+    HUBSPOT_PORTAL_ID: "145726645"
+  
+  d1_databases:
+    - binding: DB
+      database_name: telemedcare-leads
+      database_id: e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f
