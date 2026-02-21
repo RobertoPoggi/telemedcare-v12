@@ -8476,6 +8476,7 @@ app.post('/api/leads/:id/complete', async (c) => {
     } catch (triggerError) {
       // Non blocchiamo la risposta se il trigger fallisce
       console.error('⚠️ [COMPLETAMENTO] Errore trigger contratto:', triggerError)
+      console.error('⚠️ [COMPLETAMENTO] Stack trace:', (triggerError as Error)?.stack)
     }
     
     // Ritorna JSON di successo
@@ -20917,6 +20918,123 @@ app.get('/api/health', async (c) => {
       commit: GIT_COMMIT,
       error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
+    }, 500)
+  }
+})
+
+// ========================================
+// DEBUG: Test trigger contratto manualmente
+// ========================================
+app.post('/api/admin/test-trigger/:leadId', async (c) => {
+  const leadId = c.req.param('leadId')
+  
+  try {
+    console.log(`🧪 [TEST-TRIGGER] Inizio test per lead: ${leadId}`)
+    
+    // Recupera lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+      .bind(leadId)
+      .first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    // Importa funzioni
+    const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
+    const { isLeadComplete } = await import('./modules/lead-completion')
+    const { getPricing } = await import('./modules/ecura-pricing')
+    
+    // Verifica completezza
+    const leadComplete = isLeadComplete(lead)
+    console.log(`🧪 [TEST-TRIGGER] isLeadComplete = ${leadComplete}`)
+    
+    if (!leadComplete) {
+      return c.json({
+        success: false,
+        leadComplete: false,
+        message: 'Lead non completo',
+        lead: {
+          id: (lead as any).id,
+          telefono: (lead as any).telefono,
+          nomeAssistito: (lead as any).nomeAssistito,
+          cognomeAssistito: (lead as any).cognomeAssistito,
+          dataNascitaAssistito: (lead as any).dataNascitaAssistito,
+          luogoNascitaAssistito: (lead as any).luogoNascitaAssistito,
+          cfAssistito: (lead as any).cfAssistito,
+          indirizzoAssistito: (lead as any).indirizzoAssistito,
+          condizioniSalute: (lead as any).condizioniSalute
+        }
+      })
+    }
+    
+    // Genera contratto
+    const timestamp = Date.now()
+    const cognome = ((lead as any).cognomeAssistito || (lead as any).cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+    const anno = new Date().getFullYear()
+    const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+    const contractCode = `CTR-${cognome}-${anno}`
+    
+    const servizio = (lead as any).servizio || 'eCura PRO'
+    const piano = (lead as any).piano || 'BASE'
+    const pricing = getPricing(servizio, piano)
+    
+    const contractData = {
+      contractId,
+      contractCode,
+      contractPdfUrl: '',
+      tipoServizio: piano,
+      servizio: servizio,
+      prezzoBase: pricing.setupBase,
+      prezzoIvaInclusa: pricing.setupTotale
+    }
+    
+    const documentUrls: { brochure?: string } = {}
+    if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
+      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    } else if (servizio.includes('PREMIUM')) {
+      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+    }
+    
+    // Invia contratto
+    console.log(`🧪 [TEST-TRIGGER] Invio contratto...`)
+    const contractResult = await inviaEmailContratto(
+      lead as any,
+      contractData,
+      c.env,
+      documentUrls,
+      c.env.DB
+    )
+    
+    console.log(`🧪 [TEST-TRIGGER] Risultato:`, contractResult)
+    
+    if (contractResult.success) {
+      // Aggiorna lead
+      await c.env.DB.prepare(`
+        UPDATE leads SET 
+          vuoleContratto = 'Si',
+          vuoleBrochure = 'Si',
+          status = 'CONTRACT_SENT',
+          updated_at = datetime('now')
+        WHERE id = ?
+      `).bind(leadId).run()
+    }
+    
+    return c.json({
+      success: contractResult.success,
+      contractId,
+      contractCode,
+      leadComplete: true,
+      emailsSent: contractResult.emailsSent,
+      errors: contractResult.errors
+    })
+    
+  } catch (error) {
+    console.error('❌ [TEST-TRIGGER] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: (error as Error)?.stack
     }, 500)
   }
 })
