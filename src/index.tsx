@@ -8416,12 +8416,27 @@ app.post('/api/leads/:id/complete', async (c) => {
             const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
             const contractCode = `CTR-${cognome}-${anno}`
             
-            const servizio = (updatedLead as any).servizio || 'eCura PRO'
+            const servizioRaw = (updatedLead as any).servizio || 'eCura PRO'
             const piano = (updatedLead as any).piano || 'BASE'
+            
+            // ✅ FIX: Estrai tipo servizio (FAMILY/PRO/PREMIUM) da "eCura PREMIUM"
+            let servizioTipo: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
+            if (servizioRaw.includes('FAMILY')) servizioTipo = 'FAMILY'
+            else if (servizioRaw.includes('PREMIUM')) servizioTipo = 'PREMIUM'
+            else if (servizioRaw.includes('PRO')) servizioTipo = 'PRO'
+            
+            console.log(`🔍 [COMPLETAMENTO] Servizio raw: ${servizioRaw} → tipo: ${servizioTipo}, piano: ${piano}`)
             
             // Calcola pricing
             const { getPricing } = await import('./modules/ecura-pricing')
-            const pricing = getPricing(servizio, piano)
+            const pricing = getPricing(servizioTipo, piano)
+            
+            if (!pricing) {
+              console.error(`❌ [COMPLETAMENTO] Pricing non trovato per ${servizioTipo} ${piano}`)
+              throw new Error(`Pricing non disponibile per ${servizioTipo} ${piano}`)
+            }
+            
+            console.log(`✅ [COMPLETAMENTO] Pricing: ${pricing.setupBase}€ base, ${pricing.setupTotale}€ totale`)
             
             // Prepara contractData
             const contractData = {
@@ -8429,7 +8444,7 @@ app.post('/api/leads/:id/complete', async (c) => {
               contractCode,
               contractPdfUrl: '',
               tipoServizio: piano,
-              servizio: servizio,
+              servizio: servizioRaw,
               prezzoBase: pricing.setupBase,
               prezzoIvaInclusa: pricing.setupTotale
             }
@@ -20975,16 +20990,33 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
     const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
     const contractCode = `CTR-${cognome}-${anno}`
     
-    const servizio = (lead as any).servizio || 'eCura PRO'
+    const servizioRaw = (lead as any).servizio || 'eCura PRO'
     const piano = (lead as any).piano || 'BASE'
-    const pricing = getPricing(servizio, piano)
+    
+    // ✅ FIX: Estrai tipo servizio
+    let servizioTipo: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
+    if (servizioRaw.includes('FAMILY')) servizioTipo = 'FAMILY'
+    else if (servizioRaw.includes('PREMIUM')) servizioTipo = 'PREMIUM'
+    else if (servizioRaw.includes('PRO')) servizioTipo = 'PRO'
+    
+    const pricing = getPricing(servizioTipo, piano)
+    
+    if (!pricing) {
+      return c.json({
+        success: false,
+        error: `Pricing non disponibile per ${servizioTipo} ${piano}`,
+        servizioRaw,
+        servizioTipo,
+        piano
+      }, 400)
+    }
     
     const contractData = {
       contractId,
       contractCode,
       contractPdfUrl: '',
       tipoServizio: piano,
-      servizio: servizio,
+      servizio: servizioRaw,
       prezzoBase: pricing.setupBase,
       prezzoIvaInclusa: pricing.setupTotale
     }
