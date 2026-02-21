@@ -8229,6 +8229,9 @@ app.get('/api/leads/:id', async (c) => {
 app.post('/api/leads/:id/complete', async (c) => {
   const id = c.req.param('id')
   
+  console.log(`🔔🔔🔔 [COMPLETE] Endpoint chiamato per lead: ${id}`)
+  console.log(`🔔🔔🔔 [COMPLETE] Timestamp: ${new Date().toISOString()}`)
+  
   try {
     // Supporta sia JSON che form-data
     const contentType = c.req.header('content-type') || ''
@@ -8379,6 +8382,7 @@ app.post('/api/leads/:id/complete', async (c) => {
     }
     
     // ✅ TRIGGER: Invio automatico contratto dopo completamento dati
+    console.log(`🔔🔔🔔 [TRIGGER] Inizio verifica trigger contratto per lead: ${id}`)
     try {
       console.log('🔔 [COMPLETAMENTO] Verifico se inviare contratto automaticamente...')
       
