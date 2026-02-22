@@ -8345,6 +8345,10 @@ app.post('/api/leads/:id/complete', async (c) => {
     console.log(`🔍 [COMPLETE] Fields to update:`, updateFields)
     console.log(`🔍 [COMPLETE] Values:`, binds)
     
+    // ✅ Aggiungi aggiornamento status a COMPLETED
+    updateFields.push('status = ?')
+    binds.push('COMPLETED')
+    
     if (updateFields.length === 0) {
       return c.text('❌ Nessun dato da aggiornare', 400)
     }
@@ -8492,6 +8496,94 @@ app.post('/api/leads/:id/complete', async (c) => {
       // Non blocchiamo la risposta se il trigger fallisce
       console.error('⚠️ [COMPLETAMENTO] Errore trigger contratto:', triggerError)
       console.error('⚠️ [COMPLETAMENTO] Stack trace:', (triggerError as Error)?.stack)
+    }
+    
+    // ✅ NOTIFICA: Invia email a info@telemedcare.it quando form completato
+    try {
+      const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+        .bind(id)
+        .first()
+      
+      if (updatedLead && c.env.RESEND_API_KEY) {
+        const leadData = updatedLead as any
+        
+        // Prepara email notifica admin
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; }
+              .field { margin: 10px 0; padding: 8px; background: #f9f9f9; border-left: 3px solid #667eea; }
+              .label { font-weight: bold; color: #555; }
+              .value { color: #000; }
+              .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>📝 Form Completamento Dati Compilato</h2>
+              </div>
+              
+              <p>Un lead ha completato il form di inserimento dati.</p>
+              
+              <h3>📋 Dati Lead</h3>
+              <div class="field"><span class="label">ID:</span> <span class="value">${leadData.id}</span></div>
+              <div class="field"><span class="label">Nome Richiedente:</span> <span class="value">${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}</span></div>
+              <div class="field"><span class="label">Email:</span> <span class="value">${leadData.email}</span></div>
+              <div class="field"><span class="label">Telefono:</span> <span class="value">${leadData.telefono || 'N/D'}</span></div>
+              
+              <h3>👤 Dati Assistito</h3>
+              <div class="field"><span class="label">Nome:</span> <span class="value">${leadData.nomeAssistito || 'N/D'} ${leadData.cognomeAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Data Nascita:</span> <span class="value">${leadData.dataNascitaAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Luogo Nascita:</span> <span class="value">${leadData.luogoNascitaAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Codice Fiscale:</span> <span class="value">${leadData.cfAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Indirizzo:</span> <span class="value">${leadData.indirizzoAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">CAP:</span> <span class="value">${leadData.capAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Città:</span> <span class="value">${leadData.cittaAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Provincia:</span> <span class="value">${leadData.provinciaAssistito || 'N/D'}</span></div>
+              <div class="field"><span class="label">Condizioni Salute:</span> <span class="value">${leadData.condizioniSalute || 'N/D'}</span></div>
+              
+              <h3>🎯 Servizio</h3>
+              <div class="field"><span class="label">Servizio:</span> <span class="value">${leadData.servizio || 'N/D'}</span></div>
+              <div class="field"><span class="label">Piano:</span> <span class="value">${leadData.piano || 'N/D'}</span></div>
+              
+              <div class="footer">
+                <p>🤖 Notifica automatica - TeleMedCare V12</p>
+                <p>Dashboard: <a href="https://telemedcare-v12.pages.dev/leads-dashboard">Visualizza Lead</a></p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        
+        // Invia email
+        const notifyResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'TeleMedCare <noreply@telemedcare.it>',
+            to: ['info@telemedcare.it'],
+            subject: `📝 Form Completato - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+            html: emailHtml
+          })
+        })
+        
+        if (notifyResponse.ok) {
+          console.log(`✅ [NOTIFICA] Email admin inviata per lead ${id}`)
+        } else {
+          console.error(`❌ [NOTIFICA] Errore invio email admin: ${await notifyResponse.text()}`)
+        }
+      }
+    } catch (notifyError) {
+      console.error('⚠️ [NOTIFICA] Errore invio email admin (non blocca risposta):', notifyError)
     }
     
     // Ritorna JSON di successo
