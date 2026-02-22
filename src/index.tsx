@@ -6568,9 +6568,7 @@ app.post('/api/contracts/send', async (c) => {
     // Determina URL brochure in base al servizio
     const servizioNormalized = (contract.servizio || '').replace(/^eCura\s+/i, '').trim().toUpperCase()
     const documentUrls = {
-      brochure: servizioNormalized === 'PREMIUM' 
-        ? '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-        : '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf',
+      brochure: '/brochures/Brochure_eCura_2024.pdf', // ✅ Brochure unificata per tutti i servizi
       manuale: ''
     }
     
@@ -7950,11 +7948,8 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
     
     const documentUrls: { brochure?: string; manuale?: string } = {}
-    if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
-      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-    } else if (servizio.includes('PREMIUM')) {
-      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-    }
+    // ✅ Brochure unificata per tutti i servizi
+    documentUrls.brochure = '/brochures/Brochure_eCura_2024.pdf'
     
     console.log('📧 Chiamata inviaEmailContratto con:', {
       leadId: leadData.id,
@@ -8039,12 +8034,8 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     // 1. CARICA BROCHURE PDF
     const attachments: Array<{ filename: string; content: string; contentType: string }> = []
     
-    let brochureFilename = ''
-    if (servizio === 'PRO' || servizio === 'FAMILY') {
-      brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-    } else if (servizio === 'PREMIUM') {
-      brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-    }
+    // ✅ Brochure unificata per tutti i servizi
+    const brochureFilename = 'Brochure_eCura_2024.pdf'
     
     if (brochureFilename) {
       try {
@@ -8454,11 +8445,9 @@ app.post('/api/leads/:id/complete', async (c) => {
             }
             
             // Document URLs
-            const documentUrls: { brochure?: string; manuale?: string } = {}
-            if (servizioRaw.includes('PRO') || servizioRaw.includes('FAMILY')) {
-              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-            } else if (servizioRaw.includes('PREMIUM')) {
-              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+            // ✅ Brochure unificata
+            const documentUrls: { brochure?: string; manuale?: string } = {
+              brochure: '/brochures/Brochure_eCura_2024.pdf'
             }
             
             // Invia contratto
@@ -8765,11 +8754,9 @@ app.post('/api/lead/:id/complete', async (c) => {
             prezzoIvaInclusa: pricing.setupTotale
           }
           
-          const documentUrls: { brochure?: string; manuale?: string } = {}
-          if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
-            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-          } else if (servizio.includes('PREMIUM')) {
-            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+          // ✅ Brochure unificata
+          const documentUrls: { brochure?: string; manuale?: string } = {
+            brochure: '/brochures/Brochure_eCura_2024.pdf'
           }
           
           await inviaEmailContratto(updatedLead as any, contractData, c.env, documentUrls, c.env.DB)
@@ -11631,13 +11618,8 @@ app.post('/api/leads', async (c) => {
           }
           
           if (leadData.vuoleBrochure) {
-            // Determina brochure in base al servizio
-            const servizio = leadData.servizio || 'eCura PRO'
-            if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
-              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-            } else if (servizio.includes('PREMIUM')) {
-              documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-            }
+            // ✅ Brochure unificata per tutti i servizi
+            documentUrls.brochure = '/brochures/Brochure_eCura_2024.pdf'
           }
           if (leadData.vuoleManuale) {
             documentUrls.manuale = '/documents/Manuale_SiDLY.pdf'
@@ -11678,12 +11660,9 @@ app.post('/api/leads', async (c) => {
           addDebugLog(`📋 [LEAD] contractData creato: ${contractData.contractId}`)
           
           // Prepara documentUrls per eventuale brochure
-          const documentUrls: { brochure?: string; manuale?: string } = {}
-          const servizio = leadData.servizio || 'eCura PRO'
-          if (servizio.includes('PRO') || servizio.includes('FAMILY')) {
-            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-          } else if (servizio.includes('PREMIUM')) {
-            documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+          // ✅ Brochure unificata
+          const documentUrls: { brochure?: string; manuale?: string } = {
+            brochure: '/brochures/Brochure_eCura_2024.pdf'
           }
           
           addDebugLog(`📋 [LEAD] Chiamata inviaEmailContratto...`)
@@ -21113,11 +21092,9 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
       prezzoIvaInclusa: pricing.setupTotale
     }
     
-    const documentUrls: { brochure?: string } = {}
-    if (servizioRaw.includes('PRO') || servizioRaw.includes('FAMILY')) {
-      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
-    } else if (servizioRaw.includes('PREMIUM')) {
-      documentUrls.brochure = '/brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+    // ✅ Brochure unificata
+    const documentUrls: { brochure?: string } = {
+      brochure: '/brochures/Brochure_eCura_2024.pdf'
     }
     
     // Invia contratto
@@ -21295,4 +21272,4 @@ app.use('*', async (c, next) => {
 })
 
 export default app
-// Cache bust 1770140183
+// Cache bust: 1771800424320
