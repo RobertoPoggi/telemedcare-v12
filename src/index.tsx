@@ -21188,7 +21188,8 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
     }
     
     // Carica template
-    const { loadEmailTemplate, renderTemplate } = await import('./modules/email-service')
+    const { loadEmailTemplate } = await import('./modules/email-service')
+    const { renderTemplate } = await import('./modules/workflow-email-manager')
     const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
     
     if (!template) {
