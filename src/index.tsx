@@ -21163,6 +21163,100 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
   }
 })
 
+// ========================================
+// ADMIN: Reinvia email completamento dati
+// ========================================
+app.post('/api/admin/resend-completion/:leadId', async (c) => {
+  const leadId = c.req.param('leadId')
+  
+  try {
+    console.log(`📧 [RESEND-COMPLETION] Reinvio email per lead: ${leadId}`)
+    
+    // Recupera lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+      .bind(leadId)
+      .first()
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    const leadData = lead as any
+    
+    if (!leadData.email) {
+      return c.json({ success: false, error: 'Lead senza email' }, 400)
+    }
+    
+    // Carica template
+    const { loadEmailTemplate, renderTemplate } = await import('./modules/email-service')
+    const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+    
+    if (!template) {
+      return c.json({ success: false, error: 'Template email non trovato' }, 500)
+    }
+    
+    // Genera link completamento
+    const baseUrl = c.env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+    
+    // Render template
+    const html = renderTemplate(template.content || '', {
+      NOME_RICHIEDENTE: leadData.nomeRichiedente || '',
+      COGNOME_RICHIEDENTE: leadData.cognomeRichiedente || '',
+      LEAD_ID: leadId,
+      COMPLETION_URL: completionUrl,
+      DAYS_VALID: '30'
+    })
+    
+    // Invia email
+    if (!c.env.RESEND_API_KEY) {
+      return c.json({ success: false, error: 'RESEND_API_KEY non configurato' }, 500)
+    }
+    
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'TeleMedCare <noreply@telemedcare.it>',
+        to: [leadData.email],
+        subject: template.subject || 'Completa i tuoi dati - eCura',
+        html: html
+      })
+    })
+    
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text()
+      console.error(`❌ [RESEND-COMPLETION] Errore Resend API:`, errorText)
+      return c.json({
+        success: false,
+        error: 'Errore invio email',
+        details: errorText
+      }, 500)
+    }
+    
+    const result = await emailResponse.json()
+    console.log(`✅ [RESEND-COMPLETION] Email inviata a ${leadData.email}:`, result)
+    
+    return c.json({
+      success: true,
+      message: 'Email completamento reinviata',
+      emailId: result.id,
+      to: leadData.email
+    })
+    
+  } catch (error) {
+    console.error('❌ [RESEND-COMPLETION] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      stack: (error as Error)?.stack
+    }, 500)
+  }
+})
+
 // Version Guard Middleware - Logs all requests with version info
 app.use('*', async (c, next) => {
   const SYSTEM_VERSION = 'V12'
