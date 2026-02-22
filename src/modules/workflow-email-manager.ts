@@ -1135,7 +1135,6 @@ export async function inviaEmailProforma(
 <p style="margin:0"><strong>📬 Cosa Succede Dopo il Pagamento?</strong></p>
 <ol style="margin:10px 0 0 0;padding-left:20px">
 <li>Riceverai una <strong>conferma di pagamento</strong> via email</li>
-<li>Il servizio sarà <strong>attivato entro 24 ore</strong></li>
 <li>Ti invieremo le <strong>istruzioni per configurare</strong> il dispositivo SiDLY</li>
 </ol>
 </div>
