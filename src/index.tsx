@@ -21187,27 +21187,45 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
       return c.json({ success: false, error: 'Lead senza email' }, 400)
     }
     
-    // Carica template
-    const { loadEmailTemplate } = await import('./modules/email-service')
-    const { renderTemplate } = await import('./modules/workflow-email-manager')
-    const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
-    
-    if (!template) {
-      return c.json({ success: false, error: 'Template email non trovato' }, 500)
-    }
-    
     // Genera link completamento
     const baseUrl = c.env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
     const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
     
-    // Render template
-    const html = renderTemplate(template.content || '', {
-      NOME_RICHIEDENTE: leadData.nomeRichiedente || '',
-      COGNOME_RICHIEDENTE: leadData.cognomeRichiedente || '',
-      LEAD_ID: leadId,
-      COMPLETION_URL: completionUrl,
-      DAYS_VALID: '30'
-    })
+    // Costruisci HTML semplice
+    const html = `
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><title>Completa i tuoi dati - eCura</title></head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+      <h2 style="margin: 0;">📝 Completa i tuoi dati</h2>
+    </div>
+    
+    <p>Gentile <strong>${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}</strong>,</p>
+    
+    <p>Grazie per aver richiesto informazioni sui nostri servizi eCura.</p>
+    
+    <p>Per completare la tua richiesta, ti chiediamo di fornirci alcuni dati aggiuntivi cliccando sul pulsante qui sotto:</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${completionUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+        📝 Completa i Dati
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666;">Il link sarà valido per 30 giorni.</p>
+    
+    <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it" style="color: #667eea;">info@telemedcare.it</a></p>
+    
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
+      <p>Medica GB S.r.l. - TeleMedCare</p>
+      <p>Questo è un messaggio automatico, si prega di non rispondere.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `
     
     // Invia email
     if (!c.env.RESEND_API_KEY) {
@@ -21223,7 +21241,7 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
       body: JSON.stringify({
         from: 'TeleMedCare <noreply@telemedcare.it>',
         to: [leadData.email],
-        subject: template.subject || 'Completa i tuoi dati - eCura',
+        subject: 'Completa i tuoi dati - eCura',
         html: html
       })
     })
