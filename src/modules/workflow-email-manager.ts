@@ -1091,37 +1091,62 @@ export async function inviaEmailProforma(
       template = `
 <!DOCTYPE html>
 <html lang="it">
-<head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333}.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center}.content{padding:30px}.footer{background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666}.btn{display:inline-block;background:#667eea;color:white;padding:15px 30px;text-decoration:none;border-radius:5px;margin:20px 0}</style></head>
+<head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:0}.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center}.content{padding:30px;max-width:800px;margin:0 auto}.proforma{background:#f8f9fa;border:2px solid #667eea;border-radius:10px;padding:25px;margin:25px 0}.proforma h2{color:#667eea;margin-top:0;border-bottom:2px solid #667eea;padding-bottom:10px}.proforma-table{width:100%;border-collapse:collapse;margin:20px 0}.proforma-table th,.proforma-table td{padding:12px;text-align:left;border-bottom:1px solid #ddd}.proforma-table th{background:#667eea;color:white}.proforma-table tr:last-child td{border-bottom:2px solid #667eea;font-weight:bold;font-size:18px}.payment-options{display:flex;gap:20px;margin:30px 0;flex-wrap:wrap}.payment-box{flex:1;min-width:280px;background:white;border:2px solid #e0e0e0;border-radius:10px;padding:20px}.payment-box h3{color:#667eea;margin-top:0}.btn{display:inline-block;background:#667eea;color:white!important;padding:15px 30px;text-decoration:none;border-radius:8px;margin:15px 0;font-weight:bold;text-align:center;transition:background 0.3s}.btn:hover{background:#5568d3}.footer{background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666;border-top:2px solid #e0e0e0}</style></head>
 <body>
-<div class="header"><h1>💰 Fattura Proforma</h1><p>TeleMedCare - Servizio eCura</p></div>
+<div class="header">
+<h1>💰 Fattura Proforma</h1>
+<p>TeleMedCare - Servizio eCura</p>
+</div>
 <div class="content">
 <p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
-<p>Grazie per aver firmato il contratto! Ecco la tua <strong>Fattura Proforma</strong> per procedere con il pagamento.</p>
-<h3>📋 Dettagli Proforma</h3>
-<ul>
-<li><strong>Numero Proforma:</strong> {{NUMERO_PROFORMA}}</li>
-<li><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</li>
-<li><strong>Importo Totale (IVA inclusa):</strong> {{IMPORTO_TOTALE}}</li>
-<li><strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</li>
-</ul>
-<h3>💳 Modalità di Pagamento</h3>
-<p><strong>Opzione 1 - Pagamento Online (Stripe):</strong></p>
-<a href="{{LINK_PAGAMENTO}}" class="btn">💳 Paga Online con Carta/PayPal</a>
-<p><strong>Opzione 2 - Bonifico Bancario:</strong></p>
-<ul>
-<li><strong>IBAN:</strong> {{IBAN}}</li>
-<li><strong>Intestatario:</strong> Medica GB S.r.l.</li>
-<li><strong>Causale:</strong> {{CAUSALE}}</li>
-<li><strong>Importo:</strong> {{IMPORTO_TOTALE}}</li>
-</ul>
-<p><strong>📬 Prossimi Passi:</strong><br>
-1. Completa il pagamento entro la scadenza<br>
-2. Riceverai conferma di attivazione via email<br>
-3. Ti invieremo le istruzioni per configurare il dispositivo SiDLY</p>
-<p>Per domande: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
-<p>Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+<p>Grazie per aver firmato il contratto! Di seguito troverai la <strong>Fattura Proforma</strong> con le modalità di pagamento.</p>
+
+<div class="proforma">
+<h2>📋 PROFORMA N. {{NUMERO_PROFORMA}}</h2>
+<table class="proforma-table">
+<tr><th>Descrizione</th><th style="text-align:right">Importo</th></tr>
+<tr><td><strong>{{PIANO_SERVIZIO}}</strong><br><small>Servizio di telemedicina eCura</small></td><td style="text-align:right">{{IMPORTO_TOTALE}}</td></tr>
+<tr><td><strong>TOTALE DA PAGARE</strong></td><td style="text-align:right;color:#667eea"><strong>{{IMPORTO_TOTALE}}</strong></td></tr>
+</table>
+<p style="margin:15px 0"><strong>📅 Data Emissione:</strong> {{DATA_INVIO}}<br><strong>⏰ Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</p>
 </div>
-<div class="footer"><p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p><p>P.IVA: 12435130963 | Email: info@telemedcare.it</p></div>
+
+<h3 style="color:#667eea;margin-top:40px">💳 Scegli la Modalità di Pagamento</h3>
+
+<div class="payment-options">
+<div class="payment-box" style="border-color:#667eea">
+<h3>Opzione 1 - Pagamento Online</h3>
+<p>💳 <strong>Carta di Credito/Debito</strong> o <strong>PayPal</strong></p>
+<p style="color:#666;font-size:14px">Pagamento sicuro tramite Stripe. Riceverai conferma immediata.</p>
+<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block">💳 Paga Ora con Stripe</a>
+</div>
+
+<div class="payment-box">
+<h3>Opzione 2 - Bonifico Bancario</h3>
+<p><strong>IBAN:</strong><br><code style="background:#f0f0f0;padding:5px 10px;border-radius:5px;display:inline-block;margin:5px 0">{{IBAN}}</code></p>
+<p><strong>Intestatario:</strong> Medica GB S.r.l.</p>
+<p><strong>Importo:</strong> {{IMPORTO_TOTALE}}</p>
+<p><strong>Causale:</strong><br><code style="background:#fff3cd;padding:5px 10px;border-radius:5px;display:inline-block;margin:5px 0;font-size:12px">{{CAUSALE}}</code></p>
+<p style="font-size:13px;color:#666;margin-top:15px">💡 Ricorda di inserire la causale esatta per identificare il pagamento</p>
+</div>
+</div>
+
+<div style="background:#e7f3ff;border-left:4px solid #667eea;padding:15px;margin:30px 0;border-radius:5px">
+<p style="margin:0"><strong>📬 Cosa Succede Dopo il Pagamento?</strong></p>
+<ol style="margin:10px 0 0 0;padding-left:20px">
+<li>Riceverai una <strong>conferma di pagamento</strong> via email</li>
+<li>Il servizio sarà <strong>attivato entro 24 ore</strong></li>
+<li>Ti invieremo le <strong>istruzioni per configurare</strong> il dispositivo SiDLY</li>
+</ol>
+</div>
+
+<p style="margin-top:30px">Per qualsiasi domanda o assistenza:<br>📧 <a href="mailto:info@telemedcare.it" style="color:#667eea;font-weight:bold">info@telemedcare.it</a><br>📞 +39 02 1234567</p>
+
+<p style="margin-top:30px">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+</div>
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong><br>Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>P.IVA: 12435130963 | Email: info@telemedcare.it</p>
+</div>
 </body>
 </html>`
     }

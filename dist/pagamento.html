@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento Proforma - TeleMedCare</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .proforma-info {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .proforma-info h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .payment-message {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .payment-message h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 10px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Pagamento Proforma</h1>
+            <p>TeleMedCare - Servizio eCura</p>
+        </div>
+
+        <div class="content">
+            <div id="loading" class="payment-message">
+                <div class="loading"></div>
+                <h3 style="margin-top: 20px;">Caricamento dati proforma...</h3>
+            </div>
+
+            <div id="proformaDetails" style="display: none;">
+                <div class="proforma-info">
+                    <h2>📋 Dettagli Proforma</h2>
+                    <div class="info-row">
+                        <span>Numero Proforma:</span>
+                        <strong id="numeroProforma">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Servizio:</span>
+                        <strong id="servizio">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Piano:</span>
+                        <strong id="piano">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Scadenza:</span>
+                        <strong id="scadenza">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>TOTALE DA PAGARE:</span>
+                        <strong id="totale">€0.00</strong>
+                    </div>
+                </div>
+
+                <div class="payment-message">
+                    <h3>🚧 Pagamento Online Stripe</h3>
+                    <p style="margin: 20px 0; color: #666;">Il sistema di pagamento Stripe è in fase di configurazione.</p>
+                    <p style="margin: 20px 0;">Nel frattempo, puoi procedere con il <strong>bonifico bancario</strong> utilizzando i dati ricevuti via email.</p>
+                    <a href="mailto:info@telemedcare.it" class="btn">✉️ Contatta Assistenza</a>
+                </div>
+            </div>
+
+            <div id="errorMessage" style="display: none;">
+                <div class="error-message">
+                    <h3>❌ Proforma Non Trovata</h3>
+                    <p style="margin-top: 10px;">La proforma richiesta non è stata trovata o è scaduta.</p>
+                    <p style="margin-top: 10px;">Contatta il nostro team per assistenza.</p>
+                </div>
+                <div class="payment-message">
+                    <a href="mailto:info@telemedcare.it" class="btn">✉️ Contatta Assistenza</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
+            <p>P.IVA: 12435130963 | Email: info@telemedcare.it</p>
+        </div>
+    </div>
+
+    <script>
+        // Recupera proformaId dalla query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const proformaId = urlParams.get('proformaId');
+
+        if (!proformaId) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+        } else {
+            // Carica dati proforma dall'API
+            fetch(`/api/proformas/${proformaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.proforma) {
+                        const proforma = data.proforma;
+                        
+                        // Popola i dettagli
+                        document.getElementById('numeroProforma').textContent = proforma.numero_proforma;
+                        document.getElementById('servizio').textContent = proforma.servizio || 'eCura';
+                        document.getElementById('piano').textContent = proforma.piano || 'BASE';
+                        document.getElementById('scadenza').textContent = new Date(proforma.data_scadenza).toLocaleDateString('it-IT');
+                        document.getElementById('totale').textContent = `€${parseFloat(proforma.importo_totale).toFixed(2)}`;
+                        
+                        // Mostra dettagli
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('proformaDetails').style.display = 'block';
+                    } else {
+                        throw new Error('Proforma not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading proforma:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('errorMessage').style.display = 'block';
+                });
+        }
+    </script>
+</body>
+</html>
