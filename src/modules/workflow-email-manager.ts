@@ -1068,8 +1068,8 @@ export async function inviaEmailProforma(
 
     const emailService = new EmailService(env)
     
-    // Carica template email_invio_proforma
-    const template = await loadEmailTemplate('email_invio_proforma', db, env)
+    // Carica template email_invio_proforma (con fallback)
+    let template = await loadEmailTemplate('email_invio_proforma', db, env)
     
     // Prepara i dati per il template
     const templateData = {
@@ -1085,22 +1085,65 @@ export async function inviaEmailProforma(
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
+    // Fallback: se template manca, usa HTML inline
+    if (!template) {
+      console.warn(`⚠️ [WORKFLOW] Template email_invio_proforma non trovato, uso HTML inline`)
+      template = `
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333}.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center}.content{padding:30px}.footer{background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666}.btn{display:inline-block;background:#667eea;color:white;padding:15px 30px;text-decoration:none;border-radius:5px;margin:20px 0}</style></head>
+<body>
+<div class="header"><h1>💰 Fattura Proforma</h1><p>TeleMedCare - Servizio eCura</p></div>
+<div class="content">
+<p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+<p>Grazie per aver firmato il contratto! Ecco la tua <strong>Fattura Proforma</strong> per procedere con il pagamento.</p>
+<h3>📋 Dettagli Proforma</h3>
+<ul>
+<li><strong>Numero Proforma:</strong> {{NUMERO_PROFORMA}}</li>
+<li><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</li>
+<li><strong>Importo Totale (IVA inclusa):</strong> {{IMPORTO_TOTALE}}</li>
+<li><strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</li>
+</ul>
+<h3>💳 Modalità di Pagamento</h3>
+<p><strong>Opzione 1 - Pagamento Online (Stripe):</strong></p>
+<a href="{{LINK_PAGAMENTO}}" class="btn">💳 Paga Online con Carta/PayPal</a>
+<p><strong>Opzione 2 - Bonifico Bancario:</strong></p>
+<ul>
+<li><strong>IBAN:</strong> {{IBAN}}</li>
+<li><strong>Intestatario:</strong> Medica GB S.r.l.</li>
+<li><strong>Causale:</strong> {{CAUSALE}}</li>
+<li><strong>Importo:</strong> {{IMPORTO_TOTALE}}</li>
+</ul>
+<p><strong>📬 Prossimi Passi:</strong><br>
+1. Completa il pagamento entro la scadenza<br>
+2. Riceverai conferma di attivazione via email<br>
+3. Ti invieremo le istruzioni per configurare il dispositivo SiDLY</p>
+<p>Per domande: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+<p>Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+</div>
+<div class="footer"><p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p><p>P.IVA: 12435130963 | Email: info@telemedcare.it</p></div>
+</body>
+</html>`
+    }
+
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
 
-    // Prepara allegati: Proforma PDF
-    const attachments = [{
-      filename: `Proforma_${proformaData.numeroProforma}.pdf`,
-      path: proformaData.proformaPdfUrl
-    }]
+    // Prepara allegati: Proforma PDF (solo se presente)
+    const attachments = proformaData.proformaPdfUrl 
+      ? [{
+          filename: `Proforma_${proformaData.numeroProforma}.pdf`,
+          path: proformaData.proformaPdfUrl
+        }]
+      : [] // Nessun allegato se PDF non disponibile
 
-    // Invia email con allegato
+    // Invia email (con o senza allegato)
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: 'info@telemedcare.it',
       subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
       html: emailHtml,
-      attachments: attachments
+      ...(attachments.length > 0 && { attachments }) // Include attachments solo se presenti
     })
 
     if (sendResult.success) {
