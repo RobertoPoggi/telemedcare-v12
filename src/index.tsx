@@ -10553,7 +10553,7 @@ app.post('/api/contracts/sign', async (c) => {
         // Salva proforma nel DB prima dell'invio
         try {
           await c.env.DB.prepare(`
-            INSERT INTO proformas (
+            INSERT INTO proforma (
               id, leadId, numero_proforma, 
               data_emissione, data_scadenza, 
               importo_base, importo_iva, importo_totale,
@@ -21384,7 +21384,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       
       // Salva proforma nel DB
       await c.env.DB.prepare(`
-        INSERT INTO proformas (
+        INSERT INTO proforma (
           id, leadId, numero_proforma, 
           data_emissione, data_scadenza, 
           importo_base, importo_iva, importo_totale,
@@ -21484,7 +21484,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     
     // Salva proforma nel DB
     await c.env.DB.prepare(`
-      INSERT INTO proformas (
+      INSERT INTO proforma (
         id, leadId, numero_proforma, 
         data_emissione, data_scadenza, 
         importo_base, importo_iva, importo_totale,
@@ -21562,11 +21562,11 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
     
     // Aggiorna proforma (se esiste)
     const proforma = await c.env.DB.prepare(
-      'SELECT * FROM proformas WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
+      'SELECT * FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
     ).bind(leadId).first() as any
     
     if (proforma) {
-      await c.env.DB.prepare('UPDATE proformas SET status = ?, updated_at = ? WHERE id = ?')
+      await c.env.DB.prepare('UPDATE proforma SET status = ?, updated_at = ? WHERE id = ?')
         .bind('PAID', new Date().toISOString(), proforma.id).run()
       console.log(`✅ [MANUAL-PAYMENT] Proforma ${proforma.numero_proforma} marcata come pagata`)
     }
