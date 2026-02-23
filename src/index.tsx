@@ -10554,26 +10554,35 @@ app.post('/api/contracts/sign', async (c) => {
         try {
           await c.env.DB.prepare(`
             INSERT INTO proforma (
-              id, leadId, numero_proforma, 
-              data_emissione, data_scadenza, 
-              importo_base, importo_iva, importo_totale,
-              valuta, status, 
-              servizio, piano,
-              created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              id, contract_id, leadId, numero_proforma,
+              data_emissione, data_scadenza,
+              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+              cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+              tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+              status, email_sent, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             proformaId,
+            contractId || '', // contract_id
             lead.id,
             numeroProforma,
             new Date().toISOString().split('T')[0], // data_emissione
             new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // data_scadenza
-            prezzoBase, // importo_base (senza IVA)
-            (prezzoIvaInclusa - prezzoBase).toFixed(2), // importo_iva (22%)
-            prezzoIvaInclusa, // importo_totale (con IVA)
-            'EUR',
-            'GENERATED',
-            servizio,
-            piano,
+            lead.nomeRichiedente || '',
+            lead.cognomeRichiedente || '',
+            lead.email || '',
+            lead.telefono || '',
+            lead.indirizzoRichiedente || '',
+            lead.cittaRichiedente || '',
+            lead.capRichiedente || '',
+            lead.provinciaRichiedente || '',
+            lead.cfRichiedente || '',
+            piano, // tipo_servizio (BASE/AVANZATO)
+            (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
+            12, // durata_mesi
+            prezzoIvaInclusa, // prezzo_totale (con IVA)
+            'SENT',
+            false,
             new Date().toISOString(), // created_at
             new Date().toISOString()  // updated_at
           ).run()
@@ -21382,29 +21391,38 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }
       
-      // Salva proforma nel DB
+      // Salva proforma nel DB (schema corretto)
       await c.env.DB.prepare(`
         INSERT INTO proforma (
-          id, leadId, numero_proforma, 
-          data_emissione, data_scadenza, 
-          importo_base, importo_iva, importo_totale,
-          valuta, status, 
-          servizio, piano,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, contract_id, leadId, numero_proforma,
+          data_emissione, data_scadenza,
+          cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+          tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+          status, email_sent, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         proformaId,
+        contractId || '',
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        pricing.setupBase,
-        (pricing.setupTotale - pricing.setupBase).toFixed(2),
-        pricing.setupTotale,
-        'EUR',
-        'GENERATED',
-        servizio,
+        lead.nomeRichiedente || '',
+        lead.cognomeRichiedente || '',
+        lead.email || '',
+        lead.telefono || '',
+        lead.indirizzoRichiedente || '',
+        lead.cittaRichiedente || '',
+        lead.capRichiedente || '',
+        lead.provinciaRichiedente || '',
+        lead.cfRichiedente || '',
         piano,
+        (pricing.setupTotale / 12).toFixed(2),
+        12,
+        pricing.setupTotale,
+        'SENT',
+        false,
         new Date().toISOString(),
         new Date().toISOString()
       ).run()
@@ -21482,29 +21500,38 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
     
-    // Salva proforma nel DB
+    // Salva proforma nel DB (schema corretto con tutte le colonne richieste)
     await c.env.DB.prepare(`
       INSERT INTO proforma (
-        id, leadId, numero_proforma, 
-        data_emissione, data_scadenza, 
-        importo_base, importo_iva, importo_totale,
-        valuta, status, 
-        servizio, piano,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, contract_id, leadId, numero_proforma,
+        data_emissione, data_scadenza,
+        cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+        cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+        tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+        status, email_sent, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       proformaId,
+      '', // contract_id (vuoto per ora)
       leadId,
       numeroProforma,
       new Date().toISOString().split('T')[0],
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      pricing.setupBase,
-      (pricing.setupTotale - pricing.setupBase).toFixed(2),
-      pricing.setupTotale,
-      'EUR',
-      'GENERATED',
-      servizio,
-      piano,
+      lead.nomeRichiedente || '',
+      lead.cognomeRichiedente || '',
+      lead.email || '',
+      lead.telefono || '',
+      lead.indirizzoRichiedente || '',
+      lead.cittaRichiedente || '',
+      lead.capRichiedente || '',
+      lead.provinciaRichiedente || '',
+      lead.cfRichiedente || '',
+      piano, // tipo_servizio (BASE/AVANZATO)
+      (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile
+      12, // durata_mesi
+      pricing.setupTotale, // prezzo_totale
+      'DRAFT',
+      false,
       new Date().toISOString(),
       new Date().toISOString()
     ).run()
