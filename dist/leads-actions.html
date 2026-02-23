@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Leads - Azioni Manuali | TeleMedCare V12</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .btn-action {
+            transition: all 0.2s;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .table-scroll {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        .sticky-header th {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">
+                        <i class="fas fa-users-cog mr-2"></i>Gestione Leads - Azioni Manuali
+                    </h1>
+                    <p class="text-purple-100">Gestisci il flusso manuale: Firma → Proforma → Pagamento → Configurazione</p>
+                </div>
+                <a href="/dashboard.html" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50">
+                    <i class="fas fa-arrow-left mr-2"></i>Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Lead Totali</p>
+                        <p id="totalLeads" class="text-3xl font-bold text-purple-600">-</p>
+                    </div>
+                    <i class="fas fa-users text-4xl text-purple-200"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Da Firmare</p>
+                        <p id="toSign" class="text-3xl font-bold text-blue-600">-</p>
+                    </div>
+                    <i class="fas fa-pen text-4xl text-blue-200"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">In Attesa Pagamento</p>
+                        <p id="toPay" class="text-3xl font-bold text-yellow-600">-</p>
+                    </div>
+                    <i class="fas fa-euro-sign text-4xl text-yellow-200"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Da Configurare</p>
+                        <p id="toConfig" class="text-3xl font-bold text-green-600">-</p>
+                    </div>
+                    <i class="fas fa-cog text-4xl text-green-200"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex-1 min-w-[200px]">
+                    <input type="text" id="searchInput" placeholder="🔍 Cerca per nome, email, telefono..." 
+                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <select id="statusFilter" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <option value="">Tutti gli stati</option>
+                    <option value="NEW">Nuovo</option>
+                    <option value="COMPLETED">Completato</option>
+                    <option value="CONTRACT_SENT">Contratto Inviato</option>
+                    <option value="CONTRACT_SIGNED">Contratto Firmato</option>
+                    <option value="PROFORMA_SENT">Proforma Inviata</option>
+                    <option value="PAYMENT_RECEIVED">Pagamento Ricevuto</option>
+                    <option value="CONFIGURATION_SENT">Configurazione Inviata</option>
+                </select>
+                <button onclick="loadLeads()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-sync-alt mr-2"></i>Aggiorna
+                </button>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+            <p class="font-semibold text-blue-900 mb-2">📖 Legenda Azioni:</p>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-blue-800">
+                <div><strong>🖊️ Firma Manuale:</strong> Firma contratto senza processo digitale</div>
+                <div><strong>💰 Invia Proforma:</strong> Genera e invia proforma per pagamento</div>
+                <div><strong>✅ Pagamento OK:</strong> Conferma pagamento + Invia form configurazione</div>
+                <div><strong>⚙️ Form Config:</strong> Invia/reinvia link form configurazione</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="table-scroll">
+                <table class="w-full">
+                    <thead class="sticky-header">
+                        <tr class="bg-gray-50 border-b-2 border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email / Tel</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Servizio</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Data</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase" style="min-width: 280px;">
+                                Azioni Manuali
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTableBody">
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-4xl mb-3"></i>
+                                <p>Caricamento leads...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLeads = [];
+
+        // Load leads on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLeads();
+            
+            // Auto-refresh ogni 30 secondi
+            setInterval(loadLeads, 30000);
+            
+            // Search filter
+            document.getElementById('searchInput').addEventListener('input', filterLeads);
+            document.getElementById('statusFilter').addEventListener('change', filterLeads);
+        });
+
+        async function loadLeads() {
+            try {
+                const response = await fetch('/api/leads');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allLeads = data.leads || [];
+                    updateStats();
+                    filterLeads();
+                } else {
+                    showError('Errore caricamento leads');
+                }
+            } catch (error) {
+                console.error('Error loading leads:', error);
+                showError('Errore di connessione');
+            }
+        }
+
+        function updateStats() {
+            const total = allLeads.length;
+            const toSign = allLeads.filter(l => l.status === 'COMPLETED' || l.status === 'NEW').length;
+            const toPay = allLeads.filter(l => l.status === 'CONTRACT_SIGNED' || l.status === 'PROFORMA_SENT').length;
+            const toConfig = allLeads.filter(l => l.status === 'PAYMENT_RECEIVED').length;
+            
+            document.getElementById('totalLeads').textContent = total;
+            document.getElementById('toSign').textContent = toSign;
+            document.getElementById('toPay').textContent = toPay;
+            document.getElementById('toConfig').textContent = toConfig;
+        }
+
+        function filterLeads() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            
+            let filtered = allLeads;
+            
+            if (search) {
+                filtered = filtered.filter(lead => 
+                    (lead.nomeRichiedente?.toLowerCase().includes(search)) ||
+                    (lead.cognomeRichiedente?.toLowerCase().includes(search)) ||
+                    (lead.email?.toLowerCase().includes(search)) ||
+                    (lead.telefono?.includes(search))
+                );
+            }
+            
+            if (status) {
+                filtered = filtered.filter(lead => lead.status === status);
+            }
+            
+            renderLeads(filtered);
+        }
+
+        function renderLeads(leads) {
+            const tbody = document.getElementById('leadsTableBody');
+            
+            if (leads.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-gray-400">
+                            <i class="fas fa-inbox text-4xl mb-3"></i>
+                            <p>Nessun lead trovato</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = leads.map(lead => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm">
+                        <span class="font-mono text-xs text-gray-600">${escapeHtml(lead.id?.substring(0, 20))}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-gray-900">${escapeHtml(lead.nomeRichiedente)} ${escapeHtml(lead.cognomeRichiedente)}</div>
+                        ${lead.nomeAssistito ? `<div class="text-xs text-gray-500">Assistito: ${escapeHtml(lead.nomeAssistito)} ${escapeHtml(lead.cognomeAssistito)}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="text-gray-900">${escapeHtml(lead.email)}</div>
+                        ${lead.telefono ? `<div class="text-gray-500">${escapeHtml(lead.telefono)}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="font-semibold">${escapeHtml(lead.servizio) || 'eCura PRO'}</div>
+                        <div class="text-xs text-gray-500">${escapeHtml(lead.piano) || 'BASE'}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        ${getStatusBadge(lead.status)}
+                    </td>
+                    <td class="px-4 py-3 text-xs text-gray-500">
+                        ${new Date(lead.created_at).toLocaleDateString('it-IT')}
+                    </td>
+                    <td class="px-6 py-3">
+                        <div class="flex flex-wrap gap-2">
+                            ${getActionButtons(lead)}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'NEW': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Nuovo</span>',
+                'COMPLETED': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Completato</span>',
+                'CONTRACT_SENT': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Contratto Inviato</span>',
+                'CONTRACT_SIGNED': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">Contratto Firmato</span>',
+                'PROFORMA_SENT': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Proforma Inviata</span>',
+                'PAYMENT_RECEIVED': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Pagamento Ricevuto</span>',
+                'CONFIGURATION_SENT': '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">Configurazione Inviata</span>'
+            };
+            return badges[status] || `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">${status}</span>`;
+        }
+
+        function getActionButtons(lead) {
+            const buttons = [];
+            
+            // 1. Firma Manuale (se non ancora firmato)
+            if (!lead.status || lead.status === 'NEW' || lead.status === 'COMPLETED' || lead.status === 'CONTRACT_SENT') {
+                buttons.push(`
+                    <button onclick="manualSign('${lead.id}')" 
+                            class="btn-action bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"
+                            title="Firma Manuale Contratto">
+                        🖊️ Firma
+                    </button>
+                `);
+            }
+            
+            // 2. Invia Proforma (se contratto firmato ma proforma non inviata)
+            if (lead.status === 'CONTRACT_SIGNED') {
+                buttons.push(`
+                    <button onclick="sendProforma('${lead.id}')" 
+                            class="btn-action bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"
+                            title="Invia Proforma">
+                        💰 Proforma
+                    </button>
+                `);
+            }
+            
+            // 3. Pagamento OK (se proforma inviata ma non pagato)
+            if (lead.status === 'PROFORMA_SENT' || lead.status === 'CONTRACT_SIGNED') {
+                buttons.push(`
+                    <button onclick="manualPayment('${lead.id}')" 
+                            class="btn-action bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"
+                            title="Conferma Pagamento + Invia Form Config">
+                        ✅ Pagato
+                    </button>
+                `);
+            }
+            
+            // 4. Form Configurazione (se pagamento ricevuto o già inviato)
+            if (lead.status === 'PAYMENT_RECEIVED' || lead.status === 'CONFIGURATION_SENT') {
+                buttons.push(`
+                    <button onclick="sendConfiguration('${lead.id}')" 
+                            class="btn-action bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"
+                            title="Invia/Reinvia Form Configurazione">
+                        ⚙️ Config
+                    </button>
+                `);
+            }
+            
+            return buttons.join('');
+        }
+
+        // Action functions
+        async function manualSign(leadId) {
+            if (!confirm('⚠️ Confermi firma manuale contratto?\n\nQuesto:\n- Firmerà il contratto con firma staff\n- Invierà automaticamente la proforma')) return;
+            
+            showLoading(true);
+            try {
+                const res = await fetch(`/api/leads/${leadId}/manual-sign`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => loadLeads(), 1000);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Errore di connessione');
+            }
+            showLoading(false);
+        }
+
+        async function sendProforma(leadId) {
+            if (!confirm('📄 Inviare proforma a questo lead?')) return;
+            
+            showLoading(true);
+            try {
+                const res = await fetch(`/api/leads/${leadId}/send-proforma`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => loadLeads(), 1000);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Errore di connessione');
+            }
+            showLoading(false);
+        }
+
+        async function manualPayment(leadId) {
+            if (!confirm('💰 Confermi pagamento manuale ricevuto?\n\nQuesto:\n- Marcherà la proforma come pagata\n- Genererà codice cliente\n- Invierà email form configurazione')) return;
+            
+            showLoading(true);
+            try {
+                const res = await fetch(`/api/leads/${leadId}/manual-payment`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => loadLeads(), 1000);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Errore di connessione');
+            }
+            showLoading(false);
+        }
+
+        async function sendConfiguration(leadId) {
+            if (!confirm('⚙️ Inviare form configurazione a questo lead?')) return;
+            
+            showLoading(true);
+            try {
+                const res = await fetch(`/api/leads/${leadId}/send-configuration`, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showSuccess(data.message);
+                    setTimeout(() => loadLeads(), 1000);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Errore di connessione');
+            }
+            showLoading(false);
+        }
+
+        // Helpers
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLoading(show) {
+            // TODO: Add loading overlay
+        }
+
+        function showSuccess(message) {
+            alert('✅ ' + message);
+        }
+
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+    </script>
+</body>
+</html>

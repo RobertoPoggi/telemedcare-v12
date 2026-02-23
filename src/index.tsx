@@ -21271,5 +21271,415 @@ app.use('*', async (c, next) => {
   await next()
 })
 
+// ========================================
+// 🆕 ENDPOINT AZIONI MANUALI DASHBOARD LEADS
+// ========================================
+
+/**
+ * 1. FIRMA MANUALE CONTRATTO
+ * Firma contratto senza processo digitale (firma staff)
+ */
+app.post('/api/leads/:id/manual-sign', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera lead
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    console.log(`🖊️ [MANUAL-SIGN] Firma manuale contratto per lead ${leadId}`)
+    
+    // Genera ID contratto
+    const timestamp = Date.now()
+    const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
+    const anno = new Date().getFullYear()
+    const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+    const contractCode = `CTR-${cognome}-${anno}`
+    
+    // Determina servizio e piano
+    const servizio = lead.servizio || 'eCura PRO'
+    const piano = lead.piano || 'BASE'
+    
+    // Calcola prezzi
+    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    const { calculatePrice } = await import('./modules/pricing-calculator')
+    const pricing = calculatePrice(servizioType, piano.toUpperCase())
+    
+    // Genera HTML contratto (semplificato)
+    const contractHtml = `
+      <h1>Contratto ${servizio} - ${piano}</h1>
+      <p><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
+      <p><strong>Assistito:</strong> ${lead.nomeAssistito} ${lead.cognomeAssistito}</p>
+      <p><strong>Codice Contratto:</strong> ${contractCode}</p>
+      <p><strong>Importo:</strong> €${pricing.setupTotale} (IVA inclusa)</p>
+      <p><em>Firma manuale apposta dallo staff TeleMedCare</em></p>
+    `
+    
+    // Salva contratto nel DB
+    await c.env.DB.prepare(`
+      INSERT INTO contracts (
+        id, leadId, codice_contratto, 
+        servizio, piano, 
+        prezzo_base, prezzo_totale,
+        contenuto_html,
+        status, signature_data, signature_method, signature_timestamp, signed_at,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      contractId,
+      leadId,
+      contractCode,
+      servizio,
+      piano,
+      pricing.setupBase,
+      pricing.setupTotale,
+      contractHtml,
+      'SIGNED',
+      'Firma Manuale Staff TeleMedCare',
+      'manual',
+      new Date().toISOString(),
+      new Date().toISOString(),
+      new Date().toISOString(),
+      new Date().toISOString()
+    ).run()
+    
+    // Aggiorna lead
+    await c.env.DB.prepare(`
+      UPDATE leads SET 
+        vuoleContratto = 'Si',
+        status = 'CONTRACT_SIGNED',
+        updated_at = ?
+      WHERE id = ?
+    `).bind(new Date().toISOString(), leadId).run()
+    
+    console.log(`✅ [MANUAL-SIGN] Contratto ${contractCode} firmato manualmente`)
+    
+    // Trigger proforma automatica
+    try {
+      console.log(`📊 [MANUAL-SIGN→PROFORMA] Avvio workflow proforma`)
+      
+      const proformaId = `PRF-${Date.now()}`
+      const year = new Date().getFullYear()
+      const month = String(new Date().getMonth() + 1).padStart(2, '0')
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+      const numeroProforma = `PRF${year}${month}-${random}`
+      
+      const proformaData = {
+        proformaId,
+        numeroProforma,
+        proformaPdfUrl: '',
+        tipoServizio: piano,
+        servizio: servizio,
+        prezzoBase: pricing.setupBase,
+        prezzoIvaInclusa: pricing.setupTotale,
+        dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      }
+      
+      // Salva proforma nel DB
+      await c.env.DB.prepare(`
+        INSERT INTO proformas (
+          id, leadId, numero_proforma, 
+          data_emissione, data_scadenza, 
+          importo_base, importo_iva, importo_totale,
+          valuta, status, 
+          servizio, piano,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        proformaId,
+        leadId,
+        numeroProforma,
+        new Date().toISOString().split('T')[0],
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        pricing.setupBase,
+        (pricing.setupTotale - pricing.setupBase).toFixed(2),
+        pricing.setupTotale,
+        'EUR',
+        'GENERATED',
+        servizio,
+        piano,
+        new Date().toISOString(),
+        new Date().toISOString()
+      ).run()
+      
+      // Invia email proforma
+      const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
+      await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
+      
+      console.log(`✅ [MANUAL-SIGN→PROFORMA] Proforma ${numeroProforma} inviata`)
+    } catch (proformaError) {
+      console.error(`⚠️ [MANUAL-SIGN→PROFORMA] Errore:`, proformaError)
+    }
+    
+    return c.json({
+      success: true,
+      message: `Contratto ${contractCode} firmato manualmente e proforma inviata`,
+      contractId,
+      contractCode
+    })
+    
+  } catch (error) {
+    console.error('❌ [MANUAL-SIGN] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante firma manuale',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
+ * 2. INVIO PROFORMA MANUALE
+ * Invia proforma a lead che ha già contratto firmato
+ */
+app.post('/api/leads/:id/send-proforma', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    console.log(`💰 [SEND-PROFORMA] Invio proforma manuale per lead ${leadId}`)
+    
+    // Determina servizio e piano
+    const servizio = lead.servizio || 'eCura PRO'
+    const piano = lead.piano || 'BASE'
+    
+    // Calcola prezzi
+    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    const { calculatePrice } = await import('./modules/pricing-calculator')
+    const pricing = calculatePrice(servizioType, piano.toUpperCase())
+    
+    // Genera ID proforma
+    const proformaId = `PRF-${Date.now()}`
+    const year = new Date().getFullYear()
+    const month = String(new Date().getMonth() + 1).padStart(2, '0')
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const numeroProforma = `PRF${year}${month}-${random}`
+    
+    const proformaData = {
+      proformaId,
+      numeroProforma,
+      proformaPdfUrl: '',
+      tipoServizio: piano,
+      servizio: servizio,
+      prezzoBase: pricing.setupBase,
+      prezzoIvaInclusa: pricing.setupTotale,
+      dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    }
+    
+    // Salva proforma nel DB
+    await c.env.DB.prepare(`
+      INSERT INTO proformas (
+        id, leadId, numero_proforma, 
+        data_emissione, data_scadenza, 
+        importo_base, importo_iva, importo_totale,
+        valuta, status, 
+        servizio, piano,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      proformaId,
+      leadId,
+      numeroProforma,
+      new Date().toISOString().split('T')[0],
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      pricing.setupBase,
+      (pricing.setupTotale - pricing.setupBase).toFixed(2),
+      pricing.setupTotale,
+      'EUR',
+      'GENERATED',
+      servizio,
+      piano,
+      new Date().toISOString(),
+      new Date().toISOString()
+    ).run()
+    
+    // Invia email
+    const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
+    
+    if (result.success) {
+      // Aggiorna lead status
+      await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
+        .bind('PROFORMA_SENT', leadId).run()
+      
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} inviata`)
+      
+      return c.json({
+        success: true,
+        message: `Proforma ${numeroProforma} inviata con successo`,
+        proformaId,
+        numeroProforma
+      })
+    } else {
+      throw new Error(result.errors.join(', '))
+    }
+    
+  } catch (error) {
+    console.error('❌ [SEND-PROFORMA] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante invio proforma',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
+ * 3. PAGAMENTO MANUALE
+ * Conferma pagamento ricevuto + TRIGGER EMAIL FORM CONFIGURAZIONE
+ */
+app.post('/api/leads/:id/manual-payment', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    console.log(`✅ [MANUAL-PAYMENT] Conferma pagamento manuale per lead ${leadId}`)
+    
+    // Aggiorna proforma (se esiste)
+    const proforma = await c.env.DB.prepare(
+      'SELECT * FROM proformas WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
+    ).bind(leadId).first() as any
+    
+    if (proforma) {
+      await c.env.DB.prepare('UPDATE proformas SET status = ?, updated_at = ? WHERE id = ?')
+        .bind('PAID', new Date().toISOString(), proforma.id).run()
+      console.log(`✅ [MANUAL-PAYMENT] Proforma ${proforma.numero_proforma} marcata come pagata`)
+    }
+    
+    // Genera codice cliente
+    const codiceCliente = `CLI-${Date.now()}`
+    
+    // Aggiorna lead
+    await c.env.DB.prepare(`
+      UPDATE leads SET 
+        status = 'PAYMENT_RECEIVED',
+        codice_cliente = ?,
+        updated_at = ?
+      WHERE id = ?
+    `).bind(codiceCliente, new Date().toISOString(), leadId).run()
+    
+    // 🔥 TRIGGER: Invia email form configurazione
+    console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email form configurazione`)
+    
+    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailBenvenuto(
+      { ...lead, codiceCliente },
+      c.env,
+      c.env.DB
+    )
+    
+    if (result.success) {
+      // Aggiorna status
+      await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
+        .bind('CONFIGURATION_SENT', leadId).run()
+      
+      console.log(`✅ [MANUAL-PAYMENT→CONFIG] Email configurazione inviata a ${lead.email}`)
+      
+      return c.json({
+        success: true,
+        message: `Pagamento confermato ed email configurazione inviata a ${lead.email}`,
+        codiceCliente
+      })
+    } else {
+      throw new Error(result.errors.join(', '))
+    }
+    
+  } catch (error) {
+    console.error('❌ [MANUAL-PAYMENT] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante conferma pagamento',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
+ * 4. INVIO FORM CONFIGURAZIONE MANUALE
+ * Invia/reinvia email con link form configurazione
+ */
+app.post('/api/leads/:id/send-configuration', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+    
+    console.log(`⚙️ [SEND-CONFIG] Invio form configurazione per lead ${leadId}`)
+    
+    // Genera codice cliente se manca
+    let codiceCliente = lead.codice_cliente
+    if (!codiceCliente) {
+      codiceCliente = `CLI-${Date.now()}`
+      await c.env.DB.prepare('UPDATE leads SET codice_cliente = ? WHERE id = ?')
+        .bind(codiceCliente, leadId).run()
+    }
+    
+    // Invia email
+    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailBenvenuto(
+      { ...lead, codiceCliente },
+      c.env,
+      c.env.DB
+    )
+    
+    if (result.success) {
+      // Aggiorna status
+      await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
+        .bind('CONFIGURATION_SENT', leadId).run()
+      
+      console.log(`✅ [SEND-CONFIG] Email configurazione inviata a ${lead.email}`)
+      
+      return c.json({
+        success: true,
+        message: `Email configurazione inviata a ${lead.email}`,
+        codiceCliente
+      })
+    } else {
+      throw new Error(result.errors.join(', '))
+    }
+    
+  } catch (error) {
+    console.error('❌ [SEND-CONFIG] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante invio form configurazione',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 export default app
 // Cache bust: 1771800424320
