@@ -817,7 +817,7 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
+    <div class="container mx-auto px-2 sm:px-3 lg:px-4 xl:px-6 py-8" style="max-width: 98%;">
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
@@ -2313,7 +2313,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .overflow-x-auto { overflow-x: auto; }
-        table { min-width: 1800px; } /* Permette scroll orizzontale se necessario */
+        table { min-width: 1400px; } /* Permette scroll orizzontale se necessario */
     </style>
 </head>
 <body class="bg-gray-50">
@@ -2343,7 +2343,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
+    <div class="container mx-auto px-2 sm:px-3 lg:px-4 xl:px-6 py-8" style="max-width: 98%;">
         <!-- Statistiche Lead -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm card-hover border-l-4 border-blue-500">
@@ -2495,20 +2495,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <table class="w-full table-fixed">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 3%;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 15%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 16%;">Contatti</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 2%;">#</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 12%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 14%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Servizio</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Piano</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 4%;">Prezzo</th>
                             <!-- Nascoste: Brochure e Manuale non servono per ora -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th> -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th> -->
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 20%;">Azioni</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Data</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 4%;">CM</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 9%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 30%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -5558,7 +5558,7 @@ export const workflow_manager = `<!DOCTYPE html>
         </div>
     </header>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8" style="max-width: 1600px;">
+    <div class="container mx-auto px-2 sm:px-3 lg:px-4 xl:px-6 py-8" style="max-width: 98%;">
         <!-- Workflow Steps Overview -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
