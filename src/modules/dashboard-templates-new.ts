@@ -2312,6 +2312,8 @@ export const leads_dashboard = `<!DOCTYPE html>
         .gradient-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .overflow-x-auto { overflow-x: auto; }
+        table { min-width: 1800px; } /* Permette scroll orizzontale se necessario */
     </style>
 </head>
 <body class="bg-gray-50">
@@ -2505,8 +2507,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Azioni</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 20%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -2896,6 +2898,34 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Richiedi Completamento">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
+                                <button 
+                                    data-action="manual-sign"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors action-btn"
+                                    title="Firma Manuale">
+                                    🖊️
+                                </button>
+                                <button 
+                                    data-action="send-proforma"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors action-btn"
+                                    title="Invia Proforma">
+                                    💰
+                                </button>
+                                <button 
+                                    data-action="manual-payment"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors action-btn"
+                                    title="Pagamento OK">
+                                    ✅
+                                </button>
+                                <button 
+                                    data-action="send-configuration"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition-colors action-btn"
+                                    title="Form Configurazione">
+                                    ⚙️
+                                </button>
                             </div>
                         </td>
                         <td class="py-3">
@@ -2934,6 +2964,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'contract') sendContract(leadId, piano);
                         else if (action === 'brochure') sendBrochure(leadId);
                         else if (action === 'completion') requestCompletion(leadId);
+                        else if (action === 'manual-sign') manualSign(leadId);
+                        else if (action === 'send-proforma') sendProforma(leadId);
+                        else if (action === 'manual-payment') manualPayment(leadId);
+                        else if (action === 'send-configuration') sendConfiguration(leadId);
                     });
                 });
                 
@@ -3112,6 +3146,106 @@ export const leads_dashboard = `<!DOCTYPE html>
                     } else {
                         alert('❌ Errore: ' + result.error);
                     }
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // NUOVE FUNZIONI AZIONI MANUALI
+        // ============================================
+
+        async function manualSign(leadId) {
+            if (!confirm('🖊️ Firmare manualmente il contratto per questo lead?\\n\\nVerrà generata una proforma automaticamente.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/manual-sign\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Contratto firmato manualmente!\\n\\nCodice: ' + (result.contractId || 'N/A') + '\\nProforma: ' + (result.proformaId || 'N/A'));
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function sendProforma(leadId) {
+            if (!confirm('💰 Inviare proforma al lead?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/send-proforma\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Proforma inviata con successo!\\n\\nNumero: ' + (result.proformaId || 'N/A') + '\\nImporto: €' + (result.importo || 'N/A'));
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function manualPayment(leadId) {
+            if (!confirm('✅ Confermare pagamento per questo lead?\\n\\nVerrà inviata la email con il form di configurazione.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Pagamento confermato!\\n\\nEmail di configurazione inviata al cliente: ' + (result.email || 'N/A'));
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function sendConfiguration(leadId) {
+            if (!confirm('⚙️ Inviare email con form di configurazione al lead?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/send-configuration\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Email configurazione inviata!\\n\\nLink configurazione: ' + (result.configUrl || 'N/A'));
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
