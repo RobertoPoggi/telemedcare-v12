@@ -2496,18 +2496,18 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 2%;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 12%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 14%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 15%;">Contatti</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Servizio</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Piano</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 4%;">Prezzo</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
                             <!-- Nascoste: Brochure e Manuale non servono per ora -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th> -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th> -->
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Data</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 4%;">CM</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 9%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 30%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 10%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 24%;">Azioni</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">CRUD</th>
                         </tr>
                     </thead>
