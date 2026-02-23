@@ -297,9 +297,9 @@
 
     <!-- BUILD INFO: ANTI-CACHE V11 ROLLBACK -->
     <meta name="build-version" content="V12">
-    <meta name="build-commit" content="c884c20">
-    <meta name="build-date" content="2026-02-23T16:25:34.796Z">
-    <meta name="build-timestamp" content="1771863934796">
+    <meta name="build-commit" content="649b60a">
+    <meta name="build-date" content="2026-02-23T16:32:48.959Z">
+    <meta name="build-timestamp" content="1771864368959">
     <!-- END BUILD INFO -->
 </head>
 <body>
@@ -568,8 +568,16 @@
                 document.getElementById('loadingSubmit').classList.remove('active');
                 document.getElementById('successMessage').classList.add('active');
                 
-                // Nascondi il form di firma
-                document.getElementById('contractContent').style.display = 'none';
+                // Nascondi solo il form di firma (non tutto contractContent)
+                const signatureSection = document.querySelector('.signature-section');
+                const consentSection = document.querySelector('.consent');
+                const signButton = document.getElementById('signButton');
+                const contractSection = document.querySelectorAll('.contract-section');
+                
+                if (signatureSection) signatureSection.style.display = 'none';
+                if (consentSection) consentSection.style.display = 'none';
+                if (signButton) signButton.style.display = 'none';
+                contractSection.forEach(section => section.style.display = 'none');
 
             } catch (error) {
                 console.error('Errore invio firma:', error);

@@ -561,8 +561,16 @@
                 document.getElementById('loadingSubmit').classList.remove('active');
                 document.getElementById('successMessage').classList.add('active');
                 
-                // Nascondi il form di firma
-                document.getElementById('contractContent').style.display = 'none';
+                // Nascondi solo il form di firma (non tutto contractContent)
+                const signatureSection = document.querySelector('.signature-section');
+                const consentSection = document.querySelector('.consent');
+                const signButton = document.getElementById('signButton');
+                const contractSection = document.querySelectorAll('.contract-section');
+                
+                if (signatureSection) signatureSection.style.display = 'none';
+                if (consentSection) consentSection.style.display = 'none';
+                if (signButton) signButton.style.display = 'none';
+                contractSection.forEach(section => section.style.display = 'none');
 
             } catch (error) {
                 console.error('Errore invio firma:', error);

@@ -21601,14 +21601,13 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
     // Genera codice cliente
     const codiceCliente = `CLI-${Date.now()}`
     
-    // Aggiorna lead
+    // Aggiorna lead (rimuovo codice_cliente perché la colonna non esiste nella tabella)
     await c.env.DB.prepare(`
       UPDATE leads SET 
         status = 'PAYMENT_RECEIVED',
-        codice_cliente = ?,
         updated_at = ?
       WHERE id = ?
-    `).bind(codiceCliente, new Date().toISOString(), leadId).run()
+    `).bind(new Date().toISOString(), leadId).run()
     
     // 🔥 TRIGGER: Invia email form configurazione
     console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email form configurazione`)
@@ -21666,13 +21665,8 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
     
     console.log(`⚙️ [SEND-CONFIG] Invio form configurazione per lead ${leadId}`)
     
-    // Genera codice cliente se manca
-    let codiceCliente = lead.codice_cliente
-    if (!codiceCliente) {
-      codiceCliente = `CLI-${Date.now()}`
-      await c.env.DB.prepare('UPDATE leads SET codice_cliente = ? WHERE id = ?')
-        .bind(codiceCliente, leadId).run()
-    }
+    // Genera codice cliente (non salvato nel DB perché la colonna non esiste)
+    const codiceCliente = `CLI-${Date.now()}`
     
     // Invia email
     const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
