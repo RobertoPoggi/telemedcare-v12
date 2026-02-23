@@ -1218,8 +1218,12 @@ export async function inviaEmailBenvenuto(
       PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
       CODICE_CLIENTE: clientData.codiceCliente,
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
-      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || 'https://telemedcare.it'}/configurazione?clientId=${clientData.codiceCliente}`,
-      PREZZO_PIANO: clientData.pacchetto === 'BASE' ? '€490/anno' : '€840/anno'
+      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/completa-dati?leadId=${clientData.id}`,
+      COSTO_SERVIZIO: clientData.pacchetto === 'AVANZATO' ? '€1.024,80/anno (IVA inclusa)' : '€585,60/anno (IVA inclusa)',
+      SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' 
+        ? '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care PRO</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>'
+        : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
+      PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' ? '€840/anno' : '€480/anno'
     }
 
     // Renderizza template
