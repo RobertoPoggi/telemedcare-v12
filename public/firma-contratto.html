@@ -379,7 +379,7 @@
                     <h2>✅ Contratto Firmato con Successo!</h2>
                     <p style="margin-top: 10px;">Grazie per aver completato la firma. Riceverai una email di conferma a breve.</p>
                     <p style="margin-top: 10px; font-size: 14px; margin-bottom: 20px;">Ti arriverà anche la pro-forma per procedere con il pagamento.</p>
-                    <button onclick="window.close()" class="btn btn-sign" style="width: auto; padding: 12px 40px; font-size: 16px;">
+                    <button onclick="closeWindow()" class="btn btn-sign" style="width: auto; padding: 12px 40px; font-size: 16px;">
                         ✓ Chiudi
                     </button>
                 </div>
@@ -571,6 +571,28 @@
                 document.getElementById('errorMessage').classList.add('active');
                 document.getElementById('signButton').disabled = false;
             }
+        }
+
+        function closeWindow() {
+            // Tenta di chiudere la finestra (funziona solo se aperta da JavaScript)
+            window.close();
+            
+            // Se non si chiude (window.close() fallisce), resta sulla pagina di successo
+            // Non reindirizza alla home
+            setTimeout(() => {
+                // Se la finestra non si è chiusa, nasconde il bottone
+                if (!window.closed) {
+                    const btn = event.target;
+                    if (btn) {
+                        btn.style.display = 'none';
+                        const msg = document.createElement('p');
+                        msg.style.marginTop = '20px';
+                        msg.style.fontSize = '14px';
+                        msg.textContent = '✓ Puoi chiudere questa finestra manualmente';
+                        btn.parentElement.appendChild(msg);
+                    }
+                }
+            }, 100);
         }
 
         async function getClientIP() {

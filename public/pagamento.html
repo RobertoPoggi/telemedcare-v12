@@ -209,7 +209,7 @@
             document.getElementById('errorMessage').style.display = 'block';
         } else {
             // Carica dati proforma dall'API
-            fetch(`/api/proformas/${proformaId}`)
+            fetch(`/api/proforma/${proformaId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.proforma) {
