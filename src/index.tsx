@@ -21612,8 +21612,8 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
     // 🔥 TRIGGER: Invia email form configurazione
     console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email form configurazione`)
     
-    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
-    const result = await inviaEmailBenvenuto(
+    const { inviaEmailFormConfigurazione } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailFormConfigurazione(
       { ...lead, codiceCliente },
       c.env,
       c.env.DB
@@ -21669,8 +21669,8 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
     const codiceCliente = `CLI-${Date.now()}`
     
     // Invia email
-    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
-    const result = await inviaEmailBenvenuto(
+    const { inviaEmailFormConfigurazione } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailFormConfigurazione(
       { ...lead, codiceCliente },
       c.env,
       c.env.DB

@@ -1256,6 +1256,66 @@ export async function inviaEmailBenvenuto(
 }
 
 /**
+ * STEP 4B: Invia email form configurazione DOPO pagamento
+ * Template: email_configurazione.html (con link al form di configurazione)
+ */
+export async function inviaEmailFormConfigurazione(
+  clientData: LeadData & { codiceCliente: string },
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult> {
+  const result: WorkflowEmailResult = {
+    success: false,
+    step: 'email_form_configurazione',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    console.log(`📧 [WORKFLOW] STEP 4B: Invio email form configurazione a ${clientData.email}`)
+
+    const emailService = new EmailService(env)
+    
+    // Carica template email_configurazione
+    const template = await loadEmailTemplate('email_configurazione', db, env)
+    
+    // Prepara i dati per il template
+    const templateData = {
+      DISPOSITIVO: 'SiDLY Care PRO',
+      SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
+      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione?leadId=${clientData.id}`
+    }
+
+    // Renderizza template
+    const emailHtml = renderTemplate(template, templateData)
+
+    // Invia email
+    const sendResult = await emailService.sendEmail({
+      to: clientData.email,
+      from: 'info@telemedcare.it',
+      subject: `⚙️ Completa la Configurazione del tuo ${templateData.DISPOSITIVO}`,
+      html: emailHtml
+    })
+
+    if (sendResult.success) {
+      result.success = true
+      result.emailsSent.push(`email_configurazione -> ${clientData.email}`)
+      result.messageIds = [sendResult.messageId]
+      console.log(`✅ [WORKFLOW] Email form configurazione inviata: ${sendResult.messageId}`)
+    } else {
+      result.errors.push(`Errore invio email form configurazione: ${sendResult.error}`)
+      console.error(`❌ [WORKFLOW] Errore invio email form configurazione:`, sendResult.error)
+    }
+
+  } catch (error) {
+    result.errors.push(`Eccezione invio email form configurazione: ${error.message}`)
+    console.error(`❌ [WORKFLOW] Eccezione STEP 4B:`, error)
+  }
+
+  return result
+}
+
+/**
  * STEP 5: Invia configurazione cliente a info@ dopo compilazione form
  */
 export async function inviaEmailConfigurazione(
