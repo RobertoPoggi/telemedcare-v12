@@ -889,10 +889,23 @@ export async function inviaEmailContratto(
         
         console.log(`✅ [CONTRATTO] Insert result:`, insertResult)
         console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)
+        
+        // ✅ VERIFICA che il contratto sia stato effettivamente salvato
+        const verifyContract = await db.prepare('SELECT id FROM contracts WHERE id = ?')
+          .bind(contractData.contractId).first()
+        
+        if (!verifyContract) {
+          throw new Error(`CONTRATTO NON TROVATO DOPO INSERT! ID: ${contractData.contractId}`)
+        }
+        
+        console.log(`✅ [CONTRATTO] Verifica DB: contratto ${contractData.contractId} trovato!`)
       } catch (dbError) {
         console.error('❌ [CONTRATTO] Errore salvataggio DB:', dbError)
         console.error('❌ [CONTRATTO] Stack:', (dbError as Error)?.stack)
-        // Continua comunque con l'invio email
+        // ❌ BLOCCA l'operazione se il contratto non viene salvato!
+        result.errors.push(`Errore critico: contratto non salvato nel database - ${(dbError as Error)?.message}`)
+        result.success = false
+        return result
       }
     } else {
       console.warn(`⚠️  [CONTRATTO] DB non disponibile - contratto NON salvato!`)
