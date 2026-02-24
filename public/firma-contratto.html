@@ -606,25 +606,17 @@
         }
 
         function closeWindow() {
-            // Tenta di chiudere la finestra (funziona solo se aperta da JavaScript)
-            window.close();
-            
-            // Se non si chiude (window.close() fallisce), resta sulla pagina di successo
-            // Non reindirizza alla home
-            setTimeout(() => {
-                // Se la finestra non si è chiusa, nasconde il bottone
-                if (!window.closed) {
-                    const btn = event.target;
-                    if (btn) {
-                        btn.style.display = 'none';
-                        const msg = document.createElement('p');
-                        msg.style.marginTop = '20px';
-                        msg.style.fontSize = '14px';
-                        msg.textContent = '✓ Puoi chiudere questa finestra manualmente';
-                        btn.parentElement.appendChild(msg);
-                    }
-                }
-            }, 100);
+            // Non chiude automaticamente la finestra per evitare problemi con iframe/popup
+            // Mostra solo messaggio che l'utente può chiudere manualmente
+            const btn = event.target;
+            if (btn) {
+                btn.style.display = 'none';
+                const msg = document.createElement('p');
+                msg.style.marginTop = '20px';
+                msg.style.fontSize = '14px';
+                msg.textContent = '✓ Contratto firmato con successo! Puoi chiudere questa finestra.';
+                btn.parentElement.appendChild(msg);
+            }
         }
 
         async function getClientIP() {
