@@ -840,6 +840,18 @@ export async function inviaEmailContratto(
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
         console.log(`💾 [CONTRATTO] DB type:`, typeof db, db ? 'Available' : 'NULL')
         
+        // ✅ VERIFICA se esiste già un contratto per questo lead
+        const existingContract = await db.prepare(
+          'SELECT id FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
+        ).bind(leadData.id).first() as any
+        
+        if (existingContract) {
+          console.log(`⚠️  [CONTRATTO] Contratto esistente trovato per lead ${leadData.id}: ${existingContract.id}`)
+          console.log(`⚠️  [CONTRATTO] Riutilizzo contratto esistente invece di crearne uno nuovo`)
+          // Usa l'ID del contratto esistente
+          contractData.contractId = existingContract.id
+        }
+        
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
         const prezzoMensile = contractData.tipoServizio === 'AVANZATO' ? 70 : 40
         const durataMesi = 12
@@ -851,44 +863,79 @@ export async function inviaEmailContratto(
           tipo_contratto: contractData.tipoServizio,
           servizio: contractData.servizio,
           piano: contractData.tipoServizio,
-          prezzo_totale: contractData.prezzoBase
+          prezzo_totale: contractData.prezzoBase,
+          isUpdate: !!existingContract
         })
         
-        const insertResult = await db.prepare(`
-          INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, 
-            template_utilizzato, contenuto_html, 
-            pdf_generated, pdf_url, email_sent, email_template_used,
-            status, servizio, piano, 
-            prezzo_mensile, durata_mesi, prezzo_totale, 
-            data_invio, data_scadenza,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          contractData.contractId,
-          leadData.id,
-          contractData.contractCode,
-          contractData.tipoServizio,
-          'template_contratto_firma_digitale', // template_utilizzato (NOT NULL)
-          contractHtml,
-          0, // pdf_generated
-          '', // pdf_url (vuoto per ora, PDF richiede Puppeteer)
-          1, // email_sent
-          'email_invio_contratto', // email_template_used
-          'PENDING',
-          contractData.servizio,
-          contractData.tipoServizio,
-          prezzoMensile, // prezzo_mensile (NOT NULL)
-          durataMesi, // durata_mesi (NOT NULL)
-          contractData.prezzoBase, // prezzo_totale = prezzoBase (480 o 840), NON IVA inclusa
-          new Date().toISOString(), // data_invio
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // data_scadenza (+30 giorni)
-          new Date().toISOString(), // created_at
-          new Date().toISOString()  // updated_at
-        ).run()
-        
-        console.log(`✅ [CONTRATTO] Insert result:`, insertResult)
-        console.log(`✅ [CONTRATTO] Salvato nel DB: ${contractData.contractId}`)
+        if (existingContract) {
+          // ✅ UPDATE contratto esistente
+          await db.prepare(`
+            UPDATE contracts SET
+              codice_contratto = ?,
+              tipo_contratto = ?,
+              contenuto_html = ?,
+              email_sent = 1,
+              email_template_used = 'email_invio_contratto',
+              servizio = ?,
+              piano = ?,
+              prezzo_mensile = ?,
+              durata_mesi = ?,
+              prezzo_totale = ?,
+              data_invio = ?,
+              updated_at = ?
+            WHERE id = ?
+          `).bind(
+            contractData.contractCode,
+            contractData.tipoServizio,
+            contractHtml,
+            contractData.servizio,
+            contractData.tipoServizio,
+            prezzoMensile,
+            durataMesi,
+            contractData.prezzoBase,
+            new Date().toISOString(),
+            new Date().toISOString(),
+            contractData.contractId
+          ).run()
+          
+          console.log(`✅ [CONTRATTO] UPDATE eseguito su contratto esistente: ${contractData.contractId}`)
+        } else {
+          // ✅ INSERT nuovo contratto
+          await db.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, 
+              template_utilizzato, contenuto_html, 
+              pdf_generated, pdf_url, email_sent, email_template_used,
+              status, servizio, piano, 
+              prezzo_mensile, durata_mesi, prezzo_totale, 
+              data_invio, data_scadenza,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            contractData.contractId,
+            leadData.id,
+            contractData.contractCode,
+            contractData.tipoServizio,
+            'template_contratto_firma_digitale',
+            contractHtml,
+            0,
+            '',
+            1,
+            'email_invio_contratto',
+            'PENDING',
+            contractData.servizio,
+            contractData.tipoServizio,
+            prezzoMensile,
+            durataMesi,
+            contractData.prezzoBase,
+            new Date().toISOString(),
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            new Date().toISOString(),
+            new Date().toISOString()
+          ).run()
+          
+          console.log(`✅ [CONTRATTO] INSERT nuovo contratto: ${contractData.contractId}`)
+        }
         
         // ✅ VERIFICA che il contratto sia stato effettivamente salvato
         const verifyContract = await db.prepare('SELECT id FROM contracts WHERE id = ?')
