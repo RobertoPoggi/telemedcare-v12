@@ -1,5 +1,10 @@
 # Cloudflare Pages redirects
-# Redirige URL senza estensione a .html preservando i parametri query
+# Rewrite URL senza estensione a .html preservando query parameters con splat
+/firma-contratto/* /firma-contratto.html 200
+/contract-signature/* /contract-signature.html 200
+/configurazione/* /configurazione.html 200
+/pagamento/* /pagamento.html 200
+# Fallback senza parametri
 /firma-contratto /firma-contratto.html 200
 /contract-signature /contract-signature.html 200
 /configurazione /configurazione.html 200
