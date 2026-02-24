@@ -1283,7 +1283,7 @@ export async function inviaEmailFormConfigurazione(
     const templateData = {
       DISPOSITIVO: 'SiDLY Care PRO',
       SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione.html?leadId=${clientData.id}`
+      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione?leadId=${clientData.id}`
     }
 
     // Renderizza template
