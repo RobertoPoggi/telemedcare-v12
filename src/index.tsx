@@ -6853,8 +6853,7 @@ app.get('/api/proforma/:id', async (c) => {
         l.email as cliente_email,
         l.telefono as cliente_telefono
       FROM proforma p
-      LEFT JOIN contracts c ON p.contract_id = c.id
-      LEFT JOIN leads l ON c.leadId = l.id
+      LEFT JOIN leads l ON p.leadId = l.id
       WHERE p.id = ?
     `).bind(id).first()
     
