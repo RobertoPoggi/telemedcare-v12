@@ -868,10 +868,9 @@ export async function inviaEmailContratto(
         })
         
         if (existingContract) {
-          // ✅ UPDATE contratto esistente
+          // ✅ UPDATE contratto esistente (NON aggiornare codice_contratto che è UNIQUE!)
           await db.prepare(`
             UPDATE contracts SET
-              codice_contratto = ?,
               tipo_contratto = ?,
               contenuto_html = ?,
               email_sent = 1,
@@ -885,7 +884,6 @@ export async function inviaEmailContratto(
               updated_at = ?
             WHERE id = ?
           `).bind(
-            contractData.contractCode,
             contractData.tipoServizio,
             contractHtml,
             contractData.servizio,
