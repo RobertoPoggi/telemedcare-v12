@@ -1,4 +1,6 @@
 # Cloudflare Pages redirects
-# Redirige /firma-contratto a /firma-contratto.html preservando i parametri query
+# Redirige URL senza estensione a .html preservando i parametri query
 /firma-contratto /firma-contratto.html 200
 /contract-signature /contract-signature.html 200
+/configurazione /configurazione.html 200
+/pagamento /pagamento.html 200
