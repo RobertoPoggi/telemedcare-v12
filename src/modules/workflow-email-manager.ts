@@ -59,7 +59,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const indirizzoIntestatario = leadData.indirizzoAssistito || 'N/A'
   const capIntestatario = leadData.capAssistito || 'N/A'
   const cittaIntestatario = leadData.cittaAssistito || 'N/A'
-  const provinciaIntestatario = leadData.provinciaAssistito || 'N/A'
+  const provinciaIntestatario = leadData.provinciaAssistito || ''
   const cfIntestatario = leadData.cfAssistito || 'N/A'
   
   // Care giver (richiedente) per i riferimenti
@@ -1139,7 +1139,7 @@ export async function inviaEmailProforma(
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento?proformaId=${proformaData.proformaId}`,
+      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
@@ -1341,7 +1341,7 @@ export async function inviaEmailFormConfigurazione(
     const templateData = {
       DISPOSITIVO: 'SiDLY Care PRO',
       SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione?leadId=${clientData.id}`
+      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione.html?leadId=${clientData.id}`
     }
 
     // Renderizza template
