@@ -10628,10 +10628,17 @@ app.post('/api/contracts/sign', async (c) => {
       console.error(`⚠️ [FIRMA→PROFORMA] Stack:`, (proformaError as Error)?.stack)
     }
     
+    // 🔥 CRITICAL FIX: Headers espliciti per prevenire redirect
+    // Assicura che la risposta sia SEMPRE JSON, MAI redirect
+    console.log('🔍 [DEBUG BACKEND] Sto per ritornare JSON response (NO redirect, NO Location header)')
+    
     return c.json({ 
       success: true,
       message: 'Contratto firmato con successo',
       contractId: contractId
+    }, 200, {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
     })
     
   } catch (error) {

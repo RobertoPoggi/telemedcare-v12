@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firma Contratto TeleMedCare</title>
+    
+    <!-- 🔥 FIX CRITICO REDIRECT: 26 Feb 2026 -->
+    <!-- Aggiunto event.preventDefault() + type="button" + history.pushState -->
+    <!-- per prevenire QUALSIASI redirect dopo firma contratto -->
+    <meta name="fix-version" content="REDIRECT-FIX-2026-02-26">
+    <meta name="fix-commit" content="pending">
     <style>
         * {
             margin: 0;
@@ -394,7 +400,7 @@
                 </div>
 
                 <div style="text-align: center;">
-                    <button class="btn btn-sign" id="signButton" onclick="submitSignature()" disabled>
+                    <button type="button" class="btn btn-sign" id="signButton" onclick="submitSignature(event)" disabled>
                         ✅ Firma e Invia Contratto
                     </button>
                 </div>
@@ -416,7 +422,7 @@
             <h2>✅ Contratto Firmato con Successo!</h2>
             <p style="margin-top: 10px;">Grazie per aver completato la firma. Riceverai una email di conferma a breve.</p>
             <p style="margin-top: 10px; font-size: 14px; margin-bottom: 20px;">Ti arriverà anche la pro-forma per procedere con il pagamento.</p>
-            <button onclick="closeWindow()" class="btn btn-sign" style="width: auto; padding: 12px 40px; font-size: 16px;">
+            <button type="button" onclick="closeWindow(event)" class="btn btn-sign" style="width: auto; padding: 12px 40px; font-size: 16px;">
                 ✓ Chiudi
             </button>
         </div>
@@ -543,7 +549,16 @@
             }
         }
 
-        async function submitSignature() {
+        async function submitSignature(event) {
+            // 🔥 CRITICAL FIX: Previeni QUALSIASI comportamento di navigazione
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+            }
+            
+            console.log('🔍 [DEBUG] submitSignature() chiamata - NESSUN redirect previsto');
+            
             try {
                 // Verifica che ci sia una firma
                 const signatureData = canvas.toDataURL('image/png');
@@ -582,11 +597,14 @@
                 });
 
                 const result = await response.json();
+                console.log('🔍 [DEBUG] Response ricevuta:', result);
 
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || 'Errore durante l\'invio della firma');
                 }
 
+                console.log('✅ [DEBUG] Firma salvata con successo - Mostro popup successo (NO redirect)');
+                
                 // Mostra messaggio successo con overlay
                 document.getElementById('loadingSubmit').classList.remove('active');
                 document.getElementById('successOverlay').classList.add('active');
@@ -594,6 +612,15 @@
                 
                 // Nascondi il form di firma (non serve più nascondere le sezioni, il popup è in overlay)
                 document.getElementById('contractContent').style.display = 'none';
+                
+                // 🔥 CRITICAL: Previeni QUALSIASI navigazione dopo successo
+                console.log('🔍 [DEBUG] Popup successo mostrato - L\'utente DEVE rimanere su questa pagina');
+                
+                // Blocca il back button per evitare navigazioni accidentali
+                window.history.pushState(null, '', window.location.href);
+                window.addEventListener('popstate', function(e) {
+                    window.history.pushState(null, '', window.location.href);
+                });
 
             } catch (error) {
                 console.error('Errore invio firma:', error);
@@ -605,10 +632,18 @@
             }
         }
 
-        function closeWindow() {
+        function closeWindow(event) {
+            // 🔥 CRITICAL FIX: Previeni navigazione
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            console.log('🔍 [DEBUG] Bottone Chiudi cliccato - Nessuna navigazione');
+            
             // Non chiude automaticamente la finestra per evitare problemi con iframe/popup
             // Mostra solo messaggio che l'utente può chiudere manualmente
-            const btn = event.target;
+            const btn = event ? event.target : null;
             if (btn) {
                 btn.style.display = 'none';
                 const msg = document.createElement('p');
