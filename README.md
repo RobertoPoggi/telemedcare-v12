@@ -1,7 +1,9 @@
-# TeleMedCare V11.0 - Sistema Modulare Enterprise
+# TeleMedCare V12.0 - Sistema Modulare Enterprise
 
 ## 🏥 Panoramica
 Sistema enterprise modulare per la gestione della telemedicina con architettura separata tra frontend pubblico e dashboard amministrative.
+
+**Versione Attuale:** V12.0 | **Commit:** `3823984` | **Data:** 26 Febbraio 2026
 
 ## 📂 **ARCHITETTURA MODULARE**
 
@@ -198,12 +200,81 @@ npm run build
 npx wrangler pages deploy dist --project-name telemedcare-v11
 ```
 
+## 📚 **DOCUMENTAZIONE COMPLETA**
+
+### 🌟 **Documento Master (START HERE)**
+📄 **[RIEPILOGO_COMPLETO_PROGETTO_TELEMEDCARE.md](./RIEPILOGO_COMPLETO_PROGETTO_TELEMEDCARE.md)** (58 KB)
+- Panoramica 360° del sistema
+- Architettura completa (73.730 righe codice)
+- Tutti i componenti dettagliati (CRM, Workflow, Contratti, Pagamenti, ecc.)
+- Guide operative e troubleshooting
+- Roadmap tecnico 2026-2027
+
+### 📊 **Documentazione Business**
+📄 **[DOCUMENTAZIONE_FUNZIONALE_SISTEMA_TELEMEDCARE_CRM.md](./DOCUMENTAZIONE_FUNZIONALE_SISTEMA_TELEMEDCARE_CRM.md)** (84 KB)
+- Specifiche funzionali dettagliate
+- 15 stati workflow documentati
+- 6 dashboard operative illustrate
+- Schema database completo (9 tabelle)
+- GDPR compliance
+
+### 🎯 **Executive Summary**
+📄 **[EXECUTIVE_SUMMARY_TELEMEDCARE.md](./EXECUTIVE_SUMMARY_TELEMEDCARE.md)** (13 KB)
+- Sintesi per stakeholder e investitori
+- KPI e metriche business
+- Presentazione Invitalia-ready
+
+### 🗺️ **Navigazione Documentazione**
+📄 **[INDICE_DOCUMENTAZIONE.md](./INDICE_DOCUMENTAZIONE.md)** (10 KB)
+- Mappa completa di tutti i documenti
+- Guida "quale documento leggere per ruolo"
+- Checklist onboarding
+
+### ⚡ **Quick Reference**
+📄 **[QUICK_REFERENCE_CARD.md](./QUICK_REFERENCE_CARD.md)** (8 KB)
+- Sistema in 30 secondi
+- Comandi rapidi
+- Troubleshooting veloce
+- Azioni frequenti operatore
+
+---
+
 ## 📞 Supporto
 
 **Medica GB S.r.l.**  
-📧 info@telemedcare.it  
-🌐 TeleMedCare V11.0 Modular Enterprise  
+📧 info@medicagb.it  
+📧 support@medicagb.it (Supporto Tecnico 24/7)  
+📞 +39 348 1234567 (Emergenze)  
+🌐 TeleMedCare V12.0 Modular Enterprise  
+
+### **GitHub Repository**
+🔗 https://github.com/RobertoPoggi/telemedcare-v12
+
+### **Developer**
+👨‍💻 Roberto Poggi  
+📧 roberto@medicagb.it  
+💻 GitHub: [@RobertoPoggi](https://github.com/RobertoPoggi)
 
 ---
+
 **Sistema Modulare - Landing + Dashboard Separate**  
-*Aggiornato: $(date '+%Y-%m-%d %H:%M')*# Rebuild trigger Tue Jan  6 17:39:03 UTC 2026
+**Status:** ✅ Production Ready | **Last Update:** 26 Febbraio 2026 | **Commit:** `3823984`
+
+---
+
+## 🎓 Risorse Utili
+
+### Per Developer
+1. **Setup Iniziale:** Questo README
+2. **Architettura:** [RIEPILOGO_COMPLETO](./RIEPILOGO_COMPLETO_PROGETTO_TELEMEDCARE.md) sezioni 1-3
+3. **Quick Reference:** [QUICK_REFERENCE_CARD.md](./QUICK_REFERENCE_CARD.md)
+4. **Codebase:** Esplora `src/modules/` (50+ moduli)
+
+### Per Operatore Dashboard
+1. **Formazione Base:** [DOCUMENTAZIONE_FUNZIONALE](./DOCUMENTAZIONE_FUNZIONALE_SISTEMA_TELEMEDCARE_CRM.md) sezione Dashboard
+2. **Guide Operative:** [RIEPILOGO_COMPLETO](./RIEPILOGO_COMPLETO_PROGETTO_TELEMEDCARE.md) sezione "Guide Operative"
+3. **Troubleshooting:** [QUICK_REFERENCE_CARD.md](./QUICK_REFERENCE_CARD.md) sezione "Troubleshooting Veloce"
+
+### Per Management
+1. **Executive Summary:** [EXECUTIVE_SUMMARY_TELEMEDCARE.md](./EXECUTIVE_SUMMARY_TELEMEDCARE.md)
+2. **Roadmap:** [RIEPILOGO_COMPLETO](./RIEPILOGO_COMPLETO_PROGETTO_TELEMEDCARE.md) sezione "Roadmap 2026-2027"
