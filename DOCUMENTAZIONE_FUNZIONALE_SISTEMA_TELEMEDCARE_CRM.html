@@ -1,0 +1,3548 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentazione Funzionale Completa - TeleMedCare V12.0</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            h1 {
+                page-break-before: always;
+            }
+            
+            h1:first-of-type {
+                page-break-before: auto;
+            }
+            
+            table, pre, blockquote {
+                page-break-inside: avoid;
+            }
+            
+            .cover-page {
+                page-break-after: always;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        
+        /* Cover Page */
+        .cover-page {
+            text-align: center;
+            padding: 100px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .cover-logo {
+            font-size: 48pt;
+            margin-bottom: 20px;
+        }
+        
+        .cover-title {
+            font-size: 36pt;
+            color: #2563EB;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .cover-subtitle {
+            font-size: 18pt;
+            color: #6b7280;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+        
+        .cover-divider {
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #2563EB, transparent);
+            margin: 40px auto;
+        }
+        
+        .cover-info {
+            font-size: 12pt;
+            color: #374151;
+            margin-top: 60px;
+        }
+        
+        .cover-info p {
+            margin: 10px 0;
+        }
+        
+        .cover-footer {
+            margin-top: 80px;
+            font-size: 10pt;
+            color: #9ca3af;
+        }
+        
+        /* Typography */
+        h1 {
+            color: #2563EB;
+            font-size: 24pt;
+            border-bottom: 3px solid #2563EB;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 18pt;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 5px solid #3b82f6;
+            padding-left: 15px;
+        }
+        
+        h3 {
+            color: #1e40af;
+            font-size: 14pt;
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+        
+        h4 {
+            color: #374151;
+            font-size: 12pt;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+        
+        /* Code */
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 10pt;
+            color: #ef4444;
+        }
+        
+        pre {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 9pt;
+            line-height: 1.4;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            color: #e5e7eb;
+            padding: 0;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+        }
+        
+        table thead {
+            background-color: #2563EB;
+            color: white;
+        }
+        
+        table th {
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        /* Links */
+        a {
+            color: #2563EB;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid #10b981;
+            background-color: #ecfdf5;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 30px 0;
+        }
+        
+        /* Print Button */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2563EB;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #1e40af;
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+    
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <div class="cover-logo">🏥</div>
+        <div class="cover-title">TeleMedCare V12.0</div>
+        <div class="cover-subtitle">
+            Sistema CRM & Workflow Management<br>
+            Documentazione Funzionale Completa
+        </div>
+        <div class="cover-divider"></div>
+        <div class="cover-info">
+            <p><strong>Medica GB S.r.l.</strong></p>
+            <p>Innovazione nella Gestione Cliente<br>per la Teleassistenza Domiciliare</p>
+            <p style="margin-top: 40px;">Documento preparato per presentazione<br><strong>Smart&Start Italia - Invitalia</strong></p>
+        </div>
+        <div class="cover-footer">
+            <p>Data: 24 Febbraio 2026</p>
+            <p>Versione Sistema: V12.0 (Commit 5c24200)</p>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+        <h1 id="documentazione-funzionale---sistema-telemedcare-v120">DOCUMENTAZIONE FUNZIONALE - SISTEMA TELEMEDCARE V12.0</h1>
+<h2 id="crm-dashboard-e-workflow-management">CRM, Dashboard e Workflow Management</h2>
+<hr>
+<h2 id="indice">INDICE</h2>
+<ol>
+<li><a href="#1-panoramica-sistema">Panoramica Sistema</a></li>
+<li><a href="#2-architettura-funzionale">Architettura Funzionale</a></li>
+<li><a href="#3-gestione-lead-crm-core">Gestione Lead (CRM Core)</a></li>
+<li><a href="#4-workflow-automatizzato">Workflow Automatizzato</a></li>
+<li><a href="#5-dashboard-operativa">Dashboard Operativa</a></li>
+<li><a href="#6-gestione-contratti">Gestione Contratti</a></li>
+<li><a href="#7-gestione-pagamenti">Gestione Pagamenti</a></li>
+<li><a href="#8-configurazione-cliente">Configurazione Cliente</a></li>
+<li><a href="#9-gestione-dispositivi">Gestione Dispositivi</a></li>
+<li><a href="#10-sistema-email">Sistema Email</a></li>
+<li><a href="#11-sistema-template">Sistema Template</a></li>
+<li><a href="#12-database-e-persistenza">Database e Persistenza</a></li>
+<li><a href="#13-integrazioni-esterne">Integrazioni Esterne</a></li>
+<li><a href="#14-sicurezza-e-privacy">Sicurezza e Privacy</a></li>
+<li><a href="#15-stati-e-transizioni">Stati e Transizioni</a></li>
+</ol>
+<hr>
+<h2 id="1-panoramica-sistema">1. PANORAMICA SISTEMA</h2>
+<h3 id="11-descrizione-generale">1.1 Descrizione Generale</h3>
+<p><strong>TeleMedCare V12.0</strong> è una piattaforma integrata per la gestione completa del ciclo di vita del cliente nel settore della teleassistenza domiciliare. Il sistema gestisce l&#39;intero processo dall&#39;acquisizione del lead fino all&#39;attivazione del servizio.</p>
+<h3 id="12-obiettivi-funzionali">1.2 Obiettivi Funzionali</h3>
+<ul>
+<li><strong>Automazione completa</strong> del processo commerciale e operativo</li>
+<li><strong>Tracciabilità</strong> di ogni interazione con il cliente</li>
+<li><strong>Gestione documentale</strong> integrata (contratti, proforma, configurazioni)</li>
+<li><strong>Workflow guidato</strong> per ridurre errori operativi</li>
+<li><strong>Reportistica</strong> in tempo reale sullo stato delle pratiche</li>
+</ul>
+<h3 id="13-componenti-principali">1.3 Componenti Principali</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Descrizione</th>
+<th>Funzione Primaria</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>CRM Core</strong></td>
+<td>Gestione anagrafica lead</td>
+<td>Acquisizione e qualificazione contatti</td>
+</tr>
+<tr>
+<td><strong>Workflow Engine</strong></td>
+<td>Orchestrazione processi</td>
+<td>Automazione flusso vendita-attivazione</td>
+</tr>
+<tr>
+<td><strong>Dashboard Operativa</strong></td>
+<td>Interfaccia operatore</td>
+<td>Gestione pratiche e monitoraggio</td>
+</tr>
+<tr>
+<td><strong>Contract Manager</strong></td>
+<td>Gestione contratti</td>
+<td>Generazione e firma digitale</td>
+</tr>
+<tr>
+<td><strong>Payment Manager</strong></td>
+<td>Gestione pagamenti</td>
+<td>Proforma e integrazione Stripe</td>
+</tr>
+<tr>
+<td><strong>Configuration Manager</strong></td>
+<td>Configurazione servizi</td>
+<td>Raccolta dati attivazione</td>
+</tr>
+<tr>
+<td><strong>Device Manager</strong></td>
+<td>Gestione dispositivi</td>
+<td>Associazione e tracking dispositivi</td>
+</tr>
+<tr>
+<td><strong>Email Service</strong></td>
+<td>Comunicazioni automatiche</td>
+<td>Invio email transazionali</td>
+</tr>
+<tr>
+<td><strong>Template Manager</strong></td>
+<td>Gestione template</td>
+<td>Template email e documenti</td>
+</tr>
+</tbody></table>
+<h3 id="14-numeri-del-sistema">1.4 Numeri del Sistema</h3>
+<ul>
+<li><strong>24.107 linee di codice</strong> core (escluse librerie)</li>
+<li><strong>50+ moduli funzionali</strong> TypeScript</li>
+<li><strong>15 stati workflow</strong> per ogni lead</li>
+<li><strong>12+ template email</strong> transazionali</li>
+<li><strong>6 tipologie documento</strong> gestite</li>
+<li><strong>4 livelli utente</strong> (pubblico, lead, operatore, admin)</li>
+</ul>
+<hr>
+<h2 id="2-architettura-funzionale">2. ARCHITETTURA FUNZIONALE</h2>
+<h3 id="21-modello-a-strati">2.1 Modello a Strati</h3>
+<pre><code>┌─────────────────────────────────────────────┐
+│         INTERFACCIA UTENTE (UI)             │
+│  Landing Page │ Dashboard │ Form Pubblici   │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│       BUSINESS LOGIC LAYER (BLL)            │
+│  Workflow │ Lead Manager │ Document Manager │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│       DATA ACCESS LAYER (DAL)               │
+│  D1 Database │ API Gateway │ Cache Layer    │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│       INTEGRATION LAYER (IL)                │
+│  Email │ Payment │ Storage │ External APIs  │
+└─────────────────────────────────────────────┘
+</code></pre>
+<h3 id="22-flusso-dati-principale">2.2 Flusso Dati Principale</h3>
+<ol>
+<li><strong>Acquisizione Lead</strong> (Landing Page → Database)</li>
+<li><strong>Qualificazione</strong> (Operatore → Dashboard → CRM)</li>
+<li><strong>Invio Documentazione</strong> (Sistema → Email Service → Cliente)</li>
+<li><strong>Firma Contratto</strong> (Cliente → Contract Manager → Database)</li>
+<li><strong>Pagamento</strong> (Cliente → Payment Gateway → Database)</li>
+<li><strong>Configurazione</strong> (Cliente → Configuration Manager → Database)</li>
+<li><strong>Attivazione</strong> (Operatore → Device Manager → Database)</li>
+</ol>
+<h3 id="23-tecnologie-core">2.3 Tecnologie Core</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Tecnologia</th>
+<th>Scopo</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Backend</strong></td>
+<td>Hono Framework (TypeScript)</td>
+<td>API REST e routing</td>
+</tr>
+<tr>
+<td><strong>Database</strong></td>
+<td>Cloudflare D1 (SQLite)</td>
+<td>Persistenza dati</td>
+</tr>
+<tr>
+<td><strong>Frontend</strong></td>
+<td>HTML5 + Tailwind CSS</td>
+<td>Interfacce utente</td>
+</tr>
+<tr>
+<td><strong>Hosting</strong></td>
+<td>Cloudflare Pages</td>
+<td>Deploy e CDN</td>
+</tr>
+<tr>
+<td><strong>Email</strong></td>
+<td>Resend API</td>
+<td>Invio email transazionali</td>
+</tr>
+<tr>
+<td><strong>Pagamenti</strong></td>
+<td>Stripe API</td>
+<td>Gestione pagamenti</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>R2 Bucket</td>
+<td>Archiviazione documenti</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-gestione-lead-crm-core">3. GESTIONE LEAD (CRM CORE)</h2>
+<h3 id="31-acquisizione-lead">3.1 Acquisizione Lead</h3>
+<h4 id="311-canali-di-ingresso">3.1.1 Canali di Ingresso</h4>
+<ol>
+<li><p><strong>Landing Page Pubblica</strong> (<code>/</code>)</p>
+<ul>
+<li>Form principale acquisizione</li>
+<li>Campi: nome, cognome, email, telefono, provincia</li>
+<li>Opzioni: richiesta brochure, manuale, contratto</li>
+<li>Tracking: fonte acquisizione (organic, paid, referral)</li>
+</ul>
+</li>
+<li><p><strong>API Esterna</strong> (<code>POST /api/leads/external</code>)</p>
+<ul>
+<li>Integrazione con sistemi terzi</li>
+<li>Autenticazione via API key</li>
+<li>Mappatura automatica campi</li>
+</ul>
+</li>
+<li><p><strong>Inserimento Manuale</strong> (Dashboard)</p>
+<ul>
+<li>Creazione diretta operatore</li>
+<li>Tutti i campi disponibili</li>
+<li>Validazione form-side</li>
+</ul>
+</li>
+</ol>
+<h4 id="312-dati-lead">3.1.2 Dati Lead</h4>
+<p><strong>Anagrafica Base:</strong></p>
+<ul>
+<li>Nome e Cognome</li>
+<li>Email (validata, unique)</li>
+<li>Telefono</li>
+<li>Indirizzo completo (via, civico, città, provincia, CAP)</li>
+<li>Codice fiscale</li>
+<li>Data di nascita</li>
+</ul>
+<p><strong>Dati Assistito (se diverso dall&#39;intestatario):</strong></p>
+<ul>
+<li>Nome e Cognome assistito</li>
+<li>Data di nascita assistito</li>
+<li>Relazione con intestatario (genitore, coniuge, altro)</li>
+</ul>
+<p><strong>Dati Commerciali:</strong></p>
+<ul>
+<li>Servizio richiesto (Base / Avanzato)</li>
+<li>Piano scelto (mensile / annuale)</li>
+<li>Fonte acquisizione</li>
+<li>Note commerciali</li>
+<li>Operatore assegnato</li>
+</ul>
+<p><strong>Preferenze:</strong></p>
+<ul>
+<li>Vuole brochure (Si/No)</li>
+<li>Vuole manuale (Si/No)</li>
+<li>Vuole contratto (Si/No)</li>
+<li>Privacy accettata</li>
+<li>Marketing accettato</li>
+</ul>
+<p><strong>Dati Sistema:</strong></p>
+<ul>
+<li>ID univoco (formato: <code>LEAD-YYYY-MM-DD-UUID</code>)</li>
+<li>Data creazione</li>
+<li>Data ultimo aggiornamento</li>
+<li>Stato corrente</li>
+<li>Storia transizioni di stato</li>
+</ul>
+<h3 id="32-operazioni-crud">3.2 Operazioni CRUD</h3>
+<h4 id="321-create-creazione">3.2.1 Create (Creazione)</h4>
+<p><strong>Endpoint:</strong> <code>POST /api/leads</code></p>
+<p><strong>Payload Minimo:</strong></p>
+<pre><code class="language-json">{
+  &quot;nome&quot;: &quot;Mario&quot;,
+  &quot;cognome&quot;: &quot;Rossi&quot;,
+  &quot;email&quot;: &quot;mario.rossi@example.com&quot;,
+  &quot;telefono&quot;: &quot;3331234567&quot;,
+  &quot;provincia&quot;: &quot;RM&quot;
+}
+</code></pre>
+<p><strong>Validazioni:</strong></p>
+<ul>
+<li>Email valida e univoca</li>
+<li>Telefono formato italiano</li>
+<li>Provincia codice valido (2 caratteri)</li>
+<li>Nome e cognome non vuoti</li>
+</ul>
+<p><strong>Azioni Automatiche:</strong></p>
+<ul>
+<li>Generazione ID univoco</li>
+<li>Assegnazione stato iniziale (<code>NEW</code>)</li>
+<li>Timestamp creazione</li>
+<li>Score iniziale (0)</li>
+<li>Invio email notifica interna</li>
+</ul>
+<h4 id="322-read-lettura">3.2.2 Read (Lettura)</h4>
+<p><strong>Endpoint:</strong> <code>GET /api/leads/:id</code></p>
+<p><strong>Risposta:</strong></p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;lead&quot;: {
+    &quot;id&quot;: &quot;LEAD-2026-02-24-abc123&quot;,
+    &quot;nome&quot;: &quot;Mario&quot;,
+    &quot;cognome&quot;: &quot;Rossi&quot;,
+    &quot;email&quot;: &quot;mario.rossi@example.com&quot;,
+    &quot;telefono&quot;: &quot;3331234567&quot;,
+    &quot;status&quot;: &quot;NEW&quot;,
+    &quot;created_at&quot;: &quot;2026-02-24T10:00:00Z&quot;,
+    &quot;score&quot;: 0,
+    ...
+  }
+}
+</code></pre>
+<p><strong>Filtri Dashboard:</strong></p>
+<ul>
+<li>Per stato (<code>?status=NEW</code>)</li>
+<li>Per data (<code>?from=2026-02-01&amp;to=2026-02-28</code>)</li>
+<li>Per operatore (<code>?operator=user123</code>)</li>
+<li>Per servizio (<code>?service=BASE</code>)</li>
+<li>Ricerca testuale (<code>?search=mario+rossi</code>)</li>
+</ul>
+<h4 id="323-update-aggiornamento">3.2.3 Update (Aggiornamento)</h4>
+<p><strong>Endpoint:</strong> <code>PUT /api/leads/:id</code></p>
+<p><strong>Payload Parziale Consentito:</strong></p>
+<pre><code class="language-json">{
+  &quot;telefono&quot;: &quot;3339876543&quot;,
+  &quot;via&quot;: &quot;Via Roma 123&quot;,
+  &quot;note&quot;: &quot;Cliente interessato&quot;
+}
+</code></pre>
+<p><strong>Campi Protetti (non modificabili):</strong></p>
+<ul>
+<li><code>id</code> (immutabile)</li>
+<li><code>created_at</code> (timestamp originale)</li>
+<li><code>email</code> (richiede verifica separata)</li>
+</ul>
+<p><strong>Audit Trail:</strong></p>
+<ul>
+<li>Ogni modifica tracciata</li>
+<li>Timestamp aggiornamento</li>
+<li>Operatore modificante</li>
+<li>Valori precedenti salvati (per rollback)</li>
+</ul>
+<h4 id="324-delete-eliminazione">3.2.4 Delete (Eliminazione)</h4>
+<p><strong>Endpoint:</strong> <code>DELETE /api/leads/:id</code></p>
+<p><strong>Modalità:</strong></p>
+<ul>
+<li><strong>Soft Delete</strong> (default): <code>deleted = 1</code>, dati conservati</li>
+<li><strong>Hard Delete</strong> (admin): rimozione fisica record</li>
+</ul>
+<p><strong>Vincoli:</strong></p>
+<ul>
+<li>Solo lead senza contratti attivi</li>
+<li>Solo lead senza pagamenti effettuati</li>
+<li>Conferma richiesta per operatori</li>
+</ul>
+<h3 id="33-lead-scoring">3.3 Lead Scoring</h3>
+<h4 id="331-criteri-di-punteggio">3.3.1 Criteri di Punteggio</h4>
+<table>
+<thead>
+<tr>
+<th>Criterio</th>
+<th>Punti</th>
+<th>Motivazione</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Email valida</td>
+<td>+10</td>
+<td>Contattabilità garantita</td>
+</tr>
+<tr>
+<td>Telefono fornito</td>
+<td>+10</td>
+<td>Canale alternativo</td>
+</tr>
+<tr>
+<td>Indirizzo completo</td>
+<td>+15</td>
+<td>Pronto per contratto</td>
+</tr>
+<tr>
+<td>Codice fiscale</td>
+<td>+15</td>
+<td>Identificazione certa</td>
+</tr>
+<tr>
+<td>Ha aperto email</td>
+<td>+20</td>
+<td>Interesse dimostrato</td>
+</tr>
+<tr>
+<td>Ha cliccato link</td>
+<td>+25</td>
+<td>Engagement alto</td>
+</tr>
+<tr>
+<td>Ha compilato form config</td>
+<td>+30</td>
+<td>Intent molto alto</td>
+</tr>
+<tr>
+<td>Ha firmato contratto</td>
+<td>+50</td>
+<td>Lead qualificato</td>
+</tr>
+<tr>
+<td>Ha pagato</td>
+<td>+100</td>
+<td>Cliente acquisito</td>
+</tr>
+</tbody></table>
+<h4 id="332-categorie-lead">3.3.2 Categorie Lead</h4>
+<ul>
+<li><strong>0-30 punti:</strong> Lead freddo (scarso interesse)</li>
+<li><strong>31-60 punti:</strong> Lead tibido (potenziale medio)</li>
+<li><strong>61-100 punti:</strong> Lead caldo (interesse confermato)</li>
+<li><strong>101+ punti:</strong> Lead qualificato (pronto chiusura)</li>
+</ul>
+<h3 id="34-gestione-duplicati">3.4 Gestione Duplicati</h3>
+<h4 id="341-rilevamento">3.4.1 Rilevamento</h4>
+<p><strong>Criteri di Match:</strong></p>
+<ol>
+<li>Email identica (100% match)</li>
+<li>Telefono + Cognome (90% match)</li>
+<li>Codice Fiscale (100% match)</li>
+<li>Nome + Cognome + Data nascita (85% match)</li>
+</ol>
+<h4 id="342-azioni">3.4.2 Azioni</h4>
+<ul>
+<li><strong>Alert operatore</strong> se duplicato rilevato</li>
+<li><strong>Merge manuale</strong> via dashboard</li>
+<li><strong>Blocco automatico</strong> per email duplicate</li>
+<li><strong>Suggerimenti</strong> lead simili</li>
+</ul>
+<hr>
+<h2 id="4-workflow-automatizzato">4. WORKFLOW AUTOMATIZZATO</h2>
+<h3 id="41-architettura-workflow">4.1 Architettura Workflow</h3>
+<p>Il sistema utilizza un <strong>Workflow Orchestrator</strong> (<code>complete-workflow-orchestrator.ts</code>) che coordina tutte le fasi del processo commerciale e operativo.</p>
+<h4 id="411-componenti-orchestrator">4.1.1 Componenti Orchestrator</h4>
+<pre><code class="language-typescript">WorkflowOrchestrator
+├── Step 1: validateLead()
+├── Step 2: sendDocumentation()
+├── Step 3: sendContract()
+├── Step 4: waitSignature()
+├── Step 5: sendProforma()
+├── Step 6: waitPayment()
+├── Step 7: sendConfiguration()
+├── Step 8: waitConfiguration()
+└── Step 9: activateService()
+</code></pre>
+<h3 id="42-flusso-completo">4.2 Flusso Completo</h3>
+<h4 id="fase-1-acquisizione-e-qualificazione">FASE 1: ACQUISIZIONE E QUALIFICAZIONE</h4>
+<p><strong>Step 1.1 - Arrivo Lead</strong></p>
+<ul>
+<li>Lead compila form landing page</li>
+<li>Sistema salva dati in database</li>
+<li>Stato: <code>NEW</code></li>
+<li>Email automatica a <code>info@medicagb.it</code> con notifica nuovo lead</li>
+</ul>
+<p><strong>Step 1.2 - Validazione Dati</strong></p>
+<ul>
+<li>Operatore verifica completezza dati</li>
+<li>Se mancano campi essenziali → invio email &quot;completa dati&quot;</li>
+<li>Se dati completi → prosegue workflow</li>
+<li>Stato: <code>VALIDATED</code></li>
+</ul>
+<p><strong>Step 1.3 - Qualificazione Commerciale</strong></p>
+<ul>
+<li>Operatore valuta interesse lead (scoring)</li>
+<li>Assegnazione priorità (alta/media/bassa)</li>
+<li>Aggiunta note commerciali</li>
+<li>Stato: <code>QUALIFIED</code></li>
+</ul>
+<h4 id="fase-2-invio-documentazione">FASE 2: INVIO DOCUMENTAZIONE</h4>
+<p><strong>Step 2.1 - Invio Brochure</strong></p>
+<ul>
+<li>Se lead ha richiesto brochure → email con PDF allegato</li>
+<li>Template: <code>email_invio_brochure.html</code></li>
+<li>Allegato: <code>Brochure_eCura_2024.pdf</code></li>
+<li>Tracking apertura email</li>
+<li>Stato: <code>BROCHURE_SENT</code></li>
+</ul>
+<p><strong>Step 2.2 - Invio Manuale</strong></p>
+<ul>
+<li>Se lead ha richiesto manuale → email con PDF allegato</li>
+<li>Template: <code>email_invio_manuale.html</code></li>
+<li>Allegato: <code>Manuale_Dispositivo_SiDLY.pdf</code></li>
+<li>Stato: <code>MANUAL_SENT</code></li>
+</ul>
+<p><strong>Step 2.3 - Invio Contratto</strong></p>
+<ul>
+<li>Se lead ha richiesto contratto → genera contratto personalizzato</li>
+<li>Creazione record in tabella <code>contracts</code></li>
+<li>Generazione HTML contratto con dati lead</li>
+<li>Invio email con link firma digitale</li>
+<li>Template: <code>email_invio_contratto.html</code></li>
+<li>Link: <code>https://telemedcare-v12.pages.dev/firma-contratto?contractId=XXX</code></li>
+<li>Stato: <code>CONTRACT_SENT</code></li>
+</ul>
+<h4 id="fase-3-firma-contratto">FASE 3: FIRMA CONTRATTO</h4>
+<p><strong>Step 3.1 - Apertura Pagina Firma</strong></p>
+<ul>
+<li>Cliente clicca link da email</li>
+<li>Sistema carica dati contratto da database (<code>GET /api/contracts/:id</code>)</li>
+<li>Visualizza contratto in HTML responsive</li>
+<li>Mostra checkbox consensi GDPR</li>
+<li>Mostra canvas firma digitale</li>
+</ul>
+<p><strong>Step 3.2 - Firma Digitale</strong></p>
+<ul>
+<li>Cliente legge clausole</li>
+<li>Spunta checkbox obbligatori</li>
+<li>Disegna firma su canvas touch</li>
+<li>Click &quot;Firma Contratto&quot;</li>
+<li>Sistema valida presenza firma</li>
+<li>Salva firma come base64 in database</li>
+</ul>
+<p><strong>Step 3.3 - Conferma Firma</strong></p>
+<ul>
+<li>Popup di conferma: &quot;✓ Contratto firmato con successo!&quot;</li>
+<li>Aggiornamento stato contratto: <code>SIGNED</code></li>
+<li>Aggiornamento stato lead: <code>CONTRACT_SIGNED</code></li>
+<li>Timestamp firma salvato</li>
+</ul>
+<p><strong>Step 3.4 - Generazione Proforma</strong></p>
+<ul>
+<li>Workflow automatico crea proforma</li>
+<li>Calcolo importo: €480 (BASE) o €840 (AVANZATO)</li>
+<li>IVA 22% inclusa</li>
+<li>Scadenza: 30 giorni</li>
+<li>Inserimento in tabella <code>proforma</code></li>
+<li>Invio email con link pagamento</li>
+<li>Template: <code>email_invio_proforma.html</code></li>
+<li>Link: <code>https://telemedcare-v12.pages.dev/pagamento?proformaId=XXX</code></li>
+<li>Stato: <code>PROFORMA_SENT</code></li>
+</ul>
+<h4 id="fase-4-pagamento">FASE 4: PAGAMENTO</h4>
+<p><strong>Step 4.1 - Apertura Pagina Pagamento</strong></p>
+<ul>
+<li>Cliente clicca link da email</li>
+<li>Sistema carica dati proforma (<code>GET /api/proforma/:id</code>)</li>
+<li>Visualizza riepilogo importo</li>
+<li>Mostra form Stripe per carta</li>
+</ul>
+<p><strong>Step 4.2 - Pagamento Online</strong></p>
+<ul>
+<li>Cliente inserisce dati carta</li>
+<li>Stripe processa pagamento</li>
+<li>Webhook Stripe notifica esito</li>
+<li>Se successo: aggiornamento proforma a <code>PAID</code></li>
+<li>Se fallito: email di retry</li>
+<li>Stato: <code>PAYMENT_RECEIVED</code></li>
+</ul>
+<p><strong>Step 4.3 - Conferma Pagamento Manuale</strong></p>
+<ul>
+<li>Operatore può confermare pagamento offline (bonifico)</li>
+<li>Button dashboard: &quot;Pagamento OK&quot;</li>
+<li>Aggiornamento manuale stato proforma</li>
+<li>Trigger stesso workflow pagamento online</li>
+</ul>
+<p><strong>Step 4.4 - Invio Email Configurazione</strong></p>
+<ul>
+<li>Email automatica con form configurazione</li>
+<li>Template: <code>email_configurazione.html</code></li>
+<li>Link: <code>https://telemedcare-v12.pages.dev/configurazione?leadId=XXX</code></li>
+<li>Stato: <code>CONFIGURATION_SENT</code></li>
+</ul>
+<h4 id="fase-5-configurazione">FASE 5: CONFIGURAZIONE</h4>
+<p><strong>Step 5.1 - Compilazione Form</strong></p>
+<ul>
+<li>Cliente accede a form configurazione</li>
+<li>Sezioni:<ul>
+<li><strong>Dati Anagrafici</strong>: conferma intestatario</li>
+<li><strong>Dati Medici</strong>: medico curante, patologie, terapie</li>
+<li><strong>Contatti Emergenza</strong>: fino a 3 contatti con nome, telefono, relazione</li>
+</ul>
+</li>
+<li>Validazione campi obbligatori</li>
+<li>Submit via EmailJS</li>
+</ul>
+<p><strong>Step 5.2 - Ricezione Configurazione</strong></p>
+<ul>
+<li>Email inviata a <code>info@medicagb.it</code></li>
+<li>Operatore riceve dati completi</li>
+<li>Salvataggio manuale in sistema (o auto-parse)</li>
+<li>Stato: <code>CONFIGURATION_RECEIVED</code></li>
+</ul>
+<p><strong>Step 5.3 - Validazione Configurazione</strong></p>
+<ul>
+<li>Operatore verifica correttezza dati</li>
+<li>Se mancanti → richiesta integrazione</li>
+<li>Se completi → autorizzazione attivazione</li>
+<li>Stato: <code>CONFIGURATION_VALIDATED</code></li>
+</ul>
+<h4 id="fase-6-attivazione-servizio">FASE 6: ATTIVAZIONE SERVIZIO</h4>
+<p><strong>Step 6.1 - Associazione Dispositivo</strong></p>
+<ul>
+<li>Operatore seleziona dispositivo da magazzino</li>
+<li>Inserimento seriale dispositivo</li>
+<li>Associazione dispositivo a cliente</li>
+<li>Configurazione parametri dispositivo</li>
+<li>Stato: <code>DEVICE_ASSOCIATED</code></li>
+</ul>
+<p><strong>Step 6.2 - Attivazione Servizio</strong></p>
+<ul>
+<li>Attivazione linea telefonica dispositivo</li>
+<li>Configurazione centrale operativa</li>
+<li>Inserimento contatti emergenza</li>
+<li>Test funzionale dispositivo</li>
+<li>Stato: <code>ACTIVE</code></li>
+</ul>
+<p><strong>Step 6.3 - Comunicazione Attivazione</strong></p>
+<ul>
+<li>Email conferma attivazione a cliente</li>
+<li>Template: <code>email_attivazione_servizio.html</code></li>
+<li>Dettagli: seriale dispositivo, numero emergenza, istruzioni</li>
+<li>Call di benvenuto operatore (opzionale)</li>
+<li>Stato: <code>SERVICE_ACTIVE</code></li>
+</ul>
+<h3 id="43-gestione-eccezioni">4.3 Gestione Eccezioni</h3>
+<h4 id="431-timeout-step">4.3.1 Timeout Step</h4>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Timeout</th>
+<th>Azione Automatica</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Firma contratto</td>
+<td>7 giorni</td>
+<td>Email reminder</td>
+</tr>
+<tr>
+<td>Pagamento proforma</td>
+<td>30 giorni</td>
+<td>Email sollecito</td>
+</tr>
+<tr>
+<td>Form configurazione</td>
+<td>14 giorni</td>
+<td>Email reminder</td>
+</tr>
+<tr>
+<td>Attivazione dispositivo</td>
+<td>3 giorni</td>
+<td>Alert operatore</td>
+</tr>
+</tbody></table>
+<h4 id="432-fallimenti">4.3.2 Fallimenti</h4>
+<p><strong>Firma Non Completata:</strong></p>
+<ul>
+<li>Reminder automatico dopo 3 giorni</li>
+<li>Secondo reminder dopo 7 giorni</li>
+<li>Se 10 giorni: stato <code>CONTRACT_EXPIRED</code>, notifica operatore</li>
+</ul>
+<p><strong>Pagamento Fallito:</strong></p>
+<ul>
+<li>Email automatica con nuovo link</li>
+<li>Possibilità pagamento alternativo (bonifico)</li>
+<li>Operatore contatta cliente telefonicamente</li>
+</ul>
+<p><strong>Configurazione Non Ricevuta:</strong></p>
+<ul>
+<li>Reminder dopo 7 giorni</li>
+<li>Chiamata operatore dopo 14 giorni</li>
+<li>Se 30 giorni: richiesta riattivazione processo</li>
+</ul>
+<h3 id="44-workflow-manager-ui">4.4 Workflow Manager (UI)</h3>
+<h4 id="441-funzionalità">4.4.1 Funzionalità</h4>
+<p>La pagina <strong>Workflow Manager</strong> (<code>/workflow-manager</code>) fornisce:</p>
+<ul>
+<li><strong>Vista Timeline</strong> di tutte le pratiche</li>
+<li><strong>Stato corrente</strong> ogni lead</li>
+<li><strong>Prossima azione</strong> suggerita</li>
+<li><strong>Alert</strong> su ritardi</li>
+<li><strong>Bottoni azione rapida</strong> per ogni step</li>
+<li><strong>Storia completa</strong> transizioni</li>
+</ul>
+<h4 id="442-azioni-rapide">4.4.2 Azioni Rapide</h4>
+<ul>
+<li><strong>Invia Brochure</strong> → trigger step 2.1</li>
+<li><strong>Invia Contratto</strong> → trigger step 2.3</li>
+<li><strong>Sollecita Firma</strong> → invio reminder</li>
+<li><strong>Conferma Pagamento</strong> → trigger manuale step 4.3</li>
+<li><strong>Invia Form Config</strong> → trigger step 4.4</li>
+<li><strong>Associa Dispositivo</strong> → apri modal step 6.1</li>
+</ul>
+<hr>
+<h2 id="5-dashboard-operativa">5. DASHBOARD OPERATIVA</h2>
+<h3 id="51-dashboard-lead-adminleads-dashboard">5.1 Dashboard Lead (<code>/admin/leads-dashboard</code>)</h3>
+<h4 id="511-struttura">5.1.1 Struttura</h4>
+<pre><code>┌─────────────────────────────────────────────┐
+│  🏠 TeleMedCare Dashboard                   │
+│  ────────────────────────────────────────   │
+│  📊 KPI Cards                               │
+│   • Totale Lead  • In Lavorazione          │
+│   • Convertiti   • Fatturato Mese          │
+│  ────────────────────────────────────────   │
+│  🔍 Filtri e Ricerca                        │
+│   [Status ▼] [Operatore ▼] [Data Range ▼]  │
+│   [Cerca: nome, email, tel]                 │
+│  ────────────────────────────────────────   │
+│  📋 Tabella Lead                            │
+│   Nome │ Email │ Tel │ Status │ Azioni     │
+│   ─────────────────────────────────────    │
+│   Mario│m@...  │333..│NEW    │[Dettagli]  │
+│   ...                                       │
+│  ────────────────────────────────────────   │
+│  📄 Paginazione                             │
+│   ◀ Prec │ 1 2 3 ... 10 │ Succ ▶          │
+└─────────────────────────────────────────────┘
+</code></pre>
+<h4 id="512-kpi-key-performance-indicators">5.1.2 KPI (Key Performance Indicators)</h4>
+<p><strong>Card 1: Totale Lead</strong></p>
+<ul>
+<li>Conteggio lead totali (esclusi deleted)</li>
+<li>Trend vs. mese precedente (%)</li>
+<li>Breakdown per stato (grafico a torta)</li>
+</ul>
+<p><strong>Card 2: Lead in Lavorazione</strong></p>
+<ul>
+<li>Lead con stato tra <code>VALIDATED</code> e <code>CONFIGURATION_SENT</code></li>
+<li>Percentuale su totale</li>
+<li>Alertse &gt;50% in stallo da &gt;7 giorni</li>
+</ul>
+<p><strong>Card 3: Lead Convertiti</strong></p>
+<ul>
+<li>Lead con stato <code>ACTIVE</code> o <code>SERVICE_ACTIVE</code></li>
+<li>Conversion rate (%)</li>
+<li>Tempo medio di conversione (giorni)</li>
+</ul>
+<p><strong>Card 4: Fatturato Mese Corrente</strong></p>
+<ul>
+<li>Somma proforma pagate nel mese</li>
+<li>Confronto con mese precedente</li>
+<li>Proiezione fine mese</li>
+</ul>
+<p><strong>Card 5: Nuovi Lead Oggi</strong></p>
+<ul>
+<li>Lead creati nelle ultime 24h</li>
+<li>Badge rosso se &gt;10 non assegnati</li>
+</ul>
+<p><strong>Card 6: Alert Operativi</strong></p>
+<ul>
+<li>Contratti da firmare scaduti</li>
+<li>Pagamenti in ritardo</li>
+<li>Configurazioni mancanti</li>
+</ul>
+<h4 id="513-filtri">5.1.3 Filtri</h4>
+<p><strong>Per Stato:</strong></p>
+<ul>
+<li>Dropdown multi-selezione</li>
+<li>Stati disponibili: NEW, VALIDATED, QUALIFIED, CONTRACT_SENT, CONTRACT_SIGNED, PAYMENT_RECEIVED, ecc.</li>
+<li>Quick filters: &quot;Solo nuovi&quot;, &quot;In attesa firma&quot;, &quot;In attesa pagamento&quot;</li>
+</ul>
+<p><strong>Per Data:</strong></p>
+<ul>
+<li>Date picker range</li>
+<li>Preset: Oggi, Ultimi 7gg, Questo mese, Mese scorso, Custom</li>
+</ul>
+<p><strong>Per Operatore:</strong></p>
+<ul>
+<li>Dropdown operatori attivi</li>
+<li>Filtro &quot;Non assegnati&quot;</li>
+<li>Filtro &quot;Miei lead&quot; (per operatore loggato)</li>
+</ul>
+<p><strong>Ricerca Testuale:</strong></p>
+<ul>
+<li>Campo ricerca real-time</li>
+<li>Cerca in: nome, cognome, email, telefono, note</li>
+<li>Highlight risultati</li>
+</ul>
+<h4 id="514-tabella-lead">5.1.4 Tabella Lead</h4>
+<p><strong>Colonne Visualizzate:</strong></p>
+<ol>
+<li><strong>Checkbox</strong> (selezione multipla)</li>
+<li><strong>ID Lead</strong> (abbreviato, tooltip full)</li>
+<li><strong>Nome Completo</strong> (nome + cognome)</li>
+<li><strong>Email</strong> (con icona mailto)</li>
+<li><strong>Telefono</strong> (con icona call)</li>
+<li><strong>Provincia</strong></li>
+<li><strong>Status Badge</strong> (colorato per stato)</li>
+<li><strong>Score</strong> (barra progresso 0-100)</li>
+<li><strong>Data Creazione</strong></li>
+<li><strong>Ultimo Aggiornamento</strong></li>
+<li><strong>Azioni</strong></li>
+</ol>
+<p><strong>Azioni per Riga:</strong></p>
+<ul>
+<li><strong>👁️ Dettagli</strong> → modal con tutte info</li>
+<li><strong>✏️ Modifica</strong> → form inline editing</li>
+<li><strong>📧 Email</strong> → quick send email</li>
+<li><strong>📞 Call Log</strong> → registra chiamata</li>
+<li><strong>🗑️ Elimina</strong> → soft delete con conferma</li>
+</ul>
+<p><strong>Azioni Bulk (su selezione multipla):</strong></p>
+<ul>
+<li>Assegna a operatore</li>
+<li>Cambia stato</li>
+<li>Esporta CSV</li>
+<li>Invia email massiva</li>
+<li>Elimina multipli</li>
+</ul>
+<h4 id="515-dettaglio-lead-modal">5.1.5 Dettaglio Lead (Modal)</h4>
+<p>Apertura modal con tab:</p>
+<p><strong>Tab 1: Anagrafica</strong></p>
+<ul>
+<li>Tutti i dati personali</li>
+<li>Dati assistito</li>
+<li>Indirizzo completo</li>
+<li>Contatti</li>
+</ul>
+<p><strong>Tab 2: Commerciale</strong></p>
+<ul>
+<li>Servizio e piano scelti</li>
+<li>Fonte acquisizione</li>
+<li>Score e categoria</li>
+<li>Note commerciali</li>
+</ul>
+<p><strong>Tab 3: Workflow</strong></p>
+<ul>
+<li>Stato corrente (grande badge)</li>
+<li>Timeline verticale con tutti gli step</li>
+<li>Date e timestamp di ogni transizione</li>
+<li>Documenti generati (link download)</li>
+<li>Email inviate (con status apertura/click)</li>
+</ul>
+<p><strong>Tab 4: Azioni</strong></p>
+<ul>
+<li>Pulsanti per ogni step workflow</li>
+<li>Storico azioni effettuate</li>
+<li>Log modifiche</li>
+<li>Audit trail</li>
+</ul>
+<p><strong>Tab 5: Comunicazioni</strong></p>
+<ul>
+<li>Storico email inviate/ricevute</li>
+<li>Log chiamate</li>
+<li>Note operatore</li>
+<li>Attachments</li>
+</ul>
+<h3 id="52-dashboard-dati-admindata-dashboard">5.2 Dashboard Dati (<code>/admin/data-dashboard</code>)</h3>
+<h4 id="521-metriche-avanzate">5.2.1 Metriche Avanzate</h4>
+<p><strong>Sezione: Conversione Funnel</strong></p>
+<pre><code>  Lead Acquisiti (100%)
+        ↓ 85%
+  Lead Validati
+        ↓ 70%
+  Contratti Inviati
+        ↓ 45%
+  Contratti Firmati
+        ↓ 80%
+  Pagamenti Ricevuti
+        ↓ 90%
+  Servizi Attivati
+</code></pre>
+<p><strong>Sezione: Performance Temporali</strong></p>
+<ul>
+<li>Grafico lineare: nuovi lead per giorno (ultimi 30gg)</li>
+<li>Grafico a barre: conversioni per settimana</li>
+<li>Heatmap: attività per ora del giorno</li>
+</ul>
+<p><strong>Sezione: Analisi Geografica</strong></p>
+<ul>
+<li>Mappa Italia con cluster per provincia</li>
+<li>Top 10 province per numero lead</li>
+<li>Conversion rate per regione</li>
+</ul>
+<p><strong>Sezione: Analisi Commerciale</strong></p>
+<ul>
+<li>Split BASE vs. AVANZATO (% e fatturato)</li>
+<li>Canale acquisizione più performante</li>
+<li>Tempo medio di conversione per fonte</li>
+</ul>
+<h4 id="522-report-esportabili">5.2.2 Report Esportabili</h4>
+<p><strong>Report Giornaliero:</strong></p>
+<ul>
+<li>Nuovi lead del giorno</li>
+<li>Contratti firmati</li>
+<li>Pagamenti ricevuti</li>
+<li>Servizi attivati</li>
+<li>Formato: PDF + CSV</li>
+</ul>
+<p><strong>Report Settimanale:</strong></p>
+<ul>
+<li>Riepilogo attività settimana</li>
+<li>Confronto con settimana precedente</li>
+<li>Alert e anomalie</li>
+<li>Performance operatori</li>
+<li>Formato: PDF con grafici</li>
+</ul>
+<p><strong>Report Mensile:</strong></p>
+<ul>
+<li>Chiusura mese commerciale</li>
+<li>Fatturato e forecast</li>
+<li>Analisi trend</li>
+<li>Raccomandazioni</li>
+<li>Formato: PDF executive summary</li>
+</ul>
+<h3 id="53-dashboard-workflow-workflow-manager">5.3 Dashboard Workflow (<code>/workflow-manager</code>)</h3>
+<h4 id="531-vista-kanban">5.3.1 Vista Kanban</h4>
+<pre><code>┌──────────┬──────────┬──────────┬──────────┐
+│  NEW     │ CONTRACT │ PAYMENT  │ ACTIVE   │
+│  ─────── │ SENT     │ RECEIVED │ ────────  │
+│ [Lead 1] │ [Lead 5] │ [Lead 9] │ [Lead 12]│
+│ [Lead 2] │ [Lead 6] │ [Lead10] │ [Lead 13]│
+│ [Lead 3] │ [Lead 7] │          │          │
+│ [Lead 4] │ [Lead 8] │          │          │
+│          │          │          │          │
+│ + Nuovo  │          │          │          │
+└──────────┴──────────┴──────────┴──────────┘
+</code></pre>
+<p><strong>Funzionalità Drag &amp; Drop:</strong></p>
+<ul>
+<li>Sposta lead tra colonne = cambio stato automatico</li>
+<li>Validazione transizioni (solo stati consecutivi)</li>
+<li>Conferma azioni critiche (es. da NEW a ACTIVE non consentito)</li>
+</ul>
+<p><strong>Card Lead:</strong></p>
+<ul>
+<li>Nome cliente</li>
+<li>Badge priorità</li>
+<li>Icone azioni rapide</li>
+<li>Giorni in stato corrente</li>
+<li>Operatore assegnato</li>
+</ul>
+<h4 id="532-vista-timeline">5.3.2 Vista Timeline</h4>
+<pre><code>📅 Oggi
+  • 09:30 - Lead &quot;Mario Rossi&quot; → CONTRACT_SENT
+  • 14:15 - Lead &quot;Laura Bianchi&quot; → PAYMENT_RECEIVED
+
+📅 Ieri
+  • 10:00 - Lead &quot;Giovanni Verdi&quot; → CONTRACT_SIGNED
+  • 16:45 - Lead &quot;Anna Neri&quot; → ACTIVE
+
+📅 Ultimi 7 giorni
+  ...
+</code></pre>
+<h4 id="533-vista-priorità">5.3.3 Vista Priorità</h4>
+<p><strong>Urgenti (rosso):</strong></p>
+<ul>
+<li>Contratti scaduti senza firma</li>
+<li>Pagamenti in ritardo &gt;30gg</li>
+<li>Configurazioni mancanti da &gt;14gg</li>
+</ul>
+<p><strong>Alta Priorità (arancione):</strong></p>
+<ul>
+<li>Lead caldi non ancora contattati</li>
+<li>Pagamenti in scadenza entro 7gg</li>
+<li>Dispositivi da associare</li>
+</ul>
+<p><strong>Media Priorità (giallo):</strong></p>
+<ul>
+<li>Reminder firma da inviare</li>
+<li>Follow-up commerciali</li>
+<li>Report settimanali</li>
+</ul>
+<p><strong>Bassa Priorità (verde):</strong></p>
+<ul>
+<li>Aggiornamenti dati lead</li>
+<li>Ottimizzazioni processo</li>
+<li>Documentazione</li>
+</ul>
+<hr>
+<h2 id="6-gestione-contratti">6. GESTIONE CONTRATTI</h2>
+<h3 id="61-contract-manager">6.1 Contract Manager</h3>
+<h4 id="611-generazione-contratto">6.1.1 Generazione Contratto</h4>
+<p><strong>Modulo:</strong> <code>contract-generator.ts</code></p>
+<p><strong>Input:</strong></p>
+<ul>
+<li>Dati lead (anagrafica completa)</li>
+<li>Tipo servizio (BASE / AVANZATO)</li>
+<li>Piano (mensile / annuale)</li>
+<li>Prezzo concordato</li>
+</ul>
+<p><strong>Processo:</strong></p>
+<ol>
+<li>Caricamento template contratto HTML</li>
+<li>Sostituzione placeholders con dati lead</li>
+<li>Inserimento clausole specifiche per servizio</li>
+<li>Generazione ID contratto univoco (formato: <code>CTR-{COGNOME}-{ANNO}</code>)</li>
+<li>Salvataggio in database tabella <code>contracts</code></li>
+<li>Generazione PDF (opzionale, via Puppeteer)</li>
+</ol>
+<p><strong>Output:</strong></p>
+<ul>
+<li>ID contratto</li>
+<li>HTML contratto personalizzato</li>
+<li>PDF contratto (se richiesto)</li>
+<li>Record database contratto</li>
+</ul>
+<p><strong>Campi Tabella <code>contracts</code>:</strong></p>
+<pre><code class="language-sql">id                    TEXT PRIMARY KEY
+leadId                TEXT (FK → leads.id)
+codice_contratto      TEXT UNIQUE
+tipo_contratto        TEXT (BASE/AVANZATO)
+template_utilizzato   TEXT
+contenuto_html        TEXT (contratto completo)
+firma_base64          TEXT (immagine firma)
+firma_timestamp       TEXT
+pdf_generated         INTEGER (0/1)
+pdf_url               TEXT
+email_sent            INTEGER (0/1)
+email_template_used   TEXT
+status                TEXT (PENDING/SIGNED/EXPIRED)
+servizio              TEXT
+piano                 TEXT
+prezzo_mensile        REAL
+durata_mesi           INTEGER
+prezzo_totale         REAL
+data_invio            TEXT
+data_scadenza         TEXT (data_invio + 30gg)
+created_at            TEXT
+updated_at            TEXT
+</code></pre>
+<h4 id="612-template-contratto">6.1.2 Template Contratto</h4>
+<p><strong>Placeholders:</strong></p>
+<ul>
+<li><code>{{NOME_COMPLETO}}</code> → Nome e cognome intestatario</li>
+<li><code>{{CODICE_FISCALE}}</code> → CF intestatario</li>
+<li><code>{{INDIRIZZO}}</code> → Via, civico, città, provincia, CAP</li>
+<li><code>{{EMAIL}}</code> → Email contatto</li>
+<li><code>{{TELEFONO}}</code> → Numero telefono</li>
+<li><code>{{NOME_ASSISTITO}}</code> → Nome assistito (se diverso)</li>
+<li><code>{{SERVIZIO}}</code> → Nome servizio (es. &quot;eCura PRO&quot;)</li>
+<li><code>{{PIANO}}</code> → BASE / AVANZATO</li>
+<li><code>{{PREZZO_PRIMO_ANNO}}</code> → €480 o €840</li>
+<li><code>{{PREZZO_ANNI_SUCCESSIVI}}</code> → €200 o €600</li>
+<li><code>{{DISPOSITIVO}}</code> → &quot;SiDLY Care PRO&quot; o &quot;SiDLY Vital Care&quot;</li>
+<li><code>{{DATA_CONTRATTO}}</code> → Data odierna formattata</li>
+<li><code>{{CODICE_CONTRATTO}}</code> → ID univoco</li>
+<li><code>{{DURATA_CONTRATTO}}</code> → 12 mesi (standard)</li>
+</ul>
+<p><strong>Sezioni Contratto:</strong></p>
+<ol>
+<li><strong>Intestazione</strong> (logo, dati società)</li>
+<li><strong>Dati Contraenti</strong> (fornitore e cliente)</li>
+<li><strong>Oggetto del Contratto</strong> (descrizione servizio)</li>
+<li><strong>Condizioni Economiche</strong> (prezzi, modalità pagamento)</li>
+<li><strong>Durata e Rinnovo</strong> (12 mesi, rinnovo tacito)</li>
+<li><strong>Servizi Inclusi</strong> (dettaglio per piano)</li>
+<li><strong>Obblighi delle Parti</strong> (cliente e fornitore)</li>
+<li><strong>Recesso</strong> (modalità e tempistiche)</li>
+<li><strong>Privacy e GDPR</strong> (clausole conformità)</li>
+<li><strong>Foro Competente</strong> (giurisdizione)</li>
+<li><strong>Firma Digitale</strong> (area firma cliente)</li>
+</ol>
+<h4 id="613-firma-digitale">6.1.3 Firma Digitale</h4>
+<p><strong>Pagina:</strong> <code>/firma-contratto?contractId=XXX</code></p>
+<p><strong>Componenti:</strong></p>
+<ol>
+<li><p><strong>Visualizzazione Contratto</strong></p>
+<ul>
+<li>Iframe o div con HTML contratto</li>
+<li>Scroll completo documento</li>
+<li>Highlight sezioni principali</li>
+</ul>
+</li>
+<li><p><strong>Checkbox Consensi</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Ho letto e accetto le Condizioni Generali</li>
+<li><input disabled="" type="checkbox"> Ho letto e accetto le Clausole Economiche</li>
+<li><input disabled="" type="checkbox"> Ho letto e accetto l&#39;Informativa Privacy</li>
+<li><input disabled="" type="checkbox"> Autorizzo il trattamento dati per finalità contrattuali</li>
+<li>(Tutti obbligatori per procedere)</li>
+</ul>
+</li>
+<li><p><strong>Canvas Firma</strong></p>
+<ul>
+<li>Area touch/mouse drawing</li>
+<li>Pulsanti: &quot;Cancella firma&quot;, &quot;Conferma firma&quot;</li>
+<li>Validazione presenza tratti firma</li>
+<li>Conversione a base64</li>
+</ul>
+</li>
+<li><p><strong>Pulsante Submit</strong></p>
+<ul>
+<li>&quot;Firma Contratto&quot;</li>
+<li>Disabilitato se mancano consensi o firma</li>
+<li>Loading state durante invio</li>
+</ul>
+</li>
+</ol>
+<p><strong>Flusso Firma:</strong></p>
+<ol>
+<li>Utente accede a URL da email</li>
+<li>Sistema carica contratto da DB (<code>GET /api/contracts/:id</code>)</li>
+<li>Mostra documento + form firma</li>
+<li>Utente legge, spunta checkbox, disegna firma</li>
+<li>Click &quot;Firma Contratto&quot;</li>
+<li>POST <code>/api/contracts/:id/sign</code> con firma base64</li>
+<li>Sistema valida firma</li>
+<li>Aggiorna DB: <code>status=SIGNED</code>, salva <code>firma_base64</code>, <code>firma_timestamp</code></li>
+<li>Trigger workflow: genera proforma</li>
+<li>Mostra popup conferma: &quot;✓ Contratto firmato con successo!&quot;</li>
+<li>(No redirect - utente resta su pagina o chiude finestra)</li>
+</ol>
+<h4 id="614-gestione-stati-contratto">6.1.4 Gestione Stati Contratto</h4>
+<p><strong>PENDING:</strong></p>
+<ul>
+<li>Contratto generato e inviato</li>
+<li>In attesa di firma</li>
+<li>Email reminder dopo 3, 7, 10 giorni</li>
+<li>Scade dopo 30 giorni</li>
+</ul>
+<p><strong>SIGNED:</strong></p>
+<ul>
+<li>Contratto firmato digitalmente</li>
+<li>Firma salvata in DB</li>
+<li>Timestamp firma registrato</li>
+<li>Trigger generazione proforma automatica</li>
+</ul>
+<p><strong>EXPIRED:</strong></p>
+<ul>
+<li>Scaduto il termine (30gg) senza firma</li>
+<li>Alert operatore per follow-up</li>
+<li>Possibilità rigenerazione con nuovo ID</li>
+</ul>
+<p><strong>CANCELLED:</strong></p>
+<ul>
+<li>Annullato da operatore o cliente</li>
+<li>Motivo cancellazione richiesto</li>
+<li>Lead torna a stato precedente</li>
+</ul>
+<h3 id="62-endpoint-api-contratti">6.2 Endpoint API Contratti</h3>
+<p><strong>GET <code>/api/contracts/:id</code></strong></p>
+<ul>
+<li>Recupera dati contratto per visualizzazione</li>
+<li>Include dati lead associato</li>
+<li>Usato da pagina firma-contratto</li>
+</ul>
+<p><strong>POST <code>/api/contracts</code></strong></p>
+<ul>
+<li>Crea nuovo contratto</li>
+<li>Richiede leadId</li>
+<li>Genera ID univoco</li>
+<li>Salva in database</li>
+</ul>
+<p><strong>PUT <code>/api/contracts/:id</code></strong></p>
+<ul>
+<li>Aggiorna contratto esistente</li>
+<li>Solo campi modificabili (note, prezzi)</li>
+<li>Non consente modifica post-firma</li>
+</ul>
+<p><strong>POST <code>/api/contracts/:id/sign</code></strong></p>
+<ul>
+<li>Registra firma digitale</li>
+<li>Payload: <code>{ firma_base64: string }</code></li>
+<li>Valida presenza firma</li>
+<li>Aggiorna stato a SIGNED</li>
+</ul>
+<p><strong>DELETE <code>/api/contracts/:id</code></strong></p>
+<ul>
+<li>Elimina contratto (solo se PENDING)</li>
+<li>Soft delete con flag</li>
+<li>Richiede conferma admin</li>
+</ul>
+<p><strong>GET <code>/api/contracts</code></strong></p>
+<ul>
+<li>Lista tutti i contratti</li>
+<li>Filtri: status, leadId, data range</li>
+<li>Paginazione</li>
+<li>Usato da dashboard</li>
+</ul>
+<hr>
+<h2 id="7-gestione-pagamenti">7. GESTIONE PAGAMENTI</h2>
+<h3 id="71-payment-manager">7.1 Payment Manager</h3>
+<h4 id="711-proforma-fattura-proforma">7.1.1 Proforma (Fattura Proforma)</h4>
+<p><strong>Definizione:</strong>
+Documento commerciale non fiscale che anticipa l&#39;importo da pagare prima dell&#39;emissione della fattura definitiva.</p>
+<p><strong>Generazione Automatica:</strong>
+Trigger: firma contratto completata</p>
+<p><strong>Dati Proforma:</strong></p>
+<pre><code class="language-sql">id                 TEXT PRIMARY KEY
+leadId             TEXT (FK → leads.id)
+numero_proforma    TEXT UNIQUE (formato: PRO-2026-00001)
+importo            REAL (480 o 840, IVA esclusa)
+iva                REAL (22%)
+importo_totale     REAL (importo + iva)
+status             TEXT (PENDING/PAID/EXPIRED/CANCELLED)
+data_emissione     TEXT
+data_scadenza      TEXT (data_emissione + 30gg)
+metodo_pagamento   TEXT (stripe/bonifico/altro)
+stripe_session_id  TEXT (se pagamento Stripe)
+note               TEXT
+created_at         TEXT
+updated_at         TEXT
+</code></pre>
+<p><strong>Calcolo Importi:</strong></p>
+<ul>
+<li>BASE: €480 + IVA 22% = €585,60</li>
+<li>AVANZATO: €840 + IVA 22% = €1.024,80</li>
+</ul>
+<p><strong>Numero Proforma:</strong></p>
+<ul>
+<li>Formato: <code>PRO-{ANNO}-{SEQUENZA}</code></li>
+<li>Esempio: <code>PRO-2026-00001</code></li>
+<li>Sequenza auto-incrementale per anno</li>
+</ul>
+<h4 id="712-pagina-pagamento">7.1.2 Pagina Pagamento</h4>
+<p><strong>URL:</strong> <code>/pagamento?proformaId=XXX</code></p>
+<p><strong>Componenti:</strong></p>
+<ol>
+<li><p><strong>Riepilogo Proforma</strong></p>
+<ul>
+<li>Numero proforma</li>
+<li>Data emissione</li>
+<li>Data scadenza</li>
+<li>Importo (ex IVA)</li>
+<li>IVA 22%</li>
+<li>Totale da pagare</li>
+</ul>
+</li>
+<li><p><strong>Dati Cliente</strong></p>
+<ul>
+<li>Nome e cognome</li>
+<li>Email</li>
+<li>Indirizzo fatturazione</li>
+</ul>
+</li>
+<li><p><strong>Form Stripe</strong></p>
+<ul>
+<li>Campo carta credito (integrato Stripe Elements)</li>
+<li>Campi: numero carta, scadenza, CVV</li>
+<li>Validazione real-time</li>
+<li>Sicurezza PCI-compliant</li>
+</ul>
+</li>
+<li><p><strong>Pulsanti Azione</strong></p>
+<ul>
+<li>&quot;Paga con Carta&quot; (verde, primario)</li>
+<li>&quot;Paga con Bonifico&quot; (link istruzioni)</li>
+<li>&quot;Scarica Proforma PDF&quot; (opzionale)</li>
+</ul>
+</li>
+</ol>
+<p><strong>Flusso Pagamento Carta:</strong></p>
+<ol>
+<li>Utente accede a URL da email</li>
+<li>Sistema carica proforma (<code>GET /api/proforma/:id</code>)</li>
+<li>Mostra riepilogo + form Stripe</li>
+<li>Utente inserisce dati carta</li>
+<li>Click &quot;Paga con Carta&quot;</li>
+<li>Chiamata Stripe API per creare sessione pagamento</li>
+<li>Redirect a Stripe Checkout (hosted page)</li>
+<li>Cliente completa pagamento su Stripe</li>
+<li>Stripe invia webhook a <code>/api/webhooks/stripe</code></li>
+<li>Sistema aggiorna proforma: <code>status=PAID</code>, <code>metodo_pagamento=stripe</code></li>
+<li>Aggiorna lead: <code>status=PAYMENT_RECEIVED</code></li>
+<li>Trigger workflow: invia email configurazione</li>
+<li>Redirect cliente a pagina conferma</li>
+</ol>
+<p><strong>Flusso Pagamento Bonifico:</strong></p>
+<ol>
+<li>Cliente clicca &quot;Paga con Bonifico&quot;</li>
+<li>Mostra modal con istruzioni:<ul>
+<li>IBAN: IT00X0000000000000000000000</li>
+<li>Beneficiario: Medica GB S.r.l.</li>
+<li>Causale: <code>Proforma {NUMERO_PROFORMA}</code></li>
+<li>Importo: {IMPORTO_TOTALE} €</li>
+</ul>
+</li>
+<li>Cliente effettua bonifico autonomamente</li>
+<li>Operatore verifica accredito su conto bancario</li>
+<li>Operatore conferma pagamento manualmente da dashboard</li>
+<li>Sistema aggiorna proforma e continua workflow</li>
+</ol>
+<h4 id="713-integrazione-stripe">7.1.3 Integrazione Stripe</h4>
+<p><strong>Setup:</strong></p>
+<ul>
+<li>Account Stripe configurato</li>
+<li>API Keys: <code>STRIPE_SECRET_KEY</code> (server), <code>STRIPE_PUBLISHABLE_KEY</code> (client)</li>
+<li>Webhook endpoint: <code>https://telemedcare-v12.pages.dev/api/webhooks/stripe</code></li>
+<li>Eventi ascoltati: <code>checkout.session.completed</code>, <code>payment_intent.succeeded</code>, <code>payment_intent.payment_failed</code></li>
+</ul>
+<p><strong>Stripe Checkout Session:</strong></p>
+<pre><code class="language-typescript">const session = await stripe.checkout.sessions.create({
+  payment_method_types: [&#39;card&#39;],
+  line_items: [{
+    price_data: {
+      currency: &#39;eur&#39;,
+      product_data: {
+        name: &#39;TeleAssistenza eCura PRO&#39;,
+        description: `Proforma ${numero_proforma}`
+      },
+      unit_amount: importo_totale * 100 // centesimi
+    },
+    quantity: 1
+  }],
+  mode: &#39;payment&#39;,
+  success_url: `${base_url}/pagamento-success?proformaId=${proformaId}`,
+  cancel_url: `${base_url}/pagamento?proformaId=${proformaId}`,
+  metadata: {
+    proformaId: proformaId,
+    leadId: leadId
+  }
+})
+</code></pre>
+<p><strong>Webhook Handler:</strong></p>
+<pre><code class="language-typescript">app.post(&#39;/api/webhooks/stripe&#39;, async (c) =&gt; {
+  const sig = c.req.header(&#39;stripe-signature&#39;)
+  const body = await c.req.text()
+  
+  // Verifica firma webhook
+  const event = stripe.webhooks.constructEvent(body, sig, WEBHOOK_SECRET)
+  
+  if (event.type === &#39;checkout.session.completed&#39;) {
+    const session = event.data.object
+    const proformaId = session.metadata.proformaId
+    
+    // Aggiorna proforma
+    await db.prepare(`
+      UPDATE proforma 
+      SET status = &#39;PAID&#39;, 
+          metodo_pagamento = &#39;stripe&#39;,
+          stripe_session_id = ?
+      WHERE id = ?
+    `).bind(session.id, proformaId).run()
+    
+    // Trigger workflow
+    await inviaEmailFormConfigurazione(leadId, env, db)
+  }
+  
+  return c.json({ received: true })
+})
+</code></pre>
+<h4 id="714-gestione-stati-proforma">7.1.4 Gestione Stati Proforma</h4>
+<p><strong>PENDING:</strong></p>
+<ul>
+<li>Proforma generata</li>
+<li>In attesa di pagamento</li>
+<li>Email reminder dopo 15 giorni</li>
+<li>Scade dopo 30 giorni</li>
+</ul>
+<p><strong>PAID:</strong></p>
+<ul>
+<li>Pagamento ricevuto e verificato</li>
+<li>Timestamp pagamento salvato</li>
+<li>Trigger email configurazione automatica</li>
+<li>Fattura definitiva da emettere (esterno al sistema)</li>
+</ul>
+<p><strong>EXPIRED:</strong></p>
+<ul>
+<li>Scaduto termine (30gg) senza pagamento</li>
+<li>Alert operatore</li>
+<li>Possibilità rinnovo proforma con nuova scadenza</li>
+</ul>
+<p><strong>CANCELLED:</strong></p>
+<ul>
+<li>Annullata da operatore</li>
+<li>Motivo richiesto</li>
+<li>Lead torna a stato CONTRACT_SIGNED</li>
+<li>Eventuale rimborso (se pagata)</li>
+</ul>
+<h3 id="72-endpoint-api-pagamenti">7.2 Endpoint API Pagamenti</h3>
+<p><strong>GET <code>/api/proforma/:id</code></strong></p>
+<ul>
+<li>Recupera dati proforma per visualizzazione</li>
+<li>Include dati lead associato</li>
+<li>Usato da pagina pagamento</li>
+</ul>
+<p><strong>POST <code>/api/proforma</code></strong></p>
+<ul>
+<li>Crea nuova proforma</li>
+<li>Richiede leadId e importo</li>
+<li>Genera numero progressivo</li>
+<li>Salva in database</li>
+</ul>
+<p><strong>PUT <code>/api/proforma/:id</code></strong></p>
+<ul>
+<li>Aggiorna proforma esistente</li>
+<li>Solo campi modificabili (note, scadenza)</li>
+<li>Non consente modifica importo post-pagamento</li>
+</ul>
+<p><strong>POST <code>/api/leads/:id/manual-payment</code></strong></p>
+<ul>
+<li>Conferma pagamento manuale (bonifico)</li>
+<li>Richiede nota operatore</li>
+<li>Aggiorna stato proforma a PAID</li>
+<li>Trigger workflow configurazione</li>
+</ul>
+<p><strong>DELETE <code>/api/proforma/:id</code></strong></p>
+<ul>
+<li>Elimina proforma (solo se PENDING)</li>
+<li>Soft delete con flag</li>
+<li>Richiede conferma admin</li>
+</ul>
+<p><strong>GET <code>/api/proforma</code></strong></p>
+<ul>
+<li>Lista tutte le proforma</li>
+<li>Filtri: status, leadId, data range, metodo</li>
+<li>Paginazione</li>
+<li>Usato da dashboard</li>
+</ul>
+<p><strong>POST <code>/api/create-stripe-session</code></strong></p>
+<ul>
+<li>Crea sessione Stripe Checkout</li>
+<li>Payload: <code>{ proformaId: string }</code></li>
+<li>Ritorna: <code>{ sessionId: string, url: string }</code></li>
+<li>Redirect cliente a Stripe</li>
+</ul>
+<hr>
+<h2 id="8-configurazione-cliente">8. CONFIGURAZIONE CLIENTE</h2>
+<h3 id="81-configuration-manager">8.1 Configuration Manager</h3>
+<h4 id="811-form-configurazione">8.1.1 Form Configurazione</h4>
+<p><strong>URL:</strong> <code>/configurazione?leadId=XXX</code></p>
+<p><strong>Sezioni Form:</strong></p>
+<p><strong>1. Dati Anagrafici (Conferma)</strong></p>
+<ul>
+<li>Nome e Cognome (readonly, da lead)</li>
+<li>Codice Fiscale (readonly)</li>
+<li>Data di Nascita (readonly)</li>
+<li>Indirizzo Completo (readonly)</li>
+<li>Email (readonly)</li>
+<li>Telefono (readonly)</li>
+<li>(Tasto &quot;Modifica&quot; se necessario aggiornamento)</li>
+</ul>
+<p><strong>2. Dati Medici</strong></p>
+<ul>
+<li>Nome Medico Curante *</li>
+<li>Telefono Medico Curante *</li>
+<li>Patologie Principali (textarea)</li>
+<li>Allergie Note (textarea)</li>
+<li>Terapie Farmacologiche in Corso (textarea)</li>
+<li>Limitazioni Motorie (checkbox)</li>
+<li>Problemi Cognitivi (checkbox)</li>
+<li>Note Particolari (textarea)</li>
+</ul>
+<p><strong>3. Contatti Emergenza</strong>
+Ripetitore 1-3 volte:</p>
+<ul>
+<li>Nome Contatto *</li>
+<li>Relazione (genitore/figlio/coniuge/badante/altro) *</li>
+<li>Telefono Principale *</li>
+<li>Telefono Secondario</li>
+<li>Orari Preferenziali Contatto</li>
+<li>Note</li>
+</ul>
+<p><strong>4. Preferenze Servizio</strong></p>
+<ul>
+<li>Lingua Preferita (italiano/altro)</li>
+<li>Orari Attività Cliente (mattina/pomeriggio/sera/notte)</li>
+<li>Note Particolari Gestione Chiamate</li>
+</ul>
+<p><strong>5. Consensi Finali</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Confermo la correttezza dei dati inseriti *</li>
+<li><input disabled="" type="checkbox"> Autorizzo il trattamento dati sanitari (GDPR Art.9) *</li>
+<li><input disabled="" type="checkbox"> Autorizzo la condivisione dati con centrale operativa *</li>
+</ul>
+<p><strong>Validazioni:</strong></p>
+<ul>
+<li>Campi obbligatori (*) controllati</li>
+<li>Almeno 1 contatto emergenza obbligatorio</li>
+<li>Telefoni formato italiano validato</li>
+<li>Checkbox consensi tutti obbligatori</li>
+</ul>
+<p><strong>Submit:</strong></p>
+<ul>
+<li>Pulsante &quot;Invia Configurazione&quot;</li>
+<li>Loading state durante invio</li>
+<li>Invio via EmailJS a <code>info@medicagb.it</code></li>
+<li>Conferma visiva su successo</li>
+</ul>
+<h4 id="812-invio-configurazione">8.1.2 Invio Configurazione</h4>
+<p><strong>Metodo:</strong> EmailJS (servizio terzo)</p>
+<p><strong>Email Ricevuta da Operatore:</strong></p>
+<pre><code>A: info@medicagb.it
+Oggetto: 📋 Nuova Configurazione Cliente - {Nome Cognome}
+
+Gentile Staff,
+
+un cliente ha completato il form di configurazione:
+
+═══════════════════════════════════════
+DATI CLIENTE
+═══════════════════════════════════════
+Nome: Mario Rossi
+Email: mario.rossi@example.com
+Telefono: 333-1234567
+
+═══════════════════════════════════════
+DATI MEDICI
+═══════════════════════════════════════
+Medico Curante: Dr. Verdi Giovanni
+Tel. Medico: 333-9876543
+Patologie: Ipertensione, Diabete tipo 2
+...
+
+═══════════════════════════════════════
+CONTATTI EMERGENZA
+═══════════════════════════════════════
+1. Laura Rossi (Figlia)
+   Tel: 333-1111111
+   Orari: Sempre disponibile
+
+2. ...
+
+═══════════════════════════════════════
+CONSENSI
+═══════════════════════════════════════
+☑ Dati corretti confermati
+☑ Trattamento dati sanitari autorizzato
+☑ Condivisione centrale operativa autorizzata
+
+Prossimo step: Associare dispositivo e attivare servizio.
+
+Link Dashboard: https://telemedcare-v12.pages.dev/admin/leads-dashboard
+
+---
+TeleMedCare V12.0 - Sistema Automatico
+</code></pre>
+<h4 id="813-gestione-configurazione">8.1.3 Gestione Configurazione</h4>
+<p><strong>Salvataggio:</strong></p>
+<ul>
+<li>Attualmente: email operatore + salvataggio manuale</li>
+<li>Futuro: parsing automatico email → database</li>
+</ul>
+<p><strong>Tabella <code>configurations</code> (da implementare):</strong></p>
+<pre><code class="language-sql">id                          TEXT PRIMARY KEY
+leadId                      TEXT (FK)
+medico_nome                 TEXT
+medico_telefono             TEXT
+patologie                   TEXT
+allergie                    TEXT
+terapie                     TEXT
+limitazioni_motorie         INTEGER
+problemi_cognitivi          INTEGER
+note_mediche                TEXT
+contatto1_nome              TEXT
+contatto1_relazione         TEXT
+contatto1_telefono          TEXT
+contatto2_nome              TEXT
+contatto2_relazione         TEXT
+contatto2_telefono          TEXT
+contatto3_nome              TEXT
+contatto3_relazione         TEXT
+contatto3_telefono          TEXT
+lingua_preferita            TEXT
+orari_attivita              TEXT
+note_servizio               TEXT
+consensi_timestamp          TEXT
+created_at                  TEXT
+updated_at                  TEXT
+</code></pre>
+<p><strong>Verifica Operatore:</strong></p>
+<ol>
+<li>Riceve email configurazione</li>
+<li>Controlla completezza dati</li>
+<li>Se OK: aggiorna stato lead <code>CONFIGURATION_VALIDATED</code></li>
+<li>Se mancano info: email al cliente per integrazione</li>
+</ol>
+<h3 id="82-endpoint-api-configurazione">8.2 Endpoint API Configurazione</h3>
+<p><strong>GET <code>/api/configurations/:leadId</code></strong></p>
+<ul>
+<li>Recupera configurazione esistente per lead</li>
+<li>Usato per pre-compilazione form se già presente</li>
+</ul>
+<p><strong>POST <code>/api/configurations</code></strong></p>
+<ul>
+<li>Salva configurazione ricevuta</li>
+<li>Payload: tutti i campi form</li>
+<li>Aggiorna stato lead a <code>CONFIGURATION_RECEIVED</code></li>
+</ul>
+<p><strong>PUT <code>/api/configurations/:id</code></strong></p>
+<ul>
+<li>Aggiorna configurazione esistente</li>
+<li>Usato da operatore per correzioni</li>
+</ul>
+<hr>
+<h2 id="9-gestione-dispositivi">9. GESTIONE DISPOSITIVI</h2>
+<h3 id="91-device-manager">9.1 Device Manager</h3>
+<h4 id="911-tipologie-dispositivi">9.1.1 Tipologie Dispositivi</h4>
+<p><strong>SiDLY Care PRO</strong> (Piano BASE)</p>
+<ul>
+<li>Telecomando salvavita con GPS</li>
+<li>Connessione GSM</li>
+<li>Batteria: 48h autonomia</li>
+<li>Impermeabile: IP67</li>
+<li>Pulsante SOS grande</li>
+<li>Speaker vivavoce integrato</li>
+</ul>
+<p><strong>SiDLY Vital Care</strong> (Piano AVANZATO)</p>
+<ul>
+<li>Tutto del modello PRO, più:</li>
+<li>Sensori biomedici (ECG, pressione, saturazione O2)</li>
+<li>Monitoraggio h24 parametri vitali</li>
+<li>Alert automatici anomalie</li>
+<li>Display LCD touchscreen</li>
+</ul>
+<h4 id="912-stati-dispositivo">9.1.2 Stati Dispositivo</h4>
+<p><strong>IN_STOCK:</strong></p>
+<ul>
+<li>Dispositivo in magazzino</li>
+<li>Non assegnato</li>
+<li>Pronto per associazione</li>
+</ul>
+<p><strong>ASSIGNED:</strong></p>
+<ul>
+<li>Associato a lead/cliente</li>
+<li>Non ancora attivato</li>
+<li>In preparazione spedizione</li>
+</ul>
+<p><strong>ACTIVE:</strong></p>
+<ul>
+<li>Attivo e funzionante</li>
+<li>SIM attiva</li>
+<li>Cliente lo sta usando</li>
+</ul>
+<p><strong>MAINTENANCE:</strong></p>
+<ul>
+<li>In manutenzione/riparazione</li>
+<li>Temporaneamente non disponibile</li>
+<li>Sostituzione eventuale</li>
+</ul>
+<p><strong>DEACTIVATED:</strong></p>
+<ul>
+<li>Servizio terminato</li>
+<li>SIM disattivata</li>
+<li>Dispositivo da recuperare</li>
+</ul>
+<p><strong>RETIRED:</strong></p>
+<ul>
+<li>Fuori uso definitivo</li>
+<li>Non riutilizzabile</li>
+</ul>
+<h4 id="913-associazione-dispositivo">9.1.3 Associazione Dispositivo</h4>
+<p><strong>Processo da Dashboard:</strong></p>
+<p><strong>Step 1: Selezione Lead</strong></p>
+<ul>
+<li>Operatore apre dettaglio lead con stato <code>CONFIGURATION_VALIDATED</code></li>
+<li>Click pulsante &quot;Associa Dispositivo&quot;</li>
+</ul>
+<p><strong>Step 2: Selezione Dispositivo</strong></p>
+<ul>
+<li>Modal mostra lista dispositivi disponibili (<code>IN_STOCK</code>)</li>
+<li>Filtri: modello, seriale</li>
+<li>Selezione dispositivo da assegnare</li>
+</ul>
+<p><strong>Step 3: Configurazione</strong></p>
+<ul>
+<li>Inserimento dati configurazione:<ul>
+<li>Numero SIM dispositivo</li>
+<li>Numero telefonico SIM</li>
+<li>ICCID SIM</li>
+<li>Data attivazione prevista</li>
+<li>Note installazione</li>
+</ul>
+</li>
+</ul>
+<p><strong>Step 4: Conferma Associazione</strong></p>
+<ul>
+<li>Sistema salva in tabella <code>device_assignments</code></li>
+<li>Aggiorna stato dispositivo: <code>IN_STOCK</code> → <code>ASSIGNED</code></li>
+<li>Aggiorna stato lead: <code>CONFIGURATION_VALIDATED</code> → <code>DEVICE_ASSOCIATED</code></li>
+</ul>
+<p><strong>Step 5: Attivazione Servizio</strong></p>
+<ul>
+<li>Operatore configura centrale operativa</li>
+<li>Inserisce contatti emergenza in sistema centrale</li>
+<li>Testa funzionalità dispositivo</li>
+<li>Conferma attivazione</li>
+<li>Aggiorna stato lead: <code>DEVICE_ASSOCIATED</code> → <code>ACTIVE</code></li>
+<li>Aggiorna stato dispositivo: <code>ASSIGNED</code> → <code>ACTIVE</code></li>
+<li>Invio email conferma attivazione a cliente</li>
+</ul>
+<h4 id="914-tracking-dispositivi">9.1.4 Tracking Dispositivi</h4>
+<p><strong>Tabella <code>devices</code>:</strong></p>
+<pre><code class="language-sql">id                  TEXT PRIMARY KEY
+seriale             TEXT UNIQUE
+modello             TEXT (SiDLY Care PRO / SiDLY Vital Care)
+status              TEXT (IN_STOCK/ASSIGNED/ACTIVE/MAINTENANCE/...)
+data_acquisto       TEXT
+fornitore           TEXT
+prezzo_acquisto     REAL
+note                TEXT
+created_at          TEXT
+updated_at          TEXT
+</code></pre>
+<p><strong>Tabella <code>device_assignments</code>:</strong></p>
+<pre><code class="language-sql">id                  TEXT PRIMARY KEY
+device_id           TEXT (FK → devices.id)
+lead_id             TEXT (FK → leads.id)
+sim_number          TEXT
+phone_number        TEXT
+iccid               TEXT
+data_associazione   TEXT
+data_attivazione    TEXT
+data_disattivazione TEXT
+note                TEXT
+created_at          TEXT
+updated_at          TEXT
+</code></pre>
+<p><strong>Dashboard Dispositivi:</strong></p>
+<ul>
+<li>Lista tutti i dispositivi</li>
+<li>Filtri per stato, modello</li>
+<li>Ricerca per seriale</li>
+<li>Info assegnazione corrente</li>
+<li>Storico assegnazioni precedenti</li>
+<li>Alert manutenzione</li>
+</ul>
+<h3 id="92-endpoint-api-dispositivi">9.2 Endpoint API Dispositivi</h3>
+<p><strong>GET <code>/api/devices</code></strong></p>
+<ul>
+<li>Lista tutti i dispositivi</li>
+<li>Filtri: status, modello</li>
+<li>Paginazione</li>
+</ul>
+<p><strong>GET <code>/api/devices/:id</code></strong></p>
+<ul>
+<li>Dettaglio dispositivo singolo</li>
+<li>Include lead assegnato (se presente)</li>
+<li>Storico assegnazioni</li>
+</ul>
+<p><strong>POST <code>/api/devices</code></strong></p>
+<ul>
+<li>Aggiunge nuovo dispositivo a magazzino</li>
+<li>Richiede: seriale, modello</li>
+<li>Stato iniziale: <code>IN_STOCK</code></li>
+</ul>
+<p><strong>PUT <code>/api/devices/:id</code></strong></p>
+<ul>
+<li>Aggiorna dispositivo</li>
+<li>Cambia stato</li>
+<li>Modifica note</li>
+</ul>
+<p><strong>POST <code>/api/devices/:id/assign</code></strong></p>
+<ul>
+<li>Associa dispositivo a lead</li>
+<li>Payload: <code>{ leadId, sim_number, phone_number, ... }</code></li>
+<li>Crea record in <code>device_assignments</code></li>
+<li>Aggiorna stati</li>
+</ul>
+<p><strong>POST <code>/api/devices/:id/activate</code></strong></p>
+<ul>
+<li>Attiva servizio dispositivo</li>
+<li>Aggiorna stati</li>
+<li>Trigger email conferma</li>
+</ul>
+<p><strong>POST <code>/api/devices/:id/deactivate</code></strong></p>
+<ul>
+<li>Disattiva dispositivo</li>
+<li>Motivo richiesto</li>
+<li>Aggiorna stati</li>
+</ul>
+<p><strong>DELETE <code>/api/devices/:id</code></strong></p>
+<ul>
+<li>Elimina dispositivo (solo se <code>IN_STOCK</code> o <code>RETIRED</code>)</li>
+<li>Soft delete</li>
+</ul>
+<hr>
+<h2 id="10-sistema-email">10. SISTEMA EMAIL</h2>
+<h3 id="101-email-service">10.1 Email Service</h3>
+<h4 id="1011-provider">10.1.1 Provider</h4>
+<p><strong>Resend API:</strong></p>
+<ul>
+<li>Provider principale per email transazionali</li>
+<li>API Key configurata in env</li>
+<li>Domain verificato: <code>medicagb.it</code></li>
+<li>Rate limit: 100 email/ora (tier gratuito)</li>
+</ul>
+<p><strong>SendGrid (fallback):</strong></p>
+<ul>
+<li>Provider backup</li>
+<li>Usato se Resend fallisce</li>
+<li>API Key configurata</li>
+</ul>
+<h4 id="1012-email-inviate-dal-sistema">10.1.2 Email Inviate dal Sistema</h4>
+<p><strong>1. Email Notifica Nuovo Lead</strong></p>
+<ul>
+<li><strong>A:</strong> <code>info@medicagb.it</code></li>
+<li><strong>Oggetto:</strong> <code>🔔 Nuovo Lead da Landing Page - {Nome Cognome}</code></li>
+<li><strong>Quando:</strong> Subito dopo compilazione form pubblico</li>
+<li><strong>Template:</strong> <code>email_notifica_interno.html</code></li>
+<li><strong>Contenuto:</strong> Riepilogo dati lead, link dashboard</li>
+</ul>
+<p><strong>2. Email Richiesta Completamento Dati</strong></p>
+<ul>
+<li><strong>A:</strong> Lead (email fornita)</li>
+<li><strong>Oggetto:</strong> <code>Completa la tua richiesta per {Servizio} {Piano}</code></li>
+<li><strong>Quando:</strong> Operatore clicca &quot;Richiedi Dati&quot; se lead incompleto</li>
+<li><strong>Template:</strong> <code>email_richiesta_completamento_form.html</code></li>
+<li><strong>Contenuto:</strong> Link form completa-dati, brochure allegata</li>
+</ul>
+<p><strong>3. Email Invio Brochure</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>📄 La tua Brochure eCura - Servizi di Teleassistenza</code></li>
+<li><strong>Quando:</strong> Lead richiede brochure o operatore invia</li>
+<li><strong>Template:</strong> <code>email_invio_brochure.html</code></li>
+<li><strong>Allegato:</strong> <code>Brochure_eCura_2024.pdf</code> (2 MB)</li>
+</ul>
+<p><strong>4. Email Invio Manuale</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>📘 Manuale Dispositivo SiDLY Care</code></li>
+<li><strong>Quando:</strong> Lead richiede manuale o operatore invia</li>
+<li><strong>Template:</strong> <code>email_invio_manuale.html</code></li>
+<li><strong>Allegato:</strong> <code>Manuale_Dispositivo_SiDLY.pdf</code> (1.5 MB)</li>
+</ul>
+<p><strong>5. Email Invio Contratto</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>📝 Il tuo Contratto eCura - Firma Digitale</code></li>
+<li><strong>Quando:</strong> Contratto generato (automatico o manuale)</li>
+<li><strong>Template:</strong> <code>email_invio_contratto.html</code></li>
+<li><strong>Link:</strong> <code>/firma-contratto?contractId=XXX</code></li>
+<li><strong>Contenuto:</strong> Istruzioni firma digitale, riepilogo servizio</li>
+</ul>
+<p><strong>6. Email Reminder Firma Contratto</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>⏰ Reminder: Firma il tuo contratto eCura</code></li>
+<li><strong>Quando:</strong> 3, 7, 10 giorni dopo invio se non firmato</li>
+<li><strong>Template:</strong> <code>email_reminder_firma.html</code></li>
+<li><strong>Link:</strong> Stesso link contratto</li>
+</ul>
+<p><strong>7. Email Invio Proforma</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>💳 Proforma di Pagamento eCura {Numero}</code></li>
+<li><strong>Quando:</strong> Dopo firma contratto (automatico)</li>
+<li><strong>Template:</strong> <code>email_invio_proforma.html</code></li>
+<li><strong>Link:</strong> <code>/pagamento?proformaId=XXX</code></li>
+<li><strong>Contenuto:</strong> Riepilogo importo, scadenza, istruzioni</li>
+</ul>
+<p><strong>8. Email Reminder Pagamento</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>⏰ Sollecito Pagamento - Proforma {Numero}</code></li>
+<li><strong>Quando:</strong> 15 giorni dopo invio proforma se non pagata</li>
+<li><strong>Template:</strong> <code>email_reminder_pagamento.html</code></li>
+<li><strong>Link:</strong> Stesso link pagamento</li>
+</ul>
+<p><strong>9. Email Form Configurazione</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>⚙️ Completa la Configurazione del tuo {Dispositivo}</code></li>
+<li><strong>Quando:</strong> Dopo conferma pagamento (automatico)</li>
+<li><strong>Template:</strong> <code>email_configurazione.html</code></li>
+<li><strong>Link:</strong> <code>/configurazione.html?leadId=XXX</code></li>
+<li><strong>Contenuto:</strong> Istruzioni compilazione, servizi inclusi</li>
+</ul>
+<p><strong>10. Email Reminder Configurazione</strong></p>
+<ul>
+<li><strong>A:</strong> Lead</li>
+<li><strong>Oggetto:</strong> <code>⏰ Completa la configurazione del servizio eCura</code></li>
+<li><strong>Quando:</strong> 7 giorni dopo invio se non compilata</li>
+<li><strong>Template:</strong> <code>email_reminder_configurazione.html</code></li>
+</ul>
+<p><strong>11. Email Conferma Attivazione</strong></p>
+<ul>
+<li><strong>A:</strong> Cliente (lead diventato cliente)</li>
+<li><strong>Oggetto:</strong> <code>✅ Servizio eCura Attivato - Benvenuto!</code></li>
+<li><strong>Quando:</strong> Dopo associazione dispositivo e attivazione</li>
+<li><strong>Template:</strong> <code>email_attivazione_servizio.html</code></li>
+<li><strong>Contenuto:</strong><ul>
+<li>Numero seriale dispositivo</li>
+<li>Numero telefonico SIM</li>
+<li>Numero emergenza centrale operativa</li>
+<li>Istruzioni primo utilizzo</li>
+<li>Contatti supporto</li>
+</ul>
+</li>
+</ul>
+<p><strong>12. Email Test Sistema</strong></p>
+<ul>
+<li><strong>A:</strong> Configurabile</li>
+<li><strong>Oggetto:</strong> <code>✅ Test Invio Email - TeleMedCare System</code></li>
+<li><strong>Quando:</strong> Operatore testa configurazione email</li>
+<li><strong>Template:</strong> Semplice HTML inline</li>
+</ul>
+<h4 id="1013-tracking-email">10.1.3 Tracking Email</h4>
+<p><strong>Metriche Tracciate:</strong></p>
+<ul>
+<li>Data/ora invio</li>
+<li>Stato consegna (delivered / bounced / failed)</li>
+<li>Apertura email (via pixel tracking)</li>
+<li>Click link (via redirect tracking)</li>
+<li>Errori invio</li>
+</ul>
+<p><strong>Salvataggio:</strong></p>
+<ul>
+<li>Tabella <code>email_logs</code></li>
+<li>Record per ogni email inviata</li>
+<li>Consultabile da dashboard</li>
+</ul>
+<p><strong>Tabella <code>email_logs</code>:</strong></p>
+<pre><code class="language-sql">id              TEXT PRIMARY KEY
+lead_id         TEXT (FK)
+to_email        TEXT
+from_email      TEXT
+subject         TEXT
+template_used   TEXT
+status          TEXT (sent/delivered/opened/clicked/bounced/failed)
+resend_id       TEXT (ID Resend per tracking)
+sent_at         TEXT
+opened_at       TEXT
+clicked_at      TEXT
+error_message   TEXT
+created_at      TEXT
+</code></pre>
+<h3 id="102-template-system">10.2 Template System</h3>
+<h4 id="1021-template-manager">10.2.1 Template Manager</h4>
+<p><strong>Posizione:</strong> <code>/public/templates/email/</code></p>
+<p><strong>Struttura Template:</strong></p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;style&gt;
+    /* Stili inline per compatibilità email */
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div style=&quot;max-width: 600px; margin: 0 auto;&quot;&gt;
+    
+    &lt;!-- Header --&gt;
+    &lt;div style=&quot;background: #2563EB; padding: 20px; text-align: center;&quot;&gt;
+      &lt;img src=&quot;{{LOGO_URL}}&quot; alt=&quot;Medica GB&quot; style=&quot;max-width: 200px;&quot;&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Corpo --&gt;
+    &lt;div style=&quot;padding: 30px; background: #fff;&quot;&gt;
+      &lt;h1 style=&quot;color: #1e40af;&quot;&gt;{{TITOLO}}&lt;/h1&gt;
+      &lt;p&gt;Gentile {{NOME_COMPLETO}},&lt;/p&gt;
+      &lt;p&gt;{{MESSAGGIO_PRINCIPALE}}&lt;/p&gt;
+      
+      &lt;!-- Call to Action --&gt;
+      &lt;div style=&quot;text-align: center; margin: 30px 0;&quot;&gt;
+        &lt;a href=&quot;{{LINK_AZIONE}}&quot; 
+           style=&quot;background: #10b981; color: white; padding: 15px 30px; 
+                  text-decoration: none; border-radius: 5px; display: inline-block;&quot;&gt;
+          {{TESTO_BOTTONE}}
+        &lt;/a&gt;
+      &lt;/div&gt;
+      
+      &lt;p&gt;{{TESTO_AGGIUNTIVO}}&lt;/p&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Footer --&gt;
+    &lt;div style=&quot;background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px;&quot;&gt;
+      &lt;p&gt;Medica GB S.r.l. | Via Example 123, Roma | info@medicagb.it&lt;/p&gt;
+      &lt;p&gt;&lt;a href=&quot;{{LINK_PRIVACY}}&quot;&gt;Privacy Policy&lt;/a&gt; | &lt;a href=&quot;{{LINK_UNSUB}}&quot;&gt;Disiscriviti&lt;/a&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p><strong>Placeholders Comuni:</strong></p>
+<ul>
+<li><code>{{NOME_COMPLETO}}</code> → Nome e cognome lead</li>
+<li><code>{{NOME}}</code> → Solo nome</li>
+<li><code>{{EMAIL}}</code> → Email lead</li>
+<li><code>{{SERVIZIO}}</code> → Nome servizio (eCura PRO, ecc.)</li>
+<li><code>{{PIANO}}</code> → Piano scelto (BASE/AVANZATO)</li>
+<li><code>{{DISPOSITIVO}}</code> → Modello dispositivo</li>
+<li><code>{{PREZZO}}</code> → Prezzo formattato (€480/anno)</li>
+<li><code>{{LINK_AZIONE}}</code> → URL primario (firma, pagamento, config)</li>
+<li><code>{{DATA}}</code> → Data corrente formattata</li>
+<li><code>{{CODICE_CONTRATTO}}</code> → ID contratto</li>
+<li><code>{{NUMERO_PROFORMA}}</code> → Numero proforma</li>
+<li><code>{{IMPORTO_TOTALE}}</code> → Importo da pagare</li>
+<li><code>{{SCADENZA}}</code> → Data scadenza</li>
+<li><code>{{LOGO_URL}}</code> → URL logo Medica GB (base64 o CDN)</li>
+</ul>
+<h4 id="1022-rendering-template">10.2.2 Rendering Template</h4>
+<p><strong>Processo:</strong></p>
+<ol>
+<li>Caricamento file template da filesystem</li>
+<li>Parsing HTML</li>
+<li>Sostituzione placeholders con dati reali</li>
+<li>Validazione HTML</li>
+<li>Return HTML pronto per invio</li>
+</ol>
+<p><strong>Modulo:</strong> <code>template-loader-clean.ts</code></p>
+<pre><code class="language-typescript">export async function loadEmailTemplate(
+  templateName: string, 
+  env: any
+): Promise&lt;string&gt; {
+  const path = `/public/templates/email/${templateName}.html`
+  const html = await readFile(path)
+  return html
+}
+
+export function renderTemplate(
+  html: string, 
+  data: Record&lt;string, any&gt;
+): string {
+  let rendered = html
+  for (const [key, value] of Object.entries(data)) {
+    const placeholder = `{{${key}}}`
+    rendered = rendered.replaceAll(placeholder, value)
+  }
+  return rendered
+}
+</code></pre>
+<p><strong>Esempio Uso:</strong></p>
+<pre><code class="language-typescript">const template = await loadEmailTemplate(&#39;email_invio_contratto&#39;, env)
+const rendered = renderTemplate(template, {
+  NOME_COMPLETO: &#39;Mario Rossi&#39;,
+  SERVIZIO: &#39;eCura PRO&#39;,
+  PIANO: &#39;BASE&#39;,
+  LINK_AZIONE: &#39;https://telemedcare-v12.pages.dev/firma-contratto?contractId=123&#39;,
+  PREZZO: &#39;€480/anno&#39;,
+  DATA: &#39;24 febbraio 2026&#39;
+})
+</code></pre>
+<hr>
+<h2 id="11-sistema-template">11. SISTEMA TEMPLATE</h2>
+<h3 id="111-template-documenti">11.1 Template Documenti</h3>
+<h4 id="1111-template-contratto">11.1.1 Template Contratto</h4>
+<p><strong>File:</strong> <code>/public/templates/contratti/template_contratto_firma_digitale.html</code></p>
+<p><strong>Sezioni:</strong></p>
+<ol>
+<li>Intestazione (logo, ragione sociale, dati fiscali)</li>
+<li>Dati contraenti (fornitore + cliente)</li>
+<li>Oggetto contratto (descrizione servizio)</li>
+<li>Condizioni economiche (tabella prezzi)</li>
+<li>Durata e rinnovo</li>
+<li>Servizi inclusi (lista per piano)</li>
+<li>Obblighi parti</li>
+<li>Recesso e penali</li>
+<li>Trattamento dati (GDPR)</li>
+<li>Foro competente</li>
+<li>Area firma digitale</li>
+</ol>
+<p><strong>Stile:</strong></p>
+<ul>
+<li>Font: Arial, sans-serif</li>
+<li>Dimensioni A4: 210mm x 297mm</li>
+<li>Margini: 20mm</li>
+<li>Header/Footer fissi</li>
+<li>Numerazione pagine</li>
+<li>Watermark &quot;Copia non firmata&quot; se PENDING</li>
+</ul>
+<h4 id="1112-template-proforma">11.1.2 Template Proforma</h4>
+<p><strong>File:</strong> <code>/public/templates/documenti/template_proforma.html</code></p>
+<p><strong>Contenuto:</strong></p>
+<ul>
+<li>Logo e dati società</li>
+<li>Numero proforma</li>
+<li>Data emissione</li>
+<li>Data scadenza</li>
+<li>Destinatario (dati lead)</li>
+<li>Tabella importi:<ul>
+<li>Descrizione servizio</li>
+<li>Importo base (es. €840)</li>
+<li>IVA 22% (es. €184,80)</li>
+<li>Totale (es. €1.024,80)</li>
+</ul>
+</li>
+<li>Modalità pagamento</li>
+<li>Coordinate bancarie (IBAN)</li>
+<li>Note e condizioni</li>
+</ul>
+<p><strong>Formato:</strong></p>
+<ul>
+<li>HTML per visualizzazione web</li>
+<li>Convertibile in PDF (Puppeteer)</li>
+<li>Stampabile</li>
+</ul>
+<h4 id="1113-template-email">11.1.3 Template Email</h4>
+<p>Vedi sezione 10.2 Sistema Email</p>
+<h3 id="112-gestione-template">11.2 Gestione Template</h3>
+<h4 id="1121-versionamento">11.2.1 Versionamento</h4>
+<p><strong>Convenzione Naming:</strong></p>
+<ul>
+<li><code>template_contratto_v1.html</code> (prima versione)</li>
+<li><code>template_contratto_v2.html</code> (aggiornamento clausole)</li>
+<li><code>template_attivo.html</code> → symlink a versione corrente</li>
+</ul>
+<p><strong>Tracking Modifiche:</strong></p>
+<ul>
+<li>Tabella <code>template_versions</code></li>
+<li>Changelog modifiche</li>
+<li>Data attivazione</li>
+<li>Template usato per ogni documento generato</li>
+</ul>
+<p><strong>Tabella <code>template_versions</code>:</strong></p>
+<pre><code class="language-sql">id              TEXT PRIMARY KEY
+template_name   TEXT
+version         INTEGER
+file_path       TEXT
+changelog       TEXT
+is_active       INTEGER (0/1)
+created_at      TEXT
+activated_at    TEXT
+</code></pre>
+<h4 id="1122-editor-template-futuro">11.2.2 Editor Template (Futuro)</h4>
+<p><strong>Funzionalità pianificate:</strong></p>
+<ul>
+<li>WYSIWYG editor per template email</li>
+<li>Preview real-time con dati di test</li>
+<li>Gestione placeholders</li>
+<li>Salvataggio versioni</li>
+<li>A/B testing template email</li>
+</ul>
+<hr>
+<h2 id="12-database-e-persistenza">12. DATABASE E PERSISTENZA</h2>
+<h3 id="121-cloudflare-d1-database">12.1 Cloudflare D1 Database</h3>
+<h4 id="1211-caratteristiche">12.1.1 Caratteristiche</h4>
+<ul>
+<li><strong>Tipo:</strong> SQLite distribuito</li>
+<li><strong>Hosting:</strong> Edge network Cloudflare</li>
+<li><strong>Latenza:</strong> &lt;10ms (geo-distributed)</li>
+<li><strong>Limits:</strong> 100k read/day, 1k write/day (free tier)</li>
+<li><strong>Backup:</strong> Automatico quotidiano</li>
+<li><strong>Migrazione:</strong> Via Wrangler CLI</li>
+</ul>
+<h4 id="1212-schema-database">12.1.2 Schema Database</h4>
+<p><strong>Tabella <code>leads</code></strong> (core):</p>
+<pre><code class="language-sql">CREATE TABLE leads (
+  id TEXT PRIMARY KEY,
+  nome TEXT NOT NULL,
+  cognome TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  telefono TEXT,
+  via TEXT,
+  civico TEXT,
+  citta TEXT,
+  provincia TEXT,
+  cap TEXT,
+  codice_fiscale TEXT,
+  data_nascita TEXT,
+  nomeAssistito TEXT,
+  cognomeAssistito TEXT,
+  dataNascitaAssistito TEXT,
+  relazioneAssistito TEXT,
+  vuoleBrochure TEXT DEFAULT &#39;No&#39;,
+  vuoleManuale TEXT DEFAULT &#39;No&#39;,
+  vuoleContratto TEXT DEFAULT &#39;No&#39;,
+  servizioScelto TEXT,
+  pianoScelto TEXT,
+  fonteLead TEXT,
+  operatoreAssegnato TEXT,
+  status TEXT DEFAULT &#39;NEW&#39;,
+  score INTEGER DEFAULT 0,
+  note TEXT,
+  privacyAccettata INTEGER DEFAULT 0,
+  marketingAccettato INTEGER DEFAULT 0,
+  deleted INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX idx_leads_email ON leads(email);
+CREATE INDEX idx_leads_status ON leads(status);
+CREATE INDEX idx_leads_created ON leads(created_at);
+</code></pre>
+<p><strong>Tabella <code>contracts</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE contracts (
+  id TEXT PRIMARY KEY,
+  leadId TEXT NOT NULL,
+  codice_contratto TEXT UNIQUE NOT NULL,
+  tipo_contratto TEXT,
+  template_utilizzato TEXT,
+  contenuto_html TEXT,
+  firma_base64 TEXT,
+  firma_timestamp TEXT,
+  pdf_generated INTEGER DEFAULT 0,
+  pdf_url TEXT,
+  email_sent INTEGER DEFAULT 0,
+  email_template_used TEXT,
+  status TEXT DEFAULT &#39;PENDING&#39;,
+  servizio TEXT,
+  piano TEXT,
+  prezzo_mensile REAL,
+  durata_mesi INTEGER DEFAULT 12,
+  prezzo_totale REAL,
+  data_invio TEXT,
+  data_scadenza TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (leadId) REFERENCES leads(id)
+);
+
+CREATE INDEX idx_contracts_lead ON contracts(leadId);
+CREATE INDEX idx_contracts_status ON contracts(status);
+CREATE UNIQUE INDEX idx_contracts_codice ON contracts(codice_contratto);
+</code></pre>
+<p><strong>Tabella <code>proforma</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE proforma (
+  id TEXT PRIMARY KEY,
+  leadId TEXT NOT NULL,
+  numero_proforma TEXT UNIQUE NOT NULL,
+  importo REAL NOT NULL,
+  iva REAL NOT NULL,
+  importo_totale REAL NOT NULL,
+  status TEXT DEFAULT &#39;PENDING&#39;,
+  data_emissione TEXT NOT NULL,
+  data_scadenza TEXT NOT NULL,
+  metodo_pagamento TEXT,
+  stripe_session_id TEXT,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (leadId) REFERENCES leads(id)
+);
+
+CREATE INDEX idx_proforma_lead ON proforma(leadId);
+CREATE INDEX idx_proforma_status ON proforma(status);
+CREATE UNIQUE INDEX idx_proforma_numero ON proforma(numero_proforma);
+</code></pre>
+<p><strong>Tabella <code>devices</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE devices (
+  id TEXT PRIMARY KEY,
+  seriale TEXT UNIQUE NOT NULL,
+  modello TEXT NOT NULL,
+  status TEXT DEFAULT &#39;IN_STOCK&#39;,
+  data_acquisto TEXT,
+  fornitore TEXT,
+  prezzo_acquisto REAL,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_devices_seriale ON devices(seriale);
+CREATE INDEX idx_devices_status ON devices(status);
+</code></pre>
+<p><strong>Tabella <code>device_assignments</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE device_assignments (
+  id TEXT PRIMARY KEY,
+  device_id TEXT NOT NULL,
+  lead_id TEXT NOT NULL,
+  sim_number TEXT,
+  phone_number TEXT,
+  iccid TEXT,
+  data_associazione TEXT NOT NULL,
+  data_attivazione TEXT,
+  data_disattivazione TEXT,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (device_id) REFERENCES devices(id),
+  FOREIGN KEY (lead_id) REFERENCES leads(id)
+);
+
+CREATE INDEX idx_assignments_device ON device_assignments(device_id);
+CREATE INDEX idx_assignments_lead ON device_assignments(lead_id);
+</code></pre>
+<p><strong>Tabella <code>email_logs</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE email_logs (
+  id TEXT PRIMARY KEY,
+  lead_id TEXT,
+  to_email TEXT NOT NULL,
+  from_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  template_used TEXT,
+  status TEXT DEFAULT &#39;sent&#39;,
+  resend_id TEXT,
+  sent_at TEXT NOT NULL,
+  opened_at TEXT,
+  clicked_at TEXT,
+  error_message TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (lead_id) REFERENCES leads(id)
+);
+
+CREATE INDEX idx_email_lead ON email_logs(lead_id);
+CREATE INDEX idx_email_status ON email_logs(status);
+CREATE INDEX idx_email_sent ON email_logs(sent_at);
+</code></pre>
+<p><strong>Tabella <code>settings</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  description TEXT,
+  updated_at TEXT NOT NULL
+);
+</code></pre>
+<p><strong>Tabella <code>audit_log</code>:</strong></p>
+<pre><code class="language-sql">CREATE TABLE audit_log (
+  id TEXT PRIMARY KEY,
+  table_name TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  old_values TEXT,
+  new_values TEXT,
+  user_id TEXT,
+  timestamp TEXT NOT NULL
+);
+
+CREATE INDEX idx_audit_table ON audit_log(table_name);
+CREATE INDEX idx_audit_record ON audit_log(record_id);
+CREATE INDEX idx_audit_timestamp ON audit_log(timestamp);
+</code></pre>
+<h3 id="122-query-patterns">12.2 Query Patterns</h3>
+<h4 id="1221-lead-operations">12.2.1 Lead Operations</h4>
+<p><strong>Create Lead:</strong></p>
+<pre><code class="language-typescript">await db.prepare(`
+  INSERT INTO leads (
+    id, nome, cognome, email, telefono, provincia,
+    status, score, created_at, updated_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`).bind(
+  leadId, nome, cognome, email, telefono, provincia,
+  &#39;NEW&#39;, 0, now, now
+).run()
+</code></pre>
+<p><strong>Update Lead:</strong></p>
+<pre><code class="language-typescript">await db.prepare(`
+  UPDATE leads 
+  SET telefono = ?, via = ?, note = ?, updated_at = ?
+  WHERE id = ?
+`).bind(newPhone, newAddress, newNotes, now, leadId).run()
+</code></pre>
+<p><strong>Get Lead with Contract:</strong></p>
+<pre><code class="language-typescript">const result = await db.prepare(`
+  SELECT 
+    l.*,
+    c.id as contract_id,
+    c.codice_contratto,
+    c.status as contract_status,
+    c.firma_timestamp
+  FROM leads l
+  LEFT JOIN contracts c ON c.leadId = l.id
+  WHERE l.id = ?
+`).bind(leadId).first()
+</code></pre>
+<p><strong>Search Leads:</strong></p>
+<pre><code class="language-typescript">const results = await db.prepare(`
+  SELECT * FROM leads
+  WHERE (
+    nome LIKE ? OR
+    cognome LIKE ? OR
+    email LIKE ? OR
+    telefono LIKE ?
+  )
+  AND deleted = 0
+  ORDER BY created_at DESC
+  LIMIT 50
+`).bind(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`).all()
+</code></pre>
+<h4 id="1222-workflow-queries">12.2.2 Workflow Queries</h4>
+<p><strong>Lead con Contratto Scaduto:</strong></p>
+<pre><code class="language-typescript">const expired = await db.prepare(`
+  SELECT l.*, c.data_scadenza
+  FROM leads l
+  JOIN contracts c ON c.leadId = l.id
+  WHERE c.status = &#39;PENDING&#39;
+    AND c.data_scadenza &lt; ?
+`).bind(today).all()
+</code></pre>
+<p><strong>Proforma da Sollecitare:</strong></p>
+<pre><code class="language-typescript">const pending = await db.prepare(`
+  SELECT l.*, p.numero_proforma, p.importo_totale, p.data_scadenza
+  FROM leads l
+  JOIN proforma p ON p.leadId = l.id
+  WHERE p.status = &#39;PENDING&#39;
+    AND p.data_emissione &lt; ?
+    AND (p.ultimo_sollecito IS NULL OR p.ultimo_sollecito &lt; ?)
+`).bind(fifteenDaysAgo, sevenDaysAgo).all()
+</code></pre>
+<p><strong>Lead da Configurare:</strong></p>
+<pre><code class="language-typescript">const toConfig = await db.prepare(`
+  SELECT * FROM leads
+  WHERE status = &#39;PAYMENT_RECEIVED&#39;
+  ORDER BY updated_at ASC
+  LIMIT 20
+`).all()
+</code></pre>
+<h4 id="1223-reporting-queries">12.2.3 Reporting Queries</h4>
+<p><strong>Conversions Funnel:</strong></p>
+<pre><code class="language-typescript">const funnel = await db.prepare(`
+  SELECT 
+    COUNT(*) FILTER (WHERE status = &#39;NEW&#39;) as new_leads,
+    COUNT(*) FILTER (WHERE status = &#39;VALIDATED&#39;) as validated,
+    COUNT(*) FILTER (WHERE status = &#39;CONTRACT_SENT&#39;) as contracts_sent,
+    COUNT(*) FILTER (WHERE status = &#39;CONTRACT_SIGNED&#39;) as contracts_signed,
+    COUNT(*) FILTER (WHERE status = &#39;PAYMENT_RECEIVED&#39;) as paid,
+    COUNT(*) FILTER (WHERE status = &#39;ACTIVE&#39;) as active
+  FROM leads
+  WHERE created_at &gt;= ? AND created_at &lt;= ?
+`).bind(startDate, endDate).first()
+</code></pre>
+<p><strong>Revenue per Mese:</strong></p>
+<pre><code class="language-typescript">const revenue = await db.prepare(`
+  SELECT 
+    strftime(&#39;%Y-%m&#39;, data_emissione) as month,
+    SUM(importo_totale) as total_revenue,
+    COUNT(*) as paid_count
+  FROM proforma
+  WHERE status = &#39;PAID&#39;
+  GROUP BY month
+  ORDER BY month DESC
+  LIMIT 12
+`).all()
+</code></pre>
+<hr>
+<h2 id="13-integrazioni-esterne">13. INTEGRAZIONI ESTERNE</h2>
+<h3 id="131-email-resend">13.1 Email (Resend)</h3>
+<p><strong>Endpoint:</strong> <code>https://api.resend.com/emails</code></p>
+<p><strong>Autenticazione:</strong> Bearer token (API Key)</p>
+<p><strong>Invio Email:</strong></p>
+<pre><code class="language-typescript">const response = await fetch(&#39;https://api.resend.com/emails&#39;, {
+  method: &#39;POST&#39;,
+  headers: {
+    &#39;Authorization&#39;: `Bearer ${RESEND_API_KEY}`,
+    &#39;Content-Type&#39;: &#39;application/json&#39;
+  },
+  body: JSON.stringify({
+    from: &#39;noreply@medicagb.it&#39;,
+    to: &#39;cliente@example.com&#39;,
+    subject: &#39;Il tuo contratto eCura&#39;,
+    html: &#39;&lt;html&gt;...&lt;/html&gt;&#39;,
+    attachments: [{
+      filename: &#39;brochure.pdf&#39;,
+      content: base64Content
+    }]
+  })
+})
+</code></pre>
+<h3 id="132-pagamenti-stripe">13.2 Pagamenti (Stripe)</h3>
+<p><strong>Endpoint:</strong> <code>https://api.stripe.com/v1/</code></p>
+<p><strong>Autenticazione:</strong> Bearer token (Secret Key)</p>
+<p><strong>Creazione Sessione:</strong></p>
+<pre><code class="language-typescript">const session = await fetch(&#39;https://api.stripe.com/v1/checkout/sessions&#39;, {
+  method: &#39;POST&#39;,
+  headers: {
+    &#39;Authorization&#39;: `Bearer ${STRIPE_SECRET_KEY}`,
+    &#39;Content-Type&#39;: &#39;application/x-www-form-urlencoded&#39;
+  },
+  body: new URLSearchParams({
+    &#39;payment_method_types[]&#39;: &#39;card&#39;,
+    &#39;line_items[0][price_data][currency]&#39;: &#39;eur&#39;,
+    &#39;line_items[0][price_data][product_data][name]&#39;: &#39;eCura PRO&#39;,
+    &#39;line_items[0][price_data][unit_amount]&#39;: &#39;48000&#39;,
+    &#39;line_items[0][quantity]&#39;: &#39;1&#39;,
+    &#39;mode&#39;: &#39;payment&#39;,
+    &#39;success_url&#39;: successUrl,
+    &#39;cancel_url&#39;: cancelUrl
+  })
+})
+</code></pre>
+<p><strong>Webhook:</strong></p>
+<ul>
+<li>URL: <code>/api/webhooks/stripe</code></li>
+<li>Eventi: <code>checkout.session.completed</code>, <code>payment_intent.succeeded</code></li>
+<li>Verifica firma webhook per sicurezza</li>
+</ul>
+<h3 id="133-storage-cloudflare-r2">13.3 Storage (Cloudflare R2)</h3>
+<p><strong>Uso:</strong> Archiviazione PDF contratti firmati, brochure, documenti</p>
+<p><strong>Operazioni:</strong></p>
+<pre><code class="language-typescript">// Upload
+await env.R2.put(`contracts/${contractId}.pdf`, pdfBuffer, {
+  httpMetadata: {
+    contentType: &#39;application/pdf&#39;
+  }
+})
+
+// Download
+const object = await env.R2.get(`contracts/${contractId}.pdf`)
+const pdfBuffer = await object.arrayBuffer()
+
+// Delete
+await env.R2.delete(`contracts/${contractId}.pdf`)
+</code></pre>
+<h3 id="134-hubspot-crm-futuro">13.4 HubSpot CRM (Futuro)</h3>
+<p><strong>Sync Leads:</strong></p>
+<ul>
+<li>Invio lead a HubSpot via API</li>
+<li>Bidirectional sync</li>
+<li>Mapping stati</li>
+</ul>
+<h3 id="135-centrale-operativa-futuro">13.5 Centrale Operativa (Futuro)</h3>
+<p><strong>API Proprietaria:</strong></p>
+<ul>
+<li>Invio configurazione cliente</li>
+<li>Attivazione dispositivo</li>
+<li>Gestione chiamate emergenza</li>
+</ul>
+<hr>
+<h2 id="14-sicurezza-e-privacy">14. SICUREZZA E PRIVACY</h2>
+<h3 id="141-gdpr-compliance">14.1 GDPR Compliance</h3>
+<h4 id="1411-consensi">14.1.1 Consensi</h4>
+<p><strong>Raccolta Consensi:</strong></p>
+<ul>
+<li><strong>Privacy (obbligatorio):</strong> Trattamento dati personali</li>
+<li><strong>Marketing (opzionale):</strong> Comunicazioni commerciali</li>
+<li><strong>Profilazione (opzionale):</strong> Analisi preferenze</li>
+<li><strong>Terze parti (opzionale):</strong> Condivisione con partner</li>
+</ul>
+<p><strong>Tracciamento:</strong></p>
+<ul>
+<li>Timestamp consenso</li>
+<li>Versione informativa accettata</li>
+<li>IP address raccolta consenso</li>
+<li>Log modifiche consensi</li>
+</ul>
+<h4 id="1412-diritti-gdpr">14.1.2 Diritti GDPR</h4>
+<p><strong>Accesso Dati (Art. 15):</strong></p>
+<ul>
+<li>Endpoint: <code>GET /api/gdpr/data-access?email=xxx</code></li>
+<li>Esporta tutti i dati lead in JSON</li>
+<li>Include: anagrafica, contratti, pagamenti, email</li>
+</ul>
+<p><strong>Rettifica Dati (Art. 16):</strong></p>
+<ul>
+<li>Modifica dati via dashboard o API</li>
+<li>Log tutte le modifiche (audit trail)</li>
+</ul>
+<p><strong>Cancellazione (Art. 17 - Right to be Forgotten):</strong></p>
+<ul>
+<li>Endpoint: <code>DELETE /api/gdpr/delete-data?email=xxx</code></li>
+<li>Soft delete: flag <code>deleted=1</code>, dati conservati 10 anni (obbligo fiscale)</li>
+<li>Hard delete: dopo 10 anni, se richiesto</li>
+</ul>
+<p><strong>Portabilità (Art. 20):</strong></p>
+<ul>
+<li>Esporta dati in CSV o JSON</li>
+<li>Include tutti i record associati</li>
+</ul>
+<p><strong>Opposizione (Art. 21):</strong></p>
+<ul>
+<li>Disattivazione email marketing</li>
+<li>Blocco profilazione</li>
+<li>Conservazione solo dati contrattuali</li>
+</ul>
+<h4 id="1413-data-retention">14.1.3 Data Retention</h4>
+<ul>
+<li><strong>Lead non convertiti:</strong> 2 anni, poi soft delete</li>
+<li><strong>Clienti attivi:</strong> Conservazione illimitata</li>
+<li><strong>Clienti cessati:</strong> 10 anni (obbligo fiscale), poi hard delete</li>
+<li><strong>Email logs:</strong> 1 anno</li>
+<li><strong>Audit logs:</strong> 5 anni</li>
+</ul>
+<h3 id="142-sicurezza-dati">14.2 Sicurezza Dati</h3>
+<h4 id="1421-autenticazione">14.2.1 Autenticazione</h4>
+<p><strong>Operatori:</strong></p>
+<ul>
+<li>Login con email + password</li>
+<li>JWT token (scadenza 8h)</li>
+<li>Refresh token (scadenza 30gg)</li>
+<li>2FA opzionale (TOTP)</li>
+</ul>
+<p><strong>Clienti:</strong></p>
+<ul>
+<li>Link temporanei con token univoco</li>
+<li>Validità token: 7gg firma, 30gg pagamento</li>
+<li>No password richiesta (magic link)</li>
+</ul>
+<h4 id="1422-autorizzazione">14.2.2 Autorizzazione</h4>
+<p><strong>Livelli Accesso:</strong></p>
+<ol>
+<li><strong>Pubblico:</strong> Solo lettura landing page</li>
+<li><strong>Lead:</strong> Accesso propri dati (firma, pagamento, config)</li>
+<li><strong>Operatore:</strong> Gestione lead assegnati, workflow</li>
+<li><strong>Admin:</strong> Accesso completo, settings, dispositivi</li>
+</ol>
+<p><strong>Matrice Permessi:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Risorsa</th>
+<th>Pubblico</th>
+<th>Lead</th>
+<th>Operatore</th>
+<th>Admin</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Landing Page</td>
+<td>R</td>
+<td>R</td>
+<td>R</td>
+<td>R</td>
+</tr>
+<tr>
+<td>Form Pubblici</td>
+<td>W</td>
+<td>W</td>
+<td>R</td>
+<td>R</td>
+</tr>
+<tr>
+<td>Propri Dati</td>
+<td>-</td>
+<td>RW</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Dashboard Lead</td>
+<td>-</td>
+<td>-</td>
+<td>R</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>Contratti</td>
+<td>-</td>
+<td>R (propri)</td>
+<td>RW</td>
+<td>RWD</td>
+</tr>
+<tr>
+<td>Pagamenti</td>
+<td>-</td>
+<td>W (propri)</td>
+<td>R</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>Dispositivi</td>
+<td>-</td>
+<td>-</td>
+<td>R</td>
+<td>RWD</td>
+</tr>
+<tr>
+<td>Settings</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>RW</td>
+</tr>
+</tbody></table>
+<h4 id="1423-crittografia">14.2.3 Crittografia</h4>
+<p><strong>In Transit:</strong></p>
+<ul>
+<li>HTTPS obbligatorio (TLS 1.3)</li>
+<li>HSTS header attivo</li>
+<li>No mixed content</li>
+</ul>
+<p><strong>At Rest:</strong></p>
+<ul>
+<li>D1 database cifrato nativamente</li>
+<li>R2 bucket cifrato (AES-256)</li>
+<li>Firma digitale in base64 (reversibile per verifica)</li>
+</ul>
+<p><strong>Dati Sensibili:</strong></p>
+<ul>
+<li>Password: bcrypt hash + salt</li>
+<li>Codice Fiscale: opzionalmente cifrato (AES-256)</li>
+<li>Dati Sanitari: accesso ristretto, log accessi</li>
+</ul>
+<h3 id="143-audit-e-compliance">14.3 Audit e Compliance</h3>
+<h4 id="1431-logging">14.3.1 Logging</h4>
+<p><strong>Eventi Loggati:</strong></p>
+<ul>
+<li>Accessi dashboard (user, timestamp, IP)</li>
+<li>Modifiche dati lead (campo, old value, new value)</li>
+<li>Invio email (destinatario, template, esito)</li>
+<li>Firma contratti (IP, timestamp)</li>
+<li>Pagamenti (importo, esito)</li>
+<li>Accessi dati sensibili</li>
+</ul>
+<p><strong>Tabella <code>audit_log</code>:</strong></p>
+<ul>
+<li>Azioni modificanti (INSERT, UPDATE, DELETE)</li>
+<li>User ID operatore</li>
+<li>Timestamp preciso</li>
+<li>Valori prima/dopo modifica</li>
+</ul>
+<h4 id="1432-backup">14.3.2 Backup</h4>
+<p><strong>Frequenza:</strong></p>
+<ul>
+<li>Database: backup automatico quotidiano (Cloudflare)</li>
+<li>Documenti R2: replica multi-region</li>
+<li>Codice: Git repository (GitHub)</li>
+</ul>
+<p><strong>Retention:</strong></p>
+<ul>
+<li>Backup giornalieri: 30 giorni</li>
+<li>Backup mensili: 12 mesi</li>
+<li>Backup annuali: 10 anni</li>
+</ul>
+<p><strong>Restore:</strong></p>
+<ul>
+<li>Procedure documentate</li>
+<li>Test restore trimestrali</li>
+<li>RTO (Recovery Time Objective): 4 ore</li>
+<li>RPO (Recovery Point Objective): 24 ore</li>
+</ul>
+<hr>
+<h2 id="15-stati-e-transizioni">15. STATI E TRANSIZIONI</h2>
+<h3 id="151-diagramma-stati-lead">15.1 Diagramma Stati Lead</h3>
+<pre><code>      ┌─────┐
+      │ NEW │ (Lead appena creato)
+      └──┬──┘
+         │
+         ↓
+   ┌──────────┐
+   │VALIDATED │ (Dati verificati)
+   └────┬─────┘
+        │
+        ↓
+   ┌─────────┐
+   │QUALIFIED│ (Commercialmente valido)
+   └────┬────┘
+        │
+        ├─→ ┌──────────────┐
+        │   │BROCHURE_SENT │
+        │   └──────────────┘
+        │
+        ├─→ ┌─────────────┐
+        │   │MANUAL_SENT  │
+        │   └─────────────┘
+        │
+        ↓
+   ┌──────────────┐
+   │CONTRACT_SENT │ (Contratto inviato)
+   └──────┬───────┘
+          │
+          ↓
+   ┌───────────────┐
+   │CONTRACT_SIGNED│ (Contratto firmato)
+   └───────┬───────┘
+           │
+           ↓
+   ┌──────────────┐
+   │PROFORMA_SENT │ (Proforma inviata)
+   └──────┬───────┘
+          │
+          ↓
+   ┌─────────────────┐
+   │PAYMENT_RECEIVED │ (Pagamento OK)
+   └────────┬────────┘
+            │
+            ↓
+   ┌───────────────────┐
+   │CONFIGURATION_SENT │ (Form config inviato)
+   └─────────┬─────────┘
+             │
+             ↓
+   ┌──────────────────────┐
+   │CONFIGURATION_RECEIVED│ (Form compilato)
+   └──────────┬───────────┘
+              │
+              ↓
+   ┌─────────────────────┐
+   │CONFIGURATION_VALIDATED│ (Config verificata)
+   └──────────┬──────────┘
+              │
+              ↓
+   ┌─────────────────┐
+   │DEVICE_ASSOCIATED│ (Dispositivo assegnato)
+   └────────┬────────┘
+            │
+            ↓
+   ┌────────┐
+   │ ACTIVE │ (Servizio attivo)
+   └────────┘
+</code></pre>
+<h3 id="152-transizioni-consentite">15.2 Transizioni Consentite</h3>
+<table>
+<thead>
+<tr>
+<th>Da</th>
+<th>A</th>
+<th>Trigger</th>
+<th>Automatico</th>
+<th>Manuale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NEW</td>
+<td>VALIDATED</td>
+<td>Verifica dati</td>
+<td>No</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>VALIDATED</td>
+<td>QUALIFIED</td>
+<td>Qualificazione commerciale</td>
+<td>No</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>QUALIFIED</td>
+<td>CONTRACT_SENT</td>
+<td>Invio contratto</td>
+<td>Sì</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>CONTRACT_SENT</td>
+<td>CONTRACT_SIGNED</td>
+<td>Firma contratto</td>
+<td>Sì</td>
+<td>No</td>
+</tr>
+<tr>
+<td>CONTRACT_SIGNED</td>
+<td>PROFORMA_SENT</td>
+<td>Generazione proforma</td>
+<td>Sì</td>
+<td>No</td>
+</tr>
+<tr>
+<td>PROFORMA_SENT</td>
+<td>PAYMENT_RECEIVED</td>
+<td>Pagamento Stripe o manuale</td>
+<td>Sì</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>PAYMENT_RECEIVED</td>
+<td>CONFIGURATION_SENT</td>
+<td>Invio form config</td>
+<td>Sì</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>CONFIGURATION_SENT</td>
+<td>CONFIGURATION_RECEIVED</td>
+<td>Compilazione form</td>
+<td>Sì</td>
+<td>No</td>
+</tr>
+<tr>
+<td>CONFIGURATION_RECEIVED</td>
+<td>CONFIGURATION_VALIDATED</td>
+<td>Verifica operatore</td>
+<td>No</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>CONFIGURATION_VALIDATED</td>
+<td>DEVICE_ASSOCIATED</td>
+<td>Associazione dispositivo</td>
+<td>No</td>
+<td>Sì</td>
+</tr>
+<tr>
+<td>DEVICE_ASSOCIATED</td>
+<td>ACTIVE</td>
+<td>Attivazione servizio</td>
+<td>No</td>
+<td>Sì</td>
+</tr>
+</tbody></table>
+<h3 id="153-stati-terminalispeciali">15.3 Stati Terminali/Speciali</h3>
+<p><strong>CANCELLED:</strong></p>
+<ul>
+<li>Lead rinuncia durante processo</li>
+<li>No conversione</li>
+<li>Può essere riattivato</li>
+</ul>
+<p><strong>ON_HOLD:</strong></p>
+<ul>
+<li>Processo sospeso temporaneamente</li>
+<li>Richiesta cliente o blocco amministrativo</li>
+<li>Riprendibile in futuro</li>
+</ul>
+<p><strong>LOST:</strong></p>
+<ul>
+<li>Opportunità persa definitivamente</li>
+<li>Motivo perdita richiesto</li>
+<li>Report per analisi</li>
+</ul>
+<p><strong>ARCHIVED:</strong></p>
+<ul>
+<li>Cliente cessato dopo periodo attivo</li>
+<li>Dati conservati ma non visibili in dashboard</li>
+<li>Solo per consultazione storica</li>
+</ul>
+<hr>
+<h2 id="16-roadmap-tecnico-2026-2027">16. ROADMAP TECNICO 2026-2027</h2>
+<h3 id="161-q1-2026-gennaio---marzo-✅-completato">16.1 Q1 2026 (Gennaio - Marzo) ✅ COMPLETATO</h3>
+<h4 id="obiettivi-raggiunti">Obiettivi Raggiunti</h4>
+<p><strong>Refactoring Architettura Modulare</strong></p>
+<ul>
+<li>✅ Migrazione da monolite a 50+ moduli TypeScript</li>
+<li>✅ Separazione responsabilità (SOC) completa</li>
+<li>✅ Riduzione accoppiamento componenti</li>
+<li>✅ Miglioramento testabilità e manutenibilità</li>
+<li>✅ Documentazione tecnica completa</li>
+</ul>
+<p><strong>Implementazione Workflow Orchestrator</strong></p>
+<ul>
+<li>✅ Engine orchestrazione 9 fasi</li>
+<li>✅ Gestione transizioni stati automatiche</li>
+<li>✅ Sistema reminder multi-step</li>
+<li>✅ Gestione eccezioni e timeout</li>
+<li>✅ Workflow Manager UI (Kanban + Timeline)</li>
+</ul>
+<p><strong>Integrazione Stripe Pagamenti</strong></p>
+<ul>
+<li>✅ Stripe Checkout Session API</li>
+<li>✅ Webhook handler sicuro (signature verification)</li>
+<li>✅ Gestione stati proforma (PENDING/PAID/EXPIRED)</li>
+<li>✅ Supporto pagamenti alternativi (bonifico)</li>
+<li>✅ Dashboard transazioni</li>
+</ul>
+<p><strong>Sistema Template Email</strong></p>
+<ul>
+<li>✅ 12 template email transazionali</li>
+<li>✅ Template loader dinamico</li>
+<li>✅ Placeholder rendering engine</li>
+<li>✅ Tracking apertura/click email</li>
+<li>✅ Log completo email inviate</li>
+</ul>
+<p><strong>Dashboard Operativa Completa</strong></p>
+<ul>
+<li>✅ Dashboard Lead (KPI, filtri, tabella)</li>
+<li>✅ Dashboard Dati (funnel, grafici, mappe)</li>
+<li>✅ Workflow Manager (Kanban, Timeline, Priorità)</li>
+<li>✅ Dettaglio lead (5 tab, azioni rapide)</li>
+<li>✅ Export CSV e report</li>
+</ul>
+<p><strong>Fix Produzione Critici</strong></p>
+<ul>
+<li>✅ Fix 404 configurazione/pagamento (routing CloudFlare)</li>
+<li>✅ Fix redirect home post-firma (window.close rimosso)</li>
+<li>✅ Fix UPSERT contratti (no duplicati)</li>
+<li>✅ Fix UNIQUE constraint codice_contratto</li>
+<li>✅ Provincia vuota invece N/A</li>
+</ul>
+<h3 id="162-q2-2026-aprile---giugno">16.2 Q2 2026 (Aprile - Giugno)</h3>
+<h4 id="integrazioni-crm-enterprise">Integrazioni CRM Enterprise</h4>
+<p><strong>Integrazione HubSpot CRM</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Sync bidirezionale lead TeleMedCare ↔ HubSpot</li>
+<li><input disabled="" type="checkbox"> Mappatura stati workflow → pipeline HubSpot</li>
+<li><input disabled="" type="checkbox"> Sync contatti, deal, note</li>
+<li><input disabled="" type="checkbox"> Webhook HubSpot per aggiornamenti real-time</li>
+<li><input disabled="" type="checkbox"> Dashboard unificato HubSpot + TeleMedCare</li>
+<li><strong>Beneficio:</strong> Unificazione dati commerciali, reporting avanzato</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 4 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<p><strong>API Gateway Pubblico</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Documentazione API OpenAPI 3.0</li>
+<li><input disabled="" type="checkbox"> Rate limiting per cliente (1000 req/ora)</li>
+<li><input disabled="" type="checkbox"> API key management per partner</li>
+<li><input disabled="" type="checkbox"> Sandbox ambiente test</li>
+<li><input disabled="" type="checkbox"> SDK JavaScript/Python</li>
+<li><strong>Beneficio:</strong> Integrazioni terze facilitate</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<h4 id="self-service-cliente">Self-Service Cliente</h4>
+<p><strong>Portal Clienti Web</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Area riservata cliente (login magic link)</li>
+<li><input disabled="" type="checkbox"> Visualizzazione stato pratica in tempo reale</li>
+<li><input disabled="" type="checkbox"> Download documenti (contratto, proforma, fatture)</li>
+<li><input disabled="" type="checkbox"> Modifica dati anagrafici (con approvazione operatore)</li>
+<li><input disabled="" type="checkbox"> Storico comunicazioni</li>
+<li><input disabled="" type="checkbox"> FAQ e knowledge base</li>
+<li><strong>Beneficio:</strong> Riduzione chiamate supporto -40%</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 8 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<p><strong>App Mobile Operatori (iOS/Android)</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> React Native cross-platform</li>
+<li><input disabled="" type="checkbox"> Dashboard lead mobile-optimized</li>
+<li><input disabled="" type="checkbox"> Notifiche push real-time (Firebase)</li>
+<li><input disabled="" type="checkbox"> Azioni rapide (chiamata, email, cambio stato)</li>
+<li><input disabled="" type="checkbox"> Scansione QR code dispositivi</li>
+<li><input disabled="" type="checkbox"> Modalità offline (sync automatico)</li>
+<li><strong>Beneficio:</strong> Operatori sempre connessi, +30% produttività</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 10 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<h4 id="analytics--intelligence">Analytics &amp; Intelligence</h4>
+<p><strong>Miglioramento Lead Scoring (ML)</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Modello predittivo conversione (TensorFlow.js)</li>
+<li><input disabled="" type="checkbox"> Training su storico lead (222+ record)</li>
+<li><input disabled="" type="checkbox"> Features: tempo risposta, aperture email, click, dati demo</li>
+<li><input disabled="" type="checkbox"> Score dinamico aggiornato real-time</li>
+<li><input disabled="" type="checkbox"> Suggerimenti azioni per operatore</li>
+<li><strong>Beneficio:</strong> +15% conversion rate previsto</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<p><strong>Dashboard Analytics Avanzato</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Integrazione Power BI o Metabase</li>
+<li><input disabled="" type="checkbox"> Report personalizzabili drag-drop</li>
+<li><input disabled="" type="checkbox"> Drill-down multi-livello</li>
+<li><input disabled="" type="checkbox"> Export automatico report (PDF, Excel)</li>
+<li><input disabled="" type="checkbox"> Condivisione report stakeholder</li>
+<li><strong>Beneficio:</strong> Decision-making data-driven</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 4 settimane | <strong>Priorità:</strong> Bassa</li>
+</ul>
+<h3 id="163-q3-2026-luglio---settembre">16.3 Q3 2026 (Luglio - Settembre)</h3>
+<h4 id="ai--automation">AI &amp; Automation</h4>
+<p><strong>Chatbot AI Assistenza Lead</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Integrazione Gemini Pro o GPT-4</li>
+<li><input disabled="" type="checkbox"> Chat widget landing page</li>
+<li><input disabled="" type="checkbox"> Qualificazione automatica lead 24/7</li>
+<li><input disabled="" type="checkbox"> Risposte FAQ automatiche</li>
+<li><input disabled="" type="checkbox"> Escalation a operatore se necessario</li>
+<li><input disabled="" type="checkbox"> Training su knowledge base eCura</li>
+<li><strong>Beneficio:</strong> Lead capture +25%, disponibilità H24</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 8 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<p><strong>Voice AI per Chiamate Outbound</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Integrazione Twilio + speech-to-text</li>
+<li><input disabled="" type="checkbox"> Chiamate automatiche reminder firma/pagamento</li>
+<li><input disabled="" type="checkbox"> Riconoscimento intento (conferma, posticipa, rinuncia)</li>
+<li><input disabled="" type="checkbox"> Trascrizione chiamate automatica</li>
+<li><input disabled="" type="checkbox"> Sentiment analysis conversazioni</li>
+<li><strong>Beneficio:</strong> Automazione follow-up, liberazione operatori</li>
+<li><strong>Complessità:</strong> Molto Alta | <strong>Tempo:</strong> 10 settimane | <strong>Priorità:</strong> Bassa</li>
+</ul>
+<h4 id="support--ticketing">Support &amp; Ticketing</h4>
+<p><strong>Sistema Ticketing Integrato</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Creazione ticket da email, chat, telefono</li>
+<li><input disabled="" type="checkbox"> Assegnazione automatica per competenza</li>
+<li><input disabled="" type="checkbox"> SLA tracking (tempo risposta, risoluzione)</li>
+<li><input disabled="" type="checkbox"> Knowledge base interna operatori</li>
+<li><input disabled="" type="checkbox"> Integrazione con CRM (ticket collegato a lead/cliente)</li>
+<li><input disabled="" type="checkbox"> Dashboard supporto (ticket aperti, tempo medio)</li>
+<li><strong>Beneficio:</strong> Gestione supporto post-vendita professionale</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<p><strong>Live Chat Operatori</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Widget live chat sito web</li>
+<li><input disabled="" type="checkbox"> Multi-operatore con routing intelligente</li>
+<li><input disabled="" type="checkbox"> Trasferimento chat tra operatori</li>
+<li><input disabled="" type="checkbox"> Chat history salvata in CRM</li>
+<li><input disabled="" type="checkbox"> Messaggi pre-definiti per risposte rapide</li>
+<li><strong>Beneficio:</strong> Conversione lead real-time +18%</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 4 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<h4 id="compliance--finance">Compliance &amp; Finance</h4>
+<p><strong>Fatturazione Elettronica</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Generazione XML formato SDI (Sistema di Interscambio)</li>
+<li><input disabled="" type="checkbox"> Invio automatico SDI tramite intermediario</li>
+<li><input disabled="" type="checkbox"> Ricezione notifiche consegna/scarto</li>
+<li><input disabled="" type="checkbox"> Archivio fatture digitale (conservazione 10 anni)</li>
+<li><input disabled="" type="checkbox"> Integrazione con software contabilità (Danea, TeamSystem)</li>
+<li><strong>Beneficio:</strong> Obbligo legale, automazione contabilità</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<p><strong>CRM Telefonia (VoIP Integration)</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Integrazione Twilio o 3CX</li>
+<li><input disabled="" type="checkbox"> Click-to-call da dashboard</li>
+<li><input disabled="" type="checkbox"> Call recording automatico</li>
+<li><input disabled="" type="checkbox"> IVR (Interactive Voice Response) per incoming</li>
+<li><input disabled="" type="checkbox"> Call analytics (durata, esito, trascrizione)</li>
+<li><strong>Beneficio:</strong> Tracciamento completo interazioni telefoniche</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<h3 id="164-q4-2026-ottobre---dicembre">16.4 Q4 2026 (Ottobre - Dicembre)</h3>
+<h4 id="advanced-features">Advanced Features</h4>
+<p><strong>Analisi Predittiva Churn</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Modello ML predizione abbandono cliente</li>
+<li><input disabled="" type="checkbox"> Early warning system clienti a rischio</li>
+<li><input disabled="" type="checkbox"> Suggerimenti azioni retention automatiche</li>
+<li><input disabled="" type="checkbox"> Dashboard churn rate e LTV (Lifetime Value)</li>
+<li><input disabled="" type="checkbox"> Campagne re-engagement automatiche</li>
+<li><strong>Beneficio:</strong> Riduzione churn -30%</li>
+<li><strong>Complessità:</strong> Molto Alta | <strong>Tempo:</strong> 8 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<p><strong>Automazione Marketing</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Email drip campaigns multi-step</li>
+<li><input disabled="" type="checkbox"> Segmentazione avanzata lead (RFM, comportamentale)</li>
+<li><input disabled="" type="checkbox"> A/B testing email automatico</li>
+<li><input disabled="" type="checkbox"> Landing page builder integrato</li>
+<li><input disabled="" type="checkbox"> Lead magnet automation (ebook, webinar)</li>
+<li><strong>Beneficio:</strong> Nurturing lead automatizzato, +20% engagement</li>
+<li><strong>Complessità:</strong> Alta | <strong>Tempo:</strong> 8 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<p><strong>Sistema Loyalty &amp; Referral</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Programma punti fedeltà clienti</li>
+<li><input disabled="" type="checkbox"> Sconti rinnovi per clienti storici</li>
+<li><input disabled="" type="checkbox"> Referral program (porta un amico)</li>
+<li><input disabled="" type="checkbox"> Dashboard gamification operatori</li>
+<li><input disabled="" type="checkbox"> Marketplace benefit (sconti partner)</li>
+<li><strong>Beneficio:</strong> Fidelizzazione clienti, acquisizione organica</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 6 settimane | <strong>Priorità:</strong> Bassa</li>
+</ul>
+<h4 id="integrations--scalability">Integrations &amp; Scalability</h4>
+<p><strong>Integrazione Centrale Operativa</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> API proprietaria centrale operativa</li>
+<li><input disabled="" type="checkbox"> Sync real-time dispositivi attivi</li>
+<li><input disabled="" type="checkbox"> Notifiche emergenze push operatori</li>
+<li><input disabled="" type="checkbox"> Storico chiamate emergenza in CRM</li>
+<li><input disabled="" type="checkbox"> Dashboard operativa unificata</li>
+<li><strong>Beneficio:</strong> Visione completa servizio cliente</li>
+<li><strong>Complessità:</strong> Molto Alta | <strong>Tempo:</strong> 10 settimane | <strong>Priorità:</strong> Alta</li>
+</ul>
+<p><strong>Multi-Tenant White-Label</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Architettura multi-tenant (DB separation)</li>
+<li><input disabled="" type="checkbox"> Personalizzazione brand per partner</li>
+<li><input disabled="" type="checkbox"> Gestione permessi multi-livello</li>
+<li><input disabled="" type="checkbox"> Fatturazione SaaS automatica</li>
+<li><input disabled="" type="checkbox"> Admin panel super-admin</li>
+<li><strong>Beneficio:</strong> Business model SaaS, scaling revenue</li>
+<li><strong>Complessità:</strong> Molto Alta | <strong>Tempo:</strong> 12 settimane | <strong>Priorità:</strong> Bassa</li>
+</ul>
+<p><strong>Compliance Automation</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Monitoring automatico scadenze GDPR</li>
+<li><input disabled="" type="checkbox"> Alert consensi da rinnovare</li>
+<li><input disabled="" type="checkbox"> Audit log advanced search</li>
+<li><input disabled="" type="checkbox"> Report compliance automatici (mensili)</li>
+<li><input disabled="" type="checkbox"> Dashboard conformità normativa</li>
+<li><strong>Beneficio:</strong> Riduzione rischio sanzioni, audit facilitato</li>
+<li><strong>Complessità:</strong> Media | <strong>Tempo:</strong> 4 settimane | <strong>Priorità:</strong> Media</li>
+</ul>
+<h3 id="165-q1-2027-e-oltre">16.5 Q1 2027 e Oltre</h3>
+<h4 id="strategic-initiatives">Strategic Initiatives</h4>
+<p><strong>Intelligenza Artificiale Generativa</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Generazione automatica contenuti marketing (Gemini/GPT)</li>
+<li><input disabled="" type="checkbox"> Email personalizzate AI-generated per ogni lead</li>
+<li><input disabled="" type="checkbox"> Chatbot conversazionale avanzato</li>
+<li><input disabled="" type="checkbox"> Analisi sentiment social media</li>
+<li><input disabled="" type="checkbox"> Previsione trend mercato</li>
+</ul>
+<p><strong>Blockchain per Contratti</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Smart contract su blockchain per contratti digitali</li>
+<li><input disabled="" type="checkbox"> Immutabilità firma digitale certificata</li>
+<li><input disabled="" type="checkbox"> Timestamp blockchain per validità legale</li>
+<li><input disabled="" type="checkbox"> NFT per certificati servizio</li>
+</ul>
+<p><strong>IoT Integration</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Telemetria dispositivi real-time</li>
+<li><input disabled="" type="checkbox"> Manutenzione predittiva (AI su dati sensori)</li>
+<li><input disabled="" type="checkbox"> Geolocalizzazione dispositivi</li>
+<li><input disabled="" type="checkbox"> Alert anomalie uso dispositivo</li>
+</ul>
+<p><strong>Expansion Internazionale</strong></p>
+<ul>
+<li><input disabled="" type="checkbox"> Multi-language support (EN, FR, DE, ES)</li>
+<li><input disabled="" type="checkbox"> Multi-currency pagamenti</li>
+<li><input disabled="" type="checkbox"> Compliance GDPR paesi EU</li>
+<li><input disabled="" type="checkbox"> Localizzazione fuso orario</li>
+</ul>
+<h3 id="166-prioritizzazione-roadmap">16.6 Prioritizzazione Roadmap</h3>
+<h4 id="matrice-impatto-vs-sforzo">Matrice Impatto vs. Sforzo</h4>
+<p><strong>Quick Wins (Alto Impatto, Basso Sforzo):</strong></p>
+<ol>
+<li>Sistema Notifiche Push (Q2)</li>
+<li>Dashboard Analytics Avanzato (Q2)</li>
+<li>Live Chat Operatori (Q3)</li>
+<li>Compliance Automation (Q4)</li>
+</ol>
+<p><strong>Progetti Strategici (Alto Impatto, Alto Sforzo):</strong></p>
+<ol>
+<li>Portal Clienti Self-Service (Q2)</li>
+<li>Chatbot AI (Q3)</li>
+<li>Fatturazione Elettronica (Q3)</li>
+<li>Integrazione Centrale Operativa (Q4)</li>
+</ol>
+<p><strong>Fill-Ins (Basso Impatto, Basso Sforzo):</strong></p>
+<ol>
+<li>Export report automatico (Q2)</li>
+<li>Messaggi pre-definiti live chat (Q3)</li>
+<li>Dashboard gamification (Q4)</li>
+</ol>
+<p><strong>Progetti Long-Term (Basso Impatto, Alto Sforzo):</strong></p>
+<ol>
+<li>Multi-Tenant White-Label (Q4)</li>
+<li>Blockchain contratti (2027)</li>
+<li>Expansion internazionale (2027)</li>
+</ol>
+<h3 id="167-risorse-necessarie">16.7 Risorse Necessarie</h3>
+<h4 id="team-tecnico">Team Tecnico</h4>
+<p><strong>Q2 2026:</strong></p>
+<ul>
+<li>2 Backend Developer (TypeScript, Hono, D1)</li>
+<li>1 Frontend Developer (React Native)</li>
+<li>1 DevOps Engineer (CloudFlare, CI/CD)</li>
+<li>1 QA Engineer (testing automatico)</li>
+</ul>
+<p><strong>Q3 2026:</strong></p>
+<ul>
+<li>+1 AI/ML Engineer (TensorFlow, NLP)</li>
+<li>+1 Mobile Developer (iOS/Android)</li>
+<li>+1 UX/UI Designer (portal clienti, app mobile)</li>
+</ul>
+<p><strong>Q4 2026:</strong></p>
+<ul>
+<li>+1 Data Engineer (BI, analytics)</li>
+<li>+1 Security Engineer (audit, compliance)</li>
+</ul>
+<h4 id="budget-tecnologia-annuale">Budget Tecnologia (Annuale)</h4>
+<table>
+<thead>
+<tr>
+<th>Servizio</th>
+<th>Costo Mensile</th>
+<th>Costo Annuale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cloudflare Pages/Workers</td>
+<td>€50</td>
+<td>€600</td>
+</tr>
+<tr>
+<td>Cloudflare D1 Database</td>
+<td>€25</td>
+<td>€300</td>
+</tr>
+<tr>
+<td>Cloudflare R2 Storage</td>
+<td>€10</td>
+<td>€120</td>
+</tr>
+<tr>
+<td>Resend Email API</td>
+<td>€30</td>
+<td>€360</td>
+</tr>
+<tr>
+<td>Stripe (commissioni 1,4%+€0,25)</td>
+<td>Variabile</td>
+<td>~€800</td>
+</tr>
+<tr>
+<td>HubSpot CRM (Starter)</td>
+<td>€45</td>
+<td>€540</td>
+</tr>
+<tr>
+<td>Twilio (SMS/Voice)</td>
+<td>€100</td>
+<td>€1.200</td>
+</tr>
+<tr>
+<td>Firebase (Push Notifications)</td>
+<td>€20</td>
+<td>€240</td>
+</tr>
+<tr>
+<td>GitHub (Team)</td>
+<td>€4</td>
+<td>€48</td>
+</tr>
+<tr>
+<td>Monitoring (Sentry, Datadog)</td>
+<td>€50</td>
+<td>€600</td>
+</tr>
+<tr>
+<td><strong>TOTALE</strong></td>
+<td><strong>€334</strong></td>
+<td><strong>€4.808</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="conclusioni">CONCLUSIONI</h2>
+<p><strong>TeleMedCare V12.0</strong> è un sistema CRM completo e automatizzato per la gestione end-to-end del processo commerciale e operativo nel settore della teleassistenza domiciliare.</p>
+<h3 id="punti-di-forza">Punti di Forza</h3>
+<p>✅ <strong>Automazione Completa:</strong> Dal lead all&#39;attivazione con minimo intervento manuale</p>
+<p>✅ <strong>Tracciabilità Totale:</strong> Ogni step loggato e monitorabile</p>
+<p>✅ <strong>Scalabilità:</strong> Architettura modulare pronta per crescita</p>
+<p>✅ <strong>Compliance:</strong> GDPR-ready, audit trail completo</p>
+<p>✅ <strong>User Experience:</strong> Dashboard intuitive, workflow guidati</p>
+<p>✅ <strong>Integrazione:</strong> Email, pagamenti, storage unificati</p>
+<p>✅ <strong>Sicurezza:</strong> Crittografia, autenticazione, backup automatici</p>
+<h3 id="roadmap-evolutivo">Roadmap Evolutivo</h3>
+<p>Con la roadmap tecnico 2026-2027, il sistema evolverà da piattaforma CRM a <strong>ecosistema completo</strong> che integra AI, automazione avanzata, self-service clienti, e analytics predittivo, consolidando la leadership nel mercato della teleassistenza domiciliare digitale</p>
+<hr>
+<p><strong>Fine Documentazione Funzionale Sistema TeleMedCare V12.0</strong></p>
+<p><em>Documento redatto: 24 Febbraio 2026</em>
+<em>Versione Sistema: V12.0 (Commit aee3a78)</em>
+<em>Ultimo aggiornamento: Fix 404 configurazione/pagamento</em></p>
+
+    </div>
+    
+    <!-- Footer -->
+    <div class="no-print" style="text-align: center; padding: 40px 20px; background: #f9fafb; margin-top: 60px; border-top: 3px solid #2563EB;">
+        <p style="color: #6b7280; font-size: 10pt;">
+            © 2026 Medica GB S.r.l. - TeleMedCare V12.0<br>
+            Sistema CRM & Workflow Management per Teleassistenza Domiciliare
+        </p>
+    </div>
+</body>
+</html>

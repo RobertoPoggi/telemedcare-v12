@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Summary - TeleMedCare V12.0</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            h1 {
+                page-break-before: always;
+            }
+            
+            h1:first-of-type {
+                page-break-before: auto;
+            }
+            
+            table, pre, blockquote {
+                page-break-inside: avoid;
+            }
+            
+            .cover-page {
+                page-break-after: always;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        
+        /* Cover Page */
+        .cover-page {
+            text-align: center;
+            padding: 100px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .cover-logo {
+            font-size: 48pt;
+            margin-bottom: 20px;
+        }
+        
+        .cover-title {
+            font-size: 36pt;
+            color: #2563EB;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .cover-subtitle {
+            font-size: 18pt;
+            color: #6b7280;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+        
+        .cover-divider {
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #2563EB, transparent);
+            margin: 40px auto;
+        }
+        
+        .cover-info {
+            font-size: 12pt;
+            color: #374151;
+            margin-top: 60px;
+        }
+        
+        .cover-info p {
+            margin: 10px 0;
+        }
+        
+        .cover-footer {
+            margin-top: 80px;
+            font-size: 10pt;
+            color: #9ca3af;
+        }
+        
+        /* Typography */
+        h1 {
+            color: #2563EB;
+            font-size: 24pt;
+            border-bottom: 3px solid #2563EB;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 18pt;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 5px solid #3b82f6;
+            padding-left: 15px;
+        }
+        
+        h3 {
+            color: #1e40af;
+            font-size: 14pt;
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+        
+        h4 {
+            color: #374151;
+            font-size: 12pt;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+        
+        /* Code */
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 10pt;
+            color: #ef4444;
+        }
+        
+        pre {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 9pt;
+            line-height: 1.4;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            color: #e5e7eb;
+            padding: 0;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+        }
+        
+        table thead {
+            background-color: #2563EB;
+            color: white;
+        }
+        
+        table th {
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        /* Links */
+        a {
+            color: #2563EB;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid #10b981;
+            background-color: #ecfdf5;
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        /* Horizontal Rule */
+        hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 30px 0;
+        }
+        
+        /* Print Button */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2563EB;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #1e40af;
+        }
+        
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+    
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <div class="cover-logo">🏥</div>
+        <div class="cover-title">TeleMedCare V12.0</div>
+        <div class="cover-subtitle">
+            Sistema CRM & Workflow Management<br>
+            Executive Summary (2 pagine)
+        </div>
+        <div class="cover-divider"></div>
+        <div class="cover-info">
+            <p><strong>Medica GB S.r.l.</strong></p>
+            <p>Innovazione nella Gestione Cliente<br>per la Teleassistenza Domiciliare</p>
+            <p style="margin-top: 40px;">Documento preparato per presentazione<br><strong>Smart&Start Italia - Invitalia</strong></p>
+        </div>
+        <div class="cover-footer">
+            <p>Data: 24 Febbraio 2026</p>
+            <p>Versione Sistema: V12.0 (Commit 5c24200)</p>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="content">
+        <h1 id="executive-summary">EXECUTIVE SUMMARY</h1>
+<h2 id="sistema-telemedcare-v120---crm-e-workflow-management">Sistema TeleMedCare V12.0 - CRM e Workflow Management</h2>
+<hr>
+<h3 id="🎯-sintesi-esecutiva">🎯 SINTESI ESECUTIVA</h3>
+<p><strong>TeleMedCare V12.0</strong> è una piattaforma enterprise per la gestione completa del ciclo di vita del cliente nel settore della teleassistenza domiciliare. Il sistema automatizza l&#39;intero processo dall&#39;acquisizione del lead fino all&#39;attivazione del servizio, garantendo tracciabilità totale, conformità GDPR e scalabilità.</p>
+<hr>
+<h2 id="📊-numeri-del-sistema">📊 NUMERI DEL SISTEMA</h2>
+<table>
+<thead>
+<tr>
+<th>Metrica</th>
+<th>Valore</th>
+<th>Descrizione</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Linee di Codice</strong></td>
+<td>24.107</td>
+<td>Core TypeScript (escluse librerie)</td>
+</tr>
+<tr>
+<td><strong>Moduli Funzionali</strong></td>
+<td>50+</td>
+<td>Architettura modulare enterprise</td>
+</tr>
+<tr>
+<td><strong>Stati Workflow</strong></td>
+<td>15</td>
+<td>Dalla lead generation all&#39;attivazione</td>
+</tr>
+<tr>
+<td><strong>Template Email</strong></td>
+<td>12+</td>
+<td>Comunicazioni automatiche transazionali</td>
+</tr>
+<tr>
+<td><strong>Endpoint API</strong></td>
+<td>30+</td>
+<td>REST API per integrazione completa</td>
+</tr>
+<tr>
+<td><strong>Tabelle Database</strong></td>
+<td>9</td>
+<td>Schema relazionale normalizzato</td>
+</tr>
+<tr>
+<td><strong>Tempo Conversione</strong></td>
+<td>7-14 gg</td>
+<td>Da lead a servizio attivo (medio)</td>
+</tr>
+<tr>
+<td><strong>Automazione</strong></td>
+<td>85%</td>
+<td>Operazioni automatizzate vs. manuali</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="🏗️-architettura-sistema">🏗️ ARCHITETTURA SISTEMA</h2>
+<h3 id="componenti-core">Componenti Core</h3>
+<pre><code>┌───────────────────────────────────────────────────────┐
+│              INTERFACCIA UTENTE                       │
+│  Landing Page │ Dashboard Operativa │ Form Cliente   │
+└───────────────────────────────────────────────────────┘
+                         ↕
+┌───────────────────────────────────────────────────────┐
+│              BUSINESS LOGIC LAYER                     │
+│  CRM Core │ Workflow Engine │ Document Manager       │
+│  Contract Manager │ Payment Manager │ Device Manager │
+└───────────────────────────────────────────────────────┘
+                         ↕
+┌───────────────────────────────────────────────────────┐
+│              DATA &amp; INTEGRATION LAYER                 │
+│  D1 Database │ Email Service │ Payment Gateway (Stripe)│
+│  Storage R2 │ Template Manager │ Audit System        │
+└───────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="stack-tecnologico">Stack Tecnologico</h3>
+<ul>
+<li><strong>Backend:</strong> Hono Framework (TypeScript) su Cloudflare Workers</li>
+<li><strong>Database:</strong> Cloudflare D1 (SQLite distribuito) - latenza &lt;10ms</li>
+<li><strong>Frontend:</strong> HTML5 + Tailwind CSS responsive</li>
+<li><strong>Hosting:</strong> Cloudflare Pages (edge computing, CDN globale)</li>
+<li><strong>Email:</strong> Resend API (transazionale)</li>
+<li><strong>Pagamenti:</strong> Stripe (PCI-compliant)</li>
+<li><strong>Storage:</strong> Cloudflare R2 (documenti, PDF)</li>
+</ul>
+<hr>
+<h2 id="🔄-workflow-automatizzato">🔄 WORKFLOW AUTOMATIZZATO</h2>
+<h3 id="flusso-end-to-end-9-fasi">Flusso End-to-End (9 Fasi)</h3>
+<pre><code>1. ACQUISIZIONE LEAD
+   ↓ (automatico)
+2. VALIDAZIONE DATI
+   ↓ (manuale)
+3. INVIO DOCUMENTAZIONE
+   ↓ (automatico)
+4. FIRMA CONTRATTO DIGITALE
+   ↓ (cliente + automatico)
+5. GENERAZIONE PROFORMA
+   ↓ (automatico)
+6. PAGAMENTO ONLINE/OFFLINE
+   ↓ (cliente/operatore + automatico)
+7. FORM CONFIGURAZIONE
+   ↓ (cliente + automatico)
+8. ASSOCIAZIONE DISPOSITIVO
+   ↓ (operatore)
+9. ATTIVAZIONE SERVIZIO
+   ✓ (operatore + automatico)
+</code></pre>
+<h3 id="automazioni-chiave">Automazioni Chiave</h3>
+<p>✅ <strong>Email Transazionali:</strong> 12 tipologie inviate automaticamente nei punti critici
+✅ <strong>Cambio Stati:</strong> Transizioni automatiche su azioni cliente (firma, pagamento)
+✅ <strong>Generazione Documenti:</strong> Contratti e proforma generati da template
+✅ <strong>Reminder Automatici:</strong> Solleciti firma (3,7,10gg), pagamento (15gg), configurazione (7gg)
+✅ <strong>Tracking Completo:</strong> Log ogni azione, apertura email, click, timestamp
+✅ <strong>Alert Operatori:</strong> Notifiche su scadenze, ritardi, anomalie</p>
+<hr>
+<h2 id="📋-moduli-funzionali-principali">📋 MODULI FUNZIONALI PRINCIPALI</h2>
+<h3 id="1-crm-core---gestione-lead">1. CRM Core - Gestione Lead</h3>
+<p><strong>Funzionalità:</strong></p>
+<ul>
+<li>Acquisizione multi-canale (landing page, API, manuale)</li>
+<li>Anagrafica completa (intestatario + assistito)</li>
+<li>Lead scoring automatico (0-100 punti)</li>
+<li>Rilevamento duplicati intelligente</li>
+<li>Operazioni CRUD complete</li>
+<li>Ricerca avanzata e filtri</li>
+<li>Esportazione dati (CSV, JSON)</li>
+</ul>
+<p><strong>Metriche Tracciabili:</strong></p>
+<ul>
+<li>Fonte acquisizione</li>
+<li>Tempo in ogni stato</li>
+<li>Score qualificazione</li>
+<li>Interazioni (email, chiamate)</li>
+<li>Documenti generati</li>
+</ul>
+<h3 id="2-contract-manager---gestione-contratti">2. Contract Manager - Gestione Contratti</h3>
+<p><strong>Funzionalità:</strong></p>
+<ul>
+<li>Generazione contratti da template personalizzabili</li>
+<li>Firma digitale su canvas touch</li>
+<li>Validazione consensi GDPR</li>
+<li>Salvataggio firma in base64</li>
+<li>Stati contratto (PENDING, SIGNED, EXPIRED, CANCELLED)</li>
+<li>Versionamento template</li>
+<li>UPSERT logic (no duplicati)</li>
+</ul>
+<p><strong>Sicurezza:</strong></p>
+<ul>
+<li>Link temporanei univoci (scadenza 30gg)</li>
+<li>Timestamp firma immutabile</li>
+<li>Audit trail completo</li>
+<li>Conformità eIDAS (firma elettronica avanzata)</li>
+</ul>
+<h3 id="3-payment-manager---gestione-pagamenti">3. Payment Manager - Gestione Pagamenti</h3>
+<p><strong>Funzionalità:</strong></p>
+<ul>
+<li>Generazione proforma automatica post-firma</li>
+<li>Integrazione Stripe Checkout (carte)</li>
+<li>Pagamento bonifico (conferma manuale)</li>
+<li>Calcolo automatico IVA 22%</li>
+<li>Gestione scadenze (30gg standard)</li>
+<li>Reminder automatici</li>
+<li>Webhook Stripe per aggiornamenti real-time</li>
+</ul>
+<p><strong>Sicurezza:</strong></p>
+<ul>
+<li>PCI-DSS compliant (via Stripe)</li>
+<li>Webhook signature verification</li>
+<li>Nessun dato carta salvato localmente</li>
+<li>Log transazioni cifrato</li>
+</ul>
+<h3 id="4-configuration-manager---configurazione-cliente">4. Configuration Manager - Configurazione Cliente</h3>
+<p><strong>Funzionalità:</strong></p>
+<ul>
+<li>Form strutturato (dati anagrafici, medici, emergenza)</li>
+<li>Validazione campi real-time</li>
+<li>Invio via EmailJS a operatore</li>
+<li>Gestione fino a 3 contatti emergenza</li>
+<li>Consensi sanitari (Art.9 GDPR)</li>
+<li>Preferenze servizio</li>
+</ul>
+<p><strong>Dati Raccolti:</strong></p>
+<ul>
+<li>Medico curante (nome, telefono)</li>
+<li>Patologie, allergie, terapie</li>
+<li>Limitazioni motorie/cognitive</li>
+<li>Contatti emergenza (nome, relazione, telefono, orari)</li>
+<li>Preferenze lingua e orari</li>
+</ul>
+<h3 id="5-device-manager---gestione-dispositivi">5. Device Manager - Gestione Dispositivi</h3>
+<p><strong>Funzionalità:</strong></p>
+<ul>
+<li>Inventario dispositivi (SiDLY Care PRO, SiDLY Vital Care)</li>
+<li>Stati dispositivo (IN_STOCK, ASSIGNED, ACTIVE, MAINTENANCE, RETIRED)</li>
+<li>Associazione dispositivo-cliente</li>
+<li>Tracking SIM (numero, ICCID)</li>
+<li>Storico assegnazioni</li>
+<li>Alert manutenzione</li>
+</ul>
+<p><strong>Workflow Associazione:</strong></p>
+<ol>
+<li>Selezione dispositivo da stock</li>
+<li>Inserimento dati SIM</li>
+<li>Associazione a cliente</li>
+<li>Configurazione centrale operativa</li>
+<li>Test funzionale</li>
+<li>Attivazione definitiva</li>
+</ol>
+<h3 id="6-dashboard-operativa">6. Dashboard Operativa</h3>
+<p><strong>Dashboard Lead:</strong></p>
+<ul>
+<li>KPI real-time (totale lead, in lavorazione, convertiti, fatturato)</li>
+<li>Filtri avanzati (stato, operatore, data, ricerca)</li>
+<li>Tabella lead con azioni rapide</li>
+<li>Dettaglio lead (5 tab: anagrafica, commerciale, workflow, azioni, comunicazioni)</li>
+<li>Azioni bulk (assegnazione, cambio stato, export CSV)</li>
+</ul>
+<p><strong>Dashboard Dati:</strong></p>
+<ul>
+<li>Funnel conversione con %</li>
+<li>Grafici temporali (lead/giorno, conversioni/settimana)</li>
+<li>Heatmap attività</li>
+<li>Mappa geografica lead per provincia</li>
+<li>Analisi canali acquisizione</li>
+<li>Performance operatori</li>
+</ul>
+<p><strong>Workflow Manager:</strong></p>
+<ul>
+<li>Vista Kanban drag &amp; drop</li>
+<li>Timeline eventi</li>
+<li>Priorità urgente/alta/media/bassa</li>
+<li>Azioni rapide per ogni step</li>
+</ul>
+<h3 id="7-email-service">7. Email Service</h3>
+<p><strong>12 Email Automatiche:</strong></p>
+<ol>
+<li>Notifica nuovo lead (interno)</li>
+<li>Richiesta completamento dati</li>
+<li>Invio brochure</li>
+<li>Invio manuale</li>
+<li>Invio contratto</li>
+<li>Reminder firma (3x)</li>
+<li>Invio proforma</li>
+<li>Reminder pagamento</li>
+<li>Form configurazione</li>
+<li>Reminder configurazione</li>
+<li>Conferma attivazione</li>
+<li>Email test sistema</li>
+</ol>
+<p><strong>Tracking:</strong></p>
+<ul>
+<li>Consegna (delivered/bounced)</li>
+<li>Apertura (pixel tracking)</li>
+<li>Click link (redirect tracking)</li>
+<li>Timestamp ogni evento</li>
+</ul>
+<h3 id="8-database--persistence">8. Database &amp; Persistence</h3>
+<p><strong>Tabelle Principali:</strong></p>
+<ul>
+<li><code>leads</code> - Anagrafica completa lead</li>
+<li><code>contracts</code> - Contratti generati e firmati</li>
+<li><code>proforma</code> - Fatture proforma pagamenti</li>
+<li><code>devices</code> - Inventario dispositivi</li>
+<li><code>device_assignments</code> - Associazioni dispositivo-cliente</li>
+<li><code>email_logs</code> - Storico email inviate</li>
+<li><code>settings</code> - Configurazioni sistema</li>
+<li><code>audit_log</code> - Audit trail modifiche</li>
+</ul>
+<p><strong>Cloudflare D1:</strong></p>
+<ul>
+<li>SQLite distribuito edge network</li>
+<li>Latenza &lt;10ms (geo-distributed)</li>
+<li>Backup automatico quotidiano</li>
+<li>Replica multi-region</li>
+</ul>
+<h3 id="9-sicurezza--compliance">9. Sicurezza &amp; Compliance</h3>
+<p><strong>GDPR Compliance:</strong></p>
+<ul>
+<li>Consensi tracciati con timestamp</li>
+<li>Diritto accesso, rettifica, cancellazione, portabilità</li>
+<li>Data retention policy (2 anni lead non convertiti, 10 anni clienti)</li>
+<li>Audit log completo (chi, cosa, quando)</li>
+<li>Privacy by design</li>
+</ul>
+<p><strong>Sicurezza:</strong></p>
+<ul>
+<li>HTTPS obbligatorio (TLS 1.3)</li>
+<li>Autenticazione JWT (operatori)</li>
+<li>Link temporanei token univoco (clienti)</li>
+<li>Crittografia at-rest (D1, R2)</li>
+<li>Backup automatici (RPO 24h, RTO 4h)</li>
+<li>Rate limiting API</li>
+</ul>
+<hr>
+<h2 id="🎯-vantaggi-competitivi">🎯 VANTAGGI COMPETITIVI</h2>
+<h3 id="operativi">Operativi</h3>
+<p>✅ <strong>Riduzione Tempo Processo:</strong> Da 30+ giorni a 7-14 giorni medi
+✅ <strong>Automazione 85%:</strong> Solo 3 step manuali critici su 20 totali
+✅ <strong>Zero Errori Documentali:</strong> Template validati, generazione automatica
+✅ <strong>Tracciabilità Totale:</strong> Ogni azione loggata, audit completo</p>
+<h3 id="commerciali">Commerciali</h3>
+<p>✅ <strong>Aumento Conversioni:</strong> Funnel guidato, reminder automatici
+✅ <strong>Riduzione Abbandono:</strong> Solleciti tempestivi, friction ridotta
+✅ <strong>Customer Experience:</strong> Processo fluido, comunicazioni puntuali
+✅ <strong>Scalabilità:</strong> Gestione 100+ lead/giorno senza aggiunta operatori</p>
+<h3 id="compliance">Compliance</h3>
+<p>✅ <strong>GDPR-Ready:</strong> Consensi, diritti, retention, audit
+✅ <strong>PCI-DSS:</strong> Pagamenti sicuri via Stripe
+✅ <strong>eIDAS:</strong> Firma elettronica avanzata
+✅ <strong>Backup &amp; Disaster Recovery:</strong> Procedure automatiche</p>
+<hr>
+<h2 id="🚀-roadmap-tecnico-2026">🚀 ROADMAP TECNICO 2026</h2>
+<h3 id="q1-2026-gen-mar---✅-completato">Q1 2026 (Gen-Mar) - ✅ COMPLETATO</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Refactoring architettura modulare</li>
+<li><input checked="" disabled="" type="checkbox"> Implementazione workflow orchestrator</li>
+<li><input checked="" disabled="" type="checkbox"> Integrazione Stripe pagamenti</li>
+<li><input checked="" disabled="" type="checkbox"> Sistema template email</li>
+<li><input checked="" disabled="" type="checkbox"> Dashboard operativa completa</li>
+<li><input checked="" disabled="" type="checkbox"> Fix produzione (404, redirect, UPSERT)</li>
+</ul>
+<h3 id="q2-2026-apr-giu">Q2 2026 (Apr-Giu)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>Integrazione HubSpot CRM</strong> (sync bidirezionale lead)</li>
+<li><input disabled="" type="checkbox"> <strong>Portal Clienti Self-Service</strong> (area riservata, stato pratica)</li>
+<li><input disabled="" type="checkbox"> <strong>App Mobile Operatori</strong> (iOS/Android, gestione lead on-the-go)</li>
+<li><input disabled="" type="checkbox"> <strong>Sistema Notifiche Push</strong> (alert real-time operatori)</li>
+<li><input disabled="" type="checkbox"> <strong>Miglioramento Lead Scoring</strong> (machine learning predittivo)</li>
+<li><input disabled="" type="checkbox"> <strong>Dashboard Analytics Avanzato</strong> (Power BI / Metabase integration)</li>
+</ul>
+<h3 id="q3-2026-lug-set">Q3 2026 (Lug-Set)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>Chatbot AI Assistenza Lead</strong> (Gemini/GPT, qualificazione automatica)</li>
+<li><input disabled="" type="checkbox"> <strong>Sistema Ticketing Integrato</strong> (supporto post-vendita)</li>
+<li><input disabled="" type="checkbox"> <strong>Fatturazione Elettronica</strong> (integrazione SDI, generazione XML)</li>
+<li><input disabled="" type="checkbox"> <strong>CRM Telefonia</strong> (integrazione VoIP, call recording)</li>
+<li><input disabled="" type="checkbox"> <strong>Workflow Multi-Tenant</strong> (white-label per partner)</li>
+<li><input disabled="" type="checkbox"> <strong>API Pubbliche Documentate</strong> (per integrazioni terze)</li>
+</ul>
+<h3 id="q4-2026-ott-dic">Q4 2026 (Ott-Dic)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>Analisi Predittiva Conversioni</strong> (ML, churn prediction)</li>
+<li><input disabled="" type="checkbox"> <strong>Automazione Marketing</strong> (email drip campaigns, segmentazione)</li>
+<li><input disabled="" type="checkbox"> <strong>Sistema Loyalty/Referral</strong> (programma fedeltà clienti)</li>
+<li><input disabled="" type="checkbox"> <strong>Integrazione Centrale Operativa</strong> (API proprietaria, sync dispositivi)</li>
+<li><input disabled="" type="checkbox"> <strong>Reportistica Personalizzabile</strong> (editor drag-drop report)</li>
+<li><input disabled="" type="checkbox"> <strong>Compliance Automazione</strong> (monitoraggio GDPR, alert scadenze)</li>
+</ul>
+<hr>
+<h2 id="📈-metriche-successo-attuali">📈 METRICHE SUCCESSO ATTUALI</h2>
+<table>
+<thead>
+<tr>
+<th>KPI</th>
+<th>Valore Attuale</th>
+<th>Target 2026</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Lead Totali Gestiti</strong></td>
+<td>222</td>
+<td>1.000+</td>
+</tr>
+<tr>
+<td><strong>Conversion Rate</strong></td>
+<td>4,5%</td>
+<td>8-10%</td>
+</tr>
+<tr>
+<td><strong>Tempo Medio Conversione</strong></td>
+<td>21 giorni</td>
+<td>10 giorni</td>
+</tr>
+<tr>
+<td><strong>Automazione Processi</strong></td>
+<td>85%</td>
+<td>95%</td>
+</tr>
+<tr>
+<td><strong>Customer Satisfaction</strong></td>
+<td>N/A</td>
+<td>4,5/5</td>
+</tr>
+<tr>
+<td><strong>Uptime Sistema</strong></td>
+<td>99,5%</td>
+<td>99,9%</td>
+</tr>
+<tr>
+<td><strong>Tempo Risposta API</strong></td>
+<td>&lt;50ms</td>
+<td>&lt;30ms</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="💼-caso-duso-tipo">💼 CASO D&#39;USO TIPO</h2>
+<p><strong>Scenario:</strong> Lead &quot;Mario Rossi&quot; compila form landing page alle 10:00</p>
+<p><strong>10:01</strong> - Email notifica automatica a <a href="mailto:&#x69;&#x6e;&#102;&#111;&#x40;&#x6d;&#x65;&#x64;&#105;&#x63;&#x61;&#103;&#x62;&#x2e;&#105;&#116;">&#x69;&#x6e;&#102;&#111;&#x40;&#x6d;&#x65;&#x64;&#105;&#x63;&#x61;&#103;&#x62;&#x2e;&#105;&#116;</a>
+<strong>10:15</strong> - Operatore verifica dati, assegna score, invia contratto
+<strong>10:16</strong> - Email contratto inviata a Mario con link firma
+<strong>14:30</strong> - Mario clicca link, legge contratto, firma digitalmente
+<strong>14:31</strong> - Sistema genera proforma automatica, invia email pagamento
+<strong>14:45</strong> - Mario paga €585,60 con carta Stripe
+<strong>14:46</strong> - Webhook Stripe conferma pagamento, email configurazione inviata
+<strong>15:00</strong> - Mario compila form configurazione (dati medici, emergenza)
+<strong>15:30</strong> - Operatore verifica configurazione, associa dispositivo SiDLY Care PRO
+<strong>16:00</strong> - Dispositivo attivato, email conferma inviata, cliente ACTIVE</p>
+<p><strong>Totale tempo:</strong> 6 ore (vs. 30+ giorni processo manuale)
+<strong>Interventi operatore:</strong> 3 (vs. 15+ processo tradizionale)</p>
+<hr>
+<h2 id="📞-contatti">📞 CONTATTI</h2>
+<p><strong>Medica GB S.r.l.</strong>
+Via [Indirizzo], Roma
+P.IVA: [Partita IVA]</p>
+<p>📧 Email: <a href="mailto:&#x69;&#x6e;&#x66;&#x6f;&#64;&#x6d;&#x65;&#x64;&#105;&#99;&#x61;&#x67;&#x62;&#x2e;&#x69;&#116;">&#x69;&#x6e;&#x66;&#x6f;&#64;&#x6d;&#x65;&#x64;&#105;&#99;&#x61;&#x67;&#x62;&#x2e;&#x69;&#116;</a>
+🌐 Web: <a href="http://www.eCura.it">www.eCura.it</a>
+📱 Tel: [Numero]</p>
+<hr>
+<p><strong>TeleMedCare V12.0 - Innovazione nella Gestione Cliente per la Teleassistenza</strong></p>
+<p><em>Executive Summary - Documento preparato per presentazione Invitalia Smart&amp;Start</em>
+<em>Data: 24 Febbraio 2026</em></p>
+
+    </div>
+    
+    <!-- Footer -->
+    <div class="no-print" style="text-align: center; padding: 40px 20px; background: #f9fafb; margin-top: 60px; border-top: 3px solid #2563EB;">
+        <p style="color: #6b7280; font-size: 10pt;">
+            © 2026 Medica GB S.r.l. - TeleMedCare V12.0<br>
+            Sistema CRM & Workflow Management per Teleassistenza Domiciliare
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMedCare - Dashboard Lead</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <div class="bg-blue-600 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="text-2xl font-bold">🏥 TeleMedCare V12.0</div>
+                <div class="text-sm opacity-80">Sistema CRM & Workflow Management</div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm">👤 Operatore: Admin</span>
+                <button class="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold">Esci</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="container mx-auto p-6">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Card 1 -->
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Totale Lead</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-2">222</h3>
+                        <p class="text-green-600 text-sm mt-2">↑ +12% vs. mese scorso</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <span class="text-2xl">📊</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">In Lavorazione</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-2">45</h3>
+                        <p class="text-gray-600 text-sm mt-2">20% del totale</p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-lg">
+                        <span class="text-2xl">⏳</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Convertiti</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-2">10</h3>
+                        <p class="text-green-600 text-sm mt-2">4.5% conversion rate</p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <span class="text-2xl">✅</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Fatturato Mese</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-2">€6.140</h3>
+                        <p class="text-green-600 text-sm mt-2">↑ +25% vs. mese scorso</p>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stato</label>
+                    <select class="border border-gray-300 rounded-lg px-4 py-2 w-48">
+                        <option>Tutti gli stati</option>
+                        <option>NEW</option>
+                        <option>CONTRACT_SENT</option>
+                        <option>PAYMENT_RECEIVED</option>
+                        <option>ACTIVE</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Operatore</label>
+                    <select class="border border-gray-300 rounded-lg px-4 py-2 w-48">
+                        <option>Tutti gli operatori</option>
+                        <option>Roberto Poggi</option>
+                        <option>Maria Rossi</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Periodo</label>
+                    <select class="border border-gray-300 rounded-lg px-4 py-2 w-48">
+                        <option>Ultimo mese</option>
+                        <option>Ultimi 7 giorni</option>
+                        <option>Oggi</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ricerca</label>
+                    <input type="text" placeholder="Cerca per nome, email, telefono..." 
+                           class="border border-gray-300 rounded-lg px-4 py-2 w-full">
+                </div>
+            </div>
+        </div>
+
+        <!-- Lead Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-xl font-bold text-gray-900">📋 Lead in Gestione</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input type="checkbox" class="rounded">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefono</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provincia</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Row 1 -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4"><input type="checkbox" class="rounded"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Mario Rossi</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">mario.rossi@email.it</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">333-1234567</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">RM</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    NEW
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-blue-600 h-2 rounded-full" style="width: 20%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">20</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                24/02/2026
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">👁️</button>
+                                <button class="text-green-600 hover:text-green-900">✏️</button>
+                                <button class="text-purple-600 hover:text-purple-900">📧</button>
+                            </td>
+                        </tr>
+
+                        <!-- Row 2 -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4"><input type="checkbox" class="rounded"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Laura Bianchi</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">laura.bianchi@email.it</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">333-7654321</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">MI</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    CONTRACT_SENT
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">60</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                22/02/2026
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">👁️</button>
+                                <button class="text-green-600 hover:text-green-900">✏️</button>
+                                <button class="text-purple-600 hover:text-purple-900">📧</button>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3 -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4"><input type="checkbox" class="rounded"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Giovanni Verdi</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">giovanni.verdi@email.it</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">333-9871234</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">NA</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                    PAYMENT_RECEIVED
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-purple-600 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">85</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                20/02/2026
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">👁️</button>
+                                <button class="text-green-600 hover:text-green-900">✏️</button>
+                                <button class="text-purple-600 hover:text-purple-900">📧</button>
+                            </td>
+                        </tr>
+
+                        <!-- Row 4 -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4"><input type="checkbox" class="rounded"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Anna Neri</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">anna.neri@email.it</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">333-4567890</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">FI</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    ACTIVE
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">100</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                18/02/2026
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">👁️</button>
+                                <button class="text-green-600 hover:text-green-900">✏️</button>
+                                <button class="text-purple-600 hover:text-purple-900">📧</button>
+                            </td>
+                        </tr>
+
+                        <!-- Row 5 -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4"><input type="checkbox" class="rounded"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">Ressa Rosaria</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">ressa.rosaria@email.it</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">333-2468013</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">BA</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                    CONTRACT_SIGNED
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-orange-500 h-2 rounded-full" style="width: 70%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">70</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                24/02/2026
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900">👁️</button>
+                                <button class="text-green-600 hover:text-green-900">✏️</button>
+                                <button class="text-purple-600 hover:text-purple-900">📧</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Precedente
+                    </button>
+                    <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Successivo
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Mostrando <span class="font-medium">1</span> a <span class="font-medium">5</span> di <span class="font-medium">222</span> risultati
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                            <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                «
+                            </button>
+                            <button class="bg-blue-600 border-blue-600 text-white relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                1
+                            </button>
+                            <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                2
+                            </button>
+                            <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                3
+                            </button>
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                            </span>
+                            <button class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                45
+                            </button>
+                            <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                »
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-800 text-white text-center py-4 mt-12">
+        <p class="text-sm">© 2026 Medica GB S.r.l. - TeleMedCare V12.0 - Sistema CRM & Workflow Management</p>
+    </div>
+</body>
+</html>
