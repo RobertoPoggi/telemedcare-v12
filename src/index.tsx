@@ -10590,7 +10590,8 @@ app.post('/api/contracts/sign', async (c) => {
             proformaIdGenerated = insertResult.meta.last_row_id as number
             console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} salvata nel DB con ID ${proformaIdGenerated}`)
           } else {
-            console.warn(`⚠️ [FIRMA→PROFORMA] Proforma salvata ma ID non recuperato`)\n          }
+            console.warn(`⚠️ [FIRMA→PROFORMA] Proforma salvata ma ID non recuperato`)
+          }
         } catch (dbError) {
           console.error(`❌ [FIRMA→PROFORMA] Errore salvataggio proforma nel DB:`, dbError)
           // Continua comunque con l'invio email
