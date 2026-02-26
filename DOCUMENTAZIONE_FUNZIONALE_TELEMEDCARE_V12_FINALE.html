@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMedCare V12.0 - Documentazione Funzionale Sistema CRM & Workflow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #2c3e50;
+            background: #ffffff;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 60px;
+        }
+        
+        .cover {
+            page-break-after: always;
+            text-align: center;
+            padding: 120px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -40px -60px 60px -60px;
+        }
+        
+        .cover h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .cover h2 {
+            font-size: 2em;
+            margin-bottom: 50px;
+            font-weight: 400;
+            opacity: 0.95;
+        }
+        
+        .cover .meta {
+            font-size: 1.2em;
+            margin-top: 60px;
+            opacity: 0.9;
+        }
+        
+        .cover .meta p {
+            margin: 10px 0;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.8em;
+            margin: 60px 0 30px 0;
+            padding-bottom: 15px;
+            border-bottom: 4px solid #667eea;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 2.2em;
+            margin: 50px 0 25px 0;
+            padding-left: 20px;
+            border-left: 6px solid #764ba2;
+        }
+        
+        h3 {
+            color: #555;
+            font-size: 1.6em;
+            margin: 35px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h4 {
+            color: #666;
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+        }
+        
+        p {
+            margin: 15px 0;
+            text-align: justify;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 40px;
+        }
+        
+        li {
+            margin: 12px 0;
+            line-height: 1.8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 18px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        tr:hover {
+            background: #f0f4ff;
+        }
+        
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .workflow-step .step-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 25px;
+            min-width: 60px;
+        }
+        
+        .workflow-step .step-content h4 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        
+        .workflow-step .step-content p {
+            margin: 5px 0;
+            text-align: left;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-top: 4px solid #667eea;
+        }
+        
+        .feature-card h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card ul {
+            padding-left: 20px;
+        }
+        
+        .metric {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 10px 10px 10px 0;
+            font-weight: 600;
+        }
+        
+        .footer {
+            margin-top: 80px;
+            padding: 40px 0;
+            border-top: 3px solid #667eea;
+            text-align: center;
+            color: #777;
+        }
+        
+        @media print {
+            body {
+                font-size: 11pt;
+            }
+            .cover {
+                page-break-after: always;
+            }
+            h1, h2 {
+                page-break-after: avoid;
+            }
+            .workflow-step, table, .feature-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="cover">
+    <h1>📋 TeleMedCare V12.0</h1>
+    <h2>Sistema CRM, Dashboard e Workflow Management<br>per Teleassistenza Domiciliare</h2>
+    <div class="meta">
+        <p><strong>Documentazione Funzionale Completa</strong></p>
+        <p>Versione 12.0 – Febbraio 2026</p>
+        <p><strong>Medica GB S.r.l.</strong></p>
+        <p>Documento Funzionale Non Tecnico</p>
+    </div>
+</div>
+
+<div class="container">
+
+<h1>📌 Indice</h1>
+<ol style="font-size: 1.2em; line-height: 2.2;">
+    <li><strong>Panoramica Sistema</strong></li>
+    <li><strong>Componenti Funzionali Principali</strong>
+        <ul>
+            <li>CRM – Gestione Lead e Clienti</li>
+            <li>Workflow Engine – Automazione Processi</li>
+            <li>Gestione Contratti e Firma Digitale</li>
+            <li>Gestione Pagamenti e Proforma</li>
+            <li>Configurazione Cliente</li>
+            <li>Gestione Dispositivi</li>
+            <li>Sistema Email Automatiche</li>
+            <li>Dashboard Operative</li>
+        </ul>
+    </li>
+    <li><strong>Flussi Operativi</strong></li>
+    <li><strong>Ruoli Utente e Permessi</strong></li>
+    <li><strong>Reportistica e Analisi</strong></li>
+    <li><strong>Sicurezza e Privacy (GDPR)</strong></li>
+    <li><strong>Benefici Operativi</strong></li>
+</ol>
+
+<h1>1. Panoramica Sistema</h1>
+
+<div class="info-box">
+    <h3>🎯 Cos'è TeleMedCare V12.0</h3>
+    <p><strong>TeleMedCare V12.0</strong> è una piattaforma completa per la gestione digitale dell'intero ciclo di vita del cliente nel settore della teleassistenza domiciliare. Il sistema accompagna ogni potenziale cliente (lead) dall'acquisizione iniziale fino all'attivazione del servizio, passando attraverso tutte le fasi intermedie: contatto, qualificazione, invio brochure, firma contratto, pagamento, configurazione personalizzata, spedizione dispositivo e attivazione finale.</p>
+</div>
+
+<h3>Obiettivi del Sistema</h3>
+
+<ul style="font-size: 1.15em;">
+    <li><strong>Automazione Completa:</strong> ridurre al minimo gli interventi manuali ripetitivi automatizzando tutte le operazioni standard (invio email, generazione contratti, gestione pagamenti, tracciamento stati)</li>
+    <li><strong>Tracciabilità Totale:</strong> ogni azione viene registrata con timestamp, utente e dettagli, garantendo audit trail completo per conformità normativa e qualità del servizio</li>
+    <li><strong>Gestione Documentale Integrata:</strong> contratti, proforma, configurazioni cliente e documenti dispositivo vengono generati, firmati, archiviati e recuperati direttamente dalla piattaforma</li>
+    <li><strong>Workflow Guidato:</strong> il sistema guida gli operatori attraverso 15 stati predefiniti garantendo che nessun passaggio venga saltato e che tutte le comunicazioni avvengano al momento giusto</li>
+    <li><strong>Reportistica Real-Time:</strong> 6 dashboard operative forniscono visibilità immediata su KPI, pipeline commerciale, inventario dispositivi e performance generale</li>
+</ul>
+
+<h3>Metriche Sistema</h3>
+
+<div style="margin: 30px 0;">
+    <span class="metric">15 Stati Workflow</span>
+    <span class="metric">12 Template Email</span>
+    <span class="metric">9 Tabelle Database</span>
+    <span class="metric">30+ API Endpoint</span>
+    <span class="metric">6 Dashboard</span>
+    <span class="metric">4 Integrazioni Esterne</span>
+</div>
+
+<div class="success-box">
+    <h4>✅ Risultato Atteso</h4>
+    <p>Con TeleMedCare V12.0, un operatore può gestire fino a <strong>200 lead contemporaneamente</strong> (rispetto ai 50 del processo manuale), riducendo il tempo medio di attivazione da <strong>15 giorni a 7 giorni</strong> e azzerando gli errori di data-entry e i passaggi dimenticati.</p>
+</div>
+
+<h1>2. Componenti Funzionali Principali</h1>
+
+<h2>2.1 CRM – Gestione Lead e Clienti</h2>
+
+<h3>Acquisizione Lead</h3>
+
+<p>Il sistema acquisisce potenziali clienti (lead) attraverso molteplici canali:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Canale</th>
+            <th>Descrizione</th>
+            <th>Dati Acquisiti</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Landing Page Pubblica</strong></td>
+            <td>Form di contatto sulla homepage pubblica accessibile a tutti</td>
+            <td>Nome, cognome, email, telefono, indirizzo, città, CAP, provincia, note</td>
+        </tr>
+        <tr>
+            <td><strong>Dashboard Operatore</strong></td>
+            <td>Inserimento manuale da parte di operatori interni (call center, agenti)</td>
+            <td>Anagrafica completa + dati assistito (se diverso) + tipo piano</td>
+        </tr>
+        <tr>
+            <td><strong>API Esterne</strong></td>
+            <td>Integrazione con sistemi terzi (HubSpot, IRBEMA, Mondadori, in roadmap)</td>
+            <td>Dati variabili in base alla fonte</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Anagrafica Lead</h3>
+
+<p>Ogni lead registrato contiene le seguenti informazioni:</p>
+
+<div class="feature-list">
+    <div class="feature-card">
+        <h4>📝 Dati Intestatario</h4>
+        <ul>
+            <li>Nome e cognome</li>
+            <li>Email (univoca, no duplicati)</li>
+            <li>Telefono</li>
+            <li>Indirizzo completo (via, città, provincia, CAP)</li>
+            <li>Codice fiscale (opzionale)</li>
+            <li>Data di nascita (opzionale)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>👤 Dati Assistito</h4>
+        <p><em>(Se il servizio è per una persona diversa dall'intestatario)</em></p>
+        <ul>
+            <li>Nome e cognome assistito</li>
+            <li>Data di nascita assistito</li>
+            <li>Relazione con intestatario (genitore, coniuge, figlio, altro)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>📊 Informazioni Commerciali</h4>
+        <ul>
+            <li>Tipo piano (BASE, AVANZATO, PREMIUM)</li>
+            <li>Fonte acquisizione (organic, paid, referral)</li>
+            <li>Score qualità (calcolato automaticamente)</li>
+            <li>Timestamp acquisizione e ultima modifica</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>🔄 Stato Workflow</h4>
+        <ul>
+            <li>Stato attuale (uno dei 15 stati)</li>
+            <li>Storico transizioni di stato</li>
+            <li>Data e ora ogni cambio stato</li>
+            <li>Note operatore per ogni passaggio</li>
+        </ul>
+    </div>
+</div>
+
+<h3>Validazione e Qualità Dati</h3>
+
+<div class="info-box">
+    <h4>🔍 Controlli Automatici</h4>
+    <p>Il sistema esegue automaticamente i seguenti controlli di qualità sui dati inseriti:</p>
+    <ul>
+        <li><strong>Email univoca:</strong> impedisce l'inserimento di lead duplicati (stesso indirizzo email già presente)</li>
+        <li><strong>Validazione formato email:</strong> controlla che l'email abbia formato corretto (nome@dominio.ext)</li>
+        <li><strong>Validazione telefono:</strong> verifica che il numero contenga solo cifre, spazi, +, ( )</li>
+        <li><strong>Validazione codice fiscale:</strong> se fornito, verifica che rispetti il formato italiano standard</li>
+        <li><strong>Validazione CAP:</strong> controlla che il CAP sia di 5 cifre e corrisponda alla provincia indicata</li>
+        <li><strong>Calcolo score:</strong> assegna un punteggio di completezza (0-100) in base ai campi compilati</li>
+    </ul>
+</div>
+
+<h3>Ricerca e Filtri</h3>
+
+<p>Gli operatori possono cercare e filtrare i lead con criteri multipli:</p>
+
+<ul>
+    <li>Ricerca testuale (nome, cognome, email, telefono, codice fiscale)</li>
+    <li>Filtro per stato workflow (NUOVO, QUALIFICATO, CONTRATTO_FIRMATO, ecc.)</li>
+    <li>Filtro per tipo piano (BASE, AVANZATO, PREMIUM)</li>
+    <li>Filtro per fonte acquisizione</li>
+    <li>Filtro per data (range temporale acquisizione o ultima modifica)</li>
+    <li>Ordinamento per colonna (nome, email, data, stato)</li>
+</ul>
+
+<h2>2.2 Workflow Engine – Automazione Processi</h2>
+
+<h3>Ciclo di Vita del Cliente</h3>
+
+<p>Il sistema gestisce automaticamente l'intero percorso del cliente attraverso <strong>15 stati sequenziali</strong>. Ogni transizione di stato può essere:</p>
+
+<ul>
+    <li><strong>Manuale:</strong> attivata da un operatore che clicca un pulsante nella dashboard</li>
+    <li><strong>Automatica:</strong> attivata dal sistema al verificarsi di un evento (firma contratto, pagamento ricevuto, ecc.)</li>
+    <li><strong>Mista:</strong> innescata automaticamente ma confermabile manualmente</li>
+</ul>
+
+<h3>Dettaglio Stati Workflow</h3>
+
+<div class="workflow-step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+        <h4>NUOVO</h4>
+        <p><strong>Descrizione:</strong> Lead appena acquisito, in attesa di primo contatto</p>
+        <p><strong>Azioni possibili:</strong> Contatta lead (telefono/email), Elimina se spam, Qualifica</p>
+        <p><strong>Email automatiche:</strong> Nessuna (il lead riceve email di benvenuto al momento dell'acquisizione)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+        <h4>CONTATTATO</h4>
+        <p><strong>Descrizione:</strong> Primo contatto effettuato, lead informato sul servizio</p>
+        <p><strong>Azioni possibili:</strong> Qualifica se interessato, Chiudi se non interessato, Annota dettagli chiamata</p>
+        <p><strong>Email automatiche:</strong> Nessuna</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+        <h4>QUALIFICATO</h4>
+        <p><strong>Descrizione:</strong> Lead qualificato commercialmente, pronto per ricevere documentazione</p>
+        <p><strong>Azioni possibili:</strong> Invia brochure, Invia contratto diretto</p>
+        <p><strong>Email automatiche:</strong> Nessuna (in attesa di decisione operatore)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+        <h4>BROCHURE_INVIATA</h4>
+        <p><strong>Descrizione:</strong> Brochure informativa inviata al lead via email</p>
+        <p><strong>Azioni possibili:</strong> Invia contratto quando pronto, Segna come non interessato</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Brochure Informativa"</strong> con allegato PDF brochure e link informazioni</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+        <h4>CONTRATTO_INVIATO</h4>
+        <p><strong>Descrizione:</strong> Contratto generato e inviato al cliente con link firma</p>
+        <p><strong>Azioni possibili:</strong> Sollecita firma, Rigenerazione contratto se necessario</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Contratto Pronto per Firma"</strong> con link univoco `/firma-contratto?contractId=XXX` e istruzioni</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">6</div>
+    <div class="step-content">
+        <h4>CONTRATTO_FIRMATO</h4>
+        <p><strong>Descrizione:</strong> Cliente ha firmato digitalmente il contratto</p>
+        <p><strong>Azioni possibili:</strong> Nessuna (transizione automatica a proforma)</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Proforma Pagamento"</strong> generata automaticamente con link `/pagamento?proformaId=XXX` e coordinate bonifico</p>
+        <p><strong>Transizione automatica:</strong> → PROFORMA_INVIATA (immediata)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">7</div>
+    <div class="step-content">
+        <h4>PROFORMA_INVIATA</h4>
+        <p><strong>Descrizione:</strong> Proforma di pagamento inviata, in attesa di pagamento cliente</p>
+        <p><strong>Azioni possibili:</strong> Sollecita pagamento, Conferma bonifico manuale, Annulla proforma</p>
+        <p><strong>Email automatiche:</strong> Nessuna (già inviata al passaggio precedente)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">8</div>
+    <div class="step-content">
+        <h4>PAGAMENTO_RICEVUTO</h4>
+        <p><strong>Descrizione:</strong> Pagamento confermato (Stripe webhook o conferma manuale bonifico)</p>
+        <p><strong>Azioni possibili:</strong> Nessuna (transizione automatica a configurazione)</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Richiesta Configurazione Servizio"</strong> con link `/configurazione?leadId=XXX` per raccolta preferenze cliente</p>
+        <p><strong>Transizione automatica:</strong> → CONFIGURAZIONE_INVIATA (immediata)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">9</div>
+    <div class="step-content">
+        <h4>CONFIGURAZIONE_INVIATA</h4>
+        <p><strong>Descrizione:</strong> Form configurazione inviato al cliente, in attesa compilazione</p>
+        <p><strong>Azioni possibili:</strong> Sollecita compilazione, Compila manualmente se cliente telefona</p>
+        <p><strong>Email automatiche:</strong> Nessuna (già inviata al passaggio precedente)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">10</div>
+    <div class="step-content">
+        <h4>CONFIGURATO</h4>
+        <p><strong>Descrizione:</strong> Dati configurazione ricevuti e validati, cliente pronto per attivazione</p>
+        <p><strong>Azioni possibili:</strong> Assegna dispositivo da inventario</p>
+        <p><strong>Email automatiche:</strong> Nessuna</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">11</div>
+    <div class="step-content">
+        <h4>DISPOSITIVO_ASSEGNATO</h4>
+        <p><strong>Descrizione:</strong> Dispositivo SiDLY associato al cliente, pronto per spedizione</p>
+        <p><strong>Azioni possibili:</strong> Segna come spedito (inserire tracking spedizione)</p>
+        <p><strong>Email automatiche:</strong> Nessuna (in attesa di spedizione effettiva)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">12</div>
+    <div class="step-content">
+        <h4>DISPOSITIVO_SPEDITO</h4>
+        <p><strong>Descrizione:</strong> Dispositivo spedito al cliente, in transito</p>
+        <p><strong>Azioni possibili:</strong> Segna come consegnato, Gestisci problemi spedizione</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Dispositivo Spedito"</strong> con numero tracking, link corriere e istruzioni consegna</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">13</div>
+    <div class="step-content">
+        <h4>DISPOSITIVO_CONSEGNATO</h4>
+        <p><strong>Descrizione:</strong> Dispositivo consegnato al cliente (conferma corriere o cliente)</p>
+        <p><strong>Azioni possibili:</strong> Attiva servizio (telefona cliente per setup finale)</p>
+        <p><strong>Email automatiche:</strong> Nessuna (in attesa attivazione telefonica)</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">14</div>
+    <div class="step-content">
+        <h4>ATTIVO</h4>
+        <p><strong>Descrizione:</strong> Servizio attivato, cliente operativo</p>
+        <p><strong>Azioni possibili:</strong> Gestione ordinaria servizio (supporto, rinnovi, upgrade)</p>
+        <p><strong>Email automatiche:</strong> ✉️ <strong>Email "Servizio Attivato"</strong> con conferma attivazione, recap servizio, contatti assistenza</p>
+    </div>
+</div>
+
+<div class="workflow-step">
+    <div class="step-number">15</div>
+    <div class="step-content">
+        <h4>CHIUSO / ANNULLATO</h4>
+        <p><strong>Descrizione:</strong> Pratica chiusa (cliente non interessato, annullamento, cessazione servizio)</p>
+        <p><strong>Azioni possibili:</strong> Archivia definitivamente, Riapri se cliente cambia idea</p>
+        <p><strong>Email automatiche:</strong> Nessuna (o email personalizzata di chiusura se necessario)</p>
+    </div>
+</div>
+
+<h3>Regole di Transizione Automatica</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Da Stato</th>
+            <th>A Stato</th>
+            <th>Trigger Evento</th>
+            <th>Email Inviata</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>CONTRATTO_FIRMATO</td>
+            <td>PROFORMA_INVIATA</td>
+            <td>Sistema rileva firma salvata</td>
+            <td>✉️ Email proforma pagamento</td>
+        </tr>
+        <tr>
+            <td>PAGAMENTO_RICEVUTO</td>
+            <td>CONFIGURAZIONE_INVIATA</td>
+            <td>Webhook Stripe o conferma manuale</td>
+            <td>✉️ Email form configurazione</td>
+        </tr>
+        <tr>
+            <td>CONFIGURATO</td>
+            <td>DISPOSITIVO_ASSEGNATO</td>
+            <td>Operatore assegna device da inventario</td>
+            <td>Nessuna</td>
+        </tr>
+        <tr>
+            <td>DISPOSITIVO_ASSEGNATO</td>
+            <td>DISPOSITIVO_SPEDITO</td>
+            <td>Operatore inserisce tracking spedizione</td>
+            <td>✉️ Email tracking corriere</td>
+        </tr>
+        <tr>
+            <td>DISPOSITIVO_CONSEGNATO</td>
+            <td>ATTIVO</td>
+            <td>Operatore conferma attivazione telefonica</td>
+            <td>✉️ Email conferma attivazione</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>2.3 Gestione Contratti e Firma Digitale</h2>
+
+<h3>Generazione Contratto</h3>
+
+<p>Quando un operatore decide di inviare il contratto ad un lead (stato QUALIFICATO → CONTRATTO_INVIATO), il sistema esegue le seguenti operazioni:</p>
+
+<ol>
+    <li><strong>Recupera dati lead:</strong> anagrafica completa intestatario e assistito (se presente)</li>
+    <li><strong>Seleziona template contratto:</strong> in base al tipo di piano (BASE, AVANZATO, PREMIUM)</li>
+    <li><strong>Genera HTML contratto:</strong> compila template con variabili dinamiche (nome cliente, indirizzo, data, importo, condizioni specifiche piano)</li>
+    <li><strong>Salva contratto nel database:</strong> record nella tabella <code>contracts</code> con stato PENDING</li>
+    <li><strong>Genera link univoco firma:</strong> <code>/firma-contratto?contractId=123</code> (contractId generato automaticamente)</li>
+    <li><strong>Invia email al cliente:</strong> email automatica con link firma e istruzioni</li>
+    <li><strong>Aggiorna stato lead:</strong> passa a CONTRATTO_INVIATO</li>
+    <li><strong>Registra azione workflow:</strong> timestamp e operatore che ha avviato la generazione</li>
+</ol>
+
+<h3>Pagina di Firma Contratto</h3>
+
+<p>Il cliente, cliccando il link ricevuto via email, accede ad una pagina dedicata che mostra:</p>
+
+<div class="info-box">
+    <h4>🖊️ Interfaccia Firma Contratto</h4>
+    
+    <p><strong>Sezione 1 - Visualizzazione Contratto:</strong></p>
+    <ul>
+        <li>Testo completo del contratto generato (HTML formattato, facilmente leggibile)</li>
+        <li>Evidenziazione in grassetto delle clausole importanti</li>
+        <li>Scroll verticale se il testo è lungo</li>
+    </ul>
+    
+    <p><strong>Sezione 2 - Consensi Obbligatori:</strong></p>
+    <ul>
+        <li>☑️ <strong>Consenso 1:</strong> "Accetto termini e condizioni del servizio TeleMedCare"</li>
+        <li>☑️ <strong>Consenso 2:</strong> "Autorizzo il trattamento dei miei dati personali (GDPR)"</li>
+        <li>☑️ <strong>Consenso 3:</strong> "Confermo l'autenticità della mia identità e la veridicità dei dati forniti"</li>
+    </ul>
+    <p><em>Nota: tutti e tre i consensi devono essere spuntati per procedere alla firma.</em></p>
+    
+    <p><strong>Sezione 3 - Canvas Firma Digitale:</strong></p>
+    <ul>
+        <li>Area bianca rettangolare dove il cliente può disegnare la propria firma</li>
+        <li>Supporto mouse (desktop) e touch (tablet/smartphone)</li>
+        <li>Pulsante "Cancella" per ripetere la firma se non soddisfacente</li>
+    </ul>
+    
+    <p><strong>Sezione 4 - Bottone Conferma:</strong></p>
+    <ul>
+        <li>Pulsante "Conferma Firma" (disabilitato fino a quando tutti i consensi non sono spuntati e la firma non è stata apposta)</li>
+        <li>Cliccando "Conferma Firma", il sistema:
+            <ul>
+                <li>Salva la firma come immagine (base64)</li>
+                <li>Aggiorna lo stato del contratto a SIGNED</li>
+                <li>Registra timestamp firma</li>
+                <li>Genera PDF contratto firmato (firma apposta sul PDF)</li>
+                <li>Salva PDF su storage sicuro (Cloudflare R2)</li>
+                <li>Mostra popup di conferma: "✓ Contratto firmato con successo!"</li>
+                <li><strong>Mantiene la pagina aperta</strong> (non chiude finestra, non fa redirect)</li>
+                <li>Avvia automaticamente generazione proforma</li>
+                <li>Invia automaticamente email proforma al cliente</li>
+            </ul>
+        </li>
+    </ul>
+</div>
+
+<div class="warning-box">
+    <h4>⚠️ Correzione Implementata (Febbraio 2026)</h4>
+    <p><strong>Problema precedente:</strong> Dopo la firma del contratto, la pagina eseguiva <code>window.close()</code> che causava un comportamento indesiderato: su alcuni browser chiudeva la finestra, su altri faceva redirect alla homepage, confondendo il cliente.</p>
+    <p><strong>Soluzione adottata:</strong> Rimosso completamente <code>window.close()</code>. Ora, dopo la firma, il cliente vede il messaggio di successo e può chiudere manualmente la pagina quando pronto. Questo migliora notevolmente l'esperienza utente, elimina sorprese e garantisce che il cliente legga la conferma.</p>
+</div>
+
+<h3>Archiviazione Contratti</h3>
+
+<p>I contratti firmati vengono archiviati in modo sicuro e sono recuperabili in qualsiasi momento:</p>
+
+<ul>
+    <li><strong>Database record:</strong> tabella <code>contracts</code> contiene metadati (ID contratto, ID lead, tipo piano, data generazione, data firma, stato)</li>
+    <li><strong>Storage PDF:</strong> il PDF firmato viene salvato su Cloudflare R2 (object storage cloud sicuro, criptato, accessibile solo tramite credenziali autenticate)</li>
+    <li><strong>Download PDF:</strong> operatore può scaricare PDF contratto dalla dashboard lead (pulsante "Scarica Contratto")</li>
+    <li><strong>Audit trail:</strong> ogni accesso al contratto viene registrato (chi, quando, da dove)</li>
+</ul>
+
+<h2>2.4 Gestione Pagamenti e Proforma</h2>
+
+<h3>Generazione Proforma</h3>
+
+<p>Immediatamente dopo la firma del contratto, il sistema genera automaticamente una proforma di pagamento:</p>
+
+<ol>
+    <li><strong>Calcola importo:</strong> in base al tipo di piano (BASE €X, AVANZATO €Y, PREMIUM €Z) e eventuali personalizzazioni</li>
+    <li><strong>Genera numero proforma:</strong> formato <code>PRO-2026-0001</code> (anno corrente + numero progressivo)</li>
+    <li><strong>Imposta scadenza:</strong> default 15 giorni dalla data emissione (configurabile)</li>
+    <li><strong>Salva proforma database:</strong> record nella tabella <code>proforma</code> con stato EMESSA</li>
+    <li><strong>Genera link pagamento:</strong> <code>/pagamento?proformaId=456</code></li>
+    <li><strong>Invia email cliente:</strong> email automatica con riepilogo importo, scadenza, link pagamento online e coordinate bonifico bancario</li>
+    <li><strong>Aggiorna stato lead:</strong> passa a PROFORMA_INVIATA</li>
+</ol>
+
+<h3>Pagina di Pagamento</h3>
+
+<p>Il cliente, cliccando il link ricevuto via email, accede alla pagina di pagamento che offre due metodi:</p>
+
+<div class="feature-list">
+    <div class="feature-card">
+        <h4>💳 Metodo 1: Carta di Credito (Stripe)</h4>
+        <ul>
+            <li>Form sicuro Stripe Elements integrato (certificato PCI-DSS)</li>
+            <li>Campi: numero carta, data scadenza, CVV, nome intestatario</li>
+            <li>Validazione real-time (carta valida, fondi disponibili)</li>
+            <li>Pulsante "Paga €XXX" (importo proforma)</li>
+            <li>Al clic: richiesta di pagamento inviata a Stripe</li>
+            <li>Stripe processa pagamento e invia webhook di conferma al sistema</li>
+            <li>Sistema riceve webhook, aggiorna stato pagamento a PAID, aggiorna lead a PAGAMENTO_RICEVUTO</li>
+            <li>Cliente riceve conferma immediata (popup "Pagamento ricevuto!") e email ricevuta</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>🏦 Metodo 2: Bonifico Bancario</h4>
+        <ul>
+            <li>Coordinate bancarie Medica GB visualizzate:
+                <ul>
+                    <li>IBAN: IT XX XXXX XXXX XXXX XXXX XXXX XXX</li>
+                    <li>Intestatario: Medica GB S.r.l.</li>
+                    <li>Banca: [Nome Banca]</li>
+                    <li>Causale pre-compilata: <code>Proforma PRO-2026-0001</code></li>
+                </ul>
+            </li>
+            <li>Istruzioni: "Effettua il bonifico utilizzando i dati sopra e clicca 'Ho effettuato il bonifico' per notificarci"</li>
+            <li>Pulsante "Ho effettuato il bonifico"</li>
+            <li>Al clic: stato proforma passa a PENDING (in attesa conferma manuale operatore)</li>
+            <li>Operatore riceve notifica nella dashboard "Nuovi bonifici da verificare"</li>
+            <li>Operatore controlla estratto conto bancario</li>
+            <li>Operatore clicca "Conferma pagamento" nella dashboard</li>
+            <li>Sistema aggiorna stato pagamento a PAID, lead a PAGAMENTO_RICEVUTO, invia email conferma al cliente</li>
+        </ul>
+    </div>
+</div>
+
+<h3>Gestione Solleciti e Scadenze</h3>
+
+<div class="warning-box">
+    <h4>⏰ Gestione Proforma Scadute</h4>
+    <p>Se una proforma non viene pagata entro la data di scadenza, il sistema:</p>
+    <ul>
+        <li>Cambia automaticamente lo stato proforma da EMESSA a SCADUTA (cron job notturno)</li>
+        <li>Invia notifica all'operatore assegnato al lead</li>
+        <li>Operatore può: sollecitare cliente via telefono/email, rigenerare nuova proforma con nuova scadenza, annullare pratica se cliente non interessato</li>
+    </ul>
+</div>
+
+<h3>Reportistica Pagamenti</h3>
+
+<p>Dashboard dedicata "Pagamenti" fornisce visibilità real-time su:</p>
+
+<ul>
+    <li>Totale incassi mese corrente (suddiviso Stripe / Bonifico)</li>
+    <li>Numero pagamenti ricevuti (oggi, settimana, mese)</li>
+    <li>Proforma in attesa pagamento (con giorni rimanenti a scadenza)</li>
+    <li>Proforma scadute non pagate</li>
+    <li>Grafico trend pagamenti (ultimi 12 mesi)</li>
+    <li>Tempo medio pagamento (da emissione proforma a pagamento ricevuto)</li>
+    <li>Tasso conversione proforma → pagamento (%)</li>
+</ul>
+
+<h2>2.5 Configurazione Cliente</h2>
+
+<h3>Raccolta Preferenze Servizio</h3>
+
+<p>Dopo aver ricevuto il pagamento, il sistema invia automaticamente al cliente un link per configurare le preferenze del servizio:</p>
+
+<div class="info-box">
+    <h4>⚙️ Form Configurazione Cliente</h4>
+    
+    <p><strong>URL:</strong> <code>/configurazione?leadId=789</code></p>
+    
+    <p><strong>Sezione 1 – Preferenze Servizio:</strong></p>
+    <ul>
+        <li><strong>Orari preferiti:</strong> seleziona fasce orarie preferite per contatto operatore (mattina 8-12, pomeriggio 14-18, sera 18-20)</li>
+        <li><strong>Giorni preferiti:</strong> giorni della settimana disponibili (lun-ven, sabato, domenica, festivi)</li>
+        <li><strong>Lingua preferita:</strong> italiano (default), inglese, altra (per assistenza multilingua)</li>
+    </ul>
+    
+    <p><strong>Sezione 2 – Contatti di Emergenza:</strong></p>
+    <ul>
+        <li><strong>Contatto 1 (obbligatorio):</strong> nome, cognome, telefono, relazione (figlio, coniuge, medico, vicino, altro)</li>
+        <li><strong>Contatto 2 (opzionale):</strong> stesso formato</li>
+        <li><strong>Contatto 3 (opzionale):</strong> stesso formato</li>
+    </ul>
+    <p><em>Nota: almeno un contatto di emergenza è obbligatorio per procedere.</em></p>
+    
+    <p><strong>Sezione 3 – Informazioni Mediche (opzionali ma consigliate):</strong></p>
+    <ul>
+        <li><strong>Allergie:</strong> campo testo libero (es. "Penicillina, lattosio")</li>
+        <li><strong>Patologie note:</strong> campo testo libero (es. "Diabete tipo 2, ipertensione")</li>
+        <li><strong>Farmaci assunti:</strong> campo testo libero (es. "Metformina 500mg x2/die, Ramipril 5mg")</li>
+        <li><strong>Note aggiuntive:</strong> campo testo libero per qualsiasi altra informazione rilevante</li>
+    </ul>
+    
+    <p><strong>Sezione 4 – Consenso Privacy Esteso:</strong></p>
+    <ul>
+        <li>☑️ "Autorizzo il trattamento dei dati sanitari forniti (categoria speciale GDPR art. 9)"</li>
+    </ul>
+    
+    <p><strong>Pulsante Salva:</strong></p>
+    <ul>
+        <li>Validazione: verifica campi obbligatori completi</li>
+        <li>Salvataggio: record nella tabella <code>client_configurations</code></li>
+        <li>Conferma: popup "✓ Configurazione salvata con successo!"</li>
+        <li>Email automatica: notifica operatore che cliente ha completato configurazione</li>
+        <li>Transizione stato lead: passa automaticamente a CONFIGURATO</li>
+    </ul>
+</div>
+
+<h3>Gestione Configurazioni nella Dashboard</h3>
+
+<p>Gli operatori possono visualizzare e modificare le configurazioni cliente dalla dashboard lead:</p>
+
+<ul>
+    <li>Pulsante "Visualizza Configurazione" nel dettaglio lead</li>
+    <li>Modale popup con tutti i dati configurazione</li>
+    <li>Pulsante "Modifica" per aggiornare manualmente (se cliente telefona modifiche)</li>
+    <li>Storico modifiche: ogni cambio configurazione viene tracciato con timestamp e utente</li>
+</ul>
+
+<h2>2.6 Gestione Dispositivi</h2>
+
+<h3>Inventario Dispositivi SiDLY</h3>
+
+<p>Il sistema gestisce l'inventario completo dei dispositivi SiDLY (dispositivi di teleassistenza domiciliare):</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Informazione</th>
+            <th>Descrizione</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>IMEI</strong></td>
+            <td>Codice univoco internazionale dispositivo (15 cifre), utilizzato come ID principale</td>
+        </tr>
+        <tr>
+            <td><strong>Modello</strong></td>
+            <td>Modello dispositivo (es. SiDLY Home V2, SiDLY Mobile Pro)</td>
+        </tr>
+        <tr>
+            <td><strong>Numero Seriale</strong></td>
+            <td>Numero seriale produttore</td>
+        </tr>
+        <tr>
+            <td><strong>Stato</strong></td>
+            <td>DISPONIBILE, ASSEGNATO, SPEDITO, ATTIVO, IN_RIPARAZIONE, DISMESSO</td>
+        </tr>
+        <tr>
+            <td><strong>Lead Assegnato</strong></td>
+            <td>ID del lead a cui è assegnato (se stato ASSEGNATO, SPEDITO, ATTIVO)</td>
+        </tr>
+        <tr>
+            <td><strong>Data Assegnazione</strong></td>
+            <td>Timestamp assegnazione a lead</td>
+        </tr>
+        <tr>
+            <td><strong>Data Spedizione</strong></td>
+            <td>Timestamp spedizione fisica</td>
+        </tr>
+        <tr>
+            <td><strong>Tracking Spedizione</strong></td>
+            <td>Numero tracking corriere (Poste, BRT, DHL, ecc.)</td>
+        </tr>
+        <tr>
+            <td><strong>Data Consegna</strong></td>
+            <td>Timestamp consegna confermata</td>
+        </tr>
+        <tr>
+            <td><strong>Data Attivazione</strong></td>
+            <td>Timestamp attivazione servizio</td>
+        </tr>
+        <tr>
+            <td><strong>Note</strong></td>
+            <td>Campo testo libero per annotazioni (es. problemi, personalizzazioni)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Assegnazione Dispositivo a Lead</h3>
+
+<p>Quando un lead raggiunge lo stato CONFIGURATO, l'operatore può assegnare un dispositivo:</p>
+
+<ol>
+    <li>Operatore apre dettaglio lead nella dashboard</li>
+    <li>Clicca pulsante "Assegna Dispositivo"</li>
+    <li>Sistema mostra elenco dispositivi con stato DISPONIBILE</li>
+    <li>Operatore seleziona dispositivo (ricerca per IMEI o scansione barcode)</li>
+    <li>Sistema aggiorna dispositivo: stato → ASSEGNATO, lead_id → ID lead corrente, data_assegnazione → ora corrente</li>
+    <li>Sistema aggiorna lead: stato → DISPOSITIVO_ASSEGNATO</li>
+    <li>Sistema registra azione workflow: timestamp, operatore, IMEI assegnato</li>
+</ol>
+
+<h3>Spedizione Dispositivo</h3>
+
+<p>Una volta assegnato, l'operatore procede alla spedizione fisica:</p>
+
+<ol>
+    <li>Operatore prepara pacco (dispositivo + accessori + manuale + bolla)</li>
+    <li>Operatore effettua spedizione tramite corriere</li>
+    <li>Operatore apre dettaglio lead nella dashboard</li>
+    <li>Clicca pulsante "Segna come Spedito"</li>
+    <li>Sistema mostra form: inserire numero tracking, selezionare corriere (Poste, BRT, DHL, GLS, altro)</li>
+    <li>Operatore inserisce tracking e conferma</li>
+    <li>Sistema aggiorna dispositivo: stato → SPEDITO, tracking_spedizione → numero inserito, data_spedizione → ora corrente</li>
+    <li>Sistema aggiorna lead: stato → DISPOSITIVO_SPEDITO</li>
+    <li>Sistema invia email automatica al cliente: "Il tuo dispositivo è in viaggio!" con link tracking corriere</li>
+    <li>Sistema registra azione workflow</li>
+</ol>
+
+<h3>Consegna e Attivazione</h3>
+
+<p><strong>Consegna:</strong></p>
+<ul>
+    <li>Cliente riceve dispositivo e contatta operatore per conferma (telefono/email)</li>
+    <li>Operatore clicca "Segna come Consegnato" nella dashboard</li>
+    <li>Sistema aggiorna dispositivo: stato → ATTIVO (temporaneo, in attesa attivazione finale), data_consegna → ora corrente</li>
+    <li>Sistema aggiorna lead: stato → DISPOSITIVO_CONSEGNATO</li>
+</ul>
+
+<p><strong>Attivazione finale:</strong></p>
+<ul>
+    <li>Operatore contatta cliente via telefono per setup guidato dispositivo (connessione rete, test funzionamento, spiegazione uso)</li>
+    <li>Dopo verifica funzionamento OK, operatore clicca "Attiva Servizio" nella dashboard</li>
+    <li>Sistema aggiorna dispositivo: data_attivazione → ora corrente</li>
+    <li>Sistema aggiorna lead: stato → ATTIVO</li>
+    <li>Sistema invia email automatica al cliente: "Il tuo servizio TeleMedCare è ora attivo!" con riepilogo, contatti assistenza, link portale cliente</li>
+    <li>Sistema registra attivazione completata</li>
+</ul>
+
+<h3>Dashboard Inventario</h3>
+
+<p>Dashboard dedicata "Dispositivi" fornisce:</p>
+
+<ul>
+    <li>Totale dispositivi in inventario</li>
+    <li>Dispositivi disponibili (pronti per assegnazione)</li>
+    <li>Dispositivi assegnati (in attesa spedizione)</li>
+    <li>Dispositivi spediti (in transito)</li>
+    <li>Dispositivi attivi (in uso presso clienti)</li>
+    <li>Dispositivi in riparazione</li>
+    <li>Dispositivi dismessi</li>
+    <li>Grafico trend assegnazioni/attivazioni (ultimi 12 mesi)</li>
+    <li>Tempo medio spedizione → consegna</li>
+    <li>Tempo medio consegna → attivazione</li>
+    <li>Ricerca dispositivo per IMEI / Lead</li>
+    <li>Esportazione inventario (Excel/CSV)</li>
+</ul>
+
+<h2>2.7 Sistema Email Automatiche</h2>
+
+<h3>Provider Email con Failover</h3>
+
+<p>Il sistema utilizza due provider email per garantire alta affidabilità:</p>
+
+<div class="feature-list">
+    <div class="feature-card">
+        <h4>📧 Provider Primario: Resend</h4>
+        <ul>
+            <li>Priorità 1: tutti gli invii tentano prima Resend</li>
+            <li>Veloce, affidabile, API moderna</li>
+            <li>Limite: 100 email/giorno (piano gratuito) o 100.000/mese (piano pro)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>📨 Provider Secondario: SendGrid</h4>
+        <ul>
+            <li>Attivato automaticamente se Resend fallisce o supera limite</li>
+            <li>Provider enterprise, alta capacità</li>
+            <li>Limite: 100 email/giorno (piano gratuito) o illimitato (piano pro)</li>
+        </ul>
+    </div>
+</div>
+
+<p><strong>Logica Failover:</strong></p>
+<ol>
+    <li>Sistema tenta invio via Resend</li>
+    <li>Se Resend ritorna errore (limite raggiunto, problema temporaneo, timeout), sistema tenta automaticamente SendGrid</li>
+    <li>Se anche SendGrid fallisce, sistema registra errore e notifica operatore</li>
+    <li>Log email registra: timestamp, destinatario, template, provider utilizzato, esito (OK/ERRORE), messaggio errore</li>
+</ol>
+
+<h3>Template Email Transazionali</h3>
+
+<p>Il sistema dispone di 12 template email professionali pre-configurati:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Template</th>
+            <th>Trigger</th>
+            <th>Variabili Dinamiche</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td><strong>Benvenuto Lead</strong></td>
+            <td>Acquisizione lead da form pubblico</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, EMAIL, TELEFONO</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td><strong>Brochure Informativa</strong></td>
+            <td>Lead passa a BROCHURE_INVIATA</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, LINK_BROCHURE_PDF</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td><strong>Contratto Pronto</strong></td>
+            <td>Lead passa a CONTRATTO_INVIATO</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, LINK_FIRMA_CONTRATTO, TIPO_PIANO</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td><strong>Proforma Pagamento</strong></td>
+            <td>Lead passa a PROFORMA_INVIATA (automatico dopo firma)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, NUMERO_PROFORMA, IMPORTO, DATA_SCADENZA, LINK_PAGAMENTO, IBAN, CAUSALE_BONIFICO</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td><strong>Conferma Pagamento</strong></td>
+            <td>Pagamento ricevuto (webhook Stripe o conferma bonifico)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, NUMERO_PROFORMA, IMPORTO, METODO_PAGAMENTO, DATA_PAGAMENTO</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td><strong>Richiesta Configurazione</strong></td>
+            <td>Lead passa a CONFIGURAZIONE_INVIATA (automatico dopo pagamento)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, LINK_CONFIGURAZIONE</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td><strong>Dispositivo Spedito</strong></td>
+            <td>Lead passa a DISPOSITIVO_SPEDITO</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, IMEI_DISPOSITIVO, TRACKING_NUMBER, LINK_CORRIERE, CORRIERE_NOME, DATA_SPEDIZIONE_PREVISTA</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td><strong>Servizio Attivato</strong></td>
+            <td>Lead passa a ATTIVO</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, IMEI_DISPOSITIVO, DATA_ATTIVAZIONE, LINK_PORTALE_CLIENTE, TELEFONO_ASSISTENZA, EMAIL_ASSISTENZA</td>
+        </tr>
+        <tr>
+            <td>9</td>
+            <td><strong>Sollecito Firma Contratto</strong></td>
+            <td>Manuale: operatore clicca "Sollecita Firma" (contratto inviato ma non firmato dopo X giorni)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, LINK_FIRMA_CONTRATTO, GIORNI_PASSATI</td>
+        </tr>
+        <tr>
+            <td>10</td>
+            <td><strong>Sollecito Pagamento</strong></td>
+            <td>Manuale: operatore clicca "Sollecita Pagamento" (proforma inviata ma non pagata, non ancora scaduta)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, NUMERO_PROFORMA, IMPORTO, GIORNI_RIMANENTI, LINK_PAGAMENTO</td>
+        </tr>
+        <tr>
+            <td>11</td>
+            <td><strong>Sollecito Configurazione</strong></td>
+            <td>Manuale: operatore clicca "Sollecita Configurazione" (form inviato ma non compilato dopo X giorni)</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, LINK_CONFIGURAZIONE, GIORNI_PASSATI</td>
+        </tr>
+        <tr>
+            <td>12</td>
+            <td><strong>Email Personalizzata</strong></td>
+            <td>Manuale: operatore clicca "Invia Email" e scrive testo libero</td>
+            <td>NOME_CLIENTE, COGNOME_CLIENTE, + variabili custom inserite da operatore</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Log Email e Tracciamento</h3>
+
+<p>Ogni email inviata viene registrata nella tabella <code>email_logs</code>:</p>
+
+<ul>
+    <li>ID email</li>
+    <li>Lead ID destinatario</li>
+    <li>Indirizzo email destinatario</li>
+    <li>Template utilizzato</li>
+    <li>Provider utilizzato (Resend / SendGrid)</li>
+    <li>Oggetto email</li>
+    <li>Timestamp invio</li>
+    <li>Stato: SENT (inviata OK), FAILED (errore), PENDING (in coda)</li>
+    <li>Messaggio errore (se FAILED)</li>
+    <li>ID messaggio provider (per tracking aperture/click, se supportato)</li>
+</ul>
+
+<p>Operatore può visualizzare storico email di un lead nella dashboard lead (sezione "Comunicazioni").</p>
+
+<h2>2.8 Dashboard Operative</h2>
+
+<h3>Dashboard Principale</h3>
+
+<p>La dashboard principale è la "home" per gli operatori e fornisce una vista d'insieme in tempo reale:</p>
+
+<div class="feature-list">
+    <div class="feature-card">
+        <h4>📊 KPI in Evidenza</h4>
+        <ul>
+            <li>Totale lead attivi (non chiusi/annullati)</li>
+            <li>Nuovi lead oggi</li>
+            <li>Contratti firmati questa settimana</li>
+            <li>Pagamenti ricevuti questo mese</li>
+            <li>Servizi attivati questo mese</li>
+            <li>Tasso conversione lead → attivo (%)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>⚠️ Alert e Notifiche</h4>
+        <ul>
+            <li>Lead NUOVO non contattati (>24h)</li>
+            <li>Contratti inviati non firmati (>7 giorni)</li>
+            <li>Proforma scadute non pagate</li>
+            <li>Bonifici da verificare</li>
+            <li>Configurazioni non compilate (>5 giorni)</li>
+            <li>Dispositivi spediti in ritardo consegna (>7 giorni)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>📈 Grafici Trend</h4>
+        <ul>
+            <li>Acquisizione lead (ultimi 30 giorni)</li>
+            <li>Contratti firmati (ultimi 30 giorni)</li>
+            <li>Pagamenti ricevuti (ultimi 30 giorni)</li>
+            <li>Attivazioni (ultimi 30 giorni)</li>
+            <li>Funnel conversione (grafico imbuto)</li>
+        </ul>
+    </div>
+    
+    <div class="feature-card">
+        <h4>🔥 Lead "Hot"</h4>
+        <ul>
+            <li>Lead QUALIFICATO ad alta priorità</li>
+            <li>Lead con contratto firmato oggi (pronti per gestione proforma)</li>
+            <li>Lead con pagamento ricevuto oggi (pronti per configurazione)</li>
+            <li>Lead configurati pronti per assegnazione dispositivo</li>
+        </ul>
+    </div>
+</div>
+
+<h3>Dashboard Gestione Lead</h3>
+
+<p>Dashboard dedicata alla gestione operativa completa dei lead:</p>
+
+<ul>
+    <li><strong>Tabella lead completa:</strong> tutte le colonne (ID, nome, email, telefono, stato, tipo piano, data acquisizione, ultima modifica)</li>
+    <li><strong>Filtri avanzati:</strong> per stato, piano, fonte, data, operatore assegnato</li>
+    <li><strong>Ricerca full-text:</strong> cerca in nome, cognome, email, telefono, note</li>
+    <li><strong>Ordinamento:</strong> click su intestazione colonna per ordinare crescente/decrescente</li>
+    <li><strong>Paginazione:</strong> 50 lead per pagina (configurabile)</li>
+    <li><strong>Azioni rapide per lead:</strong> click su riga per aprire dettaglio completo in modale popup</li>
+</ul>
+
+<p><strong>Dettaglio Lead (Modale):</strong></p>
+<ul>
+    <li>Tab "Anagrafica": tutti i dati lead editabili</li>
+    <li>Tab "Workflow": stato attuale + storico transizioni stati con timeline visuale</li>
+    <li>Tab "Contratto": visualizza contratto, scarica PDF, rigenerazione se necessario</li>
+    <li>Tab "Pagamento": dettaglio proforma, stato pagamento, conferma manuale bonifico</li>
+    <li>Tab "Configurazione": visualizza dati configurazione cliente</li>
+    <li>Tab "Dispositivo": IMEI assegnato, tracking spedizione, stato dispositivo</li>
+    <li>Tab "Comunicazioni": storico email inviate (con timestamp e stato)</li>
+    <li>Tab "Note": campo testo libero per annotazioni operatore (visibile solo internamente)</li>
+    <li>Pulsanti azione contestuali: in base allo stato corrente, mostra pulsanti appropriati (es. "Invia Contratto" se QUALIFICATO, "Conferma Pagamento" se proforma PENDING, ecc.)</li>
+</ul>
+
+<h3>Dashboard Analytics</h3>
+
+<p>Dashboard dedicata all'analisi dati e reportistica avanzata:</p>
+
+<ul>
+    <li><strong>Grafici funnel conversione:</strong> visualizzazione imbuto da lead NUOVO → ATTIVO con percentuali conversione per ogni passaggio</li>
+    <li><strong>Tempo medio per stato:</strong> quanto tempo mediamente un lead rimane in ogni stato (identifica colli di bottiglia)</li>
+    <li><strong>Tempo totale acquisizione → attivazione:</strong> KPI principale, obiettivo ridurlo costantemente</li>
+    <li><strong>Tasso abbandono per stato:</strong> % lead che passano a CHIUSO/ANNULLATO da ogni stato (identifica problemi nel processo)</li>
+    <li><strong>Performance operatori:</strong> se implementato sistema assegnazione lead, mostra statistiche per operatore (lead gestiti, tempo medio attivazione, tasso conversione)</li>
+    <li><strong>Analisi fonti acquisizione:</strong> quale canale porta lead più qualificati (organic, paid, referral) e con tasso conversione migliore</li>
+    <li><strong>Analisi piani:</strong> distribuzione lead per tipo piano (BASE, AVANZATO, PREMIUM) e revenue associato</li>
+    <li><strong>Esportazioni:</strong> tutti i grafici e tabelle esportabili in PDF, Excel, CSV</li>
+</ul>
+
+<h3>Dashboard Inventario Dispositivi</h3>
+
+<p>Già descritta nella sezione 2.6 – riepilogo funzionalità:</p>
+
+<ul>
+    <li>Vista elenco dispositivi con filtri per stato</li>
+    <li>Ricerca per IMEI / Seriale / Lead assegnato</li>
+    <li>Dettaglio dispositivo con storico completo (assegnazioni, riparazioni, note)</li>
+    <li>Grafici inventario (totali, disponibili, assegnati, attivi, in riparazione)</li>
+    <li>Alert dispositivi in riparazione >30 giorni</li>
+    <li>Funzione "Aggiungi nuovo dispositivo" per carico nuovi IMEI</li>
+</ul>
+
+<h3>Dashboard Pagamenti</h3>
+
+<p>Già descritta nella sezione 2.4 – riepilogo funzionalità:</p>
+
+<ul>
+    <li>Totale incassi (oggi, settimana, mese, anno)</li>
+    <li>Suddivisione incassi per metodo (Stripe / Bonifico)</li>
+    <li>Proforma in attesa pagamento (con countdown scadenza)</li>
+    <li>Bonifici da verificare (lista con pulsante "Conferma")</li>
+    <li>Grafici trend incassi</li>
+    <li>Tempo medio pagamento</li>
+    <li>Esportazione estratto conto</li>
+</ul>
+
+<h3>Dashboard Testing & Documentation</h3>
+
+<p>Dashboard dedicata a testing interno e accesso documentazione (ad uso sviluppatori e admin tecnici):</p>
+
+<ul>
+    <li>Test invio email (tutti i template, seleziona destinatario test)</li>
+    <li>Test generazione contratto (simula creazione contratto e preview PDF)</li>
+    <li>Test API (form per testare endpoint API manualmente)</li>
+    <li>Visualizza log sistema (ultimi 1000 log, filtrabili per livello ERROR/WARN/INFO)</li>
+    <li>Link documentazione tecnica (API reference, schema DB, architettura)</li>
+</ul>
+
+<h1>3. Flussi Operativi</h1>
+
+<h2>3.1 Flusso Completo Lead → Cliente Attivo</h2>
+
+<div class="info-box">
+    <h3>🎯 Percorso Ideale (Scenario Senza Problemi)</h3>
+    
+    <p><strong>Giorno 1 – Acquisizione e Contatto:</strong></p>
+    <ol>
+        <li>Lead compila form su landing page (ore 10:00)</li>
+        <li>Sistema crea lead con stato NUOVO e invia email di benvenuto</li>
+        <li>Operatore riceve notifica nuovo lead (dashboard)</li>
+        <li>Operatore contatta lead telefonicamente entro 2 ore (ore 12:00)</li>
+        <li>Lead interessato, operatore cambia stato a CONTATTATO → QUALIFICATO</li>
+        <li>Operatore invia brochure (lead passa a BROCHURE_INVIATA, email automatica)</li>
+    </ol>
+    
+    <p><strong>Giorno 2 – Invio Contratto:</strong></p>
+    <ol start="7">
+        <li>Lead telefona dopo aver letto brochure, conferma interesse</li>
+        <li>Operatore clicca "Invia Contratto", lead passa a CONTRATTO_INVIATO (email automatica con link firma)</li>
+    </ol>
+    
+    <p><strong>Giorno 3 – Firma Contratto:</strong></p>
+    <ol start="9">
+        <li>Lead clicca link firma contratto, legge contratto, spunta consensi, firma digitalmente</li>
+        <li>Lead clicca "Conferma Firma" (ore 14:30)</li>
+        <li>Sistema salva contratto firmato, genera PDF, passa lead a CONTRATTO_FIRMATO</li>
+        <li>Sistema genera automaticamente proforma, passa lead a PROFORMA_INVIATA (email automatica con link pagamento)</li>
+    </ol>
+    
+    <p><strong>Giorno 3 – Pagamento:</strong></p>
+    <ol start="13">
+        <li>Lead clicca link pagamento, sceglie carta credito (ore 15:00)</li>
+        <li>Lead inserisce dati carta Stripe, clicca "Paga"</li>
+        <li>Stripe processa pagamento, invia webhook al sistema</li>
+        <li>Sistema riceve conferma, passa lead a PAGAMENTO_RICEVUTO (email conferma pagamento)</li>
+        <li>Sistema invia automaticamente email con link configurazione, passa lead a CONFIGURAZIONE_INVIATA</li>
+    </ol>
+    
+    <p><strong>Giorno 4 – Configurazione:</strong></p>
+    <ol start="18">
+        <li>Lead clicca link configurazione, compila form (preferenze, contatti emergenza, info mediche)</li>
+        <li>Lead clicca "Salva", sistema passa lead a CONFIGURATO (ore 10:00)</li>
+        <li>Sistema notifica operatore "Lead XXX pronto per assegnazione dispositivo"</li>
+    </ol>
+    
+    <p><strong>Giorno 5 – Assegnazione e Spedizione Dispositivo:</strong></p>
+    <ol start="21">
+        <li>Operatore apre dettaglio lead, clicca "Assegna Dispositivo"</li>
+        <li>Operatore seleziona dispositivo DISPONIBILE da inventario (IMEI XXX)</li>
+        <li>Sistema assegna dispositivo, passa lead a DISPOSITIVO_ASSEGNATO (ore 9:00)</li>
+        <li>Operatore prepara pacco, effettua spedizione tramite corriere (ore 11:00)</li>
+        <li>Operatore inserisce tracking corriere nella dashboard, clicca "Segna come Spedito"</li>
+        <li>Sistema passa lead a DISPOSITIVO_SPEDITO (email automatica con tracking)</li>
+    </ol>
+    
+    <p><strong>Giorno 7 – Consegna:</strong></p>
+    <ol start="27">
+        <li>Corriere consegna dispositivo (ore 10:00)</li>
+        <li>Cliente telefona operatore per confermare ricezione (ore 11:00)</li>
+        <li>Operatore clicca "Segna come Consegnato", sistema passa lead a DISPOSITIVO_CONSEGNATO</li>
+    </ol>
+    
+    <p><strong>Giorno 7 – Attivazione Finale:</strong></p>
+    <ol start="30">
+        <li>Operatore guida cliente al telefono per setup dispositivo (connessione rete, test, spiegazione uso) (ore 14:00)</li>
+        <li>Tutto funziona correttamente, operatore clicca "Attiva Servizio"</li>
+        <li>Sistema passa lead a ATTIVO (email automatica conferma attivazione)</li>
+        <li><strong>✓ Pratica completata: da acquisizione lead a servizio attivo in 7 giorni</strong></li>
+    </ol>
+</div>
+
+<h2>3.2 Flusso Alternativo: Pagamento con Bonifico</h2>
+
+<div class="warning-box">
+    <p><strong>Differenze rispetto flusso carta credito:</strong></p>
+    <ul>
+        <li>Dopo firma contratto (giorno 3), lead riceve email proforma con coordinate bonifico</li>
+        <li>Lead effettua bonifico bancario (giorno 3 pomeriggio)</li>
+        <li>Lead clicca "Ho effettuato il bonifico" nella pagina pagamento</li>
+        <li>Sistema passa proforma a stato PENDING, notifica operatore</li>
+        <li>Operatore verifica estratto conto bancario giorno 4 mattina (i bonifici ordinari impiegano 1-2 giorni lavorativi)</li>
+        <li>Operatore vede bonifico ricevuto (giorno 5), clicca "Conferma Pagamento" nella dashboard</li>
+        <li>Sistema passa lead a PAGAMENTO_RICEVUTO (email conferma pagamento)</li>
+        <li>Da questo punto il flusso continua identico al flusso carta credito</li>
+        <li><strong>Tempo totale: da acquisizione lead a servizio attivo in 9 giorni</strong> (2 giorni in più per accredito bonifico)</li>
+    </ul>
+</div>
+
+<h2>3.3 Gestione Eccezioni</h2>
+
+<h3>Lead Non Contattabile</h3>
+<ul>
+    <li>Operatore tenta contatto telefonico (3 tentativi in 3 giorni diversi, fasce orarie diverse)</li>
+    <li>Operatore invia email "Tentativo contatto" con richiesta disponibilità</li>
+    <li>Se dopo 7 giorni nessuna risposta, operatore può: segnare lead come "Non interessato" (passa a CHIUSO), o mantenere in NUOVO con nota "Da ricontattare tra 30 giorni"</li>
+</ul>
+
+<h3>Lead Interessato Ma Indeciso</h3>
+<ul>
+    <li>Operatore invia brochure (stato BROCHURE_INVIATA)</li>
+    <li>Operatore annota nella sezione Note: "Cliente indeciso, ricontattare tra 7 giorni"</li>
+    <li>Dashboard mostra alert "Lead brochure inviata >7 giorni fa" per ricordare follow-up</li>
+    <li>Operatore ricontatta dopo 7 giorni, se ancora indeciso può: inviare materiale aggiuntivo, offrire consulenza telefonica approfondita, pianificare nuovo contatto</li>
+</ul>
+
+<h3>Contratto Inviato Ma Non Firmato</h3>
+<ul>
+    <li>Lead riceve email contratto (stato CONTRATTO_INVIATO)</li>
+    <li>Dopo 3 giorni senza firma, operatore clicca "Sollecita Firma" (email automatica sollecito)</li>
+    <li>Dopo 7 giorni totali senza firma, operatore contatta telefonicamente per capire problema (dubbi contrattuali? Problemi tecnici? Non più interessato?)</li>
+    <li>Operatore risolve dubbi e il cliente firma, oppure operatore segna lead come CHIUSO se non più interessato</li>
+</ul>
+
+<h3>Proforma Non Pagata Entro Scadenza</h3>
+<ul>
+    <li>Proforma ha scadenza 15 giorni (esempio: emessa 10 febbraio, scadenza 25 febbraio)</li>
+    <li>Dopo 7 giorni senza pagamento (17 febbraio), operatore clicca "Sollecita Pagamento" (email automatica)</li>
+    <li>Giorno 25 febbraio (scadenza): sistema automatico cambia proforma da EMESSA a SCADUTA</li>
+    <li>Dashboard mostra alert "Proforma scaduta non pagata"</li>
+    <li>Operatore contatta cliente: se cliente vuole procedere ma ha avuto problemi, operatore genera nuova proforma con nuova scadenza; se cliente non più interessato, operatore segna lead come CHIUSO</li>
+</ul>
+
+<h3>Configurazione Non Compilata</h3>
+<ul>
+    <li>Lead riceve email con link configurazione dopo pagamento (stato CONFIGURAZIONE_INVIATA)</li>
+    <li>Dopo 3 giorni senza compilazione, operatore clicca "Sollecita Configurazione" (email automatica)</li>
+    <li>Dopo 7 giorni totali, operatore contatta telefonicamente e offre di compilare form al telefono insieme al cliente</li>
+    <li>Operatore compila manualmente form in dashboard mentre cliente detta dati al telefono</li>
+    <li>Operatore salva configurazione, lead passa a CONFIGURATO</li>
+</ul>
+
+<h3>Dispositivo Spedito Non Consegnato</h3>
+<ul>
+    <li>Lead riceve tracking spedizione (stato DISPOSITIVO_SPEDITO)</li>
+    <li>Dopo 7 giorni senza consegna (oltre tempo stimato corriere), dashboard mostra alert "Dispositivo in ritardo"</li>
+    <li>Operatore verifica tracking corriere: se dispositivo bloccato in transito o fermo deposito, operatore contatta corriere per sollecito; se consegna tentata ma cliente assente, operatore contatta cliente per concordare nuovo tentativo; se dispositivo perso/danneggiato, operatore avvia procedura rimborso/riassegnazione nuovo dispositivo</li>
+</ul>
+
+<h1>4. Ruoli Utente e Permessi</h1>
+
+<h3>Sistema Ruoli</h3>
+
+<p>Il sistema gestisce 4 ruoli principali:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Ruolo</th>
+            <th>Permessi</th>
+            <th>Accesso Dashboard</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>ADMIN</strong></td>
+            <td>Accesso completo: gestione lead, contratti, pagamenti, dispositivi, configurazioni, utenti, impostazioni sistema, esportazioni, log</td>
+            <td>Tutte le 6 dashboard + dashboard amministrazione utenti</td>
+        </tr>
+        <tr>
+            <td><strong>OPERATOR</strong></td>
+            <td>Gestione operativa lead: creazione, modifica, cambio stato, invio contratti/email, conferma pagamenti, assegnazione dispositivi. NO modifica impostazioni sistema, NO gestione utenti</td>
+            <td>Dashboard principale, lead, analytics, inventario, pagamenti</td>
+        </tr>
+        <tr>
+            <td><strong>VIEWER</strong></td>
+            <td>Sola lettura: visualizza lead, contratti, pagamenti, dispositivi. NO modifica, NO invio email, NO cambio stati</td>
+            <td>Dashboard principale (solo visualizzazione), lead (read-only), analytics</td>
+        </tr>
+        <tr>
+            <td><strong>CLIENT</strong></td>
+            <td>Accesso limitato ai propri dati: visualizza proprio contratto, proforma, configurazione, tracking dispositivo. NO accesso dashboard interna</td>
+            <td>Portale cliente dedicato (in roadmap): "Il mio contratto", "Il mio pagamento", "Il mio dispositivo", "Assistenza"</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Autenticazione</h3>
+
+<ul>
+    <li>Login con email + password</li>
+    <li>JWT token per sessioni (scadenza 8 ore, refresh automatico se utente attivo)</li>
+    <li>Password policy: min 8 caratteri, almeno 1 maiuscola, 1 numero, 1 carattere speciale</li>
+    <li>Reset password via email (link temporaneo valido 1 ora)</li>
+    <li>Logout automatico dopo 8 ore inattività</li>
+    <li>Log accessi: ogni login/logout viene registrato con timestamp, IP, user-agent</li>
+</ul>
+
+<h1>5. Reportistica e Analisi</h1>
+
+<h3>Report Automatici Giornalieri</h3>
+
+<p>Sistema genera automaticamente report giornaliero inviato via email a tutti gli utenti ADMIN alle ore 8:00:</p>
+
+<ul>
+    <li>Nuovi lead acquisiti ieri (numero + lista)</li>
+    <li>Contratti firmati ieri (numero + lista)</li>
+    <li>Pagamenti ricevuti ieri (numero + importo totale)</li>
+    <li>Servizi attivati ieri (numero + lista)</li>
+    <li>Lead in attesa azione (contratti non firmati >7 giorni, proforma scadute, bonifici da verificare, configurazioni non compilate, dispositivi in ritardo)</li>
+    <li>KPI confronto giorno precedente (trend ↑ ↓)</li>
+</ul>
+
+<h3>Report Settimanali</h3>
+
+<p>Sistema genera report settimanale inviato via email ogni lunedì mattina ore 8:00:</p>
+
+<ul>
+    <li>Riepilogo settimana precedente (totali lead, contratti, pagamenti, attivazioni)</li>
+    <li>Funnel conversione settimanale (% ogni passaggio)</li>
+    <li>Tempo medio attivazione lead della settimana</li>
+    <li>Top 5 operatori per numero attivazioni (se implementato sistema assegnazione)</li>
+    <li>Alert: lead bloccati da >14 giorni in stesso stato</li>
+    <li>Confronto settimana precedente (trend)</li>
+</ul>
+
+<h3>Report Mensili</h3>
+
+<p>Sistema genera report mensile inviato via email primo giorno di ogni mese ore 8:00:</p>
+
+<ul>
+    <li>Riepilogo mese completo (totali + grafici)</li>
+    <li>Revenue totale mese (incassi Stripe + bonifici)</li>
+    <li>Funnel conversione mensile con analisi colli di bottiglia</li>
+    <li>Tempo medio attivazione mensile</li>
+    <li>Tasso abbandono per stato</li>
+    <li>Analisi fonti acquisizione (quale canale ha performato meglio)</li>
+    <li>Dispositivi attivati vs inventario disponibile</li>
+    <li>Previsione mese successivo (basato su trend)</li>
+</ul>
+
+<h3>Esportazioni Dati</h3>
+
+<p>Operatori possono esportare dati in qualsiasi momento:</p>
+
+<ul>
+    <li><strong>Esporta Lead:</strong> Excel/CSV con tutti i campi lead (filtrabili per stato, data, piano)</li>
+    <li><strong>Esporta Contratti:</strong> Excel/CSV con elenco contratti (ID, lead, piano, data generazione, data firma, stato)</li>
+    <li><strong>Esporta Pagamenti:</strong> Excel/CSV estratto conto completo (proforma, importi, date, metodi, stati)</li>
+    <li><strong>Esporta Dispositivi:</strong> Excel/CSV inventario completo (IMEI, modello, stato, lead assegnato, tracking)</li>
+    <li><strong>Esporta Email Log:</strong> Excel/CSV storico email (destinatario, template, provider, data, stato)</li>
+    <li><strong>Esporta Workflow History:</strong> Excel/CSV storico transizioni stati di tutti i lead (per audit e analisi processi)</li>
+</ul>
+
+<h1>6. Sicurezza e Privacy (GDPR)</h1>
+
+<h3>Conformità GDPR</h3>
+
+<div class="success-box">
+    <h4>✅ Principi Implementati</h4>
+    
+    <p><strong>1. Consenso Esplicito:</strong></p>
+    <ul>
+        <li>Form acquisizione lead contiene checkbox consenso trattamento dati (obbligatorio per procedere)</li>
+        <li>Firma contratto richiede conferma esplicita trattamento dati personali</li>
+        <li>Form configurazione richiede consenso esteso per dati sanitari (categoria speciale GDPR art. 9)</li>
+    </ul>
+    
+    <p><strong>2. Diritto di Accesso:</strong></p>
+    <ul>
+        <li>Cliente può richiedere copia completa dei propri dati (email a privacy@medicagb.it)</li>
+        <li>Sistema genera automaticamente export PDF con tutti i dati lead (entro 30 giorni dalla richiesta, obiettivo 48 ore)</li>
+    </ul>
+    
+    <p><strong>3. Diritto di Rettifica:</strong></p>
+    <ul>
+        <li>Cliente può richiedere correzione dati errati</li>
+        <li>Operatore modifica dati lead nella dashboard, sistema registra modifica con timestamp e motivazione</li>
+    </ul>
+    
+    <p><strong>4. Diritto di Cancellazione (Diritto all'Oblio):</strong></p>
+    <ul>
+        <li>Cliente può richiedere cancellazione completa dati</li>
+        <li>Operatore esegue "Cancellazione GDPR" nella dashboard lead</li>
+        <li>Sistema:
+            <ul>
+                <li>Anonimizza dati personali (nome → "CANCELLATO", email → "deleted_XXX@medicagb.it", telefono → "000000000", indirizzo → "CANCELLATO")</li>
+                <li>Elimina documenti associati (contratti PDF, configurazioni, note)</li>
+                <li>Mantiene solo dati statistici aggregati anonimi (per analisi business)</li>
+                <li>Registra azione cancellazione GDPR in audit log (data, operatore, motivo)</li>
+            </ul>
+        </li>
+        <li>Eccezione: se esistono obblighi legali di conservazione (contratti firmati con servizio attivo), dati vengono conservati per periodo minimo richiesto dalla legge poi cancellati automaticamente</li>
+    </ul>
+    
+    <p><strong>5. Diritto di Portabilità:</strong></p>
+    <ul>
+        <li>Cliente può richiedere esportazione dati in formato strutturato (JSON/XML)</li>
+        <li>Sistema genera file con tutti i dati lead, contratti, pagamenti, configurazioni</li>
+    </ul>
+    
+    <p><strong>6. Privacy by Design:</strong></p>
+    <ul>
+        <li>Dati personali accessibili solo ad utenti autenticati con ruolo appropriato</li>
+        <li>Password mai salvate in chiaro (hashing bcrypt)</li>
+        <li>Token sessione JWT con scadenza automatica</li>
+        <li>Comunicazioni API sempre HTTPS (no HTTP)</li>
+        <li>Database criptato at-rest (Cloudflare D1)</li>
+        <li>Object storage criptato (Cloudflare R2)</li>
+    </ul>
+</div>
+
+<h3>Audit Trail Completo</h3>
+
+<p>Sistema registra automaticamente ogni azione rilevante:</p>
+
+<ul>
+    <li>Creazione lead (chi, quando, da dove)</li>
+    <li>Modifica dati lead (chi, quando, quali campi modificati, valore prima/dopo)</li>
+    <li>Cambio stato workflow (chi, quando, da stato X a stato Y, note)</li>
+    <li>Generazione contratto (chi, quando, tipo piano)</li>
+    <li>Firma contratto (chi (cliente), quando, IP, user-agent)</li>
+    <li>Generazione proforma (chi, quando, importo)</li>
+    <li>Conferma pagamento (chi, quando, metodo, ID transazione Stripe se applicabile)</li>
+    <li>Salvataggio configurazione cliente (chi (cliente), quando)</li>
+    <li>Assegnazione dispositivo (chi, quando, IMEI)</li>
+    <li>Spedizione dispositivo (chi, quando, tracking)</li>
+    <li>Attivazione servizio (chi, quando)</li>
+    <li>Invio email (chi, quando, template, destinatario, esito)</li>
+    <li>Accesso al sistema (chi, quando, IP, user-agent)</li>
+    <li>Cancellazione GDPR (chi, quando, lead ID, motivo)</li>
+</ul>
+
+<p>Audit log consultabile solo da utenti ADMIN, esportabile per conformità normative.</p>
+
+<h3>Sicurezza Infrastruttura</h3>
+
+<ul>
+    <li><strong>Cloudflare Workers:</strong> runtime isolato, auto-scaling, DDoS protection integrata</li>
+    <li><strong>Cloudflare Pages:</strong> hosting statico CDN globale, HTTPS obbligatorio, protezione DDoS</li>
+    <li><strong>Cloudflare D1:</strong> database distribuito, backup automatici giornalieri, point-in-time recovery</li>
+    <li><strong>Cloudflare R2:</strong> storage criptato, accesso solo tramite signed URLs con scadenza</li>
+    <li><strong>Rate Limiting:</strong> API protette da rate limiting (max 100 richieste/minuto per IP, 1000/ora per utente autenticato)</li>
+    <li><strong>WAF (Web Application Firewall):</strong> Cloudflare WAF attivo, blocco automatico pattern attacco comuni (SQL injection, XSS, CSRF)</li>
+    <li><strong>CSP (Content Security Policy):</strong> header CSP configurato per prevenire XSS</li>
+    <li><strong>Security Headers:</strong> X-Frame-Options (DENY), X-Content-Type-Options (nosniff), Strict-Transport-Security (HSTS), Referrer-Policy</li>
+</ul>
+
+<h1>7. Benefici Operativi</h1>
+
+<h3>Prima di TeleMedCare V12.0 (Processo Manuale)</h3>
+
+<div class="warning-box">
+    <h4>❌ Problemi Processo Manuale</h4>
+    <ul>
+        <li><strong>Gestione Excel/Email:</strong> lead registrati in fogli Excel condivisi, rischio sovrascritture, perdita dati, versioni multiple, difficoltà ricerca</li>
+        <li><strong>Email manuali:</strong> operatore scrive ogni email manualmente (tempi lunghi, errori battitura, dimenticanze, inconsistenza comunicazioni)</li>
+        <li><strong>Contratti cartacei:</strong> generazione contratto in Word, stampa, spedizione postale, firma fisica, scansione, archiviazione carta (tempi: 7-10 giorni solo per contratto)</li>
+        <li><strong>Pagamenti offline:</strong> solo bonifico, nessuna integrazione online, controllo manuale estratti conto, tempi lungi (15-20 giorni solo per pagamento)</li>
+        <li><strong>No tracciabilità:</strong> difficile sapere "dove si trova" ogni lead nel processo, passaggi dimenticati, clienti persi</li>
+        <li><strong>No reportistica:</strong> impossibile avere KPI real-time, report manuali mensili preparati in Excel (giorni di lavoro)</li>
+        <li><strong>Scalabilità limitata:</strong> operatore gestisce max 50 lead contemporaneamente, errori crescenti con volume, burnout operatori</li>
+        <li><strong>Tempo attivazione:</strong> da acquisizione lead a servizio attivo: 20-30 giorni (media)</li>
+    </ul>
+</div>
+
+<h3>Dopo TeleMedCare V12.0 (Processo Automatizzato)</h3>
+
+<div class="success-box">
+    <h4>✅ Vantaggi Sistema Digitale</h4>
+    
+    <p><strong>Efficienza Operativa:</strong></p>
+    <ul>
+        <li><strong>Gestione unificata:</strong> tutti i dati in un unico sistema, nessuna duplicazione, sincronizzazione automatica, ricerca istantanea</li>
+        <li><strong>Email automatiche:</strong> 12 template professionali, invio automatico al momento giusto, personalizzazione dinamica, zero errori battitura, risparmi: 30-40 minuti/lead</li>
+        <li><strong>Contratti digitali:</strong> generazione automatica, firma digitale immediata, archiviazione sicura, tempi: da 7-10 giorni a 1-2 giorni</li>
+        <li><strong>Pagamenti online:</strong> Stripe integrato, pagamento immediato con carta, conferma automatica, webhook real-time, tempi: da 15-20 giorni a 1 giorno (carta) o 3-5 giorni (bonifico)</li>
+        <li><strong>Workflow guidato:</strong> sistema guida operatore passo-passo, impossibile saltare step, alert automatici su ritardi, zero lead dimenticati</li>
+        <li><strong>Reportistica real-time:</strong> 6 dashboard sempre aggiornate, KPI live, grafici trend, esportazioni immediate, decisioni data-driven</li>
+        <li><strong>Scalabilità illimitata:</strong> operatore gestisce 150-200 lead contemporaneamente (4x capacità precedente), zero errori incrementali, sistema scale automaticamente con volume</li>
+        <li><strong>Tempo attivazione:</strong> da acquisizione lead a servizio attivo: 7-9 giorni (media) → <strong>riduzione 60-70%</strong></li>
+    </ul>
+    
+    <p><strong>Qualità Servizio Cliente:</strong></p>
+    <ul>
+        <li><strong>Comunicazioni tempestive:</strong> cliente riceve email immediate ad ogni passaggio, sempre informato, percezione professionalità</li>
+        <li><strong>Processo trasparente:</strong> cliente può tracciare progresso (firma contratto, pagamento, tracking dispositivo), riduzione ansia/incertezza</li>
+        <li><strong>Self-service:</strong> cliente completa firma, pagamento, configurazione autonomamente online (comodità orari, no necessità chiamate)</li>
+        <li><strong>Riduzione errori:</strong> validazioni automatiche, dati corretti, zero errori manuali (indirizzi sbagliati, importi errati, documenti persi)</li>
+        <li><strong>Supporto più reattivo:</strong> operatore vede storico completo lead in 1 click, risponde velocemente, risolve problemi in tempo reale</li>
+    </ul>
+    
+    <p><strong>Business Intelligence:</strong></p>
+    <ul>
+        <li><strong>Visibilità totale:</strong> management vede KPI real-time, identifica trend, prende decisioni immediate</li>
+        <li><strong>Ottimizzazione processi:</strong> analisi colli di bottiglia (quale stato ha tempo medio più lungo), interventi mirati</li>
+        <li><strong>Previsioni accurate:</strong> basandosi su trend storici, prevede volume lead, incassi, attivazioni mesi futuri</li>
+        <li><strong>ROI campagne marketing:</strong> tracking fonte acquisizione lead, calcolo costo acquisizione cliente per canale, ottimizzazione budget marketing</li>
+    </ul>
+    
+    <p><strong>Conformità e Audit:</strong></p>
+    <ul>
+        <li><strong>GDPR compliant:</strong> consensi espliciti, diritti GDPR implementati, audit trail completo, zero rischi sanzioni</li>
+        <li><strong>Tracciabilità totale:</strong> ogni azione registrata, recupero storico immediato, audit esterni facilitati</li>
+        <li><strong>Backup automatici:</strong> dati salvati automaticamente, disaster recovery, zero perdita dati</li>
+    </ul>
+</div>
+
+<h3>ROI Stimato</h3>
+
+<div class="highlight">
+    <h4>💰 Ritorno Investimento (Esempio Scenario)</h4>
+    
+    <p><strong>Ipotesi:</strong> Medica GB gestisce 100 nuovi lead/mese</p>
+    
+    <p><strong>Scenario Pre-Sistema (Manuale):</strong></p>
+    <ul>
+        <li>Tempo medio operatore per lead: 3 ore (email manuali, telefonate multiple, gestione Excel, controlli pagamenti, ecc.)</li>
+        <li>Totale ore/mese: 100 lead × 3 ore = 300 ore/mese</li>
+        <li>Operatori necessari: 300 ore ÷ 160 ore/mese (full-time) = ~2 operatori full-time</li>
+        <li>Costo operatori: 2 × €2.000/mese = €4.000/mese</li>
+        <li>Tasso conversione lead → attivo: 30% (molti lead persi per tempi lunghi, errori, dimenticanze)</li>
+        <li>Lead attivati/mese: 100 × 30% = 30 clienti attivi</li>
+    </ul>
+    
+    <p><strong>Scenario Post-Sistema (Automatizzato):</strong></p>
+    <ul>
+        <li>Tempo medio operatore per lead: 0,75 ore (sistema fa 80% lavoro automaticamente, operatore solo supervisione e chiamate strategiche)</li>
+        <li>Totale ore/mese: 100 lead × 0,75 ore = 75 ore/mese</li>
+        <li>Operatori necessari: 75 ore ÷ 160 ore/mese = ~0,5 operatori (1 operatore part-time o 1 full-time gestisce 200 lead)</li>
+        <li>Costo operatori: 1 × €2.000/mese = €2.000/mese</li>
+        <li>Tasso conversione lead → attivo: 50% (processo veloce, fluido, professionale, zero lead dimenticati)</li>
+        <li>Lead attivati/mese: 100 × 50% = 50 clienti attivi</li>
+    </ul>
+    
+    <p><strong>Benefici Mensili:</strong></p>
+    <ul>
+        <li><strong>Risparmio costi operatori:</strong> €4.000 - €2.000 = €2.000/mese</li>
+        <li><strong>Incremento clienti attivati:</strong> 50 - 30 = +20 clienti/mese</li>
+        <li><strong>Incremento revenue</strong> (ipotesi €100/mese per cliente): 20 × €100 = +€2.000/mese revenue ricorrente</li>
+        <li><strong>TOTALE BENEFICIO MENSILE:</strong> €2.000 (risparmio) + €2.000 (revenue) = <strong>€4.000/mese</strong></li>
+        <li><strong>ROI Annuale:</strong> €4.000 × 12 = <strong>€48.000/anno</strong></li>
+    </ul>
+    
+    <p><strong>Tempo di ammortamento investimento:</strong> Ipotizzando costo sviluppo/setup sistema €20.000, ROI breakeven in <strong>5 mesi</strong>.</p>
+</div>
+
+<div class="footer">
+    <p><strong>TeleMedCare V12.0 – Sistema CRM & Workflow Management</strong></p>
+    <p>Medica GB S.r.l. | Via [Indirizzo] | Tel: +39 02 1234567</p>
+    <p>Email: <a href="mailto:info@medicagb.it">info@medicagb.it</a> | Web: <a href="https://www.medicagb.it">www.medicagb.it</a></p>
+    <p style="margin-top: 20px; font-size: 0.9em; color: #999;">Documento generato: Febbraio 2026 | Versione 12.0 | Documento Funzionale Non Tecnico</p>
+</div>
+
+</div>
+
+</body>
+</html>

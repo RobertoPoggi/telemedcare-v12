@@ -10522,12 +10522,12 @@ app.post('/api/contracts/sign', async (c) => {
         // Importa funzione invio proforma
         const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
         
-        // Genera ID e numero proforma univoci
-        const proformaId = `PRF-${Date.now()}`
+        // Genera numero proforma univoco (l'ID sarà auto-generato da SQLite)
         const year = new Date().getFullYear()
         const month = String(new Date().getMonth() + 1).padStart(2, '0')
         const random = Math.random().toString(36).substring(2, 6).toUpperCase()
         const numeroProforma = `PRF${year}${month}-${random}`
+        let proformaIdGenerated: number | null = null  // Sarà popolato dopo INSERT
         
         // Determina prezzi in base al piano del contratto
         const piano = contract.piano || 'BASE'
@@ -10535,9 +10535,9 @@ app.post('/api/contracts/sign', async (c) => {
         const prezzoBase = contract.prezzo_totale || (piano === 'AVANZATO' ? 840 : 480)
         const prezzoIvaInclusa = piano === 'AVANZATO' ? 1024.80 : 585.60
         
-        // Prepara dati proforma
+        // Prepara dati proforma (proformaId verrà aggiornato dopo INSERT)
         const proformaData = {
-          proformaId,
+          proformaId: '', // Placeholder - sarà aggiornato dopo INSERT con ID auto-generato
           numeroProforma,
           proformaPdfUrl: '', // PDF generato separatamente (richiede Puppeteer)
           tipoServizio: piano,
@@ -10547,21 +10547,20 @@ app.post('/api/contracts/sign', async (c) => {
           dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 giorni
         }
         
-        console.log(`📊 [FIRMA→PROFORMA] Dati proforma:`, JSON.stringify(proformaData, null, 2))
+        console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-INSERT):`, JSON.stringify(proformaData, null, 2))
         
-        // Salva proforma nel DB prima dell'invio
+        // Salva proforma nel DB prima dell'invio (senza id - sarà auto-generato)
         try {
-          await c.env.DB.prepare(`
+          const insertResult = await c.env.DB.prepare(`
             INSERT INTO proforma (
-              id, contract_id, leadId, numero_proforma,
+              contract_id, leadId, numero_proforma,
               data_emissione, data_scadenza,
               cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
               cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
               tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
               status, email_sent, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
-            proformaId,
             contractId || '', // contract_id
             lead.id,
             numeroProforma,
@@ -10586,25 +10585,39 @@ app.post('/api/contracts/sign', async (c) => {
             new Date().toISOString()  // updated_at
           ).run()
           
-          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} salvata nel DB`)
+          // Recupera l'ID auto-generato
+          if (insertResult.meta && insertResult.meta.last_row_id) {
+            proformaIdGenerated = insertResult.meta.last_row_id as number
+            console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} salvata nel DB con ID ${proformaIdGenerated}`)
+          } else {
+            console.warn(`⚠️ [FIRMA→PROFORMA] Proforma salvata ma ID non recuperato`)\n          }
         } catch (dbError) {
           console.error(`❌ [FIRMA→PROFORMA] Errore salvataggio proforma nel DB:`, dbError)
           // Continua comunque con l'invio email
         }
         
-        // Invia email proforma
-        const proformaResult = await inviaEmailProforma(
-          lead,
-          proformaData,
-          c.env,
-          c.env.DB
-        )
-        
-        if (proformaResult.success) {
-          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} inviata con successo a ${lead.email}`)
-          console.log(`✅ [FIRMA→PROFORMA] Email IDs:`, proformaResult.messageIds)
+        // Se abbiamo l'ID, invia email proforma
+        if (proformaIdGenerated) {
+          // Aggiorna proformaData con l'ID generato
+          proformaData.proformaId = String(proformaIdGenerated)
+          console.log(`📊 [FIRMA→PROFORMA] Dati proforma aggiornati con ID ${proformaIdGenerated}:`, JSON.stringify(proformaData, null, 2))
+          
+          // Invia email proforma
+          const proformaResult = await inviaEmailProforma(
+            lead,
+            proformaData,
+            c.env,
+            c.env.DB
+          )
+          
+          if (proformaResult.success) {
+            console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) inviata con successo a ${lead.email}`)
+            console.log(`✅ [FIRMA→PROFORMA] Email IDs:`, proformaResult.messageIds)
+          } else {
+            console.error(`❌ [FIRMA→PROFORMA] Errore invio proforma:`, proformaResult.errors)
+          }
         } else {
-          console.error(`❌ [FIRMA→PROFORMA] Errore invio proforma:`, proformaResult.errors)
+          console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante) - email NON inviata`)
         }
       } else {
         console.warn(`⚠️ [FIRMA→PROFORMA] Lead non trovato o RESEND_API_KEY mancante - proforma NON inviata`)

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentazione Funzionale TeleMedCare V12.0 - Medica GB</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 50px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 4px solid #0066cc;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+        h1 {
+            color: #0066cc;
+            font-size: 32px;
+            margin: 40px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #0066cc;
+        }
+        h2 {
+            color: #0066cc;
+            font-size: 26px;
+            margin: 30px 0 15px 0;
+        }
+        h3 {
+            color: #0088cc;
+            font-size: 22px;
+            margin: 25px 0 12px 0;
+        }
+        h4 {
+            color: #333;
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+            font-size: 16px;
+        }
+        .highlight-box {
+            background: #e3f2fd;
+            border-left: 5px solid #0066cc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background: #e8f5e9;
+            border-left: 5px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        ul, ol {
+            margin: 15px 0 15px 40px;
+            font-size: 16px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 15px;
+        }
+        th {
+            background: #0066cc;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .workflow-step {
+            background: #f5f5f5;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .workflow-step strong {
+            color: #4caf50;
+            font-size: 18px;
+        }
+        .feature-list {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 3px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            background: #4caf50;
+            color: white;
+            margin: 0 5px;
+        }
+        .section-intro {
+            font-size: 18px;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏥 MEDICA GB S.r.l.</div>
+            <h1 style="border:none; padding:0; margin-top:10px;">DOCUMENTAZIONE FUNZIONALE</h1>
+            <h2 style="margin-top:15px; color:#0066cc;">Sistema TeleMedCare V12.0</h2>
+            <p style="font-size:20px; color:#666; margin-top:15px;">
+                CRM, Dashboard e Workflow Management<br>
+                per Teleassistenza Domiciliare
+            </p>
+            <p style="margin-top:25px;">
+                <strong>Versione:</strong> V12.0 | 
+                <strong>Data:</strong> 26 Febbraio 2026<br>
+                <strong>Status:</strong> <span class="badge">✅ OPERATIVO</span>
+            </p>
+        </div>
+
+        <h1>📋 PANORAMICA GENERALE</h1>
+        
+        <p class="section-intro">
+            TeleMedCare V12.0 è un sistema completo per la gestione del ciclo di vita del cliente nel settore della teleassistenza domiciliare, dall'acquisizione del contatto iniziale fino all'attivazione completa del servizio.
+        </p>
+
+        <div class="highlight-box">
+            <h3 style="margin-top:0;">🎯 Obiettivo del Sistema</h3>
+            <p><strong>Automatizzare completamente</strong> il processo commerciale e operativo, riducendo il lavoro manuale dell'80% e garantendo tracciabilità completa di ogni interazione con il cliente.</p>
+        </div>
+
+        <h2>Cosa Gestisce il Sistema</h2>
+        <ul>
+            <li><strong>Acquisizione Lead:</strong> Raccolta automatica contatti da landing page, form web e inserimento manuale</li>
+            <li><strong>Gestione Commerciale:</strong> Qualificazione lead, invio brochure, generazione contratti personalizzati</li>
+            <li><strong>Firma Digitale:</strong> Processo di firma contratto online con validità legale</li>
+            <li><strong>Gestione Pagamenti:</strong> Integrazione carta di credito e bonifico bancario con tracking automatico</li>
+            <li><strong>Configurazione Servizio:</strong> Raccolta dati cliente per attivazione (contatti emergenza, preferenze, note mediche)</li>
+            <li><strong>Gestione Dispositivi:</strong> Assegnazione, spedizione e tracking dispositivi SiDLY</li>
+            <li><strong>Comunicazioni Automatiche:</strong> 12 tipologie di email inviate automaticamente nelle varie fasi</li>
+            <li><strong>Dashboard Operative:</strong> 6 interfacce dedicate per monitoraggio e gestione completa</li>
+        </ul>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>👥 GESTIONE LEAD E CRM</h1>
+
+        <p class="section-intro">
+            Il cuore del sistema è la gestione anagrafica dei potenziali clienti (lead) dall'acquisizione iniziale fino alla loro trasformazione in clienti attivi.
+        </p>
+
+        <h2>Come Arrivano i Lead nel Sistema</h2>
+        
+        <h3>1. Landing Page Pubblica</h3>
+        <p>I visitatori del sito web compilano un form dove inseriscono:</p>
+        <ul>
+            <li>Nome e Cognome</li>
+            <li>Email (obbligatoria e controllata per duplicati)</li>
+            <li>Telefono</li>
+            <li>Indirizzo completo (via, città, provincia, CAP)</li>
+            <li>Richieste: brochure informativa, manuale, o contratto diretto</li>
+        </ul>
+        <p>Il sistema registra automaticamente la fonte di provenienza (ricerca organica, pubblicità, referral) per analisi successive.</p>
+
+        <h3>2. Inserimento Manuale da Dashboard</h3>
+        <p>Gli operatori possono inserire manualmente lead ricevuti via telefono, email o altri canali. Il form guidato assicura la completezza dei dati obbligatori.</p>
+
+        <h3>3. Import da Sistemi Esterni (API)</h3>
+        <p>Integrazione con eventuali sistemi esterni per importazione automatica contatti tramite API sicure.</p>
+
+        <h2>Dati Gestiti per Ogni Lead</h2>
+
+        <div class="feature-list">
+            <h4>Anagrafica Base</h4>
+            <ul>
+                <li>Dati identificativi (nome, cognome, email, telefono)</li>
+                <li>Indirizzo completo per spedizione dispositivo</li>
+                <li>Codice fiscale (opzionale, richiesto per contratto)</li>
+                <li>Data di nascita</li>
+            </ul>
+
+            <h4>Dati Assistito (se diverso dall'intestatario)</h4>
+            <ul>
+                <li>Nome e cognome della persona assistita</li>
+                <li>Data di nascita assistito</li>
+                <li>Relazione con intestatario (genitore, coniuge, altro familiare)</li>
+            </ul>
+
+            <h4>Informazioni Commerciali</h4>
+            <ul>
+                <li>Piano tariffario scelto (BASE, AVANZATO, PREMIUM)</li>
+                <li>Stato del lead nel processo (15 stati possibili - vedi workflow)</li>
+                <li>Fonte di acquisizione</li>
+                <li>Note operatore (visibili solo internamente)</li>
+            </ul>
+        </div>
+
+        <h2>Validazione Automatica Dati</h2>
+        <p>Il sistema controlla automaticamente:</p>
+        <ul>
+            <li><strong>Email univoca:</strong> Non permette duplicati</li>
+            <li><strong>Formato telefono:</strong> Verifica validità numero italiano</li>
+            <li><strong>CAP corretto:</strong> Controllo corrispondenza con città/provincia</li>
+            <li><strong>Codice fiscale:</strong> Validazione formato italiano (quando presente)</li>
+        </ul>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>🔄 WORKFLOW AUTOMATIZZATO (15 STATI)</h1>
+
+        <p class="section-intro">
+            Ogni lead attraversa un percorso strutturato in 15 stati. Il sistema automatizza le transizioni e le comunicazioni tra uno stato e l'altro.
+        </p>
+
+        <div class="workflow-step">
+            <strong>STATO 1: NUOVO</strong>
+            <p><strong>Cosa significa:</strong> Lead appena inserito nel sistema</p>
+            <p><strong>Azioni automatiche:</strong> Email di notifica all'operatore con riepilogo dati lead</p>
+            <p><strong>Cosa fa l'operatore:</strong> Verifica completezza dati e qualifica il lead</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 2: CONTATTATO</strong>
+            <p><strong>Cosa significa:</strong> Operatore ha effettuato primo contatto (telefonico o email)</p>
+            <p><strong>Azioni automatiche:</strong> Registrazione timestamp e operatore che ha contattato</p>
+            <p><strong>Cosa fa l'operatore:</strong> Valuta interesse e qualifica commercialmente</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 3: QUALIFICATO</strong>
+            <p><strong>Cosa significa:</strong> Lead ha interesse concreto e dati completi per procedere</p>
+            <p><strong>Azioni automatiche:</strong> Abilitazione invio documentazione</p>
+            <p><strong>Cosa fa l'operatore:</strong> Decide se inviare brochure o contratto diretto</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 4: BROCHURE_INVIATA</strong>
+            <p><strong>Cosa significa:</strong> Cliente ha ricevuto materiale informativo</p>
+            <p><strong>Azioni automatiche:</strong> Email automatica con PDF brochure allegato + link documentazione</p>
+            <p><strong>Cosa fa l'operatore:</strong> Follow-up dopo 2-3 giorni se non risponde</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 5: CONTRATTO_INVIATO</strong>
+            <p><strong>Cosa significa:</strong> Sistema ha generato e inviato contratto personalizzato</p>
+            <p><strong>Azioni automatiche:</strong> 
+                <ul>
+                    <li>Generazione contratto PDF in base al piano scelto</li>
+                    <li>Email con link sicuro per firma online</li>
+                    <li>Allegati: contratto, informativa privacy, condizioni generali</li>
+                </ul>
+            </p>
+            <p><strong>Cosa fa l'operatore:</strong> Monitoraggio apertura email e sollecito se necessario</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 6: CONTRATTO_FIRMATO ⭐</strong>
+            <p><strong>Cosa significa:</strong> Cliente ha firmato digitalmente il contratto</p>
+            <p><strong>Azioni automatiche:</strong>
+                <ul>
+                    <li>Salvataggio firma digitale con timestamp e IP</li>
+                    <li>Generazione automatica proforma di pagamento</li>
+                    <li>Invio email con proforma e link pagamento online</li>
+                </ul>
+            </p>
+            <p><strong>Cosa fa l'operatore:</strong> Nessuna azione richiesta - tutto automatico</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 7: PROFORMA_INVIATA</strong>
+            <p><strong>Cosa significa:</strong> Cliente ha ricevuto proforma per effettuare pagamento</p>
+            <p><strong>Azioni automatiche:</strong> Email con due opzioni pagamento (carta credito o bonifico)</p>
+            <p><strong>Cosa fa l'operatore:</strong> 
+                <ul>
+                    <li>Se carta: nessuna azione (automatico)</li>
+                    <li>Se bonifico: verifica manuale ricezione e conferma</li>
+                </ul>
+            </p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 8: PAGAMENTO_RICEVUTO ⭐</strong>
+            <p><strong>Cosa significa:</strong> Pagamento confermato (automatico se carta, manuale se bonifico)</p>
+            <p><strong>Azioni automatiche:</strong>
+                <ul>
+                    <li>Email ricevuta pagamento al cliente</li>
+                    <li>Email con link form configurazione servizio</li>
+                    <li>Notifica operatore per preparazione spedizione</li>
+                </ul>
+            </p>
+            <p><strong>Cosa fa l'operatore:</strong> Attendere compilazione form configurazione</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 9: CONFIGURAZIONE_INVIATA</strong>
+            <p><strong>Cosa significa:</strong> Cliente ha ricevuto link al form di configurazione</p>
+            <p><strong>Azioni automatiche:</strong> Reminder automatico dopo 48 ore se non compilato</p>
+            <p><strong>Cosa fa l'operatore:</strong> Contatto telefonico se dopo 5 giorni non compilato</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 10: CONFIGURATO ⭐</strong>
+            <p><strong>Cosa significa:</strong> Cliente ha completato form con tutti i dati per attivazione</p>
+            <p><strong>Azioni automatiche:</strong> Notifica operatore per assegnazione dispositivo</p>
+            <p><strong>Cosa fa l'operatore:</strong> Assegnare dispositivo disponibile in magazzino</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 11: DISPOSITIVO_ASSEGNATO</strong>
+            <p><strong>Cosa significa:</strong> Dispositivo SiDLY associato al cliente</p>
+            <p><strong>Azioni automatiche:</strong> Prenotazione dispositivo (non più disponibile per altri)</p>
+            <p><strong>Cosa fa l'operatore:</strong> Preparare pacco e organizzare spedizione</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 12: DISPOSITIVO_SPEDITO</strong>
+            <p><strong>Cosa significa:</strong> Pacco spedito con corriere</p>
+            <p><strong>Azioni automatiche:</strong>
+                <ul>
+                    <li>Email tracking spedizione al cliente</li>
+                    <li>Allegato DDT (Documento Di Trasporto)</li>
+                    <li>Link tracking corriere</li>
+                </ul>
+            </p>
+            <p><strong>Cosa fa l'operatore:</strong> Monitorare tracking e gestire eventuali problemi consegna</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 13: DISPOSITIVO_CONSEGNATO</strong>
+            <p><strong>Cosa significa:</strong> Corriere ha consegnato il pacco</p>
+            <p><strong>Azioni automatiche:</strong> Email conferma consegna + istruzioni primo utilizzo</p>
+            <p><strong>Cosa fa l'operatore:</strong> Contattare cliente per verifica e attivazione remota</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 14: ATTIVO ⭐⭐⭐ (OBIETTIVO FINALE)</strong>
+            <p><strong>Cosa significa:</strong> Servizio completamente attivato e funzionante</p>
+            <p><strong>Azioni automatiche:</strong>
+                <ul>
+                    <li>Email welcome con credenziali accesso</li>
+                    <li>Manuale utente completo PDF</li>
+                    <li>Tutorial video</li>
+                    <li>Contatti assistenza</li>
+                </ul>
+            </p>
+            <p><strong>Cosa fa l'operatore:</strong> Follow-up dopo 24h per verificare tutto OK</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>STATO 15: CHIUSO/ANNULLATO</strong>
+            <p><strong>Cosa significa:</strong> Lead non interessato o pratica annullata</p>
+            <p><strong>Azioni automatiche:</strong> Archiviazione con motivazione</p>
+            <p><strong>Cosa fa l'operatore:</strong> Nessuna azione - pratica conclusa</p>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>📝 GESTIONE CONTRATTI E FIRMA DIGITALE</h1>
+
+        <p class="section-intro">
+            Il sistema genera automaticamente contratti personalizzati in base al piano tariffario scelto e gestisce la firma elettronica con validità legale.
+        </p>
+
+        <h2>Generazione Automatica Contratto</h2>
+        <p>Quando l'operatore decide di inviare il contratto, il sistema:</p>
+        <ol>
+            <li>Preleva automaticamente i dati anagrafici del lead</li>
+            <li>Seleziona il template contratto corretto in base al piano (BASE/AVANZATO/PREMIUM)</li>
+            <li>Inserisce automaticamente tutti i dati personalizzati</li>
+            <li>Calcola importi primo anno e rinnovo</li>
+            <li>Genera codice univoco contratto (es. CONT-2026-00328)</li>
+            <li>Salva il contratto nel database</li>
+            <li>Invia email al cliente con link sicuro per firma</li>
+        </ol>
+
+        <h2>Piani Tariffari</h2>
+        <table>
+            <tr>
+                <th>Piano</th>
+                <th>Dispositivo Incluso</th>
+                <th>Prezzo Primo Anno</th>
+                <th>Rinnovo Annuale</th>
+            </tr>
+            <tr>
+                <td><strong>BASE</strong></td>
+                <td>SiDLY Care PRO</td>
+                <td>480,00 €</td>
+                <td>240,00 €</td>
+            </tr>
+            <tr>
+                <td><strong>AVANZATO</strong></td>
+                <td>SiDLY Care PRO</td>
+                <td>840,00 €</td>
+                <td>600,00 €</td>
+            </tr>
+            <tr>
+                <td><strong>PREMIUM</strong></td>
+                <td>SiDLY Vital Care</td>
+                <td>1.200,00 €</td>
+                <td>900,00 €</td>
+            </tr>
+        </table>
+
+        <h2>Processo di Firma Online</h2>
+        
+        <h3>Lato Cliente</h3>
+        <p>Il cliente riceve un'email con un link sicuro. Cliccando sul link accede a una pagina dove:</p>
+        <ol>
+            <li><strong>Visualizza</strong> l'intero contratto in formato leggibile</li>
+            <li><strong>Legge</strong> tutte le clausole e condizioni</li>
+            <li><strong>Conferma</strong> tre consensi obbligatori:
+                <ul>
+                    <li>✓ Accetto termini e condizioni</li>
+                    <li>✓ Autorizzo trattamento dati personali (GDPR)</li>
+                    <li>✓ Confermo identità e veridicità dati forniti</li>
+                </ul>
+            </li>
+            <li><strong>Firma</strong> disegnando la propria firma in un'area dedicata (con mouse o touch)</li>
+            <li><strong>Conferma</strong> cliccando sul pulsante "Firma Contratto"</li>
+        </ol>
+
+        <h3>Cosa Succede Dopo la Firma</h3>
+        <div class="success-box">
+            <p><strong>Il sistema in automatico:</strong></p>
+            <ul>
+                <li>✅ Salva la firma digitale come immagine</li>
+                <li>✅ Registra data, ora e indirizzo IP della firma</li>
+                <li>✅ Genera PDF firmato completo</li>
+                <li>✅ Archivia il documento in modo sicuro</li>
+                <li>✅ Cambia stato contratto in "FIRMATO"</li>
+                <li>✅ Cambia stato lead in "CONTRATTO_FIRMATO"</li>
+                <li>✅ Genera automaticamente la proforma di pagamento</li>
+                <li>✅ Invia email al cliente con la proforma</li>
+                <li>✅ Notifica l'operatore dell'avvenuta firma</li>
+            </ul>
+            <p style="margin-top:15px;"><em>Tutto questo avviene in pochi secondi senza alcun intervento manuale!</em></p>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>💳 GESTIONE PAGAMENTI</h1>
+
+        <p class="section-intro">
+            Dopo la firma del contratto, il sistema gestisce automaticamente il processo di pagamento con due modalità: carta di credito online o bonifico bancario.
+        </p>
+
+        <h2>Generazione Automatica Proforma</h2>
+        <p>Immediatamente dopo la firma del contratto, il sistema genera automaticamente:</p>
+        <ul>
+            <li>Numero univoco proforma (es. PRO-2026-00328)</li>
+            <li>Importo totale da pagare (primo anno servizio)</li>
+            <li>Data emissione e scadenza (30 giorni)</li>
+            <li>Documento PDF stampabile</li>
+        </ul>
+
+        <h2>Modalità di Pagamento Offerte</h2>
+
+        <h3>Opzione 1: Carta di Credito (Stripe)</h3>
+        <div class="feature-list">
+            <p><strong>Come funziona per il cliente:</strong></p>
+            <ol>
+                <li>Clicca sul link pagamento nella email ricevuta</li>
+                <li>Inserisce i dati della carta in un form sicuro</li>
+                <li>Conferma il pagamento</li>
+                <li>Riceve conferma immediata</li>
+            </ol>
+            <p><strong>Cosa fa il sistema:</strong></p>
+            <ul>
+                <li>✅ Processa il pagamento tramite gateway Stripe (sicuro PCI-DSS)</li>
+                <li>✅ Conferma automatica pagamento ricevuto</li>
+                <li>✅ Cambia stato a "PAGAMENTO_RICEVUTO" automaticamente</li>
+                <li>✅ Invia ricevuta via email</li>
+                <li>✅ Invia email con form configurazione</li>
+            </ul>
+            <p><strong>Vantaggio:</strong> <em>Tutto automatico, nessun intervento operatore necessario!</em></p>
+        </div>
+
+        <h3>Opzione 2: Bonifico Bancario</h3>
+        <div class="feature-list">
+            <p><strong>Come funziona per il cliente:</strong></p>
+            <ol>
+                <li>Visualizza coordinate bancarie nella proforma</li>
+                <li>Effettua bonifico dalla propria banca</li>
+                <li>Clicca "Ho effettuato il bonifico" nel sistema</li>
+            </ol>
+            <p><strong>Cosa fa l'operatore:</strong></p>
+            <ul>
+                <li>📋 Riceve notifica richiesta verifica bonifico</li>
+                <li>📋 Controlla estratto conto bancario</li>
+                <li>📋 Conferma manualmente ricezione pagamento nel sistema</li>
+                <li>📋 Sistema passa automaticamente a "PAGAMENTO_RICEVUTO"</li>
+            </ul>
+            <p><strong>Nota:</strong> <em>Richiede verifica manuale ma flusso semplificato</em></p>
+        </div>
+
+        <div class="warning-box">
+            <h4 style="margin-top:0;">⚠️ Importante per l'Operatore</h4>
+            <p>Con pagamento via bonifico, controllare quotidianamente l'estratto conto e confermare i pagamenti ricevuti nel sistema. Il cliente resta in attesa della conferma prima di ricevere il form di configurazione.</p>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>⚙️ CONFIGURAZIONE SERVIZIO CLIENTE</h1>
+
+        <p class="section-intro">
+            Dopo il pagamento confermato, il cliente deve fornire informazioni essenziali per l'attivazione del servizio attraverso un form online guidato.
+        </p>
+
+        <h2>Dati Raccolti nel Form Configurazione</h2>
+
+        <h3>1. Preferenze Servizio</h3>
+        <ul>
+            <li><strong>Orario preferito:</strong> Mattino, Pomeriggio, Sera (per eventuali chiamate assistenza)</li>
+            <li><strong>Giorni preferiti:</strong> Lunedì, Martedì, Mercoledì, ecc. (per servizi programmati)</li>
+            <li><strong>Lingua preferita:</strong> Italiano, Inglese, Francese (per comunicazioni)</li>
+        </ul>
+
+        <h3>2. Contatti di Emergenza (OBBLIGATORI)</h3>
+        <p>Il cliente deve fornire <strong>almeno 1 contatto di emergenza</strong> (può inserirne fino a 3):</p>
+        <ul>
+            <li>Nome e cognome del contatto</li>
+            <li>Numero di telefono (validato)</li>
+            <li>Relazione con assistito (figlio, coniuge, vicino, ecc.)</li>
+        </ul>
+        <p><em>Questi contatti saranno chiamati in caso di allarme o emergenza rilevata dal dispositivo.</em></p>
+
+        <h3>3. Informazioni Mediche (Facoltative ma Consigliate)</h3>
+        <ul>
+            <li><strong>Note mediche:</strong> Patologie croniche, condizioni particolari</li>
+            <li><strong>Allergie:</strong> Allergie note (farmaci, alimenti, altro)</li>
+            <li><strong>Patologie:</strong> Diabete, ipertensione, cardiopatie, ecc.</li>
+            <li><strong>Farmaci assunti:</strong> Elenco farmaci in terapia continuativa</li>
+        </ul>
+        <p><em>Queste informazioni sono fondamentali per il personale di assistenza in caso di intervento.</em></p>
+
+        <h2>Validazione e Completamento</h2>
+        <p>Il sistema verifica che:</p>
+        <ul>
+            <li>✓ Almeno 1 contatto emergenza sia presente</li>
+            <li>✓ Tutti i numeri telefono siano validi</li>
+            <li>✓ Tutti i campi obbligatori siano compilati</li>
+        </ul>
+
+        <div class="success-box">
+            <h4 style="margin-top:0;">✅ Dopo Invio Configurazione</h4>
+            <p>Il sistema:</p>
+            <ul>
+                <li>Salva tutti i dati in modo sicuro (crittografati per dati sensibili)</li>
+                <li>Cambia stato lead in "CONFIGURATO"</li>
+                <li>Notifica l'operatore che il cliente è pronto per assegnazione dispositivo</li>
+                <li>Invia conferma al cliente via email</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>📦 GESTIONE DISPOSITIVI</h1>
+
+        <p class="section-intro">
+            Il sistema gestisce l'intero ciclo vita dei dispositivi SiDLY: dall'inventario in magazzino fino all'attivazione presso il cliente.
+        </p>
+
+        <h2>Modelli Dispositivo</h2>
+        <table>
+            <tr>
+                <th>Modello</th>
+                <th>Piani Inclusi</th>
+                <th>Caratteristiche</th>
+            </tr>
+            <tr>
+                <td><strong>SiDLY Care PRO</strong></td>
+                <td>BASE, AVANZATO</td>
+                <td>Monitoraggio parametri base, chiamata SOS, localizzazione GPS</td>
+            </tr>
+            <tr>
+                <td><strong>SiDLY Vital Care</strong></td>
+                <td>PREMIUM</td>
+                <td>Monitoraggio avanzato, ECG, saturazione ossigeno, analisi predittiva</td>
+            </tr>
+        </table>
+
+        <h2>Stati del Dispositivo</h2>
+
+        <div class="workflow-step">
+            <strong>INVENTORY (In Magazzino)</strong>
+            <p>Dispositivo disponibile, non ancora assegnato a nessun cliente</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>ASSIGNED (Assegnato)</strong>
+            <p>Dispositivo associato a un cliente specifico ma non ancora spedito</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>SHIPPED (Spedito)</strong>
+            <p>Pacco in viaggio verso il cliente - tracking attivo</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>DELIVERED (Consegnato)</strong>
+            <p>Corriere ha consegnato, dispositivo nelle mani del cliente</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>ACTIVE (Attivo)</strong>
+            <p>Dispositivo configurato, connesso e operativo</p>
+        </div>
+
+        <div class="workflow-step">
+            <strong>DISMISSED (Dismesso)</strong>
+            <p>Dispositivo guasto, sostituito o restituito</p>
+        </div>
+
+        <h2>Dashboard Magazzino</h2>
+        <p>L'operatore ha a disposizione una dashboard dedicata che mostra:</p>
+        <ul>
+            <li><strong>Totale dispositivi:</strong> Numero complessivo in inventario</li>
+            <li><strong>Disponibili:</strong> Pronti per essere assegnati</li>
+            <li><strong>Assegnati:</strong> Già associati a clienti</li>
+            <li><strong>In spedizione:</strong> Pacchi in viaggio</li>
+            <li><strong>Attivi:</strong> Operativi presso clienti</li>
+            <li><strong>Guasti:</strong> Da riparare o sostituire</li>
+        </ul>
+
+        <h2>Processo Operativo</h2>
+
+        <h3>1. Assegnazione Dispositivo</h3>
+        <p><strong>Quando:</strong> Lead in stato "CONFIGURATO"</p>
+        <p><strong>Come:</strong></p>
+        <ol>
+            <li>Operatore apre dashboard dispositivi</li>
+            <li>Scansiona codice IMEI dispositivo (barcode) oppure inserisce manualmente</li>
+            <li>Seleziona il cliente dal menu</li>
+            <li>Clicca "Assegna Dispositivo"</li>
+            <li>Sistema associa dispositivo e cambia stato</li>
+        </ol>
+
+        <h3>2. Preparazione Spedizione</h3>
+        <p><strong>L'operatore:</strong></p>
+        <ol>
+            <li>Prepara il pacco con dispositivo, caricatore, manuale</li>
+            <li>Compila bolla di accompagnamento</li>
+            <li>Affida al corriere</li>
+            <li>Riceve numero tracking</li>
+        </ol>
+
+        <h3>3. Registrazione Spedizione nel Sistema</h3>
+        <p><strong>L'operatore:</strong></p>
+        <ol>
+            <li>Apre scheda dispositivo</li>
+            <li>Inserisce:
+                <ul>
+                    <li>Corriere utilizzato (GLS, DHL, SDA, ecc.)</li>
+                    <li>Numero tracking</li>
+                    <li>Data spedizione</li>
+                </ul>
+            </li>
+            <li>Clicca "Segna come Spedito"</li>
+        </ol>
+
+        <div class="success-box">
+            <p><strong>Il sistema automaticamente:</strong></p>
+            <ul>
+                <li>✅ Cambia stato dispositivo in "SHIPPED"</li>
+                <li>✅ Cambia stato lead in "DISPOSITIVO_SPEDITO"</li>
+                <li>✅ Genera DDT (Documento Di Trasporto) PDF</li>
+                <li>✅ Invia email al cliente con:
+                    <ul>
+                        <li>Conferma spedizione</li>
+                        <li>Numero tracking e link corriere</li>
+                        <li>DDT allegato</li>
+                        <li>Stima consegna</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <h3>4. Conferma Consegna</h3>
+        <p>Quando il corriere consegna il pacco:</p>
+        <ul>
+            <li><strong>Automatico (se disponibile):</strong> Alcuni corrieri inviano notifica automatica via webhook</li>
+            <li><strong>Manuale:</strong> Operatore verifica tracking online e conferma nel sistema</li>
+        </ul>
+
+        <h3>5. Attivazione Finale</h3>
+        <p>Dopo la consegna:</p>
+        <ol>
+            <li>Operatore contatta telefonicamente il cliente</li>
+            <li>Verifica che tutto sia OK (pacco integro, dispositivo funzionante)</li>
+            <li>Guida il cliente nell'accensione e primo utilizzo</li>
+            <li>Nel sistema clicca "Attiva Servizio"</li>
+        </ol>
+
+        <div class="success-box">
+            <p><strong>Il sistema automaticamente:</strong></p>
+            <ul>
+                <li>✅ Cambia stato dispositivo in "ACTIVE"</li>
+                <li>✅ Cambia stato lead in "ATTIVO" (obiettivo raggiunto!)</li>
+                <li>✅ Genera credenziali accesso area cliente</li>
+                <li>✅ Invia email welcome completa con:
+                    <ul>
+                        <li>Credenziali accesso</li>
+                        <li>Manuale utente PDF</li>
+                        <li>Video tutorial</li>
+                        <li>Contatti assistenza</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>📧 COMUNICAZIONI EMAIL AUTOMATICHE</h1>
+
+        <p class="section-intro">
+            Il sistema invia automaticamente 12 tipologie diverse di email nelle varie fasi del processo, riducendo drasticamente il lavoro manuale dell'operatore.
+        </p>
+
+        <h2>Elenco Completo Email Automatiche</h2>
+
+        <table>
+            <tr>
+                <th style="width:5%;">#</th>
+                <th style="width:25%;">Nome Email</th>
+                <th style="width:30%;">Quando Viene Inviata</th>
+                <th style="width:20%;">Destinatario</th>
+                <th style="width:20%;">Contenuto</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td><strong>Notifica Nuovo Lead</strong></td>
+                <td>Appena acquisito un nuovo lead</td>
+                <td>Operatore</td>
+                <td>Riepilogo dati lead, richieste specifiche</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><strong>Brochure Informativa</strong></td>
+                <td>Lead richiede materiale informativo</td>
+                <td>Cliente</td>
+                <td>PDF brochure, descrizione servizi, prezzi</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><strong>Contratto e Documenti</strong></td>
+                <td>Operatore invia contratto</td>
+                <td>Cliente</td>
+                <td>Link firma contratto, PDF contratto, privacy, condizioni</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><strong>Proforma Pagamento</strong></td>
+                <td>Contratto firmato dal cliente</td>
+                <td>Cliente</td>
+                <td>PDF proforma, link pagamento online, coordinate bonifico</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><strong>Conferma Pagamento</strong></td>
+                <td>Pagamento ricevuto e confermato</td>
+                <td>Cliente</td>
+                <td>Ricevuta pagamento PDF, conferma importo</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><strong>Form Configurazione</strong></td>
+                <td>Subito dopo conferma pagamento</td>
+                <td>Cliente</td>
+                <td>Link sicuro al form online, istruzioni compilazione</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><strong>Tracking Spedizione</strong></td>
+                <td>Dispositivo spedito con corriere</td>
+                <td>Cliente</td>
+                <td>Numero tracking, link corriere, DDT PDF, stima consegna</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><strong>Conferma Consegna</strong></td>
+                <td>Dispositivo consegnato dal corriere</td>
+                <td>Cliente</td>
+                <td>Conferma consegna, istruzioni primo utilizzo</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td><strong>Attivazione Servizio</strong></td>
+                <td>Servizio attivato dall'operatore</td>
+                <td>Cliente</td>
+                <td>Credenziali accesso, manuale PDF, video tutorial</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td><strong>Welcome Email</strong></td>
+                <td>Insieme all'attivazione</td>
+                <td>Cliente</td>
+                <td>Benvenuto, presentazione servizio, contatti assistenza</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td><strong>Reminder Configurazione</strong></td>
+                <td>48 ore dopo invio form se non compilato</td>
+                <td>Cliente</td>
+                <td>Sollecito gentile, link form, assistenza telefonica</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td><strong>Assistenza Post-Vendita</strong></td>
+                <td>Cliente apre ticket assistenza</td>
+                <td>Cliente</td>
+                <td>Conferma ricezione richiesta, tempi risposta, numero ticket</td>
+            </tr>
+        </table>
+
+        <div class="highlight-box">
+            <h4 style="margin-top:0;">💡 Vantaggio Chiave</h4>
+            <p><strong>L'operatore NON deve ricordarsi di inviare nessuna di queste email!</strong></p>
+            <p>Il sistema le invia automaticamente al momento giusto, con i dati corretti, riducendo errori e dimenticanze a ZERO.</p>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>📊 DASHBOARD OPERATIVE</h1>
+
+        <p class="section-intro">
+            Il sistema offre 6 dashboard specializzate per monitorare e gestire tutte le attività in modo semplice e intuitivo.
+        </p>
+
+        <h2>1. Dashboard Operativa Principale</h2>
+        <p><strong>URL:</strong> <code>/dashboard</code></p>
+        <p><strong>Cosa mostra:</strong></p>
+        <ul>
+            <li><strong>4 KPI Cards in tempo reale:</strong>
+                <ul>
+                    <li>Totale lead nel sistema</li>
+                    <li>Tasso di conversione %</li>
+                    <li>Contratti attivi</li>
+                    <li>Revenue mensile</li>
+                </ul>
+            </li>
+            <li><strong>Grafico lead per mese:</strong> Andamento acquisizioni ultimi 12 mesi</li>
+            <li><strong>Conversion funnel:</strong> Visualizzazione grafica dei passaggi da lead ad attivo</li>
+            <li><strong>Tabella ultimi 50 lead:</strong> Con filtri per stato, piano, data
+                <ul>
+                    <li>Azioni rapide per ogni lead (dropdown menu)</li>
+                    <li>Possibilità di: visualizzare dettaglio, inviare email, cambiare stato, assegnare dispositivo</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>2. Dashboard Lead Management</h2>
+        <p><strong>URL:</strong> <code>/leads</code></p>
+        <p><strong>Cosa mostra:</strong></p>
+        <ul>
+            <li><strong>Anagrafica completa lead:</strong> Tutti i dati modificabili inline</li>
+            <li><strong>Timeline eventi:</strong> Storico completo di ogni azione sul lead (acquisizione, email inviate, cambio stato, ecc.)</li>
+            <li><strong>Documenti associati:</strong> Contratti, proforma, DDT - visualizzabili e scaricabili</li>
+            <li><strong>Log email inviate:</strong> Tutte le comunicazioni con timestamp e stato consegna</li>
+            <li><strong>Dispositivo assegnato:</strong> Se presente, dettagli dispositivo e tracking</li>
+            <li><strong>Note operatore:</strong> Area per annotazioni private (non visibili al cliente)</li>
+            <li><strong>Pulsanti azioni workflow:</strong> Cambio stato, invio email, assegnazione dispositivo</li>
+        </ul>
+
+        <h2>3. Dashboard Analytics</h2>
+        <p><strong>URL:</strong> <code>/admin/data-dashboard</code></p>
+        <p><strong>Cosa mostra:</strong></p>
+        <ul>
+            <li><strong>KPI globali:</strong>
+                <ul>
+                    <li>Total leads</li>
+                    <li>Conversion rate %</li>
+                    <li>Average deal value €</li>
+                    <li>Churn rate %</li>
+                    <li>Customer lifetime value €</li>
+                    <li>Active devices</li>
+                    <li>Revenue month-to-date</li>
+                    <li>Revenue year-to-date</li>
+                </ul>
+            </li>
+            <li><strong>Grafici avanzati:</strong>
+                <ul>
+                    <li>Lead source analysis (da dove arrivano i contatti)</li>
+                    <li>Monthly recurring revenue trend</li>
+                    <li>Conversion funnel dettagliato con percentuali</li>
+                    <li>Device status distribution</li>
+                </ul>
+            </li>
+            <li><strong>Export report:</strong> PDF, Excel, CSV con dati personalizzabili</li>
+        </ul>
+
+        <h2>4. Dashboard Magazzino Dispositivi</h2>
+        <p><strong>URL:</strong> <code>/admin/devices</code></p>
+        <p><strong>Cosa mostra:</strong></p>
+        <ul>
+            <li><strong>Statistiche top:</strong> Totale, disponibili, assegnati, attivi</li>
+            <li><strong>Tabella completa dispositivi:</strong> Con tutti i dettagli (IMEI, modello, stato, cliente assegnato)</li>
+            <li><strong>Scanner IMEI:</strong> Lettore barcode per acquisizione rapida dispositivi</li>
+            <li><strong>Form aggiunta dispositivo:</strong> Inserimento rapido nuovi dispositivi in inventario</li>
+            <li><strong>Filtri:</strong> Per modello, stato, data assegnazione</li>
+            <li><strong>Azioni bulk:</strong> Import massivo da CSV, export inventario, stampa etichette</li>
+        </ul>
+
+        <h2>5. Dashboard Testing</h2>
+        <p><strong>URL:</strong> <code>/admin/testing-dashboard</code></p>
+        <p><strong>Cosa permette:</strong></p>
+        <ul>
+            <li>Test invio email singola (verifica template)</li>
+            <li>Test generazione contratto (controllo PDF)</li>
+            <li>Test firma contratto (simulazione processo)</li>
+            <li>Test workflow completo end-to-end</li>
+            <li>Visualizzazione log real-time operazioni</li>
+            <li>Simulatore stati lead per debug</li>
+        </ul>
+        <p><em>Utile in fase di sviluppo e per troubleshooting in produzione.</em></p>
+
+        <h2>6. Dashboard Documentazione</h2>
+        <p><strong>URL:</strong> <code>/admin/docs</code></p>
+        <p><strong>Cosa contiene:</strong></p>
+        <ul>
+            <li><strong>API Reference:</strong> Documentazione 30+ endpoint disponibili</li>
+            <li><strong>Database Schema:</strong> Struttura completa 9 tabelle con relazioni</li>
+            <li><strong>Workflow Diagrams:</strong> Diagrammi di flusso interattivi</li>
+            <li><strong>Email Templates:</strong> Preview di tutti i 12 template email</li>
+            <li><strong>Guide Operative:</strong> Manuali per operatori (questo documento!)</li>
+            <li><strong>FAQ:</strong> Domande frequenti e risposte</li>
+            <li><strong>Changelog:</strong> Storico versioni e aggiornamenti</li>
+        </ul>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>🔐 SICUREZZA E PRIVACY (GDPR)</h1>
+
+        <p class="section-intro">
+            Il sistema è progettato rispettando completamente la normativa GDPR europea sulla privacy e protezione dati personali.
+        </p>
+
+        <h2>Principi GDPR Implementati</h2>
+
+        <h3>✅ Consenso Esplicito</h3>
+        <p>Durante la firma del contratto, il cliente deve esplicitamente confermare:</p>
+        <ul>
+            <li>Accettazione termini e condizioni</li>
+            <li>Autorizzazione trattamento dati personali</li>
+            <li>Conferma identità e veridicità dati</li>
+        </ul>
+        <p>Senza questi consensi, la firma non può essere completata.</p>
+
+        <h3>✅ Diritto all'Oblio</h3>
+        <p>Il cliente può richiedere in qualsiasi momento la cancellazione completa dei propri dati. L'operatore, dalla dashboard, può eliminare definitivamente un lead e tutti i suoi dati associati.</p>
+
+        <h3>✅ Portabilità Dati</h3>
+        <p>Il sistema permette di esportare tutti i dati di un cliente in formato JSON o CSV, da consegnare su richiesta.</p>
+
+        <h3>✅ Minimizzazione Dati</h3>
+        <p>Il sistema raccoglie SOLO i dati strettamente necessari per erogare il servizio. Nessun dato superfluo viene richiesto.</p>
+
+        <h3>✅ Crittografia Dati Sensibili</h3>
+        <p>Tutti i dati sensibili sono crittografati nel database:</p>
+        <ul>
+            <li>Codice fiscale</li>
+            <li>Note mediche</li>
+            <li>Patologie e allergie</li>
+            <li>Firma digitale</li>
+        </ul>
+
+        <h3>✅ Audit Trail Completo</h3>
+        <p>Ogni azione sul lead è registrata con:</p>
+        <ul>
+            <li>Timestamp preciso</li>
+            <li>Operatore che ha effettuato l'azione</li>
+            <li>Tipo di operazione</li>
+            <li>Stato precedente e nuovo stato</li>
+        </ul>
+        <p>Questo garantisce tracciabilità completa per audit e compliance.</p>
+
+        <h3>✅ Privacy by Design</h3>
+        <p>Il sistema è progettato con la privacy come principio fondamentale:</p>
+        <ul>
+            <li>Default sicuri (dati non condivisi)</li>
+            <li>Accesso limitato solo a operatori autorizzati</li>
+            <li>Separazione dati personali da dati tecnici</li>
+            <li>Backup sicuri e crittografati</li>
+        </ul>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>📈 VANTAGGI E BENEFICI</h1>
+
+        <div class="success-box">
+            <h2 style="margin-top:0;">Per l'Azienda</h2>
+            <ul>
+                <li><strong>Automazione 80%:</strong> Riduzione drastica lavoro manuale ripetitivo</li>
+                <li><strong>Zero errori:</strong> Email automatiche sempre inviate al momento giusto</li>
+                <li><strong>Tracciabilità totale:</strong> Ogni azione registrata per audit e qualità</li>
+                <li><strong>Scalabilità:</strong> Gestisci 10, 100 o 1000 lead senza aumentare personale</li>
+                <li><strong>Analytics:</strong> Dati real-time per decisioni informate</li>
+                <li><strong>Compliance:</strong> GDPR garantito by design</li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h2 style="margin-top:0;">Per l'Operatore</h2>
+            <ul>
+                <li><strong>Interfaccia intuitiva:</strong> Dashboard chiare e facili da usare</li>
+                <li><strong>Meno stress:</strong> Sistema guida passo-passo senza dimenticare nulla</li>
+                <li><strong>Tempo risparmiato:</strong> Focus su attività a valore aggiunto</li>
+                <li><strong>Visibilità completa:</strong> Tutto a colpo d'occhio</li>
+                <li><strong>Azioni rapide:</strong> Un click per operazioni comuni</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h2 style="margin-top:0;">Per il Cliente</h2>
+            <ul>
+                <li><strong>Esperienza fluida:</strong> Processo chiaro e guidato</li>
+                <li><strong>Comunicazioni tempestive:</strong> Sempre informato sui progressi</li>
+                <li><strong>Trasparenza:</strong> Tracking completo stato pratica</li>
+                <li><strong>Semplicità:</strong> Firma e pagamento online in pochi click</li>
+                <li><strong>Assistenza:</strong> Supporto immediato quando necessario</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <h1>🎯 CONCLUSIONE</h1>
+
+        <p style="font-size:18px;">
+            <strong>TeleMedCare V12.0</strong> è un sistema completo che trasforma completamente la gestione del processo commerciale e operativo nella teleassistenza domiciliare.
+        </p>
+
+        <div class="highlight-box">
+            <h3 style="margin-top:0;">🎉 Risultato Finale</h3>
+            <p><strong>Da lead a servizio attivo in modo quasi completamente automatico!</strong></p>
+            <p>L'operatore interviene solo dove necessario (qualificazione lead, verifica bonifici, attivazione finale), mentre tutto il resto è gestito automaticamente dal sistema.</p>
+        </div>
+
+        <p><strong>Con TeleMedCare V12.0 gestisci più clienti, riduci errori, migliori la customer experience e rispetti completamente la normativa GDPR.</strong></p>
+
+        <div class="footer">
+            <p><strong>Medica GB S.r.l.</strong></p>
+            <p>Via Example 123, 20100 Milano (MI), Italia</p>
+            <p>📧 info@medicagb.it | 📧 support@medicagb.it | 📞 +39 02 1234567</p>
+            <p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a></p>
+            <hr style="margin: 30px 0;">
+            <p><strong>Documento:</strong> Documentazione Funzionale Sistema TeleMedCare V12.0</p>
+            <p><strong>Versione:</strong> 1.0 | <strong>Data:</strong> 26 Febbraio 2026</p>
+            <p><strong>Autore:</strong> Medica GB S.r.l.</p>
+            <hr style="margin: 30px 0;">
+            <p><em>© 2026 Medica GB S.r.l. - Tutti i diritti riservati</em></p>
+        </div>
+
+    </div>
+</body>
+</html>
