@@ -1107,6 +1107,7 @@ export async function inviaEmailProforma(
     numeroProforma: string
     proformaPdfUrl: string
     tipoServizio: string
+    servizio?: string  // 🔥 AGGIUNTO: campo opzionale per servizio completo
     prezzoBase: number
     prezzoIvaInclusa: number
     dataScadenza: string
