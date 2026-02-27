@@ -329,13 +329,6 @@
             }
         }
     </style>
-
-    <!-- BUILD INFO: ANTI-CACHE V11 ROLLBACK -->
-    <meta name="build-version" content="V12">
-    <meta name="build-commit" content="3155d26">
-    <meta name="build-date" content="2026-02-27T21:02:46.815Z">
-    <meta name="build-timestamp" content="1772226166815">
-    <!-- END BUILD INFO -->
 </head>
 <body>
     <div class="container">
@@ -566,6 +559,24 @@
             
             console.log('🔍 [DEBUG] submitSignature() chiamata - NESSUN redirect previsto');
             
+            // 🔥 BLOCCO GLOBALE: Previeni QUALSIASI tentativo di navigazione
+            const blockNavigation = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.warn('⚠️ [BLOCKED] Tentativo navigazione bloccato!');
+                return false;
+            };
+            
+            // Blocca tutti i possibili eventi di navigazione
+            window.addEventListener('beforeunload', blockNavigation, { capture: true });
+            window.addEventListener('unload', blockNavigation, { capture: true });
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    console.warn('⚠️ [BLOCKED] Click su link bloccato');
+                }
+            }, { capture: true });
+            
             try {
                 // Verifica che ci sia una firma
                 const signatureData = canvas.toDataURL('image/png');
@@ -612,6 +623,13 @@
 
                 console.log('✅ [DEBUG] Firma salvata con successo - Mostro popup successo (NO redirect)');
                 
+                // 🔥 PROTEZIONE MASSIMA: Blocca history e location
+                Object.defineProperty(window, 'location', {
+                    configurable: false,
+                    writable: false,
+                    value: window.location
+                });
+                
                 // Mostra messaggio successo con overlay
                 document.getElementById('loadingSubmit').classList.remove('active');
                 document.getElementById('successOverlay').classList.add('active');
@@ -627,7 +645,11 @@
                 window.history.pushState(null, '', window.location.href);
                 window.addEventListener('popstate', function(e) {
                     window.history.pushState(null, '', window.location.href);
+                    console.warn('⚠️ [BLOCKED] Back button bloccato');
                 });
+                
+                // 🔥 BLOCCO ASSOLUTO: return false per fermare esecuzione
+                return false;
 
             } catch (error) {
                 console.error('Errore invio firma:', error);
