@@ -2,47 +2,124 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/home">
-    <!-- Force deploy: 2026-01-05 19:45 - Fix Puppeteer + CRUD completo -->
-    <title>TeleMedCare V12.1 - Redirecting...</title>
-    <script>
-        window.location.href = '/home';
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleMedCare - Servizio Attivo</title>
     <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        * {
             margin: 0;
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            color: white;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .loader {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 60px 40px;
             text-align: center;
         }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            margin: 30px 0;
+            font-weight: 600;
+        }
+        .pulse {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .info {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div class="loader">
-        <div class="spinner"></div>
-        <h2>TeleMedCare V11.0</h2>
-        <p>Reindirizzamento alla dashboard...</p>
-        <p><small>Se non vieni reindirizzato, <a href="/home" style="color: #60a5fa;">clicca qui</a></small></p>
+    <div class="container">
+        <div class="logo">
+            🏥
+        </div>
+        
+        <h1>TeleMedCare</h1>
+        <p>Servizio di Teleassistenza Medica Attivo</p>
+        
+        <div class="status">
+            <div class="pulse"></div>
+            <span>Sistema Operativo</span>
+        </div>
+        
+        <div class="info">
+            <p><strong>✅ Contratto firmato con successo!</strong></p>
+            <p style="margin-top: 10px;">Se hai completato la firma del contratto, riceverai a breve:</p>
+            <ul style="text-align: left; margin: 15px 0; padding-left: 40px;">
+                <li>📧 Email di conferma firma</li>
+                <li>💰 Pro-forma per il pagamento</li>
+                <li>📋 Istruzioni per la configurazione</li>
+            </ul>
+            <p style="margin-top: 15px; font-size: 13px;">
+                Puoi chiudere questa finestra.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Medica GB S.r.l. - P.IVA 12435130963</p>
+            <p style="margin-top: 5px;">© 2026 TeleMedCare. Tutti i diritti riservati.</p>
+        </div>
     </div>
 </body>
 </html>
