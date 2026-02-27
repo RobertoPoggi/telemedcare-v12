@@ -1,11 +1,18 @@
 # Cloudflare Pages redirects
-# Rewrite URL senza estensione a .html preservando query parameters con splat
+# Rewrite URL senza estensione a .html preservando query parameters
+
+# FIRMA CONTRATTO
 /firma-contratto/* /firma-contratto.html 200
-/contract-signature/* /contract-signature.html 200
-/configurazione/* /configurazione.html 200
-/pagamento/* /pagamento.html 200
-# Fallback senza parametri
 /firma-contratto /firma-contratto.html 200
+
+# CONTRACT SIGNATURE (alias)
+/contract-signature/* /contract-signature.html 200
 /contract-signature /contract-signature.html 200
+
+# CONFIGURAZIONE
+/configurazione/* /configurazione.html 200
 /configurazione /configurazione.html 200
+
+# PAGAMENTO - RIMOSSO SPLAT per evitare loop con query params
+# /pagamento/* /pagamento.html 200  ← DISABILITATO
 /pagamento /pagamento.html 200
