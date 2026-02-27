@@ -1131,10 +1131,16 @@ export async function inviaEmailProforma(
     let template = await loadEmailTemplate('email_invio_proforma', db, env)
     
     // Prepara i dati per il template
+    // 🔥 FIX: Normalizza il servizio (rimuovi "eCura " se presente)
+    const servizioNormalizzato = (proformaData.servizio || 'PRO')
+      .replace(/^eCura\s+/i, '')  // Rimuovi "eCura " all'inizio (case-insensitive)
+      .trim()
+      .toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(proformaData.servizio || 'PRO', proformaData.tipoServizio),
+      PIANO_SERVIZIO: formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO'),
       NUMERO_PROFORMA: proformaData.numeroProforma,
       IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2)}`,
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
