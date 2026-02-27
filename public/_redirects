@@ -1,18 +1,19 @@
 # Cloudflare Pages redirects
 # Rewrite URL senza estensione a .html preservando query parameters
+# IMPORTANTE: NO splat (*) su URL con query params per evitare loop infiniti
 
-# FIRMA CONTRATTO
-/firma-contratto/* /firma-contratto.html 200
+# FIRMA CONTRATTO - Solo base path, query params passano through
 /firma-contratto /firma-contratto.html 200
 
 # CONTRACT SIGNATURE (alias)
-/contract-signature/* /contract-signature.html 200
 /contract-signature /contract-signature.html 200
 
-# CONFIGURAZIONE
-/configurazione/* /configurazione.html 200
+# CONFIGURAZIONE - Solo base path
 /configurazione /configurazione.html 200
 
-# PAGAMENTO - RIMOSSO SPLAT per evitare loop con query params
-# /pagamento/* /pagamento.html 200  ← DISABILITATO
+# PAGAMENTO - Solo base path (CRITICAL: NO splat per evitare loop)
 /pagamento /pagamento.html 200
+
+# NOTA: Tutte le route con query params (es: ?proformaId=1, ?contractId=2)
+# vengono servite DIRETTAMENTE dal file .html corrispondente
+# senza ulteriori redirect per evitare loop infiniti
