@@ -21502,15 +21502,15 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
-    // Genera ID proforma
-    const proformaId = `PRF-${Date.now()}`
+    // Genera numero proforma (l'ID sarà auto-generato da SQLite)
     const year = new Date().getFullYear()
     const month = String(new Date().getMonth() + 1).padStart(2, '0')
     const random = Math.random().toString(36).substring(2, 6).toUpperCase()
     const numeroProforma = `PRF${year}${month}-${random}`
+    let proformaIdGenerated: number | null = null
     
     const proformaData = {
-      proformaId,
+      proformaId: '', // Sarà popolato dopo INSERT
       numeroProforma,
       proformaPdfUrl: '',
       tipoServizio: piano,
@@ -21520,18 +21520,17 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
     
-    // Salva proforma nel DB (schema corretto con tutte le colonne richieste)
-    await c.env.DB.prepare(`
+    // Salva proforma nel DB (senza id - sarà auto-generato)
+    const insertResult = await c.env.DB.prepare(`
       INSERT INTO proforma (
-        id, contract_id, leadId, numero_proforma,
+        contract_id, leadId, numero_proforma,
         data_emissione, data_scadenza,
         cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
         cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
         tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
         status, email_sent, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      proformaId,
       '', // contract_id (vuoto per ora)
       leadId,
       numeroProforma,
@@ -21556,6 +21555,15 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       new Date().toISOString()
     ).run()
     
+    // Recupera ID auto-generato
+    if (insertResult.meta && insertResult.meta.last_row_id) {
+      proformaIdGenerated = insertResult.meta.last_row_id as number
+      proformaData.proformaId = String(proformaIdGenerated)
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} salvata con ID ${proformaIdGenerated}`)
+    } else {
+      throw new Error('Impossibile recuperare ID proforma generato')
+    }
+    
     // Invia email
     const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
     const result = await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
@@ -21570,7 +21578,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       return c.json({
         success: true,
         message: `Proforma ${numeroProforma} inviata con successo`,
-        proformaId,
+        proformaId: proformaIdGenerated,
         numeroProforma
       })
     } else {
