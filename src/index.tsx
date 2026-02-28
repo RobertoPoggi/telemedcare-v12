@@ -21519,57 +21519,65 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
     
-    // ✅ VERIFICA SE ESISTE GIÀ UNA PROFORMA PER QUESTO LEAD (schema iniziale: 0001_initial_schema.sql)
+    // ✅ VERIFICA SE ESISTE GIÀ UNA PROFORMA PER QUESTO LEAD
+    // Lo schema in produzione usa: id, contract_id, leadId, numero_proforma, data_emissione, data_scadenza
     const existingProforma = await c.env.DB.prepare(
-      'SELECT * FROM proforma WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1'
+      'SELECT * FROM proforma WHERE leadId = ? ORDER BY data_emissione DESC LIMIT 1'
     ).bind(leadId).first() as any
     
-    let proformaIdGenerated: number | null = null
+    let proformaIdGenerated: string | null = null
     
-    if (existingProforma && existingProforma.id) {
+    if (existingProforma) {
       // ✅ ESISTE GIÀ: fai UPDATE
-      console.log(`🔄 [SEND-PROFORMA] Proforma esistente trovata (ID ${existingProforma.id}), aggiorno...`)
+      // Se id è NULL, genera uno nuovo
+      const proformaId = existingProforma.id || `PRF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      
+      console.log(`🔄 [SEND-PROFORMA] Proforma esistente trovata (ID ${existingProforma.id || 'NULL'}), aggiorno con ID ${proformaId}...`)
       
       await c.env.DB.prepare(`
         UPDATE proforma 
-        SET importo = ?, 
-            status = ?,
-            created_at = ?
-        WHERE id = ?
+        SET id = ?,
+            numero_proforma = ?,
+            data_emissione = ?,
+            data_scadenza = ?
+        WHERE leadId = ? AND numero_proforma = ?
       `).bind(
-        pricing.setupTotale,
-        'generato',
-        new Date().toISOString(),
-        existingProforma.id
+        proformaId,
+        numeroProforma,
+        new Date().toISOString().split('T')[0],
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        leadId,
+        existingProforma.numero_proforma
       ).run()
       
-      proformaIdGenerated = existingProforma.id
-      proformaData.proformaId = String(existingProforma.id)
-      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} aggiornata con ID ${existingProforma.id}`)
+      proformaIdGenerated = proformaId
+      proformaData.proformaId = proformaId
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} aggiornata con ID ${proformaId}`)
       
     } else {
-      // ✅ NON ESISTE: fai INSERT (usa schema INIZIALE: id AUTOINCREMENT, lead_id, importo, file_path, status, created_at)
+      // ✅ NON ESISTE: fai INSERT con schema URGENT (quello in produzione)
       console.log(`📝 [SEND-PROFORMA] Nessuna proforma esistente, creo nuova...`)
       
+      const proformaId = `PRF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+      
       const insertResult = await c.env.DB.prepare(`
-        INSERT INTO proforma (lead_id, importo, file_path, status, created_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO proforma (
+          id, leadId, numero_proforma,
+          data_emissione, data_scadenza,
+          contract_id
+        ) VALUES (?, ?, ?, ?, ?, ?)
       `).bind(
+        proformaId,
         leadId,
-        pricing.setupTotale,
-        '', // file_path vuoto per ora
-        'generato',
-        new Date().toISOString()
+        numeroProforma,
+        new Date().toISOString().split('T')[0],
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        'MANUAL' // contract_id placeholder
       ).run()
       
-      // Recupera ID auto-generato
-      if (insertResult.meta && insertResult.meta.last_row_id) {
-        proformaIdGenerated = insertResult.meta.last_row_id as number
-        proformaData.proformaId = String(proformaIdGenerated)
-        console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata con ID ${proformaIdGenerated}`)
-      } else {
-        throw new Error('Impossibile recuperare ID proforma generato')
-      }
+      proformaIdGenerated = proformaId
+      proformaData.proformaId = proformaId
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata con ID ${proformaId}`)
     }
     
     // Invia email
