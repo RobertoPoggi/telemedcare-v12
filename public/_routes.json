@@ -23,6 +23,7 @@
     "/leads_clean_import.json",
     "/pagamento",
     "/pagamento.html",
+    "/proforma-view.html",
     "/setup-contracts.html",
     "/setup-contracts-sql.html",
     "/setup-contracts-client.js",
