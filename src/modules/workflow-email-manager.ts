@@ -1098,6 +1098,122 @@ export async function inviaEmailContratto(
 }
 
 /**
+ * Helper: Ritorna template proforma embedded (versione semplificata con link Stripe)
+ */
+async function loadProformaTemplate(): Promise<string> {
+  return `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeleMedCare - Fattura Proforma</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+* {margin:0;padding:0;box-sizing:border-box;}
+body {font-family:'Roboto','Arial',sans-serif;line-height:1.8;color:#333;background:#f8f9fa;}
+.container {max-width:800px;margin:20px auto;background:white;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+.header {background:linear-gradient(135deg,#0066CC,#0099CC);color:white;padding:40px 30px;text-align:center;}
+.header h1 {font-size:32px;font-weight:700;}
+.header .tagline {font-size:16px;margin-top:10px;opacity:0.95;}
+.content {padding:40px 30px;}
+.greeting {font-size:18px;color:#2c3e50;margin-bottom:25px;}
+.info-box {background:linear-gradient(135deg,#0066CC,#00A86B);color:white;padding:25px;border-radius:8px;margin:30px 0;}
+.info-box h3 {margin:0 0 20px 0;font-size:20px;}
+.info-item {margin:15px 0;font-size:16px;}
+.info-item strong {display:inline-block;min-width:150px;font-weight:500;}
+.section {margin:40px 0;}
+.section h3 {color:#0066CC;font-size:22px;margin-bottom:20px;border-bottom:2px solid #0066CC;padding-bottom:10px;}
+.price-highlight {font-size:28px;font-weight:700;color:#0066CC;margin:20px 0;text-align:center;}
+.btn {display:inline-block;background:#0066CC;color:white!important;padding:15px 30px;text-decoration:none;border-radius:8px;margin:15px 0;font-weight:bold;text-align:center;transition:background 0.3s;}
+.btn:hover {background:#0055aa;}
+.payment-options {display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:30px 0;}
+.payment-box {background:#f0f8ff;border:2px solid #0066CC;border-radius:8px;padding:20px;}
+.payment-box h3 {color:#0066CC;margin-bottom:15px;}
+.footer {background:#2c3e50;color:white;padding:30px;text-align:center;font-size:14px;}
+.footer p {margin:12px 0;}
+.footer a {color:#00A86B;text-decoration:none;}
+.warning-box {background:#fff3cd;border-left:4px solid #ffc107;padding:20px;border-radius:4px;margin:30px 0;}
+.warning-box h4 {color:#856404;margin-bottom:12px;}
+.warning-box p {color:#856404;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>💰 eCura by TeleMedCare</h1>
+<div class="tagline">La tecnologia che salva salute e vita</div>
+</div>
+<div class="content">
+<p class="greeting">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+<p>Grazie per aver firmato il contratto! Siamo lieti di inviarLe la <strong>fattura proforma</strong> per procedere con l'attivazione del Suo servizio di teleassistenza.</p>
+
+<div class="info-box">
+<h3>📋 PROFORMA N. {{NUMERO_PROFORMA}}</h3>
+<div class="info-item"><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</div>
+<div class="info-item"><strong>Data Emissione:</strong> {{DATA_INVIO}}</div>
+<div class="info-item"><strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</div>
+</div>
+
+<div class="price-highlight">💰 TOTALE DA PAGARE: {{IMPORTO_TOTALE}}</div>
+
+<div class="section">
+<h3>💳 Modalità di Pagamento</h3>
+<p>Scelga la modalità di pagamento che preferisce:</p>
+
+<div class="payment-options">
+<div class="payment-box">
+<h3>Opzione 1 - Online</h3>
+<p>💳 <strong>Carta di Credito/Debito</strong></p>
+<p style="font-size:14px;color:#666;margin:10px 0">Pagamento sicuro tramite Stripe. Conferma immediata.</p>
+<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block;text-align:center">💳 PAGA ORA CON STRIPE</a>
+</div>
+
+<div class="payment-box">
+<h3>Opzione 2 - Bonifico</h3>
+<p><strong>IBAN:</strong></p>
+<p style="background:#fff;padding:10px;border-radius:5px;font-family:monospace;font-size:14px;border:1px solid #ddd">{{IBAN}}</p>
+<p style="margin-top:15px"><strong>Intestatario:</strong> Medica GB S.r.l.</p>
+<p><strong>Causale:</strong></p>
+<p style="background:#fff3cd;padding:10px;border-radius:5px;font-size:13px;border:1px solid #ffc107">{{CAUSALE}}</p>
+</div>
+</div>
+</div>
+
+<div class="warning-box">
+<h4>⚠️ IMPORTANTE</h4>
+<p>✓ Il pagamento deve essere effettuato entro la data di scadenza</p>
+<p>✓ La fattura fiscale verrà emessa al ricevimento del pagamento</p>
+<p>✓ Il servizio verrà attivato entro 2 giorni lavorativi</p>
+</div>
+
+<div class="section">
+<h3>📬 Cosa succede dopo il pagamento?</h3>
+<p>1️⃣ Riceverà la <strong>fattura fiscale</strong> definitiva via email</p>
+<p>2️⃣ Le invieremo il <strong>dispositivo SiDLY</strong> (consegna 5-10 giorni lavorativi)</p>
+<p>3️⃣ Riceverà le <strong>istruzioni per la configurazione</strong></p>
+<p>4️⃣ Il nostro team La contatterà per <strong>programmare l'attivazione</strong></p>
+</div>
+
+<p style="margin-top:40px">Per qualsiasi domanda o assistenza:</p>
+<p>📧 <a href="mailto:info@telemedcare.it" style="color:#0066CC;font-weight:bold">info@telemedcare.it</a></p>
+<p>📞 +39 02 1234567</p>
+
+<p style="margin-top:30px">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+</div>
+
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a> | <a href="https://www.telemedcare.it">www.telemedcare.it</a></p>
+<p>📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+</div>
+</body>
+</html>`
+}
+
+/**
  * STEP 3: Invia proforma dopo firma contratto
  */
 export async function inviaEmailProforma(
@@ -1127,18 +1243,25 @@ export async function inviaEmailProforma(
 
     const emailService = new EmailService(env)
     
-    // ✅ Carica template unificato (Template_Proforma_Unificato_TeleMedCare.html)
-    let template = await loadEmailTemplate('Template_Proforma_Unificato_TeleMedCare', db, env)
+    // ✅ Carica template unificato direttamente dal file
+    // NOTA: In Cloudflare Workers, i file devono essere importati come raw text al build time
+    let template: string
     
-    // Fallback: carica dal filesystem se non in DB
-    if (!template) {
-      console.log('⚠️ Template non in DB, carico da filesystem...')
-      try {
-        const fs = await import('fs/promises')
-        template = await fs.readFile('./templates/Template_Proforma_Unificato_TeleMedCare.html', 'utf-8')
-      } catch (err) {
-        console.warn('⚠️ Template filesystem non trovato, uso fallback inline')
+    try {
+      // Prova prima dal DB
+      template = await loadEmailTemplate('Template_Proforma_Unificato_TeleMedCare', db, env)
+      if (template) {
+        console.log('✅ [WORKFLOW] Template caricato dal DB')
       }
+    } catch (err) {
+      console.warn('⚠️ Template non in DB')
+    }
+    
+    // Se non trovato nel DB, usa il template inline (versione embedded)
+    if (!template) {
+      console.log('⚠️ [WORKFLOW] Template non in DB, uso versione embedded')
+      // Questo è il template Template_Proforma_Unificato_TeleMedCare.html embedded
+      template = await loadProformaTemplate()
     }
     
     // Prepara i dati per il template
