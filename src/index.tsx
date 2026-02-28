@@ -9672,6 +9672,69 @@ app.get('/firma-contratto', async (c) => {
   `)
 })
 
+// GET /proforma-view?id=xxx - Serve proforma view HTML statico
+app.get('/proforma-view', async (c) => {
+  const proformaId = c.req.query('id')
+  
+  if (!proformaId) {
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Errore</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+          h1 { color: #e74c3c; }
+        </style>
+      </head>
+      <body>
+        <h1>❌ Errore</h1>
+        <p>ID proforma mancante</p>
+        <p>Contatta <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> per assistenza.</p>
+      </body>
+      </html>
+    `, 400)
+  }
+  
+  // Serve il file HTML statico da Assets
+  if (c.env.ASSETS) {
+    // Crea una nuova richiesta per il file statico
+    const htmlUrl = new URL(c.req.url)
+    htmlUrl.pathname = '/proforma-view.html'
+    
+    try {
+      const response = await c.env.ASSETS.fetch(htmlUrl.toString())
+      if (response.ok) {
+        return response
+      }
+    } catch (error) {
+      console.error('❌ Errore caricamento proforma-view.html da Assets:', error)
+    }
+  }
+  
+  // Fallback: errore
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      <meta charset="UTF-8">
+      <title>Errore</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+        h1 { color: #e74c3c; }
+      </style>
+    </head>
+    <body>
+      <h1>❌ Errore 503</h1>
+      <p>Impossibile caricare la proforma. Riprova più tardi.</p>
+      <p>ID: ${proformaId}</p>
+    </body>
+    </html>
+  `, 503)
+})
+
 // GET /dashboard-live - Dashboard operativa servita dal Worker (bypassa Cloudflare Pages cache)
 app.get('/dashboard-live', async (c) => {
   // REDIRECT TEMPORANEO: usa test-email-debug che funziona

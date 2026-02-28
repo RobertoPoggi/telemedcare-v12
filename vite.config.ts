@@ -35,6 +35,11 @@ function copyPublicHtmlPlugin() {
             copyFileSync(srcPath, destPath)
             console.log(`✅ Copied: ${entry} (cache control)`)
           }
+          // Copy _routes.json file (Cloudflare Pages routing config)
+          if (entry === '_routes.json') {
+            copyFileSync(srcPath, destPath)
+            console.log(`✅ Copied: ${entry} (Cloudflare Pages routing)`)
+          }
         }
       }
       
