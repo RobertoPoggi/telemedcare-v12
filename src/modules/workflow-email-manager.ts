@@ -1098,7 +1098,8 @@ export async function inviaEmailContratto(
 }
 
 /**
- * Helper: Ritorna template proforma embedded (versione semplificata con link Stripe)
+ * Helper: Ritorna template proforma corretto con link Stripe + IBAN
+ * Questo è il template originale email_invio_proforma.html MODIFICATO per includere pagamenti
  */
 async function loadProformaTemplate(): Promise<string> {
   return `<!DOCTYPE html>
@@ -1106,84 +1107,75 @@ async function loadProformaTemplate(): Promise<string> {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TeleMedCare - Fattura Proforma</title>
+<title>Email Invio Proforma - Medica GB</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-* {margin:0;padding:0;box-sizing:border-box;}
-body {font-family:'Roboto','Arial',sans-serif;line-height:1.8;color:#333;background:#f8f9fa;}
-.container {max-width:800px;margin:20px auto;background:white;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
-.header {background:linear-gradient(135deg,#0066CC,#0099CC);color:white;padding:40px 30px;text-align:center;}
-.header h1 {font-size:32px;font-weight:700;}
-.header .tagline {font-size:16px;margin-top:10px;opacity:0.95;}
-.content {padding:40px 30px;}
-.greeting {font-size:18px;color:#2c3e50;margin-bottom:25px;}
-.info-box {background:linear-gradient(135deg,#0066CC,#00A86B);color:white;padding:25px;border-radius:8px;margin:30px 0;}
-.info-box h3 {margin:0 0 20px 0;font-size:20px;}
-.info-item {margin:15px 0;font-size:16px;}
-.info-item strong {display:inline-block;min-width:150px;font-weight:500;}
-.section {margin:40px 0;}
-.section h3 {color:#0066CC;font-size:22px;margin-bottom:20px;border-bottom:2px solid #0066CC;padding-bottom:10px;}
-.price-highlight {font-size:28px;font-weight:700;color:#0066CC;margin:20px 0;text-align:center;}
-.btn {display:inline-block;background:#0066CC;color:white!important;padding:15px 30px;text-decoration:none;border-radius:8px;margin:15px 0;font-weight:bold;text-align:center;transition:background 0.3s;}
-.btn:hover {background:#0055aa;}
-.payment-options {display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:30px 0;}
-.payment-box {background:#f0f8ff;border:2px solid #0066CC;border-radius:8px;padding:20px;}
-.payment-box h3 {color:#0066CC;margin-bottom:15px;}
-.footer {background:#2c3e50;color:white;padding:30px;text-align:center;font-size:14px;}
-.footer p {margin:12px 0;}
-.footer a {color:#00A86B;text-decoration:none;}
-.warning-box {background:#fff3cd;border-left:4px solid #ffc107;padding:20px;border-radius:4px;margin:30px 0;}
-.warning-box h4 {color:#856404;margin-bottom:12px;}
-.warning-box p {color:#856404;}
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa;}
+.email-container {background: white; max-width: 800px; margin: 20px auto; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);}
+.header {background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center;}
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+.success-box {background: #d4edda; border-left: 4px solid #00A86B; padding: 20px; border-radius: 4px; margin: 30px 0;}
+.success-box h4 {color: #155724; margin: 0 0 12px 0; font-weight: 500;}
+.success-box p {color: #155724; line-height: 1.8; margin: 10px 0;}
+.section {margin: 40px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.price-highlight {font-size: 28px; font-weight: 700; color: #0066CC; margin: 30px 0; text-align: center;}
+.payment-options {display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;}
+.payment-box {background: #f0f8ff; border: 2px solid #0066CC; border-radius: 8px; padding: 20px;}
+.payment-box h3 {color: #0066CC; margin-bottom: 15px; font-size: 18px;}
+.btn {display: inline-block; background: #0066CC; color: white!important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 15px 0; font-weight: bold; text-align: center;}
+.btn:hover {background: #0055aa;}
+.contact-box {background: #2c3e50; color: white; padding: 25px; border-radius: 8px; margin: 30px 0;}
+.contact-box h3 {margin: 0 0 20px 0; color: white; font-size: 20px; font-weight: 500;}
+.contact-item {margin: 18px 0; font-size: 16px; font-weight: 400; line-height: 1.8; color: white;}
+.contact-item a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.footer {background: #2c3e50; color: white; padding: 30px; text-align: center; font-size: 14px;}
+.footer p {margin: 12px 0; font-weight: 400; color: white; line-height: 1.6;}
+.footer a {color: #00A86B; text-decoration: none; font-weight: 500;}
+p {margin: 18px 0; line-height: 1.9;}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="email-container">
 <div class="header">
-<h1>💰 eCura by TeleMedCare</h1>
-<div class="tagline">La tecnologia che salva salute e vita</div>
+<h1>eCura by Medica GB S.r.l.</h1>
+<div class="tagline">Startup Innovativa a Vocazione Sociale "La tecnologia che Le salva salute e vita"</div>
 </div>
 <div class="content">
-<p class="greeting">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
-<p>Grazie per aver firmato il contratto! Siamo lieti di inviarLe la <strong>fattura proforma</strong> per procedere con l'attivazione del Suo servizio di teleassistenza.</p>
-
-<div class="info-box">
-<h3>📋 PROFORMA N. {{NUMERO_PROFORMA}}</h3>
-<div class="info-item"><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</div>
-<div class="info-item"><strong>Data Emissione:</strong> {{DATA_INVIO}}</div>
-<div class="info-item"><strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</div>
+<p class="greeting">Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},</p>
+<p class="greeting">È con grande piacere che Le inviamo la Pro-forma eCura, una soluzione innovativa che rappresenta un vero cambiamento di paradigma nell'assistenza socio-sanitaria.</p>
+<div class="success-box">
+<h4>✅ Pro-forma {{PIANO_SERVIZIO}}</h4>
+<p>Numero Pro-forma: <strong>{{NUMERO_PROFORMA}}</strong></p>
+<p>Data emissione: <strong>{{DATA_INVIO}}</strong></p>
+<p>Scadenza pagamento: <strong>{{SCADENZA_PAGAMENTO}}</strong></p>
 </div>
-
 <div class="price-highlight">💰 TOTALE DA PAGARE: {{IMPORTO_TOTALE}}</div>
 
 <div class="section">
 <h3>💳 Modalità di Pagamento</h3>
 <p>Scelga la modalità di pagamento che preferisce:</p>
-
 <div class="payment-options">
 <div class="payment-box">
-<h3>Opzione 1 - Online</h3>
+<h3>Opzione 1 - Pagamento Online</h3>
 <p>💳 <strong>Carta di Credito/Debito</strong></p>
 <p style="font-size:14px;color:#666;margin:10px 0">Pagamento sicuro tramite Stripe. Conferma immediata.</p>
-<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block;text-align:center">💳 PAGA ORA CON STRIPE</a>
+<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block;text-align:center;color:white">💳 PAGA ORA CON STRIPE</a>
 </div>
-
 <div class="payment-box">
-<h3>Opzione 2 - Bonifico</h3>
+<h3>Opzione 2 - Bonifico Bancario</h3>
 <p><strong>IBAN:</strong></p>
-<p style="background:#fff;padding:10px;border-radius:5px;font-family:monospace;font-size:14px;border:1px solid #ddd">{{IBAN}}</p>
-<p style="margin-top:15px"><strong>Intestatario:</strong> Medica GB S.r.l.</p>
+<p style="background:#fff;padding:10px;border-radius:5px;font-family:monospace;font-size:13px;border:1px solid #ddd;margin:10px 0">{{IBAN}}</p>
+<p style="margin-top:10px"><strong>Intestatario:</strong> Medica GB S.r.l.</p>
 <p><strong>Causale:</strong></p>
-<p style="background:#fff3cd;padding:10px;border-radius:5px;font-size:13px;border:1px solid #ffc107">{{CAUSALE}}</p>
+<p style="background:#fff3cd;padding:10px;border-radius:5px;font-size:12px;border:1px solid #ffc107;margin:10px 0">{{CAUSALE}}</p>
+<p style="font-size:13px;color:#666;margin-top:10px">💡 Ricorda di inserire la causale esatta</p>
 </div>
 </div>
-</div>
-
-<div class="warning-box">
-<h4>⚠️ IMPORTANTE</h4>
-<p>✓ Il pagamento deve essere effettuato entro la data di scadenza</p>
-<p>✓ La fattura fiscale verrà emessa al ricevimento del pagamento</p>
-<p>✓ Il servizio verrà attivato entro 2 giorni lavorativi</p>
 </div>
 
 <div class="section">
@@ -1194,11 +1186,19 @@ body {font-family:'Roboto','Arial',sans-serif;line-height:1.8;color:#333;backgro
 <p>4️⃣ Il nostro team La contatterà per <strong>programmare l'attivazione</strong></p>
 </div>
 
-<p style="margin-top:40px">Per qualsiasi domanda o assistenza:</p>
-<p>📧 <a href="mailto:info@telemedcare.it" style="color:#0066CC;font-weight:bold">info@telemedcare.it</a></p>
-<p>📞 +39 02 1234567</p>
+<div class="section">
+<h3>🎯 La Nostra Mission Sociale</h3>
+<p>Medica GB nasce dal desiderio di apportare innovazione in ambito socio-sanitario, modificando il paradigma tradizionale: non più le persone che si recano nei luoghi di cura, ma la tecnologia che arriva direttamente dove c'è necessità di assistenza.</p>
+</div>
 
-<p style="margin-top:30px">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<div class="contact-item">E-MAIL: <a href="mailto:info@medicagb.it">info@medicagb.it</a>; <a href="mailto:info@telemedcare.it">info@telemedcare.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a></div>
+<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
+<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
+</div>
+
+<p>Cordiali saluti,<br><strong>Il Team eCura</strong><br>Sicuri, Vicini, Ovunque<br>"La tecnologia che Le salva salute e vita"</p>
 </div>
 
 <div class="footer">
