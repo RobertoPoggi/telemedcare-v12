@@ -21499,21 +21499,47 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     
     console.log(`💰 [SEND-PROFORMA] Invio proforma manuale per lead ${leadId}`)
     
-    // Determina servizio e piano
-    const servizio = lead.servizio || 'eCura PRO'
-    const piano = lead.piano || 'BASE'
+    // ✅ STEP 1: Cerca contratto firmato per questo lead (fonte primaria)
+    const contract = await c.env.DB.prepare(`
+      SELECT servizio, piano 
+      FROM contracts 
+      WHERE leadId = ? AND status = 'firmato'
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `).bind(leadId).first() as any
     
-    console.log(`📊 [PRICING] Lead servizio: "${lead.servizio}" → "${servizio}"`)
-    console.log(`📊 [PRICING] Lead piano: "${lead.piano}" → "${piano}"`)
+    // ✅ STEP 2: Determina servizio e piano dalla fonte corretta
+    let servizio: string
+    let piano: string
+    
+    if (contract && contract.servizio && contract.piano) {
+      // Usa dati dal contratto firmato (priorità massima)
+      servizio = contract.servizio
+      piano = contract.piano
+      console.log(`✅ [PRICING] Dati da CONTRATTO: ${servizio} - ${piano}`)
+    } else if (lead.servizio && lead.piano) {
+      // Fallback: usa dati dal lead
+      servizio = lead.servizio
+      piano = lead.piano
+      console.log(`⚠️ [PRICING] Dati da LEAD (no contratto): ${servizio} - ${piano}`)
+    } else {
+      // Ultimo fallback: usa default più comune
+      servizio = 'eCura PRO'
+      piano = 'BASE'
+      console.warn(`⚠️ [PRICING] ATTENZIONE: usando default PRO BASE (nessun dato trovato in DB)`)
+    }
+    
+    console.log(`📊 [PRICING] FINALE - Servizio: "${servizio}", Piano: "${piano}"`)
     
     // Calcola prezzi
-    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    const servizioType = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
     console.log(`📊 [PRICING] Tipo servizio calcolato: "${servizioType}"`)
     
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
-    console.log(`📊 [PRICING] Prezzo calcolato: ${servizioType} ${piano.toUpperCase()} = €${pricing.setupTotale.toFixed(2)} (base: €${pricing.setupBase})`)
+    console.log(`💰 [PRICING] Prezzo calcolato: ${servizioType} ${piano.toUpperCase()} = €${pricing.setupTotale.toFixed(2)}`)
+    console.log(`💰 [PRICING] Dettaglio: base €${pricing.setupBase} + IVA €${pricing.setupIva} = TOT €${pricing.setupTotale}`)
 
     
     // Genera numero proforma (l'ID sarà auto-generato da SQLite)
