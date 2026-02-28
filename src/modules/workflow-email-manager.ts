@@ -1098,11 +1098,59 @@ export async function inviaEmailContratto(
 }
 
 /**
- * Helper: Ritorna template proforma corretto con link Stripe + IBAN
- * Questo è il template originale email_invio_proforma.html MODIFICATO per includere pagamenti
+ * STEP 3: Invia proforma dopo firma contratto
  */
-async function loadProformaTemplate(): Promise<string> {
-  return `<!DOCTYPE html>
+export async function inviaEmailProforma(
+  leadData: LeadData,
+  proformaData: {
+    proformaId: string
+    numeroProforma: string
+    proformaPdfUrl: string
+    tipoServizio: string
+    servizio?: string  // 🔥 AGGIUNTO: campo opzionale per servizio completo
+    prezzoBase: number
+    prezzoIvaInclusa: number
+    dataScadenza: string
+  },
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult> {
+  const result: WorkflowEmailResult = {
+    success: false,
+    step: 'invio_proforma',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    console.log(`📧 [WORKFLOW] STEP 3: Invio proforma ${proformaData.numeroProforma} a ${leadData.email}`)
+
+    const emailService = new EmailService(env)
+    
+    // 🔥 FIX: Normalizza il servizio (rimuovi "eCura " se presente)
+    const servizioNormalizzato = (proformaData.servizio || 'PRO')
+      .replace(/^eCura\s+/i, '')  // Rimuovi "eCura " all'inizio (case-insensitive)
+      .trim()
+      .toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
+    
+    const templateData = {
+      NOME_CLIENTE: leadData.nomeRichiedente,
+      COGNOME_CLIENTE: leadData.cognomeRichiedente,
+      PIANO_SERVIZIO: formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO'),
+      NUMERO_PROFORMA: proformaData.numeroProforma,
+      IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
+      IBAN: 'IT97L0503401727000000003519',
+      CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proformaId=${proformaData.proformaId}`,
+      DATA_INVIO: new Date().toLocaleDateString('it-IT')
+    }
+
+    // ✅ CARICA IL TEMPLATE DA FILE (come tutti gli altri!)
+    const template = await loadEmailTemplate('email_invio_proforma', db, env)
+    
+    // OLD INLINE TEMPLATE (commentato per sicurezza - rimuovere dopo deploy)
+    /* const templateInlineOLD = `<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -1210,144 +1258,7 @@ p {margin: 18px 0; line-height: 1.9;}
 </div>
 </div>
 </body>
-</html>`
-}
-
-/**
- * STEP 3: Invia proforma dopo firma contratto
- */
-export async function inviaEmailProforma(
-  leadData: LeadData,
-  proformaData: {
-    proformaId: string
-    numeroProforma: string
-    proformaPdfUrl: string
-    tipoServizio: string
-    servizio?: string  // 🔥 AGGIUNTO: campo opzionale per servizio completo
-    prezzoBase: number
-    prezzoIvaInclusa: number
-    dataScadenza: string
-  },
-  env: any,
-  db: D1Database
-): Promise<WorkflowEmailResult> {
-  const result: WorkflowEmailResult = {
-    success: false,
-    step: 'invio_proforma',
-    emailsSent: [],
-    errors: []
-  }
-
-  try {
-    console.log(`📧 [WORKFLOW] STEP 3: Invio proforma ${proformaData.numeroProforma} a ${leadData.email}`)
-
-    const emailService = new EmailService(env)
-    
-    // ✅ Carica template unificato direttamente dal file
-    // NOTA: In Cloudflare Workers, i file devono essere importati come raw text al build time
-    let template: string
-    
-    try {
-      // Prova prima dal DB
-      template = await loadEmailTemplate('Template_Proforma_Unificato_TeleMedCare', db, env)
-      if (template) {
-        console.log('✅ [WORKFLOW] Template caricato dal DB')
-      }
-    } catch (err) {
-      console.warn('⚠️ Template non in DB')
-    }
-    
-    // Se non trovato nel DB, usa il template inline (versione embedded)
-    if (!template) {
-      console.log('⚠️ [WORKFLOW] Template non in DB, uso versione embedded')
-      // Questo è il template Template_Proforma_Unificato_TeleMedCare.html embedded
-      template = await loadProformaTemplate()
-    }
-    
-    // Prepara i dati per il template
-    // 🔥 FIX: Normalizza il servizio (rimuovi "eCura " se presente)
-    const servizioNormalizzato = (proformaData.servizio || 'PRO')
-      .replace(/^eCura\s+/i, '')  // Rimuovi "eCura " all'inizio (case-insensitive)
-      .trim()
-      .toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
-    
-    const templateData = {
-      NOME_CLIENTE: leadData.nomeRichiedente,
-      COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO'),
-      NUMERO_PROFORMA: proformaData.numeroProforma,
-      IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2)}`,
-      SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
-      IBAN: 'IT97L0503401727000000003519',
-      CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proformaId=${proformaData.proformaId}`,
-      DATA_INVIO: new Date().toLocaleDateString('it-IT')
-    }
-
-    // Fallback: se template manca, usa HTML inline
-    if (!template) {
-      console.warn(`⚠️ [WORKFLOW] Template email_invio_proforma non trovato, uso HTML inline`)
-      template = `
-<!DOCTYPE html>
-<html lang="it">
-<head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;margin:0;padding:0}.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center}.content{padding:30px;max-width:800px;margin:0 auto}.proforma{background:#f8f9fa;border:2px solid #667eea;border-radius:10px;padding:25px;margin:25px 0}.proforma h2{color:#667eea;margin-top:0;border-bottom:2px solid #667eea;padding-bottom:10px}.proforma-table{width:100%;border-collapse:collapse;margin:20px 0}.proforma-table th,.proforma-table td{padding:12px;text-align:left;border-bottom:1px solid #ddd}.proforma-table th{background:#667eea;color:white}.proforma-table tr:last-child td{border-bottom:2px solid #667eea;font-weight:bold;font-size:18px}.payment-options{display:flex;gap:20px;margin:30px 0;flex-wrap:wrap}.payment-box{flex:1;min-width:280px;background:white;border:2px solid #e0e0e0;border-radius:10px;padding:20px}.payment-box h3{color:#667eea;margin-top:0}.btn{display:inline-block;background:#667eea;color:white!important;padding:15px 30px;text-decoration:none;border-radius:8px;margin:15px 0;font-weight:bold;text-align:center;transition:background 0.3s}.btn:hover{background:#5568d3}.footer{background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666;border-top:2px solid #e0e0e0}</style></head>
-<body>
-<div class="header">
-<h1>💰 Fattura Proforma</h1>
-<p>TeleMedCare - Servizio eCura</p>
-</div>
-<div class="content">
-<p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
-<p>Grazie per aver firmato il contratto! Di seguito troverai la <strong>Fattura Proforma</strong> con le modalità di pagamento.</p>
-
-<div class="proforma">
-<h2>📋 PROFORMA N. {{NUMERO_PROFORMA}}</h2>
-<table class="proforma-table">
-<tr><th>Descrizione</th><th style="text-align:right">Importo</th></tr>
-<tr><td><strong>{{PIANO_SERVIZIO}}</strong><br><small>Servizio di telemedicina eCura</small></td><td style="text-align:right">{{IMPORTO_TOTALE}}</td></tr>
-<tr><td><strong>TOTALE DA PAGARE</strong></td><td style="text-align:right;color:#667eea"><strong>{{IMPORTO_TOTALE}}</strong></td></tr>
-</table>
-<p style="margin:15px 0"><strong>📅 Data Emissione:</strong> {{DATA_INVIO}}<br><strong>⏰ Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}</p>
-</div>
-
-<h3 style="color:#667eea;margin-top:40px">💳 Scegli la Modalità di Pagamento</h3>
-
-<div class="payment-options">
-<div class="payment-box" style="border-color:#667eea">
-<h3>Opzione 1 - Pagamento Online</h3>
-<p>💳 <strong>Carta di Credito/Debito</strong> o <strong>PayPal</strong></p>
-<p style="color:#666;font-size:14px">Pagamento sicuro tramite Stripe. Riceverai conferma immediata.</p>
-<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block">💳 Paga Ora con Stripe</a>
-</div>
-
-<div class="payment-box">
-<h3>Opzione 2 - Bonifico Bancario</h3>
-<p><strong>IBAN:</strong><br><code style="background:#f0f0f0;padding:5px 10px;border-radius:5px;display:inline-block;margin:5px 0">{{IBAN}}</code></p>
-<p><strong>Intestatario:</strong> Medica GB S.r.l.</p>
-<p><strong>Importo:</strong> {{IMPORTO_TOTALE}}</p>
-<p><strong>Causale:</strong><br><code style="background:#fff3cd;padding:5px 10px;border-radius:5px;display:inline-block;margin:5px 0;font-size:12px">{{CAUSALE}}</code></p>
-<p style="font-size:13px;color:#666;margin-top:15px">💡 Ricorda di inserire la causale esatta per identificare il pagamento</p>
-</div>
-</div>
-
-<div style="background:#e7f3ff;border-left:4px solid #667eea;padding:15px;margin:30px 0;border-radius:5px">
-<p style="margin:0"><strong>📬 Cosa Succede Dopo il Pagamento?</strong></p>
-<ol style="margin:10px 0 0 0;padding-left:20px">
-<li>Riceverai una <strong>conferma di pagamento</strong> via email</li>
-<li>Ti invieremo le <strong>istruzioni per configurare</strong> il dispositivo SiDLY</li>
-</ol>
-</div>
-
-<p style="margin-top:30px">Per qualsiasi domanda o assistenza:<br>📧 <a href="mailto:info@telemedcare.it" style="color:#667eea;font-weight:bold">info@telemedcare.it</a><br>📞 +39 02 1234567</p>
-
-<p style="margin-top:30px">Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
-</div>
-<div class="footer">
-<p><strong>Medica GB S.r.l.</strong><br>Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>P.IVA: 12435130963 | Email: info@telemedcare.it</p>
-</div>
-</body>
-</html>`
-    }
+</html>` */
 
     // Renderizza template
     const emailHtml = renderTemplate(template, templateData)
