@@ -21580,16 +21580,16 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
             numero_proforma = ?,
             data_emissione = ?,
             data_scadenza = ?,
-            servizio = ?,
-            piano = ?
+            tipo_servizio = ?,
+            prezzo_totale = ?
         WHERE leadId = ? AND numero_proforma = ?
       `).bind(
         proformaId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
-        servizio, // ✅ es. "eCura PREMIUM"
-        piano,    // ✅ es. "BASE"
+        piano,    // ✅ tipo_servizio = piano (BASE/AVANZATO) secondo schema esistente
+        pricing.setupTotale, // ✅ prezzo_totale calcolato
         leadId,
         existingProforma.numero_proforma
       ).run()
@@ -21606,19 +21606,37 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       
       const insertResult = await c.env.DB.prepare(`
         INSERT INTO proforma (
-          id, leadId, numero_proforma,
+          id, contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
-          contract_id, servizio, piano
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+          tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+          status, email_sent, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         proformaId,
+        'MANUAL', // contract_id placeholder
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
-        'MANUAL', // contract_id placeholder
-        servizio, // ✅ es. "eCura PREMIUM"
-        piano     // ✅ es. "BASE"
+        lead.nomeRichiedente || '',
+        lead.cognomeRichiedente || '',
+        lead.email || '',
+        lead.telefono || '',
+        lead.indirizzoRichiedente || '',
+        lead.cittaRichiedente || '',
+        lead.capRichiedente || '',
+        lead.provinciaRichiedente || '',
+        lead.cfRichiedente || '',
+        piano, // ✅ tipo_servizio = piano secondo schema esistente (BASE/AVANZATO)
+        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile
+        12, // durata_mesi
+        pricing.setupTotale, // prezzo_totale
+        'DRAFT',
+        false,
+        new Date().toISOString(),
+        new Date().toISOString()
       ).run()
       
       proformaIdGenerated = proformaId
