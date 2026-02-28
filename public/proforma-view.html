@@ -180,121 +180,123 @@ th {
 </div>
 
 <div id="proforma-content" style="display:none;">
-  <div class="header">
-    <div class="company-info">
-      <h1>Medica GB S.r.l.</h1>
-      <p style="margin: 5px 0;"><strong>Sede Legale:</strong> Corso Giuseppe Garibaldi, 34</p>
-      <p style="margin: 5px 0;">20121 Milano (MI)</p>
-      <p style="margin: 5px 0;"><strong>Sede Operativa:</strong> Via delle Eriche 53, 16148 Genova (GE)</p>
-      <p style="margin: 5px 0;"><strong>P.IVA:</strong> 12435130963</p>
-      <p style="margin: 5px 0;"><strong>REA:</strong> MI-2661409</p>
-      <p style="margin: 5px 0;"><strong>Email:</strong> info@medicagb.it</p>
-      <p style="margin: 5px 0;"><strong>PEC:</strong> medicagbsrl@pecimprese.it</p>
-    </div>
-    <div class="invoice-info">
-      <h2>FATTURA PROFORMA</h2>
-      <p style="margin: 10px 0;"><strong>N°:</strong> <span id="numero-proforma"></span></p>
-      <p style="margin: 10px 0;"><strong>Data:</strong> <span id="data-emissione"></span></p>
-      <p style="margin: 10px 0;"><strong>Valida fino al:</strong> <span id="data-scadenza"></span></p>
-    </div>
+
+<div class="header">
+  <div class="company-info">
+    <h1>Medica GB S.r.l.</h1>
+    <p style="margin: 5px 0;"><strong>Sede Legale:</strong> Corso Giuseppe Garibaldi, 34</p>
+    <p style="margin: 5px 0;">20121 Milano (MI)</p>
+    <p style="margin: 5px 0;"><strong>Sede Operativa:</strong> Via delle Eriche 53, 16148 Genova (GE)</p>
+    <p style="margin: 5px 0;"><strong>P.IVA:</strong> 12435130963</p>
+    <p style="margin: 5px 0;"><strong>REA:</strong> MI-2661409</p>
+    <p style="margin: 5px 0;"><strong>Email:</strong> info@medicagb.it</p>
+    <p style="margin: 5px 0;"><strong>PEC:</strong> medicagbsrl@pecimprese.it</p>
+  </div>
+  <div class="invoice-info">
+    <h2>FATTURA PROFORMA</h2>
+    <p style="margin: 10px 0;"><strong>N°:</strong> <span id="numero-proforma"></span></p>
+    <p style="margin: 10px 0;"><strong>Data:</strong> <span id="data-emissione"></span></p>
+    <p style="margin: 10px 0;"><strong>Valida fino al:</strong> <span id="data-scadenza"></span></p>
+  </div>
+</div>
+
+<div class="client-section">
+  <h3>DESTINATARIO</h3>
+  <p style="margin: 5px 0;"><strong><span id="nome-cliente"></span> <span id="cognome-cliente"></span></strong></p>
+  <p style="margin: 5px 0;"><span id="indirizzo-cliente"></span></p>
+  <p style="margin: 5px 0;"><span id="cap-cliente"></span> <span id="citta-cliente"></span> (<span id="provincia-cliente"></span>)</p>
+  <p style="margin: 5px 0;"><strong>Codice Fiscale:</strong> <span id="cf-cliente"></span></p>
+  <p style="margin: 5px 0;"><strong>Email:</strong> <span id="email-cliente"></span></p>
+  <p style="margin: 5px 0;"><strong>Telefono:</strong> <span id="telefono-cliente"></span></p>
+</div>
+
+<div class="highlight">
+  <p style="margin: 0; font-weight: bold; color: #0c5460;">Questa è una FATTURA PROFORMA valida per 3 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 50%;">Descrizione</th>
+      <th class="text-center" style="width: 15%;">Quantità</th>
+      <th class="text-right" style="width: 20%;">Prezzo Unitario</th>
+      <th class="text-right" style="width: 15%;">Totale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>Servizio TeleAssistenza <span id="tipo-servizio"></span></strong><br/>
+        <small>Durata: 12 mesi</small><br/>
+        <small>Include: Dispositivo SiDLY CARE PRO, Configurazione, Piattaforma Web/APP, SIM dati<span id="servizi-aggiuntivi"></span></small>
+      </td>
+      <td class="text-center">1</td>
+      <td class="text-right">€ <span id="prezzo-base"></span></td>
+      <td class="text-right">€ <span id="prezzo-base-2"></span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="totals-section">
+  <div class="total-row">
+    <span>Imponibile:</span>
+    <span>€ <span id="imponibile"></span></span>
+  </div>
+  <div class="total-row">
+    <span>IVA (22%):</span>
+    <span>€ <span id="importo-iva"></span></span>
+  </div>
+  <div class="total-row grand-total">
+    <span>TOTALE DA PAGARE:</span>
+    <span>€ <span id="prezzo-totale"></span></span>
+  </div>
+</div>
+
+<div class="payment-info">
+  <h3>MODALITÀ DI PAGAMENTO</h3>
+  <p style="margin: 10px 0;">Il pagamento può essere effettuato tramite:</p>
+  
+  <div class="bank-details">
+    <p style="margin: 5px 0; font-weight: bold;">1. BONIFICO BANCARIO</p>
+    <p style="margin: 5px 0;"><strong>Beneficiario:</strong> Medica GB S.r.l.</p>
+    <p style="margin: 5px 0;"><strong>IBAN:</strong> IT97L0503401727000000003519</p>
+    <p style="margin: 5px 0;"><strong>Banca:</strong> Banca Popolare di Milano</p>
+    <p style="margin: 5px 0;"><strong>Causale:</strong> Proforma <span id="causale-numero"></span> - TeleMedCare <span id="causale-servizio"></span></p>
   </div>
 
-  <div class="client-section">
-    <h3>DESTINATARIO</h3>
-    <p style="margin: 5px 0;"><strong><span id="nome-cliente"></span> <span id="cognome-cliente"></span></strong></p>
-    <p style="margin: 5px 0;" id="indirizzo-cliente"></p>
-    <p style="margin: 5px 0;"><span id="cap-cliente"></span> <span id="citta-cliente"></span> (<span id="provincia-cliente"></span>)</p>
-    <p style="margin: 5px 0;"><strong>Codice Fiscale:</strong> <span id="cf-cliente"></span></p>
-    <p style="margin: 5px 0;"><strong>Email:</strong> <span id="email-cliente"></span></p>
-    <p style="margin: 5px 0;"><strong>Telefono:</strong> <span id="telefono-cliente"></span></p>
+  <div class="bank-details">
+    <p style="margin: 5px 0; font-weight: bold;">2. CARTA DI CREDITO/DEBITO</p>
+    <p style="margin: 5px 0;">Pagamento sicuro online tramite Stripe. <a href="#" id="link-pagamento" style="color:#1e40af; font-weight:600;">Clicca qui per pagare ora →</a></p>
   </div>
 
-  <div class="highlight">
-    <p style="margin: 0; font-weight: bold; color: #0c5460;">Questa è una FATTURA PROFORMA valida per 3 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
-  </div>
+  <p style="margin: 15px 0 5px 0; font-weight: bold; color: #856404;">⚠️ IMPORTANTE:</p>
+  <ul style="margin: 5px 0; padding-left: 20px;">
+    <li>Il pagamento deve essere effettuato entro la data di scadenza indicata</li>
+    <li>La fattura fiscale definitiva verrà emessa al ricevimento del pagamento</li>
+    <li>Il servizio verrà attivato entro 2 giorni lavorativi dal pagamento</li>
+  </ul>
+</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 50%;">Descrizione</th>
-        <th class="text-center" style="width: 15%;">Quantità</th>
-        <th class="text-right" style="width: 20%;">Prezzo Unitario</th>
-        <th class="text-right" style="width: 15%;">Totale</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <strong>Servizio TeleAssistenza <span id="tipo-servizio"></span></strong><br/>
-          <small>Durata: 12 mesi</small><br/>
-          <small>Include: Dispositivo SiDLY CARE PRO, Configurazione, Piattaforma Web/APP, SIM dati<span id="servizi-aggiuntivi"></span></small>
-        </td>
-        <td class="text-center">1</td>
-        <td class="text-right">€ <span id="prezzo-base"></span></td>
-        <td class="text-right">€ <span id="prezzo-base-2"></span></td>
-      </tr>
-    </tbody>
-  </table>
+<div style="background: #e7f3ff; border-left: 4px solid #1e40af; padding: 15px; margin: 20px 0;">
+  <p style="margin: 0; font-weight: bold;">✓ Cosa succede dopo il pagamento?</p>
+  <ol style="margin: 10px 0; padding-left: 20px;">
+    <li>Riceverai la fattura fiscale definitiva via email</li>
+    <li>Ti invieremo il dispositivo SiDLY CARE PRO entro 10 giorni lavorativi</li>
+    <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+    <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+  </ol>
+</div>
 
-  <div class="totals-section">
-    <div class="total-row">
-      <span>Imponibile:</span>
-      <span>€ <span id="imponibile"></span></span>
-    </div>
-    <div class="total-row">
-      <span>IVA (22%):</span>
-      <span>€ <span id="importo-iva"></span></span>
-    </div>
-    <div class="total-row grand-total">
-      <span>TOTALE DA PAGARE:</span>
-      <span>€ <span id="prezzo-totale"></span></span>
-    </div>
-  </div>
+<div class="footer">
+  <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+  <p>www.medicagb.it | www.telemedcare.it</p>
+  <p>Tel: +39 02 1234567 | Email: info@medicagb.it</p>
+  <p style="margin-top: 15px; font-size: 11px;">
+    Documento generato automaticamente dal sistema TeleMedCare V12.0<br/>
+    Per informazioni o assistenza: info@medicagb.it
+  </p>
+</div>
 
-  <div class="payment-info">
-    <h3>MODALITÀ DI PAGAMENTO</h3>
-    <p style="margin: 10px 0;">Il pagamento può essere effettuato tramite:</p>
-    
-    <div class="bank-details">
-      <p style="margin: 5px 0; font-weight: bold;">1. BONIFICO BANCARIO</p>
-      <p style="margin: 5px 0;"><strong>Beneficiario:</strong> Medica GB S.r.l.</p>
-      <p style="margin: 5px 0;"><strong>IBAN:</strong> IT97L0503401727000000003519</p>
-      <p style="margin: 5px 0;"><strong>Banca:</strong> Banca Popolare di Milano</p>
-      <p style="margin: 5px 0;"><strong>Causale:</strong> Proforma <span id="causale-numero"></span> - TeleMedCare <span id="causale-servizio"></span></p>
-    </div>
-
-    <div class="bank-details">
-      <p style="margin: 5px 0; font-weight: bold;">2. CARTA DI CREDITO/DEBITO</p>
-      <p style="margin: 5px 0;">Pagamento sicuro online tramite Stripe. <a href="#" id="link-pagamento" style="color:#1e40af; font-weight:600;">Clicca qui per pagare ora →</a></p>
-    </div>
-
-    <p style="margin: 15px 0 5px 0; font-weight: bold; color: #856404;">⚠️ IMPORTANTE:</p>
-    <ul style="margin: 5px 0; padding-left: 20px;">
-      <li>Il pagamento deve essere effettuato entro la data di scadenza indicata</li>
-      <li>La fattura fiscale definitiva verrà emessa al ricevimento del pagamento</li>
-      <li>Il servizio verrà attivato entro 2 giorni lavorativi dal pagamento</li>
-    </ul>
-  </div>
-
-  <div style="background: #e7f3ff; border-left: 4px solid #1e40af; padding: 15px; margin: 20px 0;">
-    <p style="margin: 0; font-weight: bold;">✓ Cosa succede dopo il pagamento?</p>
-    <ol style="margin: 10px 0; padding-left: 20px;">
-      <li>Riceverai la fattura fiscale definitiva via email</li>
-      <li>Ti invieremo il dispositivo SiDLY CARE PRO entro 10 giorni lavorativi</li>
-      <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
-      <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
-    </ol>
-  </div>
-
-  <div class="footer">
-    <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
-    <p>www.medicagb.it | www.telemedcare.it</p>
-    <p>Tel: +39 02 1234567 | Email: info@medicagb.it</p>
-    <p style="margin-top: 15px; font-size: 11px;">
-      Documento generato automaticamente dal sistema TeleMedCare V12.0<br/>
-      Per informazioni o assistenza: info@medicagb.it
-    </p>
-  </div>
 </div>
 
 <script>
@@ -316,9 +318,11 @@ if (!proformaId) {
       return response.json();
     })
     .then(data => {
-      // Popola i campi
+      console.log('Dati proforma ricevuti:', data);
+      
+      // Popola i campi con i dati ricevuti
       document.getElementById('numero-proforma').textContent = data.numero_proforma || 'N/A';
-      document.getElementById('data-emissione').textContent = formatDate(data.data_emissione) || 'N/A';
+      document.getElementById('data-emissione').textContent = formatDate(data.data_emissione) || formatDate(new Date());
       document.getElementById('data-scadenza').textContent = formatDate(data.data_scadenza) || 'N/A';
       
       document.getElementById('nome-cliente').textContent = data.cliente_nome || '';
@@ -331,21 +335,31 @@ if (!proformaId) {
       document.getElementById('email-cliente').textContent = data.cliente_email || '';
       document.getElementById('telefono-cliente').textContent = data.cliente_telefono || 'N/D';
       
+      // Servizio e Piano
       const servizio = data.servizio || 'eCura PRO';
       const piano = data.piano || 'BASE';
-      document.getElementById('tipo-servizio').textContent = `${servizio} ${piano}`;
+      const tipoServizio = `${servizio} ${piano}`;
+      document.getElementById('tipo-servizio').textContent = tipoServizio;
       document.getElementById('causale-numero').textContent = data.numero_proforma || '';
-      document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
+      document.getElementById('causale-servizio').textContent = tipoServizio;
       
-      const prezzoBase = parseFloat(data.prezzo_mensile) || 0;
+      // Prezzi
+      const prezzoBase = parseFloat(data.prezzo_mensile) || parseFloat(data.importo_base) || 0;
       const iva = prezzoBase * 0.22;
       const totale = prezzoBase + iva;
       
-      document.getElementById('prezzo-base').textContent = prezzoBase.toFixed(2).replace('.', ',');
-      document.getElementById('prezzo-base-2').textContent = prezzoBase.toFixed(2).replace('.', ',');
-      document.getElementById('imponibile').textContent = prezzoBase.toFixed(2).replace('.', ',');
-      document.getElementById('importo-iva').textContent = iva.toFixed(2).replace('.', ',');
-      document.getElementById('prezzo-totale').textContent = totale.toFixed(2).replace('.', ',');
+      document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBase);
+      document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBase);
+      document.getElementById('imponibile').textContent = formatCurrency(prezzoBase);
+      document.getElementById('importo-iva').textContent = formatCurrency(iva);
+      document.getElementById('prezzo-totale').textContent = formatCurrency(totale);
+      
+      // Servizi aggiuntivi (se piano AVANZATO)
+      if (piano === 'AVANZATO') {
+        document.getElementById('servizi-aggiuntivi').textContent = ', Chiamate bidirezionali, Centrale Operativa H24';
+      } else {
+        document.getElementById('servizi-aggiuntivi').textContent = '';
+      }
       
       // Link pagamento
       const linkPagamento = `/pagamento.html?proformaId=${proformaId}`;
@@ -367,6 +381,10 @@ function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function formatCurrency(amount) {
+  return amount.toFixed(2).replace('.', ',');
 }
 </script>
 
