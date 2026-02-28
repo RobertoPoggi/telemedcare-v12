@@ -346,16 +346,16 @@ if (!proformaId) {
       document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
       document.getElementById('causale-servizio').textContent = tipoServizio;
       
-      // Prezzi
-      const prezzoBase = parseFloat(proforma.prezzo_mensile) || parseFloat(proforma.importo_base) || 0;
-      const iva = prezzoBase * 0.22;
-      const totale = prezzoBase + iva;
+      // Prezzi - USA PREZZO_TOTALE per il totale annuale!
+      const prezzoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
+      const prezzoBase = prezzoTotaleIvaInclusa / 1.22; // Scorporo IVA 22%
+      const iva = prezzoTotaleIvaInclusa - prezzoBase;
       
       document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBase);
       document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBase);
       document.getElementById('imponibile').textContent = formatCurrency(prezzoBase);
       document.getElementById('importo-iva').textContent = formatCurrency(iva);
-      document.getElementById('prezzo-totale').textContent = formatCurrency(totale);
+      document.getElementById('prezzo-totale').textContent = formatCurrency(prezzoTotaleIvaInclusa);
       
       // Servizi aggiuntivi (se piano AVANZATO)
       if (piano === 'AVANZATO') {
