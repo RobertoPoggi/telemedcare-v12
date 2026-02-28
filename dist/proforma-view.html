@@ -320,31 +320,34 @@ if (!proformaId) {
     .then(data => {
       console.log('Dati proforma ricevuti:', data);
       
-      // Popola i campi con i dati ricevuti
-      document.getElementById('numero-proforma').textContent = data.numero_proforma || 'N/A';
-      document.getElementById('data-emissione').textContent = formatDate(data.data_emissione) || formatDate(new Date());
-      document.getElementById('data-scadenza').textContent = formatDate(data.data_scadenza) || 'N/A';
+      // Estrai l'oggetto proforma dalla risposta API
+      const proforma = data.proforma || data;
       
-      document.getElementById('nome-cliente').textContent = data.cliente_nome || '';
-      document.getElementById('cognome-cliente').textContent = data.cliente_cognome || '';
-      document.getElementById('indirizzo-cliente').textContent = data.cliente_indirizzo || 'N/D';
-      document.getElementById('cap-cliente').textContent = data.cliente_cap || '';
-      document.getElementById('citta-cliente').textContent = data.cliente_citta || '';
-      document.getElementById('provincia-cliente').textContent = data.cliente_provincia || '';
-      document.getElementById('cf-cliente').textContent = data.cliente_codice_fiscale || 'N/D';
-      document.getElementById('email-cliente').textContent = data.cliente_email || '';
-      document.getElementById('telefono-cliente').textContent = data.cliente_telefono || 'N/D';
+      // Popola i campi con i dati ricevuti
+      document.getElementById('numero-proforma').textContent = proforma.numero_proforma || 'N/A';
+      document.getElementById('data-emissione').textContent = formatDate(proforma.data_emissione) || formatDate(new Date());
+      document.getElementById('data-scadenza').textContent = formatDate(proforma.data_scadenza) || 'N/A';
+      
+      document.getElementById('nome-cliente').textContent = proforma.cliente_nome || '';
+      document.getElementById('cognome-cliente').textContent = proforma.cliente_cognome || '';
+      document.getElementById('indirizzo-cliente').textContent = proforma.cliente_indirizzo || 'N/D';
+      document.getElementById('cap-cliente').textContent = proforma.cliente_cap || '';
+      document.getElementById('citta-cliente').textContent = proforma.cliente_citta || '';
+      document.getElementById('provincia-cliente').textContent = proforma.cliente_provincia || '';
+      document.getElementById('cf-cliente').textContent = proforma.cliente_codice_fiscale || 'N/D';
+      document.getElementById('email-cliente').textContent = proforma.cliente_email || '';
+      document.getElementById('telefono-cliente').textContent = proforma.cliente_telefono || 'N/D';
       
       // Servizio e Piano
-      const servizio = data.servizio || 'eCura PRO';
-      const piano = data.piano || 'BASE';
+      const servizio = proforma.servizio || 'eCura PRO';
+      const piano = proforma.piano || 'BASE';
       const tipoServizio = `${servizio} ${piano}`;
       document.getElementById('tipo-servizio').textContent = tipoServizio;
-      document.getElementById('causale-numero').textContent = data.numero_proforma || '';
+      document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
       document.getElementById('causale-servizio').textContent = tipoServizio;
       
       // Prezzi
-      const prezzoBase = parseFloat(data.prezzo_mensile) || parseFloat(data.importo_base) || 0;
+      const prezzoBase = parseFloat(proforma.prezzo_mensile) || parseFloat(proforma.importo_base) || 0;
       const iva = prezzoBase * 0.22;
       const totale = prezzoBase + iva;
       
