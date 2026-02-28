@@ -21531,7 +21531,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         status, email_sent, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      null, // contract_id (NULL - nessun contratto ancora firmato)
+      'MANUAL', // contract_id placeholder (proforma manuale, nessun contratto)
       leadId,
       numeroProforma,
       new Date().toISOString().split('T')[0],
