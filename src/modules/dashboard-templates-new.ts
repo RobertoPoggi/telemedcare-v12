@@ -3194,7 +3194,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Proforma inviata con successo!\\n\\nNumero: ' + (result.proformaId || 'N/A') + '\\nImporto: €' + (result.importo || 'N/A'));
+                    alert('✅ Proforma inviata con successo!\\n\\nServizio: ' + (result.servizio || 'N/A') + '\\nPiano: ' + (result.piano || 'N/A') + '\\nNumero: ' + (result.proformaId || 'N/A') + '\\nImporto: €' + (result.importo || 'N/A'));
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));

@@ -6861,10 +6861,16 @@ app.get('/api/proforma/:id', async (c) => {
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
     }
     
-    // ✅ Aggiungi campo importo_totale se mancante (per compatibilità frontend)
+    // ✅ Aggiungi campi derivati per compatibilità frontend
+    // Deriva il piano dal prezzo mensile: BASE < €50, AVANZATO >= €50
+    const prezzoMensile = parseFloat(proforma.prezzo_mensile || 0)
+    const piano = prezzoMensile >= 50 ? 'AVANZATO' : 'BASE'
+    
     const proformaResponse = {
       ...proforma,
-      importo_totale: proforma.importo_totale || proforma.importo || 0
+      importo_totale: proforma.prezzo_totale || proforma.importo || 0,
+      servizio: proforma.tipo_servizio || 'eCura PRO', // tipo_servizio contiene il servizio
+      piano: piano // derivato dal prezzo mensile
     }
     
     return c.json({ success: true, proforma: proformaResponse })
@@ -21574,6 +21580,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       
       console.log(`🔄 [SEND-PROFORMA] Proforma esistente trovata (ID ${existingProforma.id || 'NULL'}), aggiorno con ID ${proformaId}...`)
       
+      // ✅ NOTA SCHEMA: tipo_servizio contiene il SERVIZIO COMPLETO (es. "eCura PREMIUM")
+      // Il piano viene memorizzato in prezzo_mensile come flag: BASE < 500, AVANZATO >= 500
       await c.env.DB.prepare(`
         UPDATE proforma 
         SET id = ?,
@@ -21581,6 +21589,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
             data_emissione = ?,
             data_scadenza = ?,
             tipo_servizio = ?,
+            prezzo_mensile = ?,
             prezzo_totale = ?
         WHERE leadId = ? AND numero_proforma = ?
       `).bind(
@@ -21588,7 +21597,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         numeroProforma,
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
-        piano,    // ✅ tipo_servizio = piano (BASE/AVANZATO) secondo schema esistente
+        servizio,    // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM")
+        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile
         pricing.setupTotale, // ✅ prezzo_totale calcolato
         leadId,
         existingProforma.numero_proforma
@@ -21629,8 +21639,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         lead.capRichiedente || '',
         lead.provinciaRichiedente || '',
         lead.cfRichiedente || '',
-        piano, // ✅ tipo_servizio = piano secondo schema esistente (BASE/AVANZATO)
-        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile
+        servizio, // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM") - NON il piano!
+        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile = piano derivabile da questo
         12, // durata_mesi
         pricing.setupTotale, // prezzo_totale
         'DRAFT',
@@ -21678,6 +21688,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       proformaId: proformaIdGenerated,
       numeroProforma,
       importo: pricing.setupTotale.toFixed(2),
+      servizio: servizio,     // ✅ es. "eCura PREMIUM"
+      piano: piano,           // ✅ es. "AVANZATO"
       emailSent: emailSuccess,
       emailError: emailSuccess ? undefined : emailError
     })
