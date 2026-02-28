@@ -795,11 +795,12 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
     await ctx.db.prepare(`
       INSERT INTO proforma (
         id, contract_id, leadId, numero_proforma, data_emissione, data_scadenza,
-        cliente_nome, cliente_cognome, cliente_email,
+        cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+        cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
         tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
         status, email_template_used, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       proformaId,
       ctx.contractId,
@@ -810,6 +811,12 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
       ctx.leadData.nomeRichiedente || 'Cliente',
       ctx.leadData.cognomeRichiedente || '',
       ctx.leadData.email || 'email@example.com',
+      ctx.leadData.telefono || '',
+      ctx.leadData.indirizzo || '',
+      ctx.leadData.citta || '',
+      ctx.leadData.cap || '',
+      ctx.leadData.provincia || '',
+      ctx.leadData.codiceFiscale || '',
       tipoServizio,
       prezzoBase,
       12,
