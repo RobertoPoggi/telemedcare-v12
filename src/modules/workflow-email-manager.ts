@@ -1127,8 +1127,19 @@ export async function inviaEmailProforma(
 
     const emailService = new EmailService(env)
     
-    // Carica template email_invio_proforma (con fallback)
-    let template = await loadEmailTemplate('email_invio_proforma', db, env)
+    // ✅ Carica template unificato (Template_Proforma_Unificato_TeleMedCare.html)
+    let template = await loadEmailTemplate('Template_Proforma_Unificato_TeleMedCare', db, env)
+    
+    // Fallback: carica dal filesystem se non in DB
+    if (!template) {
+      console.log('⚠️ Template non in DB, carico da filesystem...')
+      try {
+        const fs = await import('fs/promises')
+        template = await fs.readFile('./templates/Template_Proforma_Unificato_TeleMedCare.html', 'utf-8')
+      } catch (err) {
+        console.warn('⚠️ Template filesystem non trovato, uso fallback inline')
+      }
+    }
     
     // Prepara i dati per il template
     // 🔥 FIX: Normalizza il servizio (rimuovi "eCura " se presente)

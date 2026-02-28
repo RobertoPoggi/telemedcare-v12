@@ -6861,7 +6861,13 @@ app.get('/api/proforma/:id', async (c) => {
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
     }
     
-    return c.json({ success: true, proforma })
+    // ✅ Aggiungi campo importo_totale se mancante (per compatibilità frontend)
+    const proformaResponse = {
+      ...proforma,
+      importo_totale: proforma.importo_totale || proforma.importo || 0
+    }
+    
+    return c.json({ success: true, proforma: proformaResponse })
   } catch (error) {
     console.error('❌ Errore recupero proforma:', error)
     return c.json({ 
@@ -10565,7 +10571,7 @@ app.post('/api/contracts/sign', async (c) => {
             lead.id,
             numeroProforma,
             new Date().toISOString().split('T')[0], // data_emissione
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // data_scadenza
+            new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
             lead.nomeRichiedente || '',
             lead.cognomeRichiedente || '',
             lead.email || '',
@@ -21427,7 +21433,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
         lead.nomeRichiedente || '',
         lead.cognomeRichiedente || '',
         lead.email || '',
@@ -21516,7 +21522,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       servizio: servizio,
       prezzoBase: pricing.setupBase,
       prezzoIvaInclusa: pricing.setupTotale,
-      dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // ✅ 3 giorni massimo
     }
     
     // ✅ VERIFICA SE ESISTE GIÀ UNA PROFORMA PER QUESTO LEAD
@@ -21539,13 +21545,17 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         SET id = ?,
             numero_proforma = ?,
             data_emissione = ?,
-            data_scadenza = ?
+            data_scadenza = ?,
+            servizio = ?,
+            piano = ?
         WHERE leadId = ? AND numero_proforma = ?
       `).bind(
         proformaId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
+        servizio, // ✅ es. "eCura PREMIUM"
+        piano,    // ✅ es. "BASE"
         leadId,
         existingProforma.numero_proforma
       ).run()
@@ -21564,15 +21574,17 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         INSERT INTO proforma (
           id, leadId, numero_proforma,
           data_emissione, data_scadenza,
-          contract_id
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          contract_id, servizio, piano
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         proformaId,
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        'MANUAL' // contract_id placeholder
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
+        'MANUAL', // contract_id placeholder
+        servizio, // ✅ es. "eCura PREMIUM"
+        piano     // ✅ es. "BASE"
       ).run()
       
       proformaIdGenerated = proformaId
