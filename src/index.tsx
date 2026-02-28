@@ -21733,38 +21733,19 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
   }
 })
 
-// 🔥 Handler per servire proforma-view.html (Cloudflare Pages Assets)
-app.get('/proforma-view.html', async (c) => {
-  try {
-    // Prova a servire dalla directory assets di Cloudflare Pages
-    if (c.env?.ASSETS) {
-      return await c.env.ASSETS.fetch(c.req.raw)
+export default {
+  async fetch(request: Request, env: any, ctx: any) {
+    const url = new URL(request.url)
+    
+    // 🔥 BYPASS: Se richiesta per file HTML statico, delega a Cloudflare Pages Assets
+    if (url.pathname.endsWith('.html') && url.pathname !== '/index.html') {
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request)
+      }
     }
     
-    // Fallback: errore
-    return c.html(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head>
-        <meta charset="UTF-8">
-        <title>Proforma non disponibile</title>
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
-          h1 { color: #e74c3c; }
-        </style>
-      </head>
-      <body>
-        <h1>❌ Pagina non disponibile</h1>
-        <p>La pagina di visualizzazione proforma non è al momento disponibile.</p>
-        <p>Contatta <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> per assistenza.</p>
-      </body>
-      </html>
-    `, 503)
-  } catch (error) {
-    console.error('❌ Errore serving proforma-view.html:', error)
-    return c.html(`<h1>Errore tecnico</h1><p>Contatta l'assistenza.</p>`, 500)
+    // Altrimenti usa il normale routing Hono
+    return app.fetch(request, env, ctx)
   }
-})
-
-export default app
+}
 // Cache bust: 1771800424320
