@@ -21580,27 +21580,43 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata con ID ${proformaId}`)
     }
     
-    // Invia email
+    // Invia email (con gestione errore graceful)
     const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
-    const result = await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
     
-    if (result.success) {
-      // Aggiorna lead status
-      await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
-        .bind('PROFORMA_SENT', leadId).run()
+    let emailSuccess = false
+    let emailError = ''
+    
+    try {
+      const result = await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
       
-      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} inviata`)
-      
-      return c.json({
-        success: true,
-        message: `Proforma ${numeroProforma} inviata con successo`,
-        proformaId: proformaIdGenerated,
-        numeroProforma,
-        importo: pricing.setupTotale.toFixed(2) // ✅ FIX: aggiungi importo per popup
-      })
-    } else {
-      throw new Error(result.errors.join(', '))
+      if (result.success) {
+        emailSuccess = true
+        // Aggiorna lead status solo se email inviata con successo
+        await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
+          .bind('PROFORMA_SENT', leadId).run()
+        
+        console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} inviata`)
+      } else {
+        emailError = result.errors.join(', ')
+        console.warn(`⚠️ [SEND-PROFORMA] Email fallita: ${emailError}`)
+      }
+    } catch (emailErr) {
+      emailError = emailErr instanceof Error ? emailErr.message : String(emailErr)
+      console.error(`❌ [SEND-PROFORMA] Errore invio email:`, emailErr)
     }
+    
+    // Rispondi sempre con successo (proforma salvata nel DB)
+    return c.json({
+      success: true,
+      message: emailSuccess 
+        ? `Proforma ${numeroProforma} inviata con successo`
+        : `Proforma ${numeroProforma} creata, ma email non inviata: ${emailError}`,
+      proformaId: proformaIdGenerated,
+      numeroProforma,
+      importo: pricing.setupTotale.toFixed(2),
+      emailSent: emailSuccess,
+      emailError: emailSuccess ? undefined : emailError
+    })
     
   } catch (error) {
     console.error('❌ [SEND-PROFORMA] Errore:', error)
