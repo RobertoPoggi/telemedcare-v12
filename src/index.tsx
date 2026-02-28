@@ -21595,7 +21595,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         success: true,
         message: `Proforma ${numeroProforma} inviata con successo`,
         proformaId: proformaIdGenerated,
-        numeroProforma
+        numeroProforma,
+        importo: pricing.setupTotale.toFixed(2) // ✅ FIX: aggiungi importo per popup
       })
     } else {
       throw new Error(result.errors.join(', '))
