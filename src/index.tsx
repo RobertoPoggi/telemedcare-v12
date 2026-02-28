@@ -21507,10 +21507,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     const month = String(new Date().getMonth() + 1).padStart(2, '0')
     const random = Math.random().toString(36).substring(2, 6).toUpperCase()
     const numeroProforma = `PRF${year}${month}-${random}`
-    let proformaIdGenerated: string | null = null
     
     const proformaData = {
-      proformaId: '', // Sarà popolato dopo INSERT
+      proformaId: '', // Sarà popolato dopo INSERT/UPDATE
       numeroProforma,
       proformaPdfUrl: '',
       tipoServizio: piano,
@@ -21520,40 +21519,58 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
     
-    // Salva proforma nel DB con schema corretto (migrate-proforma-table.sql)
-    // Genera ID univoco
-    const proformaId = `PRF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+    // ✅ VERIFICA SE ESISTE GIÀ UNA PROFORMA PER QUESTO LEAD (schema iniziale: 0001_initial_schema.sql)
+    const existingProforma = await c.env.DB.prepare(
+      'SELECT * FROM proforma WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1'
+    ).bind(leadId).first() as any
     
-    const insertResult = await c.env.DB.prepare(`
-      INSERT INTO proforma (
-        id, leadId, numero_proforma,
-        data_emissione, data_scadenza,
-        importo_base, importo_iva, importo_totale,
-        valuta, status,
-        servizio, piano,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      proformaId,
-      leadId,
-      numeroProforma,
-      new Date().toISOString().split('T')[0],
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      pricing.setupBase, // importo_base
-      pricing.setupTotale - pricing.setupBase, // importo_iva
-      pricing.setupTotale, // importo_totale
-      'EUR', // valuta
-      'DRAFT', // status
-      servizio, // servizio (es. "eCura PRO")
-      piano, // piano (es. "BASE")
-      new Date().toISOString(),
-      new Date().toISOString()
-    ).run()
+    let proformaIdGenerated: number | null = null
     
-    // ID già generato sopra
-    proformaIdGenerated = proformaId
-    proformaData.proformaId = proformaId
-    console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} salvata con ID ${proformaId}`)
+    if (existingProforma && existingProforma.id) {
+      // ✅ ESISTE GIÀ: fai UPDATE
+      console.log(`🔄 [SEND-PROFORMA] Proforma esistente trovata (ID ${existingProforma.id}), aggiorno...`)
+      
+      await c.env.DB.prepare(`
+        UPDATE proforma 
+        SET importo = ?, 
+            status = ?,
+            created_at = ?
+        WHERE id = ?
+      `).bind(
+        pricing.setupTotale,
+        'generato',
+        new Date().toISOString(),
+        existingProforma.id
+      ).run()
+      
+      proformaIdGenerated = existingProforma.id
+      proformaData.proformaId = String(existingProforma.id)
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} aggiornata con ID ${existingProforma.id}`)
+      
+    } else {
+      // ✅ NON ESISTE: fai INSERT (usa schema INIZIALE: id AUTOINCREMENT, lead_id, importo, file_path, status, created_at)
+      console.log(`📝 [SEND-PROFORMA] Nessuna proforma esistente, creo nuova...`)
+      
+      const insertResult = await c.env.DB.prepare(`
+        INSERT INTO proforma (lead_id, importo, file_path, status, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).bind(
+        leadId,
+        pricing.setupTotale,
+        '', // file_path vuoto per ora
+        'generato',
+        new Date().toISOString()
+      ).run()
+      
+      // Recupera ID auto-generato
+      if (insertResult.meta && insertResult.meta.last_row_id) {
+        proformaIdGenerated = insertResult.meta.last_row_id as number
+        proformaData.proformaId = String(proformaIdGenerated)
+        console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata con ID ${proformaIdGenerated}`)
+      } else {
+        throw new Error('Impossibile recuperare ID proforma generato')
+      }
+    }
     
     // Invia email
     const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
