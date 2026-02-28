@@ -10399,125 +10399,19 @@ app.post('/api/contracts/sign', async (c) => {
     
     console.log(`✅ Contratto firmato: ${contractId} da IP ${clientIp}`)
     
+    // ❌ DISABILITATO: Email conferma firma (ridondante e confusionaria)
+    // Il cliente riceverà direttamente l'email con la proforma che include tutte le info necessarie
     // Recupera lead per inviare email
     try {
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
       if (lead && c.env.RESEND_API_KEY) {
-        console.log(`📧 Invio email conferma firma a ${lead.email}`)
-        
-        // Genera HTML contratto con firma cliente + firma Medica GB
-        const contractHtmlWithSignatures = `
-          ${contract.contenuto_html}
-          <div style="margin-top: 60px; page-break-inside: avoid;">
-            <h2 style="text-align: center; margin-bottom: 40px;">Firme</h2>
-            <div style="display: flex; justify-content: space-between; gap: 40px;">
-              <div style="flex: 1; text-align: center;">
-                <p style="font-weight: bold; margin-bottom: 20px;">Il Cliente</p>
-                ${signature.startsWith('data:image') ? `<img src="${signature}" style="max-width: 300px; border: 1px solid #ccc; padding: 10px;">` : `<p style="font-style: italic;">${signature}</p>`}
-                <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                  Firma digitale apposta il ${new Date(timestamp || Date.now()).toLocaleString('it-IT')}<br>
-                  IP: ${clientIp}
-                </p>
-              </div>
-              <div style="flex: 1; text-align: center;">
-                <p style="font-weight: bold; margin-bottom: 20px;">Per Medica GB S.r.l.</p>
-                <p style="margin-top: 80px; font-size: 14px;">
-                  <strong>Stefania Rocca</strong><br>
-                  Amministratore Delegato<br>
-                  Medica GB S.r.l.
-                </p>
-                <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                  Firma depositata presso sede legale<br>
-                  Corso Giuseppe Garibaldi, 34 – 20121 Milano
-                </p>
-              </div>
-            </div>
-          </div>
-        `
-        
-        // Invia email con Resend
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
-              .content { padding: 30px; }
-              .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>✅ Contratto Firmato con Successo</h1>
-              <p>TeleMedCare - Servizio eCura</p>
-            </div>
-            <div class="content">
-              <p>Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
-              
-              <p>Grazie per aver firmato il contratto <strong>${contract.codice_contratto}</strong>!</p>
-              
-              <p>✅ <strong>La tua firma digitale è stata registrata con successo.</strong></p>
-              
-              <p><strong>Dettagli Contratto:</strong></p>
-              <ul>
-                <li>Servizio: ${contract.servizio || 'eCura PRO'}</li>
-                <li>Piano: ${contract.piano || 'BASE'}</li>
-                <li>Investimento: €${contract.prezzo_totale || '480'}/anno + iva 22%</li>
-                <li>Data firma: ${new Date().toLocaleDateString('it-IT')}</li>
-              </ul>
-              
-              <p><strong>📬 Prossimi Passi:</strong></p>
-              <ol>
-                <li><strong>Pro-forma per pagamento</strong> - Riceverai a breve un'email con la pro-forma e il link per il pagamento (Stripe o bonifico bancario)</li>
-                <li><strong>Attivazione servizio</strong> - Dopo il pagamento, il servizio verrà attivato al più presto</li>
-                <li><strong>Configurazione dispositivo</strong> - Riceverai le istruzioni per configurare il dispositivo SiDLY</li>
-              </ol>
-              
-              <p><strong>📄 Contratto Firmato:</strong><br>
-              Il contratto firmato è disponibile <a href="https://telemedcare-v12.pages.dev/api/contracts/${contractId}/pdf" style="color: #0066cc; text-decoration: none; font-weight: bold;">cliccando qui per scaricarlo</a>.</p>
-              
-              <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
-              
-              <p>Cordiali saluti,<br><strong>Il Team TeleMedCare</strong></p>
-            </div>
-            <div class="footer">
-              <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
-              <p>P.IVA: 12435130963 | Email: info@telemedcare.it | Web: www.telemedcare.it</p>
-            </div>
-          </body>
-          </html>
-        `
-        
-        
-        const resendResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            from: 'TeleMedCare <noreply@telemedcare.it>',
-            to: [lead.email],
-            cc: ['info@telemedcare.it'],
-            subject: `✅ Contratto Firmato - ${contract.codice_contratto}`,
-            html: emailHtml
-            // ❌ RIMOSSO allegato HTML - non compatibile con tutti i client email
-            // Il contratto firmato è accessibile tramite link nella email
-          })
-        })
-        
-        if (resendResponse.ok) {
-          console.log(`✅ Email conferma inviata a ${lead.email}`)
-        } else {
-          console.error(`❌ Errore invio email: ${await resendResponse.text()}`)
-        }
+        console.log(`📧 [SKIP] Email conferma firma NON inviata (riceverà proforma direttamente)`)
+        // EMAIL CONFERMA FIRMA DISABILITATA - il cliente riceverà la proforma
       }
     } catch (emailError) {
-      console.error('⚠️ Errore invio email (firma salvata comunque):', emailError)
+      console.error('⚠️ Errore check email (firma salvata comunque):', emailError)
     }
     
     // ✅ CRITICAL FIX: Trigger automatico generazione e invio proforma dopo firma
