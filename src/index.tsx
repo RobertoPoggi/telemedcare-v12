@@ -21503,10 +21503,18 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     const servizio = lead.servizio || 'eCura PRO'
     const piano = lead.piano || 'BASE'
     
+    console.log(`📊 [PRICING] Lead servizio: "${lead.servizio}" → "${servizio}"`)
+    console.log(`📊 [PRICING] Lead piano: "${lead.piano}" → "${piano}"`)
+    
     // Calcola prezzi
     const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    console.log(`📊 [PRICING] Tipo servizio calcolato: "${servizioType}"`)
+    
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
+    
+    console.log(`📊 [PRICING] Prezzo calcolato: ${servizioType} ${piano.toUpperCase()} = €${pricing.setupTotale.toFixed(2)} (base: €${pricing.setupBase})`)
+
     
     // Genera numero proforma (l'ID sarà auto-generato da SQLite)
     const year = new Date().getFullYear()
