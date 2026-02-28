@@ -1142,6 +1142,7 @@ export async function inviaEmailProforma(
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+      LINK_PROFORMA_PDF: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/proforma-view.html?id=${proformaData.proformaId}`,
       LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
