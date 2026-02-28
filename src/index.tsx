@@ -6832,6 +6832,8 @@ app.get('/api/proforma', async (c) => {
 app.get('/api/proforma/:id', async (c) => {
   const id = c.req.param('id')
   
+  console.log(`🔍 [API] GET /api/proforma/${id}`)
+  
   try {
     if (!c.env?.DB) {
       return c.json({ 
@@ -6845,7 +6847,8 @@ app.get('/api/proforma/:id', async (c) => {
       })
     }
     
-    const proforma = await c.env.DB.prepare(`
+    // 🔥 PROVA PRIMA con numero_proforma, poi con id
+    let proforma = await c.env.DB.prepare(`
       SELECT 
         p.*,
         l.nomeRichiedente,
@@ -6859,12 +6862,17 @@ app.get('/api/proforma/:id', async (c) => {
         l.codiceFiscale as lead_codice_fiscale
       FROM proforma p
       LEFT JOIN leads l ON p.leadId = l.id
-      WHERE p.id = ?
-    `).bind(id).first()
+      WHERE p.numero_proforma = ? OR p.id = ?
+    `).bind(id, id).first()
+    
+    console.log(`🔍 [API] Proforma query result:`, proforma ? 'TROVATA' : 'NON TROVATA')
     
     if (!proforma) {
+      console.log(`❌ [API] Proforma non trovata con id/numero: ${id}`)
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
     }
+    
+    console.log(`✅ [API] Proforma trovata: ${proforma.numero_proforma}`)
     
     // ✅ Aggiungi campi derivati per compatibilità frontend
     // Deriva il piano dal prezzo mensile: BASE < €50, AVANZATO >= €50
