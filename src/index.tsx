@@ -9240,6 +9240,9 @@ app.put('/api/leads/:id', async (c) => {
       telefono: 'telefono',
       cfIntestatario: 'cfIntestatario',
       indirizzoIntestatario: 'indirizzoIntestatario',
+      cittaRichiedente: 'cittaIntestatario', // Il form invia cittaRichiedente, il DB ha cittaIntestatario
+      capIntestatario: 'capIntestatario',
+      provinciaIntestatario: 'provinciaIntestatario',
       
       // Dati assistito
       nomeAssistito: 'nomeAssistito',

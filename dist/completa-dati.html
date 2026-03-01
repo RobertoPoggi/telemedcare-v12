@@ -93,6 +93,24 @@
                         <input type="text" id="citta" name="citta" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="cap">
+                            CAP <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cap" name="cap" required maxlength="5" pattern="[0-9]{5}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="00100">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="provincia">
+                            Provincia <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="provincia" name="provincia" required maxlength="2" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
+                            placeholder="RM" style="text-transform: uppercase;">
+                    </div>
                 </div>
 
                 <div class="flex justify-end mt-8">
@@ -157,6 +175,24 @@
                         </label>
                         <input type="text" id="cittaAssistito" name="cittaAssistito"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="capAssistito">
+                            CAP Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="capAssistito" name="capAssistito" maxlength="5" pattern="[0-9]{5}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="00100">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2" for="provinciaAssistito">
+                            Provincia Assistito <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="provinciaAssistito" name="provinciaAssistito" maxlength="2"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
+                            placeholder="RM" style="text-transform: uppercase;">
                     </div>
                 </div>
 
@@ -339,9 +375,23 @@
                 const cognome = document.getElementById('cognome').value.trim();
                 const telefono = document.getElementById('telefono').value.trim();
                 const citta = document.getElementById('citta').value.trim();
+                const cap = document.getElementById('cap').value.trim();
+                const provincia = document.getElementById('provincia').value.trim();
 
-                if (!nome || !cognome || !telefono || !citta) {
+                if (!nome || !cognome || !telefono || !citta || !cap || !provincia) {
                     alert('⚠️ Compila tutti i campi obbligatori');
+                    return false;
+                }
+                
+                // Valida CAP (5 cifre)
+                if (!/^[0-9]{5}$/.test(cap)) {
+                    alert('⚠️ Il CAP deve essere composto da 5 cifre');
+                    return false;
+                }
+                
+                // Valida Provincia (2 lettere)
+                if (!/^[A-Z]{2}$/.test(provincia.toUpperCase())) {
+                    alert('⚠️ La Provincia deve essere composta da 2 lettere (es. RM, MI)');
                     return false;
                 }
             } else if (step === 2) {
@@ -351,9 +401,23 @@
                     const cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
                     const dataNascita = document.getElementById('dataNascita').value;
                     const cittaAssistito = document.getElementById('cittaAssistito').value.trim();
+                    const capAssistito = document.getElementById('capAssistito').value.trim();
+                    const provinciaAssistito = document.getElementById('provinciaAssistito').value.trim();
 
-                    if (!nomeAssistito || !cognomeAssistito || !dataNascita || !cittaAssistito) {
+                    if (!nomeAssistito || !cognomeAssistito || !dataNascita || !cittaAssistito || !capAssistito || !provinciaAssistito) {
                         alert('⚠️ Compila tutti i campi dell\'assistito');
+                        return false;
+                    }
+                    
+                    // Valida CAP Assistito
+                    if (!/^[0-9]{5}$/.test(capAssistito)) {
+                        alert('⚠️ Il CAP Assistito deve essere composto da 5 cifre');
+                        return false;
+                    }
+                    
+                    // Valida Provincia Assistito
+                    if (!/^[A-Z]{2}$/.test(provinciaAssistito.toUpperCase())) {
+                        alert('⚠️ La Provincia Assistito deve essere composta da 2 lettere (es. RM, MI)');
                         return false;
                     }
                 }
@@ -411,6 +475,8 @@
                 cognomeRichiedente: document.getElementById('cognome').value.trim(),
                 telefono: document.getElementById('telefono').value.trim(),
                 cittaRichiedente: document.getElementById('citta').value.trim(),
+                capIntestatario: document.getElementById('cap').value.trim(),
+                provinciaIntestatario: document.getElementById('provincia').value.trim().toUpperCase(),
                 servizio: servizio.value,
                 piano: document.getElementById('piano').value,
                 note: document.getElementById('note').value.trim(),
@@ -424,11 +490,15 @@
                 formData.cognomeAssistito = formData.cognomeRichiedente;
                 formData.dataNascitaAssistito = null;
                 formData.cittaAssistito = formData.cittaRichiedente;
+                formData.capAssistito = formData.capIntestatario;
+                formData.provinciaAssistito = formData.provinciaIntestatario;
             } else {
                 formData.nomeAssistito = document.getElementById('nomeAssistito').value.trim();
                 formData.cognomeAssistito = document.getElementById('cognomeAssistito').value.trim();
                 formData.dataNascitaAssistito = document.getElementById('dataNascita').value;
                 formData.cittaAssistito = document.getElementById('cittaAssistito').value.trim();
+                formData.capAssistito = document.getElementById('capAssistito').value.trim();
+                formData.provinciaAssistito = document.getElementById('provinciaAssistito').value.trim().toUpperCase();
             }
 
             try {
