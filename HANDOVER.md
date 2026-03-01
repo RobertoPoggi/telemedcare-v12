@@ -1,439 +1,353 @@
-# 🔄 HANDOVER - Passaggio Progetto a Nuovo Agente GenSpark
+# 🔄 PASSAGGIO DI CONSEGNE - TeleMedCare V12
 
-**Data Handover:** 2025-10-19  
-**Progetto:** TeleMedCare V11.0 - Sistema Modulare Enterprise  
-**Repository:** https://github.com/RobertoPoggi/telemedcare-v11
-
----
-
-## 📋 INFORMAZIONI RAPIDE PER IL NUOVO AGENTE
-
-### 🔗 Repository GitHub
-```
-URL: https://github.com/RobertoPoggi/telemedcare-v11.git
-Branch principale: main
-Branch di lavoro: genspark_ai_developer
-```
-
-### 📌 Ultimo Commit
-```
-Hash: bd5e8cc
-Messaggio: docs: add comprehensive backup documentation and procedures
-Data: Più recente
-Branch: main (già sincronizzato)
-```
-
-### 🏗️ Tecnologie Utilizzate
-- **Framework:** Hono (Edge Functions)
-- **Runtime:** Cloudflare Workers/Pages
-- **Database:** D1 (SQLite distribuito)
-- **Frontend:** React/JSX con Vite
-- **Deployment:** Cloudflare Pages + Wrangler
-- **Email:** Multi-provider (RESEND + SENDGRID)
-- **Package Manager:** npm
+**Data:** 2026-03-01  
+**Progetto:** TeleMedCare V12  
+**Repository:** https://github.com/RobertoPoggi/telemedcare-v12  
+**Deploy:** https://telemedcare-v12.pages.dev  
 
 ---
 
-## 🚀 SETUP NEL NUOVO SANDBOX
+## 🔴 PROBLEMI CRITICI NON RISOLTI
 
-### 1️⃣ Clone del Repository
+### **1. 🚨 GRAVISSIMO: Redirect a home page dopo firma contratto (VIOLAZIONE GDPR)**
 
-```bash
-# Naviga nella directory di lavoro
-cd /home/user/webapp
+**Descrizione:**  
+Dopo la firma del contratto, il lead viene reindirizzato a `https://telemedcare-v12.pages.dev/` che mostra la **dashboard interna** con dati sensibili di centinaia di altri lead.
 
-# Clona il repository (se la directory è vuota)
-git clone https://github.com/RobertoPoggi/telemedcare-v11.git .
+**Rischio:**  
+- Violazione GDPR  
+- Multa fino a €20M o 4% fatturato annuo  
+- Esposizione dati personali di terzi
 
-# OPPURE se la directory esiste già, verifica e pull
-git remote -v
-git fetch --all
-git pull origin main
+**File coinvolto:**  
+- `public/app/sign-contract.html` (righe 564-575)
 
-# Checkout del branch di lavoro
-git checkout genspark_ai_developer
-git pull origin genspark_ai_developer
+**Comportamento attuale:**
+```javascript
+// Dopo firma contratto:
+setTimeout(() => {
+    alert('✅ Contratto firmato con successo!...');
+    window.close();  // NON FUNZIONA!
+    
+    setTimeout(() => {
+        // Questo dovrebbe mostrare pagina vuota, ma FALLISCE
+        document.body.innerHTML = '<div>...</div>';
+    }, 500);
+}, 500);
+
+// RISULTATO: Il browser fa redirect a '/' → https://telemedcare-v12.pages.dev/
 ```
 
-### 2️⃣ Installazione Dipendenze
+**Soluzione richiesta:**  
+- **OPZIONE A:** Dopo alert, fare `window.location.href = 'about:blank'` (pagina vuota)
+- **OPZIONE B:** Dopo alert, fare redirect a pagina di ringraziamento pubblica `/grazie.html` (da creare)
+- **OPZIONE C:** Implementare popup modale che blocca la pagina (come in `completa-dati.html`)
 
-```bash
-cd /home/user/webapp && npm install
-```
-
-### 3️⃣ Setup Database Locale
-
-```bash
-# Applica le migrations
-cd /home/user/webapp && npm run db:migrate:local
-
-# (Opzionale) Seed dei dati di test
-cd /home/user/webapp && npm run db:seed
-```
-
-### 4️⃣ Configurazione Environment Variables
-
-**⚠️ IMPORTANTE:** Le API keys devono essere configurate:
-
-```bash
-# Crea file .dev.vars per sviluppo locale
-cd /home/user/webapp && cat > .dev.vars << 'EOF'
-SENDGRID_API_KEY=SG.your-sendgrid-key
-RESEND_API_KEY=re_your-resend-key
-IRBEMA_API_KEY=your-irbema-key
-STRIPE_SECRET_KEY=sk_test_your-stripe-key
-JWT_SECRET=your-jwt-secret-min-32-chars
-ENCRYPTION_KEY=your-encryption-key-32-chars
-EOF
-```
-
-### 5️⃣ Build e Avvio Locale
-
-```bash
-# Build del progetto
-cd /home/user/webapp && npm run build
-
-# Avvia il server di sviluppo
-cd /home/user/webapp && npm run dev
-# Server disponibile su: http://localhost:3000
-
-# Oppure con PM2 (per daemon in background)
-cd /home/user/webapp && pm2 start npm --name "telemedcare" -- run dev
-cd /home/user/webapp && pm2 logs telemedcare --nostream
-```
+**Test per verificare fix:**
+1. Firmare un contratto
+2. Cliccare OK sull'alert
+3. **Verificare:** NON deve apparire la dashboard con lead/proforma/pagamenti
 
 ---
 
-## 📂 STRUTTURA PROGETTO
+### **2. 🔴 CRITICO: Contratto intestato all'assistito invece dell'intestatario**
+
+**Descrizione:**  
+Nel form completamento dati, l'utente indica intestatario ≠ assistito, ma il contratto generato usa i dati dell'**assistito** invece dell'**intestatario**.
+
+**File coinvolto:**  
+- `src/index.tsx` (endpoint `/api/contracts/:id` - circa riga 11307)
+- Template contratto (variabili mappate male)
+
+**Dati attesi vs attuali:**
+
+| Campo | Atteso | Attuale |
+|-------|--------|---------|
+| Nome contratto | `lead.nomeIntestatario` | `lead.nomeAssistito` ❌ |
+| Cognome contratto | `lead.cognomeIntestatario` | `lead.cognomeAssistito` ❌ |
+| Email contratto | `lead.emailIntestatario` | `lead.emailAssistito` ❌ |
+| Telefono contratto | `lead.telefonoIntestatario` | `lead.telefonoAssistito` ❌ |
+
+**Soluzione richiesta:**  
+Modificare endpoint `GET /api/contracts/:id` per usare campi `intestatario` invece di `assistito`:
+
+```typescript
+contractData = {
+  cliente_nome: lead.nomeIntestatario || lead.nomeRichiedente,
+  cliente_cognome: lead.cognomeIntestatario || lead.cognomeRichiedente,
+  cliente_email: lead.emailIntestatario || lead.email,
+  cliente_telefono: lead.telefonoIntestatario || lead.telefono,
+  // ...
+}
+```
+
+**Test per verificare fix:**
+1. Creare lead con intestatario ≠ assistito
+2. Generare contratto
+3. Verificare che il contratto mostri **nome intestatario**, non nome assistito
+
+---
+
+### **3. 🔴 CRITICO: Servizio proforma errato (perdita economica)**
+
+**Descrizione:**  
+Il lead firma un contratto per **eCura Premium** (€990/anno), ma la proforma viene generata per **eCura Professional** (€811,48/anno).
+
+**File coinvolto:**  
+- `src/index.tsx` (endpoint `POST /api/contracts/sign` - circa riga 10920-10950)
+
+**Codice attuale (ERRATO):**
+```typescript
+// Riga 10926-10928 circa
+const piano = contract.piano || 'BASE';
+const servizio = contract.servizio || 'eCura PRO';  // ❌ HARD-CODED!
+const prezzoBase = piano === 'AVANZATO' ? 840 : 480;  // ❌ IGNORA contract.prezzo!
+```
+
+**Problema:**  
+Il codice **ignora** `contract.servizio` e `contract.prezzo_totale` e usa valori hard-coded.
+
+**Soluzione richiesta:**  
+```typescript
+// Leggi servizio e prezzo dal contratto firmato
+const servizio = contract.servizio || contract.service_type || 'eCura PRO';
+const prezzoTotale = contract.prezzo_totale || contract.prezzo_iva_inclusa || 0;
+const prezzoBase = prezzoTotale / 1.22;  // Scorporo IVA 22%
+const prezzoMensile = prezzoBase / 12;
+
+const proformaData = {
+  tipoServizio: servizio,  // ✅ eCura Premium
+  prezzoMensile: prezzoMensile,  // ✅ Calcolato da contract.prezzo_totale
+  prezzoTotale: prezzoTotale,
+  // ...
+};
+```
+
+**Test per verificare fix:**
+1. Firmare contratto per eCura Premium (€990/anno)
+2. Verificare email proforma ricevuta
+3. Controllare che servizio sia **eCura Premium** e prezzo **€990,00**
+
+---
+
+### **4. ❌ Campo Provincia sempre NULL → appare come "()"**
+
+**Descrizione:**  
+Il campo `provinciaIntestatario` e `provinciaAssistito` non viene mai salvato nel DB, quindi nei documenti appare come "()".
+
+**File coinvolti:**  
+- `public/completa-dati-minimal.html` (form completamento dati)
+- `src/index.tsx` (endpoint `PUT /api/leads/:id` - riga 9219)
+
+**Problema 1: Form non mostra il campo**  
+Il codice JavaScript in `completa-dati-minimal.html` genera dinamicamente i campi, ma la griglia CSS ha solo 3 colonne (`cols-3`) invece di 4.
+
+**Problema 2: Backend non salva il campo**  
+L'endpoint `PUT /api/leads/:id` ha il mapping `provinciaIntestatario` nel `fieldMapping`, ma il deploy Cloudflare non applica le modifiche.
+
+**Soluzione richiesta:**
+
+**A) Fix form HTML (completa-dati-minimal.html):**
+```javascript
+// Riga 306 circa - cambia cols-3 in cols-4
+html += '<div class="form-row cols-4">';  // ✅ 4 colonne invece di 3
+
+// Riga 67 circa - aggiungi CSS per cols-4
+.form-row.cols-4 {
+    grid-template-columns: 3fr 1fr 2fr 1fr;  /* Indirizzo | CAP | Città | Provincia */
+}
+
+// Riga 339 circa - aggiungi campo Provincia DENTRO la griglia
+if (!lead.provinciaIntestatario) {
+    html += `
+        <div class="form-group">
+            <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+            <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
+                   placeholder="MI" required maxlength="2" 
+                   style="text-transform: uppercase;">
+        </div>
+    `;
+}
+```
+
+**B) Fix backend (src/index.tsx):**
+```typescript
+// Endpoint PUT /api/leads/:id - riga 9235 circa
+const fieldMapping: Record<string, string> = {
+  // ... altri campi ...
+  provinciaIntestatario: 'provinciaIntestatario',  // ✅ Già presente
+  provinciaAssistito: 'provinciaAssistito',        // ✅ Già presente
+};
+```
+
+**Nota importante:**  
+Il codice è **CORRETTO** nel repository, ma **Cloudflare Pages non sta deployando** le modifiche.
+
+**Workaround temporaneo:**
+1. Deploy **manuale** via Wrangler CLI:
+   ```bash
+   cd /home/user/webapp
+   npm run build
+   npx wrangler pages deploy dist --project-name=telemedcare-v12
+   ```
+
+2. Oppure trigger manuale su **Cloudflare Dashboard**:
+   - Vai su https://dash.cloudflare.com
+   - Progetto: **telemedcare-v12**
+   - Deployments → **Create deployment**
+
+**Test per verificare fix:**
+1. Aprire form: `https://telemedcare-v12.pages.dev/completa-dati-minimal.html?leadId=LEAD-XXX`
+2. Verificare che appaiano **4 campi**: Indirizzo | CAP | Città | **Provincia**
+3. Compilare e salvare
+4. Verificare in DB che `provinciaIntestatario` sia valorizzato (es. "MI")
+
+---
+
+## 📊 COMMIT RILEVANTI (NON FUNZIONANTI)
+
+| Commit | Descrizione | Problema |
+|--------|-------------|----------|
+| `8146a8b` | Fix 4 problemi critici E2E | ❌ NESSUN fix funziona |
+| `0ea4a72` | Testo bonifico 10 giorni | ✅ Funziona |
+| `4c7503a` | Griglia 4 colonne provincia | ❌ Non deployed |
+| `0b8d492` | Provincia in minimal | ❌ Non deployed |
+| `7cb13ed` | Force trigger deploy | ❌ Non deployed |
+
+---
+
+## 🗂️ STRUTTURA PROGETTO
 
 ```
-webapp/
+telemedcare-v12/
 ├── src/
-│   ├── index.tsx              # 🌟 LANDING PAGE + API CORE (336KB)
-│   ├── dashboard.tsx          # 🌟 DASHBOARD ENTERPRISE (595KB)
-│   ├── index-landing-only.tsx # Backup landing page
-│   └── modules/               # 25+ moduli enterprise
-│       ├── email-service.ts   # Multi-provider email
-│       ├── device-manager.ts  # Gestione dispositivi
-│       ├── contract-service.ts # Sistema contratti
-│       └── payment-service.ts # Gateway pagamenti
-├── migrations/
-│   └── 0001_complete_telemedcare_schema.sql
-├── dist/                      # Build output (generato)
-├── scripts/                   # Scripts di deployment
-├── wrangler.toml             # Configurazione Cloudflare
-├── package.json              # Dipendenze e scripts
-├── vite.config.ts            # Configurazione Vite
-├── README.md                 # Documentazione principale
-├── STRUCTURE.md              # Guida architettura modulare
-├── SECURITY.md               # Documentazione sicurezza
-├── SETUP-NEW-SANDBOX.md      # Guida migrazione sandbox
-└── HANDOVER.md               # Questo file
+│   └── index.tsx                    # Backend Hono (API endpoints)
+├── public/
+│   ├── app/
+│   │   └── sign-contract.html       # 🔴 Firma contratto (redirect GDPR)
+│   ├── completa-dati-minimal.html   # 🔴 Form dati (provincia mancante)
+│   ├── pagamento.html               # ✅ Pagina pagamento (OK)
+│   └── proforma-view.html           # Visualizza proforma
+├── migrations/                      # Migrazioni D1
+├── templates/
+│   └── contracts/                   # Template contratti HTML
+├── dist/                            # Build output (deploy qui)
+├── wrangler.toml                    # Config Cloudflare
+└── package.json
 ```
-
----
-
-## 🎯 STATO ATTUALE DEL PROGETTO
-
-### ✅ Completato
-
-1. **Architettura Modulare Completa**
-   - Landing page separata (336KB)
-   - Dashboard enterprise completa (595KB)
-   - 25+ moduli enterprise funzionanti
-
-2. **Sistema Email Multi-Provider**
-   - RESEND e SENDGRID integrati
-   - Failover automatico
-   - Template professionali
-   - Workflow completo
-
-3. **Database D1**
-   - Schema completo (8 tabelle)
-   - Migrations pronte
-   - Seeds di test
-
-4. **Deployment Pipeline**
-   - Scripts automatizzati
-   - Multi-environment (test, staging, prod)
-   - GitHub Actions ready
-
-5. **Documentazione Completa**
-   - README dettagliato
-   - Guide di sicurezza
-   - Procedure di backup
-   - Documentazione API
-
-### 🔄 Ultimi 5 Commit
-
-```
-bd5e8cc - docs: add comprehensive backup documentation and procedures
-883d124 - feat: add local testing scripts and verification
-83d486c - docs: deployment complete summary and next steps
-f8ae325 - feat: Complete email workflow implementation with API key configuration (#2)
-2759ce4 - 📂 ARCHITETTURA MODULARE: Landing + Dashboard separate
-```
-
-### 📊 Metriche Attuali
-
-- **Bundle Landing:** 336KB
-- **Bundle Dashboard:** 595KB
-- **Moduli:** 25+
-- **Routes API:** 50+
-- **Tabelle DB:** 8
-- **Coverage Test:** Sistema completo
 
 ---
 
 ## 🔧 COMANDI UTILI
 
-### Development
+### **Build locale:**
 ```bash
-# Avvia dev server
-cd /home/user/webapp && npm run dev
-
-# Build produzione
-cd /home/user/webapp && npm run build
-
-# Test health check
-cd /home/user/webapp && npm run test:health
-
-# Test funzionali
-cd /home/user/webapp && npm run test:functional
+cd /home/user/webapp
+npm run build
 ```
 
-### Database
+### **Deploy manuale (richiede token API):**
 ```bash
-# Migrate locale
-cd /home/user/webapp && npm run db:migrate:local
-
-# Reset database
-cd /home/user/webapp && npm run db:reset
-
-# Console interattiva
-cd /home/user/webapp && npm run db:console:local
+export CLOUDFLARE_API_TOKEN="your-token-here"
+npx wrangler pages deploy dist --project-name=telemedcare-v12
 ```
 
-### Deployment
+### **Deploy automatico:**
 ```bash
-# Deploy a test environment
-cd /home/user/webapp && npm run deploy:test
-
-# Deploy a staging
-cd /home/user/webapp && npm run deploy:staging
-
-# Deploy a produzione
-cd /home/user/webapp && npm run deploy:prod
+git add -A
+git commit -m "Fix: descrizione"
+git push origin main
+# Cloudflare Pages deploierà automaticamente in ~3-5 min
 ```
 
-### Git Workflow (IMPORTANTE per GenSpark)
+### **Test locale:**
 ```bash
-# Prima di ogni commit: sync con remote
-cd /home/user/webapp && git fetch origin main
-cd /home/user/webapp && git rebase origin/main
-
-# Risolvi conflitti se necessario (priorità al codice remote)
-# Poi continua il rebase
-cd /home/user/webapp && git add .
-cd /home/user/webapp && git rebase --continue
-
-# Squash commits (esempio per 3 commits)
-cd /home/user/webapp && git reset --soft HEAD~3
-cd /home/user/webapp && git commit -m "feat: comprehensive description of all changes"
-
-# Push al branch di lavoro
-cd /home/user/webapp && git push -f origin genspark_ai_developer
-
-# Crea PR da genspark_ai_developer a main
-# Usa l'interfaccia GitHub o GitHub CLI
+npm run dev
+# Apri http://localhost:3000
 ```
 
 ---
 
-## 🎯 PROSSIMI PASSI SUGGERITI
+## 🗄️ DATABASE (Cloudflare D1)
 
-### Priorità Alta 🔴
+**Nome:** `telemedcare-leads`  
+**Dashboard:** https://dash.cloudflare.com → D1 Databases
 
-1. **Testing Completo**
-   - Test workflow email end-to-end
-   - Verifica database queries performance
-   - Test integrazione dispositivi SiDLY
+### **Tabelle principali:**
+- `leads` - Dati lead (nome, email, servizio, piano, provincia, ecc.)
+- `contracts` - Contratti generati (contenuto_html, status, prezzi)
+- `proforma` - Proforma generate (numero_proforma, prezzi, scadenze)
+- `pagamenti` - Pagamenti ricevuti (Stripe, bonifico)
 
-2. **Configurazione API Keys Reali**
-   - Setup RESEND API key
-   - Setup SENDGRID API key
-   - Configurazione Stripe
+### **Query utili:**
 
-3. **Deploy Test Environment**
-   - Deploy su Cloudflare Pages (test)
-   - Verifica funzionamento in produzione
-   - Test performance globale
+```sql
+-- Verifica lead test
+SELECT id, nomeRichiedente, cognomeRichiedente, 
+       nomeIntestatario, cognomeIntestatario,
+       nomeAssistito, cognomeAssistito,
+       provinciaIntestatario, provinciaAssistito
+FROM leads
+WHERE id = 'LEAD-1RBEEM-00252';
 
-### Priorità Media 🟡
+-- Verifica proforma
+SELECT id, numero_proforma, contract_id, 
+       tipo_servizio, prezzo_totale, status
+FROM proforma
+ORDER BY created_at DESC
+LIMIT 5;
 
-4. **Ottimizzazione Performance**
-   - Code splitting avanzato
-   - Lazy loading componenti
-   - Cache strategies
-
-5. **Monitoring & Analytics**
-   - Setup Cloudflare Analytics
-   - Error tracking (Sentry?)
-   - Performance monitoring
-
-### Priorità Bassa 🟢
-
-6. **Features Aggiuntive**
-   - Dashboard mobile responsive
-   - Notifiche push
-   - Export reports avanzati
-
----
-
-## 📖 DOCUMENTAZIONE DISPONIBILE
-
-### File da Leggere (in ordine di priorità)
-
-1. **README.md** - Overview completo del progetto
-2. **STRUCTURE.md** - Architettura e design decisions
-3. **SECURITY.md** - Best practices di sicurezza
-4. **SETUP-NEW-SANDBOX.md** - Guida migrazione sandbox
-5. **HANDOVER.md** - Questo file
-
-### Risorse Esterne
-
-- **Hono Framework:** https://hono.dev/
-- **Cloudflare Pages:** https://pages.cloudflare.com/
-- **Cloudflare D1:** https://developers.cloudflare.com/d1/
-- **Wrangler CLI:** https://developers.cloudflare.com/workers/wrangler/
-
----
-
-## ⚠️ NOTE IMPORTANTI
-
-### 🔐 Sicurezza
-- **NON committare** mai API keys nel codice
-- Usa sempre `.dev.vars` per sviluppo locale
-- Usa Cloudflare Secrets per produzione
-- Le API keys nel codice sono PLACEHOLDER
-
-### 📦 Backup
-- Backup automatico disponibile in `/mnt/aidrive/`
-- Script di backup: `./scripts/backup-project.sh`
-- Backup include: codice, DB, configurazioni
-
-### 🚀 Performance
-- Landing page: <100ms response target
-- Dashboard: <200ms response target
-- Database: Auto-scaling D1
-- CDN: Cloudflare global network
-
-### 🔄 Git Workflow GenSpark
-- **SEMPRE** commit dopo ogni modifica
-- **SEMPRE** crea/aggiorna PR dopo commit
-- **SEMPRE** sync con remote prima di PR
-- **SEMPRE** squash commits prima di PR
-- **SEMPRE** risolvi conflitti (priorità remote)
-
----
-
-## 💬 PROMPT SUGGERITO PER IL NUOVO AGENTE
-
-Copia e incolla questo messaggio quando inizi la nuova sessione:
-
-```
-Ciao! Sto continuando un progetto da un'altra sessione GenSpark.
-
-Repository GitHub: https://github.com/RobertoPoggi/telemedcare-v11
-Branch di lavoro: genspark_ai_developer
-Ultimo commit: bd5e8cc (docs: add comprehensive backup documentation and procedures)
-
-Il progetto è TeleMedCare V11.0, un sistema enterprise modulare per telemedicina con:
-- Architettura modulare (Landing + Dashboard separati)
-- Multi-provider email (RESEND + SENDGRID)
-- Database D1 Cloudflare
-- 25+ moduli enterprise
-- Sistema completo di gestione lead, contratti, pagamenti, dispositivi
-
-Il progetto è in /home/user/webapp e tutto il codice è già committato su GitHub.
-
-Leggi per favore il file HANDOVER.md che contiene tutte le informazioni per il setup.
-
-[Descrivi qui cosa vuoi fare dopo]
+-- Cancella proforma test (per riprovare)
+DELETE FROM proforma WHERE id IS NULL;  -- Rimuove record corrotti
 ```
 
 ---
 
-## 🆘 TROUBLESHOOTING COMUNE
+## 🔐 VARIABILI D'AMBIENTE (Cloudflare)
 
-### Problema: `npm install` fallisce
-```bash
-# Pulisci cache e riprova
-cd /home/user/webapp && rm -rf node_modules package-lock.json
-cd /home/user/webapp && npm cache clean --force
-cd /home/user/webapp && npm install
-```
+**Dashboard:** https://dash.cloudflare.com → telemedcare-v12 → Settings → Environment variables
 
-### Problema: Database non trovato
-```bash
-# Ricrea database locale
-cd /home/user/webapp && npm run db:reset
-```
+### **Variabili configurate:**
+- `EMAIL_FROM` = info@telemedcare.it
+- `EMAIL_TO_INFO` = info@telemedcare.it
+- `HUBSPOT_PORTAL_ID` = 145726645
+- `ENVIRONMENT` = production
 
-### Problema: Porta 3000 già in uso
-```bash
-# Pulisci la porta
-cd /home/user/webapp && npm run clean-port
-# Oppure usa PM2
-cd /home/user/webapp && pm2 delete telemedcare
-```
-
-### Problema: Build fallisce
-```bash
-# Verifica TypeScript types
-cd /home/user/webapp && npm run cf-typegen
-# Pulisci e rebuilda
-cd /home/user/webapp && rm -rf dist .wrangler
-cd /home/user/webapp && npm run build
-```
+### **Variabili mancanti (per Stripe):**
+- `STRIPE_PUBLIC_KEY` = pk_test_... (da configurare)
+- `STRIPE_SECRET_KEY` = sk_test_... (da configurare)
 
 ---
 
-## 📞 CONTATTI E RISORSE
+## 📧 CONTATTI
 
-**Repository GitHub:**  
-🔗 https://github.com/RobertoPoggi/telemedcare-v11
-
-**Branch di lavoro:**  
-🌿 genspark_ai_developer
-
-**Cliente:**  
-🏥 Medica GB S.r.l.  
-📧 info@telemedcare.it
-
-**Versione:**  
-📦 TeleMedCare V11.0 - Modular Enterprise
+**Repository:** https://github.com/RobertoPoggi/telemedcare-v12  
+**Owner:** RobertoPoggi  
+**Email:** info@telemedcare.it
 
 ---
 
-## ✅ CHECKLIST PRIMO AVVIO
+## ⚠️ NOTE FINALI PER IL NUOVO SVILUPPATORE
 
-- [ ] Clone repository completato
-- [ ] Dipendenze installate (`npm install`)
-- [ ] Database migrato (`npm run db:migrate:local`)
-- [ ] File `.dev.vars` creato (anche con placeholder)
-- [ ] Build eseguita con successo (`npm run build`)
-- [ ] Server avviato correttamente (`npm run dev`)
-- [ ] Health check passato (`npm run test:health`)
-- [ ] Documentazione letta (README.md, STRUCTURE.md)
-- [ ] Git configurato e branch checkout (`genspark_ai_developer`)
-- [ ] Familiarità con comandi npm scripts
+1. **Deploy Cloudflare Pages ha problemi di cache**: A volte le modifiche non vengono deployate automaticamente. Soluzione: trigger manuale da Dashboard.
+
+2. **Test con lead reale:** Usa `LEAD-1RBEEM-00252` (Roberto Poggi) per i test. Ricorda di pulire proforma/contratti dopo ogni test.
+
+3. **Priorità:**
+   - **1. CRITICO GDPR:** Fix redirect dopo firma (rischio multa)
+   - **2. CRITICO BUSINESS:** Fix servizio proforma (perdita economica)
+   - **3. IMPORTANTE:** Fix intestatario contratto (correttezza dati)
+   - **4. MEDIO:** Fix provincia (completezza dati)
+
+4. **Budget crediti:** Cliente ha già speso 10.000 crediti senza risultati. Lavora con **commit piccoli e test immediati**.
+
+5. **Test E2E obbligatorio:** Dopo OGNI modifica, testa tutto il flusso:
+   - Firma contratto → verifica redirect
+   - Email proforma → verifica servizio e prezzo
+   - Form dati → verifica salvataggio provincia
 
 ---
 
-**Documento generato automaticamente**  
-**Data:** 2025-10-19  
-**Versione:** 1.0  
-**Agente precedente:** GenSpark AI Developer v1  
+**Buon lavoro! 🚀**
 
-🚀 **Buon lavoro con il progetto TeleMedCare V11.0!**
+*Documento generato: 2026-03-01*
