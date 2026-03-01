@@ -147,15 +147,20 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
     'Template_Contratto_Avanzato_TeleMedCare' : 
     'Template_Contratto_Base_TeleMedCare'
   
+  // ✅ FIX: Usa dati INTESTATARIO (chi firma il contratto) non richiedente
+  const nomeCompleto = `${lead.nomeIntestatario || lead.nomeRichiedente} ${lead.cognomeIntestatario || lead.cognomeRichiedente}`
+  const emailContratto = lead.emailIntestatario || lead.email
+  const telefonoContratto = lead.telefonoIntestatario || lead.telefono
+  
   return `
     <!DOCTYPE html>
     <html><head><title>Contratto TeleMedCare ${tipoContratto}</title></head>
     <body>
       <h1>CONTRATTO DI SERVIZIO TELEMEDCARE ${tipoContratto}</h1>
       <h2>DATI CONTRAENTE</h2>
-      <p><strong>Nome:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
-      <p><strong>Email:</strong> ${lead.email}</p>
-      <p><strong>Telefono:</strong> ${lead.telefono || 'Non specificato'}</p>
+      <p><strong>Nome:</strong> ${nomeCompleto}</p>
+      <p><strong>Email:</strong> ${emailContratto}</p>
+      <p><strong>Telefono:</strong> ${telefonoContratto || 'Non specificato'}</p>
       
       <h2>SERVIZIO RICHIESTO</h2>
       <p><strong>Tipo:</strong> TeleMedCare ${tipoContratto}</p>
@@ -207,8 +212,11 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
 async function generaProformaDaContratto(contractId: string, db: any) {
   try {
     // Recupera contratto e lead
+    // ✅ FIX: Recupera dati INTESTATARIO (non richiedente) per la proforma
     const contract = await db.prepare(`
-      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono
+      SELECT c.*, 
+        l.nomeIntestatario, l.cognomeIntestatario, l.emailIntestatario, l.telefonoIntestatario,
+        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ? AND c.status = 'SIGNED'
@@ -222,6 +230,12 @@ async function generaProformaDaContratto(contractId: string, db: any) {
     const numeroProforma = `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
     const dataScadenza = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 giorni
     
+    // ✅ FIX: Usa INTESTATARIO per i dati del cliente (chi paga)
+    const nomeCliente = contract.nomeIntestatario || contract.nomeRichiedente
+    const cognomeCliente = contract.cognomeIntestatario || contract.cognomeRichiedente
+    const emailCliente = contract.emailIntestatario || contract.email
+    const telefonoCliente = contract.telefonoIntestatario || contract.telefono
+    
     // Crea proforma
     await db.prepare(`
       INSERT INTO proforma (
@@ -232,8 +246,8 @@ async function generaProformaDaContratto(contractId: string, db: any) {
     `).bind(
       proformaId, contractId, contract.leadId, numeroProforma,
       new Date().toISOString(), dataScadenza.toISOString(),
-      contract.nomeRichiedente, contract.cognomeRichiedente, 
-      contract.email, contract.telefono,
+      nomeCliente, cognomeCliente, 
+      emailCliente, telefonoCliente,
       contract.tipo_contratto, contract.prezzo_mensile, contract.durata_mesi,
       contract.prezzo_totale, 'DRAFT'
     ).run()
@@ -10934,20 +10948,26 @@ app.post('/api/contracts/sign', async (c) => {
         
         // Determina prezzi e servizio dal contratto (NON hardcoded!)
         const piano = contract.piano || contract.tipo_contratto || 'BASE'
-        const servizio = contract.servizio || contract.service_type || 'eCura PRO'
+        // ✅ FIX: Usa servizio reale dal contratto (eCura Premium, eCura Professional, etc)
+        const servizio = contract.servizio || contract.service_type || 'eCura Professional'
         
-        // ✅ Leggi prezzo dal contratto (priorità: prezzo_totale, prezzo_iva_inclusa)
-        let prezzoBase = parseFloat(contract.prezzo_totale || contract.prezzo_base || 0)
+        // ✅ FIX CRITICO: Leggi prezzo TOTALE dal contratto (priorità massima)
+        // Il contratto contiene il prezzo concordato - NON usare prezzi hard-coded!
         let prezzoIvaInclusa = parseFloat(contract.prezzo_iva_inclusa || contract.prezzo_totale || 0)
+        let prezzoBase = 0
         
-        // Fallback: calcola da prezzo_totale se presente
-        if (prezzoIvaInclusa === 0 && prezzoBase > 0) {
-          prezzoIvaInclusa = prezzoBase * 1.22 // Aggiungi IVA 22%
-        } else if (prezzoBase === 0 && prezzoIvaInclusa > 0) {
-          prezzoBase = prezzoIvaInclusa / 1.22 // Rimuovi IVA
+        // Se abbiamo il prezzo IVA inclusa, calcola prezzo base (scorporo IVA 22%)
+        if (prezzoIvaInclusa > 0) {
+          prezzoBase = prezzoIvaInclusa / 1.22
+        } else {
+          // Prova a leggere prezzo_base se presente
+          prezzoBase = parseFloat(contract.prezzo_base || 0)
+          if (prezzoBase > 0) {
+            prezzoIvaInclusa = prezzoBase * 1.22
+          }
         }
         
-        // Fallback finale: usa prezzi standard solo se entrambi 0
+        // Fallback finale: usa prezzi standard SOLO se entrambi 0 (caso raro)
         if (prezzoBase === 0 && prezzoIvaInclusa === 0) {
           console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard per piano ${piano}`)
           if (piano === 'AVANZATO') {
@@ -11026,7 +11046,7 @@ app.post('/api/contracts/sign', async (c) => {
               lead.capIntestatario || lead.capAssistito || '',
               lead.provinciaIntestatario || lead.provinciaAssistito || '',
               lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
-              piano, // tipo_servizio (BASE/AVANZATO)
+              servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
               (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
               12, // durata_mesi
               prezzoIvaInclusa, // prezzo_totale (con IVA)
@@ -11065,7 +11085,7 @@ app.post('/api/contracts/sign', async (c) => {
               lead.capIntestatario || lead.capAssistito || '',
               lead.provinciaIntestatario || lead.provinciaAssistito || '',
               lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
-              piano, // tipo_servizio (BASE/AVANZATO)
+              servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
               (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
               12, // durata_mesi
               prezzoIvaInclusa, // prezzo_totale (con IVA)
@@ -11381,19 +11401,25 @@ app.get('/api/contracts/:id', async (c) => {
     }
     
     // Prendi i dati del lead se disponibili
+    // ✅ FIX: Usa dati INTESTATARIO (non richiedente) per il contratto
     let nomeCliente = 'Cliente'
     let cognomeCliente = ''
     let emailCliente = ''
     
     if (contract.leadId) {
       try {
-        const lead = await c.env.DB.prepare('SELECT nomeRichiedente, cognomeRichiedente, email FROM leads WHERE id = ?')
-          .bind(contract.leadId).first() as any
+        const lead = await c.env.DB.prepare(`
+          SELECT 
+            nomeIntestatario, cognomeIntestatario, emailIntestatario,
+            nomeRichiedente, cognomeRichiedente, email
+          FROM leads WHERE id = ?
+        `).bind(contract.leadId).first() as any
         
         if (lead) {
-          nomeCliente = lead.nomeRichiedente || 'Cliente'
-          cognomeCliente = lead.cognomeRichiedente || ''
-          emailCliente = lead.email || ''
+          // ✅ PRIORITÀ: Intestatario > Richiedente (il contratto va intestato a chi paga)
+          nomeCliente = lead.nomeIntestatario || lead.nomeRichiedente || 'Cliente'
+          cognomeCliente = lead.cognomeIntestatario || lead.cognomeRichiedente || ''
+          emailCliente = lead.emailIntestatario || lead.email || ''
         }
       } catch (leadError) {
         console.warn('⚠️  Errore caricamento lead:', leadError)

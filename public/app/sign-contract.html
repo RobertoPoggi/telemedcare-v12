@@ -561,17 +561,12 @@
                 // Nascondi il form di firma
                 document.getElementById('contractContent').style.display = 'none';
                 
-                // 🔒 SICUREZZA: Popup conferma e chiusura finestra (come form completamento)
+                // 🔒 SICUREZZA: Redirect a pagina ringraziamento (GDPR-safe)
                 setTimeout(() => {
                     alert('✅ Contratto firmato con successo!\n\nRiceverai una email con la proforma per il pagamento.\n\nGrazie per la tua fiducia in TeleMedCare!');
                     
-                    // Chiudi finestra/tab (funziona solo se aperta via JavaScript)
-                    window.close();
-                    
-                    // Fallback: Se window.close() non funziona, redirect a pagina vuota
-                    setTimeout(() => {
-                        document.body.innerHTML = '<div style="text-align:center; padding:50px; font-family:Arial;"><h1>✅ Contratto Firmato!</h1><p>Puoi chiudere questa finestra.</p></div>';
-                    }, 500);
+                    // Redirect a pagina ringraziamento pubblica (non dashboard)
+                    window.location.href = '/grazie-firma-contratto.html';
                 }, 500);
 
             } catch (error) {
