@@ -13,6 +13,9 @@
 
 import { TemplateEngine } from './email-service'
 
+// Logo Medica GB - Data URL per embedding in HTML/PDF
+const MEDICA_GB_LOGO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60' viewBox='0 0 200 60'%3E%3Cg%3E%3Crect x='10' y='15' width='8' height='30' fill='%233b82f6' rx='1'/%3E%3Crect x='5' y='23' width='18' height='8' fill='%233b82f6' rx='1'/%3E%3C/g%3E%3Ctext x='35' y='35' font-family='Arial,sans-serif' font-size='22' font-weight='bold' fill='%231e40af'%3EMedica GB%3C/text%3E%3Ctext x='35' y='48' font-family='Arial,sans-serif' font-size='8' fill='%2364748b'%3EStartup Innovativa a Vocazione Sociale%3C/text%3E%3C/svg%3E"
+
 export interface DDTData {
   // Dati DDT
   numeroDDT: string
@@ -81,8 +84,8 @@ export class DDTGenerator {
     try {
       console.log('🚚 [DDT] Generazione DDT per ordine:', data.numeroOrdine)
       
-      // 1. Genera numero DDT univoco
-      const numeroDDT = this.generateDDTNumber()
+      // 1. Genera numero DDT univoco usando il contatore dal database
+      const numeroDDT = await this.generateDDTNumber(db)
       const ddtId = `DDT_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
       
       // 2. Prepara dati completi
@@ -153,14 +156,60 @@ export class DDTGenerator {
   }
   
   /**
-   * Genera numero DDT univoco
-   * Formato: DDT-YYYY-NNNNNN (es. DDT-2025-000123)
+   * Genera numero DDT univoco da contatore database
+   * Formato: N/YYYY (es. 6/2026, 7/2026, ...)
+   * Il contatore si resetta ogni anno
    */
-  private static generateDDTNumber(): string {
-    const year = new Date().getFullYear()
-    const sequential = Math.floor(Math.random() * 999999).toString().padStart(6, '0')
+  private static async generateDDTNumber(db: any): Promise<string> {
+    const currentYear = new Date().getFullYear().toString()
     
-    return `DDT-${year}-${sequential}`
+    try {
+      // Recupera ultimo numero DDT e anno corrente
+      const settings = await db.prepare(`
+        SELECT key, value FROM system_settings 
+        WHERE key IN ('ultimo_numero_ddt', 'anno_ddt_corrente')
+      `).all()
+      
+      const settingsMap: Record<string, string> = {}
+      settings.results?.forEach((row: any) => {
+        settingsMap[row.key] = row.value
+      })
+      
+      let ultimoNumero = parseInt(settingsMap['ultimo_numero_ddt'] || '0')
+      const annoSalvato = settingsMap['anno_ddt_corrente'] || currentYear
+      
+      // Se siamo in un nuovo anno, resetta il contatore
+      if (annoSalvato !== currentYear) {
+        ultimoNumero = 0
+        await db.prepare(`
+          UPDATE system_settings 
+          SET value = ? 
+          WHERE key = 'anno_ddt_corrente'
+        `).bind(currentYear).run()
+        
+        console.log(`🔄 [DDT] Nuovo anno ${currentYear}, contatore resettato`)
+      }
+      
+      // Incrementa il contatore
+      const nuovoNumero = ultimoNumero + 1
+      
+      // Aggiorna il contatore nel database
+      await db.prepare(`
+        UPDATE system_settings 
+        SET value = ?, updated_at = datetime('now')
+        WHERE key = 'ultimo_numero_ddt'
+      `).bind(nuovoNumero.toString()).run()
+      
+      console.log(`📊 [DDT] Numero generato: ${nuovoNumero}/${currentYear}`)
+      
+      return `${nuovoNumero}/${currentYear}`
+      
+    } catch (error) {
+      console.error('❌ [DDT] Errore recupero contatore, uso fallback:', error)
+      // Fallback: genera numero casuale se il database fallisce
+      const sequential = Math.floor(Math.random() * 999999).toString().padStart(6, '0')
+      return `${sequential}/${currentYear}`
+    }
   }
   
   /**
@@ -286,9 +335,13 @@ export class DDTGenerator {
 </head>
 <body>
   <div class="header">
+    <!-- Logo Medica GB -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img src="${MEDICA_GB_LOGO}" alt="Medica GB" style="height: 60px; margin: 0 auto; display: block;">
+    </div>
+    
     <div class="logo">🚚 DOCUMENTO DI TRASPORTO (DDT)</div>
     <div style="font-size: 14px; color: #666; margin-top: 10px;">
-      <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
       {{INDIRIZZO_MITTENTE}}, {{CAP_CITTA_MITTENTE}}<br>
       {{PIVA_MITTENTE}} | REA MI-2654321
     </div>

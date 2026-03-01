@@ -1,0 +1,21 @@
+<!-- Logo Medica GB SVG -->
+<svg width="200" height="80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="80" fill="#ffffff"/>
+  
+  <!-- Medical Cross Symbol -->
+  <g transform="translate(20, 20)">
+    <rect x="15" y="5" width="10" height="30" fill="#3b82f6" rx="2"/>
+    <rect x="5" y="15" width="30" height="10" fill="#3b82f6" rx="2"/>
+  </g>
+  
+  <!-- Text "Medica GB" -->
+  <text x="65" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1e40af">
+    Medica GB
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="65" y="55" font-family="Arial, sans-serif" font-size="10" fill="#64748b">
+    Startup Innovativa a Vocazione Sociale
+  </text>
+</svg>

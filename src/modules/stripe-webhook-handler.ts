@@ -108,6 +108,33 @@ export class StripeWebhookHandler {
       
       console.log(`✅ [STRIPE-WEBHOOK] Proforma ${proformaNumber} aggiornata: paid`)
       
+      // 2.5. Registra il pagamento nella tabella payments
+      try {
+        const { registerPayment } = await import('./payment-manager')
+        
+        // Recupera proforma per ottenere contract_id
+        const proforma = await db.prepare(`
+          SELECT id, contract_id, prezzo_totale FROM proforma 
+          WHERE numero_proforma = ?
+        `).bind(proformaNumber).first()
+        
+        if (proforma) {
+          await registerPayment(db, {
+            proformaId: proforma.id,
+            contractId: proforma.contract_id,
+            leadId: lead?.id || metadata.lead_id || 'UNKNOWN',
+            importo: amountPaid,
+            metodoPagamento: 'STRIPE_CARD',
+            transactionId: paymentIntentId,
+            stripePaymentIntentId: paymentIntentId
+          })
+          
+          console.log(`✅ [STRIPE-WEBHOOK] Pagamento registrato in tabella payments`)
+        }
+      } catch (paymentError) {
+        console.error('⚠️ [STRIPE-WEBHOOK] Errore registrazione payment (non bloccante):', paymentError)
+      }
+      
       // 3. Recupera dati lead associati al contratto
       const lead = await db.prepare(`
         SELECT l.*, c.codice_contratto
