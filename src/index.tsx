@@ -6847,7 +6847,9 @@ app.get('/api/proforma/:id', async (c) => {
       })
     }
     
-    // 🔥 PROVA PRIMA con numero_proforma, poi con id
+    // 🔥 CASE-INSENSITIVE: Converti l'ID in UPPERCASE per matching
+    const idUpper = id.toUpperCase()
+    
     let proforma = await c.env.DB.prepare(`
       SELECT 
         p.*,
@@ -6862,8 +6864,8 @@ app.get('/api/proforma/:id', async (c) => {
         l.codiceFiscale as lead_codice_fiscale
       FROM proforma p
       LEFT JOIN leads l ON p.leadId = l.id
-      WHERE p.numero_proforma = ? OR p.id = ?
-    `).bind(id, id).first()
+      WHERE UPPER(p.numero_proforma) = ? OR UPPER(p.id) = ?
+    `).bind(idUpper, idUpper).first()
     
     console.log(`🔍 [API] Proforma query result:`, proforma ? 'TROVATA' : 'NON TROVATA')
     
