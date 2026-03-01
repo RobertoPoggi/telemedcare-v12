@@ -4647,6 +4647,118 @@ app.post('/api/admin/init-settings', async (c) => {
   }
 })
 
+// 📧 ENDPOINT: Gestione System Settings (email_commercialista, etc.)
+// GET /api/system-settings - Recupera tutte le impostazioni di sistema
+app.get('/api/system-settings', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera tutte le impostazioni di sistema
+    const settings = await c.env.DB.prepare(`
+      SELECT key, value, description, updated_at 
+      FROM system_settings 
+      ORDER BY key
+    `).all()
+    
+    return c.json({
+      success: true,
+      settings: settings.results || []
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore recupero system settings:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/system-settings/:key - Recupera una singola impostazione
+app.get('/api/system-settings/:key', async (c) => {
+  try {
+    const key = c.req.param('key')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const setting = await c.env.DB.prepare(`
+      SELECT key, value, description, updated_at 
+      FROM system_settings 
+      WHERE key = ?
+    `).bind(key).first()
+    
+    if (!setting) {
+      return c.json({ 
+        success: false, 
+        error: `Impostazione '${key}' non trovata` 
+      }, 404)
+    }
+    
+    return c.json({
+      success: true,
+      setting
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore recupero system setting:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/system-settings/:key - Aggiorna una singola impostazione
+app.post('/api/system-settings/:key', async (c) => {
+  try {
+    const key = c.req.param('key')
+    const { value } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Verifica che la chiave esista
+    const existing = await c.env.DB.prepare(`
+      SELECT key FROM system_settings WHERE key = ?
+    `).bind(key).first()
+    
+    if (!existing) {
+      return c.json({ 
+        success: false, 
+        error: `Impostazione '${key}' non trovata` 
+      }, 404)
+    }
+    
+    // Aggiorna il valore
+    const result = await c.env.DB.prepare(`
+      UPDATE system_settings 
+      SET value = ?, updated_at = datetime('now')
+      WHERE key = ?
+    `).bind(value, key).run()
+    
+    console.log(`✅ System setting '${key}' aggiornato a: ${value}`)
+    
+    return c.json({
+      success: true,
+      message: `Impostazione '${key}' aggiornata correttamente`,
+      key,
+      value
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore aggiornamento system setting:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // 🔄 ENDPOINT: Aggiorna template dal file HTML (con templateId come URL param)
 app.post('/api/admin/update-template/:templateId', async (c) => {
   try {

@@ -598,16 +598,43 @@ export async function processConfiguration(
       ctx.db
     )
 
-    if (emailResult.success) {
+    if (!emailResult.success) {
+      result.errors.push(...emailResult.errors)
+      // Non blocchiamo il workflow per questo errore
+      console.warn('⚠️ [ORCHESTRATOR] Errore invio email info@ (non bloccante)')
+    }
+
+    // 4.3: Invia email di benvenuto al cliente
+    const clientData = {
+      ...ctx.leadData,
+      codiceCliente: ctx.configData.codiceCliente || `CLI-${Date.now()}`,
+      servizio: ctx.leadData.pacchetto || 'BASE',
+      pacchetto: ctx.leadData.pacchetto || 'BASE'
+    }
+    
+    const benvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
+      clientData,
+      ctx.env,
+      ctx.db
+    )
+
+    if (benvenutoResult.success) {
       result.success = true
-      result.message = 'Configurazione salvata e inviata a info@'
+      result.message = 'Configurazione salvata. Email info@ e benvenuto inviate.'
       result.data = {
         configurationId: configResult.configurationId,
-        emailsSent: emailResult.emailsSent
+        emailsSent: [...(emailResult.emailsSent || []), ...(benvenutoResult.emailsSent || [])]
       }
+      console.log(`✅ [ORCHESTRATOR] Email benvenuto inviata con successo`)
     } else {
-      result.errors.push(...emailResult.errors)
-      result.message = 'Errore invio email configurazione'
+      result.success = true // Non blocchiamo per errore email
+      result.message = 'Configurazione salvata. Email info@ inviata, errore email benvenuto.'
+      result.data = {
+        configurationId: configResult.configurationId,
+        emailsSent: emailResult.emailsSent || []
+      }
+      result.errors.push(...benvenutoResult.errors)
+      console.warn('⚠️ [ORCHESTRATOR] Errore invio email benvenuto (non bloccante)')
     }
 
     // Aggiorna status lead
