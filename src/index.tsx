@@ -10961,12 +10961,28 @@ app.post('/api/contracts/sign', async (c) => {
             new Date().toISOString()  // updated_at
           ).run()
           
+          console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito`)
+          console.log(`🔍 [FIRMA→PROFORMA] insertResult.meta:`, JSON.stringify(insertResult.meta || {}))
+          
           // Recupera l'ID auto-generato
+          // ⚠️ WORKAROUND: D1 potrebbe non restituire last_row_id, quindi facciamo una SELECT
           if (insertResult.meta && insertResult.meta.last_row_id) {
             proformaIdGenerated = insertResult.meta.last_row_id as number
-            console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} salvata nel DB con ID ${proformaIdGenerated}`)
+            console.log(`✅ [FIRMA→PROFORMA] ID recuperato da last_row_id: ${proformaIdGenerated}`)
           } else {
-            console.warn(`⚠️ [FIRMA→PROFORMA] Proforma salvata ma ID non recuperato`)
+            console.warn(`⚠️ [FIRMA→PROFORMA] last_row_id non disponibile, eseguo SELECT per recuperare ID...`)
+            
+            // Fallback: recupera ID con SELECT usando numero_proforma (univoco)
+            const proformaRecord = await c.env.DB.prepare(`
+              SELECT id FROM proforma WHERE numero_proforma = ? ORDER BY created_at DESC LIMIT 1
+            `).bind(numeroProforma).first() as any
+            
+            if (proformaRecord && proformaRecord.id) {
+              proformaIdGenerated = proformaRecord.id as number
+              console.log(`✅ [FIRMA→PROFORMA] ID recuperato da SELECT: ${proformaIdGenerated}`)
+            } else {
+              console.error(`❌ [FIRMA→PROFORMA] Impossibile recuperare ID proforma per ${numeroProforma}`)
+            }
           }
         } catch (dbError) {
           console.error(`❌ [FIRMA→PROFORMA] Errore salvataggio proforma nel DB:`, dbError)
