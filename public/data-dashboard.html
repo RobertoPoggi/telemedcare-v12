@@ -309,11 +309,12 @@
                             <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Data</th>
                             <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Scadenza</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="contractsTable">
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-gray-400">
+                            <td colspan="10" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento contratti...</p>
                             </td>
@@ -520,7 +521,7 @@
             if (contracts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
+                        <td colspan="10" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
                     </tr>
                 `;
                 return;
@@ -584,6 +585,16 @@
                         </td>
                         <td class="py-3 text-xs text-gray-500">${date}</td>
                         <td class="py-3">${scadenzaHtml}</td>
+                        <td class="py-3">
+                            ${contract.status === 'SIGNED' && contract.signed_pdf_url ? 
+                                `<a href="${contract.signed_pdf_url}" 
+                                   target="_blank" 
+                                   class="inline-flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-all">
+                                    <i class="fas fa-file-pdf mr-1"></i> PDF Firmato
+                                </a>` : 
+                                `<span class="text-gray-400 text-xs">-</span>`
+                            }
+                        </td>
                     </tr>
                 `;
             }).join('');

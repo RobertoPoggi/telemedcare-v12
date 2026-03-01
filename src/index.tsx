@@ -10863,6 +10863,19 @@ app.post('/api/contracts/sign', async (c) => {
     
     console.log(`✅ Contratto firmato: ${contractId} da IP ${clientIp}`)
     
+    // Genera link al contratto firmato (visualizzabile come PDF)
+    const signedContractUrl = `/contratto-firmato.html?id=${contractId}`
+    
+    // Aggiorna il contratto con l'URL del PDF firmato
+    await c.env.DB.prepare(`
+      UPDATE contracts 
+      SET signed_pdf_url = ?,
+          pdf_generated_at = datetime('now')
+      WHERE id = ?
+    `).bind(signedContractUrl, contractId).run()
+    
+    console.log(`📄 Contratto firmato disponibile su: ${signedContractUrl}`)
+    
     // ❌ DISABILITATO: Email conferma firma (ridondante e confusionaria)
     // Il cliente riceverà direttamente l'email con la proforma che include tutte le info necessarie
     // Recupera lead per inviare email

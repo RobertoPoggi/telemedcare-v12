@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contratto Firmato - TeleMedCare</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .header img {
+      height: 60px;
+      margin-bottom: 15px;
+    }
+    
+    .contract-title {
+      font-size: 24px;
+      color: #1e40af;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .section {
+      background: #f9fafb;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .section h3 {
+      margin-top: 0;
+      color: #3b82f6;
+      margin-bottom: 10px;
+    }
+    
+    .contract-content {
+      margin: 30px 0;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    
+    .signature-box {
+      background: #f0f9ff;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .signature-box img {
+      max-width: 400px;
+      max-height: 200px;
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    
+    .no-print {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 6px;
+      margin: 0 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .btn:hover {
+      background: #2563eb;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 50px;
+    }
+    
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .info-table {
+      width: 100%;
+      margin: 15px 0;
+    }
+    
+    .info-table td {
+      padding: 8px 0;
+    }
+    
+    .info-table td:first-child {
+      font-weight: bold;
+      width: 200px;
+      color: #64748b;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        padding: 20px;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p style="margin-top: 20px;">Caricamento contratto firmato...</p>
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+      <h3>❌ Errore</h3>
+      <p id="error-message"></p>
+    </div>
+    
+    <div id="contract-content" style="display: none;">
+      <!-- Il contenuto del contratto verrà caricato qui dinamicamente -->
+    </div>
+    
+    <div class="no-print" id="actions" style="display: none;">
+      <button onclick="window.print()" class="btn">🖨️ Stampa Contratto</button>
+      <button onclick="downloadPDF()" class="btn">📥 Scarica PDF</button>
+      <a href="/admin/leads-dashboard" class="btn">↩️ Torna alla Dashboard</a>
+    </div>
+  </div>
+  
+  <script>
+    // Recupera l'ID del contratto dalla query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const contractId = urlParams.get('id');
+    
+    async function loadContract() {
+      if (!contractId) {
+        showError('ID contratto mancante. Controlla il link.');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/contracts/${contractId}`);
+        const data = await response.json();
+        
+        if (!data.success || !data.contract) {
+          throw new Error(data.error || 'Contratto non trovato');
+        }
+        
+        // Mostra il contratto
+        displayContract(data.contract);
+        
+      } catch (error) {
+        console.error('Errore caricamento contratto:', error);
+        showError(error.message || 'Errore durante il caricamento del contratto');
+      }
+    }
+    
+    function displayContract(contract) {
+      const content = document.getElementById('contract-content');
+      
+      // Costruisce l'HTML del contratto firmato
+      content.innerHTML = `
+        <div class="header">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60' viewBox='0 0 200 60'%3E%3Cg%3E%3Crect x='10' y='15' width='8' height='30' fill='%233b82f6' rx='1'/%3E%3Crect x='5' y='23' width='18' height='8' fill='%233b82f6' rx='1'/%3E%3C/g%3E%3Ctext x='35' y='35' font-family='Arial,sans-serif' font-size='22' font-weight='bold' fill='%231e40af'%3EMedica GB%3C/text%3E%3Ctext x='35' y='48' font-family='Arial,sans-serif' font-size='8' fill='%2364748b'%3EStartup Innovativa a Vocazione Sociale%3C/text%3E%3C/svg%3E" 
+               alt="Medica GB">
+          <div style="font-size: 14px; color: #666; margin-top: 10px;">
+            <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
+            Corso Garibaldi 34, 20121 Milano (MI)<br>
+            P.IVA: 12435130963 | REA MI-2654321
+          </div>
+        </div>
+
+        <h1 class="contract-title">✅ CONTRATTO FIRMATO</h1>
+        
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="background: #10b981; color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;">
+            ✓ Firmato digitalmente
+          </span>
+        </div>
+
+        <div class="section">
+          <h3>📋 DATI CONTRATTO</h3>
+          <table class="info-table">
+            <tr><td>Codice Contratto:</td><td><strong>${contract.codice_contratto || '-'}</strong></td></tr>
+            <tr><td>Tipo Contratto:</td><td>${contract.tipo_contratto || contract.piano || '-'}</td></tr>
+            <tr><td>Data Firma:</td><td>${formatDateTime(contract.signed_at)}</td></tr>
+            <tr><td>Status:</td><td><span style="color: #10b981; font-weight: bold;">${contract.status}</span></td></tr>
+          </table>
+        </div>
+
+        ${contract.prezzo_totale ? `
+        <div class="section">
+          <h3>💰 DETTAGLI ECONOMICI</h3>
+          <table class="info-table">
+            <tr><td>Prezzo Mensile:</td><td><strong>€ ${parseFloat(contract.prezzo_mensile || 0).toFixed(2)}</strong></td></tr>
+            <tr><td>Durata:</td><td>${contract.durata_mesi || 12} mesi</td></tr>
+            <tr><td>Totale (IVA inclusa):</td><td><strong style="font-size: 18px; color: #3b82f6;">€ ${parseFloat(contract.prezzo_totale || 0).toFixed(2)}</strong></td></tr>
+          </table>
+        </div>
+        ` : ''}
+
+        <div class="contract-content">
+          <h3 style="color: #3b82f6; margin-bottom: 15px;">📜 Contenuto del Contratto</h3>
+          <div style="max-height: 400px; overflow-y: auto; padding: 15px; background: #fafafa; border-radius: 6px;">
+            ${contract.contenuto_html || '<p>Contenuto non disponibile</p>'}
+          </div>
+        </div>
+
+        ${contract.signature_data ? `
+        <div class="signature-box">
+          <h3 style="color: #3b82f6; margin-bottom: 15px;">✍️ Firma Digitale</h3>
+          ${contract.signature_data.startsWith('data:image') 
+            ? `<img src="${contract.signature_data}" alt="Firma digitale">`
+            : `<p style="font-style: italic;">${contract.signature_data}</p>`
+          }
+          <div style="margin-top: 15px; font-size: 12px; color: #64748b;">
+            <p><strong>Data firma:</strong> ${formatDateTime(contract.signed_at)}</p>
+            <p><strong>IP:</strong> ${contract.signature_ip || 'Non disponibile'}</p>
+            <p><strong>Metodo:</strong> ${contract.signature_method || 'inline'}</p>
+          </div>
+        </div>
+        ` : ''}
+
+        <div style="margin: 40px 0; text-align: center;">
+          <p style="font-size: 14px; color: #666;">
+            Per assistenza contattaci:<br>
+            📧 <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | 
+            📞 335 730 1206
+          </p>
+        </div>
+
+        <div class="footer">
+          <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+          <p>
+            🏢 Milano: Corso Garibaldi 34, 20121 | 🏢 Genova: Via delle Eriche 53, 16148
+          </p>
+          <p>
+            📧 info@medicagb.it | 📞 02 8715 6826 | 🌐 www.medicagb.it
+          </p>
+          <p style="margin-top: 15px; font-style: italic;">
+            Documento generato automaticamente il ${formatDateTime(new Date().toISOString())}
+          </p>
+        </div>
+      `;
+      
+      // Mostra il contenuto e i pulsanti
+      document.getElementById('loading').style.display = 'none';
+      content.style.display = 'block';
+      document.getElementById('actions').style.display = 'block';
+    }
+    
+    function formatDateTime(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error-message').textContent = message;
+    }
+    
+    function downloadPDF() {
+      // Trigger browser's print-to-PDF functionality
+      window.print();
+    }
+    
+    // Carica il contratto all'avvio
+    loadContract();
+  </script>
+</body>
+</html>
