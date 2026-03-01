@@ -124,62 +124,9 @@ th {
   margin: 20px 0;
   border-radius: 5px;
 }
-.print-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 12px 24px;
-  background: #1e40af;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(30,64,175,0.3);
-  z-index: 1000;
-}
-.print-button:hover {
-  background: #1e3a8a;
-}
-@media print {
-  .print-button {
-    display: none;
-  }
-  body {
-    padding: 20px;
-  }
-}
-.loading {
-  text-align: center;
-  padding: 60px;
-  font-size: 18px;
-  color: #666;
-}
-.error {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 20px;
-  margin: 40px;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  text-align: center;
-}
 </style>
 </head>
 <body>
-
-<button class="print-button" onclick="window.print()">🖨️ Stampa/Salva PDF</button>
-
-<div id="loading" class="loading">
-  ⏳ Caricamento proforma in corso...
-</div>
-
-<div id="error" class="error" style="display:none;">
-  ❌ <strong>Errore:</strong> <span id="error-message"></span>
-</div>
-
-<div id="proforma-content" style="display:none;">
 
 <div class="header">
   <div class="company-info">
@@ -211,7 +158,7 @@ th {
 </div>
 
 <div class="highlight">
-  <p style="margin: 0; font-weight: bold; color: #0c5460;">Questa è una FATTURA PROFORMA valida per 3 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
+  <p style="margin: 0; font-weight: bold; color: #0c5460;">Questa è una FATTURA PROFORMA valida per 30 giorni dalla data di emissione. Non costituisce documento fiscale ma impegno a emettere fattura definitiva al ricevimento del pagamento.</p>
 </div>
 
 <table>
@@ -226,9 +173,20 @@ th {
   <tbody>
     <tr>
       <td>
-        <strong>Servizio TeleAssistenza <span id="tipo-servizio"></span></strong><br/>
-        <small>Durata: 12 mesi</small><br/>
-        <small>Include: Dispositivo SiDLY CARE PRO, Configurazione, Piattaforma Web/APP, SIM dati<span id="servizi-aggiuntivi"></span></small>
+        <strong>TIPO DI PRESTAZIONE: SERVIZI DI TELEASSISTENZA <span id="piano-servizio"></span> CON <span id="dispositivo-1"></span></strong><br/>
+        <small style="display: block; margin-top: 10px; line-height: 1.6;">
+          Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. 
+          In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale 
+          bidirezionale consente di parlare con la Centrale Operativa. E' integrato con sensori che consentono la geolocalizzazione, 
+          il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. 
+          E' un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA – ALTRI) 
+          e codice BD/RDM <span id="codice-bd-rdm"></span> del repertorio dispositivi medicali e, come tale, consente la rilevazione della 
+          Frequenza Cardiaca (FC) e della Saturazione (SpO2). E' inclusa basetta per la ricarica, alimentatore e cavo. 
+          Installazione e collaudo inclusi. SIM SiDLY per <span id="dispositivo-2"></span>, per comunicazione e trasmissione dati. 
+          Piattaforma/APP SiDLYCARE (Dispositivo medicale in classe I)
+        </small><br/>
+        <small style="display: block; margin-top: 10px;"><strong>Durata del Servizio:</strong> 12 mesi</small><br/>
+        <small><strong>Include:</strong> Dispositivo <span id="dispositivo-3"></span>, Configurazione, Piattaforma Web/APP, SIM dati, Chiamate bidirezionali<span id="centrale-operativa"></span></small>
       </td>
       <td class="text-center">1</td>
       <td class="text-right">€ <span id="prezzo-base"></span></td>
@@ -266,7 +224,7 @@ th {
 
   <div class="bank-details">
     <p style="margin: 5px 0; font-weight: bold;">2. CARTA DI CREDITO/DEBITO</p>
-    <p style="margin: 5px 0;">Pagamento sicuro online tramite Stripe. <a href="#" id="link-pagamento" style="color:#1e40af; font-weight:600;">Clicca qui per pagare ora →</a></p>
+    <p style="margin: 5px 0;">Pagamento sicuro online tramite il link fornito nell'email di conferma</p>
   </div>
 
   <p style="margin: 15px 0 5px 0; font-weight: bold; color: #856404;">⚠️ IMPORTANTE:</p>
@@ -292,11 +250,9 @@ th {
   <p>www.medicagb.it | www.telemedcare.it</p>
   <p>Tel: +39 02 1234567 | Email: info@medicagb.it</p>
   <p style="margin-top: 15px; font-size: 11px;">
-    Documento generato automaticamente dal sistema TeleMedCare V12.0<br/>
+    Documento generato automaticamente dal sistema TeleMedCare V11.0<br/>
     Per informazioni o assistenza: info@medicagb.it
   </p>
-</div>
-
 </div>
 
 <script>
@@ -305,9 +261,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const proformaId = urlParams.get('id');
 
 if (!proformaId) {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('error').style.display = 'block';
-  document.getElementById('error-message').textContent = 'ID proforma mancante nell\'URL';
+  alert('ID proforma mancante nell\'URL');
 } else {
   // Carica i dati della proforma
   fetch(`/api/proforma/${proformaId}`)
@@ -341,10 +295,29 @@ if (!proformaId) {
       // Servizio e Piano
       const servizio = proforma.servizio || 'eCura PRO';
       const piano = proforma.piano || 'BASE';
-      const tipoServizio = `${servizio} ${piano}`;
-      document.getElementById('tipo-servizio').textContent = tipoServizio;
+      
+      // Determina il dispositivo dal servizio
+      let dispositivo = 'SiDLY CARE PRO';
+      if (servizio.includes('FAMILY') || servizio.includes('BASE')) {
+        dispositivo = 'SiDLY VITAL CARE';
+      }
+      
+      // Determina il codice BD/RDM
+      const codiceBdRdm = dispositivo === 'SiDLY CARE PRO' ? '2853576' : '2853300';
+      
+      // Determina la centrale operativa
+      const centraleOperativa = piano === 'AVANZATO' ? ' e Centrale Operativa H24' : '';
+      
+      // Popola i nuovi campi
+      document.getElementById('piano-servizio').textContent = piano;
+      document.getElementById('dispositivo-1').textContent = dispositivo;
+      document.getElementById('dispositivo-2').textContent = dispositivo;
+      document.getElementById('dispositivo-3').textContent = dispositivo;
+      document.getElementById('codice-bd-rdm').textContent = codiceBdRdm;
+      document.getElementById('centrale-operativa').textContent = centraleOperativa;
+      
       document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
-      document.getElementById('causale-servizio').textContent = tipoServizio;
+      document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
       
       // Prezzi - USA PREZZO_TOTALE per il totale annuale!
       const prezzoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
@@ -357,26 +330,13 @@ if (!proformaId) {
       document.getElementById('importo-iva').textContent = formatCurrency(iva);
       document.getElementById('prezzo-totale').textContent = formatCurrency(prezzoTotaleIvaInclusa);
       
-      // Servizi aggiuntivi (se piano AVANZATO)
-      if (piano === 'AVANZATO') {
-        document.getElementById('servizi-aggiuntivi').textContent = ', Chiamate bidirezionali, Centrale Operativa H24';
-      } else {
-        document.getElementById('servizi-aggiuntivi').textContent = '';
-      }
-      
       // Link pagamento
       const linkPagamento = `/pagamento.html?proformaId=${proformaId}`;
       document.getElementById('link-pagamento').href = linkPagamento;
-      
-      // Mostra il contenuto
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('proforma-content').style.display = 'block';
     })
     .catch(error => {
       console.error('Errore caricamento proforma:', error);
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error').style.display = 'block';
-      document.getElementById('error-message').textContent = error.message || 'Impossibile caricare la proforma';
+      alert('Errore: ' + (error.message || 'Impossibile caricare la proforma'));
     });
 }
 
