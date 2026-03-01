@@ -284,10 +284,14 @@
             let html = '';
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
-            // ✅ FIX: Chiedi sempre chi intestare il contratto
-            const needsIntestatario = !lead.cfRichiedente || !lead.indirizzoRichiedente || 
-                                     !lead.capRichiedente || !lead.cittaRichiedente || !lead.provinciaIntestatario ||
-                                     !lead.nomeIntestatario || !lead.cognomeIntestatario;
+            // ✅ FIX: Controlla ENTRAMBI richiedente E intestatario (per import HubSpot)
+            const needsIntestatario = 
+                (!lead.cfRichiedente && !lead.cfIntestatario) ||
+                (!lead.indirizzoRichiedente && !lead.indirizzoIntestatario) || 
+                (!lead.capRichiedente && !lead.capIntestatario) || 
+                (!lead.cittaRichiedente && !lead.cittaIntestatario) || 
+                !lead.provinciaIntestatario ||  // Provincia SEMPRE manca (non esiste in form eCura)
+                !lead.nomeIntestatario || !lead.cognomeIntestatario;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario Contratto</h3>';
@@ -326,11 +330,11 @@
                 }
                 
                 // Indirizzo, CAP, Città, Provincia sulla stessa riga
-                // ✅ FIX: Controlla OGNI campo individualmente invece di usare griglia condizionale
-                const needsIndirizzo = !lead.indirizzoRichiedente;
-                const needsCap = !lead.capRichiedente;
-                const needsCitta = !lead.cittaRichiedente;
-                const needsProvincia = !lead.provinciaIntestatario;
+                // ✅ FIX: Controlla ENTRAMBI richiedente E intestatario (per import HubSpot)
+                const needsIndirizzo = !lead.indirizzoRichiedente && !lead.indirizzoIntestatario;
+                const needsCap = !lead.capRichiedente && !lead.capIntestatario;
+                const needsCitta = !lead.cittaRichiedente && !lead.cittaIntestatario;
+                const needsProvincia = !lead.provinciaIntestatario && !lead.provinciaRichiedente;
                 
                 // Mostra griglia solo se almeno UN campo manca
                 if (needsIndirizzo || needsCap || needsCitta || needsProvincia) {
@@ -343,7 +347,7 @@
                             <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
                             <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente" 
                                    placeholder="Via/Piazza Nome, N." required
-                                   value="${lead.indirizzoRichiedente || ''}">
+                                   value="${lead.indirizzoRichiedente || lead.indirizzoIntestatario || ''}">
                         </div>
                         
                         <div class="form-group">
@@ -351,14 +355,14 @@
                             <input type="text" id="capRichiedente" name="capRichiedente" 
                                    placeholder="00000" required maxlength="5" 
                                    pattern="[0-9]*" inputmode="numeric"
-                                   value="${lead.capRichiedente || ''}">
+                                   value="${lead.capRichiedente || lead.capIntestatario || ''}">
                         </div>
                         
                         <div class="form-group">
                             <label for="cittaRichiedente">Città <span class="required">*</span></label>
                             <input type="text" id="cittaRichiedente" name="cittaRichiedente" 
                                    placeholder="Es. Milano" required
-                                   value="${lead.cittaRichiedente || ''}">
+                                   value="${lead.cittaRichiedente || lead.cittaIntestatario || ''}">
                         </div>
                         
                         <div class="form-group">
@@ -366,7 +370,7 @@
                             <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
                                    placeholder="MI" required maxlength="2" 
                                    style="text-transform: uppercase;"
-                                   value="${lead.provinciaIntestatario || ''}">
+                                   value="${lead.provinciaIntestatario || lead.provinciaRichiedente || ''}">
                         </div>
                     `;
                     
