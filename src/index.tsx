@@ -6691,6 +6691,107 @@ app.post('/api/proforma/send', async (c) => {
   }
 })
 
+// GET /api/stripe-public-key - Recupera la chiave pubblica Stripe
+app.get('/api/stripe-public-key', async (c) => {
+  try {
+    const publicKey = c.env?.STRIPE_PUBLIC_KEY || ''
+    
+    if (!publicKey) {
+      console.warn('⚠️ [STRIPE] Public Key non configurata')
+      return c.json({ 
+        success: false, 
+        error: 'Stripe non configurato',
+        testMode: true 
+      })
+    }
+    
+    return c.json({
+      success: true,
+      publishableKey: publicKey
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore recupero Stripe public key:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST /api/create-payment-intent - Crea un Payment Intent Stripe per il pagamento
+app.post('/api/create-payment-intent', async (c) => {
+  try {
+    const { proformaId } = await c.req.json()
+    
+    if (!proformaId) {
+      return c.json({ success: false, error: 'proformaId richiesto' }, 400)
+    }
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Recupera dati proforma
+    const proforma = await c.env.DB.prepare(`
+      SELECT p.*, c.id as contract_id, c.codice_contratto, c.lead_id
+      FROM proforma p
+      LEFT JOIN contracts c ON p.contract_id = c.id
+      WHERE p.id = ? OR p.numero_proforma = ?
+    `).bind(proformaId, proformaId).first()
+    
+    if (!proforma) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    // Verifica che la proforma non sia già pagata
+    if (proforma.status === 'paid') {
+      return c.json({ 
+        success: false, 
+        error: 'Proforma già pagata',
+        alreadyPaid: true 
+      }, 400)
+    }
+    
+    // Calcola importo in centesimi (Stripe richiede l'importo in centesimi)
+    const amountInCents = Math.round(parseFloat(proforma.prezzo_totale) * 100)
+    
+    // Crea Payment Intent usando il modulo payment-manager
+    const { createStripePaymentIntent } = await import('./modules/payment-manager')
+    
+    const result = await createStripePaymentIntent(
+      c.env,
+      amountInCents,
+      `Pagamento Proforma ${proforma.numero_proforma} - TeleMedCare ${proforma.tipo_servizio}`,
+      {
+        proformaId: proforma.id,
+        proforma_number: proforma.numero_proforma,
+        contract_code: proforma.codice_contratto || proforma.contract_id,
+        leadId: proforma.lead_id
+      }
+    )
+    
+    if (!result.success) {
+      return c.json({ 
+        success: false, 
+        error: result.error || 'Errore creazione Payment Intent' 
+      }, 500)
+    }
+    
+    console.log(`✅ [API] Payment Intent creato per proforma ${proforma.numero_proforma}`)
+    
+    return c.json({
+      success: true,
+      clientSecret: result.stripeClientSecret,
+      paymentIntentId: result.paymentId,
+      amount: amountInCents,
+      currency: 'eur',
+      proformaNumber: proforma.numero_proforma
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore creazione Payment Intent:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // POST /api/payments - Registra pagamento (webhook Stripe o manuale)
 app.post('/api/payments', async (c) => {
   try {

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagamento Proforma - TeleMedCare</title>
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         * {
             margin: 0;
@@ -74,38 +75,84 @@
             margin-top: 10px;
         }
 
-        .payment-message {
-            text-align: center;
+        .payment-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
             padding: 30px;
+            margin-top: 30px;
         }
 
-        .payment-message h3 {
+        .payment-section h3 {
             color: #333;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .loading {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .payment-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .payment-tab {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
         }
 
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #f5c6cb;
+        .payment-tab:hover {
+            border-color: #667eea;
+        }
+
+        .payment-tab.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .payment-tab-content {
+            display: none;
+        }
+
+        .payment-tab-content.active {
+            display: block;
+        }
+
+        #card-element {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
             margin: 20px 0;
+        }
+
+        .card-errors {
+            color: #fa755a;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .bonifico-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .bonifico-details p {
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+
+        .bonifico-details strong {
+            display: inline-block;
+            min-width: 140px;
         }
 
         .btn {
@@ -117,12 +164,71 @@
             border-radius: 8px;
             font-size: 18px;
             font-weight: 600;
-            margin: 20px 10px;
+            margin: 20px 0;
+            border: none;
+            cursor: pointer;
             transition: background 0.3s;
+            width: 100%;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             background: #5568d3;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .loading-overlay .loading {
+            width: 50px;
+            height: 50px;
+            border-width: 5px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #c3e6cb;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .success-message h3 {
+            margin-bottom: 10px;
         }
 
         .footer {
@@ -143,7 +249,7 @@
         </div>
 
         <div class="content">
-            <div id="loading" class="payment-message">
+            <div id="loading" class="loading-overlay">
                 <div class="loading"></div>
                 <h3 style="margin-top: 20px;">Caricamento dati proforma...</h3>
             </div>
@@ -173,22 +279,64 @@
                     </div>
                 </div>
 
-                <div class="payment-message">
-                    <h3>🚧 Pagamento Online Stripe</h3>
-                    <p style="margin: 20px 0; color: #666;">Il sistema di pagamento Stripe è in fase di configurazione.</p>
-                    <p style="margin: 20px 0;">Nel frattempo, puoi procedere con il <strong>bonifico bancario</strong> utilizzando i dati ricevuti via email.</p>
-                    <a href="mailto:info@telemedcare.it" class="btn">✉️ Contatta Assistenza</a>
+                <div class="payment-section">
+                    <h3>💳 Scegli il metodo di pagamento</h3>
+                    
+                    <div class="payment-tabs">
+                        <div class="payment-tab active" data-tab="card" onclick="switchTab('card')">
+                            <div style="font-size: 24px;">💳</div>
+                            <div>Carta di Credito/Debito</div>
+                            <small>Pagamento immediato</small>
+                        </div>
+                        <div class="payment-tab" data-tab="bonifico" onclick="switchTab('bonifico')">
+                            <div style="font-size: 24px;">🏦</div>
+                            <div>Bonifico Bancario</div>
+                            <small>Attivazione in 2-3 giorni</small>
+                        </div>
+                    </div>
+
+                    <!-- Carta di Credito/Debito (Stripe) -->
+                    <div id="card-payment" class="payment-tab-content active">
+                        <form id="payment-form">
+                            <div id="card-element"></div>
+                            <div id="card-errors" class="card-errors"></div>
+                            <button id="submit-button" class="btn">
+                                <span id="button-text">Paga Ora con Carta</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Bonifico Bancario -->
+                    <div id="bonifico-payment" class="payment-tab-content">
+                        <div class="bonifico-details">
+                            <h4 style="margin-bottom: 15px;">📝 Dati per il Bonifico</h4>
+                            <p><strong>Beneficiario:</strong> Medica GB S.r.l.</p>
+                            <p><strong>IBAN:</strong> <code style="background:#fff; padding:5px; border-radius:4px;">IT97L0503401727000000003519</code></p>
+                            <p><strong>Banca:</strong> Banca Popolare di Milano</p>
+                            <p><strong>Causale:</strong> <span id="causale-bonifico">-</span></p>
+                            <p><strong>Importo:</strong> <span id="importo-bonifico">€0.00</span></p>
+                        </div>
+                        <p style="margin-top: 20px; color: #666; font-size: 14px;">
+                            ℹ️ Una volta effettuato il bonifico, il servizio sarà attivato entro 2-3 giorni lavorativi. 
+                            Riceverai una email di conferma con le istruzioni per la configurazione del dispositivo.
+                        </p>
+                        <a href="mailto:info@telemedcare.it" class="btn">✉️ Conferma Pagamento</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="successMessage" style="display: none;">
+                <div class="success-message">
+                    <h3>✅ Pagamento Completato!</h3>
+                    <p style="margin-top: 10px;">Il pagamento è stato elaborato con successo.</p>
+                    <p style="margin-top: 10px;">Riceverai a breve una email con le istruzioni per la configurazione del dispositivo.</p>
                 </div>
             </div>
 
             <div id="errorMessage" style="display: none;">
                 <div class="error-message">
-                    <h3>❌ Proforma Non Trovata</h3>
-                    <p style="margin-top: 10px;">La proforma richiesta non è stata trovata o è scaduta.</p>
-                    <p style="margin-top: 10px;">Contatta il nostro team per assistenza.</p>
-                </div>
-                <div class="payment-message">
-                    <a href="mailto:info@telemedcare.it" class="btn">✉️ Contatta Assistenza</a>
+                    <h3>❌ Errore</h3>
+                    <p id="errorText" style="margin-top: 10px;"></p>
                 </div>
             </div>
         </div>
@@ -196,45 +344,219 @@
         <div class="footer">
             <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
             <p>P.IVA: 12435130963 | Email: info@telemedcare.it</p>
+            <p style="margin-top: 10px; font-size: 12px;">🔒 Pagamenti sicuri elaborati da Stripe</p>
         </div>
     </div>
 
     <script>
+        // Variabili globali
+        let stripe = null;
+        let elements = null;
+        let cardElement = null;
+        let proformaData = null;
+        let clientSecret = null;
+
         // Recupera proformaId dalla query string
         const urlParams = new URLSearchParams(window.location.search);
         const proformaId = urlParams.get('proformaId');
 
-        if (!proformaId) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('errorMessage').style.display = 'block';
-        } else {
-            // Carica dati proforma dall'API
-            fetch(`/api/proforma/${proformaId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.proforma) {
-                        const proforma = data.proforma;
-                        
-                        // Popola i dettagli
-                        document.getElementById('numeroProforma').textContent = proforma.numero_proforma;
-                        document.getElementById('servizio').textContent = proforma.servizio || 'eCura';
-                        document.getElementById('piano').textContent = proforma.piano || 'BASE';
-                        document.getElementById('scadenza').textContent = new Date(proforma.data_scadenza).toLocaleDateString('it-IT');
-                        document.getElementById('totale').textContent = `€${parseFloat(proforma.importo_totale).toFixed(2)}`;
-                        
-                        // Mostra dettagli
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('proformaDetails').style.display = 'block';
-                    } else {
-                        throw new Error('Proforma not found');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading proforma:', error);
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('errorMessage').style.display = 'block';
-                });
+        // Inizializza la pagina
+        async function init() {
+            if (!proformaId) {
+                showError('ID Proforma mancante. Controlla il link ricevuto via email.');
+                return;
+            }
+
+            try {
+                // Carica dati proforma
+                await loadProformaData();
+                
+                // Inizializza Stripe
+                await initializeStripe();
+                
+            } catch (error) {
+                console.error('Errore inizializzazione:', error);
+                showError(error.message || 'Errore durante il caricamento dei dati');
+            }
         }
+
+        // Carica i dati della proforma
+        async function loadProformaData() {
+            const response = await fetch(`/api/proforma/${proformaId}`);
+            const data = await response.json();
+            
+            if (!data.success || !data.proforma) {
+                throw new Error('Proforma non trovata');
+            }
+            
+            proformaData = data.proforma;
+            
+            // Popola i dettagli
+            document.getElementById('numeroProforma').textContent = proformaData.numero_proforma;
+            document.getElementById('servizio').textContent = proformaData.servizio || 'eCura';
+            document.getElementById('piano').textContent = proformaData.piano || 'BASE';
+            document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
+            
+            const totale = parseFloat(proformaData.importo_totale).toFixed(2);
+            document.getElementById('totale').textContent = `€${totale}`;
+            document.getElementById('importo-bonifico').textContent = `€${totale}`;
+            
+            // Causale bonifico
+            const causale = `Proforma ${proformaData.numero_proforma} - TeleMedCare ${proformaData.servizio || 'eCura'}`;
+            document.getElementById('causale-bonifico').textContent = causale;
+            
+            // Mostra i dettagli
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('proformaDetails').style.display = 'block';
+        }
+
+        // Inizializza Stripe
+        async function initializeStripe() {
+            try {
+                // Recupera la chiave pubblica Stripe
+                const keyResponse = await fetch('/api/stripe-public-key');
+                const keyData = await keyResponse.json();
+                
+                if (!keyData.success || !keyData.publishableKey) {
+                    console.warn('Stripe non configurato, solo bonifico disponibile');
+                    // Passa automaticamente al tab bonifico
+                    switchTab('bonifico');
+                    // Nascondi il tab carta
+                    document.querySelector('[data-tab="card"]').style.display = 'none';
+                    return;
+                }
+                
+                // Inizializza Stripe.js
+                stripe = Stripe(keyData.publishableKey);
+                
+                // Crea il Payment Intent
+                const piResponse = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proformaId: proformaId })
+                });
+                
+                const piData = await piResponse.json();
+                
+                if (!piData.success || !piData.clientSecret) {
+                    throw new Error(piData.error || 'Errore creazione Payment Intent');
+                }
+                
+                clientSecret = piData.clientSecret;
+                
+                // Crea gli elementi Stripe
+                elements = stripe.elements();
+                cardElement = elements.create('card', {
+                    style: {
+                        base: {
+                            fontSize: '16px',
+                            color: '#32325d',
+                            fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+                            '::placeholder': {
+                                color: '#aab7c4'
+                            }
+                        },
+                        invalid: {
+                            color: '#fa755a',
+                            iconColor: '#fa755a'
+                        }
+                    }
+                });
+                
+                cardElement.mount('#card-element');
+                
+                // Gestisci errori in tempo reale
+                cardElement.on('change', function(event) {
+                    const displayError = document.getElementById('card-errors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+                
+                // Gestisci il form di pagamento
+                const form = document.getElementById('payment-form');
+                form.addEventListener('submit', handlePaymentSubmit);
+                
+            } catch (error) {
+                console.error('Errore inizializzazione Stripe:', error);
+                // In caso di errore, mostra solo il bonifico
+                switchTab('bonifico');
+                document.querySelector('[data-tab="card"]').style.display = 'none';
+            }
+        }
+
+        // Gestisce l'invio del form di pagamento
+        async function handlePaymentSubmit(event) {
+            event.preventDefault();
+            
+            const submitButton = document.getElementById('submit-button');
+            const buttonText = document.getElementById('button-text');
+            
+            // Disabilita il pulsante e mostra loading
+            submitButton.disabled = true;
+            buttonText.innerHTML = '<span class="loading"></span> Elaborazione in corso...';
+            
+            try {
+                // Conferma il pagamento con Stripe
+                const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: {
+                        card: cardElement,
+                        billing_details: {
+                            name: `${proformaData.cliente_nome || ''} ${proformaData.cliente_cognome || ''}`.trim(),
+                            email: proformaData.cliente_email
+                        }
+                    }
+                });
+                
+                if (error) {
+                    throw new Error(error.message);
+                }
+                
+                if (paymentIntent.status === 'succeeded') {
+                    // Pagamento completato!
+                    document.getElementById('proformaDetails').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    console.log('✅ Pagamento completato:', paymentIntent.id);
+                } else {
+                    throw new Error('Pagamento non completato. Stato: ' + paymentIntent.status);
+                }
+                
+            } catch (error) {
+                console.error('Errore pagamento:', error);
+                showError(error.message || 'Errore durante il pagamento');
+                
+                // Riabilita il pulsante
+                submitButton.disabled = false;
+                buttonText.textContent = 'Paga Ora con Carta';
+            }
+        }
+
+        // Cambia tab di pagamento
+        function switchTab(tabName) {
+            // Aggiorna i tab
+            document.querySelectorAll('.payment-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            
+            // Aggiorna i contenuti
+            document.querySelectorAll('.payment-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `${tabName}-payment`);
+            });
+        }
+
+        // Mostra messaggio di errore
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('proformaDetails').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+        }
+
+        // Inizializza quando la pagina è pronta
+        init();
     </script>
 </body>
 </html>

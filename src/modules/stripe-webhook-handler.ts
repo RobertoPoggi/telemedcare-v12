@@ -138,6 +138,12 @@ export class StripeWebhookHandler {
         // Non blocchiamo il workflow, solo log
       }
       
+      // 5.5 Invia proforma al commercialista (se configurato)
+      const commercialistaResult = await this.sendProformaToAccountant(proformaNumber, lead, db)
+      if (commercialistaResult.sent) {
+        console.log(`✅ [STRIPE-WEBHOOK] Proforma inviata al commercialista: ${commercialistaResult.email}`)
+      }
+      
       // 6. TODO: Genera DDT automatico
       console.log('🚚 [TODO] Generare DDT automatico')
       
@@ -293,6 +299,103 @@ export class StripeWebhookHandler {
     return {
       success: true,
       message: `Pagamento cancellato per proforma ${proformaNumber}`
+    }
+  }
+  
+  /**
+   * Invia copia proforma al commercialista (dopo pagamento completato)
+   */
+  private static async sendProformaToAccountant(
+    proformaNumber: string,
+    lead: any,
+    db: any
+  ): Promise<{ sent: boolean; email?: string; error?: string }> {
+    
+    try {
+      // 1. Recupera email commercialista dalle impostazioni
+      const setting = await db.prepare(`
+        SELECT value FROM system_settings WHERE key = 'email_commercialista'
+      `).first()
+      
+      const emailCommercialista = setting?.value?.trim()
+      
+      // Se non configurato, salta l'invio
+      if (!emailCommercialista || emailCommercialista === '') {
+        console.log('ℹ️  [STRIPE-WEBHOOK] Email commercialista non configurata - invio saltato')
+        return { sent: false }
+      }
+      
+      console.log(`📧 [STRIPE-WEBHOOK] Invio proforma al commercialista: ${emailCommercialista}`)
+      
+      // 2. Recupera dati proforma
+      const proforma = await db.prepare(`
+        SELECT * FROM proforma WHERE numero_proforma = ?
+      `).bind(proformaNumber).first()
+      
+      if (!proforma) {
+        throw new Error(`Proforma ${proformaNumber} non trovata`)
+      }
+      
+      // 3. Prepara email
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+          <meta charset="UTF-8">
+          <title>Copia Proforma per Fatturazione</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1e40af;">Richiesta Emissione Fattura</h2>
+            
+            <p>Gentile Commercialista,</p>
+            
+            <p>Si prega di emettere la <strong>fattura definitiva</strong> per il seguente ordine:</p>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #1e40af; margin: 20px 0;">
+              <p><strong>Numero Proforma:</strong> ${proformaNumber}</p>
+              <p><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
+              <p><strong>Email Cliente:</strong> ${lead.email}</p>
+              <p><strong>Servizio:</strong> ${proforma.tipo_servizio}</p>
+              <p><strong>Importo:</strong> €${proforma.prezzo_totale?.toFixed(2).replace('.', ',')}</p>
+              <p><strong>Data Pagamento:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+            </div>
+            
+            <p>Il pagamento è stato completato con successo tramite Stripe.</p>
+            
+            <p><strong>Link Proforma:</strong><br/>
+               <a href="https://telemedcare-v12.pages.dev/proforma-view?id=${proforma.id}" style="color: #1e40af;">
+               Visualizza Proforma Completa
+               </a>
+            </p>
+            
+            <p style="margin-top: 30px; font-size: 12px; color: #666;">
+              Questo messaggio è stato generato automaticamente dal sistema TeleMedCare.
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+      
+      // 4. Invia email (importa EmailService dinamicamente per evitare circular dependency)
+      const { EmailService } = await import('./email-service')
+      
+      await EmailService.sendEmail({
+        to: emailCommercialista,
+        from: 'info@medicagb.it',
+        fromName: 'Medica GB S.r.l.',
+        subject: `Richiesta Fattura - Proforma ${proformaNumber}`,
+        html: emailHtml,
+        text: `Richiesta emissione fattura per proforma ${proformaNumber}. Cliente: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}. Importo: €${proforma.prezzo_totale?.toFixed(2)}`
+      })
+      
+      console.log(`✅ [STRIPE-WEBHOOK] Email inviata al commercialista: ${emailCommercialista}`)
+      
+      return { sent: true, email: emailCommercialista }
+      
+    } catch (error) {
+      console.error('❌ [STRIPE-WEBHOOK] Errore invio email commercialista:', error)
+      return { sent: false, error: String(error) }
     }
   }
 }
