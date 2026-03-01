@@ -6856,12 +6856,7 @@ app.get('/api/proforma/:id', async (c) => {
         l.nomeRichiedente,
         l.cognomeRichiedente,
         l.email as lead_email,
-        l.telefono as lead_telefono,
-        l.indirizzo as lead_indirizzo,
-        l.citta as lead_citta,
-        l.cap as lead_cap,
-        l.provincia as lead_provincia,
-        l.codiceFiscale as lead_codice_fiscale
+        l.telefono as lead_telefono
       FROM proforma p
       LEFT JOIN leads l ON p.leadId = l.id
       WHERE UPPER(p.numero_proforma) = ? OR UPPER(p.id) = ?
@@ -6892,16 +6887,16 @@ app.get('/api/proforma/:id', async (c) => {
       servizio: proforma.tipo_servizio || 'eCura PRO',
       piano: piano,
       
-      // Cliente - usa prima i dati dalla proforma, poi fallback da lead
+      // Cliente - usa i dati dalla tabella proforma (già popolati all'inserimento)
       cliente_nome: proforma.cliente_nome || proforma.nomeRichiedente || '',
       cliente_cognome: proforma.cliente_cognome || proforma.cognomeRichiedente || '',
       cliente_email: proforma.cliente_email || proforma.lead_email || '',
       cliente_telefono: proforma.cliente_telefono || proforma.lead_telefono || '',
-      cliente_indirizzo: proforma.cliente_indirizzo || proforma.lead_indirizzo || 'N/D',
-      cliente_citta: proforma.cliente_citta || proforma.lead_citta || '',
-      cliente_cap: proforma.cliente_cap || proforma.lead_cap || '',
-      cliente_provincia: proforma.cliente_provincia || proforma.lead_provincia || '',
-      cliente_codice_fiscale: proforma.cliente_codice_fiscale || proforma.lead_codice_fiscale || 'N/D'
+      cliente_indirizzo: proforma.cliente_indirizzo || 'N/D',
+      cliente_citta: proforma.cliente_citta || '',
+      cliente_cap: proforma.cliente_cap || '',
+      cliente_provincia: proforma.cliente_provincia || '',
+      cliente_codice_fiscale: proforma.cliente_codice_fiscale || 'N/D'
     }
     
     return c.json({ success: true, proforma: proformaResponse })
