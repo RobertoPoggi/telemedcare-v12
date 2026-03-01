@@ -7063,6 +7063,10 @@ app.get('/api/proforma/:id', async (c) => {
     // 🔥 CASE-INSENSITIVE: Converti l'ID in UPPERCASE per matching
     const idUpper = id.toUpperCase()
     
+    // Prova anche come numero intero se l'ID è numerico
+    const idNumeric = parseInt(id, 10)
+    const isNumericId = !isNaN(idNumeric)
+    
     let proforma = await c.env.DB.prepare(`
       SELECT 
         p.*,
@@ -7072,8 +7076,10 @@ app.get('/api/proforma/:id', async (c) => {
         l.telefono as lead_telefono
       FROM proforma p
       LEFT JOIN leads l ON p.leadId = l.id
-      WHERE UPPER(p.numero_proforma) = ? OR UPPER(p.id) = ?
-    `).bind(idUpper, idUpper).first()
+      WHERE UPPER(p.numero_proforma) = ? 
+         OR UPPER(CAST(p.id AS TEXT)) = ?
+         OR (? AND p.id = ?)
+    `).bind(idUpper, idUpper, isNumericId ? 1 : 0, isNumericId ? idNumeric : 0).first()
     
     console.log(`🔍 [API] Proforma query result:`, proforma ? 'TROVATA' : 'NON TROVATA')
     
