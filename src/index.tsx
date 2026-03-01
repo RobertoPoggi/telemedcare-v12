@@ -10923,69 +10923,134 @@ app.post('/api/contracts/sign', async (c) => {
           dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 giorni
         }
         
-        console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-INSERT):`, JSON.stringify(proformaData, null, 2))
+        console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
         
-        // Salva proforma nel DB prima dell'invio (senza id - sarà auto-generato)
+        // ✅ UPSERT: Controlla se esiste già una proforma per questo contratto
         try {
-          const insertResult = await c.env.DB.prepare(`
-            INSERT INTO proforma (
-              contract_id, leadId, numero_proforma,
-              data_emissione, data_scadenza,
-              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-              cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
-              tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-              status, email_sent, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            contractId || '', // contract_id
-            lead.id,
-            numeroProforma,
-            new Date().toISOString().split('T')[0], // data_emissione
-            new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
-            lead.nomeRichiedente || '',
-            lead.cognomeRichiedente || '',
-            lead.email || '',
-            lead.telefono || '',
-            lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
-            lead.cittaIntestatario || lead.cittaAssistito || '',
-            lead.capIntestatario || lead.capAssistito || '',
-            lead.provinciaIntestatario || lead.provinciaAssistito || '',
-            lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
-            piano, // tipo_servizio (BASE/AVANZATO)
-            (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
-            12, // durata_mesi
-            prezzoIvaInclusa, // prezzo_totale (con IVA)
-            'SENT',
-            false,
-            new Date().toISOString(), // created_at
-            new Date().toISOString()  // updated_at
-          ).run()
+          console.log(`🔍 [FIRMA→PROFORMA] Controllo se proforma esiste già per contract ${contractId}...`)
           
-          console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito`)
-          console.log(`🔍 [FIRMA→PROFORMA] insertResult.meta:`, JSON.stringify(insertResult.meta || {}))
+          const existingProforma = await c.env.DB.prepare(`
+            SELECT id, numero_proforma, status 
+            FROM proforma 
+            WHERE contract_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT 1
+          `).bind(contractId).first() as any
           
-          // Recupera l'ID auto-generato
-          // ⚠️ WORKAROUND: D1 potrebbe non restituire last_row_id, quindi facciamo una SELECT
-          if (insertResult.meta && insertResult.meta.last_row_id) {
-            proformaIdGenerated = insertResult.meta.last_row_id as number
-            console.log(`✅ [FIRMA→PROFORMA] ID recuperato da last_row_id: ${proformaIdGenerated}`)
+          if (existingProforma && existingProforma.id) {
+            // ✅ UPDATE: Proforma esiste già, aggiorna i dati
+            proformaIdGenerated = existingProforma.id as number
+            console.log(`♻️  [FIRMA→PROFORMA] Proforma esistente trovata (ID ${proformaIdGenerated}, numero ${existingProforma.numero_proforma}), eseguo UPDATE...`)
+            
+            await c.env.DB.prepare(`
+              UPDATE proforma SET
+                leadId = ?,
+                data_emissione = ?,
+                data_scadenza = ?,
+                cliente_nome = ?,
+                cliente_cognome = ?,
+                cliente_email = ?,
+                cliente_telefono = ?,
+                cliente_indirizzo = ?,
+                cliente_citta = ?,
+                cliente_cap = ?,
+                cliente_provincia = ?,
+                cliente_codice_fiscale = ?,
+                tipo_servizio = ?,
+                prezzo_mensile = ?,
+                durata_mesi = ?,
+                prezzo_totale = ?,
+                status = ?,
+                updated_at = ?
+              WHERE id = ?
+            `).bind(
+              lead.id,
+              new Date().toISOString().split('T')[0], // data_emissione aggiornata
+              new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
+              lead.nomeRichiedente || '',
+              lead.cognomeRichiedente || '',
+              lead.email || '',
+              lead.telefono || '',
+              lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+              lead.cittaIntestatario || lead.cittaAssistito || '',
+              lead.capIntestatario || lead.capAssistito || '',
+              lead.provinciaIntestatario || lead.provinciaAssistito || '',
+              lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
+              piano, // tipo_servizio (BASE/AVANZATO)
+              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
+              12, // durata_mesi
+              prezzoIvaInclusa, // prezzo_totale (con IVA)
+              'SENT',
+              new Date().toISOString(), // updated_at
+              proformaIdGenerated
+            ).run()
+            
+            console.log(`✅ [FIRMA→PROFORMA] UPDATE proforma completato (ID ${proformaIdGenerated})`)
+            
           } else {
-            console.warn(`⚠️ [FIRMA→PROFORMA] last_row_id non disponibile, eseguo SELECT per recuperare ID...`)
+            // ✅ INSERT: Proforma non esiste, creane una nuova
+            console.log(`➕ [FIRMA→PROFORMA] Proforma non esistente, creo nuova proforma...`)
             
-            // Fallback: recupera ID con SELECT usando numero_proforma (univoco)
-            const proformaRecord = await c.env.DB.prepare(`
-              SELECT id FROM proforma WHERE numero_proforma = ? ORDER BY created_at DESC LIMIT 1
-            `).bind(numeroProforma).first() as any
+            const insertResult = await c.env.DB.prepare(`
+              INSERT INTO proforma (
+                contract_id, leadId, numero_proforma,
+                data_emissione, data_scadenza,
+                cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+                cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+                tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+                status, email_sent, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+              contractId || '', // contract_id
+              lead.id,
+              numeroProforma,
+              new Date().toISOString().split('T')[0], // data_emissione
+              new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
+              lead.nomeRichiedente || '',
+              lead.cognomeRichiedente || '',
+              lead.email || '',
+              lead.telefono || '',
+              lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+              lead.cittaIntestatario || lead.cittaAssistito || '',
+              lead.capIntestatario || lead.capAssistito || '',
+              lead.provinciaIntestatario || lead.provinciaAssistito || '',
+              lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
+              piano, // tipo_servizio (BASE/AVANZATO)
+              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
+              12, // durata_mesi
+              prezzoIvaInclusa, // prezzo_totale (con IVA)
+              'SENT',
+              false,
+              new Date().toISOString(), // created_at
+              new Date().toISOString()  // updated_at
+            ).run()
             
-            if (proformaRecord && proformaRecord.id) {
-              proformaIdGenerated = proformaRecord.id as number
-              console.log(`✅ [FIRMA→PROFORMA] ID recuperato da SELECT: ${proformaIdGenerated}`)
+            console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito`)
+            console.log(`🔍 [FIRMA→PROFORMA] insertResult.meta:`, JSON.stringify(insertResult.meta || {}))
+            
+            // Recupera l'ID auto-generato
+            // ⚠️ WORKAROUND: D1 potrebbe non restituire last_row_id, quindi facciamo una SELECT
+            if (insertResult.meta && insertResult.meta.last_row_id) {
+              proformaIdGenerated = insertResult.meta.last_row_id as number
+              console.log(`✅ [FIRMA→PROFORMA] ID recuperato da last_row_id: ${proformaIdGenerated}`)
             } else {
-              console.error(`❌ [FIRMA→PROFORMA] Impossibile recuperare ID proforma per ${numeroProforma}`)
+              console.warn(`⚠️ [FIRMA→PROFORMA] last_row_id non disponibile, eseguo SELECT per recuperare ID...`)
+              
+              // Fallback: recupera ID con SELECT usando numero_proforma (univoco)
+              const proformaRecord = await c.env.DB.prepare(`
+                SELECT id FROM proforma WHERE numero_proforma = ? ORDER BY created_at DESC LIMIT 1
+              `).bind(numeroProforma).first() as any
+              
+              if (proformaRecord && proformaRecord.id) {
+                proformaIdGenerated = proformaRecord.id as number
+                console.log(`✅ [FIRMA→PROFORMA] ID recuperato da SELECT: ${proformaIdGenerated}`)
+              } else {
+                console.error(`❌ [FIRMA→PROFORMA] Impossibile recuperare ID proforma per ${numeroProforma}`)
+              }
             }
           }
         } catch (dbError) {
-          console.error(`❌ [FIRMA→PROFORMA] Errore salvataggio proforma nel DB:`, dbError)
+          console.error(`❌ [FIRMA→PROFORMA] Errore UPSERT proforma nel DB:`, dbError)
           // Continua comunque con l'invio email
         }
         
