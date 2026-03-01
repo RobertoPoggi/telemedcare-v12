@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Provincia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 { color: #667eea; margin-bottom: 30px; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr 2fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test Griglia 4 Colonne con Provincia</h1>
+        
+        <h3>📋 Dati Intestatario</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Indirizzo *</label>
+                <input type="text" placeholder="Via/Piazza Nome, N." required>
+            </div>
+            <div class="form-group">
+                <label>CAP *</label>
+                <input type="text" placeholder="00000" maxlength="5" pattern="[0-9]{5}" required>
+            </div>
+            <div class="form-group">
+                <label>Città *</label>
+                <input type="text" placeholder="Es. Milano" required>
+            </div>
+            <div class="form-group">
+                <label>Provincia *</label>
+                <input type="text" placeholder="MI" maxlength="2" style="text-transform: uppercase;" required>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px;">👤 Dati Assistito</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Indirizzo *</label>
+                <input type="text" placeholder="Via/Piazza Nome, N." required>
+            </div>
+            <div class="form-group">
+                <label>CAP *</label>
+                <input type="text" placeholder="00000" maxlength="5" pattern="[0-9]{5}" required>
+            </div>
+            <div class="form-group">
+                <label>Città *</label>
+                <input type="text" placeholder="Es. Roma" required>
+            </div>
+            <div class="form-group">
+                <label>Provincia *</label>
+                <input type="text" placeholder="RM" maxlength="2" style="text-transform: uppercase;" required>
+            </div>
+        </div>
+        
+        <p style="margin-top: 30px; color: #10b981; font-weight: bold;">
+            ✅ SE VEDI 4 CAMPI PER RIGA (Indirizzo, CAP, Città, PROVINCIA), IL CODICE FUNZIONA!
+        </p>
+        <p style="margin-top: 10px; color: #666;">
+            Apri: <a href="/test-provincia-form.html" target="_blank">https://telemedcare-v12.pages.dev/test-provincia-form.html</a>
+        </p>
+    </div>
+</body>
+</html>
