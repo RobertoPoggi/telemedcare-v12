@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDT - Documento di Trasporto | TeleMedCare</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .logo {
+      color: #3b82f6;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    
+    .ddt-title {
+      font-size: 24px;
+      color: #1e40af;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .section {
+      background: #f9fafb;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .section h3 {
+      margin-top: 0;
+      color: #3b82f6;
+      margin-bottom: 10px;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    
+    .table th,
+    .table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .table th {
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .info-table {
+      width: 100%;
+      margin: 10px 0;
+    }
+    
+    .info-table td {
+      padding: 8px 0;
+    }
+    
+    .info-table td:first-child {
+      font-weight: bold;
+      width: 180px;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    
+    .no-print {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 0 10px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    
+    .btn:hover {
+      background: #2563eb;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 50px;
+    }
+    
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border: 1px solid #f5c6cb;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        padding: 20px;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p style="margin-top: 20px;">Caricamento DDT...</p>
+    </div>
+    
+    <div id="error" class="error" style="display: none;">
+      <h3>❌ Errore</h3>
+      <p id="error-message"></p>
+    </div>
+    
+    <div id="ddt-content" style="display: none;">
+      <!-- Il contenuto del DDT verrà caricato qui dinamicamente -->
+    </div>
+    
+    <div class="no-print" id="actions" style="display: none;">
+      <button onclick="window.print()" class="btn">🖨️ Stampa DDT</button>
+      <a href="/admin/leads-dashboard" class="btn">↩️ Torna alla Dashboard</a>
+    </div>
+  </div>
+  
+  <script>
+    // Recupera il numero DDT dalla query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const ddtId = urlParams.get('id') || urlParams.get('numero');
+    
+    async function loadDDT() {
+      if (!ddtId) {
+        showError('ID DDT mancante. Controlla il link.');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/ddts/${ddtId}`);
+        const data = await response.json();
+        
+        if (!data.success || !data.ddt) {
+          throw new Error(data.error || 'DDT non trovato');
+        }
+        
+        // Mostra il DDT
+        displayDDT(data.ddt);
+        
+      } catch (error) {
+        console.error('Errore caricamento DDT:', error);
+        showError(error.message || 'Errore durante il caricamento del DDT');
+      }
+    }
+    
+    function displayDDT(ddt) {
+      const content = document.getElementById('ddt-content');
+      
+      // Costruisce l'HTML del DDT
+      content.innerHTML = `
+        <div class="header">
+          <div class="logo">🚚 DOCUMENTO DI TRASPORTO (DDT)</div>
+          <div style="font-size: 14px; color: #666; margin-top: 10px;">
+            <strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
+            Corso Garibaldi 34, 20121 Milano (MI)<br>
+            P.IVA: 12435130963 | REA MI-2654321
+          </div>
+        </div>
+
+        <h1 class="ddt-title">DDT N. ${ddt.numero_ddt}</h1>
+        
+        <div style="text-align: center; margin: 20px 0; font-size: 16px;">
+          <strong>Data Emissione:</strong> ${formatDate(ddt.created_at)}
+        </div>
+
+        <div class="section">
+          <h3>📦 MITTENTE</h3>
+          <p>
+            <strong>Medica GB S.r.l.</strong><br>
+            Corso Garibaldi 34<br>
+            20121 Milano (MI)<br>
+            P.IVA: 12435130963
+          </p>
+        </div>
+
+        <div class="section">
+          <h3>👤 DESTINATARIO</h3>
+          <p>
+            <strong>${ddt.destinatario_nome}</strong><br>
+            ${ddt.destinatario_indirizzo}<br>
+            ${ddt.destinatario_cap || ''} ${ddt.destinatario_citta || ''} ${ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''}<br>
+            ${ddt.destinatario_telefono ? `📞 ${ddt.destinatario_telefono}<br>` : ''}
+            ${ddt.destinatario_email ? `📧 ${ddt.destinatario_email}` : ''}
+          </p>
+        </div>
+
+        <div class="section">
+          <h3>📋 RIFERIMENTI ORDINE</h3>
+          <table class="info-table">
+            ${ddt.contract_code ? `<tr><td>Codice Contratto:</td><td>${ddt.contract_code}</td></tr>` : ''}
+            ${ddt.proforma_number ? `<tr><td>Numero Proforma:</td><td>${ddt.proforma_number}</td></tr>` : ''}
+            <tr><td>Status:</td><td>${getStatusBadge(ddt.status)}</td></tr>
+          </table>
+        </div>
+
+        <h3 style="color: #3b82f6; margin-top: 30px;">🔧 ARTICOLI SPEDITI</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Descrizione</th>
+              <th>Seriale</th>
+              <th style="text-align: center;">Quantità</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>${ddt.dispositivo}</strong></td>
+              <td>${ddt.serial_number || 'Da assegnare'}</td>
+              <td style="text-align: center;">${ddt.quantita || 1}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="section">
+          <h3>🚛 DETTAGLI TRASPORTO</h3>
+          <table class="info-table">
+            <tr><td>Corriere:</td><td>${ddt.corriere || 'Da definire'}</td></tr>
+            <tr><td>Tracking Number:</td><td>${ddt.tracking_number || 'Verrà comunicato via email'}</td></tr>
+            <tr><td>Numero Colli:</td><td>${ddt.numero_colli || 1}</td></tr>
+            ${ddt.peso_kg ? `<tr><td>Peso Totale:</td><td>${ddt.peso_kg} kg</td></tr>` : ''}
+            ${ddt.data_spedizione ? `<tr><td>Data Spedizione:</td><td>${formatDate(ddt.data_spedizione)}</td></tr>` : ''}
+            ${ddt.data_consegna ? `<tr><td>Data Consegna:</td><td>${formatDate(ddt.data_consegna)}</td></tr>` : ''}
+          </table>
+        </div>
+
+        ${ddt.note ? `
+        <div class="section">
+          <h3>📝 NOTE</h3>
+          <p>${ddt.note}</p>
+        </div>
+        ` : ''}
+        
+        <div class="section">
+          <p style="font-size: 14px; color: #666;">
+            ⚠️ <strong>IMPORTANTE:</strong> Verificare l'integrità dell'imballo alla consegna. 
+            In caso di danni visibili, NON accettare la merce e contattare immediatamente il corriere e Medica GB.
+          </p>
+        </div>
+
+        <div style="margin: 40px 0; text-align: center;">
+          <p style="font-size: 14px; color: #666;">
+            Per assistenza sulla consegna:<br>
+            📧 <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | 
+            📞 335 730 1206
+          </p>
+        </div>
+
+        <div class="footer">
+          <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+          <p>
+            🏢 Milano: Corso Garibaldi 34, 20121 | 🏢 Genova: Via delle Eriche 53, 16148
+          </p>
+          <p>
+            📧 info@medicagb.it | 📞 02 8715 6826 | 🌐 www.medicagb.it
+          </p>
+          <p style="margin-top: 15px; font-style: italic;">
+            Documento generato automaticamente il ${formatDate(ddt.created_at)}
+          </p>
+        </div>
+      `;
+      
+      // Mostra il contenuto e i pulsanti
+      document.getElementById('loading').style.display = 'none';
+      content.style.display = 'block';
+      document.getElementById('actions').style.display = 'block';
+    }
+    
+    function getStatusBadge(status) {
+      const badges = {
+        'preparazione': '🔄 In Preparazione',
+        'spedito': '📦 Spedito',
+        'in_transito': '🚚 In Transito',
+        'consegnato': '✅ Consegnato',
+        'anomalia': '⚠️ Anomalia'
+      };
+      return badges[status] || status;
+    }
+    
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error-message').textContent = message;
+    }
+    
+    // Carica il DDT all'avvio
+    loadDDT();
+  </script>
+</body>
+</html>

@@ -7237,6 +7237,168 @@ app.delete('/api/proforma/:id', async (c) => {
   }
 })
 
+// 🚚 DDT ENDPOINTS - Documenti di Trasporto
+
+// GET /api/ddts - Lista tutti i DDT
+app.get('/api/ddts', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    const ddts = await c.env.DB.prepare(`
+      SELECT * FROM ddts ORDER BY created_at DESC LIMIT 100
+    `).all()
+    
+    return c.json({
+      success: true,
+      ddts: ddts.results || [],
+      count: ddts.results?.length || 0
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore recupero DDTs:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/ddts/:id - Recupera singolo DDT
+app.get('/api/ddts/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Cerca per ID o numero_ddt
+    const ddt = await c.env.DB.prepare(`
+      SELECT * FROM ddts WHERE id = ? OR numero_ddt = ?
+    `).bind(id, id).first()
+    
+    if (!ddt) {
+      return c.json({ success: false, error: 'DDT non trovato' }, 404)
+    }
+    
+    return c.json({
+      success: true,
+      ddt
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore recupero DDT:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// POST /api/ddts - Genera nuovo DDT
+app.post('/api/ddts', async (c) => {
+  try {
+    const ddtData = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Import DDT generator
+    const DDTGenerator = (await import('./modules/ddt-generator')).default
+    
+    // Genera DDT
+    const result = await DDTGenerator.generateDDT(ddtData, c.env.DB)
+    
+    if (!result.success) {
+      return c.json({
+        success: false,
+        error: result.error || 'Errore generazione DDT'
+      }, 500)
+    }
+    
+    console.log(`✅ DDT generato: ${result.ddt?.numeroDDT}`)
+    
+    return c.json({
+      success: true,
+      message: 'DDT generato con successo',
+      ddt: result.ddt
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore generazione DDT:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// PUT /api/ddts/:id - Aggiorna DDT (tracking, status, etc.)
+app.put('/api/ddts/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const updates = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    // Verifica esistenza DDT
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?'
+    ).bind(id, id).first()
+    
+    if (!existing) {
+      return c.json({ success: false, error: 'DDT non trovato' }, 404)
+    }
+    
+    // Costruisci query UPDATE dinamica
+    const allowedFields = [
+      'status', 'corriere', 'tracking_number', 'peso_kg', 
+      'data_spedizione', 'data_consegna', 'note', 'serial_number'
+    ]
+    
+    const setClause: string[] = []
+    const values: any[] = []
+    
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) {
+        setClause.push(`${field} = ?`)
+        values.push(updates[field])
+      }
+    }
+    
+    if (setClause.length === 0) {
+      return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+    }
+    
+    // Aggiungi updated_at
+    setClause.push("updated_at = datetime('now')")
+    values.push(existing.id)
+    
+    const query = `UPDATE ddts SET ${setClause.join(', ')} WHERE id = ?`
+    await c.env.DB.prepare(query).bind(...values).run()
+    
+    console.log(`✅ DDT aggiornato: ${id}`)
+    
+    return c.json({
+      success: true,
+      message: 'DDT aggiornato con successo',
+      id: existing.id
+    })
+    
+  } catch (error) {
+    console.error('❌ Errore aggiornamento DDT:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // POST /api/configurations - Salva configurazione dispositivo
 app.post('/api/configurations', async (c) => {
   try {
