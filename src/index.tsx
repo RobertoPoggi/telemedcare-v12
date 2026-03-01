@@ -7060,26 +7060,42 @@ app.get('/api/proforma/:id', async (c) => {
       })
     }
     
-    // 🔥 CASE-INSENSITIVE: Converti l'ID in UPPERCASE per matching
+    // 🔥 MULTI-FORMAT ID LOOKUP: Cerca per numero_proforma (stringa) o id (numero)
     const idUpper = id.toUpperCase()
-    
-    // Prova anche come numero intero se l'ID è numerico
     const idNumeric = parseInt(id, 10)
     const isNumericId = !isNaN(idNumeric)
     
-    let proforma = await c.env.DB.prepare(`
-      SELECT 
-        p.*,
-        l.nomeRichiedente,
-        l.cognomeRichiedente,
-        l.email as lead_email,
-        l.telefono as lead_telefono
-      FROM proforma p
-      LEFT JOIN leads l ON p.leadId = l.id
-      WHERE UPPER(p.numero_proforma) = ? 
-         OR UPPER(CAST(p.id AS TEXT)) = ?
-         OR (? AND p.id = ?)
-    `).bind(idUpper, idUpper, isNumericId ? 1 : 0, isNumericId ? idNumeric : 0).first()
+    console.log(`🔍 [API] Searching proforma with id="${id}" (numeric: ${isNumericId ? idNumeric : 'N/A'})`)
+    
+    let proforma;
+    
+    if (isNumericId) {
+      // Cerca per ID numerico OPPURE numero_proforma
+      proforma = await c.env.DB.prepare(`
+        SELECT 
+          p.*,
+          l.nomeRichiedente,
+          l.cognomeRichiedente,
+          l.email as lead_email,
+          l.telefono as lead_telefono
+        FROM proforma p
+        LEFT JOIN leads l ON p.leadId = l.id
+        WHERE p.id = ? OR UPPER(p.numero_proforma) = ?
+      `).bind(idNumeric, idUpper).first()
+    } else {
+      // Cerca solo per numero_proforma (stringa)
+      proforma = await c.env.DB.prepare(`
+        SELECT 
+          p.*,
+          l.nomeRichiedente,
+          l.cognomeRichiedente,
+          l.email as lead_email,
+          l.telefono as lead_telefono
+        FROM proforma p
+        LEFT JOIN leads l ON p.leadId = l.id
+        WHERE UPPER(p.numero_proforma) = ?
+      `).bind(idUpper).first()
+    }
     
     console.log(`🔍 [API] Proforma query result:`, proforma ? 'TROVATA' : 'NON TROVATA')
     
