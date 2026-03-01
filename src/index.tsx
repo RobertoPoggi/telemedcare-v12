@@ -3815,8 +3815,10 @@ app.post('/api/lead', async (c) => {
           vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoIntestatario,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status,
-          prezzo_anno, prezzo_rinnovo
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          prezzo_anno, prezzo_rinnovo,
+          cittaIntestatario, capIntestatario, provinciaIntestatario,
+          cittaAssistito, capAssistito, provinciaAssistito
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
@@ -3846,7 +3848,13 @@ app.post('/api/lead', async (c) => {
         normalizedLead.versione,
         normalizedLead.status,
         prezzoAnno,
-        prezzoRinnovo
+        prezzoRinnovo,
+        normalizedLead.cittaIntestatario || '',
+        normalizedLead.capIntestatario || '',
+        normalizedLead.provinciaIntestatario || '',
+        normalizedLead.cittaAssistito || '',
+        normalizedLead.capAssistito || '',
+        normalizedLead.provinciaAssistito || ''
       ).run()
 
       console.log('✅ Lead salvato nel database con nuovo schema')
