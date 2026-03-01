@@ -10921,11 +10921,34 @@ app.post('/api/contracts/sign', async (c) => {
         const numeroProforma = `PRF${year}${month}-${random}`
         let proformaIdGenerated: number | null = null  // Sarà popolato dopo INSERT
         
-        // Determina prezzi in base al piano del contratto
-        const piano = contract.piano || 'BASE'
-        const servizio = contract.servizio || 'eCura PRO'
-        const prezzoBase = contract.prezzo_totale || (piano === 'AVANZATO' ? 840 : 480)
-        const prezzoIvaInclusa = piano === 'AVANZATO' ? 1024.80 : 585.60
+        // Determina prezzi e servizio dal contratto (NON hardcoded!)
+        const piano = contract.piano || contract.tipo_contratto || 'BASE'
+        const servizio = contract.servizio || contract.service_type || 'eCura PRO'
+        
+        // ✅ Leggi prezzo dal contratto (priorità: prezzo_totale, prezzo_iva_inclusa)
+        let prezzoBase = parseFloat(contract.prezzo_totale || contract.prezzo_base || 0)
+        let prezzoIvaInclusa = parseFloat(contract.prezzo_iva_inclusa || contract.prezzo_totale || 0)
+        
+        // Fallback: calcola da prezzo_totale se presente
+        if (prezzoIvaInclusa === 0 && prezzoBase > 0) {
+          prezzoIvaInclusa = prezzoBase * 1.22 // Aggiungi IVA 22%
+        } else if (prezzoBase === 0 && prezzoIvaInclusa > 0) {
+          prezzoBase = prezzoIvaInclusa / 1.22 // Rimuovi IVA
+        }
+        
+        // Fallback finale: usa prezzi standard solo se entrambi 0
+        if (prezzoBase === 0 && prezzoIvaInclusa === 0) {
+          console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard per piano ${piano}`)
+          if (piano === 'AVANZATO') {
+            prezzoBase = 840
+            prezzoIvaInclusa = 1024.80
+          } else {
+            prezzoBase = 480
+            prezzoIvaInclusa = 585.60
+          }
+        }
+        
+        console.log(`📊 [FIRMA→PROFORMA] Servizio: ${servizio}, Piano: ${piano}, Prezzo Base: €${prezzoBase}, IVA Inclusa: €${prezzoIvaInclusa}`)
         
         // Prepara dati proforma (proformaId verrà aggiornato dopo INSERT)
         const proformaData = {
@@ -10983,10 +11006,10 @@ app.post('/api/contracts/sign', async (c) => {
               lead.id,
               new Date().toISOString().split('T')[0], // data_emissione aggiornata
               new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
-              lead.nomeRichiedente || '',
-              lead.cognomeRichiedente || '',
-              lead.email || '',
-              lead.telefono || '',
+              lead.nomeIntestatario || lead.nomeRichiedente || '',
+              lead.cognomeIntestatario || lead.cognomeRichiedente || '',
+              lead.emailIntestatario || lead.email || '',
+              lead.telefonoIntestatario || lead.telefono || '',
               lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
               lead.cittaIntestatario || lead.cittaAssistito || '',
               lead.capIntestatario || lead.capAssistito || '',
@@ -11022,10 +11045,10 @@ app.post('/api/contracts/sign', async (c) => {
               numeroProforma,
               new Date().toISOString().split('T')[0], // data_emissione
               new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
-              lead.nomeRichiedente || '',
-              lead.cognomeRichiedente || '',
-              lead.email || '',
-              lead.telefono || '',
+              lead.nomeIntestatario || lead.nomeRichiedente || '',
+              lead.cognomeIntestatario || lead.cognomeRichiedente || '',
+              lead.emailIntestatario || lead.email || '',
+              lead.telefonoIntestatario || lead.telefono || '',
               lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
               lead.cittaIntestatario || lead.cittaAssistito || '',
               lead.capIntestatario || lead.capAssistito || '',
