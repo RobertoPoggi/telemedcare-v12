@@ -9247,14 +9247,24 @@ app.put('/api/leads/:id', async (c) => {
     
     // Mapping campi: frontend → DB
     const fieldMapping: Record<string, string> = {
-      // Dati richiedente (il form invia già nomeRichiedente/cognomeRichiedente)
+      // Dati richiedente
       nomeRichiedente: 'nomeRichiedente',
       cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
+      cfRichiedente: 'cfRichiedente',
+      indirizzoRichiedente: 'indirizzoRichiedente',
+      cittaRichiedente: 'cittaRichiedente',
+      capRichiedente: 'capRichiedente',
+      
+      // ✅ FIX: Dati intestatario (per contratto)
+      nomeIntestatario: 'nomeIntestatario',
+      cognomeIntestatario: 'cognomeIntestatario',
+      emailIntestatario: 'emailIntestatario',
+      telefonoIntestatario: 'telefonoIntestatario',
       cfIntestatario: 'cfIntestatario',
       indirizzoIntestatario: 'indirizzoIntestatario',
-      cittaRichiedente: 'cittaIntestatario', // Il form invia cittaRichiedente, il DB ha cittaIntestatario
+      cittaIntestatario: 'cittaIntestatario',
       capIntestatario: 'capIntestatario',
       provinciaIntestatario: 'provinciaIntestatario',
       
@@ -9300,6 +9310,33 @@ app.put('/api/leads/:id', async (c) => {
       intestatarioContratto: 'intestatarioContratto',
       note: 'note',
       status: 'status'
+    }
+    
+    // ✅ FIX CRITICO: Copia automatica richiedente → intestatario se intestatario non specificato
+    // Questo assicura che i contratti abbiano sempre i dati corretti
+    if (data.nomeRichiedente && !data.nomeIntestatario) {
+      data.nomeIntestatario = data.nomeRichiedente
+    }
+    if (data.cognomeRichiedente && !data.cognomeIntestatario) {
+      data.cognomeIntestatario = data.cognomeRichiedente
+    }
+    if (data.email && !data.emailIntestatario) {
+      data.emailIntestatario = data.email
+    }
+    if (data.telefono && !data.telefonoIntestatario) {
+      data.telefonoIntestatario = data.telefono
+    }
+    if (data.cfRichiedente && !data.cfIntestatario) {
+      data.cfIntestatario = data.cfRichiedente
+    }
+    if (data.indirizzoRichiedente && !data.indirizzoIntestatario) {
+      data.indirizzoIntestatario = data.indirizzoRichiedente
+    }
+    if (data.cittaRichiedente && !data.cittaIntestatario) {
+      data.cittaIntestatario = data.cittaRichiedente
+    }
+    if (data.capRichiedente && !data.capIntestatario) {
+      data.capIntestatario = data.capRichiedente
     }
     
     // Aggiungi solo i campi presenti nel payload
@@ -10054,8 +10091,8 @@ app.get('/firma-contratto', async (c) => {
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Contratto firmato con successo!\\n\\nRiceverai una copia via email a breve.');
-                        window.location.href = '/';
+                        alert('✅ Contratto firmato con successo!\\n\\nRiceverai una email con la proforma per il pagamento.\\n\\nGrazie per la tua fiducia in TeleMedCare!');
+                        window.location.href = '/grazie-firma-contratto.html';
                     } else {
                         // Mostra errore dettagliato
                         let errorMsg = 'Errore durante la firma del contratto:\\n\\n';
@@ -12057,10 +12094,13 @@ app.post('/api/leads', async (c) => {
       leadId,
       data.nomeRichiedente,
       data.cognomeRichiedente,
-      data.email, // Per retrocompatibilità con schema DB
-      data.telefono || '', // Per retrocompatibilità con schema DB
-      data.email, // email
-      data.telefono || '', // telefono
+      data.email,
+      data.telefono || '',
+      // ✅ FIX: Copia richiedente → intestatario (di default)
+      data.nomeIntestatario || data.nomeRichiedente,
+      data.cognomeIntestatario || data.cognomeRichiedente,
+      data.emailIntestatario || data.email,
+      data.telefonoIntestatario || data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
       data.luogoNascitaAssistito ?? null,
