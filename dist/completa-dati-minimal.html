@@ -64,6 +64,9 @@
         .form-row.cols-3 {
             grid-template-columns: 2fr 1fr 1fr;
         }
+        .form-row.cols-4 {
+            grid-template-columns: 3fr 1fr 2fr 1fr;
+        }
         .form-row.date-location {
             grid-template-columns: 1fr 1fr;
         }
@@ -297,10 +300,10 @@
                     `;
                 }
                 
-                // Indirizzo, CAP, Città sulla stessa riga
-                const hasAddressGaps = !lead.indirizzoRichiedente || !lead.capRichiedente || !lead.cittaRichiedente;
+                // Indirizzo, CAP, Città, Provincia sulla stessa riga
+                const hasAddressGaps = !lead.indirizzoRichiedente || !lead.capRichiedente || !lead.cittaRichiedente || !lead.provinciaIntestatario;
                 if (hasAddressGaps) {
-                    html += '<div class="form-row cols-3">';
+                    html += '<div class="form-row cols-4">';
                     
                     if (!lead.indirizzoRichiedente) {
                         html += `
@@ -338,7 +341,7 @@
                             <div class="form-group">
                                 <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
                                 <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
-                                       placeholder="RM" required maxlength="2" 
+                                       placeholder="MI" required maxlength="2" 
                                        style="text-transform: uppercase;">
                             </div>
                         `;
@@ -438,10 +441,10 @@
                     `;
                 }
                 
-                // Indirizzo, CAP, Città sulla stessa riga
-                const hasAssistitoAddressGaps = !lead.indirizzoAssistito || !lead.capAssistito || !lead.cittaAssistito;
+                // Indirizzo, CAP, Città, Provincia sulla stessa riga
+                const hasAssistitoAddressGaps = !lead.indirizzoAssistito || !lead.capAssistito || !lead.cittaAssistito || !lead.provinciaAssistito;
                 if (hasAssistitoAddressGaps) {
-                    html += '<div class="form-row cols-3">';
+                    html += '<div class="form-row cols-4">';
                     
                     if (!lead.indirizzoAssistito) {
                         html += `
