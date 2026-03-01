@@ -297,9 +297,15 @@ if (!proformaId) {
       const piano = proforma.piano || 'BASE';
       
       // Determina il dispositivo dal servizio
-      let dispositivo = 'SiDLY CARE PRO';
-      if (servizio.includes('FAMILY') || servizio.includes('BASE')) {
+      let dispositivo = 'SiDLY CARE PRO'; // Default
+      
+      // Mappatura corretta servizio → dispositivo
+      if (servizio.includes('PREMIUM')) {
         dispositivo = 'SiDLY VITAL CARE';
+      } else if (servizio.includes('PROFESSIONAL') || servizio.includes('PRO')) {
+        dispositivo = 'SiDLY CARE PRO';
+      } else if (servizio.includes('FAMILY')) {
+        dispositivo = 'SiDLY CARE PRO'; // Con funzionalità ridotte
       }
       
       // Determina il codice BD/RDM
