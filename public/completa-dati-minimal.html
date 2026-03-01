@@ -281,7 +281,7 @@
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
             const needsIntestatario = !lead.cfRichiedente || !lead.indirizzoRichiedente || 
-                                     !lead.capRichiedente || !lead.cittaRichiedente;
+                                     !lead.capRichiedente || !lead.cittaRichiedente || !lead.provinciaIntestatario;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
@@ -333,6 +333,17 @@
                         `;
                     }
                     
+                    if (!lead.provinciaIntestatario) {
+                        html += `
+                            <div class="form-group">
+                                <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+                                <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
+                                       placeholder="RM" required maxlength="2" 
+                                       style="text-transform: uppercase;">
+                            </div>
+                        `;
+                    }
+                    
                     html += '</div>';
                 }
             }
@@ -341,7 +352,7 @@
             const needsAssistito = !lead.nomeAssistito || !lead.cognomeAssistito || 
                                   !lead.dataNascitaAssistito || !lead.luogoNascitaAssistito ||
                                   !lead.cfAssistito || !lead.indirizzoAssistito || 
-                                  !lead.capAssistito || !lead.cittaAssistito || !lead.condizioniSalute;
+                                  !lead.capAssistito || !lead.cittaAssistito || !lead.provinciaAssistito || !lead.condizioniSalute;
             
             if (needsAssistito) {
                 html += '<h3 class="section-header">👤 Dati Assistito</h3>';
@@ -459,6 +470,17 @@
                                 <label for="cittaAssistito">Città <span class="required">*</span></label>
                                 <input type="text" id="cittaAssistito" name="cittaAssistito" 
                                        placeholder="Es. Roma" required>
+                            </div>
+                        `;
+                    }
+                    
+                    if (!lead.provinciaAssistito) {
+                        html += `
+                            <div class="form-group">
+                                <label for="provinciaAssistito">Provincia <span class="required">*</span></label>
+                                <input type="text" id="provinciaAssistito" name="provinciaAssistito" 
+                                       placeholder="RM" required maxlength="2" 
+                                       style="text-transform: uppercase;">
                             </div>
                         `;
                     }
