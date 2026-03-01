@@ -13114,7 +13114,7 @@ app.post('/api/hubspot/sync', async (c) => {
     const body = await c.req.json()
     const days = body.days || 7
     const dryRun = body.dryRun || false
-    const onlyEcura = body.onlyEcura !== false // ✅ Default TRUE - SEMPRE filtro eCura (anche IRBEMA)
+    const onlyEcura = true // 🔒 HARDCODED - SEMPRE filtro Form eCura (NON MODIFICARE!)
     const useFixedDate = body.useFixedDate !== false // ✅ Default TRUE - usa data fissa 30/01/2026
     
     const client = new HubSpotClient(accessToken, portalId)
@@ -13136,10 +13136,9 @@ app.post('/api/hubspot/sync', async (c) => {
       limit: 100
     }
     
-    if (onlyEcura) {
-      searchFilters.hs_object_source_detail_1 = 'Form eCura'
-      console.log('🔍 [HUBSPOT SYNC] Filtro attivo: solo lead da Form eCura')
-    }
+    // 🔒 FILTRO FORM ECURA SEMPRE ATTIVO (HARDCODED - NON MODIFICARE!)
+    searchFilters.hs_object_source_detail_1 = 'Form eCura'
+    console.log('🔍 [HUBSPOT SYNC] Filtro HARDCODED attivo: solo lead da Form eCura')
     
     const response = await client.searchContacts(searchFilters)
     
@@ -13435,7 +13434,7 @@ app.post('/api/hubspot/auto-import', async (c) => {
       enabled: body.enabled !== false, // Default true
       startHour: body.startHour || 0, // Default 0 (importa da mezzanotte)
       days: body.days || 1, // ✅ Default 1 giorno (24 ore), configurabile
-      onlyEcura: body.onlyEcura !== false, // ✅ RIPRISTINATO: Default true (solo Form eCura)
+      onlyEcura: true, // 🔒 HARDCODED - Mai importare lead non-eCura!
       dryRun: body.dryRun || false
     }
     
@@ -22415,4 +22414,3 @@ export default {
     return app.fetch(request, env, ctx)
   }
 }
-// Cache bust: 1771800424320
