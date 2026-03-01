@@ -323,6 +323,135 @@
                 </table>
             </div>
         </div>
+
+        <!-- Tabella Proforma -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 md:mb-8">
+            <div class="flex items-center justify-between mb-4 md:mb-6">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-file-invoice text-purple-500 mr-2 md:mr-3"></i>
+                    Proforma (<span id="proformaCount">0</span>)
+                </h2>
+                <div class="flex space-x-2">
+                    <select id="filterProformaStatus" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500" onchange="applyProformaFilters()">
+                        <option value="">Tutti gli Status</option>
+                        <option value="DRAFT">DRAFT</option>
+                        <option value="SENT">SENT</option>
+                        <option value="PAID">PAID</option>
+                        <option value="EXPIRED">EXPIRED</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Numero</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Cliente</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Servizio</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Importo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Emissione</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Scadenza</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proformaTable">
+                        <tr>
+                            <td colspan="8" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento proforma...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabella Pagamenti -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 md:mb-8">
+            <div class="flex items-center justify-between mb-4 md:mb-6">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-credit-card text-green-500 mr-2 md:mr-3"></i>
+                    Pagamenti (<span id="paymentsCount">0</span>)
+                </h2>
+                <div class="flex space-x-2">
+                    <select id="filterPaymentMethod" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500" onchange="applyPaymentFilters()">
+                        <option value="">Tutti i Metodi</option>
+                        <option value="STRIPE_CARD">Carta</option>
+                        <option value="STRIPE_SEPA">SEPA</option>
+                        <option value="BONIFICO">Bonifico</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">ID Pagamento</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Proforma</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Importo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Metodo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Transaction ID</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTable">
+                        <tr>
+                            <td colspan="7" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento pagamenti...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabella DDT -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 md:mb-8">
+            <div class="flex items-center justify-between mb-4 md:mb-6">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-truck text-orange-500 mr-2 md:mr-3"></i>
+                    DDT - Documenti di Trasporto (<span id="ddtCount">0</span>)
+                </h2>
+                <div class="flex space-x-2">
+                    <select id="filterDdtStatus" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500" onchange="applyDdtFilters()">
+                        <option value="">Tutti gli Status</option>
+                        <option value="preparazione">In Preparazione</option>
+                        <option value="spedito">Spedito</option>
+                        <option value="in_transito">In Transito</option>
+                        <option value="consegnato">Consegnato</option>
+                        <option value="anomalia">Anomalia</option>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Numero DDT</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Destinatario</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Dispositivo</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Seriale</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Corriere</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Tracking</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Status</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Data</th>
+                            <th class="pb-3 px-2 text-xs md:text-sm font-semibold text-gray-600">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ddtTable">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Caricamento DDT...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -377,6 +506,27 @@
                 document.getElementById('filterCognome').addEventListener('input', applyContractFilters);
                 document.getElementById('filterStato').addEventListener('change', applyContractFilters);
                 document.getElementById('filterDispositivo').addEventListener('change', applyContractFilters);
+
+                // Carica proforma
+                const proformaResponse = await fetch('/api/proforma');
+                const proformaData = await proformaResponse.json();
+                const proformas = proformaData.proforma || proformaData.proformas || [];
+                window.allProformas = proformas;
+                renderProformaTable(proformas);
+
+                // Carica pagamenti
+                const paymentsResponse = await fetch('/api/payments');
+                const paymentsData = await paymentsResponse.json();
+                const payments = paymentsData.payments || [];
+                window.allPayments = payments;
+                renderPaymentsTable(payments);
+
+                // Carica DDT
+                const ddtResponse = await fetch('/api/ddts');
+                const ddtData = await ddtResponse.json();
+                const ddts = ddtData.ddts || [];
+                window.allDdts = ddts;
+                renderDdtTable(ddts);
 
             } catch (error) {
                 console.error('Errore caricamento data dashboard:', error);
@@ -607,6 +757,244 @@
                 'PREMIUM': 'SiDLY VITAL CARE'
             };
             return dispositivi[servizio] || 'N/A';
+        }
+
+        // ============ PROFORMA TABLE ============
+        function renderProformaTable(proformas) {
+            const tbody = document.getElementById('proformaTable');
+            const countElement = document.getElementById('proformaCount');
+            
+            countElement.textContent = proformas.length;
+            
+            if (proformas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-gray-400">Nessuna proforma trovata</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = proformas.map(proforma => {
+                const dataEmissione = proforma.data_emissione ? new Date(proforma.data_emissione).toLocaleDateString('it-IT') : '-';
+                const dataScadenza = proforma.data_scadenza ? new Date(proforma.data_scadenza).toLocaleDateString('it-IT') : '-';
+                
+                // Status badge
+                const statusColors = {
+                    'DRAFT': 'bg-gray-100 text-gray-700',
+                    'SENT': 'bg-blue-100 text-blue-700',
+                    'PAID': 'bg-green-100 text-green-700',
+                    'EXPIRED': 'bg-red-100 text-red-700'
+                };
+                const statusColor = statusColors[proforma.status] || 'bg-gray-100 text-gray-700';
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">${proforma.numero_proforma || proforma.id}</code>
+                        </td>
+                        <td class="py-3 text-sm font-medium">
+                            ${escapeHtml(proforma.cliente_nome || '')} ${escapeHtml(proforma.cliente_cognome || '')}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                ${proforma.tipo_servizio || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-sm font-bold text-green-600">
+                            €${parseFloat(proforma.prezzo_totale || 0).toFixed(2)}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 ${statusColor} text-xs rounded font-medium">
+                                ${proforma.status || 'DRAFT'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${dataEmissione}</td>
+                        <td class="py-3 text-xs text-gray-500">${dataScadenza}</td>
+                        <td class="py-3">
+                            <a href="/proforma-view.html?id=${proforma.id}" 
+                               target="_blank" 
+                               class="inline-flex items-center px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-all">
+                                <i class="fas fa-file-invoice mr-1"></i> Visualizza
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function applyProformaFilters() {
+            const statusFilter = document.getElementById('filterProformaStatus').value;
+            let filtered = window.allProformas || [];
+            
+            if (statusFilter) {
+                filtered = filtered.filter(p => p.status === statusFilter);
+            }
+            
+            renderProformaTable(filtered);
+        }
+
+        // ============ PAYMENTS TABLE ============
+        function renderPaymentsTable(payments) {
+            const tbody = document.getElementById('paymentsTable');
+            const countElement = document.getElementById('paymentsCount');
+            
+            countElement.textContent = payments.length;
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-gray-400">Nessun pagamento trovato</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = payments.map(payment => {
+                const dataPagamento = payment.data_pagamento ? new Date(payment.data_pagamento).toLocaleDateString('it-IT') : '-';
+                
+                // Metodo pagamento badge
+                const metodoBadge = {
+                    'STRIPE_CARD': '<i class="fas fa-credit-card mr-1"></i>Carta',
+                    'STRIPE_SEPA': '<i class="fas fa-university mr-1"></i>SEPA',
+                    'BONIFICO': '<i class="fas fa-money-check-alt mr-1"></i>Bonifico'
+                };
+                
+                // Status badge
+                const statusColors = {
+                    'PENDING': 'bg-yellow-100 text-yellow-700',
+                    'COMPLETED': 'bg-green-100 text-green-700',
+                    'FAILED': 'bg-red-100 text-red-700',
+                    'CANCELLED': 'bg-gray-100 text-gray-700'
+                };
+                const statusColor = statusColors[payment.status] || 'bg-gray-100 text-gray-700';
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded">${(payment.id || '').substring(0, 12)}...</code>
+                        </td>
+                        <td class="py-3 text-xs">
+                            <code class="bg-purple-50 px-2 py-1 rounded text-purple-700">${payment.proforma_id || '-'}</code>
+                        </td>
+                        <td class="py-3 text-sm font-bold text-green-600">
+                            €${parseFloat(payment.importo || 0).toFixed(2)}
+                        </td>
+                        <td class="py-3 text-xs">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                                ${metodoBadge[payment.metodo_pagamento] || payment.metodo_pagamento || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 ${statusColor} text-xs rounded font-medium">
+                                ${payment.status || 'PENDING'}
+                            </span>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">
+                            ${payment.transaction_id ? `<code class="bg-gray-50 px-1 rounded">${payment.transaction_id.substring(0, 20)}...</code>` : '-'}
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${dataPagamento}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function applyPaymentFilters() {
+            const methodFilter = document.getElementById('filterPaymentMethod').value;
+            let filtered = window.allPayments || [];
+            
+            if (methodFilter) {
+                filtered = filtered.filter(p => p.metodo_pagamento === methodFilter);
+            }
+            
+            renderPaymentsTable(filtered);
+        }
+
+        // ============ DDT TABLE ============
+        function renderDdtTable(ddts) {
+            const tbody = document.getElementById('ddtTable');
+            const countElement = document.getElementById('ddtCount');
+            
+            countElement.textContent = ddts.length;
+            
+            if (ddts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-gray-400">Nessuna DDT trovata</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = ddts.map(ddt => {
+                const dataCreazione = ddt.created_at ? new Date(ddt.created_at).toLocaleDateString('it-IT') : '-';
+                
+                // Status badge
+                const statusBadges = {
+                    'preparazione': '<i class="fas fa-box mr-1"></i>In Preparazione',
+                    'spedito': '<i class="fas fa-shipping-fast mr-1"></i>Spedito',
+                    'in_transito': '<i class="fas fa-truck mr-1"></i>In Transito',
+                    'consegnato': '<i class="fas fa-check-circle mr-1"></i>Consegnato',
+                    'anomalia': '<i class="fas fa-exclamation-triangle mr-1"></i>Anomalia'
+                };
+                
+                const statusColors = {
+                    'preparazione': 'bg-blue-100 text-blue-700',
+                    'spedito': 'bg-purple-100 text-purple-700',
+                    'in_transito': 'bg-orange-100 text-orange-700',
+                    'consegnato': 'bg-green-100 text-green-700',
+                    'anomalia': 'bg-red-100 text-red-700'
+                };
+                const statusColor = statusColors[ddt.status] || 'bg-gray-100 text-gray-700';
+                const statusBadge = statusBadges[ddt.status] || ddt.status || 'N/A';
+                
+                return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 text-xs">
+                            <code class="bg-gray-100 px-2 py-1 rounded font-bold">${ddt.numero_ddt || ddt.id}</code>
+                        </td>
+                        <td class="py-3 text-sm font-medium">
+                            ${escapeHtml(ddt.destinatario_nome || '-')}
+                        </td>
+                        <td class="py-3 text-xs text-gray-600">
+                            ${ddt.dispositivo || 'N/A'}
+                        </td>
+                        <td class="py-3 text-xs">
+                            <code class="bg-blue-50 px-2 py-1 rounded text-blue-700">${ddt.serial_number || 'Da assegnare'}</code>
+                        </td>
+                        <td class="py-3 text-xs text-gray-600">
+                            ${ddt.corriere || 'Da definire'}
+                        </td>
+                        <td class="py-3 text-xs">
+                            ${ddt.tracking_number ? `<a href="#" class="text-blue-600 hover:text-blue-800 font-medium">${ddt.tracking_number}</a>` : '-'}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-1 ${statusColor} text-xs rounded font-medium">
+                                ${statusBadge}
+                            </span>
+                        </td>
+                        <td class="py-3 text-xs text-gray-500">${dataCreazione}</td>
+                        <td class="py-3">
+                            <a href="/ddt-view.html?id=${ddt.numero_ddt || ddt.id}" 
+                               target="_blank" 
+                               class="inline-flex items-center px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded transition-all">
+                                <i class="fas fa-truck mr-1"></i> Visualizza
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function applyDdtFilters() {
+            const statusFilter = document.getElementById('filterDdtStatus').value;
+            let filtered = window.allDdts || [];
+            
+            if (statusFilter) {
+                filtered = filtered.filter(d => d.status === statusFilter);
+            }
+            
+            renderDdtTable(filtered);
         }
     </script>
 </body>
