@@ -10565,11 +10565,11 @@ app.post('/api/contracts/sign', async (c) => {
             lead.cognomeRichiedente || '',
             lead.email || '',
             lead.telefono || '',
-            lead.indirizzoRichiedente || '',
-            lead.cittaRichiedente || '',
-            lead.capRichiedente || '',
-            lead.provinciaRichiedente || '',
-            lead.cfRichiedente || '',
+            lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+            lead.cittaIntestatario || lead.cittaAssistito || '',
+            lead.capIntestatario || lead.capAssistito || '',
+            lead.provinciaIntestatario || lead.provinciaAssistito || '',
+            lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
             piano, // tipo_servizio (BASE/AVANZATO)
             (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
             12, // durata_mesi
