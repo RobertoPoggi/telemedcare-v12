@@ -15,6 +15,7 @@ import PaymentManager from './payment-manager'
 import ClientConfigurationManager from './client-configuration-manager'
 import DocumentRepository from './document-repository'
 import { generateAndSendContract } from './contract-workflow-manager'
+import { getPricing } from './ecura-pricing'
 
 export interface WorkflowContext {
   db: D1Database
@@ -742,9 +743,24 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   // In produzione, questo chiamerà document-manager.ts
   console.log(`📄 [HELPER] Generazione contratto ${ctx.leadData.pacchetto} per lead ${ctx.leadData.id}`)
   
-  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
-  const prezzoBase = tipoServizio === 'AVANZATO' ? 840 : 480
-  const prezzoIvaInclusa = prezzoBase * 1.22
+  // ✅ USA PRICING MATRIX INVECE DI HARD-CODED
+  const servizio = (ctx.leadData.servizio || 'PRO') as 'FAMILY' | 'PRO' | 'PREMIUM'
+  const piano = ctx.leadData.pacchetto as 'BASE' | 'AVANZATO'
+  const pricing = getPricing(servizio, piano)
+  
+  if (!pricing) {
+    console.error(`❌ Pricing non trovato per ${servizio} ${piano}`)
+    return {
+      success: false,
+      step: 'generate_contract',
+      message: `Errore: Pricing non trovato per ${servizio} ${piano}`,
+      data: {}
+    }
+  }
+  
+  const tipoServizio = piano
+  const prezzoBase = pricing.setupBase  // IVA ESCLUSA
+  const prezzoIvaInclusa = pricing.setupTotale  // IVA INCLUSA
   
   const contractId = `CTR${Date.now()}`
   const contractCode = `CTR-${ctx.leadData.id}-${Date.now()}`
@@ -805,17 +821,32 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
   // Placeholder: chiamata al sistema di generazione proforma
   console.log(`💰 [HELPER] Generazione proforma per contratto ${ctx.contractId}`)
   
-  const tipoServizio = ctx.leadData.pacchetto.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
-  const prezzoBase = tipoServizio === 'AVANZATO' ? 840 : 480
-  const prezzoIvaInclusa = prezzoBase * 1.22
+  // ✅ USA PRICING MATRIX INVECE DI HARD-CODED
+  const servizio = (ctx.leadData.servizio || 'PRO') as 'FAMILY' | 'PRO' | 'PREMIUM'
+  const piano = ctx.leadData.pacchetto as 'BASE' | 'AVANZATO'
+  const pricing = getPricing(servizio, piano)
+  
+  if (!pricing) {
+    console.error(`❌ Pricing non trovato per ${servizio} ${piano}`)
+    return {
+      success: false,
+      step: 'generate_proforma',
+      message: `Errore: Pricing non trovato per ${servizio} ${piano}`,
+      data: {}
+    }
+  }
+  
+  const tipoServizio = piano
+  const prezzoBase = pricing.setupBase  // IVA ESCLUSA
+  const prezzoIvaInclusa = pricing.setupTotale  // IVA INCLUSA
   
   const proformaId = `PRF${Date.now()}`
   const numeroProforma = `PRF-${ctx.leadData.id}-${Date.now()}`
   
-  // Scadenza proforma: 30 giorni
+  // ✅ CORRETTO: Scadenza proforma 3 giorni (non 30)
   const dataEmissione = new Date()
   const dataScadenza = new Date()
-  dataScadenza.setDate(dataScadenza.getDate() + 30)
+  dataScadenza.setDate(dataScadenza.getDate() + 3)
   
   // 🔥 CRITICAL FIX: Save proforma to database with correct schema
   try {
