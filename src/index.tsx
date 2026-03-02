@@ -310,11 +310,15 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     const EmailService = (await import('./modules/email-service')).default
     const emailService = EmailService.getInstance()
     
+    // ✅ FIX: Calcola IVA inclusa da prezzo_totale (che è IVA esclusa)
+    const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
+    const prezzoIvaInclusa = Math.round(prezzoBase * 1.22 * 100) / 100
+    
     // Variabili per template
     const variables = {
       NOME_CLIENTE: proforma.cliente_nome || 'Cliente',
       PIANO_SERVIZIO: proforma.servizio || 'TeleMedCare',
-      IMPORTO_TOTALE: `€${proforma.importo_totale}`,
+      IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -7133,12 +7137,17 @@ app.get('/api/proforma/:id', async (c) => {
     const prezzoMensile = parseFloat(proforma.prezzo_mensile || 0)
     const piano = prezzoMensile >= 50 ? 'AVANZATO' : 'BASE'
     
+    // ✅ FIX: prezzo_totale è GIÀ IVA ESCLUSA (non serve dividere!)
+    const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
+    const importoIva = Math.round(prezzoBaseIvaEsclusa * 0.22 * 100) / 100
+    const importoTotaleIvaInclusa = Math.round(prezzoBaseIvaEsclusa * 1.22 * 100) / 100
+    
     const proformaResponse = {
       ...proforma,
-      // Prezzi
-      importo_totale: proforma.prezzo_totale || proforma.importo || 0,
-      prezzo_base: proforma.prezzo_totale ? (proforma.prezzo_totale / 1.22).toFixed(2) : 0,
-      importo_iva: proforma.prezzo_totale ? (proforma.prezzo_totale - (proforma.prezzo_totale / 1.22)).toFixed(2) : 0,
+      // Prezzi (prezzo_totale DB è IVA ESCLUSA)
+      importo_totale: importoTotaleIvaInclusa,  // IVA inclusa per frontend
+      prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // IVA esclusa (dal DB)
+      importo_iva: importoIva.toFixed(2),  // IVA 22%
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
