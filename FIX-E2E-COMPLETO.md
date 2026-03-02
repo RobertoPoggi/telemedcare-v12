@@ -247,3 +247,72 @@ I lead con provincia mancante riceveranno email reminder → compileranno form �
 
 **Tutti i fix sono live su produzione!** 🚀  
 Pronto per test E2E completo.
+
+---
+
+## 🆕 UPDATE 2026-03-02 (Commit `b00896e`)
+
+### ❌ ERRORE 4: Provincia Intestatario Mancante
+
+**Problema**:  
+Form completamento chiedeva provincia solo per **assistito**, non per **intestatario**.
+
+**Soluzione** (Commit `b00896e`):  
+1. Aggiunto campo input `provinciaIntestatario` nel form:
+```html
+<div class="form-group">
+    <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+    <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
+           placeholder="Es. MI" required maxlength="2" 
+           pattern="[A-Z]{2}" style="text-transform: uppercase;">
+</div>
+```
+
+2. Aggiunto nei check completezza:
+   - `needsIntestatario` (riga 283-284)
+   - `hasAddressGaps` (riga 301)
+
+3. ✅ Mapping endpoint già presente (riga 9269)
+
+**File modificato**: `src/form-html.ts`
+
+**Impatto**:
+- ✅ Form chiederà provincia intestatario se compili indirizzo/CAP/città
+- ✅ Contratti avranno provincia intestatario popolata
+- ✅ Coerenza dati: città → provincia obbligatoria
+
+**Nota Tecnica**:  
+Campi intestatario sono **opzionali** in `requiredFields` (lead-completion.ts) perché spesso richiedente = intestatario. Check condizionali nel form garantiscono coerenza: se inserisci città → devi inserire provincia.
+
+---
+
+## ✅ Riepilogo Finale Completo
+
+### 🔒 Security
+✅ `window.close()` dopo firma (no URL esposto) - Commit `f9c9431`
+
+### 💰 Pricing
+✅ IVA 22% inclusa (585,60€ / 1.024,80€) - Commit `f9c9431`
+
+### 📍 Provincia
+✅ Import HubSpot legge `state` - Commit `f9c9431`  
+✅ Form chiede provincia **assistito** - Commit `9422176`  
+✅ Form chiede provincia **intestatario** - Commit `b00896e`  
+✅ Check completezza include entrambe
+
+---
+
+## 🚀 Deploy Aggiornato
+
+- **Commit 1**: `f9c9431` (Security + Pricing + HubSpot)
+- **Commit 2**: `9422176` (Form Provincia Assistito)
+- **Commit 3**: `b00896e` (Form Provincia Intestatario)
+- **Commit 4**: `de83709` (Documentazione)
+- **GitHub**: https://github.com/RobertoPoggi/telemedcare-v12/commit/b00896e
+- **Cloudflare Pages**: Build in corso (~3-5 min)
+- **URL produzione**: https://telemedcare-v12.pages.dev
+
+---
+
+**Tutti i fix sono LIVE!** 🚀  
+Sistema completo: Security + Pricing + Provincia (Assistito + Intestatario).
