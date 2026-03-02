@@ -577,7 +577,12 @@ export class EmailService {
    */
   private async sendWithSendGrid(emailData: EmailData, env?: any): Promise<EmailResult> {
     // 🔐 SECURITY: Use environment variable from Cloudflare Workers context
-    const apiKey = env?.SENDGRID_API_KEY || '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'
+    const apiKey = env?.SENDGRID_API_KEY
+    
+    if (!apiKey) {
+      console.error('❌ SENDGRID_API_KEY non configurata!')
+      throw new Error('SENDGRID_API_KEY non configurata in Cloudflare Pages')
+    }
     
     console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     console.log('📧 SendGrid: From:', emailData.from || 'info@telemedcare.it')
