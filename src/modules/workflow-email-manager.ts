@@ -37,9 +37,20 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const pianoNome = contractData.tipoServizio || 'BASE'
   const dispositivo = servizioNome.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
   
-  // Prezzi corretti secondo www.eCura.it
-  const importoPrimoAnno = contractData.prezzoBase // 480 BASE o 840 AVANZATO
-  const importoAnniSuccessivi = pianoNome === 'AVANZATO' ? 600 : 200 // Rinnovo: 600€ AVANZATO, 200€ BASE
+  // ✅ FIX: Calcola prezzi da pricing matrix (non hardcoded!)
+  const importoPrimoAnno = contractData.prezzoBase // IVA esclusa
+  
+  // Estrai tipo servizio per calcolare rinnovo corretto
+  let servizioTipo: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
+  if (servizioNome.includes('FAMILY')) servizioTipo = 'FAMILY'
+  else if (servizioNome.includes('PREMIUM')) servizioTipo = 'PREMIUM'
+  else if (servizioNome.includes('PRO')) servizioTipo = 'PRO'
+  
+  // Calcola prezzo rinnovo dalla pricing matrix
+  const { getPricing } = await import('./ecura-pricing')
+  const piano = pianoNome as 'BASE' | 'AVANZATO'
+  const pricing = getPricing(servizioTipo, piano)
+  const importoAnniSuccessivi = pricing ? pricing.rinnovoBase : 0 // IVA esclusa
   
   const dataContratto = new Date().toLocaleDateString('it-IT', { 
     day: '2-digit', 
@@ -50,17 +61,16 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataInizioServizio = new Date().toLocaleDateString('it-IT')
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
-  // ✅ CORRETTO: Intestatario contratto è SEMPRE l'assistito (il servizio è per lui/lei)
-  // Il richiedente/caregiver va nei "Riferimenti"
-  const nomeIntestatario = leadData.nomeAssistito || leadData.nomeRichiedente || 'N/A'
-  const cognomeIntestatario = leadData.cognomeAssistito || leadData.cognomeRichiedente || 'N/A'
-  const luogoNascitaIntestatario = leadData.luogoNascitaAssistito || 'N/A'
-  const dataNascitaIntestatario = leadData.dataNascitaAssistito || 'N/A'
-  const indirizzoIntestatario = leadData.indirizzoAssistito || 'N/A'
-  const capIntestatario = leadData.capAssistito || 'N/A'
-  const cittaIntestatario = leadData.cittaAssistito || 'N/A'
-  const provinciaIntestatario = leadData.provinciaAssistito || ''
-  const cfIntestatario = leadData.cfAssistito || 'N/A'
+  // ✅ FIX: Intestatario contratto = chi firma e paga (priorità: intestatario DB > richiedente > assistito)
+  const nomeIntestatario = leadData.nomeIntestatario || leadData.nomeRichiedente || leadData.nomeAssistito || 'N/A'
+  const cognomeIntestatario = leadData.cognomeIntestatario || leadData.cognomeRichiedente || leadData.cognomeAssistito || 'N/A'
+  const luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || leadData.luogoNascitaAssistito || 'N/A'
+  const dataNascitaIntestatario = leadData.dataNascitaIntestatario || leadData.dataNascitaAssistito || 'N/A'
+  const indirizzoIntestatario = leadData.indirizzoIntestatario || leadData.indirizzoAssistito || 'N/A'
+  const capIntestatario = leadData.capIntestatario || leadData.capAssistito || 'N/A'
+  const cittaIntestatario = leadData.cittaIntestatario || leadData.cittaAssistito || 'N/A'
+  const provinciaIntestatario = leadData.provinciaIntestatario || leadData.provinciaAssistito || ''
+  const cfIntestatario = leadData.cfIntestatario || leadData.cfAssistito || 'N/A'
   
   // Care giver (richiedente) per i riferimenti
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
