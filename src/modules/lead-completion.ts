@@ -525,16 +525,26 @@ export async function processReminders(
   const DAILY_LIMIT = 30 // 🔻 RIDOTTO: Max 30 reminder al giorno (budget-safe)
   
   // ============================================
-  // 🚫 BLACKLIST: Lead già attivi manualmente
+  // 🚫 BLACKLIST: Lead già attivi (clienti con dispositivo attivo)
   // ============================================
-  // Lead con contratti firmati manualmente NON presenti nel DB contracts:
-  // - Margherita Delaude
-  // - Maria Grazia Ronca (lead: Andrea D'Avella)
-  // Questi NON devono ricevere reminder perché già clienti attivi
+  // Lead con dispositivi attivi NON presenti nel DB contracts con status ACTIVE:
+  // Lista aggiornata manualmente da dashboard dispositivi attivi
+  // Ultimo aggiornamento: 2026-03-02
   const MANUAL_CONTRACTS_BLACKLIST = [
+    // Clienti attivi (dispositivi CARE e VITAL CARE)
+    'Anna De Marco',
+    'Claudio Macchi',
+    'Giovanni Locatelli',
+    'Giuliana Balzarotti',
+    'Giuseppina Cozzi',
+    'Maria Capone',
+    'Rita Pennacchio',
+    'Eileen Elisabeth King',
+    'Laura Calvi',
     'Margherita Delaude',
-    'Maria Grazia Ronca', 
-    'Andrea D\'Avella'
+    'Maria Grazia Ronca',
+    'Andrea D\'Avella',  // Lead per Maria Grazia Ronca
+    'Gianni Paolo Pizzutto'
   ]
   
   // Filtra blacklist (confronta nome richiedente)
@@ -552,7 +562,7 @@ export async function processReminders(
     return !isBlacklisted
   })
   
-  console.log(`📊 [REMINDER] Dopo filtro blacklist: ${tokensFiltered.length} token (${tokens.length - tokensFiltered.length} saltati)`)
+  console.log(`📊 [REMINDER] Dopo filtro blacklist: ${tokensFiltered.length}/${tokens.length} token validi (${tokens.length - tokensFiltered.length} clienti attivi saltati)`)
   
   const tokensToProcess = tokensFiltered.slice(0, DAILY_LIMIT)
   
