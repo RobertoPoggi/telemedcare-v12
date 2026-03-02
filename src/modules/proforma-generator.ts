@@ -474,7 +474,7 @@ export async function createProformaFromContract(
   return {
     numeroProforma: '', // Generato automaticamente
     dataEmissione: new Date().toLocaleDateString('it-IT'),
-    dataScadenza: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT'),
+    dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT'),
     
     nomeCliente,
     cognomeCliente,
@@ -491,7 +491,7 @@ export async function createProformaFromContract(
     
     codiceContratto: contractCode,
     linkPagamentoStripe: stripeLinkPayment,
-    scadenzaPagamento: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
+    scadenzaPagamento: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   }
 }
 

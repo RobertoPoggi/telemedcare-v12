@@ -73,9 +73,21 @@ export async function generateAndSendContract(
       provinciaAssistito: (leadData as any).provinciaAssistito,
       cfAssistito: (leadData as any).cfAssistito || (leadData as any).cfAssistito,
       
-      prezzoMensile: pricing.setupBase / 12,
+      // Dati intestatario (per contratto)
+      nomeIntestatario: (leadData as any).nomeIntestatario,
+      cognomeIntestatario: (leadData as any).cognomeIntestatario,
+      cfIntestatario: (leadData as any).cfIntestatario,
+      indirizzoIntestatario: (leadData as any).indirizzoIntestatario,
+      capIntestatario: (leadData as any).capIntestatario,
+      cittaIntestatario: (leadData as any).cittaIntestatario,
+      provinciaIntestatario: (leadData as any).provinciaIntestatario,
+      luogoNascitaIntestatario: (leadData as any).luogoNascitaIntestatario,
+      dataNascitaIntestatario: (leadData as any).dataNascitaIntestatario,
+      
+      // Prezzi (IVA ESCLUSA per template che aggiunge "+ IVA 22%")
+      prezzoMensile: pricing.rinnovoBase / 12,  // IVA esclusa per rinnovo
       durataContratto: 12,
-      prezzoTotale: pricing.setupTotale
+      prezzoTotale: pricing.setupBase  // IVA ESCLUSA (template aggiunge "+ IVA 22%")
     }
 
     // 3. Genera contratto PDF

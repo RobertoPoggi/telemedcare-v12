@@ -187,7 +187,20 @@ export class ContractGenerator {
     
     // 19 PLACEHOLDER CONFORMI AL TEMPLATE DOCX
     const variables = {
-      // Assistito (11 placeholder)
+      // Cliente/Intestatario (usa intestatario se presente, altrimenti richiedente)
+      NOME_CLIENTE: data.nomeIntestatario || data.nomeRichiedente,
+      COGNOME_CLIENTE: data.cognomeIntestatario || data.cognomeRichiedente,
+      LUOGO_NASCITA_CLIENTE: data.luogoNascitaIntestatario || data.luogoNascita || 'DA COMPLETARE',
+      DATA_NASCITA_CLIENTE: data.dataNascitaIntestatario || data.dataNascita || 'DA COMPLETARE',
+      INDIRIZZO_CLIENTE: data.indirizzoIntestatario || data.indirizzoAssistito || 'DA COMPLETARE',
+      CAP_CLIENTE: data.capIntestatario || data.capAssistito || 'DA COMPLETARE',
+      CITTA_CLIENTE: data.cittaIntestatario || data.cittaAssistito || 'DA COMPLETARE',
+      PROVINCIA_CLIENTE: data.provinciaIntestatario || data.provinciaAssistito || 'DA COMPLETARE',
+      CODICE_FISCALE_CLIENTE: data.cfIntestatario || data.cfAssistito || 'DA COMPLETARE',
+      TELEFONO_CLIENTE: data.telefono || 'DA COMPLETARE',
+      EMAIL_CLIENTE: data.email,
+      
+      // Assistito (11 placeholder) - per riferimento nel contratto se diverso dal cliente
       NOME_ASSISTITO: data.nomeAssistito || data.nomeRichiedente,
       COGNOME_ASSISTITO: data.cognomeAssistito || data.cognomeRichiedente,
       LUOGO_NASCITA: data.luogoNascita || 'DA COMPLETARE',
@@ -316,10 +329,10 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p class="center">e</p>
 <p>&nbsp;</p>
-<p>Sig./Sig.ra {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} nato/a a {{LUOGO_NASCITA}} il {{DATA_NASCITA}}, residente e domiciliato/a in {{INDIRIZZO_ASSISTITO}} - {{CAP_ASSISTITO}} {{CITTA_ASSISTITO}} ({{PROVINCIA_ASSISTITO}}) e con codice fiscale {{CODICE_FISCALE_ASSISTITO}}.</p>
+<p>Sig./Sig.ra {{NOME_CLIENTE}} {{COGNOME_CLIENTE}} nato/a a {{LUOGO_NASCITA_CLIENTE}} il {{DATA_NASCITA_CLIENTE}}, residente e domiciliato/a in {{INDIRIZZO_CLIENTE}} - {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}}) e con codice fiscale {{CODICE_FISCALE_CLIENTE}}.</p>
 <p>&nbsp;</p>
 <p>Riferimenti:</p>
-<p>telefono {{TELEFONO_ASSISTITO}} – e-mail {{EMAIL_ASSISTITO}}</p>
+<p>telefono {{TELEFONO_CLIENTE}} – e-mail {{EMAIL_CLIENTE}}</p>
 <p>&nbsp;</p>
 <p class="italic center">(breviter Il Cliente)</p>
 <p>&nbsp;</p>
