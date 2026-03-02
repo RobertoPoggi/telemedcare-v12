@@ -634,13 +634,12 @@ app.use('/api/admin/*', async (c, next) => {
 // 🔒 SECURITY MIDDLEWARE: Protegge endpoint API sensibili (CRUD lead, contratti, proforma)
 // Lista WHITELIST di endpoint PUBBLICI (non richiedono auth)
 const PUBLIC_ENDPOINTS = [
-  '/api/lead',                    // Form acquisizione lead
-  '/api/leads/:id/complete',      // Completamento dati da email
-  '/api/stripe-public-key',       // Chiave pubblica Stripe
-  '/api/create-payment-intent',   // Creazione pagamento
-  '/api/payments',                // Conferma pagamento
-  '/api/system-settings',         // Lettura settings (GET)
-  '/api/hubspot/webhook'          // Webhook HubSpot
+  '/api/lead',                    // Form acquisizione lead (POST)
+  '/api/leads/:id/complete',      // Completamento dati da email (POST)
+  '/api/stripe-public-key',       // Chiave pubblica Stripe (GET)
+  '/api/create-payment-intent',   // Creazione pagamento (POST)
+  '/api/payments',                // Conferma pagamento (POST)
+  '/api/hubspot/webhook'          // Webhook HubSpot (POST)
 ]
 
 app.use('/api/*', async (c, next) => {
@@ -652,29 +651,41 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
   
-  // Skip se è nella whitelist pubblica
-  const isPublic = PUBLIC_ENDPOINTS.some(endpoint => {
-    const regex = new RegExp('^' + endpoint.replace(/:\w+/g, '[^/]+') + '$')
-    return regex.test(path)
-  })
-  
-  if (isPublic && method === 'GET') {
-    return next() // Lettura pubblica OK
+  // Whitelist: solo endpoint esatti pubblici
+  if (path === '/api/lead' && method === 'POST') {
+    return next() // Form acquisizione lead
   }
   
-  if (isPublic && method === 'POST' && (path.includes('/complete') || path.includes('/lead') || path.includes('/payment'))) {
-    return next() // Form pubblici OK
+  if (path.match(/^\/api\/leads\/[^\/]+\/complete$/) && method === 'POST') {
+    return next() // Completamento dati
+  }
+  
+  if (path === '/api/stripe-public-key' && method === 'GET') {
+    return next() // Chiave Stripe
+  }
+  
+  if (path === '/api/create-payment-intent' && method === 'POST') {
+    return next() // Pagamento
+  }
+  
+  if (path === '/api/payments' && method === 'POST') {
+    return next() // Conferma pagamento
+  }
+  
+  if (path === '/api/hubspot/webhook' && method === 'POST') {
+    return next() // Webhook HubSpot
   }
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
-    path.includes('/leads') ||
-    path.includes('/contracts') ||
-    path.includes('/contratti') ||
-    path.includes('/proforma') ||
-    path.includes('/assistiti') ||
+    path.startsWith('/api/leads') ||
+    path.startsWith('/api/contracts') ||
+    path.startsWith('/api/contratti') ||
+    path.startsWith('/api/proforma') ||
+    path.startsWith('/api/assistiti') ||
     path.includes('/import') ||
-    path.includes('/setup')
+    path.includes('/setup') ||
+    path.includes('/documents')
   
   if (!isSensitive) {
     return next() // Non sensibile, passa
