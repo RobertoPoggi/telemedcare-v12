@@ -341,7 +341,7 @@ export const FORM_HTML = `<!DOCTYPE html>
             const needsAssistito = !lead.nomeAssistito || !lead.cognomeAssistito || 
                                   !lead.dataNascitaAssistito || !lead.luogoNascitaAssistito ||
                                   !lead.cfAssistito || !lead.indirizzoAssistito || 
-                                  !lead.capAssistito || !lead.cittaAssistito || !lead.condizioniSalute;
+                                  !lead.capAssistito || !lead.cittaAssistito || !lead.provinciaAssistito || !lead.condizioniSalute;
             
             if (needsAssistito) {
                 html += '<h3 class="section-header">👤 Dati Assistito</h3>';
@@ -428,7 +428,7 @@ export const FORM_HTML = `<!DOCTYPE html>
                 }
                 
                 // Indirizzo, CAP, Città sulla stessa riga
-                const hasAssistitoAddressGaps = !lead.indirizzoAssistito || !lead.capAssistito || !lead.cittaAssistito;
+                const hasAssistitoAddressGaps = !lead.indirizzoAssistito || !lead.capAssistito || !lead.cittaAssistito || !lead.provinciaAssistito;
                 if (hasAssistitoAddressGaps) {
                     html += '<div class="form-row cols-3">';
                     
@@ -460,6 +460,17 @@ export const FORM_HTML = `<!DOCTYPE html>
                             <input type="text" id="cittaAssistito" name="cittaAssistito" 
                                    value="\${lead.cittaAssistito || ''}"
                                    placeholder="Es. Roma" required>
+                        </div>
+                    \`;
+                    
+                    // ✅ PROVINCIA ASSISTITO (sigla 2 caratteri)
+                    html += \`
+                        <div class="form-group">
+                            <label for="provinciaAssistito">Provincia <span class="required">*</span></label>
+                            <input type="text" id="provinciaAssistito" name="provinciaAssistito" 
+                                   value="\${lead.provinciaAssistito || ''}"
+                                   placeholder="Es. RM" required maxlength="2" 
+                                   pattern="[A-Z]{2}" style="text-transform: uppercase;">
                         </div>
                     \`;
                     
