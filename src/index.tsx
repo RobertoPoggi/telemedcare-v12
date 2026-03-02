@@ -655,6 +655,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
   
+  // Skip se è endpoint auth
+  if (path.startsWith('/api/auth/')) {
+    return next()
+  }
+  
   // Whitelist: solo endpoint esatti pubblici
   if (path === '/api/lead' && method === 'POST') {
     return next() // Form acquisizione lead
@@ -695,16 +700,21 @@ app.use('/api/*', async (c, next) => {
     return next() // Non sensibile, passa
   }
   
-  // 🔒 PROTEZIONE OPERATOR: blocca DELETE
-  if (method === 'DELETE') {
-    // Verifica se ha sessione
-    const cookie = c.req.header('Cookie')
-    if (cookie && cookie.includes('session=')) {
-      try {
-        const sessionMatch = cookie.match(/session=([^;]+)/)
-        if (sessionMatch) {
-          const session: AuthSession = JSON.parse(decodeURIComponent(sessionMatch[1]))
-          if (session.role === 'OPERATOR') {
+  // 🔐 VERIFICA AUTENTICAZIONE: Session Cookie O API_KEY
+  const cookie = c.req.header('Cookie')
+  const authHeader = c.req.header('Authorization')
+  
+  // Opzione 1: Verifica session cookie (utenti loggati dashboard)
+  if (cookie && cookie.includes('session=')) {
+    try {
+      const sessionMatch = cookie.match(/session=([^;]+)/)
+      if (sessionMatch) {
+        const session: AuthSession = JSON.parse(decodeURIComponent(sessionMatch[1]))
+        
+        // Verifica validità sessione
+        if (AuthService.isSessionValid(session)) {
+          // 🔒 PROTEZIONE OPERATOR: blocca DELETE
+          if (method === 'DELETE' && session.role === 'OPERATOR') {
             console.warn(`⚠️ [SECURITY] OPERATOR tentato DELETE: ${path}`)
             return c.json({
               success: false,
@@ -712,13 +722,19 @@ app.use('/api/*', async (c, next) => {
               message: 'Gli OPERATOR non possono eliminare record. Contatta un ADMIN.'
             }, 403)
           }
+          
+          // Session valida - passa
+          console.log(`✅ [SECURITY] Accesso dashboard autorizzato: ${session.username} (${session.role})`)
+          c.set('user', session)
+          return next()
         }
-      } catch (e) {}
+      }
+    } catch (e) {
+      console.error('[SECURITY] Errore parsing session:', e)
     }
   }
   
-  // Verifica API_KEY
-  const authHeader = c.req.header('Authorization')
+  // Opzione 2: Verifica API_KEY (integrazioni esterne)
   const apiKey = c.env.API_KEY
   
   if (!apiKey) {
@@ -726,16 +742,19 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
   
-  if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
-    console.warn(`⚠️ [SECURITY] Accesso negato a ${path} - API_KEY invalida o mancante`)
-    return c.json({ 
-      success: false, 
-      error: 'Unauthorized - API Key required',
-      message: 'Questa risorsa richiede autenticazione. Fornire header: Authorization: Bearer <API_KEY>'
-    }, 401)
+  if (authHeader && authHeader === `Bearer ${apiKey}`) {
+    console.log(`✅ [SECURITY] Accesso API autorizzato: ${path}`)
+    return next()
   }
   
-  console.log(`✅ [SECURITY] Accesso API autorizzato: ${path}`)
+  // Nessuna autenticazione valida
+  console.warn(`⚠️ [SECURITY] Accesso negato a ${path} - Nessuna autenticazione valida`)
+  return c.json({ 
+    success: false, 
+    error: 'Unauthorized',
+    message: 'Richiesto login o API Key. Login: https://telemedcare-v12.pages.dev/login'
+  }, 401)
+  
   return next()
 })
 
