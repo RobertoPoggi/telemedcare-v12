@@ -310,15 +310,18 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     const EmailService = (await import('./modules/email-service')).default
     const emailService = EmailService.getInstance()
     
-    // ✅ FIX: Calcola IVA inclusa da prezzo_totale (che è IVA esclusa)
+    // ✅ FIX: prezzo_totale è IVA ESCLUSA nel DB
     const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
-    const prezzoIvaInclusa = Math.round(prezzoBase * 1.22 * 100) / 100
+    const iva = Math.round(prezzoBase * 0.22 * 100) / 100
+    const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
-    // Variabili per template
+    // Variabili per template (importo base + dettagli IVA)
     const variables = {
       NOME_CLIENTE: proforma.cliente_nome || 'Cliente',
       PIANO_SERVIZIO: proforma.servizio || 'TeleMedCare',
-      IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,  // IVA ESCLUSA
+      IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -11486,7 +11489,7 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)}/anno`,
+      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)} + IVA 22% / anno`,
       status: contract.status || 'PENDING'
     })
   } catch (error) {

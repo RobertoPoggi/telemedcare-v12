@@ -280,11 +280,40 @@ export const FORM_HTML = `<!DOCTYPE html>
             let html = '';
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
-            const needsIntestatario = !lead.cfIntestatario || !lead.indirizzoIntestatario || 
+            const needsIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario ||
+                                     !lead.cfIntestatario || !lead.indirizzoIntestatario || 
                                      !lead.capIntestatario || !lead.cittaIntestatario || !lead.provinciaIntestatario;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
+                
+                // Nome e Cognome intestatario
+                const needsNameIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario;
+                if (needsNameIntestatario) {
+                    html += '<div class="form-row cols-2">';
+                    
+                    if (!lead.nomeIntestatario) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="nomeIntestatario">Nome <span class="required">*</span></label>
+                                <input type="text" id="nomeIntestatario" name="nomeIntestatario" 
+                                       placeholder="Nome" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    if (!lead.cognomeIntestatario) {
+                        html += \`
+                            <div class="form-group">
+                                <label for="cognomeIntestatario">Cognome <span class="required">*</span></label>
+                                <input type="text" id="cognomeIntestatario" name="cognomeIntestatario" 
+                                       placeholder="Cognome" required>
+                            </div>
+                        \`;
+                    }
+                    
+                    html += '</div>';
+                }
                 
                 if (!lead.cfIntestatario) {
                     html += \`
