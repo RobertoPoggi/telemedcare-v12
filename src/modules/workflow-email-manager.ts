@@ -72,6 +72,12 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const provinciaIntestatario = leadData.provinciaIntestatario || leadData.provinciaAssistito || ''
   const cfIntestatario = leadData.cfIntestatario || leadData.cfAssistito || 'N/A'
   
+  // ✅ LOGICA: Determina se intestatario è diverso dall'assistito
+  const intestatarioDiversoDaAssistito = (
+    leadData.nomeIntestatario && leadData.cognomeIntestatario &&
+    (leadData.nomeIntestatario !== leadData.nomeAssistito || leadData.cognomeIntestatario !== leadData.cognomeAssistito)
+  )
+  
   // Care giver (richiedente) per i riferimenti
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
   const cognomeCareGiver = leadData.cognomeRichiedente || cognomeIntestatario
@@ -270,12 +276,20 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p style="text-align: center; font-weight: bold;">e</p>
     
     <div class="party">
-        <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario}</span> - <span class="highlight">${capIntestatario}</span> <span class="highlight">${cittaIntestatario}</span> (<span class="highlight">${provinciaIntestatario}</span>) e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+        ${intestatarioDiversoDaAssistito ? `
+            <!-- CASO 1: Intestatario ≠ Assistito -->
+            <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            
+            <p><strong>Contatti:</strong> telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
+        ` : `
+            <!-- CASO 2: Intestatario = Assistito -->
+            <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            
+            <p><strong>Riferimenti:</strong><br>
+            Signor <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
+        `}
         
         <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span></p>
-        
-        <p><strong>Riferimenti:</strong><br>
-        Signor <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>

@@ -334,8 +334,15 @@ export class EmailService {
 <div style="background:#f0fdf4;border:1px solid #dcfce7;padding:16px;border-radius:6px;margin:16px 0;">
 <h3 style="margin:0 0 8px;color:#10b981;">💳 Dettagli Pagamento</h3>
 <strong>Piano:</strong> {{PIANO_SERVIZIO}}<br>
-<strong>Importo Totale:</strong> {{IMPORTO_TOTALE}}<br>
 <strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}<br>
+<hr style="border:none;border-top:1px solid #dcfce7;margin:12px 0;">
+<p style="margin:4px 0;font-size:14px;color:#666;">
+  <strong>Imponibile:</strong> {{IMPORTO_TOTALE}}<br>
+  <strong>IVA 22%:</strong> {{IMPORTO_IVA}}
+</p>
+<p style="margin:6px 0;font-size:18px;font-weight:700;color:#10b981;">
+  <strong>TOTALE DA PAGARE: {{IMPORTO_CON_IVA}}</strong>
+</p>
 <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
 </div>
 <p>Può procedere con il pagamento tramite bonifico bancario utilizzando i dati allegati.</p>
