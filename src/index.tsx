@@ -43,6 +43,10 @@ import TemplateManager from './modules/template-manager'
 import * as WorkflowOrchestrator from './modules/complete-workflow-orchestrator'
 import * as WorkflowEmailManager from './modules/workflow-email-manager'
 
+// Import Auth Service
+import * as AuthService from './modules/auth-service'
+import type { AuthSession, UserRole } from './modules/auth-service'
+
 // Import Dashboard Templates
 import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates-new'
 import * as SignatureManager from './modules/signature-manager'
@@ -689,6 +693,28 @@ app.use('/api/*', async (c, next) => {
   
   if (!isSensitive) {
     return next() // Non sensibile, passa
+  }
+  
+  // 🔒 PROTEZIONE OPERATOR: blocca DELETE
+  if (method === 'DELETE') {
+    // Verifica se ha sessione
+    const cookie = c.req.header('Cookie')
+    if (cookie && cookie.includes('session=')) {
+      try {
+        const sessionMatch = cookie.match(/session=([^;]+)/)
+        if (sessionMatch) {
+          const session: AuthSession = JSON.parse(decodeURIComponent(sessionMatch[1]))
+          if (session.role === 'OPERATOR') {
+            console.warn(`⚠️ [SECURITY] OPERATOR tentato DELETE: ${path}`)
+            return c.json({
+              success: false,
+              error: 'Permesso negato',
+              message: 'Gli OPERATOR non possono eliminare record. Contatta un ADMIN.'
+            }, 403)
+          }
+        }
+      } catch (e) {}
+    }
   }
   
   // Verifica API_KEY
@@ -4238,6 +4264,56 @@ app.get('/api/admin/leads-dashboard', async (c) => {
     }, 500);
   }
 });
+
+// 🔐 ENDPOINT: Inizializza tabella users e utenti default
+app.post('/api/admin/init-users', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ error: 'Database non configurato' }, 500)
+    }
+    
+    console.log('🔐 [INIT-USERS] Creazione tabella users...')
+    
+    // Crea tabella users
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('ADMIN', 'OPERATOR')),
+        full_name TEXT,
+        email TEXT,
+        last_login TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `).run()
+    
+    // Crea indici
+    await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)').run()
+    await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run()
+    
+    console.log('✅ [INIT-USERS] Tabella users creata')
+    
+    // Inizializza utenti default
+    await AuthService.initializeDefaultUsers(c.env.DB)
+    
+    // Verifica utenti creati
+    const users = await c.env.DB.prepare('SELECT username, role, full_name FROM users').all()
+    
+    return c.json({
+      success: true,
+      message: 'Tabella users e utenti default inizializzati',
+      users: users.results
+    })
+  } catch (error) {
+    console.error('❌ [INIT-USERS] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
 
 // 🔧 ENDPOINT TEMPORANEO: Esegui migrations mancanti su D1
 app.post('/api/admin/run-migrations', async (c) => {
@@ -20814,9 +20890,202 @@ app.get('/landing', (c) => {
   `)
 })
 
-// ========== DASHBOARD ROUTES ==========
+// ========== AUTH ROUTES ==========
+// Login page
+app.get('/login', (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - TeleMedCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-blue-600 mb-2">TeleMedCare</h1>
+      <p class="text-gray-600">Sistema Gestionale v12.0</p>
+    </div>
+    
+    <form id="loginForm" class="space-y-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+        <input type="text" id="username" required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="roberto.poggi">
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+        <input type="password" id="password" required
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+      </div>
+      
+      <div id="error" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm"></div>
+      
+      <button type="submit" 
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+        Accedi
+      </button>
+    </form>
+  </div>
+  
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const username = document.getElementById('username').value
+      const password = document.getElementById('password').value
+      const errorDiv = document.getElementById('error')
+      
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username, password})
+        })
+        
+        const data = await res.json()
+        
+        if (data.success) {
+          window.location.href = '/dashboard'
+        } else {
+          errorDiv.textContent = data.error || 'Credenziali non valide'
+          errorDiv.classList.remove('hidden')
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Errore di connessione'
+        errorDiv.classList.remove('hidden')
+      }
+    })
+  </script>
+</body>
+</html>
+  `)
+})
+
+// Login API
+app.post('/api/auth/login', async (c) => {
+  try {
+    const { username, password } = await c.req.json()
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    // Cerca utente
+    const user = await c.env.DB.prepare(`
+      SELECT id, username, password_hash, role, full_name, email
+      FROM users WHERE username = ?
+    `).bind(username).first()
+    
+    if (!user) {
+      console.warn('[AUTH] Tentativo login utente inesistente:', username)
+      return c.json({ success: false, error: 'Credenziali non valide' }, 401)
+    }
+    
+    // Verifica password
+    const isValid = await AuthService.verifyPassword(password, user.password_hash)
+    
+    if (!isValid) {
+      console.warn('[AUTH] Password errata per:', username)
+      return c.json({ success: false, error: 'Credenziali non valide' }, 401)
+    }
+    
+    // Crea sessione
+    const session = AuthService.createSession({
+      id: user.id,
+      username: user.username,
+      role: user.role as UserRole,
+      full_name: user.full_name,
+      email: user.email
+    })
+    
+    // Aggiorna last_login
+    await c.env.DB.prepare(`
+      UPDATE users SET last_login = ? WHERE id = ?
+    `).bind(new Date().toISOString(), user.id).run()
+    
+    // Imposta cookie sessione (httpOnly, secure)
+    c.header('Set-Cookie', 
+      `session=${JSON.stringify(session)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`)
+    
+    console.log('✅ [AUTH] Login riuscito:', username, 'Ruolo:', user.role)
+    
+    return c.json({
+      success: true,
+      user: {
+        username: user.username,
+        role: user.role,
+        full_name: user.full_name
+      }
+    })
+  } catch (error) {
+    console.error('[AUTH] Errore login:', error)
+    return c.json({ success: false, error: 'Errore interno' }, 500)
+  }
+})
+
+// Logout API
+app.post('/api/auth/logout', (c) => {
+  c.header('Set-Cookie', 'session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0')
+  return c.json({ success: true })
+})
+
+// Middleware: Verifica autenticazione
+async function requireAuth(c: any, next: any) {
+  const cookie = c.req.header('Cookie')
+  
+  if (!cookie || !cookie.includes('session=')) {
+    return c.redirect('/login')
+  }
+  
+  try {
+    const sessionMatch = cookie.match(/session=([^;]+)/)
+    if (!sessionMatch) {
+      return c.redirect('/login')
+    }
+    
+    const session: AuthSession = JSON.parse(decodeURIComponent(sessionMatch[1]))
+    
+    // Verifica validità sessione
+    if (!AuthService.isSessionValid(session)) {
+      console.warn('[AUTH] Sessione scaduta:', session.username)
+      return c.redirect('/login')
+    }
+    
+    // Aggiungi user al context
+    c.set('user', session)
+    
+    return next()
+  } catch (error) {
+    console.error('[AUTH] Errore parsing sessione:', error)
+    return c.redirect('/login')
+  }
+}
+
+// Middleware: Richiede ruolo specifico
+function requireRole(roles: UserRole[]) {
+  return async (c: any, next: any) => {
+    const user: AuthSession = c.get('user')
+    
+    if (!user || !roles.includes(user.role)) {
+      return c.json({
+        success: false,
+        error: 'Permessi insufficienti',
+        required: roles,
+        current: user?.role
+      }, 403)
+    }
+    
+    return next()
+  }
+}
+
+// ========== DASHBOARD ROUTES (PROTETTE) ==========
 // Dashboard Operativa - Centro di controllo staff con analytics e monitoring
-app.get('/dashboard', (c) => {
+app.get('/dashboard', requireAuth, (c) => {
   // Usa SEMPRE il template TypeScript aggiornato (non file statici vecchi)
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   c.header('Pragma', 'no-cache')
@@ -20827,14 +21096,14 @@ app.get('/dashboard', (c) => {
 })
 
 // Dashboard Leads Modulare - Aggregazione dati dai 6 moduli Leads specializzati
-app.get('/admin/leads-dashboard', (c) => {
+app.get('/admin/leads-dashboard', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'leads')
   return c.html(leads_dashboard)
 })
 
 // Data Dashboard - Centro dati completo con analytics e KPI aziendali
-app.get('/admin/data-dashboard', (c) => {
+app.get('/admin/data-dashboard', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'data')
   return c.html(data_dashboard)
