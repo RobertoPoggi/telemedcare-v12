@@ -340,18 +340,44 @@ export async function getTokensNeedingReminder(
   const minTimeBetweenReminders = new Date()
   minTimeBetweenReminders.setHours(minTimeBetweenReminders.getHours() - 23)
   
+  // ============================================
+  // 🎯 QUERY AVANZATA CON PRIORITÀ E FILTRI
+  // ============================================
+  // Regole:
+  // 1. ❌ ESCLUDI lead con contratto già firmato (status = CONTRACT_SIGNED o ACTIVE)
+  // 2. ❌ ESCLUDI lead "NON INTERESSATI" (status = NOT_INTERESTED)
+  // 3. ✅ PRIORITÀ 1: status = "INTERESTED" (Interessati)
+  // 4. ✅ PRIORITÀ 2: status = "TO_RECONTACT" (Da ricontattare)
+  // 5. ✅ Più vecchi per primi (created_at ASC)
+  // 6. ⚠️ NOTA: Contratti firmati manualmente possono non essere nel DB
+  //    (es. Margherita Delaude, Maria Grazia Ronca - lead Andrea D'Avella)
+  
   const result = await db.prepare(`
-    SELECT * FROM lead_completion_tokens
-    WHERE completed = 0
-      AND expires_at > datetime('now')
-      AND reminder_count < ?
+    SELECT t.*, l.status, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
+    FROM lead_completion_tokens t
+    JOIN leads l ON t.lead_id = l.id
+    WHERE t.completed = 0
+      AND t.expires_at > datetime('now')
+      AND t.reminder_count < ?
       AND (
-        reminder_sent_at IS NULL
+        t.reminder_sent_at IS NULL
         OR (
-          reminder_sent_at < ? 
-          AND reminder_sent_at < ?
+          t.reminder_sent_at < ? 
+          AND t.reminder_sent_at < ?
         )
       )
+      -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi)
+      AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE')
+      -- ❌ ESCLUDI lead non interessati
+      AND l.status != 'NOT_INTERESTED'
+      -- ✅ ORDINA PER PRIORITÀ
+    ORDER BY 
+      CASE l.status
+        WHEN 'INTERESTED' THEN 1      -- Priorità 1: Interessati
+        WHEN 'TO_RECONTACT' THEN 2    -- Priorità 2: Da ricontattare
+        ELSE 3                         -- Priorità 3: Altri stati validi
+      END,
+      l.created_at ASC                 -- Più vecchi per primi
   `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
   
   return result.results as LeadCompletionToken[]
@@ -466,7 +492,7 @@ export async function sendReminderEmail(
 export async function processReminders(
   db: D1Database,
   env: any
-): Promise<{ success: number; failed: number; total: number; queued?: number; disabled?: boolean }> {
+): Promise<{ success: number; failed: number; total: number; queued?: number; blacklisted?: number; disabled?: boolean }> {
   const config = await getSystemConfig(db)
   
   // ============================================
@@ -496,12 +522,43 @@ export async function processReminders(
   // ============================================
   // 🛡️ PROTEZIONE BUDGET: LIMITE GIORNALIERO
   // ============================================
-  const DAILY_LIMIT = 50 // Max 50 reminder al giorno (budget-safe)
-  const tokensToProcess = tokens.slice(0, DAILY_LIMIT)
+  const DAILY_LIMIT = 30 // 🔻 RIDOTTO: Max 30 reminder al giorno (budget-safe)
   
-  if (tokens.length > DAILY_LIMIT) {
+  // ============================================
+  // 🚫 BLACKLIST: Lead già attivi manualmente
+  // ============================================
+  // Lead con contratti firmati manualmente NON presenti nel DB contracts:
+  // - Margherita Delaude
+  // - Maria Grazia Ronca (lead: Andrea D'Avella)
+  // Questi NON devono ricevere reminder perché già clienti attivi
+  const MANUAL_CONTRACTS_BLACKLIST = [
+    'Margherita Delaude',
+    'Maria Grazia Ronca', 
+    'Andrea D\'Avella'
+  ]
+  
+  // Filtra blacklist (confronta nome richiedente)
+  const tokensFiltered = tokens.filter((token: any) => {
+    const nomeCognome = `${token.nomeRichiedente || ''} ${token.cognomeRichiedente || ''}`.trim()
+    const isBlacklisted = MANUAL_CONTRACTS_BLACKLIST.some(name => 
+      nomeCognome.toLowerCase().includes(name.toLowerCase()) ||
+      name.toLowerCase().includes(nomeCognome.toLowerCase())
+    )
+    
+    if (isBlacklisted) {
+      console.log(`🚫 [REMINDER] Skipped (blacklist): ${nomeCognome} (lead ${token.lead_id})`)
+    }
+    
+    return !isBlacklisted
+  })
+  
+  console.log(`📊 [REMINDER] Dopo filtro blacklist: ${tokensFiltered.length} token (${tokens.length - tokensFiltered.length} saltati)`)
+  
+  const tokensToProcess = tokensFiltered.slice(0, DAILY_LIMIT)
+  
+  if (tokensFiltered.length > DAILY_LIMIT) {
     console.log(`⚠️ [REMINDER] Budget limit: ${DAILY_LIMIT} invii/giorno`)
-    console.log(`📊 [REMINDER] Processando ${tokensToProcess.length}/${tokens.length} token (${tokens.length - DAILY_LIMIT} in coda)`)
+    console.log(`📊 [REMINDER] Processando ${tokensToProcess.length}/${tokensFiltered.length} token (${tokensFiltered.length - DAILY_LIMIT} in coda)`)
   }
   
   let success = 0
@@ -541,7 +598,8 @@ export async function processReminders(
     success,
     failed,
     total: tokensToProcess.length,
-    queued: tokens.length - tokensToProcess.length  // Lead rimasti in coda
+    queued: tokensFiltered.length - tokensToProcess.length,  // Lead in coda
+    blacklisted: tokens.length - tokensFiltered.length       // Lead saltati (blacklist)
   }
 }
 
