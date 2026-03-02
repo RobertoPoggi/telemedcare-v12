@@ -74,6 +74,7 @@ type Bindings = {
   // Security
   JWT_SECRET?: string
   ENCRYPTION_KEY?: string
+  ADMIN_SECRET_TOKEN?: string // 🔒 NEW: Token admin per endpoint protetti
 }
 
 // Configurazione TeleMedCare V12.0 Modular Enterprise
@@ -603,6 +604,31 @@ app.use('*', async (c, next) => {
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
+
+// 🔒 SECURITY MIDDLEWARE: Protegge tutti gli endpoint /api/admin/*
+app.use('/api/admin/*', async (c, next) => {
+  const authHeader = c.req.header('Authorization')
+  const adminToken = c.env.ADMIN_SECRET_TOKEN
+  
+  // Se ADMIN_SECRET_TOKEN non è configurato, logga warning ma permetti accesso (backward compatibility)
+  if (!adminToken) {
+    console.warn('⚠️ [SECURITY] ADMIN_SECRET_TOKEN non configurato - endpoint admin NON protetti!')
+    return next()
+  }
+  
+  // Verifica token
+  if (!authHeader || authHeader !== `Bearer ${adminToken}`) {
+    console.warn(`⚠️ [SECURITY] Accesso negato a ${c.req.path} - Token invalido o mancante`)
+    return c.json({ 
+      success: false, 
+      error: 'Unauthorized - Admin access required',
+      message: 'Questa risorsa richiede autenticazione admin. Fornire header: Authorization: Bearer <ADMIN_SECRET_TOKEN>'
+    }, 401)
+  }
+  
+  console.log(`✅ [SECURITY] Accesso admin autorizzato: ${c.req.path}`)
+  return next()
+})
 
 // Serve static files 
 app.use('/assets/*', serveStatic({ root: './' }))
@@ -4849,9 +4875,16 @@ app.get('/api/admin/debug-env', async (c) => {
   }
 });
 
-// 🔍 ENDPOINT DEBUG: Test diretto Resend API
+// 🔍 ENDPOINT DEBUG: Test diretto Resend API - PROTETTO
 app.get('/api/admin/debug-resend', async (c) => {
   try {
+    // 🔒 SECURITY: Verifica autenticazione ADMIN
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
+      console.warn('⚠️ [DEBUG-RESEND] Tentativo accesso non autorizzato')
+      return c.json({ success: false, error: 'Unauthorized - Admin access required' }, 401)
+    }
+    
     const resendKey = c.env.RESEND_API_KEY;
     
     console.log('🔍 [DEBUG RESEND] Testing Resend API...');
@@ -6671,6 +6704,13 @@ app.post('/api/documents/generate', async (c) => {
 // POST /api/contracts/send - Invia contratto via email
 app.post('/api/contracts/send', async (c) => {
   try {
+    // 🔒 SECURITY: Verifica autenticazione
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('⚠️ [CONTRACTS-SEND] Tentativo accesso non autorizzato')
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    
     const { contractId } = await c.req.json()
     
     if (!c.env?.DB) {
@@ -6783,6 +6823,13 @@ app.post('/api/proforma', async (c) => {
 // POST /api/proforma/send - Invia proforma via email
 app.post('/api/proforma/send', async (c) => {
   try {
+    // 🔒 SECURITY: Verifica autenticazione
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('⚠️ [PROFORMA-SEND] Tentativo accesso non autorizzato')
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    
     const { proformaId } = await c.req.json()
     
     if (!c.env?.DB) {
@@ -17295,9 +17342,16 @@ app.post('/api/dispositivi/setup-table', async (c) => {
   }
 })
 
-// POST /api/leads/test-notification - Test invio notifica email (DEBUG)
+// POST /api/leads/test-notification - Test invio notifica email (DEBUG) - RICHIEDE AUTH
 app.post('/api/leads/test-notification', async (c) => {
   try {
+    // 🔒 SECURITY: Verifica autenticazione ADMIN
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
+      console.warn('⚠️ [TEST-NOTIFICATION] Tentativo accesso non autorizzato')
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    
     const data = await c.req.json()
     
     console.log('🔍 [TEST-NOTIFICATION] Inizio test notifica email...')
