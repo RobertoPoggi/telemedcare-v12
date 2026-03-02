@@ -228,7 +228,7 @@ async function generaProformaDaContratto(contractId: string, db: any) {
     
     const proformaId = `PROFORMA_${Date.now()}_${Math.random().toString(36).substring(7)}`
     const numeroProforma = `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
-    const dataScadenza = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 giorni
+    const dataScadenza = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // ✅ 3 giorni (non 15!)
     
     // ✅ FIX: Usa INTESTATARIO per i dati del cliente (chi paga)
     const nomeCliente = contract.nomeIntestatario || contract.nomeRichiedente
@@ -11011,24 +11011,16 @@ app.post('/api/contracts/sign', async (c) => {
         // ✅ FIX: Usa servizio reale dal contratto (eCura Premium, eCura Professional, etc)
         const servizio = contract.servizio || contract.service_type || 'eCura Professional'
         
-        // ✅ FIX CRITICO: Leggi prezzo TOTALE dal contratto (priorità massima)
-        // Il contratto contiene il prezzo concordato - NON usare prezzi hard-coded!
-        let prezzoIvaInclusa = parseFloat(contract.prezzo_iva_inclusa || contract.prezzo_totale || 0)
-        let prezzoBase = 0
+        // ✅ FIX CRITICO: Leggi prezzo BASE (IVA esclusa) dal contratto
+        // Il contratto contiene prezzo_totale = IVA ESCLUSA
+        let prezzoBase = parseFloat(contract.prezzo_totale || 0)
+        let prezzoIvaInclusa = 0
         
-        // Se abbiamo il prezzo IVA inclusa, calcola prezzo base (scorporo IVA 22%)
-        if (prezzoIvaInclusa > 0) {
-          prezzoBase = prezzoIvaInclusa / 1.22
+        // Calcola IVA inclusa da prezzo base
+        if (prezzoBase > 0) {
+          prezzoIvaInclusa = prezzoBase * 1.22
         } else {
-          // Prova a leggere prezzo_base se presente
-          prezzoBase = parseFloat(contract.prezzo_base || 0)
-          if (prezzoBase > 0) {
-            prezzoIvaInclusa = prezzoBase * 1.22
-          }
-        }
-        
-        // Fallback finale: usa prezzi standard SOLO se entrambi 0 (caso raro)
-        if (prezzoBase === 0 && prezzoIvaInclusa === 0) {
+          // Fallback: cerca altri campi prezzoif (prezzoBase === 0 && prezzoIvaInclusa === 0) {
           console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard per piano ${piano}`)
           if (piano === 'AVANZATO') {
             prezzoBase = 840
@@ -11050,7 +11042,7 @@ app.post('/api/contracts/sign', async (c) => {
           servizio: servizio,
           prezzoBase: prezzoBase,
           prezzoIvaInclusa: prezzoIvaInclusa,
-          dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 giorni
+          dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // ✅ +3 giorni (non 30!)
         }
         
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
@@ -11107,9 +11099,9 @@ app.post('/api/contracts/sign', async (c) => {
               lead.provinciaIntestatario || lead.provinciaAssistito || '',
               lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
+              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
               12, // durata_mesi
-              prezzoIvaInclusa, // prezzo_totale (con IVA)
+              prezzoBase, // ✅ prezzo_totale = IVA ESCLUSA (990€, non 1.207,80€)
               'SENT',
               new Date().toISOString(), // updated_at
               proformaIdGenerated
@@ -11146,9 +11138,9 @@ app.post('/api/contracts/sign', async (c) => {
               lead.provinciaIntestatario || lead.provinciaAssistito || '',
               lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile
+              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
               12, // durata_mesi
-              prezzoIvaInclusa, // prezzo_totale (con IVA)
+              prezzoBase, // ✅ prezzo_totale = IVA ESCLUSA (990€, non 1.207,80€)
               'SENT',
               false,
               new Date().toISOString(), // created_at
