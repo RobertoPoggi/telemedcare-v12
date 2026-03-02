@@ -19574,6 +19574,156 @@ app.get('/api/system/status', async (c) => {
   }
 })
 
+// 🔍 DIAGNOSTIC API - Verifica Integrità Database (Leads, Contracts, Assistiti)
+app.get('/api/diagnostic/db-integrity', async (c) => {
+  try {
+    const db = c.env.DB;
+    
+    // 1. Verifica Leads con Status ACTIVE/CONTRACT_SIGNED
+    const activeLeads = await db.prepare(`
+      SELECT 
+        id, 
+        nome || ' ' || cognome AS richiedente,
+        nomeAssistito || ' ' || cognomeAssistito AS assistito,
+        status,
+        created_at
+      FROM leads
+      WHERE status IN ('ACTIVE', 'CONTRACT_SIGNED')
+      ORDER BY created_at DESC
+    `).all();
+    
+    // 2. Verifica Contratti Orfani (senza lead_id)
+    const orphanContracts = await db.prepare(`
+      SELECT 
+        c.id,
+        c.nomeIntestatario || ' ' || c.cognomeIntestatario AS intestatario,
+        c.nomeAssistito || ' ' || c.cognomeAssistito AS assistito,
+        c.status,
+        c.lead_id,
+        c.created_at
+      FROM contracts c
+      LEFT JOIN leads l ON c.lead_id = l.id
+      WHERE c.status IN ('ACTIVE', 'SIGNED')
+        AND l.id IS NULL
+      ORDER BY c.created_at DESC
+      LIMIT 50
+    `).all();
+    
+    // 3. Verifica Assistiti Orfani (senza lead_id o contract_id)
+    const orphanAssistiti = await db.prepare(`
+      SELECT 
+        a.id,
+        a.nome || ' ' || a.cognome AS assistito,
+        a.stato,
+        a.lead_id,
+        a.contract_id,
+        a.created_at
+      FROM assistiti a
+      LEFT JOIN leads l ON a.lead_id = l.id
+      LEFT JOIN contracts c ON a.contract_id = c.id
+      WHERE a.stato = 'ACTIVE'
+        AND (l.id IS NULL OR c.id IS NULL)
+      ORDER BY a.created_at DESC
+      LIMIT 50
+    `).all();
+    
+    // 4. Statistiche Generali
+    const stats = await db.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM leads) as total_leads,
+        (SELECT COUNT(*) FROM leads WHERE status = 'ACTIVE') as leads_active,
+        (SELECT COUNT(*) FROM leads WHERE status = 'CONTRACT_SIGNED') as leads_contract_signed,
+        (SELECT COUNT(*) FROM contracts) as total_contracts,
+        (SELECT COUNT(*) FROM contracts WHERE status = 'ACTIVE') as contracts_active,
+        (SELECT COUNT(*) FROM contracts WHERE status = 'SIGNED') as contracts_signed,
+        (SELECT COUNT(*) FROM assistiti) as total_assistiti,
+        (SELECT COUNT(*) FROM assistiti WHERE stato = 'ACTIVE') as assistiti_active
+    `).first();
+    
+    // 5. Verifica Lead Blacklist (i 13 clienti attivi)
+    const blacklistNames = [
+      'Francesco Pepe', 'Alberto Locatelli', 'Paolo Macrì', 
+      'Elisabetta Cattini', 'Giorgio Riela', 'Caterina D\'Alterio',
+      'Elena Saglia', 'Stefania Rocca', 'Simona Pizzutto',
+      'Andrea D\'Avella', 'Claudio Macchi', 'Margherita Delaude',
+      'Maria Grazia Ronca'
+    ];
+    
+    const blacklistLeads = await db.prepare(`
+      SELECT 
+        l.id,
+        l.nome || ' ' || l.cognome AS richiedente,
+        l.nomeAssistito || ' ' || l.cognomeAssistito AS assistito,
+        l.status AS lead_status,
+        c.id AS contract_id,
+        c.status AS contract_status,
+        a.id AS assistito_id,
+        a.stato AS assistito_stato
+      FROM leads l
+      LEFT JOIN contracts c ON c.lead_id = l.id
+      LEFT JOIN assistiti a ON a.lead_id = l.id
+      WHERE 
+        l.nome || ' ' || l.cognome IN (
+          'Francesco Pepe', 'Alberto Locatelli', 'Paolo Macrì',
+          'Elisabetta Cattini', 'Giorgio Riela', 'Caterina D''Alterio',
+          'Elena Saglia', 'Stefania Rocca', 'Simona Pizzutto',
+          'Andrea D''Avella', 'Claudio Macchi', 'Margherita Delaude',
+          'Maria Grazia Ronca'
+        )
+      ORDER BY l.id
+    `).all();
+    
+    // Calcola integrità
+    const integrityScore = {
+      orphan_contracts: orphanContracts.results?.length || 0,
+      orphan_assistiti: orphanAssistiti.results?.length || 0,
+      blacklist_missing: 13 - (blacklistLeads.results?.length || 0),
+      total_issues: 0
+    };
+    integrityScore.total_issues = 
+      integrityScore.orphan_contracts + 
+      integrityScore.orphan_assistiti + 
+      integrityScore.blacklist_missing;
+    
+    const health = integrityScore.total_issues === 0 ? 'HEALTHY' : 
+                   integrityScore.total_issues <= 5 ? 'WARNING' : 'CRITICAL';
+    
+    return c.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      health,
+      integrity_score: integrityScore,
+      statistics: stats,
+      details: {
+        active_leads: activeLeads.results || [],
+        orphan_contracts: orphanContracts.results || [],
+        orphan_assistiti: orphanAssistiti.results || [],
+        blacklist_leads: blacklistLeads.results || []
+      },
+      recommendations: integrityScore.total_issues > 0 ? [
+        orphanContracts.results?.length > 0 && 
+          `🔧 Collegare ${orphanContracts.results.length} contratti orfani ai rispettivi lead`,
+        orphanAssistiti.results?.length > 0 && 
+          `🔧 Collegare ${orphanAssistiti.results.length} assistiti orfani ai rispettivi lead/contratti`,
+        integrityScore.blacklist_missing > 0 && 
+          `⚠️ ${integrityScore.blacklist_missing} lead blacklist mancanti nel DB - verificare nomi`,
+        integrityScore.total_issues > 0 && 
+          `📝 Una volta completato il DB, rimuovere MANUAL_CONTRACTS_BLACKLIST dal codice`
+      ].filter(Boolean) : [
+        '✅ Database integro - è possibile rimuovere la blacklist manuale!'
+      ]
+    });
+    
+  } catch (error) {
+    console.error('❌ [DIAGNOSTIC] Errore:', error);
+    return c.json({
+      success: false,
+      error: 'Errore durante diagnostica DB',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500);
+  }
+});
+
 // API Analytics per Dashboard
 app.get('/api/analytics/overview', async (c) => {
   try {
