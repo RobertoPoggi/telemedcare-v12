@@ -527,24 +527,25 @@ export async function processReminders(
   // ============================================
   // 🚫 BLACKLIST: Lead già attivi (clienti con dispositivo attivo)
   // ============================================
+  // IMPORTANTE: Questa lista contiene i NOMI DEI LEAD (richiedenti), NON degli assistiti!
   // Lead con dispositivi attivi NON presenti nel DB contracts con status ACTIVE:
   // Lista aggiornata manualmente da dashboard dispositivi attivi
-  // Ultimo aggiornamento: 2026-03-02
+  // Mappatura Lead → Assistito confermata il 2026-03-02
   const MANUAL_CONTRACTS_BLACKLIST = [
-    // Clienti attivi (dispositivi CARE e VITAL CARE)
-    'Anna De Marco',
-    'Claudio Macchi',
-    'Giovanni Locatelli',
-    'Giuliana Balzarotti',
-    'Giuseppina Cozzi',
-    'Maria Capone',
-    'Rita Pennacchio',
-    'Eileen Elisabeth King',
-    'Laura Calvi',
-    'Margherita Delaude',
-    'Maria Grazia Ronca',
-    'Andrea D\'Avella',  // Lead per Maria Grazia Ronca
-    'Gianni Paolo Pizzutto'
+    // Lead attivi (dispositivi CARE e VITAL CARE)
+    'Francesco Pepe',      // → Anna De Marco
+    'Claudio Macchi',      // → Claudio Macchi (stesso)
+    'Alberto Locatelli',   // → Giovanni Locatelli
+    'Paolo Macrì',         // → Giuliana Balzarotti
+    'Elisabetta Cattini',  // → Giuseppina Cozzi
+    'Giorgio Riela',       // → Maria Capone
+    'Caterina D\'Alterio', // → Rita Pennacchio
+    'Elena Saglia',        // → Eileen Elisabeth King
+    'Stefania Rocca',      // → Laura Calvi
+    'Margherita Delaude',  // → Margherita Delaude (stesso)
+    'Maria Grazia Ronca',  // → Maria Grazia Ronca (stesso)
+    'Andrea D\'Avella',    // → Maria Grazia Ronca
+    'Simona Pizzutto'      // → Gianni Paolo Pizzutto
   ]
   
   // Filtra blacklist (confronta nome richiedente)
