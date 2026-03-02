@@ -281,7 +281,7 @@ export const FORM_HTML = `<!DOCTYPE html>
             
             // SEZIONE 1: Dati Intestatario (per il contratto)
             const needsIntestatario = !lead.cfIntestatario || !lead.indirizzoIntestatario || 
-                                     !lead.capIntestatario || !lead.cittaIntestatario;
+                                     !lead.capIntestatario || !lead.cittaIntestatario || !lead.provinciaIntestatario;
             
             if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
@@ -298,7 +298,7 @@ export const FORM_HTML = `<!DOCTYPE html>
                 }
                 
                 // Indirizzo, CAP, Città sulla stessa riga
-                const hasAddressGaps = !lead.indirizzoIntestatario || !lead.capIntestatario || !lead.cittaIntestatario;
+                const hasAddressGaps = !lead.indirizzoIntestatario || !lead.capIntestatario || !lead.cittaIntestatario || !lead.provinciaIntestatario;
                 if (hasAddressGaps) {
                     html += '<div class="form-row cols-3">';
                     
@@ -334,6 +334,18 @@ export const FORM_HTML = `<!DOCTYPE html>
                     }
                     
                     html += '</div>';
+                }
+                
+                // ✅ PROVINCIA INTESTATARIO (sigla 2 caratteri)
+                if (!lead.provinciaIntestatario) {
+                    html += \`
+                        <div class="form-group">
+                            <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+                            <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
+                                   placeholder="Es. MI" required maxlength="2" 
+                                   pattern="[A-Z]{2}" style="text-transform: uppercase;">
+                        </div>
+                    \`;
                 }
             }
             
