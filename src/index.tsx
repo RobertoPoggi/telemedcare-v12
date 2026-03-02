@@ -74,7 +74,8 @@ type Bindings = {
   // Security
   JWT_SECRET?: string
   ENCRYPTION_KEY?: string
-  ADMIN_SECRET_TOKEN?: string // 🔒 NEW: Token admin per endpoint protetti
+  ADMIN_SECRET_TOKEN?: string // 🔒 Token admin per endpoint /api/admin/*
+  API_KEY?: string // 🔒 Token per endpoint API sensibili (CRUD lead, contratti)
 }
 
 // Configurazione TeleMedCare V12.0 Modular Enterprise
@@ -627,6 +628,77 @@ app.use('/api/admin/*', async (c, next) => {
   }
   
   console.log(`✅ [SECURITY] Accesso admin autorizzato: ${c.req.path}`)
+  return next()
+})
+
+// 🔒 SECURITY MIDDLEWARE: Protegge endpoint API sensibili (CRUD lead, contratti, proforma)
+// Lista WHITELIST di endpoint PUBBLICI (non richiedono auth)
+const PUBLIC_ENDPOINTS = [
+  '/api/lead',                    // Form acquisizione lead
+  '/api/leads/:id/complete',      // Completamento dati da email
+  '/api/stripe-public-key',       // Chiave pubblica Stripe
+  '/api/create-payment-intent',   // Creazione pagamento
+  '/api/payments',                // Conferma pagamento
+  '/api/system-settings',         // Lettura settings (GET)
+  '/api/hubspot/webhook'          // Webhook HubSpot
+]
+
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  const method = c.req.method
+  
+  // Skip se è endpoint admin (già protetto)
+  if (path.startsWith('/api/admin/')) {
+    return next()
+  }
+  
+  // Skip se è nella whitelist pubblica
+  const isPublic = PUBLIC_ENDPOINTS.some(endpoint => {
+    const regex = new RegExp('^' + endpoint.replace(/:\w+/g, '[^/]+') + '$')
+    return regex.test(path)
+  })
+  
+  if (isPublic && method === 'GET') {
+    return next() // Lettura pubblica OK
+  }
+  
+  if (isPublic && method === 'POST' && (path.includes('/complete') || path.includes('/lead') || path.includes('/payment'))) {
+    return next() // Form pubblici OK
+  }
+  
+  // Endpoint sensibili: richiedono autenticazione
+  const isSensitive = 
+    path.includes('/leads') ||
+    path.includes('/contracts') ||
+    path.includes('/contratti') ||
+    path.includes('/proforma') ||
+    path.includes('/assistiti') ||
+    path.includes('/import') ||
+    path.includes('/setup')
+  
+  if (!isSensitive) {
+    return next() // Non sensibile, passa
+  }
+  
+  // Verifica API_KEY
+  const authHeader = c.req.header('Authorization')
+  const apiKey = c.env.API_KEY
+  
+  if (!apiKey) {
+    console.warn('⚠️ [SECURITY] API_KEY non configurata - endpoint sensibili NON protetti!')
+    return next()
+  }
+  
+  if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+    console.warn(`⚠️ [SECURITY] Accesso negato a ${path} - API_KEY invalida o mancante`)
+    return c.json({ 
+      success: false, 
+      error: 'Unauthorized - API Key required',
+      message: 'Questa risorsa richiede autenticazione. Fornire header: Authorization: Bearer <API_KEY>'
+    }, 401)
+  }
+  
+  console.log(`✅ [SECURITY] Accesso API autorizzato: ${path}`)
   return next()
 })
 
