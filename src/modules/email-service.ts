@@ -489,6 +489,18 @@ export class EmailService {
    */
   private async sendEmailInternal(emailData: EmailData, env?: any): Promise<EmailResult> {
     try {
+      // 🔴 EMERGENCY KILL SWITCH - Blocca tutte le email se attivato
+      if (env?.EMAIL_EMERGENCY_STOP === 'true' || env?.EMAIL_EMERGENCY_STOP === '1') {
+        console.error('🚨🚨🚨 EMERGENCY STOP ATTIVO - EMAIL BLOCCATA 🚨🚨🚨')
+        console.error('📧 Email destinatario:', emailData.to)
+        console.error('📧 Oggetto:', emailData.subject)
+        return {
+          success: false,
+          error: 'EMERGENCY_STOP_ACTIVE - All emails are blocked by admin',
+          timestamp: new Date().toISOString()
+        }
+      }
+      
       console.log('📧 Invio email reale:', {
         to: emailData.to,
         subject: emailData.subject,
