@@ -162,7 +162,7 @@ export async function processContractReminders(
   // Configurazione default
   const REMINDER_DAYS = 4  // Ogni 4 giorni
   const MAX_REMINDERS = 3  // Max 3 reminder
-  const DAILY_LIMIT = 30   // Max 30 email/giorno
+  const DAILY_LIMIT = 10   // Max 10 email/giorno (budget totale 30 condiviso)
   
   const contracts = await getContractsNeedingReminder(db, REMINDER_DAYS, MAX_REMINDERS)
   

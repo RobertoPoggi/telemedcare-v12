@@ -175,7 +175,7 @@ export async function processProformaReminders(
   // Configurazione default
   const REMINDER_DAYS = 2  // Ogni 2 giorni (URGENTE)
   const MAX_REMINDERS = 4  // Max 4 reminder
-  const DAILY_LIMIT = 30   // Max 30 email/giorno
+  const DAILY_LIMIT = 5    // Max 5 email/giorno (PRIORITÀ ALTA - budget totale 30 condiviso)
   
   const proformas = await getProformasNeedingReminder(db, REMINDER_DAYS, MAX_REMINDERS)
   

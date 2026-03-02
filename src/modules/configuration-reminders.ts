@@ -172,7 +172,7 @@ export async function processConfigurationReminders(
   // Configurazione default
   const REMINDER_DAYS = 1  // Ogni 1 giorno (GIORNALIERO)
   const MAX_REMINDERS = 5  // Max 5 reminder
-  const DAILY_LIMIT = 30   // Max 30 email/giorno
+  const DAILY_LIMIT = 5    // Max 5 email/giorno (budget totale 30 condiviso)
   
   const forms = await getConfigurationsNeedingReminder(db, REMINDER_DAYS, MAX_REMINDERS)
   

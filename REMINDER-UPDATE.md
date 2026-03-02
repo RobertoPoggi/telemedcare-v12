@@ -137,22 +137,32 @@ ALTER TABLE proforma ADD COLUMN reminder_count INTEGER DEFAULT 0;
 
 ## 📊 IMPATTO BUDGET EMAIL
 
-### **Calcolo Totale Email/Giorno**:
-- Completamento Dati: Max 30 email
-- Firma Contratto: Max 30 email
-- Pagamento Proforma: Max 30 email
-- Form Configurazione: Max 30 email
+### **⚠️ LIMITE CORRETTO: 30 EMAIL TOTALI/GIORNO**
 
-**Totale Max**: 120 email/giorno
+**Budget disponibile**: 30 email/giorno (TOTALI, non per tipo!)
 
-**Budget disponibile**: 100 email/giorno
+### **Allocazione Budget per Priorità**:
 
-### **⚠️ ATTENZIONE**: Rischio superamento budget
+| **Tipo Reminder** | **Priorità** | **Email/Giorno** | **% Budget** |
+|------------------|-------------|-----------------|--------------|
+| **Pagamento Proforma** | 🔴 ALTA | 5 email | 16.7% |
+| **Completamento Dati** | 🟡 MEDIA | 10 email | 33.3% |
+| **Firma Contratto** | 🟡 MEDIA | 10 email | 33.3% |
+| **Form Configurazione** | 🟢 BASSA | 5 email | 16.7% |
+| **TOTALE** | | **30 email** | **100%** |
 
-**Soluzione**: Ridurre limite giornaliero a 20 email per tipo:
-- 20 × 4 tipi = 80 email/giorno (80% budget)
+### **Logica di Priorità**:
+1. **Proforma** (5 email): ALTA priorità - pagamenti urgenti (scadenza 3 giorni)
+2. **Completamento Dati** (10 email): MEDIA priorità - acquisizione lead
+3. **Firma Contratto** (10 email): MEDIA priorità - conversione lead
+4. **Form Configurazione** (5 email): BASSA priorità - onboarding assistito
 
-**Modifica da applicare**: Cambiare `DAILY_LIMIT = 30` → `DAILY_LIMIT = 20` in tutti i moduli.
+### **Tempo di Copertura**:
+- Se 100 lead in coda per tipo:
+  - Proforma: 100 / 5 = **20 giorni**
+  - Completamento Dati: 100 / 10 = **10 giorni**
+  - Firma Contratto: 100 / 10 = **10 giorni**
+  - Form Configurazione: 100 / 5 = **20 giorni**
 
 ---
 

@@ -522,7 +522,7 @@ export async function processReminders(
   // ============================================
   // 🛡️ PROTEZIONE BUDGET: LIMITE GIORNALIERO
   // ============================================
-  const DAILY_LIMIT = 30 // 🔻 RIDOTTO: Max 30 reminder al giorno (budget-safe)
+  const DAILY_LIMIT = 10 // 🔻 MODIFICATO: Max 10 reminder al giorno (budget totale 30 email condiviso con altri reminder)
   
   // ============================================
   // 🚫 BLACKLIST: Lead già attivi (clienti con dispositivo attivo)
