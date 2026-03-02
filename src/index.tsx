@@ -8880,7 +8880,10 @@ app.post('/api/leads/:id/complete', async (c) => {
             const contractCode = `CTR-${cognome}-${anno}`
             
             const servizioRaw = (updatedLead as any).servizio || 'eCura PRO'
-            const piano = (updatedLead as any).piano || 'BASE'
+            const pianoRaw = (updatedLead as any).piano || 'BASE'
+            
+            // ✅ NORMALIZZA PIANO: converte tutte le varianti in maiuscolo
+            const piano = pianoRaw.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
             
             // ✅ FIX: Estrai tipo servizio (FAMILY/PRO/PREMIUM) da "eCura PREMIUM"
             let servizioTipo: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
@@ -8888,7 +8891,9 @@ app.post('/api/leads/:id/complete', async (c) => {
             else if (servizioRaw.includes('PREMIUM')) servizioTipo = 'PREMIUM'
             else if (servizioRaw.includes('PRO')) servizioTipo = 'PRO'
             
-            console.log(`🔍 [COMPLETAMENTO] Servizio raw: ${servizioRaw} → tipo: ${servizioTipo}, piano: ${piano}`)
+            console.log(`🔍 [COMPLETAMENTO] Servizio raw: "${servizioRaw}" → tipo: ${servizioTipo}`)
+            console.log(`🔍 [COMPLETAMENTO] Piano raw: "${pianoRaw}" → normalizzato: ${piano}`)
+            console.log(`🔍 [COMPLETAMENTO] getPricing('${servizioTipo}', '${piano}')`)
             
             // Calcola pricing
             const { getPricing } = await import('./modules/ecura-pricing')
@@ -8899,7 +8904,12 @@ app.post('/api/leads/:id/complete', async (c) => {
               throw new Error(`Pricing non disponibile per ${servizioTipo} ${piano}`)
             }
             
-            console.log(`✅ [COMPLETAMENTO] Pricing: ${pricing.setupBase}€ base, ${pricing.setupTotale}€ totale`)
+            console.log(`✅ [COMPLETAMENTO] Pricing trovato:`)
+            console.log(`   - setupBase: €${pricing.setupBase} (IVA esclusa)`)
+            console.log(`   - setupTotale: €${pricing.setupTotale} (IVA inclusa)`)
+            console.log(`   - rinnovoBase: €${pricing.rinnovoBase} (IVA esclusa)`)
+            console.log(`   - rinnovoTotale: €${pricing.rinnovoTotale} (IVA inclusa)`)
+            console.log(`   - dispositivo: ${pricing.dispositivo}`)
             
             // Prepara contractData
             const contractData = {
