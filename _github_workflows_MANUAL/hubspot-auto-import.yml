@@ -1,0 +1,100 @@
+name: HubSpot Auto Import (Form eCura)
+# 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
+# ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
+# 📅 Periodo: Importa lead creati negli ultimi 2 giorni (48h)
+# 🔍 Filtro HARDCODED: hs_object_source_detail_1 = 'Form eCura'
+
+on:
+  # ⏰ Esecuzione schedulata: ogni giorno alle 08:00 (Italia = UTC+1)
+  schedule:
+    - cron: '0 7 * * *'  # 07:00 UTC = 08:00 Italia (ora solare)
+    # Nota: Durante ora legale (estate) 07:00 UTC = 08:00 CEST
+  
+  # 🔘 Permetti esecuzione manuale dalla UI di GitHub
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Giorni da importare (default: 2)'
+        required: false
+        default: '2'
+        type: string
+      dryRun:
+        description: 'Dry Run (non salvare, solo simulazione)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+# 🔐 Permessi necessari
+permissions:
+  contents: read
+
+jobs:
+  import-hubspot-leads:
+    name: Import Lead da Form eCura
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📋 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 🔄 Trigger HubSpot Auto-Import (Form eCura ONLY)
+        run: |
+          # 🎯 Parametri import
+          DAYS="${{ github.event.inputs.days || '2' }}"
+          DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
+          
+          echo "🔄 Avvio import HubSpot..."
+          echo "📅 Periodo: Ultimi $DAYS giorni"
+          echo "🔍 Filtro: Form eCura HARDCODED (NON modificabile)"
+          echo "🧪 Dry Run: $DRY_RUN"
+          
+          # 🚀 Chiama l'endpoint auto-import su Cloudflare Pages
+          RESPONSE=$(curl -s -X POST \
+            "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"days\": $DAYS,
+              \"dryRun\": $DRY_RUN,
+              \"enabled\": true,
+              \"startHour\": 0
+            }")
+          
+          echo "📊 Risposta API:"
+          echo "$RESPONSE" | jq '.'
+          
+          # ✅ Verifica successo
+          SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+          if [ "$SUCCESS" = "true" ]; then
+            IMPORTED=$(echo "$RESPONSE" | jq -r '.imported // 0')
+            SKIPPED=$(echo "$RESPONSE" | jq -r '.skipped // 0')
+            ERRORS=$(echo "$RESPONSE" | jq -r '.errors // 0')
+            
+            echo "✅ Import completato con successo!"
+            echo "📥 Importati: $IMPORTED"
+            echo "⏭️  Skipped: $SKIPPED"
+            echo "❌ Errori: $ERRORS"
+            
+            # 🚨 Exit con errore se ci sono troppi errori
+            if [ "$ERRORS" -gt 10 ]; then
+              echo "🚨 ATTENZIONE: Troppi errori durante l'import!"
+              exit 1
+            fi
+          else
+            echo "❌ Import fallito!"
+            echo "$RESPONSE"
+            exit 1
+          fi
+      
+      - name: 📊 Riepilogo Finale
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎯 IMPORT QUOTIDIANO FORM ECURA - COMPLETATO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "⏰ Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "🔍 Filtro: hs_object_source_detail_1 = 'Form eCura'"
+          echo "📅 Prossima esecuzione: Domani ore 08:00 (Italia)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

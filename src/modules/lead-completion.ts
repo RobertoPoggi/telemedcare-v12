@@ -466,7 +466,7 @@ export async function sendReminderEmail(
 export async function processReminders(
   db: D1Database,
   env: any
-): Promise<{ success: number; failed: number; total: number; disabled?: boolean }> {
+): Promise<{ success: number; failed: number; total: number; queued?: number; disabled?: boolean }> {
   const config = await getSystemConfig(db)
   
   // ============================================
@@ -493,10 +493,21 @@ export async function processReminders(
   
   console.log(`📧 [REMINDER] Trovati ${tokens.length} token che necessitano reminder`)
   
+  // ============================================
+  // 🛡️ PROTEZIONE BUDGET: LIMITE GIORNALIERO
+  // ============================================
+  const DAILY_LIMIT = 50 // Max 50 reminder al giorno (budget-safe)
+  const tokensToProcess = tokens.slice(0, DAILY_LIMIT)
+  
+  if (tokens.length > DAILY_LIMIT) {
+    console.log(`⚠️ [REMINDER] Budget limit: ${DAILY_LIMIT} invii/giorno`)
+    console.log(`📊 [REMINDER] Processando ${tokensToProcess.length}/${tokens.length} token (${tokens.length - DAILY_LIMIT} in coda)`)
+  }
+  
   let success = 0
   let failed = 0
   
-  for (const token of tokens) {
+  for (const token of tokensToProcess) {
     try {
       // Ottieni dati lead
       const leadData = await db.prepare('SELECT * FROM leads WHERE id = ?')
@@ -529,7 +540,8 @@ export async function processReminders(
   return {
     success,
     failed,
-    total: tokens.length
+    total: tokensToProcess.length,
+    queued: tokens.length - tokensToProcess.length  // Lead rimasti in coda
   }
 }
 
