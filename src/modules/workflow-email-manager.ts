@@ -863,7 +863,7 @@ export async function inviaEmailContratto(
           tipo_contratto: contractData.tipoServizio,
           servizio: contractData.servizio,
           piano: contractData.tipoServizio,
-          prezzo_totale: contractData.prezzoBase,
+          prezzo_totale: contractData.prezzoIvaInclusa,  // ✅ FIX: Usa prezzoIvaInclusa
           isUpdate: !!existingContract
         })
         
@@ -890,7 +890,7 @@ export async function inviaEmailContratto(
             contractData.tipoServizio,
             prezzoMensile,
             durataMesi,
-            contractData.prezzoBase,
+            contractData.prezzoIvaInclusa,  // ✅ FIX: Usa prezzoIvaInclusa
             new Date().toISOString(),
             new Date().toISOString(),
             contractData.contractId
@@ -925,7 +925,7 @@ export async function inviaEmailContratto(
             contractData.tipoServizio,
             prezzoMensile,
             durataMesi,
-            contractData.prezzoBase,
+            contractData.prezzoIvaInclusa,  // ✅ FIX: Usa prezzoIvaInclusa (totale IVA inclusa) non prezzoBase
             new Date().toISOString(),
             new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             new Date().toISOString(),
