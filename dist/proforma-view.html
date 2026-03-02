@@ -325,14 +325,14 @@ if (!proformaId) {
       document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
       document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
       
-      // Prezzi - USA PREZZO_TOTALE per il totale annuale!
-      const prezzoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
-      const prezzoBase = prezzoTotaleIvaInclusa / 1.22; // Scorporo IVA 22%
-      const iva = prezzoTotaleIvaInclusa - prezzoBase;
+      // ✅ FIX: prezzo_totale è IVA ESCLUSA (non serve dividere!)
+      const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
+      const iva = prezzoBaseIvaEsclusa * 0.22; // Calcola IVA 22%
+      const prezzoTotaleIvaInclusa = prezzoBaseIvaEsclusa * 1.22; // Totale IVA inclusa
       
-      document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBase);
-      document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBase);
-      document.getElementById('imponibile').textContent = formatCurrency(prezzoBase);
+      document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBaseIvaEsclusa);
+      document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBaseIvaEsclusa);
+      document.getElementById('imponibile').textContent = formatCurrency(prezzoBaseIvaEsclusa);
       document.getElementById('importo-iva').textContent = formatCurrency(iva);
       document.getElementById('prezzo-totale').textContent = formatCurrency(prezzoTotaleIvaInclusa);
       
