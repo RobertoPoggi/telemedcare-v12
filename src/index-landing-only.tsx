@@ -53,16 +53,16 @@ const CONFIG = {
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
-  // Prezzi servizi
+  // Prezzi servizi (IVA 22% INCLUSA) - Da ecura-pricing.ts
   PREZZI: {
     Base: {
-      primoAnno: 480,
-      rinnovo: 240,
+      primoAnno: 585.60,  // 480€ + IVA 22% = 585,60€
+      rinnovo: 292.80,    // 240€ + IVA 22% = 292,80€
       nome: 'TeleAssistenza Base'
     },
     Avanzato: {
-      primoAnno: 840,
-      rinnovo: 600,
+      primoAnno: 1024.80, // 840€ + IVA 22% = 1.024,80€
+      rinnovo: 732.00,    // 600€ + IVA 22% = 732,00€
       nome: 'TeleAssistenza Avanzata'
     }
   },

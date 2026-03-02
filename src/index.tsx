@@ -83,16 +83,16 @@ const CONFIG = {
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
-  // Prezzi servizi
+  // Prezzi servizi (IVA 22% INCLUSA) - Da ecura-pricing.ts
   PREZZI: {
     Base: {
-      primoAnno: 480,
-      rinnovo: 240,
+      primoAnno: 585.60,  // 480€ + IVA 22% = 585,60€
+      rinnovo: 292.80,    // 240€ + IVA 22% = 292,80€
       nome: 'TeleAssistenza Base'
     },
     Avanzato: {
-      primoAnno: 840,
-      rinnovo: 600,
+      primoAnno: 1024.80, // 840€ + IVA 22% = 1.024,80€
+      rinnovo: 732.00,    // 600€ + IVA 22% = 732,00€
       nome: 'TeleAssistenza Avanzata'
     }
   },
@@ -10092,7 +10092,8 @@ app.get('/firma-contratto', async (c) => {
                     
                     if (result.success) {
                         alert('✅ Contratto firmato con successo!\\n\\nRiceverai una email con la proforma per il pagamento.\\n\\nGrazie per la tua fiducia in TeleMedCare!');
-                        window.location.href = '/grazie-firma-contratto.html';
+                        // Chiudi la finestra dopo conferma (sicuro: no URL esposto)
+                        window.close();
                     } else {
                         // Mostra errore dettagliato
                         let errorMsg = 'Errore durante la firma del contratto:\\n\\n';
@@ -14540,7 +14541,7 @@ app.post('/api/import/irbema', async (c) => {
           }]
         }],
         properties: [
-          'firstname', 'lastname', 'email', 'mobilephone', 'city',
+          'firstname', 'lastname', 'email', 'mobilephone', 'city', 'state',
           'servizio_di_interesse', 'piano_desiderato', 'message', 'createdate',
           'hs_analytics_first_url', 'hs_analytics_last_url'
         ],
@@ -14704,11 +14705,11 @@ app.post('/api/import/irbema', async (c) => {
               id, nomeRichiedente, cognomeRichiedente, 
               email, 
               telefono, 
-              cittaAssistito,
+              cittaAssistito, provinciaAssistito,
               servizio, piano, tipoServizio, prezzo_anno, prezzo_rinnovo,
               fonte, status, vuoleBrochure, vuoleContratto,
               note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             props.firstname || 'N/A',
@@ -14716,6 +14717,7 @@ app.post('/api/import/irbema', async (c) => {
             emailSafe,      // ✅ email
             telefonoSafe,   // ✅ telefono
             props.city || null,
+            props.state || null, // ✅ PROVINCIA
             servizio,
             piano,
             'eCura',     // ✅ tipoServizio sempre 'eCura'
