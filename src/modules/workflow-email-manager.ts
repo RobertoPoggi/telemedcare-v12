@@ -68,11 +68,16 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const intestatarioDiversoDaAssistito = (intestatarioType === 'richiedente')
   
   // ✅ FIX CRITICO: Dati intestatario già calcolati e passati da POST /api/leads/:id/send-contract
-  // IMPORTANTE: nomeIntestatario, cognomeIntestatario, provinciaIntestatario sono GIÀ CORRETTI!
-  const nomeIntestatario = leadData.nomeIntestatario || 'N/A'
-  const cognomeIntestatario = leadData.cognomeIntestatario || 'N/A'
-  const luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || 'N/A'
-  const dataNascitaIntestatario = leadData.dataNascitaIntestatario || 'N/A'
+  // IMPORTANTE: nomeIntestatario, cognomeIntestatario sono calcolati da intestatarioContratto
+  // Se mancano (vecchio workflow), usa fallback intelligenti
+  const nomeIntestatario = leadData.nomeIntestatario || 
+    (intestatarioType === 'assistito' ? leadData.nomeAssistito : leadData.nomeRichiedente) || 'N/A'
+  const cognomeIntestatario = leadData.cognomeIntestatario || 
+    (intestatarioType === 'assistito' ? leadData.cognomeAssistito : leadData.cognomeRichiedente) || 'N/A'
+  const luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || 
+    (intestatarioType === 'assistito' ? leadData.luogoNascitaAssistito : '') || 'N/A'
+  const dataNascitaIntestatario = leadData.dataNascitaIntestatario || 
+    (intestatarioType === 'assistito' ? leadData.dataNascitaAssistito : '') || 'N/A'
   const indirizzoIntestatario = leadData.indirizzoIntestatario || 'N/A'
   const capIntestatario = leadData.capIntestatario || 'N/A'
   const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
@@ -86,6 +91,9 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const emailCareGiver = leadData.email || 'N/A'
   
   // ✅ Indirizzo spedizione = SEMPRE dell'assistito (dispositivo va a chi lo usa!)
+  // DEVE includere nome/cognome assistito PRIMA dell'indirizzo
+  const nomeAssistitoSpedizione = leadData.nomeAssistito || ''
+  const cognomeAssistitoSpedizione = leadData.cognomeAssistito || ''
   const indirizzoSpedizione = leadData.indirizzoAssistito || 'N/A'
   const capSpedizione = leadData.capAssistito || 'N/A'
   const cittaSpedizione = leadData.cittaAssistito || 'N/A'
@@ -296,7 +304,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
             Signor <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         `}
         
-        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${indirizzoSpedizione} - ${capSpedizione} ${cittaSpedizione} (${provinciaSpedizione})</span></p>
+        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${nomeAssistitoSpedizione} ${cognomeAssistitoSpedizione} - ${indirizzoSpedizione} - ${capSpedizione} ${cittaSpedizione} (${provinciaSpedizione})</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>
