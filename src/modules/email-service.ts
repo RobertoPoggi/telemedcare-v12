@@ -581,11 +581,6 @@ export class EmailService {
           sendgrid: sendgridError?.message || String(sendgridError)
         }
       }
-        errors: {
-          resend: resendError?.message || String(resendError),
-          sendgrid: sendgridError?.message || String(sendgridError)
-        }
-      }
 
     } catch (error) {
       return {
