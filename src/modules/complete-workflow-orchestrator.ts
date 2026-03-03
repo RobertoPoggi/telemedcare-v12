@@ -533,17 +533,33 @@ export async function processPayment(
       ctx.env,
       ctx.db
     )
+    
+    // 3.5: Invia email separata con link form configurazione
+    const emailFormResult = await WorkflowEmailManager.inviaEmailFormConfigurazione(
+      { ...ctx.leadData, codiceCliente },
+      ctx.env,
+      ctx.db
+    )
 
-    if (emailResult.success) {
+    if (emailResult.success && emailFormResult.success) {
       result.success = true
-      result.message = 'Pagamento registrato e email benvenuto inviata'
+      result.message = 'Pagamento registrato, email benvenuto e form configurazione inviati'
+      result.data = {
+        paymentId: paymentResult.paymentId,
+        codiceCliente,
+        emailsSent: [...emailResult.emailsSent, ...emailFormResult.emailsSent]
+      }
+    } else if (emailResult.success) {
+      result.success = true
+      result.message = 'Pagamento registrato, email benvenuto inviata (errore form configurazione)'
+      result.errors.push(...emailFormResult.errors)
       result.data = {
         paymentId: paymentResult.paymentId,
         codiceCliente,
         emailsSent: emailResult.emailsSent
       }
     } else {
-      result.errors.push(...emailResult.errors)
+      result.errors.push(...emailResult.errors, ...emailFormResult.errors)
       result.message = 'Errore invio email benvenuto'
     }
 
