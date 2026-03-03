@@ -10,6 +10,7 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 export interface ContractReminderConfig {
   contract_reminder_enabled: boolean
@@ -117,7 +118,7 @@ export async function sendContractReminder(
         PREZZO_PIANO: contract.prezzo_totale 
           ? `€${contract.prezzo_totale.toFixed(2)}` 
           : 'N/A',
-        LINK_FIRMA: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/firma-contratto.html?contract=${contract.id}`
+        LINK_FIRMA: `${getBaseUrl(env)}/firma-contratto.html?contract=${contract.id}`
       }
     )
     

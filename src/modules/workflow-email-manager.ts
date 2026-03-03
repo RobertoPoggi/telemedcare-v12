@@ -28,6 +28,7 @@ import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
 import { formatServiceName } from './ecura-pricing'
 import { getMissingFields, isLeadComplete } from './lead-completion'
 import { getSetting } from './settings-api'
+import { getBaseUrl } from './url-helper'
 
 /**
  * Genera HTML completo del contratto con tutti i dati del cliente
@@ -592,7 +593,7 @@ export async function inviaEmailDocumentiInformativi(
     const dispositivo = (servizioNome === 'PREMIUM' || servizioNome === 'premium') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     // Determina l'URL della brochure in base al servizio
-    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+    const baseUrl = getBaseUrl(env)
     
     console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
     
@@ -685,7 +686,7 @@ export async function inviaEmailDocumentiInformativi(
     try {
       // In Cloudflare Workers, usiamo fetch per leggere file statici da public/
       // Determina baseUrl da env
-      const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+      const baseUrl = getBaseUrl(env)
       
       console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
       
@@ -1011,7 +1012,7 @@ export async function inviaEmailContratto(
     const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     // Determina URL brochure per il link diretto
-    const baseUrl = env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+    const baseUrl = getBaseUrl(env)
     const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
     let brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
     if (servizioNormalized === 'PREMIUM') {
@@ -1192,8 +1193,8 @@ export async function inviaEmailProforma(
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-      LINK_PROFORMA_PDF: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/proforma-view?id=${proformaData.proformaId}`,
-      LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proformaId=${proformaData.proformaId}`,
+      LINK_PROFORMA_PDF: `${getBaseUrl(env)}/proforma-view?id=${proformaData.proformaId}`,
+      LINK_PAGAMENTO: `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
     }
 
@@ -1379,7 +1380,7 @@ export async function inviaEmailBenvenuto(
       PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
       CODICE_CLIENTE: clientData.codiceCliente,
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
-      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/completa-dati?leadId=${clientData.id}`,
+      LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
       COSTO_SERVIZIO: clientData.pacchetto === 'AVANZATO' ? '€1.024,80/anno (IVA inclusa)' : '€585,60/anno (IVA inclusa)',
       SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' 
         ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${(clientData.servizio || '').toUpperCase().includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
@@ -1447,7 +1448,7 @@ export async function inviaEmailFormConfigurazione(
     const templateData = {
       DISPOSITIVO: dispositivo,
       SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione.html?leadId=${clientData.id}`
+      LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/configurazione.html?leadId=${clientData.id}`
     }
 
     // Renderizza template

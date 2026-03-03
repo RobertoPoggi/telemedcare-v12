@@ -10,6 +10,7 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 export interface ProformaReminderConfig {
   proforma_reminder_enabled: boolean
@@ -126,7 +127,7 @@ export async function sendProformaReminder(
         DATA_SCADENZA: new Date(proforma.scadenza).toLocaleDateString('it-IT'),
         GIORNI_RIMANENTI: giorniRimanenti.toString(),
         URGENZA: giorniRimanenti <= 1 ? '⚠️ URGENTE' : '',
-        LINK_PAGAMENTO: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/pagamento.html?proforma=${proforma.id}`
+        LINK_PAGAMENTO: `${getBaseUrl(env)}/pagamento.html?proforma=${proforma.id}`
       }
     )
     
