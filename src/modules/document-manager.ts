@@ -155,7 +155,34 @@ export class DocumentManager {
       })
       
       // 6. Salva record proforma nel database
-      // ✅ FIX: Usa dati INTESTATARIO (chi paga) non assistito!
+      // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
+      const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+      
+      let nomeCliente: string
+      let cognomeCliente: string
+      let emailCliente: string
+      let telefonoCliente: string
+      let indirizzoCliente: string
+      let cfCliente: string
+      
+      if (intestatario === 'assistito') {
+        // Intestatario = Assistito
+        nomeCliente = lead.nomeAssistito || lead.nomeRichiedente
+        cognomeCliente = lead.cognomeAssistito || lead.cognomeRichiedente
+        emailCliente = lead.email
+        telefonoCliente = lead.telefono || ''
+        indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+        cfCliente = lead.cfIntestatario || lead.cfAssistito || ''
+      } else {
+        // Intestatario = Richiedente (default)
+        nomeCliente = lead.nomeRichiedente
+        cognomeCliente = lead.cognomeRichiedente
+        emailCliente = lead.email
+        telefonoCliente = lead.telefono || ''
+        indirizzoCliente = lead.indirizzoIntestatario || ''
+        cfCliente = lead.cfIntestatario || ''
+      }
+      
       const proformaRecord = await this.saveProformaToDatabase({
         id: generationResult.proformaId!,
         contract_id: generationResult.contractId!,
@@ -164,13 +191,12 @@ export class DocumentManager {
         pdf_url: proformaPdfUrl || '',
         prezzo_mensile: generationResult.prezzoBase || 0,
         prezzo_totale: generationResult.prezzoIvaInclusa || 0,
-        // ⭐ CRITICAL: Usa intestatario || richiedente (MAI assistito per fattura!)
-        cliente_nome: lead.nomeIntestatario || lead.nomeRichiedente,
-        cliente_cognome: lead.cognomeIntestatario || lead.cognomeRichiedente,
-        cliente_email: lead.emailIntestatario || lead.email,
-        cliente_telefono: lead.telefonoIntestatario || lead.telefono || '',
-        cliente_indirizzo: lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
-        cliente_codice_fiscale: lead.cfIntestatario || lead.cfAssistito || ''
+        cliente_nome: nomeCliente,
+        cliente_cognome: cognomeCliente,
+        cliente_email: emailCliente,
+        cliente_telefono: telefonoCliente,
+        cliente_indirizzo: indirizzoCliente,
+        cliente_codice_fiscale: cfCliente
       })
       
       console.log('✅ Documenti generati e salvati nel database')
@@ -195,8 +221,50 @@ export class DocumentManager {
    */
   private async callPythonGenerator(lead: Lead): Promise<DocumentGenerationResult> {
     return new Promise((resolve, reject) => {
+      // ⭐ CALCOLA dati intestatario in base a intestatarioContratto/intestazioneContratto
+      const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+      
+      let nomeIntestatario: string
+      let cognomeIntestatario: string
+      let emailIntestatario: string
+      let telefonoIntestatario: string
+      let dataNascitaIntestatario: string
+      let luogoNascitaIntestatario: string
+      let cfIntestatarioCalc: string
+      let indirizzoIntestatarioCalc: string
+      let cittaIntestatarioCalc: string
+      let capIntestatarioCalc: string
+      let provinciaIntestatarioCalc: string
+      
+      if (intestatario === 'assistito') {
+        // Intestatario = Assistito
+        nomeIntestatario = lead.nomeAssistito || lead.nomeRichiedente
+        cognomeIntestatario = lead.cognomeAssistito || lead.cognomeRichiedente
+        emailIntestatario = lead.email
+        telefonoIntestatario = lead.telefono || ''
+        dataNascitaIntestatario = lead.dataNascitaIntestatario || lead.dataNascitaAssistito || ''
+        luogoNascitaIntestatario = lead.luogoNascitaIntestatario || lead.luogoNascitaAssistito || ''
+        cfIntestatarioCalc = lead.cfIntestatario || lead.cfAssistito || ''
+        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+        cittaIntestatarioCalc = lead.cittaIntestatario || lead.cittaAssistito || ''
+        capIntestatarioCalc = lead.capIntestatario || lead.capAssistito || ''
+        provinciaIntestatarioCalc = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+      } else {
+        // Intestatario = Richiedente (default)
+        nomeIntestatario = lead.nomeRichiedente
+        cognomeIntestatario = lead.cognomeRichiedente
+        emailIntestatario = lead.email
+        telefonoIntestatario = lead.telefono || ''
+        dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
+        luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
+        cfIntestatarioCalc = lead.cfIntestatario || ''
+        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || ''
+        cittaIntestatarioCalc = lead.cittaIntestatario || ''
+        capIntestatarioCalc = lead.capIntestatario || ''
+        provinciaIntestatarioCalc = lead.provinciaIntestatario || ''
+      }
+      
       // Prepara dati lead in formato JSON per Python
-      // ✅ FIX: Passa TUTTI i dati intestatario per il contratto
       const leadData = JSON.stringify({
         id: lead.id,
         // Dati Richiedente (persona che compila il form)
@@ -205,18 +273,18 @@ export class DocumentManager {
         email: lead.email,
         telefono: lead.telefono,
         
-        // Dati Intestatario (chi firma il contratto e paga) ⭐ CRITICAL
-        nomeIntestatario: lead.nomeIntestatario,
-        cognomeIntestatario: lead.cognomeIntestatario,
-        emailIntestatario: lead.emailIntestatario,
-        telefonoIntestatario: lead.telefonoIntestatario,
-        dataNascitaIntestatario: lead.dataNascitaIntestatario,
-        luogoNascitaIntestatario: lead.luogoNascitaIntestatario,
-        cfIntestatario: lead.cfIntestatario,
-        indirizzoIntestatario: lead.indirizzoIntestatario,
-        cittaIntestatario: lead.cittaIntestatario,
-        capIntestatario: lead.capIntestatario,
-        provinciaIntestatario: lead.provinciaIntestatario,
+        // Dati Intestatario CALCOLATI (chi firma il contratto e paga) ⭐ CRITICAL
+        nomeIntestatario,
+        cognomeIntestatario,
+        emailIntestatario,
+        telefonoIntestatario,
+        dataNascitaIntestatario,
+        luogoNascitaIntestatario,
+        cfIntestatario: cfIntestatarioCalc,
+        indirizzoIntestatario: indirizzoIntestatarioCalc,
+        cittaIntestatario: cittaIntestatarioCalc,
+        capIntestatario: capIntestatarioCalc,
+        provinciaIntestatario: provinciaIntestatarioCalc,
         
         // Dati Assistito (persona che riceve il servizio)
         nomeAssistito: lead.nomeAssistito,
@@ -232,7 +300,7 @@ export class DocumentManager {
         // Dati pacchetto e contratto
         pacchetto: lead.pacchetto,
         vuoleContratto: lead.vuoleContratto,
-        intestazioneContratto: lead.intestazioneContratto
+        intestazioneContratto: lead.intestazioneContratto || intestatario
       })
       
       // Spawn processo Python

@@ -153,10 +153,22 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
     'Template_Contratto_Avanzato_TeleMedCare' : 
     'Template_Contratto_Base_TeleMedCare'
   
-  // ✅ FIX: Usa dati INTESTATARIO (chi firma il contratto) non richiedente
-  const nomeCompleto = `${lead.nomeIntestatario || lead.nomeRichiedente} ${lead.cognomeIntestatario || lead.cognomeRichiedente}`
-  const emailContratto = lead.emailIntestatario || lead.email
-  const telefonoContratto = lead.telefonoIntestatario || lead.telefono
+  // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
+  const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+  
+  let nomeCompleto: string
+  let emailContratto: string
+  let telefonoContratto: string
+  
+  if (intestatario === 'assistito') {
+    nomeCompleto = `${lead.nomeAssistito || lead.nomeRichiedente} ${lead.cognomeAssistito || lead.cognomeRichiedente}`
+    emailContratto = lead.email
+    telefonoContratto = lead.telefono
+  } else {
+    nomeCompleto = `${lead.nomeRichiedente} ${lead.cognomeRichiedente}`
+    emailContratto = lead.email
+    telefonoContratto = lead.telefono
+  }
   
   return `
     <!DOCTYPE html>
@@ -218,11 +230,13 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
 async function generaProformaDaContratto(contractId: string, db: any) {
   try {
     // Recupera contratto e lead
-    // ✅ FIX: Recupera dati INTESTATARIO (non richiedente) per la proforma
+    // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
     const contract = await db.prepare(`
       SELECT c.*, 
-        l.nomeIntestatario, l.cognomeIntestatario, l.emailIntestatario, l.telefonoIntestatario,
-        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono
+        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono,
+        l.nomeAssistito, l.cognomeAssistito,
+        l.intestatarioContratto, l.intestazioneContratto,
+        l.cfIntestatario, l.indirizzoIntestatario
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ? AND c.status = 'SIGNED'
@@ -236,11 +250,22 @@ async function generaProformaDaContratto(contractId: string, db: any) {
     const numeroProforma = `PF-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
     const dataScadenza = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // ✅ 3 giorni (non 15!)
     
-    // ✅ FIX: Usa INTESTATARIO per i dati del cliente (chi paga)
-    const nomeCliente = contract.nomeIntestatario || contract.nomeRichiedente
-    const cognomeCliente = contract.cognomeIntestatario || contract.cognomeRichiedente
-    const emailCliente = contract.emailIntestatario || contract.email
-    const telefonoCliente = contract.telefonoIntestatario || contract.telefono
+    // ⭐ CALCOLA dati cliente in base a intestatarioContratto
+    const intestatario = contract.intestatarioContratto || contract.intestazioneContratto || 'richiedente'
+    
+    let nomeCliente: string
+    let cognomeCliente: string
+    
+    if (intestatario === 'assistito') {
+      nomeCliente = contract.nomeAssistito || contract.nomeRichiedente
+      cognomeCliente = contract.cognomeAssistito || contract.cognomeRichiedente
+    } else {
+      nomeCliente = contract.nomeRichiedente
+      cognomeCliente = contract.cognomeRichiedente
+    }
+    
+    const emailCliente = contract.email
+    const telefonoCliente = contract.telefono
     
     // Crea proforma
     await db.prepare(`
