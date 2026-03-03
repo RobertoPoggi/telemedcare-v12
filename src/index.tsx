@@ -679,6 +679,10 @@ app.use('/api/*', async (c, next) => {
     return next() // Lettura singolo contratto (per firma-contratto.html)
   }
   
+  if (path === '/api/contracts/sign' && method === 'POST') {
+    return next() // ⚠️ TEMPORANEO: Firma contratto pubblico (serve token system!)
+  }
+  
   if (path.match(/^\/api\/proforma\/[^\/]+$/) && method === 'GET') {
     return next() // Lettura singola proforma (per proforma-view.html)
   }
