@@ -665,6 +665,10 @@ app.use('/api/*', async (c, next) => {
     return next() // Form acquisizione lead
   }
   
+  if (path.match(/^\/api\/leads\/[^\/]+$/) && method === 'GET') {
+    return next() // Lettura singolo lead (per form completamento dati pubblico)
+  }
+  
   if (path.match(/^\/api\/leads\/[^\/]+\/complete$/) && method === 'POST') {
     return next() // Completamento dati
   }
