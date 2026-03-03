@@ -11324,6 +11324,43 @@ app.post('/api/contracts/sign', async (c) => {
         
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
         
+        // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
+        const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+        
+        let nomeCliente: string
+        let cognomeCliente: string
+        let cfCliente: string
+        let indirizzoCliente: string
+        let cittaCliente: string
+        let capCliente: string
+        let provinciaCliente: string
+        
+        if (intestatario === 'assistito') {
+          // Intestatario = Assistito
+          nomeCliente = lead.nomeAssistito || lead.nomeRichiedente
+          cognomeCliente = lead.cognomeAssistito || lead.cognomeRichiedente
+          cfCliente = lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || ''
+          indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+          cittaCliente = lead.cittaIntestatario || lead.cittaAssistito || ''
+          capCliente = lead.capIntestatario || lead.capAssistito || ''
+          provinciaCliente = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+        } else {
+          // Intestatario = Richiedente (default)
+          // I campi *Intestatario SONO GIÀ i campi del richiedente
+          nomeCliente = lead.nomeRichiedente
+          cognomeCliente = lead.cognomeRichiedente
+          cfCliente = lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
+          indirizzoCliente = lead.indirizzoIntestatario || ''
+          cittaCliente = lead.cittaIntestatario || ''
+          capCliente = lead.capIntestatario || ''
+          provinciaCliente = lead.provinciaIntestatario || ''
+        }
+        
+        const emailCliente = lead.email || ''
+        const telefonoCliente = lead.telefono || ''
+        
+        console.log(`👤 [FIRMA→PROFORMA] Dati cliente calcolati: ${nomeCliente} ${cognomeCliente}, ${indirizzoCliente}, ${cittaCliente} (${provinciaCliente})`)
+        
         // ✅ UPSERT: Controlla se esiste già una proforma per questo contratto
         try {
           console.log(`🔍 [FIRMA→PROFORMA] Controllo se proforma esiste già per contract ${contractId}...`)
@@ -11366,15 +11403,15 @@ app.post('/api/contracts/sign', async (c) => {
               lead.id,
               new Date().toISOString().split('T')[0], // data_emissione aggiornata
               new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
-              lead.nomeIntestatario || lead.nomeRichiedente || '',
-              lead.cognomeIntestatario || lead.cognomeRichiedente || '',
-              lead.emailIntestatario || lead.email || '',
-              lead.telefonoIntestatario || lead.telefono || '',
-              lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
-              lead.cittaIntestatario || lead.cittaAssistito || '',
-              lead.capIntestatario || lead.capAssistito || '',
-              lead.provinciaIntestatario || lead.provinciaAssistito || '',
-              lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
+              nomeCliente,
+              cognomeCliente,
+              emailCliente,
+              telefonoCliente,
+              indirizzoCliente,
+              cittaCliente,
+              capCliente,
+              provinciaCliente,
+              cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
               (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
               12, // durata_mesi
@@ -11405,15 +11442,15 @@ app.post('/api/contracts/sign', async (c) => {
               numeroProforma,
               new Date().toISOString().split('T')[0], // data_emissione
               new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
-              lead.nomeIntestatario || lead.nomeRichiedente || '',
-              lead.cognomeIntestatario || lead.cognomeRichiedente || '',
-              lead.emailIntestatario || lead.email || '',
-              lead.telefonoIntestatario || lead.telefono || '',
-              lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
-              lead.cittaIntestatario || lead.cittaAssistito || '',
-              lead.capIntestatario || lead.capAssistito || '',
-              lead.provinciaIntestatario || lead.provinciaAssistito || '',
-              lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || '',
+              nomeCliente,
+              cognomeCliente,
+              emailCliente,
+              telefonoCliente,
+              indirizzoCliente,
+              cittaCliente,
+              capCliente,
+              provinciaCliente,
+              cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
               (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
               12, // durata_mesi
