@@ -9550,6 +9550,7 @@ app.put('/api/leads/:id', async (c) => {
       indirizzoRichiedente: 'indirizzoRichiedente',
       cittaRichiedente: 'cittaRichiedente',
       capRichiedente: 'capRichiedente',
+      provinciaRichiedente: 'provinciaRichiedente',
       
       // ✅ FIX: Dati intestatario (per contratto)
       nomeIntestatario: 'nomeIntestatario',
@@ -9557,10 +9558,13 @@ app.put('/api/leads/:id', async (c) => {
       emailIntestatario: 'emailIntestatario',
       telefonoIntestatario: 'telefonoIntestatario',
       cfIntestatario: 'cfIntestatario',
+      codiceFiscaleIntestatario: 'codiceFiscaleIntestatario', // Alias
       indirizzoIntestatario: 'indirizzoIntestatario',
       cittaIntestatario: 'cittaIntestatario',
       capIntestatario: 'capIntestatario',
       provinciaIntestatario: 'provinciaIntestatario',
+      luogoNascitaIntestatario: 'luogoNascitaIntestatario',
+      dataNascitaIntestatario: 'dataNascitaIntestatario',
       
       // Dati assistito
       nomeAssistito: 'nomeAssistito',
@@ -9572,7 +9576,7 @@ app.put('/api/leads/:id', async (c) => {
       cittaAssistito: 'cittaAssistito',
       provinciaAssistito: 'provinciaAssistito',
       cfAssistito: 'cfAssistito',
-      cfAssistito: 'cfAssistito', // Alias per codice fiscale
+      codiceFiscaleAssistito: 'codiceFiscaleAssistito', // Alias
       
       // Servizio
       servizio: 'servizio',
