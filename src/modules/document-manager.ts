@@ -155,6 +155,7 @@ export class DocumentManager {
       })
       
       // 6. Salva record proforma nel database
+      // ✅ FIX: Usa dati INTESTATARIO (chi paga) non assistito!
       const proformaRecord = await this.saveProformaToDatabase({
         id: generationResult.proformaId!,
         contract_id: generationResult.contractId!,
@@ -163,12 +164,13 @@ export class DocumentManager {
         pdf_url: proformaPdfUrl || '',
         prezzo_mensile: generationResult.prezzoBase || 0,
         prezzo_totale: generationResult.prezzoIvaInclusa || 0,
-        cliente_nome: lead.nomeAssistito,
-        cliente_cognome: lead.cognomeAssistito,
-        cliente_email: lead.email,
-        cliente_telefono: lead.telefono || '',
-        cliente_indirizzo: lead.indirizzoAssistito || '',
-        cliente_codice_fiscale: lead.cfAssistito || ''
+        // ⭐ CRITICAL: Usa intestatario || richiedente (MAI assistito per fattura!)
+        cliente_nome: lead.nomeIntestatario || lead.nomeRichiedente,
+        cliente_cognome: lead.cognomeIntestatario || lead.cognomeRichiedente,
+        cliente_email: lead.emailIntestatario || lead.email,
+        cliente_telefono: lead.telefonoIntestatario || lead.telefono || '',
+        cliente_indirizzo: lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+        cliente_codice_fiscale: lead.cfIntestatario || lead.cfAssistito || ''
       })
       
       console.log('✅ Documenti generati e salvati nel database')
@@ -194,20 +196,40 @@ export class DocumentManager {
   private async callPythonGenerator(lead: Lead): Promise<DocumentGenerationResult> {
     return new Promise((resolve, reject) => {
       // Prepara dati lead in formato JSON per Python
+      // ✅ FIX: Passa TUTTI i dati intestatario per il contratto
       const leadData = JSON.stringify({
         id: lead.id,
+        // Dati Richiedente (persona che compila il form)
         nomeRichiedente: lead.nomeRichiedente,
         cognomeRichiedente: lead.cognomeRichiedente,
         email: lead.email,
         telefono: lead.telefono,
+        
+        // Dati Intestatario (chi firma il contratto e paga) ⭐ CRITICAL
+        nomeIntestatario: lead.nomeIntestatario,
+        cognomeIntestatario: lead.cognomeIntestatario,
+        emailIntestatario: lead.emailIntestatario,
+        telefonoIntestatario: lead.telefonoIntestatario,
+        dataNascitaIntestatario: lead.dataNascitaIntestatario,
+        luogoNascitaIntestatario: lead.luogoNascitaIntestatario,
+        cfIntestatario: lead.cfIntestatario,
+        indirizzoIntestatario: lead.indirizzoIntestatario,
+        cittaIntestatario: lead.cittaIntestatario,
+        capIntestatario: lead.capIntestatario,
+        provinciaIntestatario: lead.provinciaIntestatario,
+        
+        // Dati Assistito (persona che riceve il servizio)
         nomeAssistito: lead.nomeAssistito,
         cognomeAssistito: lead.cognomeAssistito,
         dataNascitaAssistito: lead.dataNascitaAssistito,
         luogoNascitaAssistito: lead.luogoNascita, // Field mapping
         cfAssistito: lead.cfAssistito,
         indirizzoAssistito: lead.indirizzoAssistito,
-        cfIntestatario: lead.cfIntestatario,
-        indirizzoIntestatario: lead.indirizzoIntestatario,
+        cittaAssistito: lead.cittaAssistito,
+        capAssistito: lead.capAssistito,
+        provinciaAssistito: lead.provinciaAssistito,
+        
+        // Dati pacchetto e contratto
         pacchetto: lead.pacchetto,
         vuoleContratto: lead.vuoleContratto,
         intestazioneContratto: lead.intestazioneContratto
