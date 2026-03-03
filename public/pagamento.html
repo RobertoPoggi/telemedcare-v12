@@ -414,17 +414,21 @@
         async function initializeStripe() {
             try {
                 // Recupera la chiave pubblica Stripe
+                console.log('🔑 [STRIPE] Recupero chiave pubblica...');
                 const keyResponse = await fetch('/api/stripe-public-key');
                 const keyData = await keyResponse.json();
+                console.log('🔑 [STRIPE] Risposta API:', keyData);
                 
                 if (!keyData.success || !keyData.publishableKey) {
-                    console.warn('Stripe non configurato, solo bonifico disponibile');
+                    console.warn('❌ [STRIPE] Non configurato, solo bonifico disponibile. Errore:', keyData.error || 'Nessuna chiave');
                     // Passa automaticamente al tab bonifico
                     switchTab('bonifico');
                     // Nascondi il tab carta
                     document.querySelector('[data-tab="card"]').style.display = 'none';
                     return;
                 }
+                
+                console.log('✅ [STRIPE] Chiave pubblica ricevuta:', keyData.publishableKey.substring(0, 20) + '...');
                 
                 // Inizializza Stripe.js
                 stripe = Stripe(keyData.publishableKey);
