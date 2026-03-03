@@ -1172,12 +1172,23 @@ export async function inviaEmailProforma(
       .trim()
       .toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
     
+    // ✅ FIX: Calcola correttamente imponibile, IVA e totale
+    // proformaData.prezzoBase = imponibile (IVA esclusa)
+    // proformaData.prezzoIvaInclusa = totale (IVA inclusa)
+    const imponibile = proformaData.prezzoBase
+    const importoIva = Math.round((imponibile * 0.22) * 100) / 100  // IVA 22%
+    const totaleConIva = Math.round((imponibile * 1.22) * 100) / 100
+    
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
       PIANO_SERVIZIO: formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO'),
       NUMERO_PROFORMA: proformaData.numeroProforma,
-      IMPORTO_TOTALE: `€${proformaData.prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      // ✅ FIX: Usa i valori corretti per ogni campo
+      IMPORTO_BASE: `€${imponibile.toFixed(2).replace('.', ',')}`,  // Imponibile (vecchio nome in alcuni template)
+      IMPORTO_IVA: `€${importoIva.toFixed(2).replace('.', ',')}`,    // IVA 22%
+      IMPORTO_CON_IVA: `€${totaleConIva.toFixed(2).replace('.', ',')}`,  // Totale con IVA
+      IMPORTO_TOTALE: `€${totaleConIva.toFixed(2).replace('.', ',')}`,   // Alias per IMPORTO_CON_IVA
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
