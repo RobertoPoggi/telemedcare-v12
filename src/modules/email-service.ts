@@ -510,6 +510,7 @@ export class EmailService {
       })
 
       let resendError: any = null
+      let brevoError: any = null
       let sendgridError: any = null
 
       // ✅ PRIMARIO: Resend
@@ -527,9 +528,24 @@ export class EmailService {
         console.error('❌ Resend exception:', error)
       }
 
-      // 🔄 FALLBACK: SendGrid
+      // 🔄 FALLBACK 1: Brevo
       try {
-        console.log('📧 [FALLBACK] Tentativo SendGrid...')
+        console.log('📧 [FALLBACK-1] Tentativo Brevo...')
+        const result = await this.sendWithBrevo(emailData, env)
+        if (result.success) {
+          console.log('✅ Email inviata con successo via Brevo:', result.messageId)
+          return result
+        }
+        console.warn('⚠️ Brevo non ha avuto successo:', result)
+        brevoError = result.error || 'Unknown error'
+      } catch (error) {
+        brevoError = error
+        console.error('❌ Brevo exception:', error)
+      }
+
+      // 🔄 FALLBACK 2: SendGrid
+      try {
+        console.log('📧 [FALLBACK-2] Tentativo SendGrid...')
         const result = await this.sendWithSendGrid(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via SendGrid:', result.messageId)
@@ -547,16 +563,24 @@ export class EmailService {
       console.error('📧 Email destinatario:', emailData.to)
       console.error('📧 Oggetto:', emailData.subject)
       console.error('❌ Resend error:', resendError)
+      console.error('❌ Brevo error:', brevoError)
       console.error('❌ SendGrid error:', sendgridError)
       console.error('🔑 RESEND_API_KEY presente?', !!env?.RESEND_API_KEY)
+      console.error('🔑 BREVO_API_KEY presente?', !!env?.BREVO_API_KEY)
       console.error('🔑 SENDGRID_API_KEY presente?', !!env?.SENDGRID_API_KEY)
       
       return {
         success: true,  // ⚠️ FAKE SUCCESS per non bloccare il flusso
         messageId: `DEMO_${Date.now()}_${Math.random().toString(36).substring(2)}`,
         timestamp: new Date().toISOString(),
-        warning: '⚠️ DEMO MODE: Email NON inviata realmente! Configura RESEND_API_KEY o SENDGRID_API_KEY',
+        warning: '⚠️ DEMO MODE: Email NON inviata realmente! Configura RESEND_API_KEY, BREVO_API_KEY o SENDGRID_API_KEY',
         demoMode: true,  // ← Flag per identificare DEMO MODE
+        errors: {
+          resend: resendError?.message || String(resendError),
+          brevo: brevoError?.message || String(brevoError),
+          sendgrid: sendgridError?.message || String(sendgridError)
+        }
+      }
         errors: {
           resend: resendError?.message || String(resendError),
           sendgrid: sendgridError?.message || String(sendgridError)
@@ -684,6 +708,56 @@ export class EmailService {
     return {
       success: true,
       messageId: result.id,
+      timestamp: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Invio con Brevo (Sendinblue) API
+   */
+  private async sendWithBrevo(emailData: EmailData, env?: any): Promise<EmailResult> {
+    const apiKey = env?.BREVO_API_KEY
+    
+    if (!apiKey) {
+      throw new Error('BREVO_API_KEY non configurata')
+    }
+    
+    console.log('📧 Brevo: Invio a', emailData.to)
+    
+    const payload = {
+      sender: {
+        name: 'TeleMedCare',
+        email: emailData.from || 'info@medicagb.it'
+      },
+      to: [{ email: emailData.to }],
+      subject: emailData.subject,
+      htmlContent: emailData.html,
+      textContent: emailData.text || '',
+      attachment: emailData.attachments?.map(att => ({
+        name: att.filename,
+        content: typeof att.content === 'string' ? att.content : Buffer.from(att.content).toString('base64')
+      }))
+    }
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Brevo API error: ${response.status} ${error}`)
+    }
+
+    const result = await response.json()
+    return {
+      success: true,
+      messageId: result.messageId || 'brevo-' + Date.now(),
       timestamp: new Date().toISOString()
     }
   }
