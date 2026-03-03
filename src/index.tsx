@@ -8641,6 +8641,41 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     
     console.log('📄 Piano contratto:', piano, '(richiesto:', pianoRichiesto, 'lead:', lead.piano, ')')
     
+    // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
+    // CRITICAL: i campi nomeIntestatario/cognomeIntestatario NON esistono nel DB!
+    // Devono essere calcolati dinamicamente:
+    const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+    
+    let nomeIntestatario: string, cognomeIntestatario: string
+    let cfIntestatario: string, indirizzoIntestatario: string
+    let cittaIntestatario: string, capIntestatario: string, provinciaIntestatario: string
+    let luogoNascitaIntestatario: string, dataNascitaIntestatario: string
+    
+    if (intestatario === 'assistito') {
+      // Intestatario = Assistito
+      nomeIntestatario = lead.nomeAssistito || lead.nomeRichiedente
+      cognomeIntestatario = lead.cognomeAssistito || lead.cognomeRichiedente
+      cfIntestatario = lead.cfIntestatario || lead.cfAssistito || ''
+      indirizzoIntestatario = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+      cittaIntestatario = lead.cittaIntestatario || lead.cittaAssistito || ''
+      capIntestatario = lead.capIntestatario || lead.capAssistito || ''
+      provinciaIntestatario = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+      luogoNascitaIntestatario = lead.luogoNascitaIntestatario || lead.luogoNascitaAssistito || ''
+      dataNascitaIntestatario = lead.dataNascitaIntestatario || lead.dataNascitaAssistito || ''
+    } else {
+      // Intestatario = Richiedente (default)
+      // I campi *Intestatario SONO GIÀ i campi del richiedente
+      nomeIntestatario = lead.nomeRichiedente
+      cognomeIntestatario = lead.cognomeRichiedente
+      cfIntestatario = lead.cfIntestatario || ''
+      indirizzoIntestatario = lead.indirizzoIntestatario || ''
+      cittaIntestatario = lead.cittaIntestatario || ''
+      capIntestatario = lead.capIntestatario || ''
+      provinciaIntestatario = lead.provinciaIntestatario || ''
+      luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
+      dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
+    }
+    
     // Prepara leadData per workflow
     const leadData = {
       id: leadId,
@@ -8661,6 +8696,18 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       pacchetto: piano,
       servizio: servizio,
       intestatarioContratto: lead.intestatarioContratto || 'richiedente',
+      // ⭐ AGGIUNGI campi intestatario CALCOLATI
+      nomeIntestatario,
+      cognomeIntestatario,
+      emailIntestatario: lead.email,
+      telefonoIntestatario: lead.telefono || '',
+      cfIntestatario,
+      indirizzoIntestatario,
+      cittaIntestatario,
+      capIntestatario,
+      provinciaIntestatario,
+      luogoNascitaIntestatario,
+      dataNascitaIntestatario,
       vuoleBrochure: true,  // Include brochure con contratto
       vuoleManuale: false,
       vuoleContratto: true
