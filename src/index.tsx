@@ -9054,6 +9054,9 @@ app.post('/api/leads/:id/complete', async (c) => {
       indirizzoIntestatario: 'indirizzoIntestatario',
       capIntestatario: 'capIntestatario',
       cittaIntestatario: 'cittaIntestatario',
+      provinciaIntestatario: 'provinciaIntestatario',  // ✅ FIX: aggiunto campo provincia intestatario
+      luogoNascitaIntestatario: 'luogoNascitaIntestatario',  // ✅ FIX: aggiunto luogo nascita
+      dataNascitaIntestatario: 'dataNascitaIntestatario',    // ✅ FIX: aggiunto data nascita
       
       // Dati Assistito
       nomeAssistito: 'nomeAssistito',
