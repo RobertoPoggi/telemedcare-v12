@@ -9546,17 +9546,14 @@ app.put('/api/leads/:id', async (c) => {
       cognomeRichiedente: 'cognomeRichiedente',
       email: 'email',
       telefono: 'telefono',
-      cfRichiedente: 'cfRichiedente',
-      indirizzoRichiedente: 'indirizzoRichiedente',
-      cittaRichiedente: 'cittaRichiedente',
-      capRichiedente: 'capRichiedente',
-      provinciaRichiedente: 'provinciaRichiedente',
       
-      // ✅ FIX: Dati intestatario (per contratto)
-      nomeIntestatario: 'nomeIntestatario',
-      cognomeIntestatario: 'cognomeIntestatario',
-      emailIntestatario: 'emailIntestatario',
-      telefonoIntestatario: 'telefonoIntestatario',
+      // ⭐ NOTA: I campi intestatario vengono popolati nel form
+      // quando intestatarioContratto = 'richiedente':
+      // - cfIntestatario = CF del richiedente
+      // - indirizzoIntestatario = indirizzo del richiedente
+      // - cittaIntestatario = città del richiedente
+      // - capIntestatario = CAP del richiedente
+      // - provinciaIntestatario = provincia del richiedente
       cfIntestatario: 'cfIntestatario',
       codiceFiscaleIntestatario: 'codiceFiscaleIntestatario', // Alias
       indirizzoIntestatario: 'indirizzoIntestatario',

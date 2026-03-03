@@ -175,12 +175,13 @@ export class DocumentManager {
         cfCliente = lead.cfIntestatario || lead.cfAssistito || ''
       } else {
         // Intestatario = Richiedente (default)
+        // I campi *Intestatario SONO GIÀ i campi del richiedente
         nomeCliente = lead.nomeRichiedente
         cognomeCliente = lead.cognomeRichiedente
         emailCliente = lead.email
         telefonoCliente = lead.telefono || ''
-        indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
-        cfCliente = lead.cfIntestatario || lead.cfRichiedente || ''
+        indirizzoCliente = lead.indirizzoIntestatario || ''
+        cfCliente = lead.cfIntestatario || ''
       }
       
       const proformaRecord = await this.saveProformaToDatabase({
@@ -251,17 +252,18 @@ export class DocumentManager {
         provinciaIntestatarioCalc = lead.provinciaIntestatario || lead.provinciaAssistito || ''
       } else {
         // Intestatario = Richiedente (default)
+        // I campi *Intestatario SONO GIÀ i campi del richiedente
         nomeIntestatario = lead.nomeRichiedente
         cognomeIntestatario = lead.cognomeRichiedente
         emailIntestatario = lead.email
         telefonoIntestatario = lead.telefono || ''
         dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
         luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
-        cfIntestatarioCalc = lead.cfIntestatario || lead.cfRichiedente || ''
-        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
-        cittaIntestatarioCalc = lead.cittaIntestatario || lead.cittaRichiedente || ''
-        capIntestatarioCalc = lead.capIntestatario || lead.capRichiedente || ''
-        provinciaIntestatarioCalc = lead.provinciaIntestatario || lead.provinciaRichiedente || ''
+        cfIntestatarioCalc = lead.cfIntestatario || ''
+        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || ''
+        cittaIntestatarioCalc = lead.cittaIntestatario || ''
+        capIntestatarioCalc = lead.capIntestatario || ''
+        provinciaIntestatarioCalc = lead.provinciaIntestatario || ''
       }
       
       // Prepara dati lead in formato JSON per Python
