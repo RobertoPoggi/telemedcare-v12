@@ -179,8 +179,8 @@ export class DocumentManager {
         cognomeCliente = lead.cognomeRichiedente
         emailCliente = lead.email
         telefonoCliente = lead.telefono || ''
-        indirizzoCliente = lead.indirizzoIntestatario || ''
-        cfCliente = lead.cfIntestatario || ''
+        indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
+        cfCliente = lead.cfIntestatario || lead.cfRichiedente || ''
       }
       
       const proformaRecord = await this.saveProformaToDatabase({
@@ -257,11 +257,11 @@ export class DocumentManager {
         telefonoIntestatario = lead.telefono || ''
         dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
         luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
-        cfIntestatarioCalc = lead.cfIntestatario || ''
-        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || ''
-        cittaIntestatarioCalc = lead.cittaIntestatario || ''
-        capIntestatarioCalc = lead.capIntestatario || ''
-        provinciaIntestatarioCalc = lead.provinciaIntestatario || ''
+        cfIntestatarioCalc = lead.cfIntestatario || lead.cfRichiedente || ''
+        indirizzoIntestatarioCalc = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
+        cittaIntestatarioCalc = lead.cittaIntestatario || lead.cittaRichiedente || ''
+        capIntestatarioCalc = lead.capIntestatario || lead.capRichiedente || ''
+        provinciaIntestatarioCalc = lead.provinciaIntestatario || lead.provinciaRichiedente || ''
       }
       
       // Prepara dati lead in formato JSON per Python
