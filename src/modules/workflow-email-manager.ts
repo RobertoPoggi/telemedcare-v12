@@ -61,42 +61,23 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataInizioServizio = new Date().toLocaleDateString('it-IT')
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
-  // ✅ LOGICA: Determina se intestatario è ESPLICITAMENTE diverso dall'assistito
-  const haIntestatarioEsplicito = !!(leadData.nomeIntestatario && leadData.cognomeIntestatario)
-  const intestatarioDiversoDaAssistito = (
-    haIntestatarioEsplicito &&
-    (leadData.nomeIntestatario !== leadData.nomeAssistito || 
-     leadData.cognomeIntestatario !== leadData.cognomeAssistito)
-  )
+  // ✅ LOGICA SEMPLIFICATA: Usa direttamente intestatarioContratto dal leadData
+  // Se intestatario = 'richiedente' → NON mostrare luogo/data nascita nel contratto
+  // Se intestatario = 'assistito' → mostrare luogo/data nascita
+  const intestatarioType = leadData.intestatarioContratto || 'richiedente'
+  const intestatarioDiversoDaAssistito = (intestatarioType === 'richiedente')
   
-  // ✅ FIX CRITICO: Dati intestatario (NO fallback assistito se intestatario≠assistito!)
-  let nomeIntestatario: string, cognomeIntestatario: string, luogoNascitaIntestatario: string
-  let dataNascitaIntestatario: string, indirizzoIntestatario: string, capIntestatario: string
-  let cittaIntestatario: string, provinciaIntestatario: string, cfIntestatario: string
-  
-  if (intestatarioDiversoDaAssistito) {
-    // CASO 1: Intestatario ≠ Assistito → USA SOLO DATI INTESTATARIO (no fallback assistito!)
-    nomeIntestatario = leadData.nomeIntestatario || 'N/A'
-    cognomeIntestatario = leadData.cognomeIntestatario || 'N/A'
-    luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || 'N/A'
-    dataNascitaIntestatario = leadData.dataNascitaIntestatario || 'N/A'
-    indirizzoIntestatario = leadData.indirizzoIntestatario || 'N/A'
-    capIntestatario = leadData.capIntestatario || 'N/A'
-    cittaIntestatario = leadData.cittaIntestatario || 'N/A'
-    provinciaIntestatario = leadData.provinciaIntestatario || ''
-    cfIntestatario = leadData.cfIntestatario || 'N/A'
-  } else {
-    // CASO 2: Intestatario = Assistito → USA fallback assistito OK
-    nomeIntestatario = leadData.nomeIntestatario || leadData.nomeRichiedente || leadData.nomeAssistito || 'N/A'
-    cognomeIntestatario = leadData.cognomeIntestatario || leadData.cognomeRichiedente || leadData.cognomeAssistito || 'N/A'
-    luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || leadData.luogoNascitaAssistito || 'N/A'
-    dataNascitaIntestatario = leadData.dataNascitaIntestatario || leadData.dataNascitaAssistito || 'N/A'
-    indirizzoIntestatario = leadData.indirizzoIntestatario || leadData.indirizzoAssistito || 'N/A'
-    capIntestatario = leadData.capIntestatario || leadData.capAssistito || 'N/A'
-    cittaIntestatario = leadData.cittaIntestatario || leadData.cittaAssistito || 'N/A'
-    provinciaIntestatario = leadData.provinciaIntestatario || leadData.provinciaAssistito || ''
-    cfIntestatario = leadData.cfIntestatario || leadData.cfAssistito || 'N/A'
-  }
+  // ✅ FIX CRITICO: Dati intestatario già calcolati e passati da POST /api/leads/:id/send-contract
+  // IMPORTANTE: nomeIntestatario, cognomeIntestatario, provinciaIntestatario sono GIÀ CORRETTI!
+  const nomeIntestatario = leadData.nomeIntestatario || 'N/A'
+  const cognomeIntestatario = leadData.cognomeIntestatario || 'N/A'
+  const luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || 'N/A'
+  const dataNascitaIntestatario = leadData.dataNascitaIntestatario || 'N/A'
+  const indirizzoIntestatario = leadData.indirizzoIntestatario || 'N/A'
+  const capIntestatario = leadData.capIntestatario || 'N/A'
+  const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
+  const provinciaIntestatario = leadData.provinciaIntestatario || ''
+  const cfIntestatario = leadData.cfIntestatario || 'N/A'
   
   // Care giver (richiedente) per i riferimenti
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
