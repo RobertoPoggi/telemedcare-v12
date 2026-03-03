@@ -10102,39 +10102,8 @@ app.post('/api/admin/import-interactions-json', async (c) => {
 // ========================================
 
 // ========== PAGINE PUBBLICHE HTML ==========
-// GET /completa-dati.html - Form pubblico completamento dati lead
-app.get('/completa-dati.html', async (c) => {
-  try {
-    const fs = await import('fs/promises')
-    const path = await import('path')
-    const filePath = path.join(process.cwd(), 'public', 'completa-dati.html')
-    const html = await fs.readFile(filePath, 'utf-8')
-    
-    c.header('Content-Type', 'text/html; charset=utf-8')
-    c.header('Cache-Control', 'public, max-age=300')
-    return c.html(html)
-  } catch (error) {
-    console.error('Error serving completa-dati.html:', error)
-    return c.text('File non disponibile', 404)
-  }
-})
-
-// GET /completa-dati-minimal.html - Form pubblico completamento dati (versione minimal)
-app.get('/completa-dati-minimal.html', async (c) => {
-  try {
-    const fs = await import('fs/promises')
-    const path = await import('path')
-    const filePath = path.join(process.cwd(), 'public', 'completa-dati-minimal.html')
-    const html = await fs.readFile(filePath, 'utf-8')
-    
-    c.header('Content-Type', 'text/html; charset=utf-8')
-    c.header('Cache-Control', 'public, max-age=300')
-    return c.html(html)
-  } catch (error) {
-    console.error('Error serving completa-dati-minimal.html:', error)
-    return c.text('File non disponibile', 404)
-  }
-})
+// Questi file sono serviti da Cloudflare Pages come asset statici
+// Le route qui sono fallback, i file dovrebbero essere accessibili direttamente
 
 // GET /firma-contratto?contractId=xxx - Pagina firma contratto inline
 app.get('/firma-contratto', async (c) => {
