@@ -673,6 +673,20 @@ app.use('/api/*', async (c, next) => {
     return next() // Completamento dati
   }
   
+  // ⚠️ TEMPORANEO: Endpoint pubblici per pagine firma contratto, proforma, pagamenti
+  // TODO DOMANI: Implementare sistema token sicuro invece di ID pubblici
+  if (path.match(/^\/api\/contracts\/[^\/]+$/) && method === 'GET') {
+    return next() // Lettura singolo contratto (per firma-contratto.html)
+  }
+  
+  if (path.match(/^\/api\/proforma\/[^\/]+$/) && method === 'GET') {
+    return next() // Lettura singola proforma (per proforma-view.html)
+  }
+  
+  if (path.match(/^\/api\/payments\/[^\/]+$/) && method === 'GET') {
+    return next() // Lettura singolo pagamento (per pagamento.html)
+  }
+  
   if (path === '/api/stripe-public-key' && method === 'GET') {
     return next() // Chiave Stripe
   }
