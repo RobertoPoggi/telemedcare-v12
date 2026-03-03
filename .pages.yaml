@@ -27,8 +27,12 @@ preview:
     NODE_VERSION: "18"
     ENVIRONMENT: "preview"
     HUBSPOT_PORTAL_ID: "145726645"
+    # ⚠️ Stripe Test Keys - Da configurare su Cloudflare Dashboard
+    # STRIPE_PUBLIC_KEY: pk_test_51...
+    # STRIPE_SECRET_KEY: sk_test_51...
   
+  # ⚠️ Database di TEST - Sostituire database_id con l'ID del DB test
   d1_databases:
     - binding: DB
-      database_name: telemedcare-leads
-      database_id: e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f
+      database_name: telemedcare-leads-test
+      database_id: INSERISCI_QUI_DATABASE_ID_TEST  # ⬅️ Da sostituire con l'ID reale dal Cloudflare Dashboard

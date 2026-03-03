@@ -55,3 +55,10 @@ HUBSPOT_PORTAL_ID = "145726645"
 [env.preview.vars]
 ENVIRONMENT = "preview"
 HUBSPOT_PORTAL_ID = "145726645"
+
+# ⚠️ Database di TEST - NON usare il database di produzione in preview
+# Sostituisci DATABASE_ID_TEST con l'ID del database creato su Cloudflare Dashboard
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "telemedcare-leads-test"
+database_id = "INSERISCI_QUI_DATABASE_ID_TEST"  # ⬅️ Da sostituire con l'ID reale
