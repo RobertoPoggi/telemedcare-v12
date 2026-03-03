@@ -1,12 +1,15 @@
 {
   "version": 1,
   "include": [
+    "/",
     "/api/*",
     "/admin/*",
     "/dashboard",
     "/login",
     "/logout",
-    "/firma-contratto"
+    "/firma-contratto",
+    "/form-lead",
+    "/landing"
   ],
   "exclude": []
 }
