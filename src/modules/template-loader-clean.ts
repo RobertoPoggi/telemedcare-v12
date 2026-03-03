@@ -4,6 +4,7 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 /**
  * Load email template from file system (public/templates/email/)
@@ -32,7 +33,7 @@ export async function loadEmailTemplate(
   }
   
   // 🔄 FALLBACK: Carica da file statico
-  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+  const baseUrl = getBaseUrl(env)
   const templatePath = `/templates/email/${templateName}.html`
   const templateUrl = `${baseUrl}${templatePath}`
   
@@ -121,7 +122,7 @@ export async function loadHtmlFile(
   filename: string,
   env?: any
 ): Promise<string> {
-  const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+  const baseUrl = getBaseUrl(env)
   const fileUrl = `${baseUrl}/${filename}`
   
   console.log(`📂 [HTML] Loading "${filename}" from: ${fileUrl}`)

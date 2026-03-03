@@ -10,6 +10,7 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 export interface ConfigurationReminderConfig {
   configuration_reminder_enabled: boolean
@@ -127,7 +128,7 @@ export async function sendConfigurationReminder(
       templateRow.html_content as string,
       {
         NOME_ASSISTITO: nomeAssistito,
-        LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione.html?id=${form.id}`
+        LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/configurazione.html?id=${form.id}`
       }
     )
     

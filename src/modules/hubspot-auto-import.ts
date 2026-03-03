@@ -15,6 +15,7 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 // =====================================================================
 // TYPES
@@ -332,7 +333,7 @@ export async function executeAutoImport(
               console.log(`✅ [AUTO-IMPORT] Token creato: ${token.token}`)
               
               // Genera URL completamento - USA ENDPOINT API con query parameter!
-              const baseUrl = env?.PUBLIC_URL || env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+              const baseUrl = getBaseUrl(env)
               const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
               
               // Prepara dati per email

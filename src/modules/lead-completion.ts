@@ -11,6 +11,7 @@
  */
 
 import { D1Database } from '@cloudflare/workers-types'
+import { getBaseUrl } from './url-helper'
 
 // ============================================
 // TYPES & INTERFACES
@@ -431,7 +432,7 @@ export async function sendReminderEmail(
     const template = await loadEmailTemplate('email_reminder_completamento', db, env)
     
     // Prepara dati per il template
-    const baseUrl = env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+    const baseUrl = getBaseUrl(env)
     const completionLink = `${baseUrl}/completa-dati?token=${tokenData.token}`
     
     const { missing } = getMissingFields(leadData)

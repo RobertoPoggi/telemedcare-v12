@@ -16,6 +16,7 @@ import ClientConfigurationManager from './client-configuration-manager'
 import DocumentRepository from './document-repository'
 import { generateAndSendContract } from './contract-workflow-manager'
 import { getPricing } from './ecura-pricing'
+import { getBaseUrl } from './url-helper'
 
 export interface WorkflowContext {
   db: D1Database
@@ -163,7 +164,7 @@ export async function processNewLead(
           console.log(`✅ [ORCHESTRATOR] Token creato: ${token.token}`)
           
           // Genera URL completamento
-          const baseUrl = ctx.env?.PUBLIC_URL || ctx.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+          const baseUrl = getBaseUrl(ctx.env)
           const completionUrl = `${baseUrl}/completa-dati?token=${token.token}`
           
           console.log(`📋 [ORCHESTRATOR] Preparo dati email...`)
