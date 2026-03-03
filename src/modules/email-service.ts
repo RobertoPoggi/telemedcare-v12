@@ -337,7 +337,7 @@ export class EmailService {
 <strong>Scadenza Pagamento:</strong> {{SCADENZA_PAGAMENTO}}<br>
 <hr style="border:none;border-top:1px solid #dcfce7;margin:12px 0;">
 <p style="margin:4px 0;font-size:14px;color:#666;">
-  <strong>Imponibile:</strong> {{IMPORTO_TOTALE}}<br>
+  <strong>Imponibile:</strong> {{IMPORTO_BASE}}<br>
   <strong>IVA 22%:</strong> {{IMPORTO_IVA}}
 </p>
 <p style="margin:6px 0;font-size:18px;font-weight:700;color:#10b981;">

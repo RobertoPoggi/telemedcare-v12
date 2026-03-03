@@ -357,7 +357,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(50€/mese)'} + IVA 22% con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA 22% con inclusi:</p>
     
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
@@ -1382,7 +1382,7 @@ export async function inviaEmailBenvenuto(
       LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/completa-dati?leadId=${clientData.id}`,
       COSTO_SERVIZIO: clientData.pacchetto === 'AVANZATO' ? '€1.024,80/anno (IVA inclusa)' : '€585,60/anno (IVA inclusa)',
       SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' 
-        ? '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care PRO</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>'
+        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${clientData.servizio === 'PREMIUM' ? 'SiDLY Vital Care' : 'SiDLY Care PRO'}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
         : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
       PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' ? '€840/anno' : '€480/anno'
     }
@@ -1441,8 +1441,9 @@ export async function inviaEmailFormConfigurazione(
     const template = await loadEmailTemplate('email_configurazione', db, env)
     
     // Prepara i dati per il template
+    const dispositivo = clientData.servizio === 'PREMIUM' ? 'SiDLY Vital Care' : 'SiDLY Care PRO';
     const templateData = {
-      DISPOSITIVO: 'SiDLY Care PRO',
+      DISPOSITIVO: dispositivo,
       SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
       LINK_CONFIGURAZIONE: `${env.PUBLIC_URL || env.PAGES_URL || 'https://telemedcare-v12.pages.dev'}/configurazione.html?leadId=${clientData.id}`
     }
