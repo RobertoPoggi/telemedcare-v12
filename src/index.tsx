@@ -13541,19 +13541,32 @@ app.post('/api/hubspot/sync', async (c) => {
         `).bind(contact.properties.email, contact.id).first()
         
         if (existing) {
-          // ✅ FIX: Aggiorna NOTE lead esistenti (recupera note perse da bug precedente)
-          console.log(`🔄 [HUBSPOT SYNC] Contact ${contact.id} già esistente, aggiorno NOTE...`)
+          // ✅ FIX: Aggiorna NOTE lead esistenti SOLO se placeholder (PROTEGGE interazioni manuali!)
+          console.log(`🔄 [HUBSPOT SYNC] Contact ${contact.id} già esistente, verifico NOTE...`)
           
-          // Mappa contatto per ottenere note aggiornate
+          // Leggi note correnti dal DB
+          const currentLead = await c.env.DB.prepare(`
+            SELECT id, note FROM leads WHERE id = ?
+          `).bind(existing.id).first() as { id: string; note: string | null } | null
+          
+          const currentNote = currentLead?.note || ''
+          
+          // Mappa contatto per ottenere note da HubSpot
           const leadData = mapHubSpotContactToLead(contact)
           
-          // Aggiorna SOLO campo note (se presente e diverso da placeholder HubSpot)
-          const shouldUpdate = leadData.note && 
-            leadData.note !== null && 
-            leadData.note !== '' &&
-            !leadData.note.startsWith('Importato da HubSpot')
+          // 🛡️ PROTEZIONE CRITICA: Aggiorna SOLO se note correnti sono placeholder HubSpot
+          // NON sovrascrivere interazioni manuali inserite (es. "Nota: Chiamato il 20/2...")
+          const isPlaceholder = currentNote === '' || 
+                                currentNote === null || 
+                                currentNote.startsWith('Importato da HubSpot')
           
-          if (shouldUpdate) {
+          const hasNewNotes = leadData.note && 
+                             leadData.note !== null && 
+                             leadData.note !== '' &&
+                             !leadData.note.startsWith('Importato da HubSpot')
+          
+          if (isPlaceholder && hasNewNotes) {
+            // ✅ SAFE: Sostituisci placeholder con note reali da HubSpot
             await c.env.DB.prepare(`
               UPDATE leads 
               SET note = ?, 
@@ -13565,11 +13578,17 @@ app.post('/api/hubspot/sync', async (c) => {
               existing.id
             ).run()
             
-            console.log(`✅ [HUBSPOT SYNC] Note aggiornate per lead ${existing.id}: "${leadData.note?.substring(0, 50)}..."`)
-            results.updated++  // ✅ Conteggio lead aggiornati
+            console.log(`✅ [HUBSPOT SYNC] Note recuperate per lead ${existing.id}: "${leadData.note?.substring(0, 50)}..."`)
+            results.updated++
+          } else if (!isPlaceholder) {
+            // 🛡️ SKIP: Note correnti contengono interazioni manuali → NON sovrascrivere!
+            console.log(`🛡️  [HUBSPOT SYNC] Lead ${existing.id} ha interazioni manuali, SKIP update (protetto)`)
+            console.log(`     Note correnti: "${currentNote.substring(0, 80)}..."`)
+            results.skipped++
           } else {
-            console.log(`⏭️  [HUBSPOT SYNC] Note vuote/placeholder per contact ${contact.id}, skip update`)
-            results.skipped++  // Lead esistente ma note non aggiornabili
+            // Note HubSpot vuote/placeholder, niente da fare
+            console.log(`⏭️  [HUBSPOT SYNC] Note HubSpot vuote per contact ${contact.id}, skip`)
+            results.skipped++
           }
           
           continue
