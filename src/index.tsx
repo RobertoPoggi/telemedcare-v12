@@ -7533,17 +7533,18 @@ app.get('/api/proforma/:id', async (c) => {
     const prezzoMensile = parseFloat(proforma.prezzo_mensile || 0)
     const piano = prezzoMensile >= 50 ? 'AVANZATO' : 'BASE'
     
-    // ✅ FIX: prezzo_totale è GIÀ IVA ESCLUSA (non serve dividere!)
-    const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
-    const importoIva = Math.round(prezzoBaseIvaEsclusa * 0.22 * 100) / 100
-    const importoTotaleIvaInclusa = Math.round(prezzoBaseIvaEsclusa * 1.22 * 100) / 100
+    // ⚠️ ATTENZIONE: prezzo_totale nel DB contiene GIÀ L'IVA INCLUSA!
+    // Es: DB.prezzo_totale = €1207.80 (che è €990 + 22% IVA)
+    const importoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale || 0)
+    const prezzoBaseIvaEsclusa = Math.round((importoTotaleIvaInclusa / 1.22) * 100) / 100
+    const importoIva = Math.round((importoTotaleIvaInclusa - prezzoBaseIvaEsclusa) * 100) / 100
     
     const proformaResponse = {
       ...proforma,
-      // Prezzi (prezzo_totale DB è IVA ESCLUSA)
-      importo_totale: importoTotaleIvaInclusa,  // IVA inclusa per frontend
-      prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // IVA esclusa (dal DB)
-      importo_iva: importoIva.toFixed(2),  // IVA 22%
+      // Prezzi (prezzo_totale DB è GIÀ IVA INCLUSA!)
+      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Dalla DB, GIÀ con IVA
+      prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Calcolato: totale / 1.22
+      importo_iva: importoIva.toFixed(2),  // Calcolato: totale - base
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
