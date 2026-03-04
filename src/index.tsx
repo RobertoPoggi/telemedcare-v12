@@ -13526,6 +13526,7 @@ app.post('/api/hubspot/sync', async (c) => {
     const results = {
       total: response.results.length,
       created: 0,
+      updated: 0,  // ✅ Nuovo: contatore lead aggiornati (note)
       skipped: 0,
       errors: [] as any[]
     }
@@ -13540,8 +13541,37 @@ app.post('/api/hubspot/sync', async (c) => {
         `).bind(contact.properties.email, contact.id).first()
         
         if (existing) {
-          console.log(`⏭️  [HUBSPOT SYNC] Contact ${contact.id} già esistente, skip`)
-          results.skipped++
+          // ✅ FIX: Aggiorna NOTE lead esistenti (recupera note perse da bug precedente)
+          console.log(`🔄 [HUBSPOT SYNC] Contact ${contact.id} già esistente, aggiorno NOTE...`)
+          
+          // Mappa contatto per ottenere note aggiornate
+          const leadData = mapHubSpotContactToLead(contact)
+          
+          // Aggiorna SOLO campo note (se presente e diverso da placeholder HubSpot)
+          const shouldUpdate = leadData.note && 
+            leadData.note !== null && 
+            leadData.note !== '' &&
+            !leadData.note.startsWith('Importato da HubSpot')
+          
+          if (shouldUpdate) {
+            await c.env.DB.prepare(`
+              UPDATE leads 
+              SET note = ?, 
+                  updated_at = ?
+              WHERE id = ?
+            `).bind(
+              leadData.note,
+              new Date().toISOString(),
+              existing.id
+            ).run()
+            
+            console.log(`✅ [HUBSPOT SYNC] Note aggiornate per lead ${existing.id}: "${leadData.note?.substring(0, 50)}..."`)
+            results.updated++  // ✅ Conteggio lead aggiornati
+          } else {
+            console.log(`⏭️  [HUBSPOT SYNC] Note vuote/placeholder per contact ${contact.id}, skip update`)
+            results.skipped++  // Lead esistente ma note non aggiornabili
+          }
+          
           continue
         }
         
