@@ -15046,11 +15046,55 @@ app.post('/api/import/irbema', async (c) => {
           // Verifica se già esiste (per email)
           if (email) {
             const existing = await c.env.DB.prepare(
-              'SELECT id FROM leads WHERE email = ? LIMIT 1'
+              'SELECT id, note FROM leads WHERE email = ? LIMIT 1'
             ).bind(email).first()
             
             if (existing) {
-              console.log(`⏭️ [HUBSPOT] Lead già esistente (email): ${email}`)
+              console.log(`🔍 [IRBEMA] Lead già esistente (${existing.id}): ${email}, verifico NOTE...`)
+              
+              // 🔄 UPDATE NOTE se sono placeholder
+              const currentNote = (existing.note as string) || ''
+              const isPlaceholder = currentNote === '' || 
+                                   currentNote === null || 
+                                   currentNote.startsWith('Importato da HubSpot') ||
+                                   currentNote.startsWith('HubSpot ID:')
+              
+              // Estrai nota da HubSpot (prima costruiamo la nota come nel caso INSERT)
+              let hubspotNote = `HubSpot ID: ${contact.id}`
+              if (props.city) {
+                hubspotNote += ` | Città: ${props.city}`
+              }
+              if (props.message) {
+                hubspotNote += ` | Messaggio: ${props.message}`
+              }
+              
+              const hasNewNotes = hubspotNote && 
+                                 hubspotNote !== '' && 
+                                 hubspotNote !== null &&
+                                 !hubspotNote.startsWith('Importato da HubSpot')
+              
+              if (isPlaceholder && hasNewNotes) {
+                // UPDATE note
+                await c.env.DB.prepare(`
+                  UPDATE leads 
+                  SET note = ?,
+                      updated_at = ?
+                  WHERE id = ?
+                `).bind(
+                  hubspotNote,
+                  new Date().toISOString(),
+                  existing.id
+                ).run()
+                
+                console.log(`✅ [IRBEMA] Note recuperate per lead ${existing.id}: "${hubspotNote.substring(0, 50)}..."`)
+                // NON incrementare totalSkipped, ma creiamo un counter separato
+                // Per ora lo skippiamo nel conteggio INSERT
+              } else if (!isPlaceholder) {
+                console.log(`🛡️ [IRBEMA] Lead ${existing.id} ha interazioni manuali, SKIP update (protetto)`)
+              } else {
+                console.log(`⏭️ [IRBEMA] Note HubSpot vuote per ${existing.id}, skip`)
+              }
+              
               totalSkipped++
               continue
             }
