@@ -414,13 +414,22 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
   }
   
   // ✅ DEBUG: Log campi note disponibili da HubSpot
-  console.log(`📝 [HUBSPOT MAPPING] Campi note disponibili:`, {
-    note_assistito: props.note_assistito || '(vuoto)',
-    note_aggiuntive: props.note_aggiuntive || '(vuoto)',
-    notes: props.notes || '(vuoto)',
-    message: props.message || '(vuoto)',
-    condizioni_salute: props.condizioni_salute || '(vuoto)',
-    note: props.note || '(vuoto)'
+  const noteFinale = props.note_assistito 
+    || props.note_aggiuntive 
+    || props.notes 
+    || props.message 
+    || props.condizioni_salute 
+    || props.note 
+    || null
+  
+  console.log(`📝 [HUBSPOT MAPPING] Campi note disponibili per contact ${contact.id}:`, {
+    note_assistito: props.note_assistito ? `"${props.note_assistito.substring(0, 50)}..."` : '(vuoto)',
+    note_aggiuntive: props.note_aggiuntive ? `"${props.note_aggiuntive.substring(0, 50)}..."` : '(vuoto)',
+    notes: props.notes ? `"${props.notes.substring(0, 50)}..."` : '(vuoto)',
+    message: props.message ? `"${props.message.substring(0, 50)}..."` : '(vuoto)',
+    condizioni_salute: props.condizioni_salute ? `"${props.condizioni_salute.substring(0, 50)}..."` : '(vuoto)',
+    note: props.note ? `"${props.note.substring(0, 50)}..."` : '(vuoto)',
+    '→ VALORE_IMPORTATO': noteFinale ? `"${noteFinale.substring(0, 100)}..."` : 'NULL'
   })
   
   // Status mapping
@@ -474,14 +483,9 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     external_source_id: contact.id,
     
     // Metadata
-    // ✅ FIX: Cerca note in tutti i possibili campi HubSpot (con fallback)
-    note: props.note_assistito 
-      || props.note_aggiuntive 
-      || props.notes 
-      || props.message 
-      || props.condizioni_salute 
-      || props.note 
-      || `Importato da HubSpot - ID: ${contact.id}`,
+    // ✅ FIX CRITICO: Importa note VERE da HubSpot (NO fallback che sovrascrive!)
+    // external_source_id contiene già l'ID HubSpot, quindi non serve duplicarlo in note
+    note: noteFinale,
     
     // Richieste documentazione
     // ✅ SEMPRE SI per lead da Form eCura (import automatico)
