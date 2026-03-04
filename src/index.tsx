@@ -7144,10 +7144,15 @@ app.post('/api/create-payment-intent', async (c) => {
     
     // Recupera dati proforma
     const proforma = await c.env.DB.prepare(`
-      SELECT p.*, c.id as contract_id, c.codice_contratto, c.lead_id
+      SELECT p.*, 
+             p.leadId as lead_id,
+             c.id as contract_id, 
+             c.codice_contratto
       FROM proforma p
-      LEFT JOIN contracts c ON p.contract_id = c.id
+      LEFT JOIN contracts c ON c.lead_id = p.leadId
       WHERE p.id = ? OR p.numero_proforma = ?
+      ORDER BY c.created_at DESC
+      LIMIT 1
     `).bind(proformaId, proformaId).first()
     
     if (!proforma) {
@@ -7164,7 +7169,15 @@ app.post('/api/create-payment-intent', async (c) => {
     }
     
     // Calcola importo in centesimi (Stripe richiede l'importo in centesimi)
-    const amountInCents = Math.round(parseFloat(proforma.prezzo_totale) * 100)
+    // USA importo_totale che è già IVA inclusa (NON ricalcolare IVA!)
+    const totalAmount = parseFloat(proforma.importo_totale || proforma.prezzo_totale || '0')
+    if (totalAmount <= 0) {
+      return c.json({ 
+        success: false, 
+        error: 'Importo proforma non valido' 
+      }, 400)
+    }
+    const amountInCents = Math.round(totalAmount * 100)
     
     // Crea Payment Intent usando il modulo payment-manager
     const { createStripePaymentIntent } = await import('./modules/payment-manager')
