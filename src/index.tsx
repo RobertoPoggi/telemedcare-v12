@@ -7142,21 +7142,27 @@ app.post('/api/create-payment-intent', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    // Recupera dati proforma
+    // Recupera dati proforma (senza JOIN per evitare errori SQL)
     const proforma = await c.env.DB.prepare(`
-      SELECT p.*, 
-             p.leadId as lead_id,
-             c.id as contract_id, 
-             c.codice_contratto
-      FROM proforma p
-      LEFT JOIN contracts c ON c.lead_id = p.leadId
-      WHERE p.id = ? OR p.numero_proforma = ?
-      ORDER BY c.created_at DESC
+      SELECT * FROM proforma
+      WHERE id = ? OR numero_proforma = ?
       LIMIT 1
     `).bind(proformaId, proformaId).first()
     
     if (!proforma) {
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    // Recupera contratto separatamente (se esiste)
+    let contract = null
+    if (proforma.leadId) {
+      contract = await c.env.DB.prepare(`
+        SELECT id, contract_code as codice_contratto
+        FROM contracts
+        WHERE lead_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).bind(proforma.leadId).first()
     }
     
     // Verifica che la proforma non sia già pagata
@@ -7185,12 +7191,12 @@ app.post('/api/create-payment-intent', async (c) => {
     const result = await createStripePaymentIntent(
       c.env,
       amountInCents,
-      `Pagamento Proforma ${proforma.numero_proforma} - TeleMedCare ${proforma.tipo_servizio}`,
+      `Pagamento Proforma ${proforma.numero_proforma} - TeleMedCare ${proforma.servizio || proforma.tipo_servizio || ''}`,
       {
         proformaId: proforma.id,
         proforma_number: proforma.numero_proforma,
-        contract_code: proforma.codice_contratto || proforma.contract_id,
-        leadId: proforma.lead_id
+        contract_code: contract?.codice_contratto || contract?.id || '',
+        leadId: proforma.leadId
       }
     )
     
