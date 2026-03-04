@@ -1263,8 +1263,8 @@ p {margin: 18px 0; line-height: 1.9;}
 <div class="payment-box">
 <h3>Opzione 1 - Pagamento Online</h3>
 <p>💳 <strong>Carta di Credito/Debito</strong></p>
-<p style="font-size:14px;color:#666;margin:10px 0">Pagamento sicuro tramite Stripe. Conferma immediata.</p>
-<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block;text-align:center;color:white">💳 PAGA ORA CON STRIPE</a>
+<p style="font-size:14px;color:#666;margin:10px 0">Pagamento sicuro con Carta di Credito. Conferma immediata.</p>
+<a href="{{LINK_PAGAMENTO}}" class="btn" style="display:block;text-align:center;color:white">💳 PAGA ORA CON CARTA</a>
 </div>
 <div class="payment-box">
 <h3>Opzione 2 - Bonifico Bancario</h3>
