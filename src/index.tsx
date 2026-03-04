@@ -14929,6 +14929,7 @@ app.post('/api/import/irbema', async (c) => {
     // Statistiche import
     let totalImported = 0
     let totalSkipped = 0
+    let totalUpdated = 0  // ✅ AGGIUNTO: counter per note aggiornate
     let totalContacts = 0
     let totalFiltered = 0
     let totalPages = 0
@@ -15087,8 +15088,7 @@ app.post('/api/import/irbema', async (c) => {
                 ).run()
                 
                 console.log(`✅ [IRBEMA] Note recuperate per lead ${existing.id}: "${hubspotNote.substring(0, 50)}..."`)
-                // NON incrementare totalSkipped, ma creiamo un counter separato
-                // Per ora lo skippiamo nel conteggio INSERT
+                totalUpdated++  // ✅ INCREMENTA counter update
               } else if (!isPlaceholder) {
                 console.log(`🛡️ [IRBEMA] Lead ${existing.id} ha interazioni manuali, SKIP update (protetto)`)
               } else {
@@ -15335,6 +15335,7 @@ app.post('/api/import/irbema', async (c) => {
 
     console.log(`🎯 [HUBSPOT] Import COMPLETATO:`)
     console.log(`   • Importati: ${totalImported}`)
+    console.log(`   • Aggiornati (note): ${totalUpdated}`)  // ✅ AGGIUNTO
     console.log(`   • Saltati (duplicati): ${totalSkipped}`)
     console.log(`   • Filtrati (pre-2026): ${totalFiltered}`)
     console.log(`   • Totale elaborati: ${totalContacts}`)
@@ -15344,6 +15345,7 @@ app.post('/api/import/irbema', async (c) => {
       success: true,
       message: 'Import HubSpot completato (contatti dal 1/12/2025)',
       imported: totalImported,
+      updated: totalUpdated,  // ✅ AGGIUNTO al JSON
       skipped: totalSkipped,
       filtered: totalFiltered,
       total: totalContacts,
