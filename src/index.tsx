@@ -7144,30 +7144,57 @@ app.get('/api/debug-schema', async (c) => {
       ORDER BY name
     `).all()
 
-    const schemas: Record<string, any> = {}
-
-    // Per ogni tabella, ottieni lo schema
-    for (const table of tables.results) {
-      const tableName = (table as any).name
-      const schema = await db.prepare(`PRAGMA table_info(${tableName})`).all()
-      schemas[tableName] = schema.results
+    // Usa il metodo più semplice: recupera esempi di dati e mostro le colonne
+    const samples: Record<string, any> = {}
+    
+    // Proforma
+    try {
+      const proformaSample = await db.prepare(`SELECT * FROM proforma LIMIT 1`).first()
+      samples.proforma = {
+        columns: proformaSample ? Object.keys(proformaSample) : [],
+        sample: proformaSample
+      }
+    } catch (e: any) {
+      samples.proforma = { error: e.message }
     }
 
-    // Esempio di dati reali da proforma
-    let sampleProforma = null
+    // Contracts
     try {
-      sampleProforma = await db.prepare(`SELECT * FROM proforma LIMIT 1`).first()
-    } catch (e) {
-      sampleProforma = { error: 'Tabella proforma non esiste o vuota' }
+      const contractSample = await db.prepare(`SELECT * FROM contracts LIMIT 1`).first()
+      samples.contracts = {
+        columns: contractSample ? Object.keys(contractSample) : [],
+        sample: contractSample
+      }
+    } catch (e: any) {
+      samples.contracts = { error: e.message }
+    }
+
+    // Leads
+    try {
+      const leadSample = await db.prepare(`SELECT * FROM leads LIMIT 1`).first()
+      samples.leads = {
+        columns: leadSample ? Object.keys(leadSample) : [],
+        sample: leadSample
+      }
+    } catch (e: any) {
+      samples.leads = { error: e.message }
+    }
+
+    // Lead interactions
+    try {
+      const interactionSample = await db.prepare(`SELECT * FROM lead_interactions LIMIT 1`).first()
+      samples.lead_interactions = {
+        columns: interactionSample ? Object.keys(interactionSample) : [],
+        sample: interactionSample
+      }
+    } catch (e: any) {
+      samples.lead_interactions = { error: e.message }
     }
 
     return c.json({
       success: true,
       tables: tables.results.map((t: any) => t.name),
-      schemas,
-      samples: {
-        proforma: sampleProforma
-      }
+      samples
     })
 
   } catch (error: any) {
