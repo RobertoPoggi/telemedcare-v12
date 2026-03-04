@@ -528,11 +528,42 @@
                 }
                 
                 if (paymentIntent.status === 'succeeded') {
-                    // Pagamento completato!
+                    console.log('✅ [STRIPE] Pagamento completato:', paymentIntent.id);
+                    console.log('📤 [BACKEND] Notifica backend pagamento avvenuto...');
+                    
+                    // ✅ NOTIFICA BACKEND: Registra pagamento e avvia workflow post-pagamento
+                    try {
+                        const backendResponse = await fetch('/api/payments', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                proformaId: proformaData.id || proformaId,
+                                importo: parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0),
+                                metodoPagamento: 'stripe',
+                                transactionId: paymentIntent.id,
+                                stripePaymentIntentId: paymentIntent.id,
+                                autoConfirm: true  // ✅ Conferma automatica pagamento Stripe
+                            })
+                        });
+                        
+                        const backendData = await backendResponse.json();
+                        console.log('📥 [BACKEND] Risposta:', backendData);
+                        
+                        if (!backendData.success) {
+                            console.warn('⚠️ [BACKEND] Pagamento registrato su Stripe ma errore backend:', backendData.error);
+                            // Mostra comunque successo all'utente, il pagamento è andato a buon fine
+                        } else {
+                            console.log('✅ [BACKEND] Workflow post-pagamento completato');
+                        }
+                    } catch (backendError) {
+                        console.error('❌ [BACKEND] Errore notifica:', backendError);
+                        // Non blocchiamo, il pagamento è comunque riuscito
+                    }
+                    
+                    // Mostra messaggio successo all'utente
                     document.getElementById('proformaDetails').style.display = 'none';
                     document.getElementById('successMessage').style.display = 'block';
                     
-                    console.log('✅ Pagamento completato:', paymentIntent.id);
                 } else {
                     throw new Error('Pagamento non completato. Stato: ' + paymentIntent.status);
                 }

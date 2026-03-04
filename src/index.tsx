@@ -7329,7 +7329,7 @@ app.post('/api/create-payment-intent', async (c) => {
 // POST /api/payments - Registra pagamento (webhook Stripe o manuale)
 app.post('/api/payments', async (c) => {
   try {
-    const { proformaId, importo, metodoPagamento, transactionId, stripePaymentIntentId } = await c.req.json()
+    const { proformaId, importo, metodoPagamento, transactionId, stripePaymentIntentId, autoConfirm } = await c.req.json()
     
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
@@ -7393,7 +7393,8 @@ app.post('/api/payments', async (c) => {
         amount: importo,
         paymentMethod: metodoPagamento,
         transactionId,
-        stripePaymentIntentId
+        stripePaymentIntentId,
+        autoConfirm: autoConfirm || false  // ✅ Conferma automatica (true per Stripe)
       }
     }
     
