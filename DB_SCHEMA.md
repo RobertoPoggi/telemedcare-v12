@@ -75,24 +75,43 @@ CREATE TABLE leads (
 ```sql
 CREATE TABLE contracts (
   id TEXT PRIMARY KEY,
-  lead_id TEXT NOT NULL,                  -- ⚠️ NON leadId!
-  contract_code TEXT UNIQUE NOT NULL,     -- ⚠️ NON codice_contratto!
-  tipo_servizio TEXT NOT NULL,
-  prezzo_base REAL NOT NULL,
-  prezzo_iva_inclusa REAL NOT NULL,
-  status TEXT DEFAULT 'draft',
+  leadId TEXT NOT NULL,                   -- ⚠️ leadId (camelCase), NON lead_id!
+  codice_contratto TEXT UNIQUE NOT NULL,  -- ⚠️ codice_contratto, NON contract_code!
+  tipo_contratto TEXT NOT NULL,           -- BASE, AVANZATO
+  template_utilizzato TEXT,
+  contenuto_html TEXT,
   pdf_url TEXT,
-  docusign_envelope_id TEXT,
+  pdf_generated INTEGER DEFAULT 0,
+  prezzo_mensile REAL,
+  durata_mesi INTEGER DEFAULT 12,
+  prezzo_totale REAL NOT NULL,            -- ⚠️ Prezzo SENZA IVA (es. €840)
+  status TEXT DEFAULT 'draft',            -- draft, SENT, SIGNED, ACTIVE
+  data_invio TEXT,
+  data_scadenza TEXT,
+  email_sent INTEGER DEFAULT 0,
+  email_template_used TEXT,
   created_at TEXT,
   updated_at TEXT,
+  imei_dispositivo TEXT,
+  piano TEXT,                             -- BASE, AVANZATO
+  servizio TEXT,                          -- eCura PRO, eCura PREMIUM, eCura FAMILY
+  signature_data TEXT,
+  signature_ip TEXT,
+  signature_timestamp TEXT,
+  signature_user_agent TEXT,
+  signature_screen_resolution TEXT,
+  signed_at TEXT,
+  signature_method TEXT,
   
-  FOREIGN KEY (lead_id) REFERENCES leads(id)
+  FOREIGN KEY (leadId) REFERENCES leads(id)
 );
 ```
 
 **⚠️ ATTENZIONE**:
-- Il campo contratto è `contract_code` NON `codice_contratto`
-- Il riferimento lead è `lead_id` NON `leadId`
+- Il campo lead è `leadId` (camelCase) NON `lead_id`
+- Il campo contratto è `codice_contratto` NON `contract_code`
+- `prezzo_totale` qui contiene il prezzo SENZA IVA (es. €840)
+- Nelle proforma invece `prezzo_totale` contiene CON IVA (es. €1207.80)
 
 ---
 
@@ -100,39 +119,56 @@ CREATE TABLE contracts (
 
 ```sql
 CREATE TABLE proforma (
-  id TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  contract_id TEXT,                       -- ID contratto associato
   leadId TEXT NOT NULL,                   -- ⚠️ leadId (camelCase)!
   numero_proforma TEXT NOT NULL UNIQUE,
   data_emissione TEXT NOT NULL,
   data_scadenza TEXT NOT NULL,
   
-  -- Importi (⚠️ NOMI ESATTI)
-  importo_base REAL NOT NULL,             -- Base senza IVA (es. €990)
-  importo_iva REAL NOT NULL,              -- IVA 22% (es. €217.80)
-  importo_totale REAL NOT NULL,           -- Totale CON IVA (es. €1207.80)
+  -- Dati cliente
+  cliente_nome TEXT,
+  cliente_cognome TEXT,
+  cliente_email TEXT,
+  cliente_telefono TEXT,
+  cliente_indirizzo TEXT,
+  cliente_citta TEXT,
+  cliente_cap TEXT,
+  cliente_provincia TEXT,
+  cliente_codice_fiscale TEXT,
   
-  valuta TEXT DEFAULT 'EUR',
-  status TEXT DEFAULT 'GENERATED',        -- GENERATED, PAID, EXPIRED
-  servizio TEXT,
-  piano TEXT,
+  -- Servizio e importi
+  tipo_servizio TEXT,                     -- es. "eCura PREMIUM"
+  prezzo_mensile REAL,                    -- Prezzo mensile (IVA esclusa / 12)
+  durata_mesi INTEGER DEFAULT 12,
+  prezzo_totale REAL NOT NULL,            -- ⚠️ Totale CON IVA (es. €1207.80)
+  
+  -- Status
+  status TEXT DEFAULT 'GENERATED',        -- GENERATED, SENT, PAID, EXPIRED
+  email_sent INTEGER DEFAULT 0,
+  
+  -- Timestamps
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   
-  FOREIGN KEY (leadId) REFERENCES leads(id)
+  FOREIGN KEY (leadId) REFERENCES leads(id),
+  FOREIGN KEY (contract_id) REFERENCES contracts(id)
 );
 ```
 
 **⚠️ ATTENZIONE**:
 - Campo lead è `leadId` (camelCase) NON `lead_id`
-- NON esiste campo `contract_id` in questa tabella
-- NON esiste campo `prezzo_totale` (è `importo_totale`)
-- Per JOIN con contracts: `contracts.lead_id = proforma.leadId`
+- ✅ Esiste campo `contract_id` (FK opzionale verso contracts)
+- ✅ Usa `prezzo_totale` NON `importo_totale`
+- ⚠️ `prezzo_totale` contiene GIÀ l'IVA inclusa (es. €1207.80)
+- Per JOIN con contracts: `contracts.leadId = proforma.leadId` o `contracts.id = proforma.contract_id`
 
-**💡 CALCOLO IVA CORRETTO**:
+**💡 CALCOLO CORRETTO**:
 ```javascript
-importo_base = 990.00        // Base senza IVA
-importo_iva = 217.80         // IVA 22%
-importo_totale = 1207.80     // Totale = base + IVA
+prezzoBase = 990.00          // Base annuale senza IVA
+prezzoConIva = 1207.80       // Totale annuale con IVA 22%
+prezzo_mensile = 82.50       // prezzoBase / 12 (mensile senza IVA)
+prezzo_totale = 1207.80      // ← Questo va in DB (CON IVA)
 ```
 
 ---
@@ -200,10 +236,10 @@ WHERE l.email = ?
 
 ```javascript
 // SBAGLIATO ❌
-const total = parseFloat(proforma.prezzo_totale)  // Campo NON esiste!
+const total = parseFloat(proforma.importo_totale)  // Campo NON esiste!
 
 // CORRETTO ✅
-const total = parseFloat(proforma.importo_totale)  // Campo corretto
+const total = parseFloat(proforma.prezzo_totale)  // prezzo_totale contiene GIÀ IVA
 ```
 
 ---
@@ -226,11 +262,12 @@ Prima di scrivere una query SQL, verifica:
 | ❌ SBAGLIATO | ✅ CORRETTO | Tabella |
 |-------------|-------------|---------|
 | `c.lead_id` (dopo LEFT JOIN fallito) | `p.leadId` | proforma |
-| `p.contract_id` | NON ESISTE | proforma |
-| `c.codice_contratto` | `c.contract_code` | contracts |
-| `p.prezzo_totale` | `p.importo_totale` | proforma |
+| `p.contract_id` | ✅ ESISTE (FK opzionale) | proforma |
+| `c.codice_contratto` | `c.contract_code` o `c.codice_contratto` | contracts (varia!) |
+| `p.importo_totale` | `p.prezzo_totale` | proforma |
 | `l.leadId` | `l.id` | leads |
-| `JOIN ON p.contract_id = c.id` | `JOIN ON c.lead_id = p.leadId` | JOIN proforma-contracts |
+| `JOIN ON p.contract_id = c.id` | ✅ CORRETTO | JOIN proforma-contracts |
+| `JOIN ON c.lead_id = p.leadId` | ✅ CORRETTO (alternativa) | JOIN contracts-proforma |
 
 ---
 
