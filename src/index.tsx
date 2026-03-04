@@ -7156,13 +7156,18 @@ app.post('/api/create-payment-intent', async (c) => {
     // Recupera contratto separatamente (se esiste)
     let contract = null
     if (proforma.leadId) {
-      contract = await c.env.DB.prepare(`
-        SELECT id, contract_code as codice_contratto
-        FROM contracts
-        WHERE lead_id = ?
-        ORDER BY created_at DESC
-        LIMIT 1
-      `).bind(proforma.leadId).first()
+      try {
+        contract = await c.env.DB.prepare(`
+          SELECT *
+          FROM contracts
+          WHERE lead_id = ?
+          ORDER BY created_at DESC
+          LIMIT 1
+        `).bind(proforma.leadId).first()
+      } catch (err) {
+        console.warn('[PAYMENT] Contratto non trovato o errore query:', err)
+        // Continua comunque, contract rimane null
+      }
     }
     
     // Verifica che la proforma non sia già pagata
@@ -7175,8 +7180,29 @@ app.post('/api/create-payment-intent', async (c) => {
     }
     
     // Calcola importo in centesimi (Stripe richiede l'importo in centesimi)
-    // USA importo_totale che è già IVA inclusa (NON ricalcolare IVA!)
-    const totalAmount = parseFloat(proforma.importo_totale || proforma.prezzo_totale || '0')
+    // WORKAROUND: Se importo_totale è sbagliato (IVA duplicata), usa importo_base + IVA
+    let totalAmount = 0
+    
+    // Leggi i campi dalla proforma
+    const importo_base = parseFloat(proforma.importo_base || '0')
+    const importo_iva = parseFloat(proforma.importo_iva || '0')
+    const importo_totale = parseFloat(proforma.importo_totale || '0')
+    
+    // Validazione: se importo_totale > importo_base * 1.5 → probabilmente IVA duplicata
+    if (importo_totale > importo_base * 1.5 && importo_base > 0) {
+      // USA importo_base + importo_iva (calcolo corretto)
+      totalAmount = importo_base + importo_iva
+      console.warn(`⚠️ [PAYMENT] Importo totale sospetto (€${importo_totale.toFixed(2)}), uso importo_base + IVA = €${totalAmount.toFixed(2)}`)
+    } else if (importo_totale > 0) {
+      // USA importo_totale se sembra corretto
+      totalAmount = importo_totale
+      console.log(`✅ [PAYMENT] Uso importo_totale: €${totalAmount.toFixed(2)}`)
+    } else {
+      // Fallback su prezzo_totale (campo legacy)
+      totalAmount = parseFloat(proforma.prezzo_totale || '0')
+      console.log(`📦 [PAYMENT] Fallback prezzo_totale: €${totalAmount.toFixed(2)}`)
+    }
+    
     if (totalAmount <= 0) {
       return c.json({ 
         success: false, 
@@ -7195,7 +7221,7 @@ app.post('/api/create-payment-intent', async (c) => {
       {
         proformaId: proforma.id,
         proforma_number: proforma.numero_proforma,
-        contract_code: contract?.codice_contratto || contract?.id || '',
+        contract_code: contract?.contract_code || contract?.codice_contratto || contract?.id || '',
         leadId: proforma.leadId
       }
     )
