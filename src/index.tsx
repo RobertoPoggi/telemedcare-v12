@@ -7129,6 +7129,55 @@ app.get('/api/stripe-public-key', async (c) => {
   }
 })
 
+// GET /api/debug-schema - TEMPORARY: Espone schema DB per verifica (RIMUOVERE dopo il test!)
+app.get('/api/debug-schema', async (c) => {
+  const db = c.env.DB
+  if (!db) {
+    return c.json({ error: 'Database non configurato' }, 500)
+  }
+
+  try {
+    // Lista tabelle
+    const tables = await db.prepare(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' 
+      ORDER BY name
+    `).all()
+
+    const schemas: Record<string, any> = {}
+
+    // Per ogni tabella, ottieni lo schema
+    for (const table of tables.results) {
+      const tableName = (table as any).name
+      const schema = await db.prepare(`PRAGMA table_info(${tableName})`).all()
+      schemas[tableName] = schema.results
+    }
+
+    // Esempio di dati reali da proforma
+    let sampleProforma = null
+    try {
+      sampleProforma = await db.prepare(`SELECT * FROM proforma LIMIT 1`).first()
+    } catch (e) {
+      sampleProforma = { error: 'Tabella proforma non esiste o vuota' }
+    }
+
+    return c.json({
+      success: true,
+      tables: tables.results.map((t: any) => t.name),
+      schemas,
+      samples: {
+        proforma: sampleProforma
+      }
+    })
+
+  } catch (error: any) {
+    return c.json({ 
+      error: 'Errore interrogazione schema',
+      details: error.message 
+    }, 500)
+  }
+})
+
 // POST /api/create-payment-intent - Crea un Payment Intent Stripe per il pagamento
 app.post('/api/create-payment-intent', async (c) => {
   try {
