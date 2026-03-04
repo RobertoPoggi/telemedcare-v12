@@ -420,10 +420,10 @@
                 console.log('🔑 [STRIPE] Risposta API:', keyData);
                 
                 if (!keyData.success || !keyData.publishableKey) {
-                    console.warn('❌ [STRIPE] Non configurato, solo bonifico disponibile. Errore:', keyData.error || 'Nessuna chiave');
-                    // Passa automaticamente al tab bonifico
+                    console.error('❌ [STRIPE] Chiave non disponibile:', keyData.error || 'Nessuna chiave');
+                    // Mostra errore ma lascia disponibile il bonifico
+                    alert('⚠️ Pagamento con carta temporaneamente non disponibile.\n\nPuoi procedere con bonifico bancario.');
                     switchTab('bonifico');
-                    // Nascondi il tab carta
                     document.querySelector('[data-tab="card"]').style.display = 'none';
                     return;
                 }
@@ -432,8 +432,10 @@
                 
                 // Inizializza Stripe.js
                 stripe = Stripe(keyData.publishableKey);
+                console.log('✅ [STRIPE] Stripe.js inizializzato');
                 
                 // Crea il Payment Intent
+                console.log('💳 [STRIPE] Creazione Payment Intent per proforma:', proformaId);
                 const piResponse = await fetch('/api/create-payment-intent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -441,12 +443,14 @@
                 });
                 
                 const piData = await piResponse.json();
+                console.log('💳 [STRIPE] Risposta Payment Intent:', piData);
                 
                 if (!piData.success || !piData.clientSecret) {
                     throw new Error(piData.error || 'Errore creazione Payment Intent');
                 }
                 
                 clientSecret = piData.clientSecret;
+                console.log('✅ [STRIPE] Payment Intent creato, client secret ricevuto');
                 
                 // Crea gli elementi Stripe
                 elements = stripe.elements();
@@ -468,6 +472,7 @@
                 });
                 
                 cardElement.mount('#card-element');
+                console.log('✅ [STRIPE] Form carta montato correttamente');
                 
                 // Gestisci errori in tempo reale
                 cardElement.on('change', function(event) {
@@ -483,11 +488,15 @@
                 const form = document.getElementById('payment-form');
                 form.addEventListener('submit', handlePaymentSubmit);
                 
+                console.log('🎉 [STRIPE] Inizializzazione completa! Form pronto per l\'uso.');
+                
             } catch (error) {
-                console.error('Errore inizializzazione Stripe:', error);
-                // In caso di errore, mostra solo il bonifico
+                console.error('❌ [STRIPE] Errore inizializzazione:', error);
+                alert(`⚠️ Errore inizializzazione pagamento con carta:\n\n${error.message}\n\nPuoi procedere con bonifico bancario.`);
+                // In caso di errore, mostra il bonifico come alternativa
                 switchTab('bonifico');
-                document.querySelector('[data-tab="card"]').style.display = 'none';
+                // NON nascondere il tab carta, lascia la possibilità di riprovare
+                // document.querySelector('[data-tab="card"]').style.display = 'none';
             }
         }
 
