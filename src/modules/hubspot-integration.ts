@@ -36,6 +36,11 @@ export interface HubSpotContact {
     servizio_richiesto?: string
     piano_selezionato?: string
     note_assistito?: string
+    note_aggiuntive?: string  // ✅ FIX: Campo note aggiuntive
+    notes?: string            // ✅ FIX: Note generiche
+    message?: string          // ✅ FIX: Messaggio/Note dal form
+    condizioni_salute?: string // ✅ FIX: Condizioni salute
+    note?: string             // ✅ FIX: Note standard HubSpot
     vuole_contratto?: string
     vuole_brochure?: string
     [key: string]: any
@@ -210,7 +215,14 @@ export class HubSpotClient {
       'servizio_ecura', // ✅ Custom property: FAMILY/PRO/PREMIUM
       'piano_ecura', // ✅ Custom property: BASE/AVANZATO
       'servizio_di_interesse', // ✅ Campo alternativo da form ecura.it
-      'piano_desiderato' // ✅ Campo alternativo da form ecura.it
+      'piano_desiderato', // ✅ Campo alternativo da form ecura.it
+      // ✅ FIX: Aggiunti campi note/messaggio per importazione
+      'note_assistito', // Note aggiuntive assistito
+      'note_aggiuntive', // Note aggiuntive (nome alternativo)
+      'notes', // Note generiche
+      'message', // Messaggio/Note dal form
+      'condizioni_salute', // Condizioni salute assistito
+      'note' // Note standard HubSpot
     ]
     
     const body = {
@@ -401,6 +413,16 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     // Prezzi restano NULL
   }
   
+  // ✅ DEBUG: Log campi note disponibili da HubSpot
+  console.log(`📝 [HUBSPOT MAPPING] Campi note disponibili:`, {
+    note_assistito: props.note_assistito || '(vuoto)',
+    note_aggiuntive: props.note_aggiuntive || '(vuoto)',
+    notes: props.notes || '(vuoto)',
+    message: props.message || '(vuoto)',
+    condizioni_salute: props.condizioni_salute || '(vuoto)',
+    note: props.note || '(vuoto)'
+  })
+  
   // Status mapping
   const statusMap: Record<string, string> = {
     'new': 'NEW',
@@ -452,7 +474,14 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     external_source_id: contact.id,
     
     // Metadata
-    note: props.note_assistito || `Importato da HubSpot - ID: ${contact.id}`,
+    // ✅ FIX: Cerca note in tutti i possibili campi HubSpot (con fallback)
+    note: props.note_assistito 
+      || props.note_aggiuntive 
+      || props.notes 
+      || props.message 
+      || props.condizioni_salute 
+      || props.note 
+      || `Importato da HubSpot - ID: ${contact.id}`,
     
     // Richieste documentazione
     // ✅ SEMPRE SI per lead da Form eCura (import automatico)
