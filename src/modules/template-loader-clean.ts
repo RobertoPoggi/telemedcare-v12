@@ -34,26 +34,34 @@ export async function loadEmailTemplate(
   
   // 🔄 FALLBACK: Carica da file statico
   const baseUrl = getBaseUrl(env)
-  const templatePath = `/templates/email/${templateName}.html`
-  const templateUrl = `${baseUrl}${templatePath}`
   
-  console.log(`📂 [TEMPLATE] Loading from file: ${templateUrl}`)
+  // ✅ Cloudflare Pages rimuove .html automaticamente, prova prima senza .html
+  const pathsToTry = [
+    `/templates/email/${templateName}`,        // Senza .html (Cloudflare Pages)
+    `/templates/email/${templateName}.html`    // Con .html (fallback)
+  ]
   
-  try {
-    const response = await fetch(templateUrl)
+  for (const templatePath of pathsToTry) {
+    const templateUrl = `${baseUrl}${templatePath}`
+    console.log(`📂 [TEMPLATE] Tentativo caricamento da: ${templateUrl}`)
     
-    if (!response.ok) {
-      throw new Error(`Template not found: HTTP ${response.status}`)
+    try {
+      const response = await fetch(templateUrl)
+      
+      if (response.ok) {
+        const html = await response.text()
+        console.log(`✅ [TEMPLATE] Caricato da file: "${templateName}" (${html.length} chars) - URL: ${templateUrl}`)
+        return html
+      } else {
+        console.log(`⚠️ [TEMPLATE] HTTP ${response.status} su ${templateUrl}`)
+      }
+    } catch (error) {
+      console.log(`⚠️ [TEMPLATE] Errore fetch su ${templateUrl}:`, error)
     }
-    
-    const html = await response.text()
-    console.log(`✅ [TEMPLATE] Loaded from file: "${templateName}" (${html.length} chars)`)
-    return html
-    
-  } catch (error) {
-    console.error(`❌ [TEMPLATE] Error loading "${templateName}":`, error)
-    throw new Error(`Template "${templateName}" not found in DB or at ${templateUrl}`)
   }
+  
+  // Se nessun path ha funzionato, errore
+  throw new Error(`Template "${templateName}" not found in DB or at ${pathsToTry.join(', ')}`)
 }
 
 /**
