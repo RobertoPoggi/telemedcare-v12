@@ -1677,16 +1677,68 @@ export async function inviaEmailConfigurazionePostPagamento(
     console.log(`🔗 [WORKFLOW] Token configurazione generato: ${configToken}`)
     console.log(`🔗 [WORKFLOW] URL form configurazione: ${configUrl}`)
     
-    // Carica template email_configurazione.html
-    const emailTemplatePath = `${process.cwd()}/templates/email_configurazione.html`
+    // ✅ Carica template email_configurazione (dalla tabella DB o file statico)
     let emailHtml = ''
     
     try {
-      emailHtml = await Bun.file(emailTemplatePath).text()
-    } catch (err) {
-      // Fallback: prova in public/templates
-      const fallbackPath = `${process.cwd()}/public/templates/email/email_configurazione.html`
-      emailHtml = await Bun.file(fallbackPath).text()
+      // Prova a caricare dal DB (se esiste un record email_templates)
+      const templateRecord = await db.prepare(`
+        SELECT content FROM email_templates WHERE name = 'email_configurazione' LIMIT 1
+      `).first() as any
+      
+      if (templateRecord && templateRecord.content) {
+        emailHtml = templateRecord.content
+        console.log(`✅ [WORKFLOW] Template caricato dal DB`)
+      } else {
+        // Fallback: usa template inline (HTML embedded)
+        console.log(`⚠️ [WORKFLOW] Template non trovato nel DB, uso template inline`)
+        emailHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurazione Dispositivo</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; }
+    .content { padding: 40px 30px; }
+    .btn { display: inline-block; background: #0066CC; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+    .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔧 Configura il tuo dispositivo</h1>
+    </div>
+    <div class="content">
+      <p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+      <p>Il pagamento è stato ricevuto con successo!</p>
+      <p><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}<br>
+         <strong>Servizio:</strong> {{SERVIZIO}} - Piano {{PIANO}}</p>
+      <p>Per completare l'attivazione, configura il tuo dispositivo cliccando sul pulsante:</p>
+      <p style="text-align: center;">
+        <a href="{{LINK_CONFIGURAZIONE}}" class="btn">Configura Dispositivo</a>
+      </p>
+      <p>Oppure copia questo link nel browser:<br>
+         <a href="{{LINK_CONFIGURAZIONE}}">{{LINK_CONFIGURAZIONE}}</a></p>
+    </div>
+    <div class="footer">
+      <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
+         P.IVA: 12435130963 | Email: info@telemedcare.it</p>
+    </div>
+  </div>
+</body>
+</html>
+        `
+      }
+    } catch (err: any) {
+      console.error(`❌ [WORKFLOW] Errore caricamento template:`, err)
+      result.errors.push(`Errore caricamento template: ${err.message}`)
+      return result
     }
     
     // Sostituisci placeholder nell'email
