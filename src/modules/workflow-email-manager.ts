@@ -1732,7 +1732,9 @@ export async function inviaEmailConfigurazionePostPagamento(
     console.log(`📧 [WORKFLOW] HTML length: ${emailHtml.length} chars`)
     console.log(`📧 [WORKFLOW] Link configurazione incluso: ${emailHtml.includes(configUrl)}`)
     
-    const sendResult = await sendEmail(env, {
+    // ✅ Crea istanza EmailService e invia
+    const emailService = new EmailService(env)
+    const sendResult = await emailService.sendEmail({
       to: clientData.email,
       from: 'info@telemedcare.it',
       subject: `🔧 Configura il tuo dispositivo ${servizio}`,
