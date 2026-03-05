@@ -529,9 +529,13 @@
                 
                 if (paymentIntent.status === 'succeeded') {
                     console.log('✅ [STRIPE] Pagamento completato:', paymentIntent.id);
+                    
+                    // 🔄 Mostra loader durante elaborazione backend
+                    buttonText.innerHTML = '<span class="loading"></span> Pagamento confermato, invio email in corso...';
                     console.log('📤 [BACKEND] Notifica backend pagamento avvenuto...');
                     
                     // ✅ NOTIFICA BACKEND: Registra pagamento e avvia workflow post-pagamento
+                    // ⚠️ IMPORTANTE: Attendere PRIMA di mostrare il messaggio di successo
                     try {
                         const backendResponse = await fetch('/api/payments', {
                             method: 'POST',
@@ -551,16 +555,18 @@
                         
                         if (!backendData.success) {
                             console.warn('⚠️ [BACKEND] Pagamento registrato su Stripe ma errore backend:', backendData.error);
-                            // Mostra comunque successo all'utente, il pagamento è andato a buon fine
+                            console.warn('⚠️ [BACKEND] Debug:', backendData);
+                            // Pagamento OK, mostra successo anche se email fallisce
                         } else {
                             console.log('✅ [BACKEND] Workflow post-pagamento completato');
+                            console.log('✅ [BACKEND] Email inviate:', backendData.data?.emailsSent);
                         }
                     } catch (backendError) {
                         console.error('❌ [BACKEND] Errore notifica:', backendError);
-                        // Non blocchiamo, il pagamento è comunque riuscito
+                        console.error('⚠️ Il pagamento è stato elaborato ma potrebbe esserci un problema con l\'invio delle email');
                     }
                     
-                    // Mostra messaggio successo all'utente
+                    // ✅ ORA mostra messaggio successo (DOPO che backend ha completato)
                     document.getElementById('proformaDetails').style.display = 'none';
                     document.getElementById('successMessage').style.display = 'block';
                     
