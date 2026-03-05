@@ -1677,63 +1677,21 @@ export async function inviaEmailConfigurazionePostPagamento(
     console.log(`🔗 [WORKFLOW] Token configurazione generato: ${configToken}`)
     console.log(`🔗 [WORKFLOW] URL form configurazione: ${configUrl}`)
     
-    // ✅ Carica template email_configurazione (dalla tabella DB o file statico)
+    // ✅ Carica template email_configurazione.html come asset statico
+    // In Cloudflare Workers, i file in public/ sono accessibili come fetch()
     let emailHtml = ''
     
     try {
-      // Prova a caricare dal DB (se esiste un record email_templates)
-      const templateRecord = await db.prepare(`
-        SELECT content FROM email_templates WHERE name = 'email_configurazione' LIMIT 1
-      `).first() as any
+      // Fetch template da public/templates/email/
+      const templateUrl = `${env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/templates/email/email_configurazione.html`
+      const templateResponse = await fetch(templateUrl)
       
-      if (templateRecord && templateRecord.content) {
-        emailHtml = templateRecord.content
-        console.log(`✅ [WORKFLOW] Template caricato dal DB`)
+      if (templateResponse.ok) {
+        emailHtml = await templateResponse.text()
+        console.log(`✅ [WORKFLOW] Template caricato da: ${templateUrl}`)
       } else {
-        // Fallback: usa template inline (HTML embedded)
-        console.log(`⚠️ [WORKFLOW] Template non trovato nel DB, uso template inline`)
-        emailHtml = `
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Configurazione Dispositivo</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; }
-    .header { background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%); color: white; padding: 40px 30px; text-align: center; }
-    .header h1 { margin: 0; font-size: 28px; }
-    .content { padding: 40px 30px; }
-    .btn { display: inline-block; background: #0066CC; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-    .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🔧 Configura il tuo dispositivo</h1>
-    </div>
-    <div class="content">
-      <p>Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
-      <p>Il pagamento è stato ricevuto con successo!</p>
-      <p><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}<br>
-         <strong>Servizio:</strong> {{SERVIZIO}} - Piano {{PIANO}}</p>
-      <p>Per completare l'attivazione, configura il tuo dispositivo cliccando sul pulsante:</p>
-      <p style="text-align: center;">
-        <a href="{{LINK_CONFIGURAZIONE}}" class="btn">Configura Dispositivo</a>
-      </p>
-      <p>Oppure copia questo link nel browser:<br>
-         <a href="{{LINK_CONFIGURAZIONE}}">{{LINK_CONFIGURAZIONE}}</a></p>
-    </div>
-    <div class="footer">
-      <p>Medica GB S.r.l. - Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
-         P.IVA: 12435130963 | Email: info@telemedcare.it</p>
-    </div>
-  </div>
-</body>
-</html>
-        `
+        console.error(`❌ [WORKFLOW] Template non trovato: ${templateResponse.status}`)
+        throw new Error(`Template non accessibile: ${templateResponse.status}`)
       }
     } catch (err: any) {
       console.error(`❌ [WORKFLOW] Errore caricamento template:`, err)
@@ -1747,6 +1705,7 @@ export async function inviaEmailConfigurazionePostPagamento(
     const codiceCliente = clientData.codiceCliente || 'N/A'
     const servizio = clientData.servizio || 'eCura'
     const piano = clientData.piano || 'BASE'
+    const dispositivo = servizio // Es: "eCura PREMIUM" diventa il nome dispositivo
     
     emailHtml = emailHtml
       .replace(/{{NOME_CLIENTE}}/g, nomeCliente)
@@ -1754,9 +1713,28 @@ export async function inviaEmailConfigurazionePostPagamento(
       .replace(/{{CODICE_CLIENTE}}/g, codiceCliente)
       .replace(/{{SERVIZIO}}/g, servizio)
       .replace(/{{PIANO}}/g, piano)
+      .replace(/{{DISPOSITIVO}}/g, dispositivo)
       .replace(/{{LINK_CONFIGURAZIONE}}/g, configUrl)
       .replace(/{{EMAIL_CLIENTE}}/g, clientData.email)
       .replace(/{{TELEFONO_CLIENTE}}/g, clientData.telefono || '')
+    
+    // ✅ Se il template non contiene il link, aggiungilo prima del footer
+    if (!emailHtml.includes(configUrl) && !emailHtml.includes('{{LINK_CONFIGURAZIONE}}')) {
+      console.warn(`⚠️ [WORKFLOW] Template non contiene link configurazione, lo aggiungo`)
+      const linkButton = `
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background: #ecf6ff; border-radius: 8px;">
+          <h3 style="color: #094ec0; margin-bottom: 15px;">🔧 Compila il Form di Configurazione</h3>
+          <a href="${configUrl}" style="display: inline-block; background: #094ec0; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Configura Ora
+          </a>
+          <p style="margin-top: 15px; font-size: 12px; color: #666;">
+            Oppure copia questo link: <a href="${configUrl}">${configUrl}</a>
+          </p>
+        </div>
+      `
+      // Inserisci prima del footer (cerca tag comuni di chiusura)
+      emailHtml = emailHtml.replace('</body>', linkButton + '</body>')
+    }
     
     // Invia email
     const sendResult = await sendEmail(env, {
