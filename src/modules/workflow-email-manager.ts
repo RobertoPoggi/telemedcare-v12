@@ -1677,22 +1677,12 @@ export async function inviaEmailConfigurazionePostPagamento(
     console.log(`🔗 [WORKFLOW] Token configurazione generato: ${configToken}`)
     console.log(`🔗 [WORKFLOW] URL form configurazione: ${configUrl}`)
     
-    // ✅ Carica template email_configurazione.html come asset statico
-    // In Cloudflare Workers, i file in public/ sono accessibili come fetch()
+    // ✅ Carica template email_configurazione.html usando loadEmailTemplate (DB o fallback file)
     let emailHtml = ''
     
     try {
-      // Fetch template da public/templates/email/
-      const templateUrl = `${env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/templates/email/email_configurazione.html`
-      const templateResponse = await fetch(templateUrl)
-      
-      if (templateResponse.ok) {
-        emailHtml = await templateResponse.text()
-        console.log(`✅ [WORKFLOW] Template caricato da: ${templateUrl}`)
-      } else {
-        console.error(`❌ [WORKFLOW] Template non trovato: ${templateResponse.status}`)
-        throw new Error(`Template non accessibile: ${templateResponse.status}`)
-      }
+      emailHtml = await loadEmailTemplate('email_configurazione', db, env)
+      console.log(`✅ [WORKFLOW] Template email_configurazione caricato (${emailHtml.length} chars)`)
     } catch (err: any) {
       console.error(`❌ [WORKFLOW] Errore caricamento template:`, err)
       result.errors.push(`Errore caricamento template: ${err.message}`)
