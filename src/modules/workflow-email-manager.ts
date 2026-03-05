@@ -1727,11 +1727,22 @@ export async function inviaEmailConfigurazionePostPagamento(
     }
     
     // Invia email
+    console.log(`📧 [WORKFLOW] Invio email configurazione a: ${clientData.email}`)
+    console.log(`📧 [WORKFLOW] Subject: 🔧 Configura il tuo dispositivo ${servizio}`)
+    console.log(`📧 [WORKFLOW] HTML length: ${emailHtml.length} chars`)
+    console.log(`📧 [WORKFLOW] Link configurazione incluso: ${emailHtml.includes(configUrl)}`)
+    
     const sendResult = await sendEmail(env, {
       to: clientData.email,
       from: 'info@telemedcare.it',
       subject: `🔧 Configura il tuo dispositivo ${servizio}`,
       html: emailHtml
+    })
+    
+    console.log(`📧 [WORKFLOW] Risultato sendEmail:`, {
+      success: sendResult.success,
+      messageId: sendResult.messageId,
+      error: sendResult.error
     })
 
     if (sendResult.success) {

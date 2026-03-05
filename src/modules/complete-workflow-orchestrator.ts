@@ -529,6 +529,12 @@ export async function processPayment(
     const codiceCliente = await generateCodiceCliente(ctx.db, ctx.leadData.id)
 
     // 3.4: ✅ Invia SOLO email configurazione post-pagamento (template CORRETTO)
+    console.log(`📧 [ORCHESTRATOR] Preparazione invio email configurazione...`)
+    console.log(`   → Lead ID: ${ctx.leadData.id}`)
+    console.log(`   → Email: ${ctx.leadData.email}`)
+    console.log(`   → Codice Cliente: ${codiceCliente}`)
+    console.log(`   → Servizio: ${ctx.leadData.pacchetto}`)
+    
     const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(
       { 
         ...ctx.leadData, 
@@ -539,6 +545,12 @@ export async function processPayment(
       ctx.env,
       ctx.db
     )
+    
+    console.log(`📧 [ORCHESTRATOR] Risultato email configurazione:`, {
+      success: emailConfigResult.success,
+      errors: emailConfigResult.errors,
+      emailsSent: emailConfigResult.emailsSent
+    })
 
     if (emailConfigResult.success) {
       result.success = true
