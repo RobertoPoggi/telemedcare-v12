@@ -8118,6 +8118,57 @@ app.post('/api/webhooks/docusign', async (c) => {
   }
 })
 
+// 🧪 TEMP: Reset proforma status per testing (SOLO TEST-ENVIRONMENT)
+app.post('/api/test/reset-proforma/:numero', async (c) => {
+  try {
+    const numero = c.req.param('numero')
+    const db = c.env.DB
+    
+    if (!db) {
+      return c.json({ success: false, error: 'DB non configurato' }, 500)
+    }
+    
+    // Verifica che sia test-environment
+    const branch = c.env.CF_PAGES_BRANCH || 'unknown'
+    if (branch !== 'test-environment' && branch !== 'preview') {
+      return c.json({ 
+        success: false, 
+        error: 'Endpoint disponibile SOLO su test-environment',
+        branch 
+      }, 403)
+    }
+    
+    // Reset status a SENT
+    const updateResult = await db.prepare(`
+      UPDATE proforma 
+      SET status = 'SENT', updated_at = datetime('now')
+      WHERE numero_proforma = ?
+    `).bind(numero).run()
+    
+    // Verifica proforma aggiornata
+    const proforma = await db.prepare(`
+      SELECT numero_proforma, status, prezzo_totale, cliente_email 
+      FROM proforma 
+      WHERE numero_proforma = ?
+    `).bind(numero).first()
+    
+    if (!proforma) {
+      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: 'Proforma resettata a status SENT',
+      proforma,
+      updated: updateResult.meta.changes
+    })
+    
+  } catch (error: any) {
+    console.error('❌ [TEST] Errore reset proforma:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // POST /api/webhooks/stripe - Webhook Stripe per eventi pagamento (PASSO 4)
 app.post('/api/webhooks/stripe', async (c) => {
   try {
