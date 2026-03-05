@@ -535,7 +535,9 @@
                     console.log('📤 [BACKEND] Notifica backend pagamento avvenuto...');
                     
                     // ✅ NOTIFICA BACKEND: Registra pagamento e avvia workflow post-pagamento
-                    // ⚠️ IMPORTANTE: Attendere PRIMA di mostrare il messaggio di successo
+                    let backendSuccess = false;
+                    let backendError = null;
+                    
                     try {
                         const backendResponse = await fetch('/api/payments', {
                             method: 'POST',
@@ -546,29 +548,59 @@
                                 metodoPagamento: 'stripe',
                                 transactionId: paymentIntent.id,
                                 stripePaymentIntentId: paymentIntent.id,
-                                autoConfirm: true  // ✅ Conferma automatica pagamento Stripe
+                                autoConfirm: true
                             })
                         });
                         
+                        console.log('📥 [BACKEND] Status HTTP:', backendResponse.status);
+                        
                         const backendData = await backendResponse.json();
-                        console.log('📥 [BACKEND] Risposta:', backendData);
+                        console.log('📥 [BACKEND] Risposta completa:', JSON.stringify(backendData, null, 2));
                         
                         if (!backendData.success) {
-                            console.warn('⚠️ [BACKEND] Pagamento registrato su Stripe ma errore backend:', backendData.error);
-                            console.warn('⚠️ [BACKEND] Debug:', backendData);
-                            // Pagamento OK, mostra successo anche se email fallisce
+                            console.error('❌ [BACKEND] Errore backend:', backendData.error);
+                            console.error('❌ [BACKEND] Errori:', backendData.errors);
+                            console.error('❌ [BACKEND] Debug:', backendData.debug);
+                            backendError = backendData.error || 'Errore sconosciuto';
                         } else {
+                            backendSuccess = true;
                             console.log('✅ [BACKEND] Workflow post-pagamento completato');
+                            console.log('✅ [BACKEND] Payment ID:', backendData.data?.paymentId);
+                            console.log('✅ [BACKEND] Codice cliente:', backendData.data?.codiceCliente);
                             console.log('✅ [BACKEND] Email inviate:', backendData.data?.emailsSent);
                         }
                     } catch (backendError) {
-                        console.error('❌ [BACKEND] Errore notifica:', backendError);
-                        console.error('⚠️ Il pagamento è stato elaborato ma potrebbe esserci un problema con l\'invio delle email');
+                        console.error('❌ [BACKEND] Eccezione:', backendError);
+                        backendError = backendError.message || 'Errore di rete';
                     }
                     
-                    // ✅ ORA mostra messaggio successo (DOPO che backend ha completato)
+                    // ✅ Mostra risultato finale
                     document.getElementById('proformaDetails').style.display = 'none';
-                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    if (backendSuccess) {
+                        // Workflow completato con successo
+                        document.getElementById('successMessage').style.display = 'block';
+                    } else {
+                        // Pagamento OK ma workflow fallito - mostra avviso
+                        const successDiv = document.getElementById('successMessage');
+                        successDiv.innerHTML = `
+                            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px;">
+                                <h3 style="color: #856404; margin: 0 0 10px 0;">⚠️ Pagamento Ricevuto</h3>
+                                <p style="color: #856404; margin: 0;">
+                                    Il pagamento è stato elaborato con successo, ma c'è stato un problema tecnico nell'invio della email di configurazione.
+                                </p>
+                                <p style="color: #856404; margin: 10px 0 0 0;">
+                                    <strong>Riceverai comunque le istruzioni via email entro 24 ore.</strong>
+                                    <br/>Per assistenza immediata contatta: info@telemedcare.it
+                                </p>
+                                <details style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; color: #856404;">Dettagli tecnici (per supporto)</summary>
+                                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; overflow: auto;">${backendError || 'Errore sconosciuto'}</pre>
+                                </details>
+                            </div>
+                        `;
+                        successDiv.style.display = 'block';
+                    }
                     
                 } else {
                     throw new Error('Pagamento non completato. Stato: ' + paymentIntent.status);
