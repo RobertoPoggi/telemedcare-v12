@@ -28,6 +28,23 @@ import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
 import { formatServiceName } from './ecura-pricing'
 import { getMissingFields, isLeadComplete } from './lead-completion'
 import { getSetting } from './settings-api'
+
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+
+/**
+ * Genera un token sicuro per il form configurazione
+ */
+function generateToken(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let token = ''
+  for (let i = 0; i < 32; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return token
+}
+
 import { getBaseUrl } from './url-helper'
 
 /**
@@ -1615,6 +1632,106 @@ export async function inviaEmailConfermaAttivazione(
   return result
 }
 
+/**
+ * ✅ FUNZIONE CORRETTA: Invia email configurazione dispositivo DOPO PAGAMENTO
+ * Usa i template CORRETTI specificati dall'utente:
+ * - Email: templates/email_configurazione.html  
+ * - Form: templates/forms/form_configurazione.html
+ */
+export async function inviaEmailConfigurazionePostPagamento(
+  clientData: {
+    id: string
+    nomeRichiedente: string
+    cognomeRichiedente: string
+    email: string
+    telefono?: string
+    nomeAssistito?: string
+    cognomeAssistito?: string
+    codiceCliente?: string
+    servizio?: string
+    piano?: string
+  },
+  env: any,
+  db: any
+): Promise<EmailResult> {
+  const result: EmailResult = {
+    success: false,
+    errors: [],
+    emailsSent: [],
+    messageIds: []
+  }
+
+  try {
+    console.log(`📧 [WORKFLOW] INVIO EMAIL CONFIGURAZIONE POST-PAGAMENTO per ${clientData.email}`)
+    
+    // Genera token per il form configurazione
+    const configToken = generateToken()
+    const configUrl = `${env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/form-configurazione?token=${configToken}&leadId=${clientData.id}`
+    
+    // Salva token nel DB
+    await db.prepare(`
+      INSERT INTO lead_completion_tokens (token, lead_id, expires_at, created_at)
+      VALUES (?, ?, datetime('now', '+30 days'), datetime('now'))
+    `).bind(configToken, clientData.id).run()
+    
+    console.log(`🔗 [WORKFLOW] Token configurazione generato: ${configToken}`)
+    console.log(`🔗 [WORKFLOW] URL form configurazione: ${configUrl}`)
+    
+    // Carica template email_configurazione.html
+    const emailTemplatePath = `${process.cwd()}/templates/email_configurazione.html`
+    let emailHtml = ''
+    
+    try {
+      emailHtml = await Bun.file(emailTemplatePath).text()
+    } catch (err) {
+      // Fallback: prova in public/templates
+      const fallbackPath = `${process.cwd()}/public/templates/email/email_configurazione.html`
+      emailHtml = await Bun.file(fallbackPath).text()
+    }
+    
+    // Sostituisci placeholder nell'email
+    const nomeCliente = clientData.nomeRichiedente || 'Cliente'
+    const cognomeCliente = clientData.cognomeRichiedente || ''
+    const codiceCliente = clientData.codiceCliente || 'N/A'
+    const servizio = clientData.servizio || 'eCura'
+    const piano = clientData.piano || 'BASE'
+    
+    emailHtml = emailHtml
+      .replace(/{{NOME_CLIENTE}}/g, nomeCliente)
+      .replace(/{{COGNOME_CLIENTE}}/g, cognomeCliente)
+      .replace(/{{CODICE_CLIENTE}}/g, codiceCliente)
+      .replace(/{{SERVIZIO}}/g, servizio)
+      .replace(/{{PIANO}}/g, piano)
+      .replace(/{{LINK_CONFIGURAZIONE}}/g, configUrl)
+      .replace(/{{EMAIL_CLIENTE}}/g, clientData.email)
+      .replace(/{{TELEFONO_CLIENTE}}/g, clientData.telefono || '')
+    
+    // Invia email
+    const sendResult = await sendEmail(env, {
+      to: clientData.email,
+      from: 'info@telemedcare.it',
+      subject: `🔧 Configura il tuo dispositivo ${servizio}`,
+      html: emailHtml
+    })
+
+    if (sendResult.success) {
+      result.success = true
+      result.emailsSent.push(`email_configurazione_post_pagamento -> ${clientData.email}`)
+      result.messageIds = [sendResult.messageId]
+      console.log(`✅ [WORKFLOW] Email configurazione post-pagamento inviata: ${sendResult.messageId}`)
+    } else {
+      result.errors.push(`Errore invio email configurazione: ${sendResult.error}`)
+      console.error(`❌ [WORKFLOW] Errore invio email configurazione:`, sendResult.error)
+    }
+
+  } catch (error: any) {
+    result.errors.push(`Eccezione invio email configurazione: ${error.message}`)
+    console.error(`❌ [WORKFLOW] Eccezione invio email configurazione:`, error)
+  }
+
+  return result
+}
+
 export default {
   inviaEmailNotificaInfo,
   inviaEmailDocumentiInformativi,
@@ -1622,5 +1739,6 @@ export default {
   inviaEmailProforma,
   inviaEmailBenvenuto,
   inviaEmailConfigurazione,
+  inviaEmailConfigurazionePostPagamento,
   inviaEmailConfermaAttivazione
 }

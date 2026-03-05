@@ -528,40 +528,36 @@ export async function processPayment(
     // 3.3: Genera codice cliente
     const codiceCliente = await generateCodiceCliente(ctx.db, ctx.leadData.id)
 
-    // 3.4: Invia email benvenuto con form configurazione
-    const emailResult = await WorkflowEmailManager.inviaEmailBenvenuto(
-      { ...ctx.leadData, codiceCliente },
-      ctx.env,
-      ctx.db
-    )
-    
-    // 3.5: Invia email separata con link form configurazione
-    const emailFormResult = await WorkflowEmailManager.inviaEmailFormConfigurazione(
-      { ...ctx.leadData, codiceCliente },
+    // 3.4: ✅ Invia SOLO email configurazione post-pagamento (template CORRETTO)
+    const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(
+      { 
+        ...ctx.leadData, 
+        codiceCliente,
+        servizio: ctx.leadData.pacchetto,  // es. "eCura PREMIUM"
+        piano: ctx.leadData.pacchetto === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+      },
       ctx.env,
       ctx.db
     )
 
-    if (emailResult.success && emailFormResult.success) {
+    if (emailConfigResult.success) {
       result.success = true
-      result.message = 'Pagamento registrato, email benvenuto e form configurazione inviati'
+      result.message = 'Pagamento registrato, email configurazione inviata'
       result.data = {
         paymentId: paymentResult.paymentId,
         codiceCliente,
-        emailsSent: [...emailResult.emailsSent, ...emailFormResult.emailsSent]
-      }
-    } else if (emailResult.success) {
-      result.success = true
-      result.message = 'Pagamento registrato, email benvenuto inviata (errore form configurazione)'
-      result.errors.push(...emailFormResult.errors)
-      result.data = {
-        paymentId: paymentResult.paymentId,
-        codiceCliente,
-        emailsSent: emailResult.emailsSent
+        emailsSent: emailConfigResult.emailsSent
       }
     } else {
-      result.errors.push(...emailResult.errors, ...emailFormResult.errors)
-      result.message = 'Errore invio email benvenuto'
+      // Email fallita ma pagamento registrato
+      result.success = true  // Pagamento OK anche se email fallisce
+      result.message = 'Pagamento registrato (errore invio email configurazione)'
+      result.errors.push(...emailConfigResult.errors)
+      result.data = {
+        paymentId: paymentResult.paymentId,
+        codiceCliente,
+        emailsSent: []
+      }
     }
 
     // Aggiorna status lead
@@ -569,7 +565,7 @@ export async function processPayment(
 
     console.log(`✅ [ORCHESTRATOR] STEP 3 completato: ${result.message}`)
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(`❌ [ORCHESTRATOR] Errore STEP 3:`, error)
     result.message = `Errore processamento pagamento: ${error.message}`
     result.errors.push(error.message)
