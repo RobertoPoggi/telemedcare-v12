@@ -9570,7 +9570,24 @@ app.post('/api/configurations/submit', async (c) => {
   console.log('📥 [CONFIG SUBMIT] Ricevuta richiesta submit configurazione')
   
   try {
-    const data = await c.req.json()
+    // ✅ Leggi il body raw per debugging
+    const rawBody = await c.req.text()
+    console.log('📋 [CONFIG SUBMIT] Raw body ricevuto:', rawBody.substring(0, 200)) // Primi 200 caratteri
+    
+    // ✅ Parse JSON con gestione errori migliorata
+    let data
+    try {
+      data = JSON.parse(rawBody)
+    } catch (jsonError) {
+      console.error('❌ [CONFIG SUBMIT] Errore parsing JSON:', jsonError)
+      console.error('❌ [CONFIG SUBMIT] Raw body completo:', rawBody)
+      return c.json({
+        success: false,
+        error: 'Formato JSON non valido',
+        details: jsonError instanceof Error ? jsonError.message : String(jsonError)
+      }, 400)
+    }
+    
     const { leadId, token, ...configData } = data
     
     console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}, Token: ${token}`)

@@ -594,16 +594,36 @@
             console.log('📋 [FORM CONFIG] Dati configurazione:', data);
             
             try {
+                // ✅ Valida e pulisci JSON prima dell'invio
+                let jsonString;
+                try {
+                    jsonString = JSON.stringify(data);
+                    console.log('✅ [FORM CONFIG] JSON validato, lunghezza:', jsonString.length);
+                } catch (stringifyError) {
+                    console.error('❌ [FORM CONFIG] Errore creazione JSON:', stringifyError);
+                    alert('Errore nella preparazione dei dati. Riprova.');
+                    return;
+                }
+                
                 // ✅ Invia al backend per salvare DB e inviare email benvenuto
                 const response = await fetch('/api/configurations/submit', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json; charset=utf-8'
                     },
-                    body: JSON.stringify(data)
+                    body: jsonString
                 });
                 
-                const result = await response.json();
+                // ✅ Gestione risposta con controllo errori
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    console.error('❌ [FORM CONFIG] Errore parsing risposta:', parseError);
+                    const responseText = await response.text();
+                    console.error('❌ [FORM CONFIG] Risposta raw:', responseText);
+                    throw new Error('Errore nella risposta del server. Contatta il supporto.');
+                }
                 
                 if (result.success) {
                     console.log('✅ [FORM CONFIG] Configurazione salvata con successo');
