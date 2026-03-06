@@ -9615,6 +9615,8 @@ app.post('/api/configurations/submit', async (c) => {
       INSERT INTO configurations (
         id,
         leadId,
+        device_id,
+        contract_id,
         nome_assistito,
         cognome_assistito,
         data_nascita,
@@ -9654,7 +9656,7 @@ app.post('/api/configurations/submit', async (c) => {
         status,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     
     // Prepara array farmaci come JSON string
@@ -9689,6 +9691,8 @@ app.post('/api/configurations/submit', async (c) => {
       await db.prepare(insertQuery).bind(
         configId,
         leadId,
+        null, // device_id (non ancora assegnato)
+        null, // contract_id (non ancora assegnato)
         configData.nome || '',
         configData.cognome || '',
         configData.data_nascita || '',
