@@ -9166,8 +9166,8 @@ app.get('/api/leads/:id', async (c) => {
       return c.json({ error: 'Lead non trovato' }, 404)
     }
     
-    console.log(`✅ Lead ${id} recuperato`)
-    return c.json(lead)
+    console.log(`✅ Lead ${id} recuperato:`, lead)
+    return c.json({ success: true, lead })
   } catch (error) {
     console.error('❌ Errore recupero lead:', error)
     return c.json({ 
