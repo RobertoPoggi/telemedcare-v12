@@ -9899,6 +9899,7 @@ app.post('/api/configurations/submit', async (c) => {
     
     console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
     
+    // 🚧 TEMPORANEAMENTE DISABILITATO per debug
     // 5️⃣ Invia DUE email:
     // A) Email a info@telemedcare.it con i dati compilati
     // B) Email di benvenuto al cliente
@@ -9906,6 +9907,18 @@ app.post('/api/configurations/submit', async (c) => {
     let emailConfigSent = false
     let emailBenvenutoSent = false
     
+    console.log('⚠️ [CONFIG SUBMIT] Invio email DISABILITATO per debug')
+    
+    // ✅ Restituisci successo SENZA inviare email
+    return c.json({
+      success: true,
+      leadId: leadId,
+      emailConfigSent: false,
+      emailBenvenutoSent: false,
+      message: 'Configurazione salvata (email disabilitate per debug)'
+    })
+    
+    /* CODICE EMAIL TEMPORANEAMENTE COMMENTATO
     try {
       const WorkflowEmailManager = await import('./modules/workflow-email-manager')
       
@@ -9983,6 +9996,7 @@ app.post('/api/configurations/submit', async (c) => {
       emailBenvenutoSent,
       message: 'Configurazione salvata' + (emailConfigSent ? ', email inviata a info@' : '') + (emailBenvenutoSent ? ' e email benvenuto inviata al cliente' : '')
     })
+    */
     
   } catch (error) {
     console.error('❌ [CONFIG SUBMIT] Errore:', error)
