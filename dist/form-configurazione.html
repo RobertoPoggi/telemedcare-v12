@@ -605,8 +605,14 @@
                     return;
                 }
                 
+                // ✅ Costruisci URL completo per debugging
+                const apiUrl = '/api/configurations/submit';
+                const fullUrl = window.location.origin + apiUrl;
+                console.log('🌐 [FORM CONFIG] URL chiamata:', fullUrl);
+                console.log('🌐 [FORM CONFIG] Current location:', window.location.href);
+                
                 // ✅ Invia al backend per salvare DB e inviare email benvenuto
-                const response = await fetch('/api/configurations/submit', {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json; charset=utf-8'
