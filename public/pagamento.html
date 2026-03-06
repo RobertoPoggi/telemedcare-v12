@@ -582,15 +582,18 @@
                         document.getElementById('successMessage').style.display = 'block';
                         
                         // ✅ Chiudi automaticamente la finestra dopo 3 secondi
+                        // Se window.close() fallisce (apertura diretta URL invece di popup),
+                        // lascia l'utente sulla pagina di successo (non redirect)
                         setTimeout(() => {
-                            console.log('🔄 [AUTO-CLOSE] Chiusura automatica finestra pagamento...');
-                            window.close();
+                            console.log('🔄 [AUTO-CLOSE] Tentativo chiusura finestra pagamento...');
+                            const closed = window.close();
                             
-                            // Fallback: se window.close() non funziona (popup blocker), redirect
-                            setTimeout(() => {
-                                console.log('🔄 [AUTO-CLOSE] Redirect a pagina principale...');
-                                window.location.href = '/';
-                            }, 500);
+                            // Log per debug (window.close() ritorna undefined, non boolean)
+                            if (closed === undefined) {
+                                console.log('ℹ️ [AUTO-CLOSE] window.close() eseguito (la finestra potrebbe chiudersi se aperta come popup)');
+                            }
+                            // Se la finestra non si chiude (aperta direttamente), l'utente rimane sulla pagina di successo
+                            console.log('ℹ️ [AUTO-CLOSE] Se vedi questo messaggio, la finestra è ancora aperta. Puoi chiuderla manualmente.');
                         }, 3000);
                     } else {
                         // Pagamento OK ma workflow fallito - mostra avviso
