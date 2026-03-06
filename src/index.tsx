@@ -13661,6 +13661,77 @@ app.post('/api/db/migrate', async (c) => {
       migrations.push(`Errore fix configurations: ${error}`)
     }
 
+    // ✅ MIGRATION: Aggiungi colonne mancanti a configurations (2026-03-06)
+    try {
+      console.log('🔧 [MIGRATION] Aggiunta colonne configurations per form post-pagamento...')
+      
+      const configurationsColumns = [
+        // Dati assistito
+        { name: 'nome_assistito', type: 'TEXT' },
+        { name: 'cognome_assistito', type: 'TEXT' },
+        { name: 'data_nascita', type: 'TEXT' },
+        { name: 'eta', type: 'TEXT' },
+        { name: 'peso', type: 'REAL' },
+        { name: 'altezza', type: 'REAL' },
+        { name: 'telefono', type: 'TEXT' },
+        { name: 'email', type: 'TEXT' },
+        { name: 'indirizzo', type: 'TEXT' },
+        // Contatti emergenza nuovo formato
+        { name: 'contatto1_nome', type: 'TEXT' },
+        { name: 'contatto1_cognome', type: 'TEXT' },
+        { name: 'contatto1_telefono', type: 'TEXT' },
+        { name: 'contatto1_email', type: 'TEXT' },
+        { name: 'contatto2_nome', type: 'TEXT' },
+        { name: 'contatto2_cognome', type: 'TEXT' },
+        { name: 'contatto2_telefono', type: 'TEXT' },
+        { name: 'contatto2_email', type: 'TEXT' },
+        { name: 'contatto3_nome', type: 'TEXT' },
+        { name: 'contatto3_cognome', type: 'TEXT' },
+        { name: 'contatto3_telefono', type: 'TEXT' },
+        { name: 'contatto3_email', type: 'TEXT' },
+        // Whitelist chiamate
+        { name: 'whitelist1_nome', type: 'TEXT' },
+        { name: 'whitelist1_cognome', type: 'TEXT' },
+        { name: 'whitelist1_telefono', type: 'TEXT' },
+        { name: 'whitelist1_email', type: 'TEXT' },
+        { name: 'whitelist2_nome', type: 'TEXT' },
+        { name: 'whitelist2_cognome', type: 'TEXT' },
+        { name: 'whitelist2_telefono', type: 'TEXT' },
+        { name: 'whitelist2_email', type: 'TEXT' },
+        { name: 'whitelist3_nome', type: 'TEXT' },
+        { name: 'whitelist3_cognome', type: 'TEXT' },
+        { name: 'whitelist3_telefono', type: 'TEXT' },
+        { name: 'whitelist3_email', type: 'TEXT' },
+        // Patologie/farmaci nuovo formato
+        { name: 'patologie', type: 'TEXT' },
+        { name: 'note_mediche', type: 'TEXT' },
+        { name: 'farmaci_data', type: 'TEXT' }
+      ]
+
+      let addedCount = 0
+      let existingCount = 0
+
+      for (const col of configurationsColumns) {
+        try {
+          await c.env.DB.prepare(`
+            ALTER TABLE configurations ADD COLUMN ${col.name} ${col.type} DEFAULT ''
+          `).run()
+          console.log(`✅ [MIGRATION] Colonna ${col.name} aggiunta a configurations`)
+          addedCount++
+        } catch (error) {
+          // Colonna già esistente (normale e safe)
+          existingCount++
+        }
+      }
+
+      console.log(`✅ [MIGRATION] Configurations: ${addedCount} colonne aggiunte, ${existingCount} già esistenti`)
+      migrations.push(`Configurations: ${addedCount} colonne aggiunte, ${existingCount} esistenti`)
+
+    } catch (error) {
+      console.error('❌ [MIGRATION] Errore aggiunta colonne configurations:', error)
+      migrations.push(`Errore colonne configurations: ${error}`)
+    }
+
     return c.json({
       success: true,
       message: 'Migrazioni completate',
