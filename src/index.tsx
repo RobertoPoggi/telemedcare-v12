@@ -9669,47 +9669,70 @@ app.post('/api/configurations/submit', async (c) => {
       ? configData.patologie.join(', ') 
       : (configData.patologie || '')
     
-    await db.prepare(insertQuery).bind(
+    console.log('🔍 [DEBUG] Dati prima del bind:', {
       configId,
       leadId,
-      configData.nome || '',
-      configData.cognome || '',
-      configData.data_nascita || '',
-      configData.eta || '',
-      configData.peso || null,
-      configData.altezza || null,
-      configData.telefono || '',
-      configData.email || '',
-      configData.indirizzo || '',
-      configData.contatto1_nome || '',
-      configData.contatto1_cognome || '',
-      configData.contatto1_telefono || '',
-      configData.contatto1_email || '',
-      configData.contatto2_nome || '',
-      configData.contatto2_cognome || '',
-      configData.contatto2_telefono || '',
-      configData.contatto2_email || '',
-      configData.contatto3_nome || '',
-      configData.contatto3_cognome || '',
-      configData.contatto3_telefono || '',
-      configData.contatto3_email || '',
-      configData.whitelist1_nome || '',
-      configData.whitelist1_cognome || '',
-      configData.whitelist1_telefono || '',
-      configData.whitelist1_email || '',
-      configData.whitelist2_nome || '',
-      configData.whitelist2_cognome || '',
-      configData.whitelist2_telefono || '',
-      configData.whitelist2_email || '',
-      configData.whitelist3_nome || '',
-      configData.whitelist3_cognome || '',
-      configData.whitelist3_telefono || '',
-      configData.whitelist3_email || '',
-      patologie,
-      configData.note_aggiuntive || '',
+      nome: configData.nome,
+      cognome: configData.cognome,
+      data_nascita: configData.data_nascita,
+      eta: configData.eta,
+      peso: configData.peso,
+      altezza: configData.altezza,
+      telefono: configData.telefono,
+      email: configData.email,
+      indirizzo: configData.indirizzo,
       farmaciData,
-      'SUBMITTED'
-    ).run()
+      patologie
+    })
+    
+    try {
+      await db.prepare(insertQuery).bind(
+        configId,
+        leadId,
+        configData.nome || '',
+        configData.cognome || '',
+        configData.data_nascita || '',
+        configData.eta || '',
+        configData.peso || null,
+        configData.altezza || null,
+        configData.telefono || '',
+        configData.email || '',
+        configData.indirizzo || '',
+        configData.contatto1_nome || '',
+        configData.contatto1_cognome || '',
+        configData.contatto1_telefono || '',
+        configData.contatto1_email || '',
+        configData.contatto2_nome || '',
+        configData.contatto2_cognome || '',
+        configData.contatto2_telefono || '',
+        configData.contatto2_email || '',
+        configData.contatto3_nome || '',
+        configData.contatto3_cognome || '',
+        configData.contatto3_telefono || '',
+        configData.contatto3_email || '',
+        configData.whitelist1_nome || '',
+        configData.whitelist1_cognome || '',
+        configData.whitelist1_telefono || '',
+        configData.whitelist1_email || '',
+        configData.whitelist2_nome || '',
+        configData.whitelist2_cognome || '',
+        configData.whitelist2_telefono || '',
+        configData.whitelist2_email || '',
+        configData.whitelist3_nome || '',
+        configData.whitelist3_cognome || '',
+        configData.whitelist3_telefono || '',
+        configData.whitelist3_email || '',
+        patologie,
+        configData.note_aggiuntive || '',
+        farmaciData,
+        'SUBMITTED'
+      ).run()
+    } catch (dbError) {
+      console.error('❌ [DB INSERT ERROR] Dettaglio errore database:', dbError)
+      console.error('❌ [DB INSERT ERROR] Query:', insertQuery)
+      console.error('❌ [DB INSERT ERROR] ConfigData completo:', JSON.stringify(configData, null, 2))
+      throw new Error(`Database insert failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
+    }
     
     console.log(`✅ [CONFIG SUBMIT] Configurazione ${configId} salvata nel DB`)
     
