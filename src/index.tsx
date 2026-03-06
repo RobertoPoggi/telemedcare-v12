@@ -9564,6 +9564,7 @@ app.post('/api/leads/:id/complete', async (c) => {
       message: error instanceof Error ? error.message : String(error)
     }, 500)
   }
+})
 
 // ✅ POST /api/configurations/submit - Salva configurazione e invia email benvenuto
 app.post('/api/configurations/submit', async (c) => {
@@ -9822,8 +9823,6 @@ app.post('/api/configurations/submit', async (c) => {
       stack: error instanceof Error ? error.stack : undefined
     }, 500)
   }
-})
-
 })
 
 // 🔧 ALIAS: /api/lead/:id/complete (SINGOLARE) - Per retrocompatibilità con form email vecchi
