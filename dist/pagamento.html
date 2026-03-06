@@ -414,22 +414,28 @@
         async function initializeStripe() {
             try {
                 // Recupera la chiave pubblica Stripe
+                console.log('🔑 [STRIPE] Recupero chiave pubblica...');
                 const keyResponse = await fetch('/api/stripe-public-key');
                 const keyData = await keyResponse.json();
+                console.log('🔑 [STRIPE] Risposta API:', keyData);
                 
                 if (!keyData.success || !keyData.publishableKey) {
-                    console.warn('Stripe non configurato, solo bonifico disponibile');
-                    // Passa automaticamente al tab bonifico
+                    console.error('❌ [STRIPE] Chiave non disponibile:', keyData.error || 'Nessuna chiave');
+                    // Mostra errore ma lascia disponibile il bonifico
+                    alert('⚠️ Pagamento con carta temporaneamente non disponibile.\n\nPuoi procedere con bonifico bancario.');
                     switchTab('bonifico');
-                    // Nascondi il tab carta
                     document.querySelector('[data-tab="card"]').style.display = 'none';
                     return;
                 }
                 
+                console.log('✅ [STRIPE] Chiave pubblica ricevuta:', keyData.publishableKey.substring(0, 20) + '...');
+                
                 // Inizializza Stripe.js
                 stripe = Stripe(keyData.publishableKey);
+                console.log('✅ [STRIPE] Stripe.js inizializzato');
                 
                 // Crea il Payment Intent
+                console.log('💳 [STRIPE] Creazione Payment Intent per proforma:', proformaId);
                 const piResponse = await fetch('/api/create-payment-intent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -437,12 +443,14 @@
                 });
                 
                 const piData = await piResponse.json();
+                console.log('💳 [STRIPE] Risposta Payment Intent:', piData);
                 
                 if (!piData.success || !piData.clientSecret) {
                     throw new Error(piData.error || 'Errore creazione Payment Intent');
                 }
                 
                 clientSecret = piData.clientSecret;
+                console.log('✅ [STRIPE] Payment Intent creato, client secret ricevuto');
                 
                 // Crea gli elementi Stripe
                 elements = stripe.elements();
@@ -464,6 +472,7 @@
                 });
                 
                 cardElement.mount('#card-element');
+                console.log('✅ [STRIPE] Form carta montato correttamente');
                 
                 // Gestisci errori in tempo reale
                 cardElement.on('change', function(event) {
@@ -479,11 +488,15 @@
                 const form = document.getElementById('payment-form');
                 form.addEventListener('submit', handlePaymentSubmit);
                 
+                console.log('🎉 [STRIPE] Inizializzazione completa! Form pronto per l\'uso.');
+                
             } catch (error) {
-                console.error('Errore inizializzazione Stripe:', error);
-                // In caso di errore, mostra solo il bonifico
+                console.error('❌ [STRIPE] Errore inizializzazione:', error);
+                alert(`⚠️ Errore inizializzazione pagamento con carta:\n\n${error.message}\n\nPuoi procedere con bonifico bancario.`);
+                // In caso di errore, mostra il bonifico come alternativa
                 switchTab('bonifico');
-                document.querySelector('[data-tab="card"]').style.display = 'none';
+                // NON nascondere il tab carta, lascia la possibilità di riprovare
+                // document.querySelector('[data-tab="card"]').style.display = 'none';
             }
         }
 
@@ -515,11 +528,95 @@
                 }
                 
                 if (paymentIntent.status === 'succeeded') {
-                    // Pagamento completato!
-                    document.getElementById('proformaDetails').style.display = 'none';
-                    document.getElementById('successMessage').style.display = 'block';
+                    console.log('✅ [STRIPE] Pagamento completato:', paymentIntent.id);
                     
-                    console.log('✅ Pagamento completato:', paymentIntent.id);
+                    // 🔄 Mostra loader durante elaborazione backend
+                    buttonText.innerHTML = '<span class="loading"></span> Pagamento confermato, invio email in corso...';
+                    console.log('📤 [BACKEND] Notifica backend pagamento avvenuto...');
+                    
+                    // ✅ NOTIFICA BACKEND: Registra pagamento e avvia workflow post-pagamento
+                    let backendSuccess = false;
+                    let backendError = null;
+                    
+                    try {
+                        const backendResponse = await fetch('/api/payments', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                proformaId: proformaData.id || proformaId,
+                                importo: parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0),
+                                metodoPagamento: 'stripe',
+                                transactionId: paymentIntent.id,
+                                stripePaymentIntentId: paymentIntent.id,
+                                autoConfirm: true
+                            })
+                        });
+                        
+                        console.log('📥 [BACKEND] Status HTTP:', backendResponse.status);
+                        
+                        const backendData = await backendResponse.json();
+                        console.log('📥 [BACKEND] Risposta completa:', JSON.stringify(backendData, null, 2));
+                        
+                        if (!backendData.success) {
+                            console.error('❌ [BACKEND] Errore backend:', backendData.error);
+                            console.error('❌ [BACKEND] Errori:', backendData.errors);
+                            console.error('❌ [BACKEND] Debug:', backendData.debug);
+                            backendError = backendData.error || 'Errore sconosciuto';
+                        } else {
+                            backendSuccess = true;
+                            console.log('✅ [BACKEND] Workflow post-pagamento completato');
+                            console.log('✅ [BACKEND] Payment ID:', backendData.data?.paymentId);
+                            console.log('✅ [BACKEND] Codice cliente:', backendData.data?.codiceCliente);
+                            console.log('✅ [BACKEND] Email inviate:', backendData.data?.emailsSent);
+                        }
+                    } catch (backendError) {
+                        console.error('❌ [BACKEND] Eccezione:', backendError);
+                        backendError = backendError.message || 'Errore di rete';
+                    }
+                    
+                    // ✅ Mostra risultato finale
+                    document.getElementById('proformaDetails').style.display = 'none';
+                    
+                    if (backendSuccess) {
+                        // Workflow completato con successo
+                        document.getElementById('successMessage').style.display = 'block';
+                        
+                        // ✅ Chiudi automaticamente la finestra dopo 3 secondi
+                        // Se window.close() fallisce (apertura diretta URL invece di popup),
+                        // lascia l'utente sulla pagina di successo (non redirect)
+                        setTimeout(() => {
+                            console.log('🔄 [AUTO-CLOSE] Tentativo chiusura finestra pagamento...');
+                            const closed = window.close();
+                            
+                            // Log per debug (window.close() ritorna undefined, non boolean)
+                            if (closed === undefined) {
+                                console.log('ℹ️ [AUTO-CLOSE] window.close() eseguito (la finestra potrebbe chiudersi se aperta come popup)');
+                            }
+                            // Se la finestra non si chiude (aperta direttamente), l'utente rimane sulla pagina di successo
+                            console.log('ℹ️ [AUTO-CLOSE] Se vedi questo messaggio, la finestra è ancora aperta. Puoi chiuderla manualmente.');
+                        }, 3000);
+                    } else {
+                        // Pagamento OK ma workflow fallito - mostra avviso
+                        const successDiv = document.getElementById('successMessage');
+                        successDiv.innerHTML = `
+                            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px;">
+                                <h3 style="color: #856404; margin: 0 0 10px 0;">⚠️ Pagamento Ricevuto</h3>
+                                <p style="color: #856404; margin: 0;">
+                                    Il pagamento è stato elaborato con successo, ma c'è stato un problema tecnico nell'invio della email di configurazione.
+                                </p>
+                                <p style="color: #856404; margin: 10px 0 0 0;">
+                                    <strong>Riceverai comunque le istruzioni via email entro 24 ore.</strong>
+                                    <br/>Per assistenza immediata contatta: info@telemedcare.it
+                                </p>
+                                <details style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; color: #856404;">Dettagli tecnici (per supporto)</summary>
+                                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; overflow: auto;">${backendError || 'Errore sconosciuto'}</pre>
+                                </details>
+                            </div>
+                        `;
+                        successDiv.style.display = 'block';
+                    }
+                    
                 } else {
                     throw new Error('Pagamento non completato. Stato: ' + paymentIntent.status);
                 }
