@@ -1,15 +1,38 @@
-# 🔧 Istruzioni Migration Database - Configurazioni
+# 🔧 Istruzioni Database - Configurazioni
+
+## ⚠️ IMPORTANTE: Se tabella è vuota, USA DB_RECREATE_configurations.sql
+
+Se la tabella `configurations` è **vuota** (nessun dato), è più semplice **ricrearla** invece di fare ALTER TABLE.
 
 ## Problema
-Il form configurazione è stato aggiornato con nuovi campi:
-- **Email** per contatti emergenza (3 campi)
-- **Whitelist** chiamate autorizzate (12 campi: nome, cognome, telefono, email × 3)
+Il form configurazione usa nomi di colonne:
+- `contatto1_nome`, `contatto1_cognome`, `contatto1_telefono`, `contatto1_email`
+- `whitelist1_nome`, `whitelist1_cognome`, `whitelist1_telefono`, `whitelist1_email` (×3)
 
-Ma il database D1 **NON** ha queste colonne, quindi l'INSERT fallisce.
+Ma lo schema DB originale usa:
+- `contatto_emergenza_1_nome`, `contatto_emergenza_1_telefono`, `contatto_emergenza_1_relazione`
 
-## Soluzione
+## Soluzione - RICREAZIONE (tabella vuota)
 
-### Opzione 1: Via Cloudflare Dashboard (CONSIGLIATA)
+### ⭐ METODO RACCOMANDATO: Ricreazione Tabella (se vuota)
+
+1. Vai su https://dash.cloudflare.com
+2. Seleziona il progetto `telemedcare-v12`
+3. Vai su **Workers & Pages** → **D1 Database**
+4. Seleziona il database
+5. Vai su **Console**
+6. **Copia e incolla TUTTO il contenuto di** `DB_RECREATE_configurations.sql`
+7. Clicca **Execute**
+8. Verifica: `SELECT COUNT(*) FROM configurations;` (dovrebbe essere 0)
+
+**Vantaggi:**
+- ✅ Schema pulito e corretto
+- ✅ Nomi colonne consistenti con il codice
+- ✅ Nessun problema di compatibilità
+
+---
+
+### Opzione Alternativa: Via Cloudflare Dashboard (ALTER TABLE)
 
 1. Vai su https://dash.cloudflare.com
 2. Seleziona il progetto `telemedcare-v12`
