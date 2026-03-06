@@ -358,9 +358,6 @@
             }
         }
 
-        // Carica dati all'avvio
-        loadLeadData();
-
         // Calculate age from birth date
         document.getElementById('data_nascita').addEventListener('change', function() {
             const birthDate = new Date(this.value);
@@ -446,10 +443,16 @@
             console.log('Configuration data:', data);
         });
 
-        // Auto-calculate age on page load
+        // ✅ CARICA TUTTO DOPO CHE IL DOM È PRONTO
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 [FORM CONFIG] DOM ready, caricamento dati...');
+            
+            // ✅ Carica dati lead
+            loadLeadData();
+            
+            // ✅ Auto-calculate age on page load
             const birthDateInput = document.getElementById('data_nascita');
-            if (birthDateInput.value) {
+            if (birthDateInput && birthDateInput.value) {
                 birthDateInput.dispatchEvent(new Event('change'));
             }
         });
