@@ -9899,7 +9899,9 @@ app.post('/api/configurations/submit', async (c) => {
     
     console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
     
-    // 5️⃣ Invia email configurazione a info@telemedcare.it
+    // 5️⃣ Invia DUE email:
+    // A) Email a info@telemedcare.it con i dati compilati
+    // B) Email di benvenuto al cliente
     const WorkflowEmailManager = await import('./modules/workflow-email-manager')
     
     // ✅ Prepara lead con codiceCliente
@@ -9940,20 +9942,32 @@ app.post('/api/configurations/submit', async (c) => {
       note_aggiuntive: configData.note_aggiuntive
     }
     
-    const emailResult = await WorkflowEmailManager.inviaEmailConfigurazione(
+    // A) Invia email configurazione a info@telemedcare.it
+    const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazione(
       leadWithCode,
       configDataForEmail,
       c.env,
       db
     )
     
-    console.log(`📧 [CONFIG SUBMIT] Email configurazione result:`, emailResult)
+    console.log(`📧 [CONFIG SUBMIT] Email configurazione (info@) result:`, emailConfigResult)
+    
+    // B) Invia email di benvenuto al cliente
+    const emailBenvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
+      leadWithCode,
+      leadId,
+      db,
+      c.env
+    )
+    
+    console.log(`📧 [CONFIG SUBMIT] Email benvenuto (cliente) result:`, emailBenvenutoResult)
     
     return c.json({
       success: true,
       leadId: leadId,
-      emailSent: emailResult.success,
-      message: 'Configurazione salvata e notifica inviata a info@telemedcare.it'
+      emailConfigSent: emailConfigResult.success,
+      emailBenvenutoSent: emailBenvenutoResult.success,
+      message: 'Configurazione salvata, email inviata a info@ e email benvenuto inviata al cliente'
     })
     
   } catch (error) {

@@ -551,14 +551,19 @@
             // Rimuovi il warning "dati andranno persi"
             window.onbeforeunload = null;
             
+            // Nascondi il popup
+            document.getElementById('success-message').classList.add('hidden');
+            
             // Prova a chiudere la finestra
             try {
                 window.close();
                 console.log('✅ Finestra chiusa con successo');
             } catch (e) {
-                console.log('⚠️ Impossibile chiudere finestra (normale se non aperta da script)');
-                // Se non può chiudere, nascondi il popup
-                document.getElementById('success-message').classList.add('hidden');
+                console.log('⚠️ Impossibile chiudere finestra, redirect alla home...');
+                // Se non può chiudere, redirect alla home page
+                setTimeout(() => {
+                    window.location.href = 'https://www.ecura.it';
+                }, 500);
             }
         }
 
