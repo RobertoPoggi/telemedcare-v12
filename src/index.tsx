@@ -9566,6 +9566,15 @@ app.post('/api/leads/:id/complete', async (c) => {
   }
 })
 
+// 🔍 GET /api/test - Test endpoint senza DB
+app.get('/api/test', async (c) => {
+  return c.json({
+    status: 'ok',
+    message: 'API is working',
+    timestamp: new Date().toISOString()
+  })
+})
+
 // 🔍 GET /api/configurations/health - Health check endpoint
 app.get('/api/configurations/health', async (c) => {
   console.log('🏥 [HEALTH CHECK] Checking configurations endpoint health...')
