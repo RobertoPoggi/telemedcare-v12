@@ -1,0 +1,10 @@
+{
+  "main_module": "_worker.js",
+  "bindings": [
+    {
+      "type": "d1",
+      "name": "DB",
+      "id": "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
+    }
+  ]
+}
