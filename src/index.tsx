@@ -9650,13 +9650,31 @@ app.post('/api/configurations/submit', async (c) => {
         whitelist3_cognome,
         whitelist3_telefono,
         whitelist3_email,
+        contatto_emergenza_1_nome,
+        contatto_emergenza_1_telefono,
+        contatto_emergenza_1_relazione,
+        contatto_emergenza_2_nome,
+        contatto_emergenza_2_telefono,
+        contatto_emergenza_2_relazione,
+        medico_curante_nome,
+        medico_curante_telefono,
+        centro_medico_riferimento,
         patologie,
         note_mediche,
         farmaci_data,
+        allergie,
+        patologie_croniche,
+        farmaci_assunti,
+        modalita_utilizzo,
+        orari_attivazione,
         status,
+        data_completamento,
+        form_inviato,
+        email_benvenuto_inviata,
+        email_conferma_inviata,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     
     // Prepara array farmaci come JSON string
@@ -9726,10 +9744,28 @@ app.post('/api/configurations/submit', async (c) => {
         configData.whitelist3_cognome || '',
         configData.whitelist3_telefono || '',
         configData.whitelist3_email || '',
+        '', // contatto_emergenza_1_nome (vecchio formato, non usato)
+        '', // contatto_emergenza_1_telefono
+        '', // contatto_emergenza_1_relazione
+        '', // contatto_emergenza_2_nome
+        '', // contatto_emergenza_2_telefono
+        '', // contatto_emergenza_2_relazione
+        '', // medico_curante_nome (non ancora implementato)
+        '', // medico_curante_telefono
+        '', // centro_medico_riferimento
         patologie,
         configData.note_aggiuntive || '',
         farmaciData,
-        'SUBMITTED'
+        '', // allergie (vecchio formato, non usato)
+        '', // patologie_croniche
+        '', // farmaci_assunti
+        '', // modalita_utilizzo (non ancora implementato)
+        '', // orari_attivazione
+        'SUBMITTED',
+        null, // data_completamento
+        true, // form_inviato
+        false, // email_benvenuto_inviata (verrà aggiornato dopo)
+        false  // email_conferma_inviata
       ).run()
     } catch (dbError) {
       console.error('❌ [DB INSERT ERROR] Dettaglio errore database:', dbError)
