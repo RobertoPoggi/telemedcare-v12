@@ -1518,19 +1518,102 @@ export async function inviaEmailConfigurazione(
 
     const emailService = new EmailService(env)
     
-    // Carica template email_configurazione (per info@)
-    const template = await loadEmailTemplate('email_configurazione', db, env)
+    // Carica template email_configurazione_riepilogo (nuovo template dettagliato)
+    const template = await loadEmailTemplate('email_configurazione_riepilogo', db, env)
+    
+    // Prepara tabella farmaci HTML
+    let farmaciTable = '<p style="color: #64748b; font-style: italic;">Nessun farmaco indicato</p>'
+    
+    if (configData.farmaci_data) {
+      try {
+        const farmaci = typeof configData.farmaci_data === 'string' 
+          ? JSON.parse(configData.farmaci_data) 
+          : configData.farmaci_data
+        
+        if (farmaci.nomi && farmaci.nomi.length > 0) {
+          farmaciTable = '<table class="farmaci-table">'
+          farmaciTable += '<tr><th>Farmaco</th><th>Dosaggio</th><th>Orario</th></tr>'
+          
+          for (let i = 0; i < farmaci.nomi.length; i++) {
+            farmaciTable += `<tr>
+              <td><strong>${farmaci.nomi[i] || ''}</strong></td>
+              <td>${farmaci.dosaggi?.[i] || 'Non specificato'}</td>
+              <td>${farmaci.orari?.[i] || 'Non specificato'}</td>
+            </tr>`
+          }
+          farmaciTable += '</table>'
+        }
+      } catch (e) {
+        console.error('Errore parsing farmaci_data:', e)
+      }
+    }
     
     // Prepara i dati per il template
     const templateData = {
-      NOME_CLIENTE: clientData.nomeRichiedente,
-      COGNOME_CLIENTE: clientData.cognomeRichiedente,
-      CODICE_CLIENTE: clientData.codiceCliente,
-      EMAIL_CLIENTE: clientData.email,
-      TELEFONO_CLIENTE: clientData.telefono || 'Non fornito',
-      PIANO_SERVIZIO: clientData.pacchetto,
-      DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT'),
-      DATI_CONFIGURAZIONE: JSON.stringify(configData, null, 2)
+      // Dati cliente/lead
+      CODICE_CLIENTE: clientData.codiceCliente || clientData.id || 'N/D',
+      LEAD_ID: clientData.id,
+      NOME_RICHIEDENTE: clientData.nomeRichiedente || '',
+      COGNOME_RICHIEDENTE: clientData.cognomeRichiedente || '',
+      EMAIL_RICHIEDENTE: clientData.email || '',
+      TELEFONO_RICHIEDENTE: clientData.telefono || '',
+      PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'Standard',
+      DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      
+      // Dati assistito
+      NOME_ASSISTITO: configData.nome_assistito || '',
+      COGNOME_ASSISTITO: configData.cognome_assistito || '',
+      DATA_NASCITA: configData.data_nascita || '',
+      ETA: configData.eta || '',
+      PESO: configData.peso || '',
+      ALTEZZA: configData.altezza || '',
+      TELEFONO_ASSISTITO: configData.telefono || '',
+      EMAIL_ASSISTITO: configData.email || '',
+      INDIRIZZO: configData.indirizzo || '',
+      
+      // Contatti emergenza
+      CONTATTO1_NOME: configData.contatti_emergenza?.contatto1?.nome || '',
+      CONTATTO1_COGNOME: configData.contatti_emergenza?.contatto1?.cognome || '',
+      CONTATTO1_TELEFONO: configData.contatti_emergenza?.contatto1?.telefono || '',
+      CONTATTO1_EMAIL: configData.contatti_emergenza?.contatto1?.email || '',
+      
+      CONTATTO2_NOME: configData.contatti_emergenza?.contatto2?.nome || '',
+      CONTATTO2_COGNOME: configData.contatti_emergenza?.contatto2?.cognome || '',
+      CONTATTO2_TELEFONO: configData.contatti_emergenza?.contatto2?.telefono || '',
+      CONTATTO2_EMAIL: configData.contatti_emergenza?.contatto2?.email || '',
+      
+      CONTATTO3_NOME: configData.contatti_emergenza?.contatto3?.nome || '',
+      CONTATTO3_COGNOME: configData.contatti_emergenza?.contatto3?.cognome || '',
+      CONTATTO3_TELEFONO: configData.contatti_emergenza?.contatto3?.telefono || '',
+      CONTATTO3_EMAIL: configData.contatti_emergenza?.contatto3?.email || '',
+      
+      // Whitelist
+      WHITELIST1_NOME: configData.whitelist?.whitelist1?.nome || '',
+      WHITELIST1_COGNOME: configData.whitelist?.whitelist1?.cognome || '',
+      WHITELIST1_TELEFONO: configData.whitelist?.whitelist1?.telefono || '',
+      
+      WHITELIST2_NOME: configData.whitelist?.whitelist2?.nome || '',
+      WHITELIST2_COGNOME: configData.whitelist?.whitelist2?.cognome || '',
+      WHITELIST2_TELEFONO: configData.whitelist?.whitelist2?.telefono || '',
+      
+      WHITELIST3_NOME: configData.whitelist?.whitelist3?.nome || '',
+      WHITELIST3_COGNOME: configData.whitelist?.whitelist3?.cognome || '',
+      WHITELIST3_TELEFONO: configData.whitelist?.whitelist3?.telefono || '',
+      
+      // Dati medici
+      PATOLOGIE: Array.isArray(configData.patologie) 
+        ? configData.patologie.join(', ') 
+        : (configData.patologie || 'Nessuna patologia indicata'),
+      NOTE_MEDICHE: configData.note_aggiuntive || 'Nessuna nota',
+      
+      // Farmaci (tabella HTML)
+      FARMACI_TABLE: farmaciTable
     }
 
     // Renderizza template
@@ -1540,13 +1623,13 @@ export async function inviaEmailConfigurazione(
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
       from: 'info@telemedcare.it',
-      subject: `📋 Nuova Configurazione Cliente: ${clientData.nomeRichiedente} ${clientData.cognomeRichiedente}`,
+      subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.codiceCliente || clientData.id})`,
       html: emailHtml
     })
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push('email_configurazione -> info@telemedcare.it')
+      result.emailsSent.push('email_configurazione_riepilogo -> info@telemedcare.it')
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email configurazione inviata con successo: ${sendResult.messageId}`)
     } else {
