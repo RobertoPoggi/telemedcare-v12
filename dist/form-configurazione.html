@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurazione SiDLY CARE - Dati Cliente</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Configurazione SiDLY CARE - Dati Cliente v2.1</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -679,6 +682,9 @@
             if (birthDateInput && birthDateInput.value) {
                 birthDateInput.dispatchEvent(new Event('change'));
             }
+            
+            // 🔄 Force reload timestamp - v2.1.0
+            console.log('📦 Form version: 2.1.0 - Build: 2026-03-07T00:00:00Z');
         });
     </script>
 </body>
