@@ -9607,13 +9607,9 @@ app.post('/api/configurations/submit', async (c) => {
       }, 404)
     }
     
-    // 3️⃣ Genera ID configurazione
-    const configId = `CONF-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-    
-    // 4️⃣ Salva nella tabella configurations
+    // 3️⃣ Salva nella tabella configurations
     const insertQuery = `
       INSERT INTO configurations (
-        id,
         leadId,
         device_id,
         contract_id,
@@ -9650,6 +9646,9 @@ app.post('/api/configurations/submit', async (c) => {
         whitelist3_cognome,
         whitelist3_telefono,
         whitelist3_email,
+        patologie,
+        note_mediche,
+        farmaci_data,
         contatto_emergenza_1_nome,
         contatto_emergenza_1_telefono,
         contatto_emergenza_1_relazione,
@@ -9659,9 +9658,6 @@ app.post('/api/configurations/submit', async (c) => {
         medico_curante_nome,
         medico_curante_telefono,
         centro_medico_riferimento,
-        patologie,
-        note_mediche,
-        farmaci_data,
         allergie,
         patologie_croniche,
         farmaci_assunti,
@@ -9671,10 +9667,8 @@ app.post('/api/configurations/submit', async (c) => {
         data_completamento,
         form_inviato,
         email_benvenuto_inviata,
-        email_conferma_inviata,
-        created_at,
-        updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        email_conferma_inviata
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     
     // Prepara array farmaci come JSON string
@@ -9707,7 +9701,6 @@ app.post('/api/configurations/submit', async (c) => {
     
     try {
       await db.prepare(insertQuery).bind(
-        configId,
         leadId,
         null, // device_id (non ancora assegnato)
         null, // contract_id (non ancora assegnato)
@@ -9744,6 +9737,9 @@ app.post('/api/configurations/submit', async (c) => {
         configData.whitelist3_cognome || '',
         configData.whitelist3_telefono || '',
         configData.whitelist3_email || '',
+        patologie,
+        configData.note_aggiuntive || '',
+        farmaciData,
         '', // contatto_emergenza_1_nome (vecchio formato, non usato)
         '', // contatto_emergenza_1_telefono
         '', // contatto_emergenza_1_relazione
@@ -9753,9 +9749,6 @@ app.post('/api/configurations/submit', async (c) => {
         '', // medico_curante_nome (non ancora implementato)
         '', // medico_curante_telefono
         '', // centro_medico_riferimento
-        patologie,
-        configData.note_aggiuntive || '',
-        farmaciData,
         '', // allergie (vecchio formato, non usato)
         '', // patologie_croniche
         '', // farmaci_assunti
@@ -9774,7 +9767,7 @@ app.post('/api/configurations/submit', async (c) => {
       throw new Error(`Database insert failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
     }
     
-    console.log(`✅ [CONFIG SUBMIT] Configurazione ${configId} salvata nel DB`)
+    console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
     
     // 5️⃣ Invia email benvenuto
     const WorkflowEmailManager = await import('./modules/workflow-email-manager')
@@ -9795,7 +9788,7 @@ app.post('/api/configurations/submit', async (c) => {
     
     return c.json({
       success: true,
-      configId: configId,
+      leadId: leadId,
       emailSent: emailResult.success,
       message: 'Configurazione salvata e email benvenuto inviata'
     })
