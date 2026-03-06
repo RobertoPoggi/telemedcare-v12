@@ -12,6 +12,7 @@
     "binding": "BROWSER"
   },
   
+  // Force rebuild timestamp: 2026-03-06 21:06
   // Environment: Development (local)
   "d1_databases": [
     {
