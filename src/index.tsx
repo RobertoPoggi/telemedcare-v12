@@ -9666,17 +9666,12 @@ app.post('/api/configurations/submit', async (c) => {
   console.log('📥 [CONFIG SUBMIT] Ricevuta richiesta submit configurazione')
   
   try {
-    // ✅ Leggi il body raw per debugging
-    const rawBody = await c.req.text()
-    console.log('📋 [CONFIG SUBMIT] Raw body ricevuto:', rawBody.substring(0, 200)) // Primi 200 caratteri
-    
-    // ✅ Parse JSON con gestione errori migliorata
+    // ✅ Parse JSON direttamente (senza leggere prima come text)
     let data
     try {
-      data = JSON.parse(rawBody)
+      data = await c.req.json()
     } catch (jsonError) {
       console.error('❌ [CONFIG SUBMIT] Errore parsing JSON:', jsonError)
-      console.error('❌ [CONFIG SUBMIT] Raw body completo:', rawBody)
       return c.json({
         success: false,
         error: 'Formato JSON non valido',
