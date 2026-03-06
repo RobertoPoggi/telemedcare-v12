@@ -615,13 +615,17 @@
                 });
                 
                 // ✅ Gestione risposta con controllo errori
+                // Leggi prima come testo per evitare di consumare la response
+                const responseText = await response.text();
+                console.log('📥 [FORM CONFIG] Response status:', response.status);
+                console.log('📥 [FORM CONFIG] Response text (primi 500 chars):', responseText.substring(0, 500));
+                
                 let result;
                 try {
-                    result = await response.json();
+                    result = JSON.parse(responseText);
                 } catch (parseError) {
-                    console.error('❌ [FORM CONFIG] Errore parsing risposta:', parseError);
-                    const responseText = await response.text();
-                    console.error('❌ [FORM CONFIG] Risposta raw:', responseText);
+                    console.error('❌ [FORM CONFIG] Errore parsing risposta JSON:', parseError);
+                    console.error('❌ [FORM CONFIG] Risposta raw completa:', responseText);
                     throw new Error('Errore nella risposta del server. Contatta il supporto.');
                 }
                 

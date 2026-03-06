@@ -1,0 +1,570 @@
+Delivered-To: rpoggi55@gmail.com
+Received: by 2002:a05:7208:c008:b0:ff:922b:ed84 with SMTP id r8csp556205rba;
+        Fri, 6 Mar 2026 13:26:21 -0800 (PST)
+X-Received: by 2002:a05:6000:1a89:b0:437:75c1:578e with SMTP id ffacd0b85a97d-439da351eacmr6845668f8f.21.1772832381274;
+        Fri, 06 Mar 2026 13:26:21 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1772832381; cv=none;
+        d=google.com; s=arc-20240605;
+        b=bFZNdzEUKZBi0SDyztRZDi6CyLBWC3Q84pR8gfk861osocAfKq1kZflvqKxnzvqRfL
+         +9iArm9rreSYLgsvbpmi7vZckTSBRNSonR8ro0+Ric3DdsP8Bk08RKFn0OJ+YwCF+Rpq
+         M8POjtbmMVekk1mOOREyHfE3Gevk+XWwVJHuVhcWiYuUZTCYiJlqkovz0WjxWm1a7aIh
+         2LxUVgKhmxS6iyHI9vqYTThBGWWYit6wRF1PhTtYNfPaHvlpdRKHv9ACOPqIxTB09AV7
+         SqMWcsBxtIJmBSC3zw/d7hJS4AVFvpb/apnA8t5eflF9SmRoFIVvJp2wPHmcQtvI0xx5
+         FkHA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=feedback-id:mime-version:date:message-id:subject:to:from
+         :dkim-signature:dkim-signature;
+        bh=yDuNfr9qI+293LNn5XNPGODyAxRxQbrEz1Ja/gT8ce8=;
+        fh=XZJUSJoDMes0dZcJUb0x0qLHCJl0LrA3B9NB7PzY4D4=;
+        b=hX5LTAdbVR1LIPLxlaVDqqnxXUiWhtMb+f85TJ+evCBAStqQaeQsr57m7tM48L8O5u
+         HeV2HZHG9JQwdiCwPIxQ5nUvtCzAFaEWbyXUeXAiOEDMQaEb6I5pBZZ0ZDcfQxjg9n0r
+         219a73XGBP+qxYxr9Yrk9b/UOeCdrzdUBjxo1KsNPUwdBJOqi0fJoUiHkEi5SKnfbjX5
+         NiErer/Q1HFQ5K5CBvo/Yp2/+RM8W+QQQBFtp4hoE/KCtPR4nB+wH6GPsqmPSy7dhXsN
+         t2dID5nAW1riwroTjbQ87JnWQ1hZKnEywFpTq95aoWL2ut/QLuyqW2cy3QaSMc8HRvWD
+         DuFA==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@telemedcare.it header.s=resend header.b="Vqd/97fv";
+       dkim=pass header.i=@amazonses.com header.s=ihchhvubuqgjsxyuhssfvqohv7z3u4hn header.b=JNlumz3K;
+       spf=pass (google.com: domain of 0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it designates 54.240.6.244 as permitted sender) smtp.mailfrom=0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=telemedcare.it
+Return-Path: <0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it>
+Received: from a6-244.smtp-out.eu-west-1.amazonses.com (a6-244.smtp-out.eu-west-1.amazonses.com. [54.240.6.244])
+        by mx.google.com with ESMTPS id ffacd0b85a97d-439dade7cafsi5446431f8f.551.2026.03.06.13.26.21
+        for <rpoggi55@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 06 Mar 2026 13:26:21 -0800 (PST)
+Received-SPF: pass (google.com: domain of 0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it designates 54.240.6.244 as permitted sender) client-ip=54.240.6.244;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@telemedcare.it header.s=resend header.b="Vqd/97fv";
+       dkim=pass header.i=@amazonses.com header.s=ihchhvubuqgjsxyuhssfvqohv7z3u4hn header.b=JNlumz3K;
+       spf=pass (google.com: domain of 0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it designates 54.240.6.244 as permitted sender) smtp.mailfrom=0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@send.telemedcare.it;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=telemedcare.it
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple; s=resend;
+	d=telemedcare.it; t=1772832381;
+	h=From:To:Subject:Message-ID:Date:MIME-Version:Content-Type;
+	bh=iPzF9UNNszae0eSP0fL/3EOEVLOR+YeBYAfmwYGcIcw=;
+	b=Vqd/97fvGt7A5BBK5tF8zk2WjZZEnT6N3vkrH0ppIXAEvkF1/JjLMDFaFxa22FrG
+	0yITVBZ3itUxB8MKcX8KH2AhEM/KvHRgecrG2euiK0M7n2f4UFljrKAIBMMAbP/GsBE
+	38DyTzdtQWZ+mT1BGhQV6rAss+ha8BUacog6cFmA=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+	s=ihchhvubuqgjsxyuhssfvqohv7z3u4hn; d=amazonses.com; t=1772832381;
+	h=From:To:Subject:Message-ID:Date:MIME-Version:Content-Type:Feedback-ID;
+	bh=iPzF9UNNszae0eSP0fL/3EOEVLOR+YeBYAfmwYGcIcw=;
+	b=JNlumz3Kp9fQ8EGtgsQHoEBEGiVD1nrQs+h5nYs1YljP6RGhKVd+EVUhw/uJBX9f
+	lFYJo6f2GZ/G0FSAWqPXzF80VnbZ205eAgA9slApENd06NJ3Axb12ZGWAGNHzPM4h6w
+	7jumvU9EGNF69v3PX5ea5FG9JgsHeje4e3TYZPhs=
+From: TeleMedCare <info@telemedcare.it>
+To: rpoggi55@gmail.com
+Subject: =?UTF-8?Q?=E2=9A=99=EF=B8=8F_Completa_la_Configura?=
+ =?UTF-8?Q?zione_del_tuo_SiDLY_Vital_Care?=
+Message-ID: <0102019cc50b57a6-23f3d8f8-c929-4b49-9590-2a866ab60415-000000@eu-west-1.amazonses.com>
+Date: Fri, 6 Mar 2026 21:26:20 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--_NmP-03b034c81f395a01-Part_1"
+Feedback-ID: :1.eu-west-1.CYsFr0a7e9ssXbX3+3hyoRQzkgE/va2I4IGzUjMsh0Js3YuDGRVSBoz7kAR/M/dIJByPNVV/2MLpybUbv9FZ2IwuQNJlPu9AKqcIlGqouAzk8psSsxxA1qvGcIIaPEdqmOKKfTxdiB+XVi8hMKjUMWyi0xNTOd8LgwS9Hjac7H4=:1.eu-west-1.mn4CV6NdxyxonKM+/Hjvd874GJxbRQyaS3Zo0NapPlc=:AmazonSES
+X-SES-Outgoing: 2026.03.06-54.240.6.244
+
+----_NmP-03b034c81f395a01-Part_1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+=E2=9D=A4=EF=B8=8F eCura
+Medica GB S.r.l.
+Startup Innovativa a Vocazione =
+Sociale
+
+=E2=9C=85
+
+
+BENVENUTO {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}
+
+Grazie per aver scelto la nostra tecnologia di teleassistenza avanzata.
+Il pagamento =C3=A8 stato elaborato con successo!
+
+=E2=84=B9=EF=B8=8F
+
+
+COSA SUCCEDE ORA?
+
+=E2=9C=93 Il tuo ordine =C3=A8 stato confermato =
+=E2=9C=93 Riceverai una email di conferma =E2=9C=93 Il dispositivo SiDLY =
+Vital Care sar=C3=A0 configurato per te =E2=9C=93 Riceverai istruzioni per =
+l'attivazione
+
+
+=F0=9F=94=A7 CONFIGURAZIONE PERSONALIZZATA
+
+1
+
+
+COMPILA IL FORM DI CONFIGURAZIONE
+
+Per configurare al meglio il tuo =
+dispositivo SiDLY Vital Care, abbiamo bisogno di alcune informazioni =
+personali e mediche che ci permetteranno di personalizzare completamente il=
+ servizio.
+
+2
+
+
+CONFIGURAZIONE AUTOMATICA
+
+I nostri tecnici configureranno =
+automaticamente la piattaforma eCura eCura PREMIUM Avanzato con i tuoi dati=
+ per garantire un servizio perfettamente personalizzato alle tue esigenze.
+
+3
+
+
+ATTIVAZIONE E SUPPORTO
+
+Riceverai il dispositivo pre-configurato e le =
+credenziali di accesso. Il nostro team ti contatter=C3=A0 per il supporto =
+all'attivazione e la formazione iniziale.
+
+=E2=8F=B1=EF=B8=8F
+
+
+TEMPO RICHIESTO
+
+La compilazione richiede circa 5-8 minuti. I dati sono =
+protetti secondo la normativa GDPR e utilizzati esclusivamente per la =
+configurazione del tuo servizio eCura eCura PREMIUM Avanzato.
+
+Inizia Configurazione =E2=86=92 https://be3e11c2.telemedcare-v12.pages.=
+dev/configurazione.html?leadId=3DLEAD-IRBEMA-00268
+=F0=9F=94=92 I tuoi dati=
+ sono protetti con crittografia SSL 256-bit
+
+Il tuo codice cliente:
+
+{{CODICE_CLIENTE}}
+
+Oppure copia questo link:
+https://be3e11c2.=
+telemedcare-v12.pages.dev/configurazione.html?leadId=3DLEAD-IRBEMA-00268
+
+Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale
+
+=F0=9F=93=8D Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche =
+53, 16148
+
+P.IVA: 12435130963 | REA: MI-2661409
+
+=F0=9F=8C=90 www.medicagb.=
+it https://www.medicagb.it/ | www.ecura.it https://www.ecura.it/ | www.=
+telemedcare.it https://www.telemedcare.it/
+
+=F0=9F=93=A7 info@medicagb.=
+it
+----_NmP-03b034c81f395a01-Part_1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"it">
+<head>
+    <meta charset=3D"UTF-8">
+    <meta name=3D"viewport" content=3D"width=3Ddevice-width, =
+initial-scale=3D1.0">
+    <title>Configurazione SiDLY Vital Care - =
+Benvenuto | Medica GB</title>
+    <link href=3D"https://fonts.googleapis.=
+com/css2?family=3DPoppins:wght@300;400;500;600;700&display=3Dswap" =
+rel=3D"stylesheet">
+</head>
+<body style=3D"margin: 0; padding: 0; =
+font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', =
+Roboto, sans-serif; line-height: 1.6; color: #333; background: =
+linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+   =20
+    <!-- Header -->
+    <table width=3D"100%" cellpadding=3D"0" =
+cellspacing=3D"0" style=3D"background: rgba(255, 255, 255, 0.95); =
+backdrop-filter: blur(10px); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1); =
+padding: 20px 0;">
+        <tr>
+            <td align=3D"center">
+                <table width=3D"600" cellpadding=3D"0" cellspacing=3D"0">
+                    <tr>
+                        <td align=3D"center">
+                            <div style=3D"font-size: 2rem; font-weight: =
+700; color: #2563eb; margin-bottom: 0.5rem;">
+                             =
+   =E2=9D=A4=EF=B8=8F eCura
+                            </div>
+                            <div style=3D"font-size: 1.5rem; font-weight: =
+600; color: #1e40af; margin-bottom: 0.25rem;">
+                            =
+    Medica GB S.r.l.
+                            </div>
+                            <div style=3D"font-size: 0.9rem; color: =
+#64748b; font-weight: 400;">
+                                Startup =
+Innovativa a Vocazione Sociale
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Main Content -->
+    <table width=3D"100%" cellpadding=3D"0" =
+cellspacing=3D"0" style=3D"padding: 3rem 0;">
+        <tr>
+            <td align=3D"center">
+                <table width=3D"600" =
+cellpadding=3D"0" cellspacing=3D"0">
+                   =20
+                    <!-- Welcome Card -->
+                    <tr>
+                        <td style=3D"background: rgba(255, 255, 255, 0.95);=
+ backdrop-filter: blur(15px); border-radius: 20px; padding: 3rem 2rem; =
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255,=
+ 255, 0.2); text-align: center; margin-bottom: 2rem;">
+                            <div style=3D"font-size: 4rem; color: #10b981; =
+margin-bottom: 1.5rem;">=E2=9C=85</div>
+                            <h1 =
+style=3D"font-size: 2.5rem; font-weight: 700; color: #1e40af; =
+margin-bottom: 1rem; line-height: 1.2;">
+                                =
+Benvenuto {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}
+                            =
+</h1>
+                            <p style=3D"font-size: 1.2rem; color: =
+#64748b; margin-bottom: 2rem; font-weight: 400;">
+                         =
+       Grazie per aver scelto la nostra tecnologia di teleassistenza =
+avanzata.<br>
+                                Il pagamento =C3=A8 stato =
+elaborato con successo!
+                            </p>
+                           =20
+                            <!-- Info Box =
+-->
+                            <div style=3D"background: =
+linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 1px solid =
+#93c5fd; border-radius: 12px; padding: 1.5rem; margin: 2rem 0; text-align: =
+left;">
+                                <div style=3D"color: #2563eb; =
+font-size: 1.5rem; margin-bottom: 1rem; text-align: =
+center;">=E2=84=B9=EF=B8=8F</div>
+                                <h3 =
+style=3D"font-size: 1.3rem; font-weight: 600; color: #1e40af; =
+margin-bottom: 1rem; text-align: center;">
+                                =
+    Cosa succede ora?
+                                </h3>
+                                <table width=3D"100%" cellpadding=3D"5" =
+cellspacing=3D"0">
+                                    <tr>
+                                        <td style=3D"color: #1e40af; =
+padding: 0.5rem 0;">
+                                            <span =
+style=3D"color: #10b981; margin-right: 0.75rem;">=E2=9C=93</span> Il tuo =
+ordine =C3=A8 stato confermato
+                                        =
+</td>
+                                    </tr>
+                           =
+         <tr>
+                                        <td style=3D"color: =
+#1e40af; padding: 0.5rem 0;">
+                                            =
+<span style=3D"color: #10b981; margin-right: 0.75rem;">=E2=9C=93</span> =
+Riceverai una email di conferma
+                                        =
+</td>
+                                    </tr>
+                           =
+         <tr>
+                                        <td style=3D"color: =
+#1e40af; padding: 0.5rem 0;">
+                                            =
+<span style=3D"color: #10b981; margin-right: 0.75rem;">=E2=9C=93</span> Il =
+dispositivo SiDLY Vital Care sar=C3=A0 configurato per te
+                                        </td>
+                             =
+       </tr>
+                                    <tr>
+                                        <td style=3D"color: #1e40af; =
+padding: 0.5rem 0;">
+                                            <span =
+style=3D"color: #10b981; margin-right: 0.75rem;">=E2=9C=93</span> Riceverai=
+ istruzioni per l'attivazione
+                                        </td>
+                                    </tr>
+                                =
+</table>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Process Steps -->
+                    <tr>
+                        <td style=3D"background: =
+rgba(255, 255, 255, 0.9); border-radius: 15px; padding: 2rem; margin: 2rem =
+0;">
+                            <h2 style=3D"font-size: 1.8rem; =
+font-weight: 600; color: #1e40af; text-align: center; margin-bottom: =
+2rem;">
+                                =F0=9F=94=A7 Configurazione =
+Personalizzata
+                            </h2>
+                          =
+ =20
+                            <!-- Step 1 -->
+                          =
+  <table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" =
+style=3D"margin-bottom: 1rem;">
+                                <tr>
+                                    <td style=3D"background: =
+linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; =
+border-left: 5px solid #3b82f6; padding: 1.5rem;">
+                        =
+                <table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0">
+                                            <tr>
+                          =
+                      <td width=3D"50" valign=3D"top">
+                                                    <div =
+style=3D"background: #3b82f6; color: white; width: 40px; height: 40px; =
+border-radius: 50%; display: flex; align-items: center; justify-content: =
+center; font-weight: 600; text-align: center; line-height: 40px;">
+                                                        1
+                                                    </div>
+                                                </td>
+                                                <td valign=3D"top">
+                                                    <h3 style=3D"font-size:=
+ 1.2rem; font-weight: 600; color: #1e293b; margin: 0 0 0.5rem 0;">
+                                                        Compila il Form di =
+Configurazione
+                                                    </h3>
+                                                    <p style=3D"color: =
+#64748b; line-height: 1.5; margin: 0;">
+                                   =
+                     Per configurare al meglio il tuo dispositivo SiDLY =
+Vital Care, abbiamo bisogno di alcune informazioni personali e mediche che =
+ci permetteranno di personalizzare completamente il servizio.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                         =
+               </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Step 2 -->
+                            =
+<table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" =
+style=3D"margin-bottom: 1rem;">
+                                <tr>
+                                    <td style=3D"background: =
+linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; =
+border-left: 5px solid #3b82f6; padding: 1.5rem;">
+                        =
+                <table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0">
+                                            <tr>
+                          =
+                      <td width=3D"50" valign=3D"top">
+                                                    <div =
+style=3D"background: #3b82f6; color: white; width: 40px; height: 40px; =
+border-radius: 50%; text-align: center; line-height: 40px; font-weight: =
+600;">
+                                                        2
+                                                    </div>
+                                                </td>
+                                                <td valign=3D"top">
+                                                    <h3 style=3D"font-size:=
+ 1.2rem; font-weight: 600; color: #1e293b; margin: 0 0 0.5rem 0;">
+                                                        Configurazione =
+Automatica
+                                                    </h3>
+                                                    <p style=3D"color: =
+#64748b; line-height: 1.5; margin: 0;">
+                                   =
+                     I nostri tecnici configureranno automaticamente la =
+piattaforma eCura eCura PREMIUM Avanzato con i tuoi dati per garantire un =
+servizio perfettamente personalizzato alle tue esigenze.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                         =
+               </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Step 3 -->
+                            =
+<table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" =
+style=3D"margin-bottom: 1rem;">
+                                <tr>
+                                    <td style=3D"background: =
+linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; =
+border-left: 5px solid #3b82f6; padding: 1.5rem;">
+                        =
+                <table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0">
+                                            <tr>
+                          =
+                      <td width=3D"50" valign=3D"top">
+                                                    <div =
+style=3D"background: #3b82f6; color: white; width: 40px; height: 40px; =
+border-radius: 50%; text-align: center; line-height: 40px; font-weight: =
+600;">
+                                                        3
+                                                    </div>
+                                                </td>
+                                                <td valign=3D"top">
+                                                    <h3 style=3D"font-size:=
+ 1.2rem; font-weight: 600; color: #1e293b; margin: 0 0 0.5rem 0;">
+                                                        Attivazione e =
+Supporto
+                                                    </h3>
+                                                    <p style=3D"color: =
+#64748b; line-height: 1.5; margin: 0;">
+                                   =
+                     Riceverai il dispositivo pre-configurato e le =
+credenziali di accesso. Il nostro team ti contatter=C3=A0 per il supporto =
+all'attivazione e la formazione iniziale.
+                                 =
+                   </p>
+                                                =
+</td>
+                                            </tr>
+                                        </table>
+                          =
+          </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Time Info -->
+                    <tr>
+                        <td style=3D"background: =
+linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 1px solid =
+#93c5fd; border-radius: 12px; padding: 1.5rem; margin: 2rem 0;">
+                            <div style=3D"color: #2563eb; font-size: 1.=
+5rem; text-align: center; margin-bottom: 1rem;">=E2=8F=B1=EF=B8=8F</div>
+                            <h3 style=3D"font-size: 1.3rem; font-weight: =
+600; color: #1e40af; margin-bottom: 1rem; text-align: center;">
+                                Tempo Richiesto
+                           =
+ </h3>
+                            <p style=3D"color: #1e40af; font-weight:=
+ 500; margin: 0; text-align: center;">
+                                La =
+compilazione richiede circa <strong>5-8 minuti</strong>. I dati sono =
+protetti secondo la normativa GDPR e utilizzati esclusivamente per la =
+configurazione del tuo servizio eCura eCura PREMIUM Avanzato.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- CTA Button -->
+                    <tr>
+                        <td align=3D"center" =
+style=3D"padding: 2rem 0;">
+                            <a =
+href=3D"https://be3e11c2.telemedcare-v12.pages.dev/configurazione.html?=
+leadId=3DLEAD-IRBEMA-00268" style=3D"background: linear-gradient(135deg, =
+#3b82f6 0%, #1d4ed8 100%); color: white; padding: 1rem 2.5rem; =
+border-radius: 50px; font-size: 1.2rem; font-weight: 600; text-decoration: =
+none; display: inline-block; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.=
+4);">
+                                Inizia Configurazione =E2=86=92
+                            </a>
+                           =20
+                            <div style=3D"background: rgba(16, 185, 129, 0.=
+1); border: 1px solid #10b981; border-radius: 10px; padding: 1rem; =
+margin-top: 2rem;">
+                                <span style=3D"color: =
+#10b981; font-size: 1.2rem; margin-right: 0.5rem;">=F0=9F=94=92</span>
+                                <span style=3D"color: #047857; font-weight:=
+ 500;">I tuoi dati sono protetti con crittografia SSL 256-bit</span>
+                            </div>
+                           =20
+                            <!-- Codice Cliente -->
+                            <div style=3D"margin-top: 2rem; padding: 1rem; =
+background: rgba(255, 255, 255, 0.9); border-radius: 10px; text-align: =
+center;">
+                                <p style=3D"color: #64748b; =
+margin: 0 0 0.5rem 0; font-size: 0.9rem;">Il tuo codice cliente:</p>
+                                <p style=3D"color: #1e40af; font-weight: =
+700; font-size: 1.3rem; margin: 0;">{{CODICE_CLIENTE}}</p>
+                            </div>
+                           =20
+                            <!-- Link alternativo -->
+                            <p style=3D"margin-top: 1.5rem; font-size: 0.=
+9rem; color: #64748b;">
+                                Oppure copia questo=
+ link:<br>
+                                <a href=3D"https://be3e11c2.=
+telemedcare-v12.pages.dev/configurazione.html?leadId=3DLEAD-IRBEMA-00268" =
+style=3D"color: #3b82f6; word-break: break-all; font-size: 0.=
+85rem;">https://be3e11c2.telemedcare-v12.pages.dev/configurazione.html?=
+leadId=3DLEAD-IRBEMA-00268</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Footer -->
+    <table width=3D"100%" cellpadding=3D"0" =
+cellspacing=3D"0" style=3D"background: rgba(255, 255, 255, 0.9); padding: =
+2rem 0; margin-top: 2rem;">
+        <tr>
+            <td align=3D"center">
+                <table width=3D"600" cellpadding=3D"0" cellspacing=3D"0">
+                    <tr>
+                        <td align=3D"center" =
+style=3D"padding-bottom: 1rem;">
+                            <p =
+style=3D"color: #1e40af; font-weight: 600; margin: 0 0 0.5rem 0;">Medica GB=
+ S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+                            <p style=3D"color: #64748b; margin: 0.25rem 0; =
+font-size: 0.9rem;">=F0=9F=93=8D Milano: Corso Garibaldi 34, 20121 | =
+Genova: Via delle Eriche 53, 16148</p>
+                            <p =
+style=3D"color: #64748b; margin: 0.25rem 0; font-size: 0.9rem;">P.IVA: =
+12435130963 | REA: MI-2661409</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        =
+<td align=3D"center" style=3D"padding-top: 1rem;">
+                        =
+    <p style=3D"color: #10b981; margin: 0.25rem 0; font-size: 0.9rem;">
+                                =F0=9F=8C=90 <a href=3D"https://www.=
+medicagb.it/" style=3D"color: #10b981; text-decoration: none;">www.medicagb=
+.it</a> |=20
+                                <a href=3D"https://www.ecura.=
+it/" style=3D"color: #10b981; text-decoration: none;">www.ecura.it</a> |=20
+                                <a href=3D"https://www.telemedcare.it/" =
+style=3D"color: #10b981; text-decoration: none;">www.telemedcare.it</a>
+                            </p>
+                            <p =
+style=3D"color: #10b981; margin: 0.5rem 0; font-size: 0.9rem;">
+                                =F0=9F=93=A7 <a href=3D"mailto:info@medicag=
+b.it" style=3D"color: #10b981; text-decoration: none;">info@medicagb.it</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
+
+----_NmP-03b034c81f395a01-Part_1--
