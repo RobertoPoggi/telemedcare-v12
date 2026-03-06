@@ -9769,73 +9769,91 @@ app.post('/api/configurations/submit', async (c) => {
     })
     
     console.log(`🔍 [CONFIG SUBMIT] Inizio INSERT nel database...`)
+    
+    // 🔍 DEBUG: Log della query completa prima dell'esecuzione
+    const bindValues = [
+      leadId,
+      null, // device_id
+      null, // contract_id
+      configData.nome || '',
+      configData.cognome || '',
+      configData.data_nascita || '',
+      configData.eta || '',
+      configData.peso || null,
+      configData.altezza || null,
+      configData.telefono || '',
+      configData.email || '',
+      configData.indirizzo || '',
+      configData.contatto1_nome || '',
+      configData.contatto1_cognome || '',
+      configData.contatto1_telefono || '',
+      configData.contatto1_email || '',
+      configData.contatto2_nome || '',
+      configData.contatto2_cognome || '',
+      configData.contatto2_telefono || '',
+      configData.contatto2_email || '',
+      configData.contatto3_nome || '',
+      configData.contatto3_cognome || '',
+      configData.contatto3_telefono || '',
+      configData.contatto3_email || '',
+      configData.whitelist1_nome || '',
+      configData.whitelist1_cognome || '',
+      configData.whitelist1_telefono || '',
+      configData.whitelist1_email || '',
+      configData.whitelist2_nome || '',
+      configData.whitelist2_cognome || '',
+      configData.whitelist2_telefono || '',
+      configData.whitelist2_email || '',
+      configData.whitelist3_nome || '',
+      configData.whitelist3_cognome || '',
+      configData.whitelist3_telefono || '',
+      configData.whitelist3_email || '',
+      patologie,
+      configData.note_aggiuntive || '',
+      farmaciData,
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      'SUBMITTED',
+      null,
+      true,
+      false,
+      false
+    ]
+    
+    console.log(`🔍 [CONFIG SUBMIT] Bind values count: ${bindValues.length}`)
+    console.log(`🔍 [CONFIG SUBMIT] Sample values:`, {
+      leadId: bindValues[0],
+      nome: bindValues[3],
+      cognome: bindValues[4],
+      peso: bindValues[7],
+      altezza: bindValues[8]
+    })
+    
     try {
-      await db.prepare(insertQuery).bind(
-        leadId,
-        null, // device_id (non ancora assegnato)
-        null, // contract_id (non ancora assegnato)
-        configData.nome || '',
-        configData.cognome || '',
-        configData.data_nascita || '',
-        configData.eta || '',
-        configData.peso || null,
-        configData.altezza || null,
-        configData.telefono || '',
-        configData.email || '',
-        configData.indirizzo || '',
-        configData.contatto1_nome || '',
-        configData.contatto1_cognome || '',
-        configData.contatto1_telefono || '',
-        configData.contatto1_email || '',
-        configData.contatto2_nome || '',
-        configData.contatto2_cognome || '',
-        configData.contatto2_telefono || '',
-        configData.contatto2_email || '',
-        configData.contatto3_nome || '',
-        configData.contatto3_cognome || '',
-        configData.contatto3_telefono || '',
-        configData.contatto3_email || '',
-        configData.whitelist1_nome || '',
-        configData.whitelist1_cognome || '',
-        configData.whitelist1_telefono || '',
-        configData.whitelist1_email || '',
-        configData.whitelist2_nome || '',
-        configData.whitelist2_cognome || '',
-        configData.whitelist2_telefono || '',
-        configData.whitelist2_email || '',
-        configData.whitelist3_nome || '',
-        configData.whitelist3_cognome || '',
-        configData.whitelist3_telefono || '',
-        configData.whitelist3_email || '',
-        patologie,
-        configData.note_aggiuntive || '',
-        farmaciData,
-        '', // contatto_emergenza_1_nome (vecchio formato, non usato)
-        '', // contatto_emergenza_1_telefono
-        '', // contatto_emergenza_1_relazione
-        '', // contatto_emergenza_2_nome
-        '', // contatto_emergenza_2_telefono
-        '', // contatto_emergenza_2_relazione
-        '', // medico_curante_nome (non ancora implementato)
-        '', // medico_curante_telefono
-        '', // centro_medico_riferimento
-        '', // allergie (vecchio formato, non usato)
-        '', // patologie_croniche
-        '', // farmaci_assunti
-        '', // modalita_utilizzo (non ancora implementato)
-        '', // orari_attivazione
-        'SUBMITTED',
-        null, // data_completamento
-        true, // form_inviato
-        false, // email_benvenuto_inviata (verrà aggiornato dopo)
-        false  // email_conferma_inviata
-      ).run()
+      await db.prepare(insertQuery).bind(...bindValues).run()
       console.log(`✅ [CONFIG SUBMIT] INSERT completato con successo`)
     } catch (dbError) {
-      console.error('❌ [DB INSERT ERROR] Dettaglio errore database:', dbError)
-      console.error('❌ [DB INSERT ERROR] Query:', insertQuery)
-      console.error('❌ [DB INSERT ERROR] ConfigData completo:', JSON.stringify(configData, null, 2))
-      throw new Error(`Database insert failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`)
+      // Cattura e log dettagliato dell'errore DB
+      const errorDetails = {
+        message: dbError instanceof Error ? dbError.message : String(dbError),
+        name: dbError instanceof Error ? dbError.name : 'Unknown',
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+        bindValuesCount: bindValues.length,
+        leadId,
+        sampleData: {
+          nome: configData.nome,
+          cognome: configData.cognome,
+          peso: configData.peso,
+          altezza: configData.altezza
+        }
+      }
+      console.error('❌ [DB INSERT ERROR] Dettaglio completo:', JSON.stringify(errorDetails, null, 2))
+      
+      // IMPORTANTE: Restituisci l'errore al client per debug
+      return c.json({
+        success: false,
+        error: 'Database insert failed',
+        details: errorDetails
+      }, 500)
     }
     
     console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
