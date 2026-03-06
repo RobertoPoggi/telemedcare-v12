@@ -9902,23 +9902,29 @@ app.post('/api/configurations/submit', async (c) => {
     // 5️⃣ Invia DUE email:
     // A) Email a info@telemedcare.it con i dati compilati
     // B) Email di benvenuto al cliente
-    const WorkflowEmailManager = await import('./modules/workflow-email-manager')
     
-    // ✅ Prepara lead con codiceCliente
-    const leadWithCode = {
-      ...lead,
-      codiceCliente: lead.codiceCliente || lead.id || 'N/D'
-    }
+    let emailConfigSent = false
+    let emailBenvenutoSent = false
     
-    // ✅ Prepara configData dai dati ricevuti
-    const configDataForEmail = {
-      nome_assistito: configData.nome,
-      cognome_assistito: configData.cognome,
-      data_nascita: configData.data_nascita,
-      telefono: configData.telefono,
-      email: configData.email,
-      indirizzo: configData.indirizzo,
-      contatti_emergenza: {
+    try {
+      const WorkflowEmailManager = await import('./modules/workflow-email-manager')
+      
+      // ✅ Prepara lead con codiceCliente
+      const leadWithCode = {
+        ...lead,
+        codiceCliente: lead.codiceCliente || lead.id || 'N/D'
+      }
+      
+      // ✅ Prepara configData dai dati ricevuti
+      const configDataForEmail = {
+        nome_assistito: configData.nome,
+        cognome_assistito: configData.cognome,
+        data_nascita: configData.data_nascita,
+        telefono: configData.telefono,
+        email: configData.email,
+        indirizzo: configData.indirizzo,
+        farmaci_data: farmaciData,
+        contatti_emergenza: {
         contatto1: {
           nome: configData.contatto1_nome,
           cognome: configData.contatto1_cognome,
@@ -9952,22 +9958,30 @@ app.post('/api/configurations/submit', async (c) => {
     
     console.log(`📧 [CONFIG SUBMIT] Email configurazione (info@) result:`, emailConfigResult)
     
-    // B) Invia email di benvenuto al cliente
-    const emailBenvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
-      leadWithCode,
-      leadId,
-      db,
-      c.env
-    )
-    
-    console.log(`📧 [CONFIG SUBMIT] Email benvenuto (cliente) result:`, emailBenvenutoResult)
+      // B) Invia email di benvenuto al cliente
+      const emailBenvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
+        leadWithCode,
+        leadId,
+        db,
+        c.env
+      )
+      
+      console.log(`📧 [CONFIG SUBMIT] Email benvenuto (cliente) result:`, emailBenvenutoResult)
+      
+      emailConfigSent = emailConfigResult.success
+      emailBenvenutoSent = emailBenvenutoResult.success
+      
+    } catch (emailError) {
+      console.error('❌ [CONFIG SUBMIT] Errore invio email (non critico):', emailError)
+      // Non blocchiamo il flusso se le email falliscono
+    }
     
     return c.json({
       success: true,
       leadId: leadId,
-      emailConfigSent: emailConfigResult.success,
-      emailBenvenutoSent: emailBenvenutoResult.success,
-      message: 'Configurazione salvata, email inviata a info@ e email benvenuto inviata al cliente'
+      emailConfigSent,
+      emailBenvenutoSent,
+      message: 'Configurazione salvata' + (emailConfigSent ? ', email inviata a info@' : '') + (emailBenvenutoSent ? ' e email benvenuto inviata al cliente' : '')
     })
     
   } catch (error) {
