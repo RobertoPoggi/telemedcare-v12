@@ -46,59 +46,10 @@ export async function registerPayment(
     console.log(`💳 [PAYMENT] Registrazione pagamento ${paymentId} per proforma ${paymentData.proformaId}`)
     console.log(`💳 [PAYMENT DEBUG] Full paymentData:`, JSON.stringify(paymentData))
 
-    // DEBUG: Test each field individually
-    const field1 = paymentId
-    const field2 = paymentData.proformaId
-    const field3 = paymentData.contractId
-    const field4 = paymentData.leadId
-    const field5 = paymentData.importo
-    const field6 = 'EUR'
-    const field7 = paymentData.metodoPagamento
-    const field8 = paymentData.transactionId || null
-    const field9 = 'PENDING'
+    // ✅ Prepara TUTTI i campi dello schema payments
+    const now = new Date().toISOString()
     
-    // Build debug object to return in case of error
-    const debugInfo = {
-      field1_id: { value: field1, type: typeof field1, isUndefined: field1 === undefined },
-      field2_proforma_id: { value: field2, type: typeof field2, isUndefined: field2 === undefined },
-      field3_contract_id: { value: field3, type: typeof field3, isUndefined: field3 === undefined },
-      field4_leadId: { value: field4, type: typeof field4, isUndefined: field4 === undefined },
-      field5_importo: { value: field5, type: typeof field5, isUndefined: field5 === undefined },
-      field6_valuta: { value: field6, type: typeof field6, isUndefined: field6 === undefined },
-      field7_metodo: { value: field7, type: typeof field7, isUndefined: field7 === undefined },
-      field8_transaction_id: { value: field8, type: typeof field8, isUndefined: field8 === undefined },
-      field9_status: { value: field9, type: typeof field9, isUndefined: field9 === undefined }
-    }
-    
-    console.log(`💳 [PAYMENT DEBUG] All fields:`, JSON.stringify(debugInfo, null, 2))
-    
-    // Check for undefined values and return debug info if found
-    if (field1 === undefined) {
-      return { success: false, error: 'Field 1 (id) is undefined', debug: debugInfo } as any
-    }
-    if (field2 === undefined) {
-      return { success: false, error: 'Field 2 (proforma_id) is undefined', debug: debugInfo } as any
-    }
-    if (field3 === undefined) {
-      return { success: false, error: 'Field 3 (contract_id) is undefined', debug: debugInfo } as any
-    }
-    if (field4 === undefined) {
-      return { success: false, error: 'Field 4 (leadId) is undefined', debug: debugInfo } as any
-    }
-    if (field5 === undefined) {
-      return { success: false, error: 'Field 5 (importo) is undefined', debug: debugInfo } as any
-    }
-    if (field6 === undefined) {
-      return { success: false, error: 'Field 6 (valuta) is undefined', debug: debugInfo } as any
-    }
-    if (field7 === undefined) {
-      return { success: false, error: 'Field 7 (metodo) is undefined', debug: debugInfo } as any
-    }
-    if (field9 === undefined) {
-      return { success: false, error: 'Field 9 (status) is undefined', debug: debugInfo } as any
-    }
-    
-    // Inserisci pagamento nel database
+    // Inserisci pagamento nel database con TUTTI i campi
     const insertResult = await db.prepare(`
       INSERT INTO payments (
         id,
@@ -109,19 +60,40 @@ export async function registerPayment(
         valuta,
         metodo_pagamento,
         transaction_id,
+        riferimento_bonifico,
+        iban_mittente,
         status,
-        data_pagamento
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        data_pagamento,
+        data_conferma,
+        stripe_payment_intent_id,
+        stripe_charge_id,
+        paypal_transaction_id,
+        note,
+        verificato_manualmente,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      field1,
-      field2,
-      field3,
-      field4,
-      field5,
-      field6,
-      field7,
-      field8,
-      field9
+      paymentId,                                    // id
+      paymentData.proformaId,                       // proforma_id
+      paymentData.contractId,                       // contract_id
+      paymentData.leadId,                           // leadId
+      paymentData.importo,                          // importo
+      'EUR',                                        // valuta
+      paymentData.metodoPagamento,                  // metodo_pagamento
+      paymentData.transactionId || null,            // transaction_id
+      paymentData.riferimentoBonifico || null,      // riferimento_bonifico
+      paymentData.ibanMittente || null,             // iban_mittente
+      'COMPLETED',                                  // status (COMPLETED se arriva qui da Stripe)
+      now,                                          // data_pagamento
+      now,                                          // data_conferma
+      paymentData.stripePaymentIntentId || null,    // stripe_payment_intent_id
+      paymentData.stripeChargeId || null,           // stripe_charge_id
+      null,                                         // paypal_transaction_id
+      paymentData.note || null,                     // note
+      0,                                            // verificato_manualmente
+      now,                                          // created_at
+      now                                           // updated_at
     ).run()
     
     console.log(`✅ [PAYMENT] INSERT successful:`, insertResult)
