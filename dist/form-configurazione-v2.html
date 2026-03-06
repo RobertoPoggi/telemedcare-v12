@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Configurazione</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 class="text-2xl font-bold mb-6">Test Configurazione SOLO CARE</h1>
+        
+        <form id="testForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Nome</label>
+                <input type="text" id="nome" class="w-full border rounded px-3 py-2" value="Mario">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-2">Cognome</label>
+                <input type="text" id="cognome" class="w-full border rounded px-3 py-2" value="Rossi">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-2">Data di nascita</label>
+                <input type="date" id="data_nascita" class="w-full border rounded px-3 py-2" value="1950-01-15">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-2">Telefono</label>
+                <input type="tel" id="telefono" class="w-full border rounded px-3 py-2" value="3331234567">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-2">Email</label>
+                <input type="email" id="email" class="w-full border rounded px-3 py-2" value="mario.rossi@test.it">
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+                Invia Configurazione
+            </button>
+        </form>
+        
+        <div id="result" class="mt-6 p-4 rounded-lg hidden"></div>
+        
+        <div id="logs" class="mt-6 bg-gray-100 p-4 rounded text-xs font-mono overflow-auto max-h-96"></div>
+    </div>
+    
+    <script>
+        const leadId = 'LEAD-IRBEMA-00268';
+        const logsDiv = document.getElementById('logs');
+        const resultDiv = document.getElementById('result');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const color = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-gray-700';
+            logsDiv.innerHTML += `<div class="${color}">[${timestamp}] ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            logsDiv.innerHTML = '';
+            resultDiv.classList.add('hidden');
+            
+            const formData = {
+                leadId: leadId,
+                nome: document.getElementById('nome').value,
+                cognome: document.getElementById('cognome').value,
+                data_nascita: document.getElementById('data_nascita').value,
+                telefono: document.getElementById('telefono').value,
+                email: document.getElementById('email').value
+            };
+            
+            log('📤 Invio configurazione...', 'info');
+            log('📋 Dati: ' + JSON.stringify(formData, null, 2), 'info');
+            
+            try {
+                const apiUrl = window.location.origin + '/api/configurations/submit';
+                log('🌐 URL API: ' + apiUrl, 'info');
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                log('📥 Status: ' + response.status, response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                log('📥 Response raw: ' + responseText.substring(0, 500), 'info');
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    log('✅ JSON parsato correttamente', 'success');
+                } catch (parseError) {
+                    log('❌ Errore parsing JSON: ' + parseError.message, 'error');
+                    throw new Error('Risposta non valida dal server');
+                }
+                
+                if (result.success) {
+                    log('✅ Configurazione salvata!', 'success');
+                    resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-100 border border-green-400 text-green-800';
+                    resultDiv.innerHTML = `
+                        <h3 class="font-bold text-lg mb-2">✅ Successo!</h3>
+                        <p>Configurazione salvata correttamente.</p>
+                        <p class="text-sm mt-2">Lead ID: ${result.leadId}</p>
+                        ${result.emailConfigSent ? '<p class="text-sm">✉️ Email inviata a info@telemedcare.it</p>' : ''}
+                        ${result.emailBenvenutoSent ? '<p class="text-sm">✉️ Email benvenuto inviata al cliente</p>' : ''}
+                    `;
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    throw new Error(result.error || 'Errore sconosciuto');
+                }
+                
+            } catch (error) {
+                log('❌ Errore: ' + error.message, 'error');
+                resultDiv.className = 'mt-6 p-4 rounded-lg bg-red-100 border border-red-400 text-red-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-bold text-lg mb-2">❌ Errore</h3>
+                    <p>${error.message}</p>
+                `;
+                resultDiv.classList.remove('hidden');
+            }
+        });
+        
+        log('🚀 Form pronto. Lead ID: ' + leadId, 'success');
+    </script>
+</body>
+</html>
