@@ -23850,18 +23850,5 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
   }
 })
 
-export default {
-  async fetch(request: Request, env: any, ctx: any) {
-    const url = new URL(request.url)
-    
-    // 🔥 BYPASS: Se richiesta per file HTML statico, delega a Cloudflare Pages Assets
-    if (url.pathname.endsWith('.html') && url.pathname !== '/index.html') {
-      if (env.ASSETS) {
-        return env.ASSETS.fetch(request)
-      }
-    }
-    
-    // Altrimenti usa il normale routing Hono
-    return app.fetch(request, env, ctx)
-  }
-}
+// Export diretto dell'app Hono (richiesto da @hono/vite-build)
+export default app
