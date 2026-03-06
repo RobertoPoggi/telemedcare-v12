@@ -9615,6 +9615,52 @@ app.get('/api/configurations/health', async (c) => {
   }
 })
 
+// 🧪 POST /api/configurations/test-insert - Test minimale INSERT
+app.post('/api/configurations/test-insert', async (c) => {
+  try {
+    const data = await c.req.json()
+    const leadId = data.leadId || 'TEST-00001'
+    
+    if (!c.env?.DB) {
+      return c.json({ error: 'DB not available' }, 500)
+    }
+    
+    const db = c.env.DB
+    
+    // Test 1: Query semplice
+    try {
+      const result = await db.prepare('SELECT 1 as test').first()
+      console.log('✅ Test query OK:', result)
+    } catch (e) {
+      return c.json({ error: 'Test query failed', details: String(e) }, 500)
+    }
+    
+    // Test 2: INSERT minimale (solo campi obbligatori)
+    try {
+      await db.prepare(`
+        INSERT INTO configurations (
+          leadId, nome_assistito, cognome_assistito, status, form_inviato
+        ) VALUES (?, ?, ?, ?, ?)
+      `).bind(leadId, data.nome || 'Test', data.cognome || 'User', 'TEST', true).run()
+      
+      return c.json({ success: true, message: 'INSERT OK', leadId })
+    } catch (dbError) {
+      return c.json({
+        success: false,
+        error: 'INSERT failed',
+        message: dbError instanceof Error ? dbError.message : String(dbError),
+        name: dbError instanceof Error ? dbError.name : 'Unknown'
+      }, 500)
+    }
+    
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: String(error)
+    }, 500)
+  }
+})
+
 // ✅ POST /api/configurations/submit - Salva configurazione e invia email benvenuto
 app.post('/api/configurations/submit', async (c) => {
   console.log('📥 [CONFIG SUBMIT] Ricevuta richiesta submit configurazione')
