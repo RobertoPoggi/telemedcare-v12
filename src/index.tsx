@@ -9593,6 +9593,7 @@ app.post('/api/configurations/submit', async (c) => {
     
     console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}, Token: ${token}`)
     console.log(`📋 [CONFIG SUBMIT] Dati configurazione:`, JSON.stringify(configData, null, 2))
+    console.log(`🔍 [CONFIG SUBMIT] Environment check: DB=${!!c.env?.DB}, env=${!!c.env}`)
     
     if (!c.env?.DB) {
       return c.json({ 
@@ -9616,7 +9617,9 @@ app.post('/api/configurations/submit', async (c) => {
     }
     
     // 2️⃣ Recupera lead per avere tutti i dati
+    console.log(`🔍 [CONFIG SUBMIT] Query lead: ${leadId}`)
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+    console.log(`🔍 [CONFIG SUBMIT] Lead trovato:`, lead ? 'SI' : 'NO')
     
     if (!lead) {
       return c.json({ 
@@ -9702,7 +9705,6 @@ app.post('/api/configurations/submit', async (c) => {
       : (configData.patologie || '')
     
     console.log('🔍 [DEBUG] Dati prima del bind:', {
-      configId,
       leadId,
       nome: configData.nome,
       cognome: configData.cognome,
@@ -9717,6 +9719,7 @@ app.post('/api/configurations/submit', async (c) => {
       patologie
     })
     
+    console.log(`🔍 [CONFIG SUBMIT] Inizio INSERT nel database...`)
     try {
       await db.prepare(insertQuery).bind(
         leadId,
@@ -9778,6 +9781,7 @@ app.post('/api/configurations/submit', async (c) => {
         false, // email_benvenuto_inviata (verrà aggiornato dopo)
         false  // email_conferma_inviata
       ).run()
+      console.log(`✅ [CONFIG SUBMIT] INSERT completato con successo`)
     } catch (dbError) {
       console.error('❌ [DB INSERT ERROR] Dettaglio errore database:', dbError)
       console.error('❌ [DB INSERT ERROR] Query:', insertQuery)
