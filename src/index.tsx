@@ -9681,8 +9681,10 @@ app.post('/api/configurations/submit', async (c) => {
     
     const { leadId, token, ...configData } = data
     
-    console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}, Token: ${token}`)
-    console.log(`📋 [CONFIG SUBMIT] Dati configurazione:`, JSON.stringify(configData, null, 2))
+    console.log(`📋 [CONFIG SUBMIT] Step 1: Parse OK`)
+    console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}`)
+    console.log(`📋 [CONFIG SUBMIT] Token: ${token ? 'presente' : 'mancante'}`)
+    console.log(`📋 [CONFIG SUBMIT] Step 2: Check environment`)
     console.log(`🔍 [CONFIG SUBMIT] Environment check: DB=${!!c.env?.DB}, env=${!!c.env}`)
     
     if (!c.env?.DB) {
