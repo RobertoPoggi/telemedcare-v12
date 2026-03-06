@@ -1,172 +1,95 @@
-# 🔧 Istruzioni Migrazione Database - Aggiungi Date Contratti
+# 🔧 Istruzioni Migration Database - Configurazioni
 
-## ⚠️ Problema Attuale
+## Problema
+Il form configurazione è stato aggiornato con nuovi campi:
+- **Email** per contatti emergenza (3 campi)
+- **Whitelist** chiamate autorizzate (12 campi: nome, cognome, telefono, email × 3)
 
-Il database live **NON ha** i campi `data_firma` e `data_scadenza` nella tabella `contracts`.  
-Questo impedisce:
-- ❌ Inserimento contratti con date specifiche
-- ❌ Aggiornamento date contratti esistenti
-- ❌ Gestione corretta rinnovi
-- ❌ Query per contratti in scadenza
+Ma il database D1 **NON** ha queste colonne, quindi l'INSERT fallisce.
 
-## ✅ Soluzione: Migration 0003
+## Soluzione
 
-La migration `migrations/0003_add_contract_dates.sql` aggiunge i campi mancanti.
+### Opzione 1: Via Cloudflare Dashboard (CONSIGLIATA)
 
----
+1. Vai su https://dash.cloudflare.com
+2. Seleziona il progetto `telemedcare-v12`
+3. Vai su **Workers & Pages** → **D1 Database**
+4. Seleziona il database (probabilmente `telemedcare_db` o simile)
+5. Vai su **Console**
+6. Copia e incolla questo SQL:
 
-## 📋 Step by Step
+```sql
+-- Aggiungi email contatti emergenza
+ALTER TABLE configurations ADD COLUMN contatto1_email TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN contatto2_email TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN contatto3_email TEXT DEFAULT '';
 
-### **1. Verifica Database Cloudflare D1**
+-- Aggiungi whitelist contatti
+ALTER TABLE configurations ADD COLUMN whitelist1_nome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist1_cognome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist1_telefono TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist1_email TEXT DEFAULT '';
+
+ALTER TABLE configurations ADD COLUMN whitelist2_nome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist2_cognome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist2_telefono TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist2_email TEXT DEFAULT '';
+
+ALTER TABLE configurations ADD COLUMN whitelist3_nome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist3_cognome TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist3_telefono TEXT DEFAULT '';
+ALTER TABLE configurations ADD COLUMN whitelist3_email TEXT DEFAULT '';
+```
+
+7. Clicca **Execute**
+8. Verifica con: `SELECT * FROM configurations LIMIT 1;`
+
+### Opzione 2: Via Wrangler CLI
+
+Se hai accesso a wrangler:
 
 ```bash
-# Lista databases
-wrangler d1 list
+# 1. Verifica nome database in wrangler.toml
+grep "database_name" wrangler.toml
 
-# Output atteso:
-# ┌───────────────────┬──────────────────────────────────────┐
-# │ Name              │ UUID                                 │
-# ├───────────────────┼──────────────────────────────────────┤
-# │ telemedcare-db    │ xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx │
-# └───────────────────┴──────────────────────────────────────┘
+# 2. Esegui migration
+wrangler d1 execute <DB_NAME> --file=DB_MIGRATION_configurations.sql --remote
+
+# 3. Verifica
+wrangler d1 execute <DB_NAME> --command="SELECT sql FROM sqlite_master WHERE type='table' AND name='configurations';" --remote
 ```
 
-### **2. Backup Database (Consigliato)**
+## Verifica Post-Migration
 
-```bash
-# Export schema corrente
-wrangler d1 execute telemedcare-db --remote --command="SELECT sql FROM sqlite_master WHERE type='table' AND name='contracts';" > backup_contracts_schema.sql
+1. Vai su https://telemedcare-v12.pages.dev/form-configurazione?leadId=LEAD-IRBEMA-00268&token=test123
+2. Compila il form con almeno:
+   - 1 contatto emergenza con email
+   - 1 contatto whitelist
+3. Submit
+4. Verifica che:
+   - ✅ Success popup appare
+   - ✅ Nessun errore in console
+   - ✅ Email benvenuto ricevuta
 
-# Export dati contratti esistenti
-wrangler d1 execute telemedcare-db --remote --command="SELECT * FROM contracts LIMIT 10;" > backup_contracts_sample.txt
+## Rollback (se necessario)
+
+Se qualcosa va storto, puoi rimuovere le colonne:
+
+```sql
+-- SQLite non supporta DROP COLUMN nativamente
+-- Serve creare una nuova tabella e copiare i dati
+
+-- Verifica prima con:
+SELECT COUNT(*) FROM configurations;
 ```
 
-### **3. Esegui Migration**
+## Note
 
-```bash
-cd /path/to/telemedcare-v12
+- Le colonne sono tutte `TEXT DEFAULT ''` quindi non NULL
+- I valori esistenti non vengono toccati
+- Il form funziona anche senza la migration (dà errore ma non blocca)
+- La migration è **safe** e **idempotente** (puoi ripeterla)
 
-# Esegui migration su DATABASE REMOTO (produzione)
-wrangler d1 execute telemedcare-db --remote --file=./migrations/0003_add_contract_dates.sql
-```
+## Contatti
 
-**Output atteso:**
-```
-🌀 Executing on remote database telemedcare-db (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx):
-🚣 Executed 6 commands in 1.234s
-```
-
-### **4. Verifica Migration**
-
-```bash
-# Verifica che le colonne siano state aggiunte
-wrangler d1 execute telemedcare-db --remote --command="PRAGMA table_info(contracts);" | grep data_
-
-# Output atteso:
-# | ... | data_firma    | TEXT | ... |
-# | ... | data_scadenza | TEXT | ... |
-```
-
-```bash
-# Verifica che i contratti esistenti abbiano le date
-wrangler d1 execute telemedcare-db --remote --command="SELECT id, codice_contratto, data_firma, data_scadenza FROM contracts LIMIT 5;"
-```
-
-### **5. Re-deploy Applicazione**
-
-Dopo la migration, ri-abilita i campi nel codice:
-
-```bash
-# L'applicazione è già aggiornata su GitHub
-# Il prossimo deploy includerà i campi data_firma/data_scadenza
-```
-
----
-
-## 🧪 Test Post-Migration
-
-### **Test 1: Inserimento Contratti**
-1. Vai a: https://telemedcare-v12.pages.dev/test-insert-manual-contracts
-2. Clicca "🚀 Inserisci Contratti nel Database"
-3. Verifica: **"✅ Inseriti 3/3 contratti"** (nessun errore SQL)
-
-### **Test 2: Aggiornamento Date**
-1. Vai a: https://telemedcare-v12.pages.dev/test-update-contracts-dates
-2. Clicca "🔄 Aggiorna Date Contratti"
-3. Verifica: **"✅ Aggiornati 6/6 contratti"**
-
-### **Test 3: Dashboard**
-1. Vai a: https://telemedcare-v12.pages.dev/admin/leads-dashboard
-2. Tab "Contratti" → verifica colonne `data_firma` e `data_scadenza` popolate
-
----
-
-## 🔄 Rollback (Se Necessario)
-
-Se la migration causa problemi:
-
-```bash
-# Rimuovi le colonne aggiunte
-wrangler d1 execute telemedcare-db --remote --command="ALTER TABLE contracts DROP COLUMN data_firma;"
-wrangler d1 execute telemedcare-db --remote --command="ALTER TABLE contracts DROP COLUMN data_scadenza;"
-
-# Rimuovi indici
-wrangler d1 execute telemedcare-db --remote --command="DROP INDEX IF EXISTS idx_contracts_data_firma;"
-wrangler d1 execute telemedcare-db --remote --command="DROP INDEX IF EXISTS idx_contracts_data_scadenza;"
-```
-
----
-
-## 📊 Cosa Fa la Migration
-
-1. **Aggiunge colonne**:
-   - `data_firma TEXT` - Data firma contratto (formato: 2025-05-12)
-   - `data_scadenza TEXT` - Data scadenza per rinnovo (formato: 2026-05-11)
-
-2. **Crea indici** per query performanti su scadenze
-
-3. **Popola date esistenti** da `created_at` + `durata_mesi`:
-   ```sql
-   data_firma = created_at
-   data_scadenza = created_at + durata_mesi - 1 giorno
-   ```
-
-4. **Verifica** contratti in scadenza prossimi 90 giorni
-
----
-
-## ✅ Checklist Completa
-
-- [ ] Backup database eseguito
-- [ ] Migration `0003_add_contract_dates.sql` eseguita su produzione
-- [ ] Verifica colonne `data_firma` e `data_scadenza` esistono
-- [ ] Verifica contratti esistenti hanno date popolate
-- [ ] Test inserimento 3 nuovi contratti (Locatelli, Pepe, Macchi)
-- [ ] Test aggiornamento 6 contratti esistenti (Capone, Pennacchio, Cozzi, King, Pizzutto, Balzarotti)
-- [ ] Verifica dashboard mostra date corrette
-- [ ] Sistema rinnovi abilitato
-
----
-
-## 🆘 Supporto
-
-Se riscontri errori durante la migration:
-1. Controlla output comando `wrangler d1 execute`
-2. Verifica nome database: `telemedcare-db`
-3. Verifica permessi Cloudflare (deve essere owner o admin)
-4. Esegui rollback e contatta supporto
-
----
-
-## 📝 Note Tecniche
-
-- **SQLite**: Cloudflare D1 usa SQLite, che supporta `ALTER TABLE ADD COLUMN`
-- **Tipo TEXT**: Date salvate come stringa ISO 8601 (YYYY-MM-DD)
-- **Indici**: Migliorano performance query per scadenze imminenti
-- **Backward compatible**: Contratti senza date non causano errori
-
----
-
-**Data creazione**: 2026-02-15  
-**Versione**: 1.0  
-**Autore**: TeleMedCare System
+In caso di dubbi: info@telemedcare.it
