@@ -9627,19 +9627,34 @@ app.post('/api/configurations/submit', async (c) => {
         contatto1_nome,
         contatto1_cognome,
         contatto1_telefono,
+        contatto1_email,
         contatto2_nome,
         contatto2_cognome,
         contatto2_telefono,
+        contatto2_email,
         contatto3_nome,
         contatto3_cognome,
         contatto3_telefono,
+        contatto3_email,
+        whitelist1_nome,
+        whitelist1_cognome,
+        whitelist1_telefono,
+        whitelist1_email,
+        whitelist2_nome,
+        whitelist2_cognome,
+        whitelist2_telefono,
+        whitelist2_email,
+        whitelist3_nome,
+        whitelist3_cognome,
+        whitelist3_telefono,
+        whitelist3_email,
         patologie,
         note_mediche,
         farmaci_data,
         status,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
     
     // Prepara array farmaci come JSON string
@@ -9669,12 +9684,27 @@ app.post('/api/configurations/submit', async (c) => {
       configData.contatto1_nome || '',
       configData.contatto1_cognome || '',
       configData.contatto1_telefono || '',
+      configData.contatto1_email || '',
       configData.contatto2_nome || '',
       configData.contatto2_cognome || '',
       configData.contatto2_telefono || '',
+      configData.contatto2_email || '',
       configData.contatto3_nome || '',
       configData.contatto3_cognome || '',
       configData.contatto3_telefono || '',
+      configData.contatto3_email || '',
+      configData.whitelist1_nome || '',
+      configData.whitelist1_cognome || '',
+      configData.whitelist1_telefono || '',
+      configData.whitelist1_email || '',
+      configData.whitelist2_nome || '',
+      configData.whitelist2_cognome || '',
+      configData.whitelist2_telefono || '',
+      configData.whitelist2_email || '',
+      configData.whitelist3_nome || '',
+      configData.whitelist3_cognome || '',
+      configData.whitelist3_telefono || '',
+      configData.whitelist3_email || '',
       patologie,
       configData.note_aggiuntive || '',
       farmaciData,
@@ -9709,10 +9739,14 @@ app.post('/api/configurations/submit', async (c) => {
     
   } catch (error) {
     console.error('❌ [CONFIG SUBMIT] Errore:', error)
+    console.error('❌ [CONFIG SUBMIT] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.error('❌ [CONFIG SUBMIT] Lead ID:', leadId)
+    
     return c.json({
       success: false,
       error: 'Errore salvataggio configurazione',
-      details: error instanceof Error ? error.message : String(error)
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
     }, 500)
   }
 })
