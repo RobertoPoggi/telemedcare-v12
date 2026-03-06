@@ -9566,6 +9566,46 @@ app.post('/api/leads/:id/complete', async (c) => {
   }
 })
 
+// 🔍 GET /api/configurations/health - Health check endpoint
+app.get('/api/configurations/health', async (c) => {
+  console.log('🏥 [HEALTH CHECK] Checking configurations endpoint health...')
+  
+  try {
+    const hasEnv = !!c.env
+    const hasDB = !!c.env?.DB
+    
+    let dbStatus = 'not_available'
+    let dbVersion = null
+    
+    if (hasDB) {
+      try {
+        const result = await c.env.DB.prepare('SELECT sqlite_version() as version').first()
+        dbVersion = result?.version
+        dbStatus = 'connected'
+      } catch (dbError) {
+        dbStatus = 'error: ' + (dbError instanceof Error ? dbError.message : String(dbError))
+      }
+    }
+    
+    return c.json({
+      status: 'ok',
+      endpoint: '/api/configurations/submit',
+      environment: {
+        hasEnv,
+        hasDB,
+        dbStatus,
+        dbVersion
+      },
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    return c.json({
+      status: 'error',
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // ✅ POST /api/configurations/submit - Salva configurazione e invia email benvenuto
 app.post('/api/configurations/submit', async (c) => {
   console.log('📥 [CONFIG SUBMIT] Ricevuta richiesta submit configurazione')
