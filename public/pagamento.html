@@ -580,6 +580,18 @@
                     if (backendSuccess) {
                         // Workflow completato con successo
                         document.getElementById('successMessage').style.display = 'block';
+                        
+                        // ✅ Chiudi automaticamente la finestra dopo 3 secondi
+                        setTimeout(() => {
+                            console.log('🔄 [AUTO-CLOSE] Chiusura automatica finestra pagamento...');
+                            window.close();
+                            
+                            // Fallback: se window.close() non funziona (popup blocker), redirect
+                            setTimeout(() => {
+                                console.log('🔄 [AUTO-CLOSE] Redirect a pagina principale...');
+                                window.location.href = '/';
+                            }, 500);
+                        }, 3000);
                     } else {
                         // Pagamento OK ma workflow fallito - mostra avviso
                         const successDiv = document.getElementById('successMessage');
