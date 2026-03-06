@@ -87,11 +87,13 @@ CREATE TABLE assistiti (
 
 **Descrizione**: Configurazioni dispositivi, contatti emergenza, whitelist e informazioni mediche.
 
-**⚠️ SCHEMA AGGIORNATO 2026-03-06**: Aggiunti campi per form configurazione post-pagamento.
+**⚠️ SCHEMA VERIFICATO 2026-03-06**: Schema DB reale da produzione Cloudflare D1.
+
+**⚠️ IMPORTANTE**: L'ordine delle colonne DEVE corrispondere esattamente a questo schema per gli INSERT!
 
 ```sql
 CREATE TABLE configurations (
-    id TEXT PRIMARY KEY,                      -- CONF-timestamp-random (cambiato da INTEGER)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,     -- ⚠️ AUTOINCREMENT: non inserire manualmente!
     leadId TEXT NOT NULL,                     -- FK leads(id)
     device_id INTEGER,                        -- FK dispositivi(id)
     contract_id TEXT,                         -- FK contracts(id)
@@ -139,6 +141,12 @@ CREATE TABLE configurations (
     whitelist3_telefono TEXT,
     whitelist3_email TEXT,
     
+    -- ✅ INFORMAZIONI MEDICHE - FORMATO NUOVO (aggiunti 2026-03-06)
+    -- ⚠️ ORDINE IMPORTANTE: patologie, note_mediche, farmaci_data PRIMA dei campi vecchi!
+    patologie TEXT,                           -- CSV string (es. "ipertensione, diabete")
+    note_mediche TEXT,                        -- Note aggiuntive
+    farmaci_data TEXT,                        -- JSON string con nomi, dosaggi, orari
+    
     -- ⚠️ CONTATTI EMERGENZA - FORMATO VECCHIO (deprecato ma mantenuto per compatibilità)
     contatto_emergenza_1_nome TEXT,
     contatto_emergenza_1_telefono TEXT,
@@ -151,11 +159,6 @@ CREATE TABLE configurations (
     medico_curante_nome TEXT,
     medico_curante_telefono TEXT,
     centro_medico_riferimento TEXT,
-    
-    -- ✅ INFORMAZIONI MEDICHE - FORMATO NUOVO (aggiunti 2026-03-06)
-    patologie TEXT,                           -- CSV string (es. "ipertensione, diabete")
-    note_mediche TEXT,                        -- Note aggiuntive
-    farmaci_data TEXT,                        -- JSON string con nomi, dosaggi, orari
     
     -- ⚠️ INFORMAZIONI MEDICHE - FORMATO VECCHIO (deprecato ma mantenuto)
     allergie TEXT,
@@ -173,7 +176,7 @@ CREATE TABLE configurations (
     email_benvenuto_inviata BOOLEAN DEFAULT FALSE,
     email_conferma_inviata BOOLEAN DEFAULT FALSE,
     
-    -- Timestamps
+    -- Timestamps (DEFAULT: non inserire manualmente!)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
@@ -181,6 +184,12 @@ CREATE TABLE configurations (
     FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
 )
 ```
+
+**Note importanti per INSERT:**
+1. **NON inserire** `id` (è AUTOINCREMENT)
+2. **NON inserire** `created_at` e `updated_at` (hanno DEFAULT)
+3. **Rispettare l'ordine esatto** delle colonne come sopra
+4. Totale colonne da inserire: **58** (61 totali - 3 con auto/default)
 
 ---
 
