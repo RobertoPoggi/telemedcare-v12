@@ -9686,14 +9686,14 @@ app.post('/api/configurations/submit', async (c) => {
     // 5️⃣ Invia email benvenuto
     const WorkflowEmailManager = await import('./modules/workflow-email-manager')
     
+    // ✅ Prepara lead con codiceCliente
+    const leadWithCode = {
+      ...lead,
+      codiceCliente: lead.codiceCliente || lead.id || 'N/D'
+    }
+    
     const emailResult = await WorkflowEmailManager.inviaEmailBenvenuto(
-      lead,
-      {
-        codiceCliente: lead.codiceCliente || 'N/D',
-        dispositivo: 'SiDLY',
-        servizio: lead.servizio || 'eCura',
-        piano: lead.piano || 'AVANZATO'
-      },
+      leadWithCode,
       c.env,
       db
     )
