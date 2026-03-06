@@ -9564,6 +9564,159 @@ app.post('/api/leads/:id/complete', async (c) => {
       message: error instanceof Error ? error.message : String(error)
     }, 500)
   }
+
+// ✅ POST /api/configurations/submit - Salva configurazione e invia email benvenuto
+app.post('/api/configurations/submit', async (c) => {
+  console.log('📥 [CONFIG SUBMIT] Ricevuta richiesta submit configurazione')
+  
+  try {
+    const data = await c.req.json()
+    const { leadId, token, ...configData } = data
+    
+    console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}, Token: ${token}`)
+    console.log(`📋 [CONFIG SUBMIT] Dati configurazione:`, JSON.stringify(configData, null, 2))
+    
+    if (!c.env?.DB) {
+      return c.json({ 
+        success: false, 
+        error: 'Database non disponibile' 
+      }, 500)
+    }
+    
+    const db = c.env.DB
+    
+    // 1️⃣ Verifica token (opzionale - per sicurezza)
+    if (token) {
+      const tokenCheck = await db.prepare(
+        'SELECT * FROM lead_completion_tokens WHERE token = ? AND lead_id = ? AND datetime(expires_at) > datetime("now")'
+      ).bind(token, leadId).first()
+      
+      if (!tokenCheck) {
+        console.log('⚠️ [CONFIG SUBMIT] Token non valido o scaduto')
+        // Non blocchiamo se il token non è valido, è solo un check di sicurezza
+      }
+    }
+    
+    // 2️⃣ Recupera lead per avere tutti i dati
+    const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+    
+    if (!lead) {
+      return c.json({ 
+        success: false, 
+        error: 'Lead non trovato' 
+      }, 404)
+    }
+    
+    // 3️⃣ Genera ID configurazione
+    const configId = `CONF-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    
+    // 4️⃣ Salva nella tabella configurations
+    const insertQuery = `
+      INSERT INTO configurations (
+        id,
+        leadId,
+        nome_assistito,
+        cognome_assistito,
+        data_nascita,
+        eta,
+        peso,
+        altezza,
+        telefono,
+        email,
+        indirizzo,
+        contatto1_nome,
+        contatto1_cognome,
+        contatto1_telefono,
+        contatto2_nome,
+        contatto2_cognome,
+        contatto2_telefono,
+        contatto3_nome,
+        contatto3_cognome,
+        contatto3_telefono,
+        patologie,
+        note_mediche,
+        farmaci_data,
+        status,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `
+    
+    // Prepara array farmaci come JSON string
+    const farmaciData = JSON.stringify({
+      nomi: configData['farmaco_nome'] || [],
+      dosaggi: configData['farmaco_dosaggio'] || [],
+      orari: configData['farmaco_orario'] || []
+    })
+    
+    // Prepara array patologie come stringa separata da virgole
+    const patologie = Array.isArray(configData.patologie) 
+      ? configData.patologie.join(', ') 
+      : (configData.patologie || '')
+    
+    await db.prepare(insertQuery).bind(
+      configId,
+      leadId,
+      configData.nome || '',
+      configData.cognome || '',
+      configData.data_nascita || '',
+      configData.eta || '',
+      configData.peso || null,
+      configData.altezza || null,
+      configData.telefono || '',
+      configData.email || '',
+      configData.indirizzo || '',
+      configData.contatto1_nome || '',
+      configData.contatto1_cognome || '',
+      configData.contatto1_telefono || '',
+      configData.contatto2_nome || '',
+      configData.contatto2_cognome || '',
+      configData.contatto2_telefono || '',
+      configData.contatto3_nome || '',
+      configData.contatto3_cognome || '',
+      configData.contatto3_telefono || '',
+      patologie,
+      configData.note_aggiuntive || '',
+      farmaciData,
+      'SUBMITTED'
+    ).run()
+    
+    console.log(`✅ [CONFIG SUBMIT] Configurazione ${configId} salvata nel DB`)
+    
+    // 5️⃣ Invia email benvenuto
+    const WorkflowEmailManager = await import('./modules/workflow-email-manager')
+    
+    const emailResult = await WorkflowEmailManager.inviaEmailBenvenuto(
+      lead,
+      {
+        codiceCliente: lead.codiceCliente || 'N/D',
+        dispositivo: 'SiDLY',
+        servizio: lead.servizio || 'eCura',
+        piano: lead.piano || 'AVANZATO'
+      },
+      c.env,
+      db
+    )
+    
+    console.log(`📧 [CONFIG SUBMIT] Email benvenuto result:`, emailResult)
+    
+    return c.json({
+      success: true,
+      configId: configId,
+      emailSent: emailResult.success,
+      message: 'Configurazione salvata e email benvenuto inviata'
+    })
+    
+  } catch (error) {
+    console.error('❌ [CONFIG SUBMIT] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore salvataggio configurazione',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 })
 
 // 🔧 ALIAS: /api/lead/:id/complete (SINGOLARE) - Per retrocompatibilità con form email vecchi

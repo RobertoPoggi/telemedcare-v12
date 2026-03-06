@@ -101,15 +101,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                            <input type="text" name="contatto1_nome" value="Anna" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="contatto1_nome" value="" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
-                            <input type="text" name="contatto1_cognome" value="Rossi" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="contatto1_cognome" value="" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Telefono</label>
-                            <input type="tel" name="contatto1_telefono" value="347 987 6543" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="tel" name="contatto1_telefono" value="" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
                 </div>
@@ -123,15 +123,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                            <input type="text" name="contatto2_nome" value="Luca" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="contatto2_nome" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Cognome</label>
-                            <input type="text" name="contatto2_cognome" value="Rossi" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="contatto2_cognome" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Telefono</label>
-                            <input type="tel" name="contatto2_telefono" value="338 456 7890" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="tel" name="contatto2_telefono" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
                 </div>
@@ -167,7 +167,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
-                        <input type="checkbox" name="patologie[]" value="ipertensione" checked class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                        <input type="checkbox" name="patologie[]" value="ipertensione" class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
                         <span class="ml-3 text-gray-700">Ipertensione arteriosa</span>
                     </label>
                     <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer">
@@ -261,8 +261,8 @@
             <div class="text-center">
                 <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Configurazione Inviata!</h3>
-                <p class="text-gray-600">I dati sono stati inviati correttamente. Riceverete conferma dell'attivazione entro 24 ore.</p>
-                <button onclick="document.getElementById('success-message').classList.add('hidden')" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                <p class="text-gray-600">I dati sono stati inviati correttamente. Riceverete a breve una mail con conferma dell'attivazione.</p>
+                <button onclick="closeFormAndWindow()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
                     Chiudi
                 </button>
             </div>
@@ -270,8 +270,32 @@
     </div>
 
     <script>
-        // Initialize EmailJS
-        emailjs.init('-JEWqtrkLWqAEvuoW');
+        // ✅ RIMUOVI WARNING "dati andranno persi" quando form è completato
+        let formSubmitted = false;
+        
+        window.addEventListener('beforeunload', function (e) {
+            // Se il form è stato inviato con successo, NON mostrare warning
+            if (formSubmitted) {
+                return undefined;
+            }
+            
+            // Altrimenti, mostra warning solo se ci sono dati nel form
+            const form = document.getElementById('configurazione-form');
+            const formData = new FormData(form);
+            let hasData = false;
+            
+            for (let [key, value] of formData.entries()) {
+                if (value && value.trim() !== '') {
+                    hasData = true;
+                    break;
+                }
+            }
+            
+            if (hasData) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         // ✅ CARICA DATI LEAD DAL BACKEND
         async function loadLeadData() {
@@ -349,6 +373,25 @@
                     }
                 }
                 
+                // ✅ PRECOMPILA CONTATTO EMERGENZA 1 CON RICHIEDENTE (se diverso da assistito)
+                if (lead.nomeRichiedente && lead.cognomeRichiedente) {
+                    // Se assistito è diverso da richiedente, usa richiedente come contatto 1
+                    const assistitoNome = (lead.nomeAssistito || '').toLowerCase();
+                    const richiedenteNome = (lead.nomeRichiedente || '').toLowerCase();
+                    const assistitoCognome = (lead.cognomeAssistito || '').toLowerCase();
+                    const richiedenteCognome = (lead.cognomeRichiedente || '').toLowerCase();
+                    
+                    const sonoLaStessaPersona = (assistitoNome === richiedenteNome && assistitoCognome === richiedenteCognome);
+                    
+                    if (!sonoLaStessaPersona) {
+                        // ✅ Precompila contatto 1 con richiedente
+                        document.querySelector('input[name="contatto1_nome"]').value = lead.nomeRichiedente || '';
+                        document.querySelector('input[name="contatto1_cognome"]').value = lead.cognomeRichiedente || '';
+                        document.querySelector('input[name="contatto1_telefono"]').value = lead.telefono || '';
+                        console.log(`✅ [FORM CONFIG] Contatto 1 precompilato con richiedente: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`);
+                    }
+                }
+                
                 console.log(`✅ [FORM CONFIG] Form precompilato con dati lead`);
                 
             } catch (error) {
@@ -399,13 +442,44 @@
             container.appendChild(newFarmaco);
         }
 
+        // ✅ CHIUDI FORM E FINESTRA
+        function closeFormAndWindow() {
+            console.log('⏱️ Tentativo chiusura form e finestra...');
+            
+            // ✅ Imposta flag per rimuovere il warning
+            formSubmitted = true;
+            
+            // Rimuovi il warning "dati andranno persi"
+            window.onbeforeunload = null;
+            
+            // Prova a chiudere la finestra
+            try {
+                window.close();
+                console.log('✅ Finestra chiusa con successo');
+            } catch (e) {
+                console.log('⚠️ Impossibile chiudere finestra (normale se non aperta da script)');
+                // Se non può chiudere, nascondi il popup
+                document.getElementById('success-message').classList.add('hidden');
+            }
+        }
+
         // Handle form submission
-        document.getElementById('configurazione-form').addEventListener('submit', function(e) {
+        document.getElementById('configurazione-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            console.log('📤 [FORM CONFIG] Invio configurazione...');
+            
+            // Leggi leadId e token dalla URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const leadId = urlParams.get('leadId');
+            const token = urlParams.get('token');
             
             // Collect form data
             const formData = new FormData(this);
-            const data = {};
+            const data = {
+                leadId: leadId,
+                token: token
+            };
             
             // Basic fields
             for (let [key, value] of formData.entries()) {
@@ -418,29 +492,36 @@
                 }
             }
             
-            // Prepare email data
-            const emailData = {
-                to_email: 'info@medicagb.it',
-                client_name: data.nome + ' ' + data.cognome,
-                client_data: JSON.stringify(data, null, 2),
-                submission_date: new Date().toLocaleDateString('it-IT'),
-                submission_time: new Date().toLocaleTimeString('it-IT')
-            };
+            console.log('📋 [FORM CONFIG] Dati configurazione:', data);
             
-            // Send email notification
-            emailjs.send('service_ku6guc3', 'template_6m9wx7t', emailData)
-                .then(function(response) {
-                    console.log('Email sent successfully:', response);
-                    document.getElementById('success-message').classList.remove('hidden');
-                })
-                .catch(function(error) {
-                    console.log('Email error:', error);
-                    alert('Errore nell\'invio. Riprova più tardi.');
+            try {
+                // ✅ Invia al backend per salvare DB e inviare email benvenuto
+                const response = await fetch('/api/configurations/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
                 });
-            
-            // Here you would also send data to Google Sheets
-            // This would typically be done via a Google Apps Script Web App
-            console.log('Configuration data:', data);
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('✅ [FORM CONFIG] Configurazione salvata con successo');
+                    console.log('✅ [FORM CONFIG] Email benvenuto inviata:', result.emailSent);
+                    
+                    // ✅ Imposta flag per disabilitare warning
+                    formSubmitted = true;
+                    
+                    document.getElementById('success-message').classList.remove('hidden');
+                } else {
+                    throw new Error(result.error || 'Errore sconosciuto');
+                }
+                
+            } catch (error) {
+                console.error('❌ [FORM CONFIG] Errore invio:', error);
+                alert('Errore nell\'invio della configurazione. Riprova più tardi o contatta info@telemedcare.it');
+            }
         });
 
         // ✅ CARICA TUTTO DOPO CHE IL DOM È PRONTO

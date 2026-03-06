@@ -1,139 +1,255 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Benvenuto/a in TeleMedCare</title>
-  <style>
-    /* Client-safe, inline-friendly base styles. Keep simple for email clients. */
-    body { margin:0; padding:0; background-color:#f4f6f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:#222222; }
-    a { color:#1a73e8; text-decoration:none; }
-    .email-wrapper { width:100%; background-color:#f4f6f8; padding:20px 0; }
-    .email-container { width:100%; max-width:600px; margin:0 auto; background:#ffffff; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-    .email-header { padding:20px 24px; background:#0b6cf6; color:#ffffff; }
-    .logo { font-weight:700; font-size:18px; letter-spacing:0.2px; }
-    .preheader { display:none !important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; }
-    .content { padding:24px; }
-    h1 { margin:0 0 12px 0; font-size:20px; color:#111827; }
-    p { margin:0 0 12px 0; line-height:1.45; color:#333333; }
-    .lead { font-size:16px; color:#111827; margin-bottom:12px; }
-    .summary { background:#f7f9fc; border:1px solid #eef2f7; padding:14px; border-radius:6px; margin-bottom:16px; }
-    .summary-table { width:100%; border-collapse:collapse; }
-    .summary-table td { padding:6px 0; vertical-align:top; color:#333333; font-size:14px; }
-    .summary-label { color:#6b7280; width:36%; font-weight:600; padding-right:8px; }
-    .services { margin:12px 0 18px 0; }
-    .steps { margin:0; padding-left:18px; color:#333333; }
-    .step { margin:8px 0; }
-    .button { display:inline-block; background:#0b6cf6; color:#ffffff; padding:10px 16px; border-radius:6px; font-weight:600; text-decoration:none; margin-top:8px; }
-    .footer { padding:18px 24px; font-size:13px; color:#6b7280; text-align:center; border-top:1px solid #eef2f7; }
-    @media screen and (max-width:420px) {
-      .email-container { margin:0 12px; }
-      .summary-label { display:block; width:100%; padding-bottom:4px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Benvenuto - Medica GB</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+@media print {
+    body {background-color: white; margin: 0; padding: 0;}
+    .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;}
+    .header, .content, .footer {page-break-inside: avoid;}
+    * {page-break-after: avoid !important; page-break-before: avoid !important;}
+}
+
+.email-container {
+    background: white;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.info-box {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.info-item strong {display: inline-block; min-width: 150px; font-weight: 500; color: white;}
+
+.section {margin: 40px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+
+.steps {
+    background: #f0f8ff;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #0066CC;
+    margin: 30px 0;
+}
+
+.step {
+    margin: 20px 0;
+    padding-left: 35px;
+    position: relative;
+    font-weight: 400;
+    line-height: 1.8;
+    color: #2c3e50;
+}
+
+.step:before {content: '✓'; position: absolute; left: 0; top: 0; color: #00A86B; font-weight: bold; font-size: 22px;}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.benefits-box h3 {margin: 0 0 20px 0; color: white; font-weight: 500; font-size: 20px;}
+
+.benefit-item {
+    margin: 18px 0;
+    padding-left: 35px;
+    position: relative;
+    font-weight: 400;
+    line-height: 1.8;
+    color: white;
+}
+
+.benefit-item:before {content: '💰'; position: absolute; left: 0; top: 0; font-size: 20px;}
+
+.contact-box {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.contact-box h3 {margin: 0 0 20px 0; color: white; font-size: 20px; font-weight: 500;}
+
+.contact-item {
+    margin: 18px 0;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.8;
+    color: white;
+}
+
+.contact-item strong {color: white; font-weight: 500;}
+.contact-item a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.contact-item a:hover {text-decoration: underline;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 30px;
+    text-align: center;
+    font-size: 14px;
+    margin-top: 40px;
+}
+
+.footer p {margin: 12px 0; font-weight: 400; color: white; line-height: 1.6;}
+.footer a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.footer a:hover {text-decoration: underline;}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 30px 0;
+}
+
+.warning-box h4 {color: #856404; margin: 0 0 12px 0; font-weight: 500;}
+.warning-box p {color: #856404; line-height: 1.8; margin: 10px 0;}
+
+.success-box {
+    background: #d4edda;
+    border-left: 4px solid #00A86B;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 30px 0;
+}
+
+.success-box h4 {color: #155724; margin: 0 0 12px 0; font-weight: 500;}
+.success-box p {color: #155724; line-height: 1.8; margin: 10px 0;}
+
+.price-highlight {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0066CC;
+    margin: 30px 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    background: white;
+}
+
+table th {
+    background: #0066CC;
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    line-height: 1.6;
+}
+
+table tr:hover {
+    background: #f0f8ff;
+}
+
+p {margin: 18px 0; line-height: 1.9;}
+
+</style>
 </head>
 <body>
-  <!-- Preheader (appears in inbox preview) -->
-  <div class="preheader">Congratulazioni! Benvenuto/a nella famiglia TeleMedCare. Tutte le informazioni sul tuo servizio qui sotto.</div>
-
-  <table class="email-wrapper" role="presentation" cellpadding="0" cellspacing="0" width="100%">
-    <tr>
-      <td align="center">
-        <table class="email-container" role="presentation" cellpadding="0" cellspacing="0">
-          <!-- Header -->
-          <tr>
-            <td class="email-header" align="left">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <!-- Logo placeholder -->
-                <div style="display:inline-block; width:44px; height:44px; border-radius:6px; background:#ffffff; color:#0b6cf6; text-align:center; line-height:44px; font-weight:700;">
-                  T
-                </div>
-                <div>
-                  <div class="logo">TeleMedCare</div>
-                  <div style="font-size:12px; opacity:0.9;">La tua sicurezza, la nostra priorità</div>
-                </div>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td class="content">
-              <h1>Benvenuto/a {{NOME_CLIENTE}}!</h1>
-
-              <p class="lead">🎉 Congratulazioni per la Sua scelta!</p>
-
-              <p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
-
-              <p style="font-weight:600; margin-top:12px;">La Sua sicurezza è la nostra priorità!</p>
-
-              <!-- Summary -->
-              <div class="summary" role="article" aria-label="Riepilogo del servizio">
-                <table class="summary-table" role="presentation">
-                  <tr>
-                    <td class="summary-label">Piano:</td>
-                    <td>{{PIANO_SERVIZIO}}</td>
-                  </tr>
-                  <tr>
-                    <td class="summary-label">Costo:</td>
-                    <td>{{COSTO_SERVIZIO}}</td>
-                  </tr>
-                  <tr>
-                    <td class="summary-label">Data Attivazione:</td>
-                    <td>{{DATA_ATTIVAZIONE}}</td>
-                  </tr>
-                  <tr>
-                    <td class="summary-label">Codice Cliente:</td>
-                    <td>{{CODICE_CLIENTE}}</td>
-                  </tr>
-                </table>
-
-                <div style="margin-top:12px;">
-                  <strong>Servizi inclusi nel Suo piano:</strong>
-                  <div class="services">
-                    {{SERVIZI_INCLUSI}}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Next steps -->
-              <div>
-                <strong>🚀 I prossimi passi:</strong>
-                <ol class="steps" style="margin-top:8px;">
-                  <li class="step"><strong>Configurazione Dispositivo:</strong> Completi il form di configurazione cliccando sul pulsante qui sotto per personalizzare il Suo dispositivo SiDLY.</li>
-                  <li class="step"><strong>Consegna Dispositivo:</strong> Riceverà il dispositivo SiDLY entro 10 giorni lavorativi.</li>
-                  <li class="step"><strong>Training:</strong> Sessione di formazione gratuita per imparare ad usare il dispositivo tramite Tutorial.</li>
-                  <li class="step"><strong>Attivazione esclusivamente per Servizio Avanzato:</strong> Verrà contattato dalla Centrale Operativa per il test completo di funzionamento.</li>
-                </ol>
-              </div>
-
-              <!-- CTA Button - Form Configurazione -->
-              <div style="margin-top:24px; text-align:center;">
-                <a href="{{LINK_CONFIGURAZIONE}}" class="button" style="background:#10b981; font-size:16px; padding:14px 28px;">
-                  ⚙️ Completa Configurazione Dispositivo
-                </a>
-                <p style="margin-top:12px; font-size:13px; color:#6b7280;">
-                  Clicchi sul pulsante sopra per accedere al form di configurazione personalizzata del Suo dispositivo SiDLY.
-                </p>
-              </div>
-
-              <p style="margin-top:16px;">Siamo lieti di averLa con noi e non vediamo l'ora di offrirLe la tranquillità e la sicurezza che merita.</p>
-
-              <p style="margin-top:8px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td class="footer">
-              <div>TeleMedCare · Assistenza clienti: <a href="mailto:support@telemedcare.it">support@telemedcare.it</a> · Tel: +39 02 1234 5678</div>
-              <div style="margin-top:6px;">Ricevuta questa email per errore? Contattaci e provvederemo a rimuovere i suoi dati.</div>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+<div class="email-container">
+<div class="header">
+<h1>eCura by Medica GB S.r.l.</h1>
+<div class="tagline">eCura, Sicuri, Vicini, Ovunque</div>
+</div>
+<div class="content">
+<p>By Medica GB S.r.l. La tecnologia che Le salva salute e vita</p>
+<p class="greeting">Benvenuto/a {{NOME_CLIENTE}}!</p>
+<div class="section">
+<h3>🎉 Congratulazioni per la Sua scelta!</h3>
+</div>
+<p>Ha scelto il nostro servizio {{ SERVIZIO}} {{PIANO }} e ora fa parte della famiglia eCura.</p>
+<p>La Sua sicurezza è la nostra priorità!</p>
+<div class="section">
+<h3>📋 Riepilogo del Suo servizio:</h3>
+</div>
+<div class="info-box">
+<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
+<div class="info-item"><strong>Servizio:</strong> {{SERVIZIO}} {{PIANO}}</div>
+<div class="info-item"><strong>Costo:</strong> {{COSTO_SERVIZIO_PIANO}}</div>
+<div class="info-item"><strong>Data Attivazione:</strong> {{DATA_ATTIVAZIONE}}</div>
+<div class="info-item"><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</div>
+<div class="info-item"><strong>Servizi inclusi nel Suo piano:</strong> </div>
+</div>
+<p>{{SERVIZI_INCLUSI}}</p>
+<div class="section">
+<h3>📝 I prossimi passi:</h3>
+</div>
+<div class="info-box">
+<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
+<div class="info-item"><strong>1. Consegna Dispositivo:</strong> Riceverà il dispositivo {{DISPOSITIVO}} entro 10 giorni lavorativi</div>
+<div class="steps">
+<div class="step">Training: Sessione di formazione gratuita per imparare ad usare il dispositivo tramite Tutorial</div>
+<div class="step">Attivazione esclusivamente per Servizio Avanzato: Verrà contattato dalla Centrale Operativa per il test completo di funzionamento</div>
+</div>
+</div>
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<div class="contact-item">E-MAIL: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></div>
+<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
+<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
+</div>
+<p class="greeting">Siamo lieti di averLa con noi e non vediamo l'ora di offrirLe la tranquillità e la sicurezza che merita.</p>
+<p class="greeting">Benvenuto/a nella famiglia eCura! Il Team eCura</p>
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148 P.IVA: 12435130963 | <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it | www.ecura.it</p>
+</div>
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a> | <a href="https://www.telemedcare.it">www.telemedcare.it</a></p>
+<p>📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+</div>
 </body>
 </html>
