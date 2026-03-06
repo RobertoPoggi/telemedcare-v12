@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Stripe Configuration - TeleMedCare</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            color: #4ec9b0;
+            margin-top: 0;
+            border-bottom: 1px solid #3e3e42;
+            padding-bottom: 10px;
+        }
+        .result {
+            background: #1e1e1e;
+            border-left: 4px solid #007acc;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .success {
+            border-left-color: #4ec9b0;
+            color: #4ec9b0;
+        }
+        .error {
+            border-left-color: #f48771;
+            color: #f48771;
+        }
+        .warning {
+            border-left-color: #dcdcaa;
+            color: #dcdcaa;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        pre {
+            margin: 5px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Stripe Configuration Test</h1>
+    <p>Test diagnostico per verificare la configurazione Stripe su TeleMedCare V12</p>
+
+    <div class="test-section">
+        <h2>Test 1: Stripe Public Key</h2>
+        <button onclick="testPublicKey()">▶️ Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Payment Intent Creation</h2>
+        <input type="text" id="proforma-id" placeholder="Inserisci ID Proforma (es. PRF202603-0LUD)" 
+               style="width: 400px; padding: 8px; margin: 10px 0; background: #3c3c3c; border: 1px solid #555; color: white;">
+        <button onclick="testPaymentIntent()">▶️ Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Full Payment Flow</h2>
+        <p>Questo test simula l'intero flusso di pagamento.</p>
+        <button onclick="testFullFlow()">▶️ Run Full Test</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Environment Info</h2>
+        <div id="env-info"></div>
+    </div>
+
+    <script>
+        // Display environment info
+        document.getElementById('env-info').innerHTML = `
+            <div class="result">
+                <pre>URL: ${window.location.href}
+Environment: ${window.location.hostname.includes('test-environment') ? 'PREVIEW (test-environment)' : 'PRODUCTION (main)'}
+User Agent: ${navigator.userAgent}</pre>
+            </div>
+        `;
+
+        async function testPublicKey() {
+            const resultDiv = document.getElementById('test1-result');
+            resultDiv.innerHTML = '<div class="result">⏳ Testing...</div>';
+            
+            try {
+                console.log('🔑 [TEST] Fetching public key...');
+                const response = await fetch('/api/stripe-public-key');
+                const data = await response.json();
+                
+                console.log('🔑 [TEST] Response:', data);
+                
+                if (data.success && data.publishableKey) {
+                    const keyPreview = data.publishableKey.substring(0, 30) + '...';
+                    const keyType = data.publishableKey.startsWith('pk_test_') ? 'TEST' : 
+                                   data.publishableKey.startsWith('pk_live_') ? 'LIVE' : 'UNKNOWN';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <pre>✅ SUCCESS
+Status: ${response.status}
+Key Found: Yes
+Key Type: ${keyType}
+Key Preview: ${keyPreview}
+
+Full Response:
+${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <pre>❌ FAILED
+Status: ${response.status}
+Error: ${data.error || 'No error message'}
+Success: ${data.success}
+
+Full Response:
+${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ [TEST] Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <pre>❌ EXCEPTION
+Error: ${error.message}
+Stack: ${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPaymentIntent() {
+            const resultDiv = document.getElementById('test2-result');
+            const proformaId = document.getElementById('proforma-id').value;
+            
+            if (!proformaId) {
+                resultDiv.innerHTML = '<div class="result warning">⚠️ Inserisci un ID Proforma valido</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="result">⏳ Testing...</div>';
+            
+            try {
+                console.log('💳 [TEST] Creating Payment Intent for:', proformaId);
+                const response = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proformaId })
+                });
+                
+                const data = await response.json();
+                console.log('💳 [TEST] Response:', data);
+                
+                if (data.success && data.clientSecret) {
+                    const secretPreview = data.clientSecret.substring(0, 40) + '...';
+                    const isTest = data.clientSecret.includes('test_') || data.clientSecret.startsWith('pi_');
+                    
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <pre>✅ SUCCESS
+Status: ${response.status}
+Client Secret: ${secretPreview}
+Type: ${isTest ? 'TEST' : 'LIVE'}
+
+Full Response:
+${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <pre>❌ FAILED
+Status: ${response.status}
+Error: ${data.error || 'No error message'}
+Success: ${data.success}
+
+Full Response:
+${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ [TEST] Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <pre>❌ EXCEPTION
+Error: ${error.message}
+Stack: ${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testFullFlow() {
+            const resultDiv = document.getElementById('test3-result');
+            resultDiv.innerHTML = '<div class="result">⏳ Running full test...</div>';
+            
+            let output = '';
+            
+            try {
+                // Test 1: Public Key
+                output += '═══ Step 1: Public Key ═══\n';
+                const keyResponse = await fetch('/api/stripe-public-key');
+                const keyData = await keyResponse.json();
+                
+                if (keyData.success) {
+                    output += `✅ Public key OK: ${keyData.publishableKey.substring(0, 20)}...\n`;
+                } else {
+                    output += `❌ Public key FAILED: ${keyData.error}\n`;
+                    throw new Error('Public key test failed');
+                }
+                
+                // Test 2: Proforma exists
+                output += '\n═══ Step 2: Check Proforma ═══\n';
+                const proformaId = 'PRF202603-0LUD';
+                output += `Testing with proforma: ${proformaId}\n`;
+                
+                // Test 3: Payment Intent
+                output += '\n═══ Step 3: Payment Intent ═══\n';
+                const piResponse = await fetch('/api/create-payment-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proformaId })
+                });
+                
+                const piData = await piResponse.json();
+                
+                if (piData.success) {
+                    output += `✅ Payment Intent created\n`;
+                    output += `   Client Secret: ${piData.clientSecret.substring(0, 30)}...\n`;
+                } else {
+                    output += `❌ Payment Intent FAILED: ${piData.error}\n`;
+                    throw new Error('Payment Intent test failed');
+                }
+                
+                output += '\n═══════════════════════════\n';
+                output += '✅ ALL TESTS PASSED\n';
+                output += '═══════════════════════════\n';
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <pre>${output}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                output += `\n❌ TEST FAILED: ${error.message}\n`;
+                console.error('❌ [TEST] Full flow error:', error);
+                
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <pre>${output}</pre>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

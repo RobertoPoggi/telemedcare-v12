@@ -1288,6 +1288,7 @@
                 if (data.success) {
                     alert(`✅ Import completato!\n\n` +
                           `• Lead importati: ${data.imported}\n` +
+                          `• Lead aggiornati (note): ${data.updated || 0}\n` +  // ✅ AGGIUNTO
                           `• Lead saltati (duplicati): ${data.skipped}\n` +
                           `• Lead filtrati (pre-2026): ${data.filtered || 0}\n` +
                           `• Totale contatti elaborati: ${data.total}\n` +
