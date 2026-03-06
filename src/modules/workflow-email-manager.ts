@@ -1666,7 +1666,8 @@ export async function inviaEmailConfigurazionePostPagamento(
     
     // Genera token per il form configurazione
     const configToken = generateToken()
-    const configUrl = `${env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'}/form-configurazione?token=${configToken}&leadId=${clientData.id}`
+    const baseUrl = getBaseUrl(env)  // ✅ Usa URL corretto per l'ambiente (test/prod)
+    const configUrl = `${baseUrl}/form-configurazione?token=${configToken}&leadId=${clientData.id}`
     
     // Salva token nel DB
     await db.prepare(`
