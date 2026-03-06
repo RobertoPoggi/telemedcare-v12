@@ -1,38 +1,45 @@
-# 🔧 Istruzioni Database - Configurazioni
+# 🔧 Istruzioni Migration Database - Configurazioni
 
-## ⚠️ IMPORTANTE: Se tabella è vuota, USA DB_RECREATE_configurations.sql
+## ⚠️ METODO CORRETTO: Aggiungi solo colonne mancanti
 
-Se la tabella `configurations` è **vuota** (nessun dato), è più semplice **ricrearla** invece di fare ALTER TABLE.
+**NON ricreare la tabella!** Aggiungi solo le colonne nuove per evitare problemi con codice esistente.
 
 ## Problema
-Il form configurazione usa nomi di colonne:
-- `contatto1_nome`, `contatto1_cognome`, `contatto1_telefono`, `contatto1_email`
-- `whitelist1_nome`, `whitelist1_cognome`, `whitelist1_telefono`, `whitelist1_email` (×3)
+Il form configurazione post-pagamento richiede nuovi campi che potrebbero non esistere nel DB:
+- **Dati assistito**: nome, cognome, data nascita, età, peso, altezza, telefono, email, indirizzo
+- **Contatti emergenza**: nome, cognome, telefono, **email** (formato nuovo)
+- **Whitelist**: 3 contatti autorizzati (nome, cognome, telefono, email)
+- **Patologie e farmaci**: formato JSON/CSV
 
-Ma lo schema DB originale usa:
-- `contatto_emergenza_1_nome`, `contatto_emergenza_1_telefono`, `contatto_emergenza_1_relazione`
+## Soluzione - ADD COLUMN (SAFE)
 
-## Soluzione - RICREAZIONE (tabella vuota)
-
-### ⭐ METODO RACCOMANDATO: Ricreazione Tabella (se vuota)
+### ⭐ METODO RACCOMANDATO: Aggiungi colonne mancanti
 
 1. Vai su https://dash.cloudflare.com
 2. Seleziona il progetto `telemedcare-v12`
 3. Vai su **Workers & Pages** → **D1 Database**
 4. Seleziona il database
 5. Vai su **Console**
-6. **Copia e incolla TUTTO il contenuto di** `DB_RECREATE_configurations.sql`
+6. **Copia e incolla TUTTO il contenuto di** `DB_ADD_COLUMNS_configurations.sql`
 7. Clicca **Execute**
-8. Verifica: `SELECT COUNT(*) FROM configurations;` (dovrebbe essere 0)
+8. ⚠️ **È NORMALE vedere errori** "duplicate column name" per colonne già esistenti
+9. Verifica: `SELECT sql FROM sqlite_master WHERE type='table' AND name='configurations';`
 
 **Vantaggi:**
-- ✅ Schema pulito e corretto
-- ✅ Nomi colonne consistenti con il codice
-- ✅ Nessun problema di compatibilità
+- ✅ Safe: Non tocca colonne esistenti
+- ✅ Compatibilità: Mantiene campi vecchi per codice legacy
+- ✅ No data loss: Dati esistenti non vengono toccati
+- ✅ Idempotente: Può essere rieseguito senza problemi
+
+**Script SQL da eseguire:**
+```sql
+-- Vedi file DB_ADD_COLUMNS_configurations.sql
+-- Include ~39 ALTER TABLE ADD COLUMN statements
+```
 
 ---
 
-### Opzione Alternativa: Via Cloudflare Dashboard (ALTER TABLE)
+### ⚠️ Opzione Alternativa: Ricreazione Tabella (SOLO se tabella vuota)
 
 1. Vai su https://dash.cloudflare.com
 2. Seleziona il progetto `telemedcare-v12`

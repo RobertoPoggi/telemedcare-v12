@@ -2,7 +2,7 @@
 
 **Documento di riferimento definitivo** - Tutti gli schemi delle tabelle del database.
 
-Ultimo aggiornamento: **2026-03-06 18:00**
+Ultimo aggiornamento: **2026-03-06 20:30** - Aggiunti campi configurations per form post-pagamento
 
 ---
 
@@ -85,16 +85,61 @@ CREATE TABLE assistiti (
 
 ## 2. `configurations`
 
-**Descrizione**: Configurazioni dispositivi, contatti emergenza e informazioni mediche.
+**Descrizione**: Configurazioni dispositivi, contatti emergenza, whitelist e informazioni mediche.
+
+**⚠️ SCHEMA AGGIORNATO 2026-03-06**: Aggiunti campi per form configurazione post-pagamento.
 
 ```sql
 CREATE TABLE configurations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,                      -- CONF-timestamp-random (cambiato da INTEGER)
     leadId TEXT NOT NULL,                     -- FK leads(id)
     device_id INTEGER,                        -- FK dispositivi(id)
     contract_id TEXT,                         -- FK contracts(id)
     
-    -- Contatti emergenza
+    -- ✅ DATI ASSISTITO (aggiunti 2026-03-06)
+    nome_assistito TEXT,
+    cognome_assistito TEXT,
+    data_nascita TEXT,
+    eta TEXT,
+    peso REAL,
+    altezza REAL,
+    telefono TEXT,
+    email TEXT,
+    indirizzo TEXT,
+    
+    -- ✅ CONTATTI EMERGENZA - FORMATO NUOVO (aggiunti 2026-03-06)
+    contatto1_nome TEXT,
+    contatto1_cognome TEXT,
+    contatto1_telefono TEXT,
+    contatto1_email TEXT,
+    
+    contatto2_nome TEXT,
+    contatto2_cognome TEXT,
+    contatto2_telefono TEXT,
+    contatto2_email TEXT,
+    
+    contatto3_nome TEXT,
+    contatto3_cognome TEXT,
+    contatto3_telefono TEXT,
+    contatto3_email TEXT,
+    
+    -- ✅ WHITELIST CHIAMATE (aggiunti 2026-03-06)
+    whitelist1_nome TEXT,
+    whitelist1_cognome TEXT,
+    whitelist1_telefono TEXT,
+    whitelist1_email TEXT,
+    
+    whitelist2_nome TEXT,
+    whitelist2_cognome TEXT,
+    whitelist2_telefono TEXT,
+    whitelist2_email TEXT,
+    
+    whitelist3_nome TEXT,
+    whitelist3_cognome TEXT,
+    whitelist3_telefono TEXT,
+    whitelist3_email TEXT,
+    
+    -- ⚠️ CONTATTI EMERGENZA - FORMATO VECCHIO (deprecato ma mantenuto per compatibilità)
     contatto_emergenza_1_nome TEXT,
     contatto_emergenza_1_telefono TEXT,
     contatto_emergenza_1_relazione TEXT,
@@ -107,7 +152,12 @@ CREATE TABLE configurations (
     medico_curante_telefono TEXT,
     centro_medico_riferimento TEXT,
     
-    -- Informazioni mediche
+    -- ✅ INFORMAZIONI MEDICHE - FORMATO NUOVO (aggiunti 2026-03-06)
+    patologie TEXT,                           -- CSV string (es. "ipertensione, diabete")
+    note_mediche TEXT,                        -- Note aggiuntive
+    farmaci_data TEXT,                        -- JSON string con nomi, dosaggi, orari
+    
+    -- ⚠️ INFORMAZIONI MEDICHE - FORMATO VECCHIO (deprecato ma mantenuto)
     allergie TEXT,
     patologie_croniche TEXT,
     farmaci_assunti TEXT,
@@ -117,7 +167,7 @@ CREATE TABLE configurations (
     orari_attivazione TEXT,
     
     -- Status e tracking
-    status TEXT DEFAULT 'PENDING',            -- PENDING, COMPLETED, FAILED
+    status TEXT DEFAULT 'PENDING',            -- PENDING, SUBMITTED, COMPLETED, FAILED
     data_completamento DATETIME,
     form_inviato BOOLEAN DEFAULT FALSE,
     email_benvenuto_inviata BOOLEAN DEFAULT FALSE,
