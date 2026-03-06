@@ -9787,7 +9787,7 @@ app.post('/api/configurations/submit', async (c) => {
     
     console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
     
-    // 5️⃣ Invia email benvenuto
+    // 5️⃣ Invia email configurazione a info@telemedcare.it
     const WorkflowEmailManager = await import('./modules/workflow-email-manager')
     
     // ✅ Prepara lead con codiceCliente
@@ -9796,19 +9796,52 @@ app.post('/api/configurations/submit', async (c) => {
       codiceCliente: lead.codiceCliente || lead.id || 'N/D'
     }
     
-    const emailResult = await WorkflowEmailManager.inviaEmailBenvenuto(
+    // ✅ Prepara configData dai dati ricevuti
+    const configDataForEmail = {
+      nome_assistito: configData.nome,
+      cognome_assistito: configData.cognome,
+      data_nascita: configData.data_nascita,
+      telefono: configData.telefono,
+      email: configData.email,
+      indirizzo: configData.indirizzo,
+      contatti_emergenza: {
+        contatto1: {
+          nome: configData.contatto1_nome,
+          cognome: configData.contatto1_cognome,
+          telefono: configData.contatto1_telefono,
+          email: configData.contatto1_email
+        },
+        contatto2: {
+          nome: configData.contatto2_nome,
+          cognome: configData.contatto2_cognome,
+          telefono: configData.contatto2_telefono,
+          email: configData.contatto2_email
+        },
+        contatto3: {
+          nome: configData.contatto3_nome,
+          cognome: configData.contatto3_cognome,
+          telefono: configData.contatto3_telefono,
+          email: configData.contatto3_email
+        }
+      },
+      patologie: configData.patologie,
+      note_aggiuntive: configData.note_aggiuntive
+    }
+    
+    const emailResult = await WorkflowEmailManager.inviaEmailConfigurazione(
       leadWithCode,
+      configDataForEmail,
       c.env,
       db
     )
     
-    console.log(`📧 [CONFIG SUBMIT] Email benvenuto result:`, emailResult)
+    console.log(`📧 [CONFIG SUBMIT] Email configurazione result:`, emailResult)
     
     return c.json({
       success: true,
       leadId: leadId,
       emailSent: emailResult.success,
-      message: 'Configurazione salvata e email benvenuto inviata'
+      message: 'Configurazione salvata e notifica inviata a info@telemedcare.it'
     })
     
   } catch (error) {
