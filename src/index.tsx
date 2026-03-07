@@ -12010,16 +12010,31 @@ app.post('/api/contracts/sign', async (c) => {
         
         // Calcola IVA inclusa da prezzo base
         if (prezzoBase > 0) {
-          prezzoIvaInclusa = prezzoBase * 1.22
+          prezzoIvaInclusa = Math.round(prezzoBase * 1.22 * 100) / 100
         } else {
-          // Fallback: cerca altri campi prezzoif (prezzoBase === 0 && prezzoIvaInclusa === 0) {
-          console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard per piano ${piano}`)
-          if (piano === 'AVANZATO') {
-            prezzoBase = 840
-            prezzoIvaInclusa = 1024.80
+          // Fallback: usa prezzi corretti da ecura-pricing
+          console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard da ecura-pricing per piano ${piano}`)
+          
+          // Importa getPricing per prezzi corretti
+          const { getPricing } = await import('./modules/ecura-pricing')
+          const servizioTipo = servizio.includes('PREMIUM') ? 'PREMIUM' : servizio.includes('PRO') ? 'PRO' : 'FAMILY'
+          const pianoTipo = piano === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+          const pricing = getPricing(servizioTipo, pianoTipo)
+          
+          if (pricing) {
+            prezzoBase = pricing.setupBase  // IVA esclusa
+            prezzoIvaInclusa = pricing.setupTotale  // IVA inclusa
+            console.log(`✅ [FIRMA→PROFORMA] Prezzi da ecura-pricing: ${servizioTipo} ${pianoTipo} = €${prezzoBase} (base) + IVA = €${prezzoIvaInclusa}`)
           } else {
-            prezzoBase = 480
-            prezzoIvaInclusa = 585.60
+            // Ultimate fallback
+            console.error(`❌ [FIRMA→PROFORMA] getPricing restituito null per ${servizioTipo} ${pianoTipo}, uso fallback hardcoded`)
+            if (piano === 'AVANZATO') {
+              prezzoBase = 990
+              prezzoIvaInclusa = 1207.80
+            } else {
+              prezzoBase = 480
+              prezzoIvaInclusa = 585.60
+            }
           }
         }
         
@@ -12128,9 +12143,9 @@ app.post('/api/contracts/sign', async (c) => {
               provinciaCliente,
               cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
+              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile (IVA inclusa / 12) per visualizzazione
               12, // durata_mesi
-              prezzoBase, // ✅ prezzo_totale = IVA ESCLUSA (990€, non 1.207,80€)
+              prezzoIvaInclusa, // ✅ FIX CRITICO: prezzo_totale = IVA INCLUSA (€1.207,80 per PREMIUM AVANZATO)
               'SENT',
               new Date().toISOString(), // updated_at
               proformaIdGenerated
@@ -12167,9 +12182,9 @@ app.post('/api/contracts/sign', async (c) => {
               provinciaCliente,
               cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA esclusa / 12)
+              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile (IVA inclusa / 12) per visualizzazione
               12, // durata_mesi
-              prezzoBase, // ✅ prezzo_totale = IVA ESCLUSA (990€, non 1.207,80€)
+              prezzoIvaInclusa, // ✅ FIX CRITICO: prezzo_totale = IVA INCLUSA (€1.207,80 per PREMIUM AVANZATO)
               'SENT',
               false,
               new Date().toISOString(), // created_at
