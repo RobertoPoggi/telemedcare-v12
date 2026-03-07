@@ -1551,13 +1551,15 @@ export async function inviaEmailConfigurazione(
     // Prepara i dati per il template
     const templateData = {
       // Dati cliente/lead
-      CODICE_CLIENTE: clientData.codiceCliente || clientData.id || 'N/D',
+      CODICE_CLIENTE: clientData.codiceCliente || 'N/D', // ✅ FIX: usa solo codiceCliente, non fallback a id
       LEAD_ID: clientData.id,
       NOME_RICHIEDENTE: clientData.nomeRichiedente || '',
       COGNOME_RICHIEDENTE: clientData.cognomeRichiedente || '',
       EMAIL_RICHIEDENTE: clientData.email || '',
       TELEFONO_RICHIEDENTE: clientData.telefono || '',
-      PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'Standard',
+      SERVIZIO: clientData.servizio || 'eCura PRO', // ✅ FIX: separato da piano
+      PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'BASE', // ✅ FIX: solo piano
+      DISPOSITIVO: clientData.dispositivo || 'SiDLY VITAL CARE', // ✅ FIX: dispositivo
       DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT', {
         day: '2-digit',
         month: '2-digit',
@@ -1570,7 +1572,7 @@ export async function inviaEmailConfigurazione(
       NOME_ASSISTITO: configData.nome_assistito || '',
       COGNOME_ASSISTITO: configData.cognome_assistito || '',
       DATA_NASCITA: configData.data_nascita || '',
-      ETA: configData.eta || '',
+      ETA: configData.eta || '', // ✅ Età numerica (es: "95")
       PESO: configData.peso || '',
       ALTEZZA: configData.altezza || '',
       TELEFONO_ASSISTITO: configData.telefono || '',

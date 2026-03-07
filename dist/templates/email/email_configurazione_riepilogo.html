@@ -135,7 +135,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Configurazione Dispositivo SiDLY CARE</h1>
+            <h1>📋 Configurazione Dispositivo {{DISPOSITIVO}}</h1>
             <div class="subtitle">Nuova configurazione ricevuta - Pronta per setup dispositivo</div>
         </div>
 
@@ -167,8 +167,16 @@
                 <div class="field-value">{{TELEFONO_RICHIEDENTE}}</div>
             </div>
             <div class="field-group">
-                <div class="field-label">Piano Servizio:</div>
+                <div class="field-label">Servizio:</div>
+                <div class="field-value"><strong>{{SERVIZIO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Piano:</div>
                 <div class="field-value"><strong>{{PIANO_SERVIZIO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Dispositivo:</div>
+                <div class="field-value"><strong>{{DISPOSITIVO}}</strong></div>
             </div>
             <div class="field-group">
                 <div class="field-label">Data Compilazione:</div>
