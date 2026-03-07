@@ -12036,7 +12036,8 @@ app.post('/api/contracts/sign', async (c) => {
         
         // Calcola IVA inclusa da prezzo base
         if (prezzoBase > 0) {
-          prezzoIvaInclusa = Math.round(prezzoBase * 1.22 * 100) / 100
+          const iva = Math.round(prezzoBase * 0.22 * 100) / 100
+          prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
         } else {
           // Fallback: usa prezzi corretti da ecura-pricing
           console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard da ecura-pricing per piano ${piano}`)
