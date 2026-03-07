@@ -12143,9 +12143,9 @@ app.post('/api/contracts/sign', async (c) => {
               provinciaCliente,
               cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile (IVA inclusa / 12) per visualizzazione
+              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
               12, // durata_mesi
-              prezzoIvaInclusa, // ✅ FIX CRITICO: prezzo_totale = IVA INCLUSA (€1.207,80 per PREMIUM AVANZATO)
+              prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
               'SENT',
               new Date().toISOString(), // updated_at
               proformaIdGenerated
@@ -12182,9 +12182,9 @@ app.post('/api/contracts/sign', async (c) => {
               provinciaCliente,
               cfCliente,
               servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoIvaInclusa / 12).toFixed(2), // prezzo_mensile (IVA inclusa / 12) per visualizzazione
+              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
               12, // durata_mesi
-              prezzoIvaInclusa, // ✅ FIX CRITICO: prezzo_totale = IVA INCLUSA (€1.207,80 per PREMIUM AVANZATO)
+              prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
               'SENT',
               false,
               new Date().toISOString(), // created_at
@@ -12535,7 +12535,12 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)} IVA inclusa / anno`,
+      // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
+      const prezzoBase = parseFloat(contract.prezzo_totale || 0);
+      const iva = prezzoBase * 0.22;
+      const totaleIvaInclusa = prezzoBase + iva;
+      
+      prezzo: `€${prezzoBase.toFixed(2)} + IVA 22% (€${totaleIvaInclusa.toFixed(2)}) / anno`,
       status: contract.status || 'PENDING'
     })
   } catch (error) {

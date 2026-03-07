@@ -325,11 +325,11 @@ if (!proformaId) {
       document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
       document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
       
-      // ✅ FIX DEFINITIVO: prezzo_totale nel DB contiene IVA INCLUSA (1207.80€)
-      // Dobbiamo recuperare l'imponibile dividendo per 1.22
-      const prezzoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
-      const prezzoBaseIvaEsclusa = prezzoTotaleIvaInclusa / 1.22; // Imponibile = totale / 1.22
-      const iva = prezzoTotaleIvaInclusa - prezzoBaseIvaEsclusa; // IVA = totale - imponibile
+      // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB contiene IVA ESCLUSA (990€)
+      // Calcoliamo l'IVA aggiungendo 22%
+      const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale) || parseFloat(proforma.importo_totale) || 0;
+      const iva = prezzoBaseIvaEsclusa * 0.22; // IVA 22%
+      const prezzoTotaleIvaInclusa = prezzoBaseIvaEsclusa + iva; // Totale = base + IVA
       
       document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBaseIvaEsclusa);
       document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBaseIvaEsclusa);

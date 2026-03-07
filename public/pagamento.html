@@ -397,7 +397,10 @@
             document.getElementById('piano').textContent = proformaData.piano || 'BASE';
             document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
             
-            const totale = parseFloat(proformaData.importo_totale).toFixed(2);
+            // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
+            const prezzoBase = parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0);
+            const iva = prezzoBase * 0.22; // IVA 22%
+            const totale = (prezzoBase + iva).toFixed(2); // Totale IVA inclusa
             document.getElementById('totale').textContent = `€${totale}`;
             document.getElementById('importo-bonifico').textContent = `€${totale}`;
             
@@ -544,7 +547,8 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 proformaId: proformaData.id || proformaId,
-                                importo: parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0),
+                                // ✅ REGOLA UNIVERSALE: inviamo totale IVA INCLUSA a backend
+                                importo: parseFloat(totale), // Totale già calcolato con IVA inclusa
                                 metodoPagamento: 'stripe',
                                 transactionId: paymentIntent.id,
                                 stripePaymentIntentId: paymentIntent.id,
