@@ -12535,7 +12535,7 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)} + IVA 22% / anno`,
+      prezzo: `€${parseFloat(contract.prezzo_totale || contract.prezzo_iva_inclusa || 0).toFixed(2)} IVA inclusa / anno`,
       status: contract.status || 'PENDING'
     })
   } catch (error) {
