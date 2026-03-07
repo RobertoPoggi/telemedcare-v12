@@ -1390,19 +1390,34 @@ export async function inviaEmailBenvenuto(
     // Carica template email_benvenuto
     const template = await loadEmailTemplate('email_benvenuto', db, env)
     
+    // ✅ Determina dispositivo
+    const dispositivo = (clientData.servizio || '').toUpperCase().includes('PREMIUM') 
+      ? 'SiDLY Vital Care' 
+      : 'SiDLY Care PRO'
+    
     // Prepara i dati per il template
     const templateData = {
       NOME_CLIENTE: clientData.nomeRichiedente,
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
+      // ✅ FIX: Aggiungi SERVIZIO e PIANO separati
+      SERVIZIO: clientData.servizio || 'eCura PRO',
+      PIANO: clientData.piano || clientData.pacchetto || 'BASE',
+      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
+      // ✅ FIX: COSTO_SERVIZIO_PIANO invece di COSTO_SERVIZIO
+      COSTO_SERVIZIO_PIANO: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO' 
+        ? '€1.024,80/anno (IVA inclusa)' 
+        : '€585,60/anno (IVA inclusa)',
+      // ✅ FIX: Aggiungi DISPOSITIVO
+      DISPOSITIVO: dispositivo,
       CODICE_CLIENTE: clientData.codiceCliente,
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
-      COSTO_SERVIZIO: clientData.pacchetto === 'AVANZATO' ? '€1.024,80/anno (IVA inclusa)' : '€585,60/anno (IVA inclusa)',
-      SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' 
-        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${(clientData.servizio || '').toUpperCase().includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
+      SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO'
+        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
         : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
-      PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' ? '€840/anno' : '€480/anno'
+      PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO' 
+        ? '€840/anno' 
+        : '€480/anno'
     }
 
     // Renderizza template
@@ -1463,8 +1478,11 @@ export async function inviaEmailFormConfigurazione(
       ? 'SiDLY Vital Care' 
       : 'SiDLY Care PRO';
     const templateData = {
+      // ✅ FIX: Aggiungi NOME_CLIENTE e COGNOME_CLIENTE per versioni template che li usano
+      NOME_CLIENTE: clientData.nomeRichiedente,
+      COGNOME_CLIENTE: clientData.cognomeRichiedente,
       DISPOSITIVO: dispositivo,
-      SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
+      SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/configurazione.html?leadId=${clientData.id}`
     }
 
