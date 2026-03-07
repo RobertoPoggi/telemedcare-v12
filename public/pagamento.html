@@ -542,13 +542,23 @@
                     let backendError = null;
                     
                     try {
+                        // ✅ Calcola importo totale da proformaData (IVA inclusa)
+                        const prezzoBase = parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0);
+                        const iva = prezzoBase * 0.22;
+                        const importoTotale = prezzoBase + iva;
+                        
+                        console.log('💰 [PAYMENT] Importo calcolato:', {
+                            prezzoBase,
+                            iva,
+                            importoTotale
+                        });
+                        
                         const backendResponse = await fetch('/api/payments', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 proformaId: proformaData.id || proformaId,
-                                // ✅ REGOLA UNIVERSALE: inviamo totale IVA INCLUSA a backend
-                                importo: parseFloat(totale), // Totale già calcolato con IVA inclusa
+                                importo: importoTotale, // ✅ Importo IVA INCLUSA
                                 metodoPagamento: 'stripe',
                                 transactionId: paymentIntent.id,
                                 stripePaymentIntentId: paymentIntent.id,
