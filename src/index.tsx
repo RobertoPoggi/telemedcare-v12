@@ -346,13 +346,18 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     const iva = Math.round(prezzoBase * 0.22 * 100) / 100
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
-    // Variabili per template (importo base + dettagli IVA)
+    // ✅ REGOLA UNIVERSALE: DB contiene IVA ESCLUSA, calcoliamo IVA 22%
     const variables = {
       NOME_CLIENTE: proforma.cliente_nome || 'Cliente',
+      SERVIZIO: proforma.tipo_servizio || 'eCura Premium',
+      PIANO: proforma.piano || 'AVANZATO',
+      NUMERO_PROFORMA: proforma.numero_proforma || proforma.id || 'N/A',
       PIANO_SERVIZIO: proforma.servizio || 'TeleMedCare',
-      IMPORTO_TOTALE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,  // IVA ESCLUSA
+      IMPORTO_BASE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,  // IVA ESCLUSA
       IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA
+      IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA (alias)
+      PREZZO_SERVIZIO_PIANO: `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA 22% (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,  // Template compatibility
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -7534,18 +7539,18 @@ app.get('/api/proforma/:id', async (c) => {
     const prezzoMensile = parseFloat(proforma.prezzo_mensile || 0)
     const piano = prezzoMensile >= 50 ? 'AVANZATO' : 'BASE'
     
-    // ⚠️ ATTENZIONE: prezzo_totale nel DB contiene GIÀ L'IVA INCLUSA!
-    // Es: DB.prezzo_totale = €1207.80 (che è €990 + 22% IVA)
-    const importoTotaleIvaInclusa = parseFloat(proforma.prezzo_totale || 0)
-    const prezzoBaseIvaEsclusa = Math.round((importoTotaleIvaInclusa / 1.22) * 100) / 100
-    const importoIva = Math.round((importoTotaleIvaInclusa - prezzoBaseIvaEsclusa) * 100) / 100
+    // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB contiene IVA ESCLUSA
+    // Es: DB.prezzo_totale = €990 (IVA ESCLUSA)
+    const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
+    const importoIva = Math.round((prezzoBaseIvaEsclusa * 0.22) * 100) / 100
+    const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
     
     const proformaResponse = {
       ...proforma,
-      // Prezzi (prezzo_totale DB è GIÀ IVA INCLUSA!)
-      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Dalla DB, GIÀ con IVA
-      prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Calcolato: totale / 1.22
-      importo_iva: importoIva.toFixed(2),  // Calcolato: totale - base
+      // ✅ REGOLA UNIVERSALE: prezzi calcolati da DB (prezzo_totale = IVA ESCLUSA)
+      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA (base + IVA 22%)
+      prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Base IVA ESCLUSA (da DB)
+      importo_iva: importoIva.toFixed(2),  // IVA 22% calcolata
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
