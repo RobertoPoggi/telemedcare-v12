@@ -7112,7 +7112,22 @@ app.post('/api/proforma/send', async (c) => {
 // GET /api/stripe-public-key - Recupera la chiave pubblica Stripe
 app.get('/api/stripe-public-key', async (c) => {
   try {
-    const publicKey = c.env?.STRIPE_PUBLIC_KEY || ''
+    // ✅ Auto-detect environment: se URL contiene "test-environment", usa TEST mode
+    const hostname = c.req.header('host') || ''
+    const isPreview = hostname.includes('test-environment') || hostname.includes('preview')
+    
+    let publicKey = c.env?.STRIPE_PUBLIC_KEY || ''
+    
+    // 🔧 OVERRIDE: Se siamo in preview ma c'è solo chiave LIVE, forza test key
+    if (isPreview && publicKey.startsWith('pk_live')) {
+      const testKey = c.env?.STRIPE_TEST_PUBLIC_KEY
+      if (testKey) {
+        console.log('🔧 [STRIPE] Preview detected - using TEST key')
+        publicKey = testKey
+      } else {
+        console.warn('⚠️ [STRIPE] Preview ma STRIPE_TEST_PUBLIC_KEY non configurata')
+      }
+    }
     
     if (!publicKey) {
       console.warn('⚠️ [STRIPE] Public Key non configurata')
@@ -7125,7 +7140,8 @@ app.get('/api/stripe-public-key', async (c) => {
     
     return c.json({
       success: true,
-      publishableKey: publicKey
+      publishableKey: publicKey,
+      testMode: isPreview || publicKey.startsWith('pk_test')
     })
     
   } catch (error) {
