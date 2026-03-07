@@ -1424,7 +1424,7 @@ export async function inviaEmailBenvenuto(
       COSTO_SERVIZIO_PIANO: costoServizio,
       // ✅ FIX: Aggiungi DISPOSITIVO
       DISPOSITIVO: dispositivo,
-      CODICE_CLIENTE: clientData.codiceCliente,
+      // ❌ CODICE_CLIENTE rimosso (non disponibile)
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
       SERVIZI_INCLUSI: pianoType === 'AVANZATO'
