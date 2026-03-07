@@ -1390,19 +1390,47 @@ export async function inviaEmailBenvenuto(
     // Carica template email_benvenuto
     const template = await loadEmailTemplate('email_benvenuto', db, env)
     
+    // ✅ Determina dispositivo
+    const dispositivo = (clientData.servizio || '').toUpperCase().includes('PREMIUM') 
+      ? 'SiDLY Vital Care' 
+      : 'SiDLY Care PRO'
+    
+    // ✅ Calcola prezzi dalla pricing matrix
+    const { getPricing } = await import('./ecura-pricing')
+    let servizioType: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
+    if ((clientData.servizio || '').toUpperCase().includes('FAMILY')) servizioType = 'FAMILY'
+    else if ((clientData.servizio || '').toUpperCase().includes('PREMIUM')) servizioType = 'PREMIUM'
+    
+    const pianoType: 'BASE' | 'AVANZATO' = (clientData.piano || clientData.pacchetto || 'BASE').toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+    const pricing = getPricing(servizioType, pianoType)
+    
+    const costoServizio = pricing 
+      ? `€${pricing.setupTotale.toFixed(2).replace('.', ',')}/anno (IVA inclusa)`
+      : '€585,60/anno (IVA inclusa)'
+    
+    const prezzoBase = pricing
+      ? `€${pricing.setupBase.toFixed(2).replace('.', ',')}/anno`
+      : '€480/anno'
+    
     // Prepara i dati per il template
     const templateData = {
       NOME_CLIENTE: clientData.nomeRichiedente,
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
-      CODICE_CLIENTE: clientData.codiceCliente,
+      // ✅ FIX: Aggiungi SERVIZIO e PIANO separati
+      SERVIZIO: clientData.servizio || 'eCura PRO',
+      PIANO: clientData.piano || clientData.pacchetto || 'BASE',
+      PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
+      // ✅ FIX: Usa prezzi dalla pricing matrix
+      COSTO_SERVIZIO_PIANO: costoServizio,
+      // ✅ FIX: Aggiungi DISPOSITIVO
+      DISPOSITIVO: dispositivo,
+      // ❌ CODICE_CLIENTE rimosso (non disponibile)
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
-      COSTO_SERVIZIO: clientData.pacchetto === 'AVANZATO' ? '€1.024,80/anno (IVA inclusa)' : '€585,60/anno (IVA inclusa)',
-      SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' 
-        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${(clientData.servizio || '').toUpperCase().includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
+      SERVIZI_INCLUSI: pianoType === 'AVANZATO'
+        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li></ul>`
         : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
-      PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' ? '€840/anno' : '€480/anno'
+      PREZZO_PIANO: prezzoBase
     }
 
     // Renderizza template
@@ -1463,8 +1491,11 @@ export async function inviaEmailFormConfigurazione(
       ? 'SiDLY Vital Care' 
       : 'SiDLY Care PRO';
     const templateData = {
+      // ✅ FIX: Aggiungi NOME_CLIENTE e COGNOME_CLIENTE per versioni template che li usano
+      NOME_CLIENTE: clientData.nomeRichiedente,
+      COGNOME_CLIENTE: clientData.cognomeRichiedente,
       DISPOSITIVO: dispositivo,
-      SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto),
+      SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/configurazione.html?leadId=${clientData.id}`
     }
 
@@ -1550,14 +1581,15 @@ export async function inviaEmailConfigurazione(
     
     // Prepara i dati per il template
     const templateData = {
-      // Dati cliente/lead
-      CODICE_CLIENTE: clientData.codiceCliente || clientData.id || 'N/D',
+      // Dati cliente/lead (CODICE_CLIENTE rimosso - non disponibile)
       LEAD_ID: clientData.id,
       NOME_RICHIEDENTE: clientData.nomeRichiedente || '',
       COGNOME_RICHIEDENTE: clientData.cognomeRichiedente || '',
       EMAIL_RICHIEDENTE: clientData.email || '',
       TELEFONO_RICHIEDENTE: clientData.telefono || '',
-      PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'Standard',
+      SERVIZIO: clientData.servizio || 'eCura PRO', // ✅ FIX: separato da piano
+      PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'BASE', // ✅ FIX: solo piano
+      DISPOSITIVO: clientData.dispositivo || 'SiDLY VITAL CARE', // ✅ FIX: dispositivo
       DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT', {
         day: '2-digit',
         month: '2-digit',
@@ -1570,7 +1602,7 @@ export async function inviaEmailConfigurazione(
       NOME_ASSISTITO: configData.nome_assistito || '',
       COGNOME_ASSISTITO: configData.cognome_assistito || '',
       DATA_NASCITA: configData.data_nascita || '',
-      ETA: configData.eta || '',
+      ETA: configData.eta || '', // ✅ Età numerica (es: "95")
       PESO: configData.peso || '',
       ALTEZZA: configData.altezza || '',
       TELEFONO_ASSISTITO: configData.telefono || '',
@@ -1623,7 +1655,7 @@ export async function inviaEmailConfigurazione(
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
       from: 'info@telemedcare.it',
-      subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.codiceCliente || clientData.id})`,
+      subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.id})`,
       html: emailHtml
     })
 

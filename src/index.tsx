@@ -9716,6 +9716,13 @@ app.post('/api/configurations/submit', async (c) => {
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
     console.log(`🔍 [CONFIG SUBMIT] Lead trovato:`, lead ? 'SI' : 'NO')
     
+    // 🔍 DEBUG: Log codiceCliente del lead
+    if (lead) {
+      console.log(`🔍 [CONFIG SUBMIT] Lead codiceCliente:`, (lead as any).codiceCliente)
+      console.log(`🔍 [CONFIG SUBMIT] Lead servizio:`, (lead as any).servizio)
+      console.log(`🔍 [CONFIG SUBMIT] Lead piano:`, (lead as any).piano)
+    }
+    
     if (!lead) {
       return c.json({ 
         success: false, 
@@ -9915,9 +9922,37 @@ app.post('/api/configurations/submit', async (c) => {
       const WorkflowEmailManager = await import('./modules/workflow-email-manager')
       
       // ✅ Prepara lead con codiceCliente
+      // Priorità: codiceCliente → codice_cliente → citta → cm → id (ultimo fallback)
+      const leadAny = lead as any
+      const codiceClienteValue = leadAny.codiceCliente 
+        || leadAny.codice_cliente 
+        || leadAny.citta 
+        || leadAny.cm 
+        || lead.id 
+        || 'N/D'
+      
       const leadWithCode = {
         ...lead,
-        codiceCliente: lead.codiceCliente || lead.id || 'N/D'
+        codiceCliente: codiceClienteValue
+      }
+      
+      console.log(`🔍 [CONFIG SUBMIT] leadWithCode.codiceCliente finale:`, leadWithCode.codiceCliente)
+      
+      // ✅ Calcola età numerica da data_nascita (se non fornita)
+      let etaCalcolata = configData.eta || ''
+      if (!etaCalcolata && configData.data_nascita) {
+        try {
+          const birthDate = new Date(configData.data_nascita)
+          const today = new Date()
+          let age = today.getFullYear() - birthDate.getFullYear()
+          const monthDiff = today.getMonth() - birthDate.getMonth()
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+          }
+          etaCalcolata = String(age)
+        } catch (e) {
+          console.warn('⚠️ [CONFIG] Impossibile calcolare età da data_nascita:', e)
+        }
       }
       
       // ✅ Prepara configData dai dati ricevuti
@@ -9925,6 +9960,9 @@ app.post('/api/configurations/submit', async (c) => {
         nome_assistito: configData.nome,
         cognome_assistito: configData.cognome,
         data_nascita: configData.data_nascita,
+        eta: etaCalcolata, // ✅ Età numerica (es: "95")
+        peso: configData.peso,
+        altezza: configData.altezza,
         telefono: configData.telefono,
         email: configData.email,
         indirizzo: configData.indirizzo,
@@ -9949,6 +9987,23 @@ app.post('/api/configurations/submit', async (c) => {
           email: configData.contatto3_email
         }
       },
+      whitelist: { // ✅ Aggiungi whitelist
+        whitelist1: {
+          nome: configData.whitelist1_nome,
+          cognome: configData.whitelist1_cognome,
+          telefono: configData.whitelist1_telefono
+        },
+        whitelist2: {
+          nome: configData.whitelist2_nome,
+          cognome: configData.whitelist2_cognome,
+          telefono: configData.whitelist2_telefono
+        },
+        whitelist3: {
+          nome: configData.whitelist3_nome,
+          cognome: configData.whitelist3_cognome,
+          telefono: configData.whitelist3_telefono
+        }
+      },
       patologie: configData.patologie,
       note_aggiuntive: configData.note_aggiuntive
     }
@@ -9965,10 +10020,9 @@ app.post('/api/configurations/submit', async (c) => {
     
       // B) Invia email di benvenuto al cliente
       const emailBenvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
-        leadWithCode,
-        leadId,
-        db,
-        c.env
+        leadWithCode, // ✅ Lead con codiceCliente
+        c.env, // ✅ Environment variables
+        db // ✅ Database
       )
       
       console.log(`📧 [CONFIG SUBMIT] Email benvenuto (cliente) result:`, emailBenvenutoResult)
