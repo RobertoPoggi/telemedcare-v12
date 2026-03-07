@@ -910,9 +910,9 @@ export async function inviaEmailContratto(
         }
         
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
-        // ✅ FIX CRITICO: Usa prezzoIvaInclusa per prezzo_totale e calcola mensile da IVA inclusa
+        // ✅ REGOLA UNIVERSALE: prezzo_mensile = prezzoBase / 12 (IVA ESCLUSA)
         const prezzoIvaInclusa = contractData.prezzoIvaInclusa || (contractData.prezzoBase * 1.22)
-        const prezzoMensile = Math.round((prezzoIvaInclusa / 12) * 100) / 100
+        const prezzoMensile = Math.round((contractData.prezzoBase / 12) * 100) / 100
         const durataMesi = 12
         
         console.log(`💰 [CONTRATTO] Prezzi calcolati:`, {

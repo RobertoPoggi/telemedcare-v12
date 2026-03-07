@@ -23802,8 +23802,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
         servizio,    // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM")
-        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile
-        pricing.setupTotale, // ✅ prezzo_totale calcolato
+        (pricing.setupBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
+        pricing.setupBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA
         leadId,
         existingProforma.numero_proforma
       ).run()
@@ -23844,9 +23844,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         lead.provinciaRichiedente || '',
         lead.cfRichiedente || '',
         servizio, // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM") - NON il piano!
-        (pricing.setupTotale / 12).toFixed(2), // prezzo_mensile = piano derivabile da questo
+        (pricing.setupBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
         12, // durata_mesi
-        pricing.setupTotale, // prezzo_totale
+        pricing.setupBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA
         'DRAFT',
         false,
         new Date().toISOString(),
