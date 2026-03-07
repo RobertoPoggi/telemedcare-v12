@@ -12527,6 +12527,11 @@ app.get('/api/contracts/:id', async (c) => {
       }
     }
     
+    // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
+    const prezzoBase = parseFloat(contract.prezzo_totale || 0)
+    const iva = prezzoBase * 0.22
+    const totaleIvaInclusa = prezzoBase + iva
+    
     // Mappa schema DB esistente a formato API
     return c.json({
       success: true,
@@ -12540,11 +12545,6 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
-      const prezzoBase = parseFloat(contract.prezzo_totale || 0);
-      const iva = prezzoBase * 0.22;
-      const totaleIvaInclusa = prezzoBase + iva;
-      
       prezzo: `€${prezzoBase.toFixed(2)} + IVA 22% (€${totaleIvaInclusa.toFixed(2)}) / anno`,
       status: contract.status || 'PENDING'
     })
