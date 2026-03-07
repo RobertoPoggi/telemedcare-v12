@@ -23943,4 +23943,6 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
 })
 
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
-export default app
+export default {
+  fetch: app.fetch.bind(app)
+}
