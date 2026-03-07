@@ -910,8 +910,17 @@ export async function inviaEmailContratto(
         }
         
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
-        const prezzoMensile = contractData.tipoServizio === 'AVANZATO' ? 70 : 40
+        // ✅ FIX CRITICO: Usa prezzoIvaInclusa per prezzo_totale e calcola mensile da IVA inclusa
+        const prezzoIvaInclusa = contractData.prezzoIvaInclusa || (contractData.prezzoBase * 1.22)
+        const prezzoMensile = Math.round((prezzoIvaInclusa / 12) * 100) / 100
         const durataMesi = 12
+        
+        console.log(`💰 [CONTRATTO] Prezzi calcolati:`, {
+          prezzoBase: contractData.prezzoBase,
+          prezzoIvaInclusa: prezzoIvaInclusa,
+          prezzoMensile: prezzoMensile,
+          durataMesi: durataMesi
+        })
         
         console.log(`💾 [CONTRATTO] Dati da salvare:`, {
           id: contractData.contractId,
@@ -920,7 +929,8 @@ export async function inviaEmailContratto(
           tipo_contratto: contractData.tipoServizio,
           servizio: contractData.servizio,
           piano: contractData.tipoServizio,
-          prezzo_totale: contractData.prezzoBase,
+          prezzo_mensile: prezzoMensile,
+          prezzo_totale: prezzoIvaInclusa,  // ✅ FIX: IVA inclusa (€1.207,80 per PREMIUM AVANZATO)
           isUpdate: !!existingContract
         })
         
@@ -947,7 +957,7 @@ export async function inviaEmailContratto(
             contractData.tipoServizio,
             prezzoMensile,
             durataMesi,
-            contractData.prezzoBase,
+            contractData.prezzoIvaInclusa || (contractData.prezzoBase * 1.22),  // ✅ FIX: prezzo_totale = IVA INCLUSA
             new Date().toISOString(),
             new Date().toISOString(),
             contractData.contractId
@@ -982,7 +992,7 @@ export async function inviaEmailContratto(
             contractData.tipoServizio,
             prezzoMensile,
             durataMesi,
-            contractData.prezzoBase,
+            contractData.prezzoIvaInclusa || (contractData.prezzoBase * 1.22),  // ✅ FIX: prezzo_totale = IVA INCLUSA
             new Date().toISOString(),
             new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             new Date().toISOString(),
