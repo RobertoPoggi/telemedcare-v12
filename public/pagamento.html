@@ -397,10 +397,11 @@
             document.getElementById('piano').textContent = proformaData.piano || 'BASE';
             document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
             
-            // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
-            const prezzoBase = parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0);
-            const iva = prezzoBase * 0.22; // IVA 22%
-            const totale = (prezzoBase + iva).toFixed(2); // Totale IVA inclusa
+            // ✅ REGOLA UNIVERSALE: L'API già calcola tutto correttamente
+            // Usa prezzo_base (IVA ESCLUSA), importo_iva e importo_totale (IVA INCLUSA)
+            const prezzoBase = parseFloat(proformaData.prezzo_base || proformaData.prezzo_totale || 0);
+            const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * 0.22);
+            const totale = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
             document.getElementById('totale').textContent = `€${totale}`;
             document.getElementById('importo-bonifico').textContent = `€${totale}`;
             
