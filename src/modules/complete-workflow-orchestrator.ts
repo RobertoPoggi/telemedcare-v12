@@ -540,7 +540,7 @@ export async function processPayment(
         ...ctx.leadData, 
         codiceCliente,
         servizio: ctx.leadData.pacchetto,  // es. "eCura PREMIUM"
-        piano: ctx.leadData.pacchetto === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+        piano: (ctx.leadData as any).tipoServizio || 'BASE'  // ✅ FIX: usa tipoServizio per il piano (BASE/AVANZATO)
       },
       ctx.env,
       ctx.db

@@ -7407,7 +7407,8 @@ app.post('/api/payments', async (c) => {
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
         etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
-        pacchetto: leadData.tipoServizio || 'BASE',
+        pacchetto: leadData.servizio || 'eCura PRO',  // ✅ FIX: usa servizio completo (es. "eCura PREMIUM")
+        tipoServizio: leadData.tipoServizio || 'BASE',  // ✅ Piano: BASE o AVANZATO
         vuoleContratto: true,
         vuoleBrochure: leadData.vuoleBrochure === 'Si',
         vuoleManuale: leadData.vuoleManuale === 'Si',
