@@ -1581,8 +1581,7 @@ export async function inviaEmailConfigurazione(
     
     // Prepara i dati per il template
     const templateData = {
-      // Dati cliente/lead
-      CODICE_CLIENTE: clientData.codiceCliente || 'N/D', // ✅ FIX: usa solo codiceCliente, non fallback a id
+      // Dati cliente/lead (CODICE_CLIENTE rimosso - non disponibile)
       LEAD_ID: clientData.id,
       NOME_RICHIEDENTE: clientData.nomeRichiedente || '',
       COGNOME_RICHIEDENTE: clientData.cognomeRichiedente || '',
@@ -1656,7 +1655,7 @@ export async function inviaEmailConfigurazione(
     const sendResult = await emailService.sendEmail({
       to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
       from: 'info@telemedcare.it',
-      subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.codiceCliente || clientData.id})`,
+      subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.id})`,
       html: emailHtml
     })
 
