@@ -7356,21 +7356,26 @@ app.post('/api/payments', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    // Recupera proforma e contratto
+    // Recupera proforma (senza JOIN - il leadId è già nella proforma)
     const proforma = await c.env.DB.prepare(`
-      SELECT p.*, c.leadId, c.id as contract_id
-      FROM proforma p
-      LEFT JOIN contracts c ON p.contract_id = c.id
-      WHERE p.id = ?
+      SELECT * FROM proforma WHERE id = ?
     `).bind(proformaId).first()
     
     if (!proforma) {
       return c.json({ success: false, error: 'Proforma non trovata' }, 404)
     }
     
+    console.log(`🔍 [PAYMENT] Proforma trovata:`, {
+      id: proforma.id,
+      numero: proforma.numero_proforma,
+      leadId: proforma.leadId,
+      contract_id: proforma.contract_id
+    })
+    
     // Recupera lead data
     const leadData = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(proforma.leadId).first()
     if (!leadData) {
+      console.error(`❌ [PAYMENT] Lead non trovato: ${proforma.leadId}`)
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
     
