@@ -1395,6 +1395,23 @@ export async function inviaEmailBenvenuto(
       ? 'SiDLY Vital Care' 
       : 'SiDLY Care PRO'
     
+    // ✅ Calcola prezzi dalla pricing matrix
+    const { getPricing } = await import('./ecura-pricing')
+    let servizioType: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
+    if ((clientData.servizio || '').toUpperCase().includes('FAMILY')) servizioType = 'FAMILY'
+    else if ((clientData.servizio || '').toUpperCase().includes('PREMIUM')) servizioType = 'PREMIUM'
+    
+    const pianoType: 'BASE' | 'AVANZATO' = (clientData.piano || clientData.pacchetto || 'BASE').toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+    const pricing = getPricing(servizioType, pianoType)
+    
+    const costoServizio = pricing 
+      ? `€${pricing.setupTotale.toFixed(2).replace('.', ',')}/anno (IVA inclusa)`
+      : '€585,60/anno (IVA inclusa)'
+    
+    const prezzoBase = pricing
+      ? `€${pricing.setupBase.toFixed(2).replace('.', ',')}/anno`
+      : '€480/anno'
+    
     // Prepara i dati per il template
     const templateData = {
       NOME_CLIENTE: clientData.nomeRichiedente,
@@ -1403,21 +1420,17 @@ export async function inviaEmailBenvenuto(
       SERVIZIO: clientData.servizio || 'eCura PRO',
       PIANO: clientData.piano || clientData.pacchetto || 'BASE',
       PIANO_SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
-      // ✅ FIX: COSTO_SERVIZIO_PIANO invece di COSTO_SERVIZIO
-      COSTO_SERVIZIO_PIANO: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO' 
-        ? '€1.024,80/anno (IVA inclusa)' 
-        : '€585,60/anno (IVA inclusa)',
+      // ✅ FIX: Usa prezzi dalla pricing matrix
+      COSTO_SERVIZIO_PIANO: costoServizio,
       // ✅ FIX: Aggiungi DISPOSITIVO
       DISPOSITIVO: dispositivo,
       CODICE_CLIENTE: clientData.codiceCliente,
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
-      SERVIZI_INCLUSI: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO'
+      SERVIZI_INCLUSI: pianoType === 'AVANZATO'
         ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemedicina integrata</li></ul>`
         : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
-      PREZZO_PIANO: clientData.pacchetto === 'AVANZATO' || clientData.piano === 'AVANZATO' 
-        ? '€840/anno' 
-        : '€480/anno'
+      PREZZO_PIANO: prezzoBase
     }
 
     // Renderizza template

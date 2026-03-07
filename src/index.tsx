@@ -9716,6 +9716,13 @@ app.post('/api/configurations/submit', async (c) => {
     const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
     console.log(`🔍 [CONFIG SUBMIT] Lead trovato:`, lead ? 'SI' : 'NO')
     
+    // 🔍 DEBUG: Log codiceCliente del lead
+    if (lead) {
+      console.log(`🔍 [CONFIG SUBMIT] Lead codiceCliente:`, (lead as any).codiceCliente)
+      console.log(`🔍 [CONFIG SUBMIT] Lead servizio:`, (lead as any).servizio)
+      console.log(`🔍 [CONFIG SUBMIT] Lead piano:`, (lead as any).piano)
+    }
+    
     if (!lead) {
       return c.json({ 
         success: false, 
@@ -9915,10 +9922,21 @@ app.post('/api/configurations/submit', async (c) => {
       const WorkflowEmailManager = await import('./modules/workflow-email-manager')
       
       // ✅ Prepara lead con codiceCliente
+      // Priorità: codiceCliente → codice_cliente → citta → cm → id (ultimo fallback)
+      const leadAny = lead as any
+      const codiceClienteValue = leadAny.codiceCliente 
+        || leadAny.codice_cliente 
+        || leadAny.citta 
+        || leadAny.cm 
+        || lead.id 
+        || 'N/D'
+      
       const leadWithCode = {
         ...lead,
-        codiceCliente: lead.codiceCliente || lead.id || 'N/D'
+        codiceCliente: codiceClienteValue
       }
+      
+      console.log(`🔍 [CONFIG SUBMIT] leadWithCode.codiceCliente finale:`, leadWithCode.codiceCliente)
       
       // ✅ Calcola età numerica da data_nascita (se non fornita)
       let etaCalcolata = configData.eta || ''
