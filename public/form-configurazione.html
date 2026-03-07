@@ -557,17 +557,14 @@
             // Nascondi il popup
             document.getElementById('success-message').classList.add('hidden');
             
-            // Prova a chiudere la finestra
-            try {
-                window.close();
-                console.log('✅ Finestra chiusa con successo');
-            } catch (e) {
-                console.log('⚠️ Impossibile chiudere finestra, redirect alla home...');
-                // Se non può chiudere, redirect alla home page
-                setTimeout(() => {
-                    window.location.href = 'https://www.ecura.it';
-                }, 500);
-            }
+            // Prova a chiudere la finestra (ma window.close() non funziona se non aperta da script)
+            window.close();
+            
+            // Se siamo ancora qui dopo 100ms, significa che window.close() è fallito
+            setTimeout(() => {
+                console.log('⚠️ Impossibile chiudere finestra, redirect a eCura...');
+                window.location.href = 'https://www.ecura.it';
+            }, 100);
         }
 
         // Handle form submission
