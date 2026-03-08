@@ -1084,12 +1084,21 @@ export async function inviaEmailContratto(
       const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl)
       
       if (brochurePdf) {
-        attachments.push({
-          filename: brochurePdf.filename,
-          content: brochurePdf.content,
-          contentType: 'application/pdf'
-        })
-        console.log(`✅ [CONTRATTO] Brochure SiDLY allegata: ${brochurePdf.filename} (${(brochurePdf.size / 1024).toFixed(2)} KB)`)
+        const sizeKB = brochurePdf.size / 1024
+        const MIN_VALID_SIZE_KB = 10 // 10 KB minimo
+        
+        // 🛡️ CONTROLLO FINALE: Non allegare se troppo piccolo
+        if (sizeKB < MIN_VALID_SIZE_KB) {
+          console.error(`🔴🔴🔴 [CONTRATTO] BLOCCO ALLEGATO ROTTO: ${brochurePdf.filename} (${sizeKB.toFixed(2)} KB < 10 KB)`)
+          console.error(`🔴 [CONTRATTO] Email inviata SENZA allegato - cliente userà link nel template`)
+        } else {
+          attachments.push({
+            filename: brochurePdf.filename,
+            content: brochurePdf.content,
+            contentType: 'application/pdf'
+          })
+          console.log(`✅ [CONTRATTO] Brochure SiDLY allegata: ${brochurePdf.filename} (${sizeKB.toFixed(2)} KB)`)
+        }
       } else {
         console.warn(`⚠️ [CONTRATTO] Impossibile caricare brochure SiDLY per ${servizioNormalized}`)
       }

@@ -1,0 +1,15 @@
+# Cloudflare Pages: RIMUOVI FILE OBSOLETI
+# ==========================================
+# 
+# File da RIMUOVERE dalla cache:
+# - /documents/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf
+# - /documents/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf
+# - /brochures/Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf
+# - /brochures/Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf
+#
+# File CORRETTI da servire:
+# - /documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf (2.6 MB)
+# - /documents/Medica_GB_SiDLY_Vital_Care_ITA.pdf (1.7 MB)
+#
+# Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+Sun Mar  8 18:32:16 UTC 2026
