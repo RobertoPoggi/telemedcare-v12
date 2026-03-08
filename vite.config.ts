@@ -112,10 +112,9 @@ export default defineConfig({
       output: {
         // Mantieni file statici nella root
         assetFileNames: (assetInfo) => {
-          // File PDF nella cartella brochures
-          if (assetInfo.name?.endsWith('.pdf')) {
-            return 'brochures/[name][extname]'
-          }
+          // ✅ FIX: Mantieni struttura directory originale per PDF
+          // NON forzare tutti i PDF in /brochures/
+          // Lascia che Vite mantenga la struttura di public/
           return 'assets/[name]-[hash][extname]'
         }
       }
