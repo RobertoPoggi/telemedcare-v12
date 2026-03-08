@@ -397,7 +397,11 @@
             document.getElementById('piano').textContent = proformaData.piano || 'BASE';
             document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
             
-            const totale = parseFloat(proformaData.importo_totale).toFixed(2);
+            // ✅ REGOLA UNIVERSALE: L'API già calcola tutto correttamente
+            // Usa prezzo_base (IVA ESCLUSA), importo_iva e importo_totale (IVA INCLUSA)
+            const prezzoBase = parseFloat(proformaData.prezzo_base || proformaData.prezzo_totale || 0);
+            const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * 0.22);
+            const totale = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
             document.getElementById('totale').textContent = `€${totale}`;
             document.getElementById('importo-bonifico').textContent = `€${totale}`;
             
@@ -539,12 +543,23 @@
                     let backendError = null;
                     
                     try {
+                        // ✅ Calcola importo totale da proformaData (IVA inclusa)
+                        const prezzoBase = parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0);
+                        const iva = prezzoBase * 0.22;
+                        const importoTotale = prezzoBase + iva;
+                        
+                        console.log('💰 [PAYMENT] Importo calcolato:', {
+                            prezzoBase,
+                            iva,
+                            importoTotale
+                        });
+                        
                         const backendResponse = await fetch('/api/payments', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 proformaId: proformaData.id || proformaId,
-                                importo: parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0),
+                                importo: importoTotale, // ✅ Importo IVA INCLUSA
                                 metodoPagamento: 'stripe',
                                 transactionId: paymentIntent.id,
                                 stripePaymentIntentId: paymentIntent.id,
