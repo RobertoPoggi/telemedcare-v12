@@ -397,22 +397,48 @@ await emailService.sendEmail({
 
 ## ⚠️ Problemi Risolti
 
-### 1. Brochure Compresse Non Leggibili (RISOLTO)
-**Commit**: `d78ebb3` - "fix: BROCHURE PDF NON LEGGIBILI"  
+### 1. Brochure Compresse Non Leggibili (RISOLTO ✅)
+**Commit 1**: `d78ebb3` - "fix: BROCHURE PDF NON LEGGIBILI"  
+**Commit 2**: `b1c6b30` - "fix: CRITICO - brochure PDF rotte (4.9 KB) in email contratto"  
 **Data**: 08/03/2026
 
-**Problema**: File compressi `-compresso.pdf` non si aprivano su alcuni dispositivi
+**Problema**: 
+- File compressi `-compresso.pdf` non si aprivano su alcuni dispositivi
+- Email contratto riceveva brochure rotta di 4.9 KB
+- File caricato da path sbagliato `/brochures/` invece di `/documents/`
 
-**Soluzione**: Sostituiti con PDF leggibili:
-- `Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf` → `Medica_GB_SiDLY_Vital_Care_ITA.pdf` (1.7 MB)
-- `Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf` → `Medica_GB_SiDLY_Care_PRO_ITA.pdf` (2.6 MB)
+**Soluzione**: 
+- Sostituiti file PDF in `public/documents/`:
+  - `Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf` → `Medica_GB_SiDLY_Vital_Care_ITA.pdf` (1.7 MB)
+  - `Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf` → `Medica_GB_SiDLY_Care_PRO_ITA.pdf` (2.6 MB)
+- Aggiornato `src/modules/brochure-manager.ts`:
+  - BROCHURE_MAP con filename corretti (senza `-compresso`)
+  - Path corretto: `/documents/` (era `/brochures/`)
+  - Nome dispositivo FAMILY: "SiDLY Care FAMILY" (era "Senium")
 
 **Codice aggiornato**:
 ```typescript
-// Linea 617-619 in workflow-email-manager.ts
+// workflow-email-manager.ts:617-619
 const brochureFilename = (servizioNome === 'PREMIUM' || servizioNome === 'premium')
   ? 'Medica_GB_SiDLY_Vital_Care_ITA.pdf'     // ✅ Nome corretto
   : 'Medica_GB_SiDLY_Care_PRO_ITA.pdf'       // ✅ Nome corretto
+
+// brochure-manager.ts:25-39
+export const BROCHURE_MAP: Record<string, BrochureInfo> = {
+  'FAMILY': {
+    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ File leggibile
+    nomeDispositivo: 'SiDLY Care FAMILY'
+  },
+  'PRO': {
+    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ File leggibile (2.6 MB)
+  },
+  'PREMIUM': {
+    filename: 'Medica_GB_SiDLY_Vital_Care_ITA.pdf', // ✅ File leggibile (1.7 MB)
+  }
+}
+
+// brochure-manager.ts:68
+const pdfUrl = `${baseUrl}/documents/${brochureInfo.filename}` // ✅ Path corretto
 ```
 
 ---
