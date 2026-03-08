@@ -712,7 +712,7 @@ export async function inviaEmailDocumentiInformativi(
         
         // Normalizza il nome del servizio: "eCura PRO" → "PRO"
         const servizioRaw = leadData.servizio || 'DEFAULT'
-        const servizio = servizioRaw.replace(/^eCura\s+/i, '').trim()
+        const servizio = servizioRaw.replace(/^eCura\s+/i, '').trim().toUpperCase()
         
         console.log(`📄 [WORKFLOW] Servizio normalizzato: "${servizioRaw}" → "${servizio}"`)
         
@@ -734,7 +734,7 @@ export async function inviaEmailDocumentiInformativi(
           // Fallback su brochure generica se necessario
           if (!pdfData) {
             console.log(`📄 [WORKFLOW] Caricamento brochure generica eCura`)
-            const brochureUrl = `${baseUrl}/brochures/Brochure_eCura.pdf`
+            const brochureUrl = `${baseUrl}/documents/Brochure_eCura.pdf`
             const response = await fetch(brochureUrl)
             
             if (response.ok) {

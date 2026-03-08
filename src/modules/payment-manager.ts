@@ -207,10 +207,8 @@ export async function createStripePaymentIntent(
   try {
     console.log(`💳 [STRIPE] Creazione Payment Intent per €${(amount / 100).toFixed(2)}`)
 
-    // ✅ PRIORITY: Usa TEST key se disponibile (per preview/staging)
-    // Se STRIPE_TEST_SECRET_KEY è definita, viene usata (override per preview)
-    // Altrimenti usa STRIPE_SECRET_KEY (produzione)
-    const stripeApiKey = env.STRIPE_TEST_SECRET_KEY || env.STRIPE_SECRET_KEY
+    // ✅ PRIORITY: Usa STRIPE_SECRET_KEY (deve essere sk_test_ in Preview, sk_live_ in Produzione)
+    const stripeApiKey = env.STRIPE_SECRET_KEY
     
     if (!stripeApiKey) {
       console.warn(`⚠️ [STRIPE] API Key non configurata, modalità test`)
@@ -223,6 +221,15 @@ export async function createStripePaymentIntent(
     
     const isTestMode = stripeApiKey.startsWith('sk_test')
     console.log(`🔑 [STRIPE] Using ${isTestMode ? 'TEST' : 'LIVE'} mode`)
+    console.log(`🔑 [STRIPE] Key prefix: ${stripeApiKey.substring(0, 15)}...`)
+    
+    // Verifica che in produzione non si usi test key
+    if (env.ENVIRONMENT === 'production' && isTestMode) {
+      console.error(`🚨 [STRIPE] ERRORE: Stai usando TEST key in ambiente PRODUCTION!`)
+    }
+    if (env.ENVIRONMENT !== 'production' && !isTestMode) {
+      console.warn(`⚠️ [STRIPE] ATTENZIONE: Stai usando LIVE key in ambiente NON-production!`)
+    }
 
     const response = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
