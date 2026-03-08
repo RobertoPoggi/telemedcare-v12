@@ -8935,9 +8935,10 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     console.log('📧 Import workflow-email-manager...')
     const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
     
+    // ✅ Non passare documentUrls: il workflow userà brochure-manager per caricare la brochure corretta
     const documentUrls: { brochure?: string; manuale?: string } = {}
-    // ✅ Brochure unificata per tutti i servizi
-    documentUrls.brochure = '/brochures/Brochure_eCura_2024.pdf'
+    // REMOVED: documentUrls.brochure = '/brochures/Brochure_eCura_2024.pdf'
+    // Il workflow caricherà automaticamente la brochure corretta in base al servizio
     
     console.log('📧 Chiamata inviaEmailContratto con:', {
       leadId: leadData.id,
@@ -9022,39 +9023,25 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     // 1. CARICA BROCHURE PDF
     const attachments: Array<{ filename: string; content: string; contentType: string }> = []
     
-    // ✅ Brochure unificata per tutti i servizi
-    const brochureFilename = 'Brochure_eCura_2024.pdf'
+    // ✅ Usa brochure-manager per caricare PDF corretto per dispositivo
+    const { loadBrochurePDF } = await import('./modules/brochure-manager')
+    const baseUrl = getBaseUrl(c.env)
+    const servizioNormalized = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
     
-    if (brochureFilename) {
-      try {
-        // Carica brochure da asset pubblici (Cloudflare Pages)
-        const brochureUrl = `/brochures/${brochureFilename}`
-        console.log(`📥 [BROCHURE] Fetch brochure da: ${brochureUrl}`)
-        
-        const response = await fetch(new URL(brochureUrl, c.req.url).toString())
-        
-        if (response.ok) {
-          const arrayBuffer = await response.arrayBuffer()
-          const brochureBase64 = Buffer.from(arrayBuffer).toString('base64')
-          
-          attachments.push({
-            filename: brochureFilename,
-            content: brochureBase64,
-            contentType: 'application/pdf'
-          })
-          
-          console.log(`📎 [BROCHURE] Allegato: ${(brochureBase64.length * 0.75 / 1024).toFixed(2)} KB`)
-        } else {
-          console.error('❌ [BROCHURE] Brochure non trovata:', response.status)
-          return c.json({ success: false, error: `Brochure non disponibile (${response.status})` }, 500)
-        }
-        
-      } catch (brochureError) {
-        console.error('❌ [BROCHURE] Errore caricamento brochure:', brochureError)
-        return c.json({ success: false, error: 'Brochure non disponibile' }, 500)
-      }
+    console.log(`📥 [BROCHURE] Caricamento brochure per servizio: ${servizioNormalized}`)
+    
+    const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl)
+    
+    if (brochurePdf) {
+      attachments.push({
+        filename: brochurePdf.filename,
+        content: brochurePdf.content,
+        contentType: 'application/pdf'
+      })
+      console.log(`✅ [BROCHURE] Brochure allegata: ${brochurePdf.filename} (${(brochurePdf.size / 1024).toFixed(2)} KB)`)
     } else {
-      return c.json({ success: false, error: 'Servizio non valido' }, 400)
+      console.error('❌ [BROCHURE] Servizio non trovato o PDF non disponibile')
+      return c.json({ success: false, error: 'Brochure non disponibile per il servizio selezionato' }, 500)
     }
     
     // 2. INVIA EMAIL CON BROCHURE usando template DB

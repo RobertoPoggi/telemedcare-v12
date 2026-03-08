@@ -132,7 +132,7 @@ export async function generateAndSendContract(
       if (!brochurePdf) {
         console.log(`📄 [CONTRACT_WORKFLOW] Caricamento brochure generica TeleMedCare`)
         try {
-          const brochureUrl = `${baseUrl}/brochures/Brochure_eCura.pdf`
+          const brochureUrl = `${baseUrl}/documents/Brochure_eCura.pdf` // ✅ FIX: /documents/ invece /brochures/
           const response = await fetch(brochureUrl)
           
           if (response.ok) {

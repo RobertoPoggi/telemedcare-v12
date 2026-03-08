@@ -618,7 +618,7 @@ export async function inviaEmailDocumentiInformativi(
       ? 'Medica_GB_SiDLY_Vital_Care_ITA.pdf'
       : 'Medica_GB_SiDLY_Care_PRO_ITA.pdf'
     
-    const brochureUrl = `${baseUrl}/brochures/${brochureFilename}`
+    const brochureUrl = `${baseUrl}/documents/${brochureFilename}` // ✅ FIX: /documents/ invece /brochures/
     
     // ============================================
     // VERIFICA COMPLETAMENTO LEAD
@@ -1045,7 +1045,7 @@ export async function inviaEmailContratto(
     if (servizioNormalized === 'PREMIUM') {
       brochureFilename = 'Medica_GB_SiDLY_Vital_Care_ITA.pdf'
     }
-    const linkBrochure = `${baseUrl}/brochures/${brochureFilename}`
+    const linkBrochure = `${baseUrl}/documents/${brochureFilename}` // ✅ FIX: /documents/ invece /brochures/
     
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
