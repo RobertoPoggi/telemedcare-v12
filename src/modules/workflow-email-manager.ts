@@ -1075,53 +1075,27 @@ export async function inviaEmailContratto(
     // NOTA: Il PDF del contratto non è disponibile senza Puppeteer
     // Il cliente riceverà il link per firmare il contratto online nel template email
     
-    // 🔴 BROCHURE SIDLY - SEMPRE ALLEGATA CON IL CONTRATTO (indipendente da vuoleBrochure)
-    // vuoleBrochure si riferisce alla brochure eCura (documentazione informativa)
-    // La brochure SiDLY del dispositivo VA SEMPRE allegata al contratto!
-    if (env?.ASSETS) {
-      try {
-        console.log(`📎 [CONTRATTO] Caricamento brochure SiDLY via ASSETS: ${linkBrochure}`)
-        
-        // Usa ASSETS binding per leggere il PDF
-        const brochureUrl = new URL(linkBrochure)
-        const assetResponse = await env.ASSETS.fetch(brochureUrl)
-        
-        if (assetResponse.ok) {
-          // Leggi il PDF come ArrayBuffer
-          const arrayBuffer = await assetResponse.arrayBuffer()
-          const sizeKB = (arrayBuffer.byteLength / 1024).toFixed(2)
-          console.log(`📥 [CONTRATTO] PDF caricato: ${sizeKB} KB`)
-          
-          // Converti in base64 (chunked per evitare stack overflow)
-          const uint8Array = new Uint8Array(arrayBuffer)
-          const chunkSize = 32768 // 32KB chunks
-          let binary = ''
-          
-          for (let i = 0; i < uint8Array.length; i += chunkSize) {
-            const chunk = uint8Array.slice(i, i + chunkSize)
-            binary += String.fromCharCode.apply(null, Array.from(chunk))
-          }
-          
-          const base64 = btoa(binary)
-          
-          // Aggiungi agli allegati
-          const filename = linkBrochure.split('/').pop() || 'Brochure_eCura.pdf'
-          attachments.push({
-            filename: filename,
-            content: base64,
-            contentType: 'application/pdf'
-          })
-          
-          console.log(`✅ [CONTRATTO] Brochure allegata: ${filename} (${sizeKB} KB, ${base64.length} chars base64)`)
-        } else {
-          console.warn(`⚠️ [CONTRATTO] ASSETS non trova brochure: ${linkBrochure} (status: ${assetResponse.status})`)
-        }
-      } catch (error) {
-        console.error(`❌ [CONTRATTO] Errore caricamento brochure:`, error)
-        // Non bloccare l'invio email se fallisce l'allegato - il link è comunque nel template
+    // 🔴 BROCHURE SIDLY - SEMPRE ALLEGATA CON IL CONTRATTO
+    // Usa loadBrochurePDF invece di ASSETS.fetch per evitare problemi di cache
+    try {
+      const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
+      console.log(`📎 [CONTRATTO] Caricamento brochure SiDLY per servizio: ${servizioNormalized}`)
+      
+      const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl)
+      
+      if (brochurePdf) {
+        attachments.push({
+          filename: brochurePdf.filename,
+          content: brochurePdf.content,
+          contentType: 'application/pdf'
+        })
+        console.log(`✅ [CONTRATTO] Brochure SiDLY allegata: ${brochurePdf.filename} (${(brochurePdf.size / 1024).toFixed(2)} KB)`)
+      } else {
+        console.warn(`⚠️ [CONTRATTO] Impossibile caricare brochure SiDLY per ${servizioNormalized}`)
       }
-    } else {
-      console.warn(`⚠️ [CONTRATTO] ASSETS binding non disponibile, brochure SiDLY disponibile solo via link`)
+    } catch (error) {
+      console.error(`❌ [CONTRATTO] Errore caricamento brochure SiDLY:`, error)
+      // Non bloccare l'invio email se fallisce l'allegato - il link è comunque nel template
     }
     
     // Link brochure sempre incluso nel template come fallback
