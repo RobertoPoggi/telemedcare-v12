@@ -207,10 +207,10 @@ export async function createStripePaymentIntent(
   try {
     console.log(`💳 [STRIPE] Creazione Payment Intent per €${(amount / 100).toFixed(2)}`)
 
-    // ✅ PRIORITY: Usa TEST key se disponibile (per preview/staging)
-    // Se STRIPE_TEST_SECRET_KEY è definita, viene usata (override per preview)
-    // Altrimenti usa STRIPE_SECRET_KEY (produzione)
-    const stripeApiKey = env.STRIPE_TEST_SECRET_KEY || env.STRIPE_SECRET_KEY
+    // ✅ Usa STRIPE_SECRET_KEY che contiene:
+    // - sk_test_... in Preview (Environment Variables Preview)
+    // - sk_live_... in Production (Environment Variables Production)
+    const stripeApiKey = env.STRIPE_SECRET_KEY
     
     if (!stripeApiKey) {
       console.warn(`⚠️ [STRIPE] API Key non configurata, modalità test`)
