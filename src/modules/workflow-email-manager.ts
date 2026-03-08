@@ -615,8 +615,8 @@ export async function inviaEmailDocumentiInformativi(
     console.log(`🌐 [WORKFLOW] Using baseUrl: ${baseUrl}`)
     
     const brochureFilename = (servizioNome === 'PREMIUM' || servizioNome === 'premium') 
-      ? 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
-      : 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+      ? 'Medica_GB_SiDLY_Vital_Care_ITA.pdf'
+      : 'Medica_GB_SiDLY_Care_PRO_ITA.pdf'
     
     const brochureUrl = `${baseUrl}/brochures/${brochureFilename}`
     
@@ -1041,9 +1041,9 @@ export async function inviaEmailContratto(
     // Determina URL brochure per il link diretto
     const baseUrl = getBaseUrl(env)
     const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
-    let brochureFilename = 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf'
+    let brochureFilename = 'Medica_GB_SiDLY_Care_PRO_ITA.pdf'
     if (servizioNormalized === 'PREMIUM') {
-      brochureFilename = 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf'
+      brochureFilename = 'Medica_GB_SiDLY_Vital_Care_ITA.pdf'
     }
     const linkBrochure = `${baseUrl}/brochures/${brochureFilename}`
     
