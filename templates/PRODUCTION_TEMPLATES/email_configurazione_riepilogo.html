@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurazione Dispositivo - {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .subtitle {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '📋';
+            margin-right: 10px;
+        }
+        .field-group {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .field-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+        .field-value {
+            color: #1e293b;
+        }
+        .subsection {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .subsection-title {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .farmaci-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .farmaci-table th {
+            background: #3b82f6;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .farmaci-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .farmaci-table tr:last-child td {
+            border-bottom: none;
+        }
+        .alert-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+        }
+        .badge {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Configurazione Dispositivo {{DISPOSITIVO}}</h1>
+            <div class="subtitle">Nuova configurazione ricevuta - Pronta per setup dispositivo</div>
+        </div>
+
+        <div class="alert-box">
+            <strong>⚠️ Azione Richiesta:</strong> Configurare il dispositivo con i dati seguenti prima della spedizione
+        </div>
+
+        <!-- DATI LEAD E CLIENTE -->
+        <div class="section">
+            <div class="section-title">👤 Dati Cliente</div>
+            <div class="field-group">
+                <div class="field-label">Lead ID:</div>
+                <div class="field-value">{{LEAD_ID}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Richiedente:</div>
+                <div class="field-value">{{NOME_RICHIEDENTE}} {{COGNOME_RICHIEDENTE}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Email Richiedente:</div>
+                <div class="field-value">{{EMAIL_RICHIEDENTE}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Telefono Richiedente:</div>
+                <div class="field-value">{{TELEFONO_RICHIEDENTE}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Servizio:</div>
+                <div class="field-value"><strong>{{SERVIZIO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Piano:</div>
+                <div class="field-value"><strong>{{PIANO_SERVIZIO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Dispositivo:</div>
+                <div class="field-value"><strong>{{DISPOSITIVO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Data Compilazione:</div>
+                <div class="field-value">{{DATA_COMPILAZIONE}}</div>
+            </div>
+        </div>
+
+        <!-- DATI ASSISTITO -->
+        <div class="section">
+            <div class="section-title">🏥 Dati Assistito (Da configurare sul dispositivo)</div>
+            <div class="field-group">
+                <div class="field-label">Nome:</div>
+                <div class="field-value"><strong>{{NOME_ASSISTITO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Cognome:</div>
+                <div class="field-value"><strong>{{COGNOME_ASSISTITO}}</strong></div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Data di Nascita:</div>
+                <div class="field-value">{{DATA_NASCITA}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Età:</div>
+                <div class="field-value">{{ETA}} anni</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Peso:</div>
+                <div class="field-value">{{PESO}} kg</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Altezza:</div>
+                <div class="field-value">{{ALTEZZA}} cm</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Telefono:</div>
+                <div class="field-value">{{TELEFONO_ASSISTITO}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Email:</div>
+                <div class="field-value">{{EMAIL_ASSISTITO}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Indirizzo:</div>
+                <div class="field-value">{{INDIRIZZO}}</div>
+            </div>
+        </div>
+
+        <!-- CONTATTI EMERGENZA -->
+        <div class="section">
+            <div class="section-title">🚨 Contatti di Emergenza (Da configurare sul dispositivo)</div>
+            
+            <div class="subsection">
+                <div class="subsection-title">Contatto 1:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{CONTATTO1_NOME}} {{CONTATTO1_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{CONTATTO1_TELEFONO}}</strong></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Email:</div>
+                    <div class="field-value">{{CONTATTO1_EMAIL}}</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">Contatto 2:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{CONTATTO2_NOME}} {{CONTATTO2_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{CONTATTO2_TELEFONO}}</strong></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Email:</div>
+                    <div class="field-value">{{CONTATTO2_EMAIL}}</div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">Contatto 3:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{CONTATTO3_NOME}} {{CONTATTO3_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{CONTATTO3_TELEFONO}}</strong></div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Email:</div>
+                    <div class="field-value">{{CONTATTO3_EMAIL}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WHITELIST CHIAMATE -->
+        <div class="section">
+            <div class="section-title">📞 Whitelist Chiamate Consentite (Da configurare sul dispositivo)</div>
+            
+            <div class="subsection">
+                <div class="subsection-title">Whitelist 1:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{WHITELIST1_NOME}} {{WHITELIST1_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{WHITELIST1_TELEFONO}}</strong></div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">Whitelist 2:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{WHITELIST2_NOME}} {{WHITELIST2_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{WHITELIST2_TELEFONO}}</strong></div>
+                </div>
+            </div>
+
+            <div class="subsection">
+                <div class="subsection-title">Whitelist 3:</div>
+                <div class="field-group">
+                    <div class="field-label">Nome:</div>
+                    <div class="field-value">{{WHITELIST3_NOME}} {{WHITELIST3_COGNOME}}</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Telefono:</div>
+                    <div class="field-value"><strong>{{WHITELIST3_TELEFONO}}</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PATOLOGIE -->
+        <div class="section">
+            <div class="section-title">🏥 Informazioni Mediche</div>
+            <div class="field-group">
+                <div class="field-label">Patologie:</div>
+                <div class="field-value">{{PATOLOGIE}}</div>
+            </div>
+            <div class="field-group">
+                <div class="field-label">Note Mediche:</div>
+                <div class="field-value">{{NOTE_MEDICHE}}</div>
+            </div>
+        </div>
+
+        <!-- FARMACI -->
+        <div class="section">
+            <div class="section-title">💊 Terapia Farmacologica (Da configurare reminder sul dispositivo)</div>
+            {{FARMACI_TABLE}}
+        </div>
+
+        <div class="footer">
+            <p><strong>TeleMedCare V12</strong> - Sistema di Gestione Lead e Configurazione Dispositivi</p>
+            <p>Medica GB S.r.l. - P.IVA: 12435130963</p>
+            <p>📧 info@telemedcare.it | 🌐 www.ecura.it | 📞 02 8715 6826</p>
+            <p style="margin-top: 10px; font-size: 11px; color: #94a3b8;">
+                Email generata automaticamente - Data: {{DATA_COMPILAZIONE}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

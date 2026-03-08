@@ -1,0 +1,137 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-08",
+  "status": "STABLE",
+  "templates": {
+    "email_configurazione": {
+      "filename": "email_configurazione.html",
+      "size_kb": 17,
+      "path": "public/templates/email/email_configurazione.html",
+      "public_url": "/templates/email/email_configurazione.html",
+      "subject": "⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}",
+      "when": "Dopo pagamento ricevuto",
+      "recipient": "Cliente",
+      "layout": "Professionale con gradient viola/blu",
+      "placeholders": [
+        "{{NOME_CLIENTE}}",
+        "{{COGNOME_CLIENTE}}",
+        "{{DISPOSITIVO}}",
+        "{{SERVIZIO}}",
+        "{{LINK_CONFIGURAZIONE}}",
+        "{{CODICE_CLIENTE}}",
+        "{{EMAIL_CLIENTE}}",
+        "{{TELEFONO_CLIENTE}}"
+      ],
+      "features": [
+        "Checkmark verde 4rem",
+        "Box azzurro gradient 'Cosa succede ora?'",
+        "Step 1-2-3 cerchi blu numerati",
+        "Bottone CTA blu gradient",
+        "Box sicurezza SSL verde",
+        "Footer professionale"
+      ]
+    },
+    "email_benvenuto": {
+      "filename": "email_benvenuto.html",
+      "size_kb": 7.6,
+      "path": "public/templates/email/email_benvenuto.html",
+      "public_url": "/templates/email/email_benvenuto.html",
+      "subject": "🎉 Benvenuto/a in TeleMedCare, {{NOME_CLIENTE}}!",
+      "when": "Dopo compilazione form configurazione",
+      "recipient": "Cliente",
+      "placeholders": [
+        "{{NOME_CLIENTE}}",
+        "{{COGNOME_CLIENTE}}",
+        "{{SERVIZIO}}",
+        "{{PIANO}}",
+        "{{DISPOSITIVO}}"
+      ]
+    },
+    "email_configurazione_riepilogo": {
+      "filename": "email_configurazione_riepilogo.html",
+      "size_kb": 13,
+      "path": "public/templates/email/email_configurazione_riepilogo.html",
+      "public_url": "/templates/email/email_configurazione_riepilogo.html",
+      "subject": "📋 Nuova Configurazione Ricevuta - {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}",
+      "when": "Dopo compilazione form configurazione",
+      "recipient": "info@telemedcare.it (interno)",
+      "placeholders": [
+        "Tutti i campi del form configurazione",
+        "Dati cliente completi",
+        "Informazioni contatto emergenza"
+      ]
+    }
+  },
+  "devices": {
+    "eCura PREMIUM": {
+      "device_name": "SiDLY Vital Care",
+      "brochure": "Medica_GB_SiDLY_Vital_Care_ITA.pdf",
+      "brochure_size_mb": 1.7,
+      "brochure_path": "public/documents/Medica_GB_SiDLY_Vital_Care_ITA.pdf",
+      "brochure_url": "/brochures/Medica_GB_SiDLY_Vital_Care_ITA.pdf"
+    },
+    "eCura PRO": {
+      "device_name": "SiDLY Care PRO",
+      "brochure": "Medica_GB_SiDLY_Care_PRO_ITA.pdf",
+      "brochure_size_mb": 2.6,
+      "brochure_path": "public/documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf",
+      "brochure_url": "/brochures/Medica_GB_SiDLY_Care_PRO_ITA.pdf"
+    },
+    "eCura FAMILY": {
+      "device_name": "SiDLY Care PRO",
+      "brochure": "Medica_GB_SiDLY_Care_PRO_ITA.pdf",
+      "brochure_size_mb": 2.6,
+      "brochure_path": "public/documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf",
+      "brochure_url": "/brochures/Medica_GB_SiDLY_Care_PRO_ITA.pdf"
+    }
+  },
+  "pricing": {
+    "eCura PREMIUM AVANZATO": {
+      "price_base": 990.00,
+      "vat_22_percent": 217.80,
+      "price_total_vat_included": 1207.80,
+      "price_monthly_vat_excluded": 82.50,
+      "currency": "EUR"
+    },
+    "eCura PREMIUM BASE": {
+      "price_base": 480.00,
+      "vat_22_percent": 105.60,
+      "price_total_vat_included": 585.60,
+      "price_monthly_vat_excluded": 40.00,
+      "currency": "EUR"
+    },
+    "eCura PRO AVANZATO": {
+      "price_base": 730.00,
+      "vat_22_percent": 160.60,
+      "price_total_vat_included": 890.60,
+      "price_monthly_vat_excluded": 60.83,
+      "currency": "EUR"
+    },
+    "eCura PRO BASE": {
+      "price_base": 380.00,
+      "vat_22_percent": 83.60,
+      "price_total_vat_included": 463.60,
+      "price_monthly_vat_excluded": 31.67,
+      "currency": "EUR"
+    }
+  },
+  "important_notes": {
+    "vat_storage": "Nel database si salvano SEMPRE i prezzi SENZA IVA (prezzo_totale = prezzo base)",
+    "vat_calculation": "IVA 22% viene calcolata solo per visualizzazione/email/PDF",
+    "monthly_price": "Prezzo mensile = prezzo_base / 12 (SENZA IVA)",
+    "template_priority": "Sistema carica prima dal DB (tabella email_templates), poi da file",
+    "correct_directory": "Template devono essere in public/templates/email/ NON in templates/"
+  },
+  "code_references": {
+    "email_sending": "src/modules/workflow-email-manager.ts",
+    "template_loading": "src/modules/template-loader-clean.ts",
+    "workflow_orchestrator": "src/modules/complete-workflow-orchestrator.ts",
+    "payment_endpoint": "src/index.tsx POST /api/payments",
+    "configuration_endpoint": "src/index.tsx POST /api/configuration/submit"
+  },
+  "backup_location": "templates/PRODUCTION_TEMPLATES/",
+  "test_urls": {
+    "preview": "https://test-environment.telemedcare-v12.pages.dev",
+    "production": "https://telemedcare-v12.pages.dev"
+  }
+}
