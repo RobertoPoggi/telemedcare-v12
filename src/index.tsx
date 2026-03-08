@@ -24044,6 +24044,43 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
   }
 })
 
+/**
+ * UTILITY: Reset email template to force file usage
+ * DELETE /api/email/template/:name/reset
+ */
+app.delete('/api/email/template/:name/reset', async (c) => {
+  const templateName = c.req.param('name')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    
+    console.log(`🗑️ [TEMPLATE-RESET] Rimozione template "${templateName}" dal database...`)
+    
+    // Delete template from database
+    const result = await c.env.DB.prepare('DELETE FROM email_templates WHERE name = ?')
+      .bind(templateName)
+      .run()
+    
+    console.log(`✅ [TEMPLATE-RESET] Template "${templateName}" rimosso. Changes: ${result.meta.changes}`)
+    
+    return c.json({
+      success: true,
+      message: `Template "${templateName}" rimosso dal database. Il sistema userà ora il file da templates/${templateName}.html`,
+      changes: result.meta.changes
+    })
+    
+  } catch (error) {
+    console.error('❌ [TEMPLATE-RESET] Errore:', error)
+    return c.json({
+      success: false,
+      error: 'Errore durante reset template',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
