@@ -1821,7 +1821,13 @@ export async function inviaEmailConfigurazionePostPagamento(
     const codiceCliente = clientData.codiceCliente || 'N/A'
     const servizio = clientData.servizio || 'eCura'
     const piano = clientData.piano || 'BASE'
-    const dispositivo = servizio // Es: "eCura PREMIUM" diventa il nome dispositivo
+    
+    // ✅ FIX: Mappa correttamente il nome del dispositivo
+    const dispositivo = (servizio || '').toUpperCase().includes('PREMIUM') 
+      ? 'SiDLY Vital Care' 
+      : (servizio || '').toUpperCase().includes('FAMILY')
+        ? 'SiDLY Care FAMILY'
+        : 'SiDLY Care PRO'
     
     emailHtml = emailHtml
       .replace(/{{NOME_CLIENTE}}/g, nomeCliente)
@@ -1863,7 +1869,7 @@ export async function inviaEmailConfigurazionePostPagamento(
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
       from: 'info@telemedcare.it',
-      subject: `🔧 Configura il tuo dispositivo ${servizio}`,
+      subject: `⚙️ Completa la Configurazione del tuo ${dispositivo}`,
       html: emailHtml
     })
     
