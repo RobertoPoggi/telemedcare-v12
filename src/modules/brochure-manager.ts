@@ -56,14 +56,18 @@ export function getBrochureForService(servizio: string): BrochureInfo | null {
  * Carica la brochure PDF dal percorso pubblico
  * @param servizio - Servizio eCura (FAMILY/PRO/PREMIUM)
  * @param baseUrl - URL base del server (es. https://app.ecura.it o http://localhost:8788)
+ * @param validateSize - Se true, verifica che il PDF sia > 1 MB (per brochure SiDLY)
  * @returns Base64 del PDF o null se errore
  * 
- * 🛡️ SAFETY CHECK: Verifica dimensione PDF prima di restituirlo
- * Se il PDF è < 10 KB, tenta automaticamente percorsi alternativi
+ * 🛡️ SAFETY CHECK (solo se validateSize=true):
+ * Verifica dimensione PDF prima di restituirlo.
+ * Se il PDF è < 10 KB, tenta automaticamente percorsi alternativi.
+ * Usare validateSize=true SOLO per brochure SiDLY (1.7-2.6 MB)
  */
 export async function loadBrochurePDF(
   servizio: string, 
-  baseUrl: string
+  baseUrl: string,
+  validateSize: boolean = false
 ): Promise<{ filename: string; content: string; size: number } | null> {
   try {
     const brochureInfo = getBrochureForService(servizio)
@@ -91,37 +95,41 @@ export async function loadBrochurePDF(
     
     console.log(`✅ [BROCHURE] ${brochureInfo.nomeDispositivo}: ${brochureInfo.filename} (${sizeKB} KB)`)
 
-    // 🛡️ SAFETY CHECK: Se il PDF è < 10 KB, è ROTTO o COMPRESSO
-    const MIN_VALID_SIZE = 10 * 1024 // 10 KB
-    const MIN_EXPECTED_SIZE = 1024 * 1024 // 1 MB
-    
-    if (sizeBytes < MIN_VALID_SIZE) {
-      console.error(`🔴 [BROCHURE] ERRORE CRITICO: PDF troppo piccolo (${sizeKB} KB < 10 KB)`)
-      console.error(`🔴 [BROCHURE] File probabilmente ROTTO o COMPRESSO`)
+    // 🛡️ SAFETY CHECK: SOLO per brochure SiDLY (validateSize=true)
+    // Se il PDF è < 10 KB, è ROTTO o COMPRESSO
+    if (validateSize) {
+      const MIN_VALID_SIZE = 10 * 1024 // 10 KB
+      const MIN_EXPECTED_SIZE = 1024 * 1024 // 1 MB
       
-      // 🔄 TENTATIVO 2: Prova path alternativo /brochures/
-      const fallbackUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
-      console.log(`🔄 [BROCHURE] Tentativo fallback: ${fallbackUrl}`)
-      
-      const fallbackResponse = await fetch(fallbackUrl)
-      if (fallbackResponse.ok) {
-        const fallbackBuffer = await fallbackResponse.arrayBuffer()
-        const fallbackSizeKB = (fallbackBuffer.byteLength / 1024).toFixed(2)
+      if (sizeBytes < MIN_VALID_SIZE) {
+        console.error(`🔴 [BROCHURE] ERRORE CRITICO: PDF troppo piccolo (${sizeKB} KB < 10 KB)`)
+        console.error(`🔴 [BROCHURE] File probabilmente ROTTO o COMPRESSO`)
         
-        if (fallbackBuffer.byteLength >= MIN_EXPECTED_SIZE) {
-          console.log(`✅ [BROCHURE] Fallback OK: ${fallbackSizeKB} KB da ${fallbackUrl}`)
-          arrayBuffer = fallbackBuffer
+        // 🔄 TENTATIVO 2: Prova path alternativo /brochures/
+        const fallbackUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
+        console.log(`🔄 [BROCHURE] Tentativo fallback: ${fallbackUrl}`)
+        
+        const fallbackResponse = await fetch(fallbackUrl)
+        if (fallbackResponse.ok) {
+          const fallbackBuffer = await fallbackResponse.arrayBuffer()
+          const fallbackSizeKB = (fallbackBuffer.byteLength / 1024).toFixed(2)
+          
+          if (fallbackBuffer.byteLength >= MIN_EXPECTED_SIZE) {
+            console.log(`✅ [BROCHURE] Fallback OK: ${fallbackSizeKB} KB da ${fallbackUrl}`)
+            arrayBuffer = fallbackBuffer
+          } else {
+            console.error(`🔴 [BROCHURE] Anche fallback ROTTO: ${fallbackSizeKB} KB`)
+            return null
+          }
         } else {
-          console.error(`🔴 [BROCHURE] Anche fallback ROTTO: ${fallbackSizeKB} KB`)
+          console.error(`🔴 [BROCHURE] Fallback non disponibile (HTTP ${fallbackResponse.status})`)
           return null
         }
-      } else {
-        console.error(`🔴 [BROCHURE] Fallback non disponibile (HTTP ${fallbackResponse.status})`)
-        return null
+      } else if (sizeBytes < MIN_EXPECTED_SIZE) {
+        console.warn(`⚠️ [BROCHURE] PDF valido ma sospetto: ${sizeKB} KB (atteso > 1 MB)`)
       }
-    } else if (sizeBytes < MIN_EXPECTED_SIZE) {
-      console.warn(`⚠️ [BROCHURE] PDF valido ma sospetto: ${sizeKB} KB (atteso > 1 MB)`)
     }
+
 
     // Conversione ArrayBuffer → Base64 (chunked per evitare stack overflow)
     const uint8Array = new Uint8Array(arrayBuffer)

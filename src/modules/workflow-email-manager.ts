@@ -720,9 +720,9 @@ export async function inviaEmailDocumentiInformativi(
           let pdfData = null
           
           if (servizio !== 'DEFAULT' && (servizio === 'FAMILY' || servizio === 'PRO' || servizio === 'PREMIUM')) {
-            // Carica brochure specifica dal brochure-manager
+            // Carica brochure specifica dal brochure-manager (brochure SiDLY)
             console.log(`📥 [WORKFLOW] Caricamento brochure specifica per ${servizio}`)
-            pdfData = await loadBrochurePDF(servizio, baseUrl)
+            pdfData = await loadBrochurePDF(servizio, baseUrl, true) // ← validateSize=true (brochure SiDLY)
             
             if (pdfData) {
               console.log(`✅ [WORKFLOW] Brochure ${servizio} caricata: ${(pdfData.size / 1024).toFixed(2)} KB`)
@@ -1077,11 +1077,12 @@ export async function inviaEmailContratto(
     
     // 🔴 BROCHURE SIDLY - SEMPRE ALLEGATA CON IL CONTRATTO
     // Usa loadBrochurePDF invece di ASSETS.fetch per evitare problemi di cache
+    // validateSize=true → Attiva controllo dimensione PDF (brochure SiDLY deve essere > 1 MB)
     try {
       const servizioNormalized = servizioNome.replace(/^eCura\s+/i, '').trim().toUpperCase()
       console.log(`📎 [CONTRATTO] Caricamento brochure SiDLY per servizio: ${servizioNormalized}`)
       
-      const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl)
+      const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl, true) // ← validateSize=true
       
       if (brochurePdf) {
         const sizeKB = brochurePdf.size / 1024

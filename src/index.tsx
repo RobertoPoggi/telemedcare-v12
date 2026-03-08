@@ -9029,7 +9029,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     console.log(`📥 [BROCHURE] Caricamento brochure per servizio: ${servizioNormalized}`)
     
-    const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl)
+    const brochurePdf = await loadBrochurePDF(servizioNormalized, baseUrl, true) // ← validateSize=true (brochure SiDLY)
     
     if (brochurePdf) {
       attachments.push({

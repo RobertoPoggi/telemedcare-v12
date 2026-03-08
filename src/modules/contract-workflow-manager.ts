@@ -125,7 +125,7 @@ export async function generateAndSendContract(
       let brochurePdf = null
       
       if (servizio !== 'DEFAULT' && (servizio === 'FAMILY' || servizio === 'PRO' || servizio === 'PREMIUM')) {
-        brochurePdf = await loadBrochurePDF(servizio, baseUrl)
+        brochurePdf = await loadBrochurePDF(servizio, baseUrl, true) // ← validateSize=true (brochure SiDLY)
       }
       
       // Fallback su brochure generica se necessario
