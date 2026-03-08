@@ -1,0 +1,16 @@
+# Cloudflare Cache Buster
+# Modifica questo file per forzare Cloudflare a reinvalidare la cache
+
+TIMESTAMP: 2026-03-08T11:40:00Z
+BUILD_ID: 3e1c140
+CACHE_VERSION: v3
+
+# FIX: Brochure PDF rotte 4.9 KB
+# Cloudflare DEVE servire i nuovi PDF da public/documents/:
+# - Medica_GB_SiDLY_Care_PRO_ITA.pdf (2.6 MB)
+# - Medica_GB_SiDLY_Vital_Care_ITA.pdf (1.7 MB)
+
+# NO MORE:
+# - File compressi *_compresso.pdf
+# - Path /brochures/ (ora /documents/)
+# - Brochure_eCura_2024.pdf (NON ESISTE)
