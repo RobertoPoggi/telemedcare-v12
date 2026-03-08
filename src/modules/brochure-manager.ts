@@ -56,13 +56,15 @@ export function getBrochureForService(servizio: string): BrochureInfo | null {
  * Carica la brochure PDF dal percorso pubblico
  * @param servizio - Servizio eCura (FAMILY/PRO/PREMIUM)
  * @param baseUrl - URL base del server (es. https://app.ecura.it o http://localhost:8788)
- * @param validateSize - Se true, verifica che il PDF sia > 1 MB (per brochure SiDLY)
+ * @param validateSize - Se true, verifica che il PDF sia >= 10 KB (per brochure SiDLY)
  * @returns Base64 del PDF o null se errore
  * 
  * 🛡️ SAFETY CHECK (solo se validateSize=true):
- * Verifica dimensione PDF prima di restituirlo.
- * Se il PDF è < 10 KB, tenta automaticamente percorsi alternativi.
- * Usare validateSize=true SOLO per brochure SiDLY (1.7-2.6 MB)
+ * - Se PDF < 10 KB → File ROTTO → Prova fallback /brochures/
+ * - Se fallback < 10 KB → Restituisce null
+ * - Se fallback >= 10 KB → Usa fallback ✅
+ * 
+ * Usare validateSize=true SOLO per brochure SiDLY (non per brochure eCura)
  */
 export async function loadBrochurePDF(
   servizio: string, 
@@ -96,10 +98,9 @@ export async function loadBrochurePDF(
     console.log(`✅ [BROCHURE] ${brochureInfo.nomeDispositivo}: ${brochureInfo.filename} (${sizeKB} KB)`)
 
     // 🛡️ SAFETY CHECK: SOLO per brochure SiDLY (validateSize=true)
-    // Se il PDF è < 10 KB, è ROTTO o COMPRESSO
+    // Se il PDF è < 10 KB, è ROTTO o COMPRESSO → Prova fallback
     if (validateSize) {
       const MIN_VALID_SIZE = 10 * 1024 // 10 KB
-      const MIN_EXPECTED_SIZE = 1024 * 1024 // 1 MB
       
       if (sizeBytes < MIN_VALID_SIZE) {
         console.error(`🔴 [BROCHURE] ERRORE CRITICO: PDF troppo piccolo (${sizeKB} KB < 10 KB)`)
@@ -114,19 +115,18 @@ export async function loadBrochurePDF(
           const fallbackBuffer = await fallbackResponse.arrayBuffer()
           const fallbackSizeKB = (fallbackBuffer.byteLength / 1024).toFixed(2)
           
-          if (fallbackBuffer.byteLength >= MIN_EXPECTED_SIZE) {
+          // Accetta qualsiasi dimensione >= 10 KB
+          if (fallbackBuffer.byteLength >= MIN_VALID_SIZE) {
             console.log(`✅ [BROCHURE] Fallback OK: ${fallbackSizeKB} KB da ${fallbackUrl}`)
             arrayBuffer = fallbackBuffer
           } else {
-            console.error(`🔴 [BROCHURE] Anche fallback ROTTO: ${fallbackSizeKB} KB`)
+            console.error(`🔴 [BROCHURE] Anche fallback ROTTO: ${fallbackSizeKB} KB < 10 KB`)
             return null
           }
         } else {
           console.error(`🔴 [BROCHURE] Fallback non disponibile (HTTP ${fallbackResponse.status})`)
           return null
         }
-      } else if (sizeBytes < MIN_EXPECTED_SIZE) {
-        console.warn(`⚠️ [BROCHURE] PDF valido ma sospetto: ${sizeKB} KB (atteso > 1 MB)`)
       }
     }
 
