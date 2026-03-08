@@ -1,8 +1,21 @@
-# 📧 Template Email Produzione - TeleMedCare V12
+# 📧 Documentazione Completa Template Produzione - TeleMedCare V12
 
-Questo directory contiene **SOLO i template email effettivamente utilizzati** nel flusso E2E di produzione.
+Questo directory contiene **TUTTA la documentazione dei template, documenti e allegati effettivamente utilizzati** nel flusso E2E di produzione.
 
-## ✅ Template Verificati e Confermati (8 template)
+## 📚 Contenuto Documentazione
+
+### ✅ Template Email (8 file HTML)
+Tutti i template email verificati e confermati utilizzati nel workflow E2E.
+
+### 📄 Documenti Inline Generati (2 documenti)
+Contratto e Proforma generati programmaticamente (non sono file template).
+
+### 📚 Brochure PDF e Azioni Manuali
+Tutti i PDF device-specific e le azioni manuali dashboard documentate.
+
+---
+
+## ✅ Template Email Verificati (8 template)
 
 ### 🔄 Flusso Completo E2E
 
@@ -84,17 +97,22 @@ Questo directory contiene **SOLO i template email effettivamente utilizzati** ne
 
 ```
 templates/PRODUCTION_TEMPLATES/
-├── README.md                                    (questo file)
-├── template-mapping.json                        (mappatura completa)
+├── README.md                                          (questo file - indice generale)
+├── template-mapping.json                              (mappatura JSON completa)
+│
+├── CONTRATTO_INLINE_GENERATED.md                      (📄 Contratto HTML inline)
+├── PROFORMA_INLINE_GENERATED.md                       (🧾 Proforma HTML inline)
+├── BROCHURE_PDF_AZIONI_MANUALI.md                     (📚 Brochure PDF + Azioni dashboard)
+│
 └── email/
-    ├── email_notifica_info.html                (6.4 KB) ✅
-    ├── email_documenti_informativi.html        (8.0 KB) ✅
-    ├── email_invio_contratto.html              (7.6 KB) ✅
-    ├── email_invio_proforma.html               (11 KB)  ✅
-    ├── email_configurazione.html               (17 KB)  ✅ NUOVO LAYOUT
-    ├── email_benvenuto.html                    (7.6 KB) ⚠️ DEPRECATO
-    ├── email_configurazione_riepilogo.html     (13 KB)  ✅
-    └── email_conferma_attivazione.html         (5.3 KB) ✅
+    ├── email_notifica_info.html                      (6.4 KB) ✅
+    ├── email_documenti_informativi.html              (8.0 KB) ✅
+    ├── email_invio_contratto.html                    (7.6 KB) ✅
+    ├── email_invio_proforma.html                     (11 KB)  ✅
+    ├── email_configurazione.html                     (17 KB)  ✅ NUOVO LAYOUT
+    ├── email_benvenuto.html                          (7.6 KB) ⚠️ DEPRECATO
+    ├── email_configurazione_riepilogo.html           (13 KB)  ✅
+    └── email_conferma_attivazione.html               (5.3 KB) ✅
 ```
 
 ---
@@ -404,3 +422,149 @@ Per modifiche ai template o problemi nel flusso email, contattare:
 
 **Ultimo aggiornamento**: 08 Marzo 2026  
 **Versione**: 12.0 (E2E Workflow Completo)
+
+---
+
+## 📄 DOCUMENTI INLINE GENERATI
+
+### 1. CONTRATTO eCura (Scrittura Privata Medica GB)
+**Documentazione**: `CONTRATTO_INLINE_GENERATED.md`  
+**Generatore**: `generateContractHtml()` in `src/modules/workflow-email-manager.ts:53-427`  
+**Output**: HTML string (~30 KB) → convertito in PDF da DocuSign  
+**Contenuto**:
+- Carta intestata Medica GB con logo
+- Parti contraenti (Medica GB + Cliente)
+- Oggetto contratto (TeleAssistenza BASE/AVANZATO)
+- Funzioni dispositivo (8 features dettagliate)
+- Durata servizio (12 mesi)
+- Tariffa servizio (primo anno + rinnovi)
+- Metodo pagamento (IBAN Banca Popolare Milano)
+- Clausole legali (riservatezza, foro competente)
+- Firme digitali
+
+**Variabili dinamiche**: 50+ campi personalizzati per ogni cliente
+
+### 2. PROFORMA / Fattura Proforma eCura
+**Documentazione**: `PROFORMA_INLINE_GENERATED.md`  
+**Generatore**: `ProformaGenerator.getProformaTemplate()` in `src/modules/proforma-generator.ts:216-452`  
+**Output**: HTML string (~18 KB) → convertito in PDF base64  
+**Contenuto**:
+- Header eCura / Medica GB
+- Numero proforma (formato PF-YYYYMM-XXXXXX)
+- Dati cliente completi
+- Tabella servizi (descrizione + prezzi)
+- Totale con IVA 22%
+- Pulsante pagamento Stripe (link dinamico)
+- Modalità pagamento (online + bonifico)
+- Box detrazione fiscale 19%
+- Footer contatti
+
+**Funzionalità**:
+- Auto-generazione numero proforma univoco
+- Scadenza pagamento (7 giorni default)
+- Integrazione Stripe Payment Link
+- Calcolo detrazione fiscale
+
+---
+
+## 📚 BROCHURE PDF E AZIONI MANUALI
+
+### Brochure Device-Specific
+**Documentazione**: `BROCHURE_PDF_AZIONI_MANUALI.md`
+
+**File PDF disponibili**:
+1. **Medica_GB_SiDLY_Vital_Care_ITA.pdf** (1.7 MB)
+   - Dispositivo: SiDLY Vital Care
+   - Servizi: eCura PREMIUM (BASE + AVANZATO)
+   - Path: `public/documents/`
+   
+2. **Medica_GB_SiDLY_Care_PRO_ITA.pdf** (2.6 MB)
+   - Dispositivi: SiDLY Care PRO + SiDLY Care FAMILY
+   - Servizi: eCura PRO, eCura FAMILY (tutti i piani)
+   - Path: `public/documents/`
+
+**Mapping Servizio → Brochure**:
+| Servizio | Dispositivo | Brochure PDF |
+|---|---|---|
+| eCura PREMIUM | SiDLY Vital Care | Medica_GB_SiDLY_Vital_Care_ITA.pdf |
+| eCura PRO | SiDLY Care PRO | Medica_GB_SiDLY_Care_PRO_ITA.pdf |
+| eCura FAMILY | SiDLY Care FAMILY | Medica_GB_SiDLY_Care_PRO_ITA.pdf |
+
+**Quando vengono allegati**:
+- ✅ Email contratto (`email_invio_contratto.html`)
+- ✅ Email documentazione (`email_documenti_informativi.html`)
+- ✅ Azione manuale "Invia Brochure" dashboard
+
+### Azioni Manuali Dashboard
+**Documentazione**: `BROCHURE_PDF_AZIONI_MANUALI.md`
+
+1. **📄 Invia Contratto**
+   - Endpoint: `POST /api/leads/:id/send-contract`
+   - Genera contratto HTML inline
+   - Allega brochure device-specific
+   - Template email: `email_invio_contratto.html`
+
+2. **📧 Invia Brochure**
+   - Endpoint: `POST /api/leads/:id/send-brochure`
+   - Allega `Brochure_eCura_2024.pdf`
+   - Template email: `email_brochure` (DB)
+
+3. **🔧 Invia Configurazione**
+   - Endpoint: `POST /api/leads/:id/send-configuration`
+   - Template email: `email_configurazione.html` (layout professionale)
+   - Include link form configurazione
+
+4. **📝 Registra Pagamento Manuale**
+   - Endpoint: `POST /api/leads/:id/manual-payment`
+   - Aggiorna status → PAYMENT_RECEIVED
+   - Trigger email configurazione post-pagamento
+
+---
+
+## 📖 Come Usare Questa Documentazione
+
+### Per Aggiornare un Template Email
+1. Leggi `README.md` (questo file) per capire il flusso
+2. Leggi il dettaglio template nella sezione specifica
+3. Modifica il file in `public/templates/email/`
+4. Copia backup in `templates/PRODUCTION_TEMPLATES/email/`
+5. Commit e deploy (auto-deploy Cloudflare Pages)
+
+### Per Modificare Contratto o Proforma
+1. Leggi `CONTRATTO_INLINE_GENERATED.md` o `PROFORMA_INLINE_GENERATED.md`
+2. Modifica la funzione generatrice nel file TypeScript indicato
+3. Testa localmente con dati reali
+4. Commit e deploy
+5. ⚠️ ATTENZIONE: Questi NON sono file template, sono codice inline!
+
+### Per Gestire Brochure PDF
+1. Leggi `BROCHURE_PDF_AZIONI_MANUALI.md`
+2. Sostituisci PDF in `public/documents/` o `public/brochures/`
+3. Mantieni nomi file identici (mapping hardcoded nel codice)
+4. Verifica dimensione file (max 5 MB consigliato)
+5. Deploy (Cloudflare Pages serve automaticamente)
+
+### Per Aggiungere Nuove Azioni Dashboard
+1. Leggi esempi in `BROCHURE_PDF_AZIONI_MANUALI.md`
+2. Crea nuovo endpoint in `src/index.tsx`
+3. Implementa logica (carica template, prepara dati, invia email)
+4. Aggiungi button in dashboard component
+5. Testa flusso completo E2E
+6. Documenta nella sezione Azioni Manuali
+
+---
+
+## 🚀 Quick Links
+
+- **Repository**: https://github.com/RobertoPoggi/telemedcare-v12
+- **Preview Deploy**: https://test-environment.telemedcare-v12.pages.dev
+- **Production Deploy**: https://telemedcare-v12.pages.dev
+
+**Brochure URL Diretti**:
+- https://telemedcare-v12.pages.dev/documents/Medica_GB_SiDLY_Vital_Care_ITA.pdf
+- https://telemedcare-v12.pages.dev/documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf
+
+---
+
+**Ultimo aggiornamento**: 08 Marzo 2026  
+**Versione**: 12.0 - Documentazione Completa (Email + Documenti Inline + Brochure PDF + Azioni Manuali)
