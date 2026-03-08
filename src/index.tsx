@@ -6976,10 +6976,9 @@ app.post('/api/contracts/send', async (c) => {
       prezzoIvaInclusa: (contract.prezzo_totale || 480) * 1.22
     }
     
-    // Determina URL brochure in base al servizio
-    const servizioNormalized = (contract.servizio || '').replace(/^eCura\s+/i, '').trim().toUpperCase()
+    // NON passare documentUrls - workflow usa brochure-manager automaticamente
     const documentUrls = {
-      brochure: '/brochures/Brochure_eCura_2024.pdf', // ✅ Brochure unificata per tutti i servizi
+      brochure: '', // workflow caricherà Medica_GB_SiDLY_*.pdf corretto
       manuale: ''
     }
     
@@ -9433,10 +9432,8 @@ app.post('/api/leads/:id/complete', async (c) => {
             }
             
             // Document URLs
-            // ✅ Brochure unificata
-            const documentUrls: { brochure?: string; manuale?: string } = {
-              brochure: '/brochures/Brochure_eCura_2024.pdf'
-            }
+            // NON passare documentUrls - workflow usa brochure-manager
+            const documentUrls: { brochure?: string; manuale?: string } = {}
             
             // Invia contratto
             const contractResult = await inviaEmailContratto(
@@ -10235,7 +10232,7 @@ app.post('/api/lead/:id/complete', async (c) => {
           
           // ✅ Brochure unificata
           const documentUrls: { brochure?: string; manuale?: string } = {
-            brochure: '/brochures/Brochure_eCura_2024.pdf'
+            // NON passare brochure - workflow usa brochure-manager
           }
           
           await inviaEmailContratto(updatedLead as any, contractData, c.env, documentUrls, c.env.DB)
@@ -13299,8 +13296,8 @@ app.post('/api/leads', async (c) => {
           }
           
           if (leadData.vuoleBrochure) {
-            // ✅ Brochure unificata per tutti i servizi
-            documentUrls.brochure = '/brochures/Brochure_eCura_2024.pdf'
+            // ✅ NON passare URL hardcoded - workflow usa brochure-manager automaticamente
+            // documentUrls.brochure viene omesso intenzionalmente
           }
           if (leadData.vuoleManuale) {
             documentUrls.manuale = '/documents/Manuale_SiDLY.pdf'
@@ -13341,10 +13338,9 @@ app.post('/api/leads', async (c) => {
           addDebugLog(`📋 [LEAD] contractData creato: ${contractData.contractId}`)
           
           // Prepara documentUrls per eventuale brochure
-          // ✅ Brochure unificata
-          const documentUrls: { brochure?: string; manuale?: string } = {
-            brochure: '/brochures/Brochure_eCura_2024.pdf'
-          }
+          // ✅ NON passare URL hardcoded - workflow usa brochure-manager per caricare PDF corretto
+          const documentUrls: { brochure?: string; manuale?: string } = {}
+          // brochure omesso: workflow caricherà automaticamente Medica_GB_SiDLY_*.pdf corretto
           
           addDebugLog(`📋 [LEAD] Chiamata inviaEmailContratto...`)
           const contrattoResult = await inviaEmailContratto(leadData, contractData, c.env, documentUrls, c.env.DB)
@@ -23327,7 +23323,7 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
     
     // ✅ Brochure unificata
     const documentUrls: { brochure?: string } = {
-      brochure: '/brochures/Brochure_eCura_2024.pdf'
+      // NON passare brochure - workflow usa brochure-manager
     }
     
     // Invia contratto
