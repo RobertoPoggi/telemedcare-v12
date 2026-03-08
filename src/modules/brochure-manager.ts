@@ -1,11 +1,16 @@
 /**
- * TeleMedCare V11.0 / eCura - Brochure Manager
+ * TeleMedCare V12.0 / eCura - Brochure Manager
  * Gestisce la mappatura Servizio → Brochure e il caricamento dinamico dei PDF
  * 
- * MAPPATURA SERVIZI:
- * - FAMILY → Senium
- * - PRO → SiDLY Care PRO
- * - PREMIUM → SiDLY Vital Care
+ * MAPPATURA SERVIZI → DISPOSITIVI → BROCHURE:
+ * - FAMILY → SiDLY Care FAMILY → Medica_GB_SiDLY_Care_PRO_ITA.pdf (2.6 MB)
+ * - PRO → SiDLY Care PRO → Medica_GB_SiDLY_Care_PRO_ITA.pdf (2.6 MB)
+ * - PREMIUM → SiDLY Vital Care → Medica_GB_SiDLY_Vital_Care_ITA.pdf (1.7 MB)
+ * 
+ * PATH: /documents/ (non più /brochures/)
+ * FORMAT: PDF leggibili (non più compressi)
+ * 
+ * ✅ FIX 08/03/2026: Sostituiti file compressi rotti con versioni leggibili
  */
 
 export interface BrochureInfo {
@@ -21,20 +26,20 @@ export interface BrochureInfo {
 export const BROCHURE_MAP: Record<string, BrochureInfo> = {
   'FAMILY': {
     servizio: 'FAMILY',
-    nomeDispositivo: 'Senium',
-    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf', // Usa PRO per FAMILY
-    descrizione: 'Dispositivo per monitoraggio familiare'
+    nomeDispositivo: 'SiDLY Care FAMILY',
+    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ FAMILY usa stessa brochure di PRO
+    descrizione: 'Dispositivo per monitoraggio familiare (SiDLY Care FAMILY)'
   },
   'PRO': {
     servizio: 'PRO',
     nomeDispositivo: 'SiDLY Care PRO',
-    filename: 'Medica-GB-SiDLY_Care_PRO_ITA_compresso.pdf',
+    filename: 'Medica_GB_SiDLY_Care_PRO_ITA.pdf', // ✅ File leggibile (2.6 MB)
     descrizione: 'Dispositivo professionale per assistenza avanzata (SiDLY Care PRO)'
   },
   'PREMIUM': {
     servizio: 'PREMIUM',
     nomeDispositivo: 'SiDLY Vital Care',
-    filename: 'Medica-GB-SiDLY_Vital_Care_ITA-compresso.pdf',
+    filename: 'Medica_GB_SiDLY_Vital_Care_ITA.pdf', // ✅ File leggibile (1.7 MB)
     descrizione: 'Dispositivo premium per monitoraggio completo (SiDLY Vital Care)'
   }
 }
@@ -65,7 +70,7 @@ export async function loadBrochurePDF(
       return null
     }
 
-    const pdfUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
+    const pdfUrl = `${baseUrl}/documents/${brochureInfo.filename}` // ✅ Path corretto: /documents/
     console.log(`📥 [BROCHURE] Servizio: ${servizio} → Dispositivo: ${brochureInfo.nomeDispositivo}`)
     console.log(`📥 [BROCHURE] Caricamento da: ${pdfUrl}`)
 
