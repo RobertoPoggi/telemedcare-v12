@@ -1075,10 +1075,12 @@ export async function inviaEmailContratto(
     // NOTA: Il PDF del contratto non è disponibile senza Puppeteer
     // Il cliente riceverà il link per firmare il contratto online nel template email
     
-    // Brochure (se richiesta) - CARICA usando ASSETS binding
-    if (leadData.vuoleBrochure && env?.ASSETS) {
+    // 🔴 BROCHURE SIDLY - SEMPRE ALLEGATA CON IL CONTRATTO (indipendente da vuoleBrochure)
+    // vuoleBrochure si riferisce alla brochure eCura (documentazione informativa)
+    // La brochure SiDLY del dispositivo VA SEMPRE allegata al contratto!
+    if (env?.ASSETS) {
       try {
-        console.log(`📎 [CONTRATTO] Caricamento brochure via ASSETS: ${linkBrochure}`)
+        console.log(`📎 [CONTRATTO] Caricamento brochure SiDLY via ASSETS: ${linkBrochure}`)
         
         // Usa ASSETS binding per leggere il PDF
         const brochureUrl = new URL(linkBrochure)
@@ -1118,12 +1120,12 @@ export async function inviaEmailContratto(
         console.error(`❌ [CONTRATTO] Errore caricamento brochure:`, error)
         // Non bloccare l'invio email se fallisce l'allegato - il link è comunque nel template
       }
-    } else if (leadData.vuoleBrochure && !env?.ASSETS) {
-      console.warn(`⚠️ [CONTRATTO] ASSETS binding non disponibile, brochure disponibile solo via link`)
+    } else {
+      console.warn(`⚠️ [CONTRATTO] ASSETS binding non disponibile, brochure SiDLY disponibile solo via link`)
     }
     
     // Link brochure sempre incluso nel template come fallback
-    console.log(`📎 [CONTRATTO] Link brochure nel template: ${linkBrochure}`)
+    console.log(`📎 [CONTRATTO] Link brochure SiDLY nel template: ${linkBrochure}`)
     
     // Manuale (se richiesto) - Anche questo come link per ora
     if (leadData.vuoleManuale && documentUrls.manuale) {
