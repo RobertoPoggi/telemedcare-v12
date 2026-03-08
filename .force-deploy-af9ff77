@@ -1,0 +1,18 @@
+# FORCE CLOUDFLARE DEPLOY + CACHE PURGE
+# Version: af9ff77
+# Timestamp: 2026-03-08T12:15:00Z
+
+# CRITICAL FIX: Brochure SiDLY ALWAYS attached
+# Removed condition: if (leadData.vuoleBrochure && env?.ASSETS)
+# Now: if (env?.ASSETS) { ... }
+
+# ASSETS MUST SERVE THESE FILES:
+# - /documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf (2.6 MB)
+# - /documents/Medica_GB_SiDLY_Vital_Care_ITA.pdf (1.7 MB)
+
+# NOT:
+# - /brochures/* (old path)
+# - *_compresso.pdf (old files)
+# - Any file < 100 KB
+
+# CLOUDFLARE: PURGE CACHE FOR /documents/*.pdf
