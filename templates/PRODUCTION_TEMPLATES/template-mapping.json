@@ -1,137 +1,388 @@
 {
-  "version": "1.0",
-  "last_updated": "2026-03-08",
-  "status": "STABLE",
-  "templates": {
-    "email_configurazione": {
-      "filename": "email_configurazione.html",
-      "size_kb": 17,
-      "path": "public/templates/email/email_configurazione.html",
-      "public_url": "/templates/email/email_configurazione.html",
+  "metadata": {
+    "project": "TeleMedCare V12",
+    "version": "12.0",
+    "last_updated": "2026-03-08",
+    "author": "Roberto Poggi",
+    "verified": true,
+    "description": "Mappatura completa template email effettivamente utilizzati nel flusso E2E"
+  },
+  
+  "workflow_sequence": [
+    {
+      "step": 1,
+      "phase": "ACQUISIZIONE_LEAD",
+      "trigger": "Lead compila form landing page",
+      "template": "email_notifica_info.html",
+      "from": "sistema@telemedcare.it",
+      "to": "info@telemedcare.it",
+      "function": "inviaEmailNotificaInfo()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 466
+    },
+    {
+      "step": 2,
+      "phase": "INVIO_DOCUMENTAZIONE",
+      "trigger": "Lead richiede solo brochure/manuali",
+      "template": "email_documenti_informativi.html",
+      "from": "info@telemedcare.it",
+      "to": "lead@email.com",
+      "function": "inviaEmailDocumentiInformativi()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 588
+    },
+    {
+      "step": 3,
+      "phase": "INVIO_CONTRATTO",
+      "trigger": "Lead richiede contratto",
+      "template": "email_invio_contratto.html",
+      "from": "info@telemedcare.it",
+      "to": "lead@email.com",
+      "function": "inviaEmailContratto()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 849,
+      "attachments": [
+        {
+          "type": "PDF",
+          "name": "Contratto eCura",
+          "generated_by": "generateContractHtml()",
+          "location": "src/modules/workflow-email-manager.ts",
+          "line_number": 53
+        },
+        {
+          "type": "PDF",
+          "name": "Brochure device-specific",
+          "location": "public/brochures/",
+          "files": [
+            "Medica_GB_SiDLY_Vital_Care_ITA.pdf",
+            "Medica_GB_SiDLY_Care_PRO_ITA.pdf"
+          ]
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "phase": "POST_FIRMA_CONTRATTO",
+      "trigger": "DocuSign webhook contract_signed",
+      "template": "email_invio_proforma.html",
+      "from": "info@telemedcare.it",
+      "to": "cliente@email.com",
+      "function": "inviaEmailProforma()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 1178,
+      "attachments": [
+        {
+          "type": "PDF",
+          "name": "Proforma/Fattura",
+          "generated_by": "ProformaGenerator.getProformaTemplate()",
+          "location": "src/modules/proforma-generator.ts",
+          "line_number": 216
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "phase": "POST_PAGAMENTO",
+      "trigger": "Stripe payment_intent.succeeded",
+      "template": "email_configurazione.html",
+      "from": "info@telemedcare.it",
+      "to": "cliente@email.com",
+      "function": "inviaEmailConfigurazionePostPagamento()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 1806,
       "subject": "⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}",
-      "when": "Dopo pagamento ricevuto",
-      "recipient": "Cliente",
-      "layout": "Professionale con gradient viola/blu",
+      "layout": "professional_gradient",
+      "file_size": "17 KB",
+      "notes": "Nuovo layout professionale con gradient viola/blu, sostituisce email_benvenuto.html"
+    },
+    {
+      "step": 6,
+      "phase": "POST_CONFIGURAZIONE",
+      "trigger": "Cliente compila form configurazione",
+      "template": "email_configurazione_riepilogo.html",
+      "from": "sistema@telemedcare.it",
+      "to": "info@telemedcare.it",
+      "function": "inviaEmailConfigurazione()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 1628
+    },
+    {
+      "step": 7,
+      "phase": "ATTIVAZIONE_DISPOSITIVO",
+      "trigger": "Operatore associa IMEI dispositivo",
+      "template": "email_conferma_attivazione.html",
+      "from": "info@telemedcare.it",
+      "to": "cliente@email.com",
+      "function": "inviaEmailConfermaAttivazione()",
+      "file_location": "src/modules/workflow-email-manager.ts",
+      "line_number": 1722
+    }
+  ],
+  
+  "templates": {
+    "email_notifica_info.html": {
+      "status": "ACTIVE",
+      "size": "6.4 KB",
+      "when": "Lead compila form",
+      "to": "info@telemedcare.it",
       "placeholders": [
-        "{{NOME_CLIENTE}}",
-        "{{COGNOME_CLIENTE}}",
-        "{{DISPOSITIVO}}",
-        "{{SERVIZIO}}",
-        "{{LINK_CONFIGURAZIONE}}",
-        "{{CODICE_CLIENTE}}",
-        "{{EMAIL_CLIENTE}}",
-        "{{TELEFONO_CLIENTE}}"
+        "NOME_RICHIEDENTE", "COGNOME_RICHIEDENTE",
+        "EMAIL_RICHIEDENTE", "TELEFONO_RICHIEDENTE",
+        "NOME_ASSISTITO", "COGNOME_ASSISTITO",
+        "SERVIZIO", "PIANO",
+        "VUOLE_CONTRATTO", "VUOLE_BROCHURE", "VUOLE_MANUALE",
+        "AZIONE_SUGGERITA"
+      ]
+    },
+    "email_documenti_informativi.html": {
+      "status": "ACTIVE",
+      "size": "8.0 KB",
+      "when": "Richiesta solo documentazione",
+      "to": "lead@email.com",
+      "placeholders": [
+        "NOME_RICHIEDENTE", "COGNOME_RICHIEDENTE",
+        "BROCHURE_URL", "MANUALE_URL",
+        "SERVIZIO", "DISPOSITIVO"
+      ]
+    },
+    "email_invio_contratto.html": {
+      "status": "ACTIVE",
+      "size": "7.6 KB",
+      "when": "Invio contratto da firmare",
+      "to": "lead@email.com",
+      "placeholders": [
+        "NOME_CLIENTE", "COGNOME_CLIENTE",
+        "SERVIZIO", "PIANO", "DISPOSITIVO",
+        "PREZZO_BASE", "PREZZO_IVA_INCLUSA",
+        "CODICE_CONTRATTO",
+        "LINK_FIRMA_CONTRATTO"
+      ]
+    },
+    "email_invio_proforma.html": {
+      "status": "ACTIVE",
+      "size": "11 KB",
+      "when": "Post-firma contratto",
+      "to": "cliente@email.com",
+      "placeholders": [
+        "NOME_CLIENTE", "COGNOME_CLIENTE",
+        "NUMERO_PROFORMA", "DATA_PROFORMA",
+        "SERVIZIO", "PIANO", "DISPOSITIVO",
+        "IMPORTO_BASE", "IVA", "TOTALE",
+        "LINK_PAGAMENTO_STRIPE",
+        "DATA_SCADENZA"
+      ]
+    },
+    "email_configurazione.html": {
+      "status": "ACTIVE",
+      "size": "17 KB",
+      "when": "Post-pagamento Stripe",
+      "to": "cliente@email.com",
+      "layout": "professional_gradient",
+      "updated": "2026-03-08",
+      "notes": "Sostituisce email_benvenuto.html",
+      "placeholders": [
+        "NOME_CLIENTE", "COGNOME_CLIENTE",
+        "DISPOSITIVO", "SERVIZIO",
+        "LINK_CONFIGURAZIONE",
+        "CODICE_CLIENTE"
       ],
-      "features": [
-        "Checkmark verde 4rem",
-        "Box azzurro gradient 'Cosa succede ora?'",
-        "Step 1-2-3 cerchi blu numerati",
-        "Bottone CTA blu gradient",
-        "Box sicurezza SSL verde",
-        "Footer professionale"
+      "subject": "⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}"
+    },
+    "email_benvenuto.html": {
+      "status": "DEPRECATED",
+      "size": "7.6 KB",
+      "when": "NON PIÙ USATO",
+      "notes": "Sostituito da email_configurazione.html, mantenuto solo per backward compatibility",
+      "replacement": "email_configurazione.html"
+    },
+    "email_configurazione_riepilogo.html": {
+      "status": "ACTIVE",
+      "size": "13 KB",
+      "when": "Post-compilazione form configurazione",
+      "to": "info@telemedcare.it",
+      "placeholders": [
+        "NOME_CLIENTE", "COGNOME_CLIENTE",
+        "CODICE_CLIENTE",
+        "SERVIZIO", "DISPOSITIVO",
+        "INDIRIZZO_SPEDIZIONE",
+        "CONTATTI_EMERGENZA",
+        "MEDICO_BASE",
+        "CONFIGURAZIONE_ALLARMI"
       ]
     },
-    "email_benvenuto": {
-      "filename": "email_benvenuto.html",
-      "size_kb": 7.6,
-      "path": "public/templates/email/email_benvenuto.html",
-      "public_url": "/templates/email/email_benvenuto.html",
-      "subject": "🎉 Benvenuto/a in TeleMedCare, {{NOME_CLIENTE}}!",
-      "when": "Dopo compilazione form configurazione",
-      "recipient": "Cliente",
+    "email_conferma_attivazione.html": {
+      "status": "ACTIVE",
+      "size": "5.3 KB",
+      "when": "Post-associazione IMEI",
+      "to": "cliente@email.com",
       "placeholders": [
-        "{{NOME_CLIENTE}}",
-        "{{COGNOME_CLIENTE}}",
-        "{{SERVIZIO}}",
-        "{{PIANO}}",
-        "{{DISPOSITIVO}}"
-      ]
-    },
-    "email_configurazione_riepilogo": {
-      "filename": "email_configurazione_riepilogo.html",
-      "size_kb": 13,
-      "path": "public/templates/email/email_configurazione_riepilogo.html",
-      "public_url": "/templates/email/email_configurazione_riepilogo.html",
-      "subject": "📋 Nuova Configurazione Ricevuta - {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}",
-      "when": "Dopo compilazione form configurazione",
-      "recipient": "info@telemedcare.it (interno)",
-      "placeholders": [
-        "Tutti i campi del form configurazione",
-        "Dati cliente completi",
-        "Informazioni contatto emergenza"
+        "NOME_CLIENTE", "COGNOME_CLIENTE",
+        "DISPOSITIVO", "IMEI",
+        "DATA_ATTIVAZIONE",
+        "NUMERO_ASSISTENZA",
+        "LINK_APP_DOWNLOAD"
       ]
     }
   },
-  "devices": {
+  
+  "device_mapping": {
     "eCura PREMIUM": {
-      "device_name": "SiDLY Vital Care",
+      "device": "SiDLY Vital Care",
       "brochure": "Medica_GB_SiDLY_Vital_Care_ITA.pdf",
-      "brochure_size_mb": 1.7,
-      "brochure_path": "public/documents/Medica_GB_SiDLY_Vital_Care_ITA.pdf",
-      "brochure_url": "/brochures/Medica_GB_SiDLY_Vital_Care_ITA.pdf"
+      "plans": {
+        "BASE": {
+          "prezzo_base": 720.00,
+          "iva": 158.40,
+          "totale": 878.40,
+          "mensile": 60.00
+        },
+        "AVANZATO": {
+          "prezzo_base": 990.00,
+          "iva": 217.80,
+          "totale": 1207.80,
+          "mensile": 82.50
+        }
+      }
     },
     "eCura PRO": {
-      "device_name": "SiDLY Care PRO",
+      "device": "SiDLY Care PRO",
       "brochure": "Medica_GB_SiDLY_Care_PRO_ITA.pdf",
-      "brochure_size_mb": 2.6,
-      "brochure_path": "public/documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf",
-      "brochure_url": "/brochures/Medica_GB_SiDLY_Care_PRO_ITA.pdf"
+      "plans": {
+        "BASE": {
+          "prezzo_base": 564.00,
+          "iva": 124.08,
+          "totale": 688.08,
+          "mensile": 47.00
+        },
+        "AVANZATO": {
+          "prezzo_base": 840.00,
+          "iva": 184.80,
+          "totale": 1024.80,
+          "mensile": 70.00
+        }
+      }
     },
     "eCura FAMILY": {
-      "device_name": "SiDLY Care PRO",
+      "device": "SiDLY Care FAMILY",
       "brochure": "Medica_GB_SiDLY_Care_PRO_ITA.pdf",
-      "brochure_size_mb": 2.6,
-      "brochure_path": "public/documents/Medica_GB_SiDLY_Care_PRO_ITA.pdf",
-      "brochure_url": "/brochures/Medica_GB_SiDLY_Care_PRO_ITA.pdf"
+      "plans": {
+        "BASE": {
+          "prezzo_base": 564.00,
+          "iva": 124.08,
+          "totale": 688.08,
+          "mensile": 47.00
+        },
+        "AVANZATO": {
+          "prezzo_base": 792.00,
+          "iva": 174.24,
+          "totale": 966.24,
+          "mensile": 66.00
+        }
+      }
     }
   },
-  "pricing": {
-    "eCura PREMIUM AVANZATO": {
-      "price_base": 990.00,
-      "vat_22_percent": 217.80,
-      "price_total_vat_included": 1207.80,
-      "price_monthly_vat_excluded": 82.50,
-      "currency": "EUR"
-    },
-    "eCura PREMIUM BASE": {
-      "price_base": 480.00,
-      "vat_22_percent": 105.60,
-      "price_total_vat_included": 585.60,
-      "price_monthly_vat_excluded": 40.00,
-      "currency": "EUR"
-    },
-    "eCura PRO AVANZATO": {
-      "price_base": 730.00,
-      "vat_22_percent": 160.60,
-      "price_total_vat_included": 890.60,
-      "price_monthly_vat_excluded": 60.83,
-      "currency": "EUR"
-    },
-    "eCura PRO BASE": {
-      "price_base": 380.00,
-      "vat_22_percent": 83.60,
-      "price_total_vat_included": 463.60,
-      "price_monthly_vat_excluded": 31.67,
-      "currency": "EUR"
-    }
-  },
-  "important_notes": {
-    "vat_storage": "Nel database si salvano SEMPRE i prezzi SENZA IVA (prezzo_totale = prezzo base)",
-    "vat_calculation": "IVA 22% viene calcolata solo per visualizzazione/email/PDF",
-    "monthly_price": "Prezzo mensile = prezzo_base / 12 (SENZA IVA)",
-    "template_priority": "Sistema carica prima dal DB (tabella email_templates), poi da file",
-    "correct_directory": "Template devono essere in public/templates/email/ NON in templates/"
-  },
+  
   "code_references": {
-    "email_sending": "src/modules/workflow-email-manager.ts",
-    "template_loading": "src/modules/template-loader-clean.ts",
-    "workflow_orchestrator": "src/modules/complete-workflow-orchestrator.ts",
-    "payment_endpoint": "src/index.tsx POST /api/payments",
-    "configuration_endpoint": "src/index.tsx POST /api/configuration/submit"
+    "template_loader": {
+      "file": "src/modules/template-loader-clean.ts",
+      "function": "loadEmailTemplate()",
+      "line": 12,
+      "path_pattern": "/templates/email/${templateName}.html"
+    },
+    "email_sender": {
+      "file": "src/modules/workflow-email-manager.ts",
+      "exports": [
+        "inviaEmailNotificaInfo",
+        "inviaEmailDocumentiInformativi",
+        "inviaEmailContratto",
+        "inviaEmailProforma",
+        "inviaEmailBenvenuto",
+        "inviaEmailConfigurazione",
+        "inviaEmailConfigurazionePostPagamento",
+        "inviaEmailConfermaAttivazione"
+      ]
+    },
+    "contract_generator": {
+      "file": "src/modules/workflow-email-manager.ts",
+      "function": "generateContractHtml()",
+      "line_start": 53,
+      "line_end": 427,
+      "type": "inline_code",
+      "output": "HTML string"
+    },
+    "proforma_generator": {
+      "file": "src/modules/proforma-generator.ts",
+      "class": "ProformaGenerator",
+      "method": "getProformaTemplate()",
+      "line": 216,
+      "type": "inline_code",
+      "output": "HTML string"
+    }
   },
-  "backup_location": "templates/PRODUCTION_TEMPLATES/",
-  "test_urls": {
-    "preview": "https://test-environment.telemedcare-v12.pages.dev",
-    "production": "https://telemedcare-v12.pages.dev"
+  
+  "fixes_applied": [
+    {
+      "date": "2026-03-08",
+      "commit": "5242178",
+      "issue": "Doppio calcolo IVA in proforma",
+      "fix": "Corretto calcolo IVA da €1,473.52 a €1,207.80 per PREMIUM AVANZATO"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "4fa2cb7",
+      "issue": "Prezzo mensile calcolato con IVA inclusa",
+      "fix": "Prezzo mensile = prezzoBase / 12 (IVA esclusa)"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "8eda217",
+      "issue": "Email post-pagamento sbagliata (inviava Benvenuto)",
+      "fix": "Chiamata corretta a inviaEmailConfigurazionePostPagamento()"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "8da9a5a",
+      "issue": "Subject e dispositivo email errati",
+      "fix": "Subject corretto + mapping dispositivi"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "d4ba646",
+      "issue": "Layout email non professionale",
+      "fix": "Nuovo template con gradient viola/blu, check mark verde, step numerati"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "d78ebb3",
+      "issue": "Brochure PDF non leggibili",
+      "fix": "Sostituite versioni compresse con PDF leggibili"
+    },
+    {
+      "date": "2026-03-08",
+      "commit": "de7e060",
+      "issue": "Template nella directory sbagliata",
+      "fix": "Spostato da templates/ a public/templates/email/"
+    }
+  ],
+  
+  "deployment": {
+    "branch": "test-environment",
+    "preview_url": "https://test-environment.telemedcare-v12.pages.dev",
+    "production_url": "https://telemedcare-v12.pages.dev",
+    "auto_deploy": true,
+    "deploy_time": "2-3 minutes"
+  },
+  
+  "testing": {
+    "stripe_test_card": "4242 4242 4242 4242",
+    "expiry": "12/34",
+    "cvc": "123",
+    "test_lead": {
+      "servizio": "eCura PREMIUM",
+      "piano": "AVANZATO",
+      "expected_price": "€1,207.80",
+      "expected_device": "SiDLY Vital Care",
+      "expected_subject": "⚙️ Completa la Configurazione del tuo SiDLY Vital Care"
+    }
   }
 }

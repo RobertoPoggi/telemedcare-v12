@@ -1,436 +1,406 @@
-# 📧 PRODUCTION EMAIL TEMPLATES - DOCUMENTAZIONE COMPLETA
+# 📧 Template Email Produzione - TeleMedCare V12
 
-**Data ultima modifica**: 8 Marzo 2026  
-**Versione**: 1.0 - Stabile e Testata  
-**Status**: ✅ TUTTI I TEMPLATE FUNZIONANTI E VALIDATI
+Questo directory contiene **SOLO i template email effettivamente utilizzati** nel flusso E2E di produzione.
+
+## ✅ Template Verificati e Confermati (8 template)
+
+### 🔄 Flusso Completo E2E
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 1: ACQUISIZIONE LEAD                                       │
+└─────────────────────────────────────────────────────────────────┘
+1. Lead compila form su landing page
+   ↓
+2. Sistema invia: email_notifica_info.html
+   → A: info@telemedcare.it
+   → Contenuto: Notifica nuovo lead con dati richiesta
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 2A: INVIO DOCUMENTAZIONE (se richiesta solo info)         │
+└─────────────────────────────────────────────────────────────────┘
+3. Sistema invia: email_documenti_informativi.html
+   → A: lead@email.com
+   → Contenuto: Link a brochure e manuali
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 2B: INVIO CONTRATTO (se richiesto contratto)              │
+└─────────────────────────────────────────────────────────────────┘
+4. Sistema invia: email_invio_contratto.html
+   → A: lead@email.com
+   → Contenuto: Email con contratto allegato (generato in codice)
+   → Allegati: Contratto PDF + Brochure device-specific
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 3: POST-FIRMA CONTRATTO                                    │
+└─────────────────────────────────────────────────────────────────┘
+5. Lead firma contratto (DocuSign webhook)
+   ↓
+6. Sistema invia: email_invio_proforma.html
+   → A: lead@email.com
+   → Contenuto: Email con proforma allegata (generata in codice)
+   → Include: Link pagamento Stripe
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 4: POST-PAGAMENTO                                          │
+└─────────────────────────────────────────────────────────────────┘
+7. Lead paga (Stripe payment_intent.succeeded)
+   ↓
+8. Sistema invia: email_configurazione.html
+   → A: lead@email.com
+   → Contenuto: Email configurazione post-pagamento (layout professionale)
+   → Include: Link form configurazione dispositivo
+   → Subject: "⚙️ Completa la Configurazione del tuo SiDLY Vital Care"
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 5: POST-CONFIGURAZIONE                                     │
+└─────────────────────────────────────────────────────────────────┘
+9. Cliente compila form configurazione
+   ↓
+10. Sistema invia: email_configurazione_riepilogo.html
+    → A: info@telemedcare.it
+    → Contenuto: Riepilogo dati configurazione per operatore
+
+┌─────────────────────────────────────────────────────────────────┐
+│ FASE 6: ATTIVAZIONE DISPOSITIVO                                 │
+└─────────────────────────────────────────────────────────────────┘
+11. Operatore associa dispositivo IMEI
+    ↓
+12. Sistema invia: email_conferma_attivazione.html
+    → A: cliente@email.com
+    → Contenuto: Conferma attivazione con dati dispositivo
+
+┌─────────────────────────────────────────────────────────────────┐
+│ TEMPLATE NON PIÙ USATO (mantenuto per compatibilità)           │
+└─────────────────────────────────────────────────────────────────┘
+• email_benvenuto.html
+  → Prima usato post-pagamento, ora sostituito da email_configurazione.html
+  → Mantenuto solo per backward compatibility
+```
 
 ---
 
-## 📋 INDICE
+## 📁 Struttura Directory
 
-1. [Template Disponibili](#template-disponibili)
-2. [Workflow Email Completo](#workflow-email-completo)
-3. [Mapping Servizi → Template](#mapping-servizi--template)
-4. [Placeholder Supportati](#placeholder-supportati)
-5. [Path e Directory](#path-e-directory)
-6. [Come Aggiornare un Template](#come-aggiornare-un-template)
-7. [Troubleshooting](#troubleshooting)
+```
+templates/PRODUCTION_TEMPLATES/
+├── README.md                                    (questo file)
+├── template-mapping.json                        (mappatura completa)
+└── email/
+    ├── email_notifica_info.html                (6.4 KB) ✅
+    ├── email_documenti_informativi.html        (8.0 KB) ✅
+    ├── email_invio_contratto.html              (7.6 KB) ✅
+    ├── email_invio_proforma.html               (11 KB)  ✅
+    ├── email_configurazione.html               (17 KB)  ✅ NUOVO LAYOUT
+    ├── email_benvenuto.html                    (7.6 KB) ⚠️ DEPRECATO
+    ├── email_configurazione_riepilogo.html     (13 KB)  ✅
+    └── email_conferma_attivazione.html         (5.3 KB) ✅
+```
 
 ---
 
-## 📧 TEMPLATE DISPONIBILI
+## 🔍 Dettaglio Template
 
-### 1. **email_configurazione.html** (17KB)
-**Quando viene inviata**: Dopo il pagamento con carta/bonifico  
-**Subject**: `⚙️ Completa la Configurazione del tuo {DISPOSITIVO}`  
-**Destinatario**: Cliente  
-
-**Contenuto**:
-- ✅ Checkmark verde grande (4rem)
-- 📦 Box "Cosa succede ora?" con gradient azzurro
-- 🔧 Step 1-2-3 con cerchi blu numerati
-- 🔵 Bottone CTA "Inizia Configurazione →" con gradient blu
-- 🔒 Box sicurezza SSL 256-bit
-- 🎨 Background gradient viola/blu
-
+### 1. email_notifica_info.html
+**Quando**: Subito dopo compilazione form landing page  
+**Da**: sistema@telemedcare.it  
+**A**: info@telemedcare.it  
+**Scopo**: Notificare team di nuovo lead  
 **Placeholder**:
-- `{{NOME_CLIENTE}}` - Nome del cliente
-- `{{COGNOME_CLIENTE}}` - Cognome del cliente
-- `{{DISPOSITIVO}}` - Es. "SiDLY Vital Care", "SiDLY Care PRO"
-- `{{SERVIZIO}}` - Es. "eCura PREMIUM", "eCura PRO"
-- `{{LINK_CONFIGURAZIONE}}` - Link al form configurazione
-- `{{CODICE_CLIENTE}}` - Codice cliente univoco
+- `{{NOME_RICHIEDENTE}}`, `{{COGNOME_RICHIEDENTE}}`
+- `{{EMAIL_RICHIEDENTE}}`, `{{TELEFONO_RICHIEDENTE}}`
+- `{{NOME_ASSISTITO}}`, `{{COGNOME_ASSISTITO}}`
+- `{{SERVIZIO}}`, `{{PIANO}}`
+- `{{VUOLE_CONTRATTO}}`, `{{VUOLE_BROCHURE}}`, `{{VUOLE_MANUALE}}`
+- `{{AZIONE_SUGGERITA}}`
 
-**Path produzione**: `public/templates/email/email_configurazione.html`
+**Chiamata**: `inviaEmailNotificaInfo()` in workflow-email-manager.ts
 
 ---
 
-### 2. **email_benvenuto.html** (7.6KB)
-**Quando viene inviata**: Dopo compilazione form configurazione  
-**Subject**: `🎉 Benvenuto/a in TeleMedCare, {NOME_CLIENTE}!`  
-**Destinatario**: Cliente  
-
-**Contenuto**:
-- Benvenuto personalizzato
-- Riepilogo servizio e piano acquistato
-- Informazioni su attivazione
-- Link alla documentazione
-
+### 2. email_documenti_informativi.html
+**Quando**: Se lead richiede solo brochure/manuali (no contratto)  
+**Da**: info@telemedcare.it  
+**A**: lead@email.com  
+**Scopo**: Inviare link a documentazione informativa  
 **Placeholder**:
-- `{{NOME_CLIENTE}}` - Nome del cliente
-- `{{COGNOME_CLIENTE}}` - Cognome del cliente
-- `{{SERVIZIO}}` - Servizio acquistato
-- `{{PIANO}}` - Piano (BASE/AVANZATO)
-- `{{DISPOSITIVO}}` - Nome dispositivo
+- `{{NOME_RICHIEDENTE}}`, `{{COGNOME_RICHIEDENTE}}`
+- `{{BROCHURE_URL}}`, `{{MANUALE_URL}}`
+- `{{SERVIZIO}}`, `{{DISPOSITIVO}}`
 
-**Path produzione**: `public/templates/email/email_benvenuto.html`
+**Chiamata**: `inviaEmailDocumentiInformativi()` in workflow-email-manager.ts
 
 ---
 
-### 3. **email_configurazione_riepilogo.html** (13KB)
-**Quando viene inviata**: Dopo compilazione form configurazione  
-**Subject**: `📋 Nuova Configurazione Ricevuta - {NOME_CLIENTE} {COGNOME_CLIENTE}`  
-**Destinatario**: TeleMedCare (info@telemedcare.it)  
-
-**Contenuto**:
-- Riepilogo completo dati cliente
-- Informazioni dispositivo e configurazione
-- Dati per attivazione servizio
-- Informazioni mediche (se presenti)
-
+### 3. email_invio_contratto.html
+**Quando**: Se lead richiede contratto  
+**Da**: info@telemedcare.it  
+**A**: lead@email.com  
+**Scopo**: Inviare contratto pre-compilato da firmare  
 **Placeholder**:
-- Tutti i campi del form configurazione
-- Dati cliente completi
-- Informazioni contatto emergenza
+- `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
+- `{{SERVIZIO}}`, `{{PIANO}}`, `{{DISPOSITIVO}}`
+- `{{PREZZO_BASE}}`, `{{PREZZO_IVA_INCLUSA}}`
+- `{{CODICE_CONTRATTO}}`
+- `{{LINK_FIRMA_CONTRATTO}}` (DocuSign envelope)
 
-**Path produzione**: `public/templates/email/email_configurazione_riepilogo.html`
+**Allegati**: 
+- Contratto PDF (generato da `generateContractHtml()`)
+- Brochure device-specific
 
----
-
-## 🔄 WORKFLOW EMAIL COMPLETO
-
-```
-STEP 1: Lead creato
-   ↓
-STEP 2: Contratto firmato
-   ↓
-STEP 3: Pagamento ricevuto
-   ↓
-   📧 EMAIL #1: email_configurazione.html
-      → Destinatario: Cliente
-      → Subject: "⚙️ Completa la Configurazione del tuo SiDLY Vital Care"
-      → CTA: Link al form configurazione
-   ↓
-STEP 4: Form configurazione compilato
-   ↓
-   📧 EMAIL #2: email_configurazione_riepilogo.html
-      → Destinatario: info@telemedcare.it
-      → Subject: "📋 Nuova Configurazione Ricevuta - Roberto Poggi"
-      → Contenuto: Tutti i dati del cliente
-   
-   📧 EMAIL #3: email_benvenuto.html
-      → Destinatario: Cliente
-      → Subject: "🎉 Benvenuto/a in TeleMedCare, Roberto!"
-      → Contenuto: Conferma attivazione servizio
-```
+**Chiamata**: `inviaEmailContratto()` in workflow-email-manager.ts
 
 ---
 
-## 🗺️ MAPPING SERVIZI → TEMPLATE
+### 4. email_invio_proforma.html
+**Quando**: Dopo firma contratto (DocuSign webhook)  
+**Da**: info@telemedcare.it  
+**A**: cliente@email.com  
+**Scopo**: Inviare proforma/fattura per pagamento  
+**Placeholder**:
+- `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
+- `{{NUMERO_PROFORMA}}`, `{{DATA_PROFORMA}}`
+- `{{SERVIZIO}}`, `{{PIANO}}`, `{{DISPOSITIVO}}`
+- `{{IMPORTO_BASE}}`, `{{IVA}}`, `{{TOTALE}}`
+- `{{LINK_PAGAMENTO_STRIPE}}`
+- `{{DATA_SCADENZA}}`
 
-### Dispositivi
+**Allegati**: 
+- Proforma PDF (generata da `ProformaGenerator.getProformaTemplate()`)
 
-| Servizio eCura | Piano | Dispositivo | Brochure PDF |
-|---|---|---|---|
-| **eCura PREMIUM** | BASE/AVANZATO | **SiDLY Vital Care** | `Medica_GB_SiDLY_Vital_Care_ITA.pdf` (1.7 MB) |
-| **eCura PRO** | BASE/AVANZATO | **SiDLY Care PRO** | `Medica_GB_SiDLY_Care_PRO_ITA.pdf` (2.6 MB) |
-| **eCura FAMILY** | BASE/AVANZATO | **SiDLY Care PRO** | `Medica_GB_SiDLY_Care_PRO_ITA.pdf` (2.6 MB) |
-
-### Prezzi (IVA esclusa)
-
-| Servizio | Piano | Prezzo Base (€) | IVA 22% (€) | Totale (€) | Mensile (€) |
-|---|---|---|---|---|---|
-| eCura PREMIUM | AVANZATO | 990.00 | 217.80 | 1,207.80 | 82.50 |
-| eCura PREMIUM | BASE | 480.00 | 105.60 | 585.60 | 40.00 |
-| eCura PRO | AVANZATO | 730.00 | 160.60 | 890.60 | 60.83 |
-| eCura PRO | BASE | 380.00 | 83.60 | 463.60 | 31.67 |
-
-**IMPORTANTE**: 
-- ⚠️ Nel database si salvano **SEMPRE i prezzi SENZA IVA** (prezzo_totale = 990.00 per PREMIUM AVANZATO)
-- ✅ L'IVA 22% viene calcolata solo per visualizzazione/email/PDF
-- ✅ Prezzo mensile = prezzo_base / 12 (SENZA IVA)
+**Chiamata**: `inviaEmailProforma()` in workflow-email-manager.ts
 
 ---
 
-## 🏷️ PLACEHOLDER SUPPORTATI
+### 5. email_configurazione.html ⭐ **NUOVO LAYOUT PROFESSIONALE**
+**Quando**: Dopo pagamento Stripe (payment_intent.succeeded)  
+**Da**: info@telemedcare.it  
+**A**: cliente@email.com  
+**Scopo**: Inviare link form configurazione dispositivo  
+**Subject**: `⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}`  
+**Layout**: Gradient viola/blu, check mark verde, step numerati, CTA button  
+**Placeholder**:
+- `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
+- `{{DISPOSITIVO}}` (SiDLY Vital Care o SiDLY Care PRO/FAMILY)
+- `{{SERVIZIO}}` (eCura PREMIUM/PRO/FAMILY)
+- `{{LINK_CONFIGURAZIONE}}` (URL con leadId)
+- `{{CODICE_CLIENTE}}`
 
-### Placeholder Cliente
-```
-{{NOME_CLIENTE}}          - Nome del cliente
-{{COGNOME_CLIENTE}}       - Cognome del cliente
-{{EMAIL_CLIENTE}}         - Email del cliente
-{{TELEFONO_CLIENTE}}      - Telefono del cliente
-{{CODICE_CLIENTE}}        - Codice cliente univoco (es. CLI-1234567890)
-```
+**Path di caricamento**: `public/templates/email/email_configurazione.html`  
+**Dimensione**: 17 KB (aggiornato il 08/03/2026)
 
-### Placeholder Servizio
-```
-{{SERVIZIO}}              - Nome servizio completo (es. "eCura PREMIUM")
-{{PIANO}}                 - Piano servizio (BASE/AVANZATO)
-{{DISPOSITIVO}}           - Nome dispositivo (es. "SiDLY Vital Care", "SiDLY Care PRO")
-```
+**Mapping dispositivo**:
+- eCura PREMIUM → SiDLY Vital Care
+- eCura PRO → SiDLY Care PRO
+- eCura FAMILY → SiDLY Care FAMILY
 
-### Placeholder Prezzi
-```
-{{PREZZO_BASE}}           - Prezzo IVA esclusa (es. "€990,00")
-{{IMPORTO_IVA}}           - IVA 22% (es. "€217,80")
-{{IMPORTO_TOTALE}}        - Totale IVA inclusa (es. "€1.207,80")
-{{PREZZO_MENSILE}}        - Rata mensile (es. "€82,50")
-```
-
-### Placeholder Link
-```
-{{LINK_CONFIGURAZIONE}}   - Link al form configurazione con token
-{{LINK_CONTRATTO}}        - Link al PDF del contratto
-{{LINK_PROFORMA}}         - Link al PDF della proforma
-```
+**Chiamata**: `inviaEmailConfigurazionePostPagamento()` in workflow-email-manager.ts (linea 1806)
 
 ---
 
-## 📂 PATH E DIRECTORY
+### 6. email_benvenuto.html ⚠️ **DEPRECATO**
+**Stato**: NON PIÙ USATO post-pagamento (sostituito da email_configurazione.html)  
+**Mantenuto**: Solo per backward compatibility e test legacy  
+**Subject**: `🎉 Benvenuto – {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}`  
+**Layout**: Layout vecchio senza gradient
 
-### Directory Principale Templates
-```
-/home/user/webapp/
-├── templates/                              # ❌ NON USARE (solo backup)
-│   └── email_configurazione.html
-│
-├── public/templates/email/                 # ✅ DIRECTORY CORRETTA (usata dal sistema)
-│   ├── email_configurazione.html          # 17KB - Layout professionale
-│   ├── email_benvenuto.html               # 7.6KB
-│   └── email_configurazione_riepilogo.html # 13KB
-│
-└── templates/PRODUCTION_TEMPLATES/         # 📦 BACKUP SICURO (questa directory)
-    ├── email_configurazione.html
-    ├── email_benvenuto.html
-    ├── email_configurazione_riepilogo.html
-    └── README.md (questo file)
-```
-
-### Path Pubblici (Cloudflare Pages)
-```
-https://telemedcare-v12.pages.dev/templates/email/email_configurazione.html
-https://telemedcare-v12.pages.dev/templates/email/email_benvenuto.html
-https://telemedcare-v12.pages.dev/templates/email/email_configurazione_riepilogo.html
-```
-
-### Path Brochure
-```
-https://telemedcare-v12.pages.dev/brochures/Medica_GB_SiDLY_Vital_Care_ITA.pdf
-https://telemedcare-v12.pages.dev/brochures/Medica_GB_SiDLY_Care_PRO_ITA.pdf
-```
+**⚠️ ATTENZIONE**: NON usare questo template per nuovi flussi!
 
 ---
 
-## 🔧 COME AGGIORNARE UN TEMPLATE
+### 7. email_configurazione_riepilogo.html
+**Quando**: Dopo compilazione form configurazione da parte del cliente  
+**Da**: sistema@telemedcare.it  
+**A**: info@telemedcare.it  
+**Scopo**: Notificare team con dati configurazione per preparare spedizione  
+**Placeholder**:
+- `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
+- `{{CODICE_CLIENTE}}`
+- `{{SERVIZIO}}`, `{{DISPOSITIVO}}`
+- `{{INDIRIZZO_SPEDIZIONE}}`
+- `{{CONTATTI_EMERGENZA}}` (array)
+- `{{MEDICO_BASE}}` (nome, telefono)
+- `{{CONFIGURAZIONE_ALLARMI}}`
 
-### Procedura Corretta
+**Chiamata**: `inviaEmailConfigurazione()` in workflow-email-manager.ts
 
-1. **Backup del template attuale**:
+---
+
+### 8. email_conferma_attivazione.html
+**Quando**: Dopo associazione dispositivo IMEI da dashboard operativa  
+**Da**: info@telemedcare.it  
+**A**: cliente@email.com  
+**Scopo**: Confermare attivazione dispositivo e fornire istruzioni finali  
+**Placeholder**:
+- `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
+- `{{DISPOSITIVO}}`, `{{IMEI}}`
+- `{{DATA_ATTIVAZIONE}}`
+- `{{NUMERO_ASSISTENZA}}` (800-XXX-XXX)
+- `{{LINK_APP_DOWNLOAD}}`
+
+**Chiamata**: `inviaEmailConfermaAttivazione()` in workflow-email-manager.ts
+
+---
+
+## 🚫 Cosa NON è incluso (e perché)
+
+### ❌ Documenti generati in codice (NON template file)
+
+1. **CONTRATTO PDF**
+   - Generato da: `generateContractHtml()` in `src/modules/workflow-email-manager.ts` (linee 53-427)
+   - Motivo: Template inline nel codice TypeScript, non file HTML separato
+   - Include: Carta intestata Medica GB, dati cliente, prezzi dinamici, clausole legali
+
+2. **PROFORMA PDF**
+   - Generata da: `ProformaGenerator.getProformaTemplate()` in `src/modules/proforma-generator.ts`
+   - Motivo: Template inline nel codice TypeScript, non file HTML separato
+   - Include: Numero proforma, dati cliente, dettagli servizio, prezzi, link Stripe
+
+### ❌ Template HTML non utilizzati
+
+- `public/templates/documents/contratto_vendita.html` → Template alternativo mai usato
+- `public/templates/documents/proforma_commerciale.html` → Template alternativo mai usato
+- `public/templates/documents/proforma_template_unificato.html` → Template alternativo mai usato
+
+---
+
+## 🔧 Come Aggiornare un Template
+
+### ✅ Procedura Corretta
+
+1. **Modifica il file sorgente**:
    ```bash
    cd /home/user/webapp
-   cp public/templates/email/email_configurazione.html \
-      templates/PRODUCTION_TEMPLATES/email_configurazione_BACKUP_$(date +%Y%m%d).html
-   ```
-
-2. **Modifica il template**:
-   ```bash
-   # Apri con editor
    nano public/templates/email/email_configurazione.html
-   
-   # OPPURE sostituisci con nuovo file
-   cp /path/to/nuovo_template.html public/templates/email/email_configurazione.html
    ```
 
-3. **Verifica dimensione e contenuto**:
+2. **Copia il backup qui**:
    ```bash
-   # Verifica dimensione (deve essere ~17KB per email_configurazione)
-   ls -lh public/templates/email/email_configurazione.html
-   
-   # Verifica placeholder
-   grep -o "{{[A-Z_]*}}" public/templates/email/email_configurazione.html | sort -u
+   cp public/templates/email/email_configurazione.html \
+      templates/PRODUCTION_TEMPLATES/email/
    ```
 
-4. **Test locale** (opzionale):
+3. **Commit e push**:
    ```bash
-   # Apri in browser per vedere layout
-   open public/templates/email/email_configurazione.html
-   ```
-
-5. **Commit e deploy**:
-   ```bash
-   cd /home/user/webapp
    git add public/templates/email/email_configurazione.html
+   git add templates/PRODUCTION_TEMPLATES/email/email_configurazione.html
    git commit -m "fix: aggiornato template email_configurazione"
    git push origin test-environment
-   
-   # Attendi 2-3 minuti per deploy Cloudflare
    ```
 
-6. **Aggiorna backup in PRODUCTION_TEMPLATES**:
-   ```bash
-   cp public/templates/email/email_configurazione.html \
-      templates/PRODUCTION_TEMPLATES/email_configurazione.html
-   ```
+4. **Deploy automatico Cloudflare Pages**: il template aggiornato sarà live in 2-3 minuti
+
+### ⚠️ Path di Caricamento Template
+
+I template vengono caricati da `src/modules/template-loader-clean.ts`:
+
+```typescript
+// Percorso di caricamento
+const baseUrl = 'https://your-deployment.pages.dev'
+const templateUrl = `${baseUrl}/templates/email/${templateName}.html`
+```
+
+**Quindi il file DEVE essere in**: `public/templates/email/nome_template.html`
 
 ---
 
-## 🚨 TROUBLESHOOTING
+## 🐛 Troubleshooting
 
-### Problema: Email arriva con layout vecchio
+### ❌ Problema: Email arriva con placeholder {{NON_SOSTITUITI}}
 
-**Causa**: Template nel database ha precedenza sul file
+**Causa**: Template non trovato o path errato  
+**Soluzione**:
+1. Verifica che il file esista in `public/templates/email/`
+2. Controlla il nome del file (no typo!)
+3. Verifica che `loadEmailTemplate()` cerchi il nome corretto
+4. Controlla i log: `[WORKFLOW] Template caricato: X chars`
 
-**Soluzione 1** - Rimuovi template dal DB:
-```bash
-# Chiamare endpoint (dopo deploy)
-curl -X DELETE \
-  "https://test-environment.telemedcare-v12.pages.dev/api/email/template/email_configurazione/reset"
-```
+### ❌ Problema: Email ha layout vecchio invece di quello nuovo
 
-**Soluzione 2** - Verifica path corretto:
-```bash
-# Il file DEVE essere in public/templates/email/
-ls -lh public/templates/email/email_configurazione.html
+**Causa**: Template obsoleto in cache o DB  
+**Soluzione**:
+1. Verifica dimensione file: `ls -lh public/templates/email/email_configurazione.html` → deve essere 17 KB
+2. Se DB ha template vecchio, cancellalo: `DELETE FROM email_templates WHERE name = 'email_configurazione'`
+3. Il sistema ricaricherà automaticamente il file da `public/templates/email/`
 
-# NON in templates/ (directory root)
-```
+### ❌ Problema: Email non parte dopo pagamento
 
----
-
-### Problema: Placeholder non sostituiti (es. {{NOME_CLIENTE}} visibile)
-
-**Causa**: Sintassi placeholder errata o dati mancanti
-
-**Verifica**:
-1. Placeholder devono essere `{{NOME_PLACEHOLDER}}` (doppia graffa, uppercase, underscore)
-2. Controlla log backend per vedere se i dati vengono passati:
-   ```
-   📧 [WORKFLOW] Invio email configurazione a: email@esempio.com
-   📧 [WORKFLOW] Dati cliente: { nomeRichiedente: "Roberto", ... }
-   ```
-
-**Fix**:
-- Assicurati che il codice passi tutti i dati necessari alla funzione di invio email
-- Verifica in `src/modules/workflow-email-manager.ts` riga ~1826-1835
+**Causa**: Funzione sbagliata chiamata  
+**Soluzione**:
+- Verifica che venga chiamata `inviaEmailConfigurazionePostPagamento()` (non `inviaEmailBenvenuto()`)
+- Controlla in `src/index.tsx` linea ~23957:
+  ```typescript
+  // ✅ CORRETTO
+  await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(...)
+  
+  // ❌ SBAGLIATO
+  await WorkflowEmailManager.inviaEmailBenvenuto(...)
+  ```
 
 ---
 
-### Problema: Dimensione file troppo piccola
+## 📊 Mapping Servizi → Dispositivi
 
-**Causa**: File compresso o vecchio template
-
-**Verifica**:
-```bash
-ls -lh public/templates/email/email_configurazione.html
-# Deve essere ~17KB (layout professionale)
-# Se è ~7.6KB = vecchio template
-```
-
-**Fix**:
-```bash
-# Ripristina da backup
-cp templates/PRODUCTION_TEMPLATES/email_configurazione.html \
-   public/templates/email/email_configurazione.html
-```
+| Servizio eCura | Piano | Dispositivo | Prezzo Base | Prezzo Totale (IVA) |
+|---|---|---|---|---|
+| eCura FAMILY | BASE | SiDLY Care FAMILY | €564.00 | €688.08 |
+| eCura FAMILY | AVANZATO | SiDLY Care FAMILY | €792.00 | €966.24 |
+| eCura PRO | BASE | SiDLY Care PRO | €564.00 | €688.08 |
+| eCura PRO | AVANZATO | SiDLY Care PRO | €840.00 | ��1,024.80 |
+| eCura PREMIUM | BASE | SiDLY Vital Care | €720.00 | €878.40 |
+| eCura PREMIUM | AVANZATO | SiDLY Vital Care | €990.00 | €1,207.80 |
 
 ---
 
-### Problema: Email non arriva affatto
+## 🔐 Variabili d'Ambiente Richieste
 
-**Causa**: Errore nel codice di invio o configurazione AWS SES
+```env
+# Email Service (Mailgun)
+MAILGUN_API_KEY=key-xxxxx
+MAILGUN_DOMAIN=mg.telemedcare.it
 
-**Debug**:
-1. Controlla log Cloudflare Pages
-2. Verifica configurazione AWS SES in environment variables
-3. Controlla che `EmailService` sia configurato correttamente
+# Stripe Payment
+STRIPE_PUBLIC_KEY=pk_test_xxxxx
+STRIPE_SECRET_KEY=sk_test_xxxxx
 
-**Verifica environment variables**:
-- `AWS_SES_REGION` (es. eu-west-1)
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `EMAIL_FROM` (es. info@telemedcare.it)
+# DocuSign
+DOCUSIGN_INTEGRATION_KEY=xxxxx
+DOCUSIGN_USER_ID=xxxxx
+DOCUSIGN_ACCOUNT_ID=xxxxx
 
----
-
-## 📚 FILE DI RIFERIMENTO IMPORTANTI
-
-### Codice Backend Email
-```
-src/modules/workflow-email-manager.ts
-  ├── inviaEmailConfigurazionePostPagamento() - Riga 1766
-  ├── inviaEmailBenvenuto() - Riga 1383
-  └── inviaEmailConfigurazione() - Riga 558
-
-src/modules/template-loader-clean.ts
-  └── loadEmailTemplate() - Riga 12 (caricamento template)
-
-src/modules/email-service.ts
-  └── EmailService.sendEmail() - Invio email via AWS SES
-```
-
-### Orchestrator Workflow
-```
-src/modules/complete-workflow-orchestrator.ts
-  ├── processPayment() - STEP 3: Pagamento → Email configurazione
-  └── processConfiguration() - STEP 4: Configurazione → Email benvenuto + riepilogo
-```
-
-### Endpoint API
-```
-src/index.tsx
-  ├── POST /api/payments - Registra pagamento e invia email configurazione
-  ├── POST /api/configuration/submit - Salva configurazione e invia email
-  └── DELETE /api/email/template/:name/reset - Reset template dal DB
+# Base URL
+CLOUDFLARE_PAGES_URL=https://telemedcare-v12.pages.dev
 ```
 
 ---
 
-## ✅ CHECKLIST PRE-DEPLOY
+## 📅 Changelog
 
-Prima di fare deploy di modifiche ai template:
+### [2026-03-08] - Fix Definitivo Email Post-Pagamento
+- ✅ Sostituito `email_benvenuto.html` con `email_configurazione.html` (nuovo layout)
+- ✅ Aggiunto mapping dispositivi (PREMIUM → Vital Care, PRO/FAMILY → Care PRO/FAMILY)
+- ✅ Corretto subject: `⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}`
+- ✅ Template spostato da `templates/email_configurazione.html` a `public/templates/email/email_configurazione.html`
+- ✅ Layout professionale: gradient viola/blu, step numerati, CTA button
 
-- [ ] Backup template attuale salvato in `PRODUCTION_TEMPLATES/`
-- [ ] Template aggiornato in `public/templates/email/`
-- [ ] Dimensione file verificata (17KB per email_configurazione)
-- [ ] Placeholder verificati con grep
-- [ ] Test visivo in browser locale
-- [ ] Commit con messaggio descrittivo
-- [ ] Push su branch test-environment
-- [ ] Attesa 2-3 minuti per deploy Cloudflare
-- [ ] Test completo E2E (pagamento → email ricevuta)
-- [ ] Verifica layout in client email (Gmail, Outlook, etc.)
+### [2026-03-08] - Fix Brochure PDF
+- ✅ Sostituite brochure compresse con versioni leggibili
+- ✅ SiDLY Vital Care: `Medica_GB_SiDLY_Vital_Care_ITA.pdf` (1.7 MB)
+- ✅ SiDLY Care PRO: `Medica_GB_SiDLY_Care_PRO_ITA.pdf` (2.6 MB)
 
----
-
-## 📞 CONTATTI E SUPPORTO
-
-**Sviluppatore**: Claude (Genspark AI)  
-**Data Fix Completo**: 8 Marzo 2026  
-**Repository**: https://github.com/RobertoPoggi/telemedcare-v12  
-**Branch Test**: test-environment  
-**Branch Produzione**: main  
-
-**Per problemi**:
-1. Controllare questo README
-2. Verificare log Cloudflare Pages
-3. Controllare file in `templates/PRODUCTION_TEMPLATES/`
-4. Ripristinare da backup se necessario
+### [2026-03-08] - Fix Calcolo IVA Proforma
+- ✅ Corretto doppio calcolo IVA in generazione proforma
+- ✅ Prezzo PREMIUM AVANZATO: €990.00 + IVA 22% = €1,207.80 (era €1,473.52)
 
 ---
 
-## 📝 CHANGELOG
+## 📞 Supporto
 
-### [1.0] - 2026-03-08 - ✅ STABLE
-**Fix Completati**:
-- ✅ IVA doppia corretta (990€ → 1,473€ risolto)
-- ✅ Prezzo mensile con IVA esclusa (82.50€)
-- ✅ Email configurazione con layout professionale (gradient viola/blu, 17KB)
-- ✅ Subject email corretto ("⚙️ Completa la Configurazione...")
-- ✅ Mapping dispositivo corretto (PREMIUM → SiDLY Vital Care)
-- ✅ Brochure PDF leggibili (non compressi, 1.7MB e 2.6MB)
-- ✅ Template nella directory corretta (public/templates/email/)
-- ✅ Placeholder tutti compilati correttamente
-
-**Commit Principali**:
-- `de7e060` - Template posizionato correttamente
-- `d78ebb3` - Brochure PDF leggibili
-- `d4ba646` - Layout email professionale
-- `8da9a5a` - Subject e dispositivo corretti
-- `4fa2cb7` - Prezzo mensile IVA esclusa
-- `5242178` - Calcolo IVA corretto
+Per modifiche ai template o problemi nel flusso email, contattare:
+- **Email**: roberto.poggi@example.com
+- **Repository**: https://github.com/RobertoPoggi/telemedcare-v12
 
 ---
 
-**🎉 TUTTI I TEMPLATE SONO ORA STABILI E TESTATI! 🎉**
-
+**Ultimo aggiornamento**: 08 Marzo 2026  
+**Versione**: 12.0 (E2E Workflow Completo)

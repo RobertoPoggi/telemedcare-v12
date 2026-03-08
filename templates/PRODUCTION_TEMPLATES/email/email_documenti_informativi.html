@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Documenti Informativi - Medica GB</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+@media print {
+    body {background-color: white; margin: 0; padding: 0;}
+    .email-container {box-shadow: none; margin: 0; border-radius: 0; max-width: 100%; page-break-after: avoid;}
+    .header, .content, .footer {page-break-inside: avoid;}
+    * {page-break-after: avoid !important; page-break-before: avoid !important;}
+}
+
+.email-container {
+    background: white;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    background: linear-gradient(135deg, #0066CC 0%, #0099CC 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.header h1 {margin: 0; font-size: 32px; font-weight: 700; color: white;}
+.header .tagline {font-size: 16px; margin-top: 10px; opacity: 0.95; font-weight: 300; color: white;}
+.content {padding: 40px 30px;}
+.greeting {font-size: 18px; color: #2c3e50; margin-bottom: 25px; font-weight: 400; line-height: 1.8;}
+
+.info-box {
+    background: linear-gradient(135deg, #0066CC 0%, #00A86B 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.info-box h3 {margin: 0 0 20px 0; font-size: 20px; font-weight: 500; color: white;}
+.info-item {margin: 15px 0; font-size: 16px; font-weight: 400; color: white; line-height: 1.8;}
+.info-item strong {display: inline-block; min-width: 150px; font-weight: 500; color: white;}
+
+.section {margin: 40px 0;}
+.section h3 {color: #0066CC; font-size: 22px; margin-bottom: 20px; border-bottom: 2px solid #0066CC; padding-bottom: 10px; font-weight: 500;}
+.section p {margin: 18px 0; line-height: 1.9; color: #333;}
+
+.steps {
+    background: #f0f8ff;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #0066CC;
+    margin: 30px 0;
+}
+
+.step {
+    margin: 20px 0;
+    padding-left: 35px;
+    position: relative;
+    font-weight: 400;
+    line-height: 1.8;
+    color: #2c3e50;
+}
+
+.step:before {content: '✓'; position: absolute; left: 0; top: 0; color: #00A86B; font-weight: bold; font-size: 22px;}
+
+.benefits-box {
+    background: linear-gradient(135deg, #00A86B 0%, #20B2AA 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.benefits-box h3 {margin: 0 0 20px 0; color: white; font-weight: 500; font-size: 20px;}
+
+.benefit-item {
+    margin: 18px 0;
+    padding-left: 35px;
+    position: relative;
+    font-weight: 400;
+    line-height: 1.8;
+    color: white;
+}
+
+.benefit-item:before {content: '💰'; position: absolute; left: 0; top: 0; font-size: 20px;}
+
+.contact-box {
+    background: #2c3e50;
+    color: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin: 30px 0;
+}
+
+.contact-box h3 {margin: 0 0 20px 0; color: white; font-size: 20px; font-weight: 500;}
+
+.contact-item {
+    margin: 18px 0;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.8;
+    color: white;
+}
+
+.contact-item strong {color: white; font-weight: 500;}
+.contact-item a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.contact-item a:hover {text-decoration: underline;}
+
+.footer {
+    background: #2c3e50;
+    color: white;
+    padding: 30px;
+    text-align: center;
+    font-size: 14px;
+    margin-top: 40px;
+}
+
+.footer p {margin: 12px 0; font-weight: 400; color: white; line-height: 1.6;}
+.footer a {color: #00A86B; text-decoration: none; font-weight: 500;}
+.footer a:hover {text-decoration: underline;}
+
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 30px 0;
+}
+
+.warning-box h4 {color: #856404; margin: 0 0 12px 0; font-weight: 500;}
+.warning-box p {color: #856404; line-height: 1.8; margin: 10px 0;}
+
+.success-box {
+    background: #d4edda;
+    border-left: 4px solid #00A86B;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 30px 0;
+}
+
+.success-box h4 {color: #155724; margin: 0 0 12px 0; font-weight: 500;}
+.success-box p {color: #155724; line-height: 1.8; margin: 10px 0;}
+
+.price-highlight {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0066CC;
+    margin: 30px 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    background: white;
+}
+
+table th {
+    background: #0066CC;
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    line-height: 1.6;
+}
+
+table tr:hover {
+    background: #f0f8ff;
+}
+
+p {margin: 18px 0; line-height: 1.9;}
+
+</style>
+</head>
+<body>
+<div class="email-container">
+<div class="header">
+<h1>eCura by Medica GB S.r.l.</h1>
+<div class="tagline">eCura, Sicuri, Vicini, Ovunque</div>
+</div>
+<div class="content">
+<p>La tecnologia che Le salva salute e vita Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale</p>
+<p class="greeting">Gentile {{NOME_CLIENTE}},</p>
+<p class="greeting">Grazie per l'interesse mostrato verso i nostri servizi {{SERVIZI}} {{PIANO}}. Come richiesto, abbiamo preparato per Lei la documentazione informativa completa.</p>
+<p>Il nostro servizio è pensato per {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}} e rappresenta una soluzione innovativa per la gestione della salute a distanza.</p>
+
+{{COMPLETION_SECTION}}
+<div class="section">
+<h3>📋 Riepilogo della Sua richiesta</h3>
+</div>
+<div class="steps">
+<div class="step">Codice pratica: {{LEAD_ID}}</div>
+<div class="step">Data richiesta: {{DATA_RICHIESTA}}</div>
+<div class="info-box">
+<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
+<div class="info-item"><strong>Servizio e Piano:</strong> {{SERVIZIO}} {{PIANO}}</div>
+<div class="step">Assistito: {{NOME_ASSISTITO}} {{COGNOME_ASSISTITO}}</div>
+</div>
+</div>
+<div class="section">
+<h3>📄 Documentazione Allegata</h3>
+</div>
+<p>Brochure {{DISPOSITIVO}}</p>
+<div class="steps">
+<div class="step">Panoramica del dispositivo</div>
+<div class="step">Caratteristiche tecniche</div>
+<div class="success-box">
+<h4>✅ Servizio {{SERVIZIO}} {{PIANO}} Selezionato</h4>
+</div>
+</div>
+<div class="info-box">
+<h3>Dettagli {{SERVIZIO}} {{PIANO}}</h3>
+<div class="info-item"><strong>Investimento:</strong> {{PREZZO_SERVIZIO_PIANO}}</div>
+</div>
+<p>Il pacchetto {{SERVIZIO}} {{PIANO}} è perfetto per le esigenze di {{NOME_ASSISTITO}} e offre un supporto di TeleAssistenza completo e personalizzato.</p>
+<div class="contact-box">
+<h3>📞 Contatti</h3>
+<div class="contact-item">E-MAIL: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></div>
+<div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
+<div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
+</div>
+<p class="greeting">Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità.</p>
+<p>Cordiali saluti, Il Team eCura</p>
+<p>Medica GB S.r.l. - Startup Innovativa a Vocazione Sociale Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148 P.IVA: <a href="tel:+3912435130963">+39 124 3513 0963</a> | <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | www.medicagb.it</p>
+</div>
+<div class="footer">
+<p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
+<p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
+<p>P.IVA: 12435130963 | REA: MI-2661409</p>
+<p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a> | <a href="https://www.telemedcare.it">www.telemedcare.it</a></p>
+<p>📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TeleMedCare - Invio contratto</title>
+  <style>
+    /* Inline-friendly basic styles for email clients */
+    body { margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, Helvetica, sans-serif; color:#333333; }
+    .wrapper { width:100%; table-layout:fixed; background-color:#f4f6f8; padding:20px 0; }
+    .main { background:#ffffff; margin:0 auto; width:100%; max-width:600px; border-radius:6px; overflow:hidden; }
+    .content { padding:24px; }
+    h1,h2,h3 { margin:0 0 12px 0; color:#0b63a5; }
+    p { margin:0 0 12px 0; line-height:1.4; color:#333; }
+    .muted { color:#666666; font-size:14px; }
+    .card { background:#f8fbff; border:1px solid #e6f0fa; padding:14px; border-radius:6px; margin:12px 0; }
+    .list { margin:12px 0 12px 18px; padding:0; }
+    .list li { margin-bottom:8px; }
+    .steps { margin:0; padding-left:18px; }
+    .footer { font-size:13px; color:#777777; padding:16px 24px; text-align:center; }
+    .highlight { font-weight:600; color:#111; }
+    .meta { background:#f1f5f8; padding:10px 12px; border-radius:4px; margin-top:10px; font-size:15px; }
+    .btn { display:inline-block; background:#0b63a5; color:#ffffff; text-decoration:none; padding:10px 16px; border-radius:4px; font-weight:600; }
+    @media only screen and (max-width:520px) {
+      .content { padding:16px; }
+    }
+  </style>
+</head>
+<body>
+  <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <tr>
+      <td align="center">
+        <table class="main" cellpadding="0" cellspacing="0" role="presentation">
+          <tr>
+            <td style="background:#0b63a5; padding:18px 24px;">
+              <h1 style="color:#ffffff; font-size:20px; margin:0;">TeleMedCare</h1>
+            </td>
+          </tr>
+          <tr>
+            <td class="content">
+              <p>Gentile <span class="highlight">{{NOME_CLIENTE}}</span>,</p>
+
+              <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova la brochure del dispositivo prescelto con tutti i dettagli delle sue caratteristiche innovative nonché il contratto per il servizio {{PIANO_SERVIZIO}} che ha selezionato tra le sue preferenze.</p>
+
+              <!-- Box Brochure PRIMA del Contratto -->
+              <div style="background:#e6f7ff;border:1px solid #91d5ff;padding:16px;border-radius:6px;margin:16px 0;">
+                <h3 style="margin:0 0 8px;color:#1890ff;font-size:16px;">📘 Brochure Dispositivo {{DISPOSITIVO}}</h3>
+                <p style="margin:4px 0;color:#333;">Trova in allegato la brochure completa con tutte le caratteristiche tecniche e innovative del dispositivo.</p>
+              </div>
+
+              <!-- Box Contratto -->
+              <div class="card" role="article" aria-label="Dettagli piano">
+                <h2 style="font-size:16px; margin-bottom:8px;">📋 Il Suo Contratto: <span style="color:#0b63a5;">{{PIANO_SERVIZIO}}</span></h2>
+                <div class="meta">
+                  <div><strong>Piano:</strong> {{PIANO_SERVIZIO}}</div>
+                  <div><strong>Investimento:</strong> {{PREZZO_PIANO}} + IVA 22%</div>
+                  <div><strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}</div>
+                  <div><strong>Codice Contratto:</strong> {{CODICE_CONTRATTO}}</div>
+                </div>
+              </div>
+
+              <h3 style="color:#0b63a5;font-size:18px;margin-top:24px;">🚀 Prossimi passi per l'attivazione:</h3>
+
+              <!-- Opzione 1: Firma Elettronica -->
+              <div style="background:#fff7e6;border-left:4px solid #ffa940;padding:16px;margin:12px 0;border-radius:4px;">
+                <p style="margin:0 0 8px;font-weight:bold;color:#d46b08;font-size:16px;">📱 Opzione 1: Firma Elettronica (Consigliata)</p>
+                <ol style="margin:8px 0 0 18px;padding:0;color:#333;">
+                  <li style="margin-bottom:8px;">Dopo averlo letto ed esaminato, firmi in modo elettronico il contratto (usando il mouse del PC o il dito su tablet o sul cellulare)</li>
+                  <li style="margin-bottom:8px;">Prema invio per conferma e riceverà rapidamente la proforma con tutte le informazioni per effettuare il bonifico</li>
+                </ol>
+                
+                <!-- Pulsante Firma Digitale -->
+                <div style="text-align:center;margin-top:16px;">
+                  <table cellpadding="0" cellspacing="0" border="0" align="center">
+                    <tr>
+                      <td style="background-color:#10b981; border-radius:6px; text-align:center;">
+                        <a href="{{LINK_FIRMA}}" style="display:inline-block; color:#ffffff; text-decoration:none; padding:14px 30px; font-weight:bold; font-size:16px; font-family:Arial,sans-serif;">✍️ FIRMA IL CONTRATTO ORA</a>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Opzione 2: Firma Cartacea -->
+              <div style="background:#f6ffed;border-left:4px solid #52c41a;padding:16px;margin:12px 0;border-radius:4px;">
+                <p style="margin:0 0 8px;font-weight:bold;color:#389e0d;font-size:16px;">📄 Oppure - Opzione 2: Firma Cartacea</p>
+                <ol style="margin:8px 0 0 18px;padding:0;color:#333;">
+                  <li style="margin-bottom:8px;">Provveda a stampare e leggere attentamente il contratto allegato</li>
+                  <li style="margin-bottom:8px;">Firmi in ogni pagina richiesta e nell'ultima pagina</li>
+                  <li style="margin-bottom:8px;">Ci invii il contratto firmato via email o WhatsApp</li>
+                  <li style="margin-bottom:8px;">Appena possibile riceverà la proforma con tutte le informazioni per effettuare il bonifico</li>
+                </ol>
+              </div>
+
+              <!-- Nota Consegna -->
+              <div style="background:#fafafa;border-radius:6px;padding:14px;margin:16px 0;border:1px solid #e0e0e0;">
+                <p style="margin:0;color:#333;"><strong>📦 Consegna:</strong> In ogni caso riceverà il dispositivo entro <strong>10 giorni lavorativi</strong> dall'arrivo del pagamento.</p>
+              </div>
+
+              <h3>Vantaggi economici e fiscali</h3>
+              <ul class="list">
+                <li><strong>Detrazione Fiscale 19%:</strong> Il servizio è detraibile come spesa sanitaria nel 730.</li>
+                <li><strong>Possibili Rimborsi INPS:</strong> Per ISEE sotto €6.000 + Legge 104.</li>
+              </ul>
+
+              <p class="muted">Siamo qui per accompagnarLa in ogni step di questo percorso. Non esiti a contattarci per qualsiasi chiarimento o domanda. La Sua sicurezza e tranquillità sono la nostra priorità.</p>
+
+              <p style="margin-top:18px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
+
+              <p style="margin-top:18px;">
+                <a href="mailto:info@telemedcare.it" class="btn">Contattaci via Email</a>
+                &nbsp;&nbsp;
+                <a href="https://wa.me/393316432390" class="btn" style="background:#25D366;">Invia via WhatsApp</a>
+              </p>
+
+            </td>
+          </tr>
+
+          <tr>
+            <td class="footer">
+              <div>TeleMedCare &middot; Assistenza Domiciliare e Monitoraggio</div>
+              <div style="margin-top:6px;">Questo messaggio contiene allegati: contratto e brochure.</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
