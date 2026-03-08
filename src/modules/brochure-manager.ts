@@ -56,13 +56,16 @@ export function getBrochureForService(servizio: string): BrochureInfo | null {
  * Carica la brochure PDF dal percorso pubblico
  * @param servizio - Servizio eCura (FAMILY/PRO/PREMIUM)
  * @param baseUrl - URL base del server (es. https://app.ecura.it o http://localhost:8788)
- * @param validateSize - Se true, verifica che il PDF sia >= 10 KB (per brochure SiDLY)
+ * @param validateSize - Se true, verifica dimensione e cerca alternative se < 10 KB
  * @returns Base64 del PDF o null se errore
  * 
  * 🛡️ SAFETY CHECK (solo se validateSize=true):
- * - Se PDF < 10 KB → File ROTTO → Prova fallback /brochures/
- * - Se fallback < 10 KB → Restituisce null
- * - Se fallback >= 10 KB → Usa fallback ✅
+ * - Se PDF < 10 KB → Cerca STESSO FILENAME in percorsi alternativi:
+ *   1. /brochures/{filename}
+ *   2. /documents/brochures/{filename}
+ *   3. /assets/brochures/{filename}
+ * - Appena trova PDF >= 10 KB → Usa quello ✅
+ * - Se nessun PDF valido trovato → Restituisce null
  * 
  * Usare validateSize=true SOLO per brochure SiDLY (non per brochure eCura)
  */
@@ -98,33 +101,51 @@ export async function loadBrochurePDF(
     console.log(`✅ [BROCHURE] ${brochureInfo.nomeDispositivo}: ${brochureInfo.filename} (${sizeKB} KB)`)
 
     // 🛡️ SAFETY CHECK: SOLO per brochure SiDLY (validateSize=true)
-    // Se il PDF è < 10 KB, è ROTTO o COMPRESSO → Prova fallback
+    // Se il PDF è < 10 KB → Cerca STESSO NOME in percorsi alternativi
     if (validateSize) {
       const MIN_VALID_SIZE = 10 * 1024 // 10 KB
       
       if (sizeBytes < MIN_VALID_SIZE) {
-        console.error(`🔴 [BROCHURE] ERRORE CRITICO: PDF troppo piccolo (${sizeKB} KB < 10 KB)`)
-        console.error(`🔴 [BROCHURE] File probabilmente ROTTO o COMPRESSO`)
+        console.error(`🔴 [BROCHURE] PDF troppo piccolo (${sizeKB} KB < 10 KB)`)
+        console.error(`🔴 [BROCHURE] Cerco stesso file (${brochureInfo.filename}) in percorsi alternativi...`)
         
-        // 🔄 TENTATIVO 2: Prova path alternativo /brochures/
-        const fallbackUrl = `${baseUrl}/brochures/${brochureInfo.filename}`
-        console.log(`🔄 [BROCHURE] Tentativo fallback: ${fallbackUrl}`)
+        // Lista percorsi alternativi da provare (stesso filename)
+        const fallbackPaths = [
+          `/brochures/${brochureInfo.filename}`,
+          `/documents/brochures/${brochureInfo.filename}`,
+          `/assets/brochures/${brochureInfo.filename}`
+        ]
         
-        const fallbackResponse = await fetch(fallbackUrl)
-        if (fallbackResponse.ok) {
-          const fallbackBuffer = await fallbackResponse.arrayBuffer()
-          const fallbackSizeKB = (fallbackBuffer.byteLength / 1024).toFixed(2)
+        let validPdfFound = false
+        
+        for (const fallbackPath of fallbackPaths) {
+          const fallbackUrl = `${baseUrl}${fallbackPath}`
+          console.log(`🔄 [BROCHURE] Tentativo ${fallbackPaths.indexOf(fallbackPath) + 1}/${fallbackPaths.length}: ${fallbackUrl}`)
           
-          // Accetta qualsiasi dimensione >= 10 KB
-          if (fallbackBuffer.byteLength >= MIN_VALID_SIZE) {
-            console.log(`✅ [BROCHURE] Fallback OK: ${fallbackSizeKB} KB da ${fallbackUrl}`)
-            arrayBuffer = fallbackBuffer
-          } else {
-            console.error(`🔴 [BROCHURE] Anche fallback ROTTO: ${fallbackSizeKB} KB < 10 KB`)
-            return null
+          try {
+            const fallbackResponse = await fetch(fallbackUrl)
+            if (fallbackResponse.ok) {
+              const fallbackBuffer = await fallbackResponse.arrayBuffer()
+              const fallbackSizeKB = (fallbackBuffer.byteLength / 1024).toFixed(2)
+              
+              // Verifica che il file alternativo sia > 10 KB
+              if (fallbackBuffer.byteLength >= MIN_VALID_SIZE) {
+                console.log(`✅ [BROCHURE] Trovato PDF valido: ${fallbackSizeKB} KB da ${fallbackUrl}`)
+                arrayBuffer = fallbackBuffer
+                validPdfFound = true
+                break // Esce dal loop, PDF valido trovato
+              } else {
+                console.warn(`⚠️ [BROCHURE] PDF trovato ma ancora troppo piccolo: ${fallbackSizeKB} KB < 10 KB`)
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ [BROCHURE] Errore tentativo ${fallbackPath}:`, error)
           }
-        } else {
-          console.error(`🔴 [BROCHURE] Fallback non disponibile (HTTP ${fallbackResponse.status})`)
+        }
+        
+        if (!validPdfFound) {
+          console.error(`🔴 [BROCHURE] NESSUN PDF VALIDO trovato per ${brochureInfo.filename}`)
+          console.error(`🔴 [BROCHURE] Provati ${fallbackPaths.length} percorsi alternativi`)
           return null
         }
       }
