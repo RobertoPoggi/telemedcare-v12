@@ -166,7 +166,9 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
 
 /**
  * Salva o aggiorna il lead nel database D1 (UPSERT)
- * IMPORTANTE: Aggiorna solo i campi forniti, NON cancella mai campi esistenti!
+ * LOGICA AGGIORNAMENTO:
+ * - Se lead esiste: aggiorna SOLO i campi NULL o vuoti ('')
+ * - Se lead NON esiste: inserisce nuovo lead
  */
 export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ success: boolean; error?: string }> {
   try {
@@ -181,20 +183,30 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
     
     // 1. Verifica se esiste già un lead con questa email
     const existingLead = await db
-      .prepare('SELECT id, email FROM leads WHERE email = ? LIMIT 1')
+      .prepare('SELECT * FROM leads WHERE email = ? LIMIT 1')
       .bind(lead.email)
       .first()
 
     if (existingLead) {
-      // Lead esiste già → UPDATE solo i campi HubSpot (NON sovrascrivere altri campi!)
-      console.log(`🔄 Lead esistente trovato (email: ${lead.email}), aggiornamento campi HubSpot...`)
+      // Lead esiste già → UPDATE solo i campi NULL o vuoti
+      console.log(`🔄 Lead esistente trovato (email: ${lead.email}), aggiornamento campi vuoti/NULL...`)
       
       const updateQuery = `
         UPDATE leads 
         SET 
-          hs_object_source = COALESCE(?, hs_object_source),
-          hs_object_source_detail_1 = COALESCE(?, hs_object_source_detail_1),
-          dettaglio_fonte = COALESCE(?, dettaglio_fonte),
+          nomeRichiedente = CASE WHEN (nomeRichiedente IS NULL OR nomeRichiedente = '') THEN ? ELSE nomeRichiedente END,
+          cognomeRichiedente = CASE WHEN (cognomeRichiedente IS NULL OR cognomeRichiedente = '') THEN ? ELSE cognomeRichiedente END,
+          telefono = CASE WHEN (telefono IS NULL OR telefono = '') THEN ? ELSE telefono END,
+          cittaIntestatario = CASE WHEN (cittaIntestatario IS NULL OR cittaIntestatario = '') THEN ? ELSE cittaIntestatario END,
+          nomeAssistito = CASE WHEN (nomeAssistito IS NULL OR nomeAssistito = '') THEN ? ELSE nomeAssistito END,
+          cognomeAssistito = CASE WHEN (cognomeAssistito IS NULL OR cognomeAssistito = '') THEN ? ELSE cognomeAssistito END,
+          etaAssistito = CASE WHEN etaAssistito IS NULL THEN ? ELSE etaAssistito END,
+          pacchetto = CASE WHEN (pacchetto IS NULL OR pacchetto = '') THEN ? ELSE pacchetto END,
+          fonte = CASE WHEN (fonte IS NULL OR fonte = '') THEN ? ELSE fonte END,
+          hs_object_source = CASE WHEN (hs_object_source IS NULL OR hs_object_source = '') THEN ? ELSE hs_object_source END,
+          hs_object_source_detail_1 = CASE WHEN (hs_object_source_detail_1 IS NULL OR hs_object_source_detail_1 = '') THEN ? ELSE hs_object_source_detail_1 END,
+          dettaglio_fonte = CASE WHEN (dettaglio_fonte IS NULL OR dettaglio_fonte = '') THEN ? ELSE dettaglio_fonte END,
+          note = CASE WHEN (note IS NULL OR note = '') THEN ? ELSE note END,
           updated_at = CURRENT_TIMESTAMP
         WHERE email = ?
       `
@@ -202,14 +214,24 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
       const result = await db
         .prepare(updateQuery)
         .bind(
+          lead.nomeRichiedente,
+          lead.cognomeRichiedente,
+          lead.telefono || '',
+          lead.cittaIntestatario || null,
+          lead.nomeAssistito || null,
+          lead.cognomeAssistito || null,
+          lead.etaAssistito || null,
+          lead.pacchetto,
+          lead.fonte || 'Form eCura',
           lead.hs_object_source || null,
           lead.hs_object_source_detail_1 || null,
           lead.dettaglio_fonte || null,
+          lead.note || null,
           lead.email
         )
         .run()
 
-      console.log(`✅ Lead ${existingLead.id} aggiornato. Campi HubSpot popolati senza cancellare dati esistenti.`)
+      console.log(`✅ Lead aggiornato. Solo campi NULL/vuoti sono stati popolati. Campi esistenti preservati.`)
       
       return { success: true }
     }
