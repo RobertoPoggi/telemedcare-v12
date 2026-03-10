@@ -14211,16 +14211,17 @@ app.post('/api/db/migrate', async (c) => {
         }
       }
 
-      // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" (TUTTI i lead, non solo dal 29/01/2026)
+      // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" dal 29/01/2026
       try {
         const result = await c.env.DB.prepare(`
           UPDATE leads 
           SET dettaglio_fonte = 'FORM'
-          WHERE (fonte = 'Form eCura' OR fonte = 'Form eCura x test')
+          WHERE fonte = 'Form eCura' 
+            AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
             AND dettaglio_fonte IS NULL
         `).run()
-        console.log(`✅ Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti con fonte eCura`)
-        migrations.push(`Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti con fonte eCura`)
+        console.log(`✅ Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti (dal 29/01/2026)`)
+        migrations.push(`Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti (dal 29/01/2026)`)
       } catch (error) {
         console.log('⚠️ Errore popolamento dettaglio_fonte:', error)
       }
@@ -14242,6 +14243,83 @@ app.post('/api/db/migrate', async (c) => {
     return c.json({
       success: false,
       error: 'Errore esecuzione migrazioni',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/debug/leads-fonte - Report diagnostico sui campi fonte e dettaglio_fonte
+app.get('/api/debug/leads-fonte', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔍 Report diagnostico campi fonte...')
+
+    // Count totale lead
+    const totalCount = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM leads
+    `).first()
+
+    // Count per fonte
+    const fonteStats = await c.env.DB.prepare(`
+      SELECT 
+        fonte,
+        COUNT(*) as count
+      FROM leads
+      GROUP BY fonte
+      ORDER BY count DESC
+    `).all()
+
+    // Count per dettaglio_fonte
+    const dettaglioStats = await c.env.DB.prepare(`
+      SELECT 
+        dettaglio_fonte,
+        COUNT(*) as count
+      FROM leads
+      GROUP BY dettaglio_fonte
+      ORDER BY count DESC
+    `).all()
+
+    // Lead con fonte='Form eCura' dal 29/01/2026
+    const eCuraFrom29Jan = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM leads
+      WHERE fonte = 'Form eCura' 
+        AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
+    `).first()
+
+    // Lead con fonte='Form eCura' (tutti)
+    const eCuraTotal = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM leads
+      WHERE fonte = 'Form eCura'
+    `).first()
+
+    // Lead con dettaglio_fonte popolato
+    const withDettaglio = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM leads
+      WHERE dettaglio_fonte IS NOT NULL
+    `).first()
+
+    return c.json({
+      success: true,
+      report: {
+        total_leads: totalCount?.count || 0,
+        fonte_distribution: fonteStats.results || [],
+        dettaglio_fonte_distribution: dettaglioStats.results || [],
+        form_ecura_all: eCuraTotal?.count || 0,
+        form_ecura_from_29jan: eCuraFrom29Jan?.count || 0,
+        with_dettaglio_fonte: withDettaglio?.count || 0
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore report diagnostico:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore report',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
