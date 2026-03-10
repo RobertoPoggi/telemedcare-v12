@@ -12455,23 +12455,121 @@ app.post('/api/contracts/sign', async (c) => {
     
     console.log(`✅ Contratto firmato: ${contractId} da IP ${clientIp}`)
     
-    // ✅ RIABILITATO: Email notifica firma a info@telemedcare.it con PDF contratto firmato
+    // ✅ SALVATAGGIO PDF + EMAIL con ALLEGATO
     try {
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
       if (lead && c.env.RESEND_API_KEY) {
-        console.log(`📧 [FIRMA] Invio notifica firma contratto a info@telemedcare.it`)
+        console.log(`📧 [FIRMA] Generazione e invio PDF contratto firmato`)
         
-        // Importa EmailService
+        // 1. GENERA HTML COMPLETO DEL CONTRATTO (con contenuto_html originale)
+        const baseUrl = c.req.url.split('/api/')[0]
+        const htmlContent = contract.contenuto_html || `
+          <h1>Contratto TeleMedCare</h1>
+          <p><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
+          <p><strong>Servizio:</strong> ${contract.servizio || 'N/A'}</p>
+          <p><strong>Piano:</strong> ${contract.piano || 'N/A'}</p>
+        `
+        
+        // 2. AGGIUNGI FIRMA GRAFICA
+        const signatureHtml = signature.startsWith('data:image') ? 
+          `<div style="margin-top: 40px; padding: 20px; border-top: 2px solid #e5e7eb;">
+            <p style="font-weight: bold; margin-bottom: 10px;">Firma Cliente:</p>
+            <img src="${signature}" style="max-width: 300px; height: auto; border: 1px solid #ccc; padding: 5px;" alt="Firma Cliente">
+            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+              Firmato digitalmente il ${new Date().toLocaleString('it-IT')}<br>
+              IP: ${clientIp}
+            </p>
+          </div>` : 
+          `<div style="margin-top: 40px; padding: 20px; border-top: 2px solid #e5e7eb;">
+            <p style="font-weight: bold; margin-bottom: 10px;">Firma Cliente: ${signature}</p>
+            <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+              Firmato digitalmente il ${new Date().toLocaleString('it-IT')}<br>
+              IP: ${clientIp}
+            </p>
+          </div>`
+        
+        const fullHtml = `
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+          <meta charset="UTF-8">
+          <title>Contratto ${contractId} - ${lead.cognomeRichiedente}</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+          ${signatureHtml}
+        </body>
+        </html>
+        `
+        
+        // 3. GENERA PDF con Puppeteer
+        console.log(`📄 [FIRMA] Generazione PDF con Puppeteer per ${contractId}`)
+        let pdfBuffer: Buffer | null = null
+        
+        try {
+          const puppeteer = await import('@cloudflare/puppeteer')
+          const browser = await puppeteer.launch(c.env.MYBROWSER)
+          const page = await browser.newPage()
+          
+          await page.setContent(fullHtml, { waitUntil: 'networkidle0' })
+          
+          pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '20mm',
+              right: '15mm',
+              bottom: '20mm',
+              left: '15mm'
+            }
+          }) as any
+          
+          await page.close()
+          await browser.close()
+          
+          console.log(`✅ [FIRMA] PDF generato: ${(pdfBuffer.length / 1024).toFixed(2)} KB`)
+        } catch (pdfError) {
+          console.error('❌ [FIRMA] Errore generazione PDF Puppeteer:', pdfError)
+          // Continua senza PDF se Puppeteer fallisce
+        }
+        
+        // 4. SALVA PDF nella cartella /public/contratti/
+        if (pdfBuffer) {
+          try {
+            const dataFirma = new Date().toLocaleDateString('it-IT').replace(/\//g, '.')
+            const fileName = `${dataFirma}_Contratto_${lead.cognomeRichiedente}_${lead.nomeRichiedente}_FIRMATO.pdf`
+            const filePath = `./public/contratti/${fileName}`
+            
+            // Salva file su disco usando Bun
+            await Bun.write(filePath, pdfBuffer)
+            
+            console.log(`✅ [FIRMA] PDF salvato in: ${filePath}`)
+            
+            // Aggiorna record contratto con percorso PDF
+            await c.env.DB.prepare(`
+              UPDATE contracts 
+              SET pdf_url = ? 
+              WHERE id = ?
+            `).bind(`/contratti/${fileName}`, contractId).run()
+            
+          } catch (saveError) {
+            console.error('❌ [FIRMA] Errore salvataggio PDF su disco:', saveError)
+          }
+        }
+        
+        // 5. INVIA EMAIL con PDF ALLEGATO
         const EmailService = (await import('./modules/email-service')).default
         const emailService = EmailService.getInstance()
         
-        // Genera link PDF contratto firmato
-        const baseUrl = c.req.url.split('/api/')[0]
         const pdfUrl = `${baseUrl}/api/contratti/${contractId}/pdf-print`
+        const pdfBase64 = pdfBuffer ? Buffer.from(pdfBuffer).toString('base64') : null
         
-        // Invia email a info@telemedcare.it
         await emailService.sendEmail({
           to: 'info@telemedcare.it',
           subject: `✅ Contratto Firmato - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
@@ -12490,11 +12588,13 @@ app.post('/api/contracts/sign', async (c) => {
                 <p style="margin: 5px 0;"><strong>IP Cliente:</strong> ${clientIp}</p>
               </div>
               
-              <p><strong>📄 Visualizza/Scarica Contratto Firmato:</strong></p>
+              <p><strong>📎 Il PDF del contratto firmato è allegato a questa email.</strong></p>
+              
+              <p><strong>📄 Oppure visualizza online:</strong></p>
               <p style="margin: 20px 0;">
                 <a href="${pdfUrl}" 
                    style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  📥 Visualizza Contratto con Firma
+                  📥 Visualizza Contratto Online
                 </a>
               </p>
               
@@ -12503,10 +12603,16 @@ app.post('/api/contracts/sign', async (c) => {
               </p>
             </div>
           `,
-          text: `Contratto firmato da ${lead.nomeRichiedente} ${lead.cognomeRichiedente}. Visualizza: ${pdfUrl}`
+          text: `Contratto firmato da ${lead.nomeRichiedente} ${lead.cognomeRichiedente}. Visualizza: ${pdfUrl}`,
+          attachments: pdfBase64 ? [{
+            filename: `Contratto_${lead.cognomeRichiedente}_${contractId}_FIRMATO.pdf`,
+            content: pdfBase64,
+            type: 'application/pdf',
+            disposition: 'attachment'
+          }] : undefined
         }, c.env)
         
-        console.log(`✅ [FIRMA] Email notifica inviata a info@telemedcare.it`)
+        console.log(`✅ [FIRMA] Email con PDF allegato inviata a info@telemedcare.it`)
       }
     } catch (emailError) {
       console.error('⚠️ Errore invio email notifica firma:', emailError)
