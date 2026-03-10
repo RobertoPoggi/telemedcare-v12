@@ -25,11 +25,11 @@ ALTER TABLE leads ADD COLUMN hs_object_source_detail_1 TEXT;
 ALTER TABLE leads ADD COLUMN dettaglio_fonte TEXT;
 
 -- Step 4: Popola dettaglio_fonte per i lead esistenti con fonte 'Form eCura'
---         Imposta dettaglio_fonte = 'FORM' come valore di default
+--         Imposta dettaglio_fonte = 'FORM' per TUTTI i lead eCura (non solo dal 29/01/2026)
 UPDATE leads 
 SET dettaglio_fonte = 'FORM'
-WHERE fonte = 'Form eCura' 
-  AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00');
+WHERE (fonte = 'Form eCura' OR fonte = 'Form eCura x test')
+  AND dettaglio_fonte IS NULL;
 
 -- Step 5: Verifica risultati
 SELECT 

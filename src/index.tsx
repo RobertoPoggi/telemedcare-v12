@@ -14211,17 +14211,16 @@ app.post('/api/db/migrate', async (c) => {
         }
       }
 
-      // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" dal 29/01/2026
+      // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" (TUTTI i lead, non solo dal 29/01/2026)
       try {
         const result = await c.env.DB.prepare(`
           UPDATE leads 
           SET dettaglio_fonte = 'FORM'
-          WHERE fonte = 'Form eCura' 
-            AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
+          WHERE (fonte = 'Form eCura' OR fonte = 'Form eCura x test')
             AND dettaglio_fonte IS NULL
         `).run()
-        console.log(`✅ Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti`)
-        migrations.push(`Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti`)
+        console.log(`✅ Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti con fonte eCura`)
+        migrations.push(`Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti con fonte eCura`)
       } catch (error) {
         console.log('⚠️ Errore popolamento dettaglio_fonte:', error)
       }
