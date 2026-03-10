@@ -13133,7 +13133,7 @@ startxref
           `).run(),console.log(`✅ Colonna ${d.name} aggiunta a leads (${d.description})`),s.push(`Colonna ${d.name} aggiunta a leads`)}catch{console.log(`ℹ️ Colonna ${d.name} già esistente in leads`)}try{const d=await t.env.DB.prepare(`
           UPDATE leads 
           SET dettaglio_fonte = 'FORM'
-          WHERE fonte = 'Form eCura' 
+          WHERE (fonte = 'Form eCura' OR fonte LIKE 'Form eCura x %')
             AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
             AND dettaglio_fonte IS NULL
         `).run();console.log(`✅ Popolato dettaglio_fonte per ${((e=d.meta)==null?void 0:e.changes)||0} lead esistenti (dal 29/01/2026)`),s.push(`Popolato dettaglio_fonte per ${((a=d.meta)==null?void 0:a.changes)||0} lead esistenti (dal 29/01/2026)`)}catch(d){console.log("⚠️ Errore popolamento dettaglio_fonte:",d)}console.log("✅ [MIGRATION] Campi HubSpot source aggiunti con successo"),s.push("Campi HubSpot source (hs_object_source, hs_object_source_detail_1, dettaglio_fonte) aggiunti a leads")}catch(l){console.error("❌ [MIGRATION] Errore aggiunta campi HubSpot source:",l),s.push(`Errore campi HubSpot source: ${l}`)}return t.json({success:!0,message:"Migrazioni completate",migrations:s})}catch(i){return console.error("❌ Errore migrazioni:",i),t.json({success:!1,error:"Errore esecuzione migrazioni",details:i instanceof Error?i.message:String(i)},500)}});w.get("/api/debug/leads-fonte",async t=>{try{if(!t.env.DB)return t.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Report diagnostico campi fonte...");const o=await t.env.DB.prepare(`

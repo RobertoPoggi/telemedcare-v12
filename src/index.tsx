@@ -14212,11 +14212,12 @@ app.post('/api/db/migrate', async (c) => {
       }
 
       // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" dal 29/01/2026
+      // Include anche varianti: "Form eCura x Test", "Form eCura x test"
       try {
         const result = await c.env.DB.prepare(`
           UPDATE leads 
           SET dettaglio_fonte = 'FORM'
-          WHERE fonte = 'Form eCura' 
+          WHERE (fonte = 'Form eCura' OR fonte LIKE 'Form eCura x %')
             AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
             AND dettaglio_fonte IS NULL
         `).run()
