@@ -11762,11 +11762,53 @@ startxref
       SELECT c.*, 
         l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono,
         l.cfIntestatario, l.indirizzoIntestatario,
-        l.nomeAssistito, l.cognomeAssistito
+        l.nomeAssistito, l.cognomeAssistito, l.dataNascitaAssistito,
+        l.luogoNascitaAssistito
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ?
-    `).bind(o).first();if(!a)return t.html("<h1>Contratto non trovato</h1>",404);const i=`<!DOCTYPE html>
+    `).bind(o).first();if(!a)return t.html("<h1>Contratto non trovato</h1>",404);if(a.contenuto_html&&a.status==="SIGNED"&&a.signature_data){let r=a.contenuto_html;const s=`
+        <div style="margin-top: 40px; padding: 20px; border: 2px solid #16a34a; background: #f0f9ff; border-radius: 8px; page-break-inside: avoid;">
+          <h3 style="margin: 0 0 10px 0; color: #16a34a;">✅ CONTRATTO FIRMATO DIGITALMENTE</h3>
+          <p style="margin: 0 0 15px 0; color: #64748b;">Il cliente ha apposto la propria firma digitale al presente contratto:</p>
+          
+          <div style="padding: 15px; background: white; border: 1px solid #cbd5e1; text-align: center;">
+            <img src="${a.signature_data}" alt="Firma Digitale" style="max-width: 400px; max-height: 120px; border: 1px solid #e2e8f0; padding: 10px;" />
+            <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
+              <p style="margin: 5px 0;"><strong>Data Firma:</strong> ${a.signed_at?new Date(a.signed_at).toLocaleString("it-IT"):"N/A"}</p>
+              <p style="margin: 5px 0;"><strong>IP:</strong> ${a.signature_ip||"N/A"}</p>
+              <p style="margin: 5px 0;"><strong>Timestamp:</strong> ${a.signature_timestamp?new Date(a.signature_timestamp).toLocaleString("it-IT"):"N/A"}</p>
+            </div>
+          </div>
+        </div>
+      `;r.includes("</body>")?r=r.replace("</body>",`${s}</body>`):r+=s;const l=`
+        <style>
+          @media print {
+            @page { margin: 2cm; size: A4; }
+            .no-print { display: none !important; }
+            button { display: none !important; }
+          }
+          .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+          }
+          .print-button:hover {
+            background: #1d4ed8;
+          }
+        </style>
+        <button class="print-button no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+      `;return r.includes("</head>")?r=r.replace("</head>",`${l}</head>`):r=`<head>${l}</head>`+r,t.html(r)}const i=`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
