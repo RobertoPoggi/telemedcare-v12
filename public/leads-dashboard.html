@@ -150,6 +150,12 @@
                     Tutti i Lead
                 </h3>
                 <div class="flex space-x-2">
+                    <select id="filterFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutte le Fonti</option>
+                    </select>
+                    <select id="filterDettaglioFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutti i Dettagli Fonte</option>
+                    </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
                         <option value="FAMILY">FAMILY</option>
@@ -194,6 +200,12 @@
 
     <script>
         let allLeads = [];
+        let filterOptions = {
+            fonti: [],
+            dettagliFonte: [],
+            servizi: [],
+            piani: []
+        };
 
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
@@ -213,6 +225,15 @@
 
         async function loadLeadsData() {
             try {
+                // Carica opzioni filtri
+                const filtersResponse = await fetch('/api/leads/filters');
+                const filtersData = await filtersResponse.json();
+                
+                if (filtersData.success) {
+                    filterOptions = filtersData.filters;
+                    populateFilters();
+                }
+
                 // Carica statistiche
                 const statsResponse = await fetch('/api/data/stats');
                 const stats = await statsResponse.json();
@@ -363,14 +384,40 @@
             }).join('');
         }
 
+        function populateFilters() {
+            // Popola filtro Fonte
+            const fonteSelect = document.getElementById('filterFonte');
+            fonteSelect.innerHTML = '<option value="">Tutte le Fonti</option>';
+            filterOptions.fonti.forEach(fonte => {
+                const option = document.createElement('option');
+                option.value = fonte;
+                option.textContent = fonte;
+                fonteSelect.appendChild(option);
+            });
+
+            // Popola filtro Dettaglio Fonte
+            const dettaglioFonteSelect = document.getElementById('filterDettaglioFonte');
+            dettaglioFonteSelect.innerHTML = '<option value="">Tutti i Dettagli Fonte</option>';
+            filterOptions.dettagliFonte.forEach(dettaglio => {
+                const option = document.createElement('option');
+                option.value = dettaglio;
+                option.textContent = dettaglio;
+                dettaglioFonteSelect.appendChild(option);
+            });
+        }
+
         function applyFilters() {
+            const fonteFilter = document.getElementById('filterFonte').value;
+            const dettaglioFonteFilter = document.getElementById('filterDettaglioFonte').value;
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
 
             const filtered = allLeads.filter(lead => {
+                const matchFonte = !fonteFilter || lead.fonte === fonteFilter;
+                const matchDettaglioFonte = !dettaglioFonteFilter || lead.dettaglio_fonte === dettaglioFonteFilter;
                 const matchServizio = !servizioFilter || lead.servizio === servizioFilter;
                 const matchPiano = !pianoFilter || lead.pacchetto === pianoFilter;
-                return matchServizio && matchPiano;
+                return matchFonte && matchDettaglioFonte && matchServizio && matchPiano;
             });
 
             renderLeadsTable(filtered);

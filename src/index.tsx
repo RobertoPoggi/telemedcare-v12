@@ -5586,6 +5586,65 @@ app.get('/api/leads', async (c) => {
   }
 })
 
+// GET /api/leads/filters - Ottieni valori distinti per filtri leads
+app.get('/api/leads/filters', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({
+        success: false,
+        error: 'Database D1 non configurato'
+      }, 400)
+    }
+
+    console.log('🔍 Recupero valori distinti per filtri leads...')
+
+    // Recupera valori distinti di fonte
+    const fonti = await c.env.DB.prepare(`
+      SELECT DISTINCT fonte 
+      FROM leads 
+      WHERE fonte IS NOT NULL AND fonte != ''
+      ORDER BY fonte
+    `).all()
+
+    // Recupera valori distinti di dettaglio_fonte
+    const dettagliFonte = await c.env.DB.prepare(`
+      SELECT DISTINCT dettaglio_fonte 
+      FROM leads 
+      WHERE dettaglio_fonte IS NOT NULL AND dettaglio_fonte != ''
+      ORDER BY dettaglio_fonte
+    `).all()
+
+    // Recupera valori distinti di servizio
+    const servizi = await c.env.DB.prepare(`
+      SELECT DISTINCT servizio 
+      FROM leads 
+      WHERE servizio IS NOT NULL AND servizio != ''
+      ORDER BY servizio
+    `).all()
+
+    // Recupera valori distinti di pacchetto (piano)
+    const piani = await c.env.DB.prepare(`
+      SELECT DISTINCT pacchetto 
+      FROM leads 
+      WHERE pacchetto IS NOT NULL AND pacchetto != ''
+      ORDER BY pacchetto
+    `).all()
+
+    return c.json({
+      success: true,
+      filters: {
+        fonti: fonti.results?.map((r: any) => r.fonte) || [],
+        dettagliFonte: dettagliFonte.results?.map((r: any) => r.dettaglio_fonte) || [],
+        servizi: servizi.results?.map((r: any) => r.servizio) || [],
+        piani: piani.results?.map((r: any) => r.pacchetto) || []
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore recupero filtri leads:', error)
+    return c.json({ success: false, error: 'Errore recupero filtri' }, 500)
+  }
+})
+
 // 🚀 BULK IMPORT ENDPOINT - Import 126 lead da Excel
 app.post('/api/leads/import-bulk', async (c) => {
   try {
@@ -14101,6 +14160,50 @@ app.post('/api/db/migrate', async (c) => {
     } catch (error) {
       console.error('❌ [MIGRATION] Errore aggiunta colonne configurations:', error)
       migrations.push(`Errore colonne configurations: ${error}`)
+    }
+
+    // ✅ MIGRATION: Aggiungi campi HubSpot source a leads (2026-03-08)
+    try {
+      console.log('🔧 [MIGRATION] Aggiunta campi HubSpot source a leads...')
+      
+      const hubspotColumns = [
+        { name: 'hs_object_source', type: 'TEXT', description: 'Fonte HubSpot (FORM, IMPORT, INTEGRATION, etc.)' },
+        { name: 'hs_object_source_detail_1', type: 'TEXT', description: 'Dettaglio fonte (es. "Form eCura")' },
+        { name: 'dettaglio_fonte', type: 'TEXT', description: 'Campo calcolato basato su hs_object_source' }
+      ]
+
+      for (const col of hubspotColumns) {
+        try {
+          await c.env.DB.prepare(`
+            ALTER TABLE leads ADD COLUMN ${col.name} ${col.type}
+          `).run()
+          console.log(`✅ Colonna ${col.name} aggiunta a leads (${col.description})`)
+          migrations.push(`Colonna ${col.name} aggiunta a leads`)
+        } catch (error) {
+          console.log(`ℹ️ Colonna ${col.name} già esistente in leads`)
+        }
+      }
+
+      // Popola dettaglio_fonte per lead esistenti con fonte "Form eCura" dal 29/01/2026
+      try {
+        const result = await c.env.DB.prepare(`
+          UPDATE leads 
+          SET dettaglio_fonte = 'FORM'
+          WHERE fonte = 'Form eCura' 
+            AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
+            AND dettaglio_fonte IS NULL
+        `).run()
+        console.log(`✅ Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti`)
+        migrations.push(`Popolato dettaglio_fonte per ${result.meta?.changes || 0} lead esistenti`)
+      } catch (error) {
+        console.log('⚠️ Errore popolamento dettaglio_fonte:', error)
+      }
+
+      console.log('✅ [MIGRATION] Campi HubSpot source aggiunti con successo')
+      migrations.push('Campi HubSpot source (hs_object_source, hs_object_source_detail_1, dettaglio_fonte) aggiunti a leads')
+    } catch (error) {
+      console.error('❌ [MIGRATION] Errore aggiunta campi HubSpot source:', error)
+      migrations.push(`Errore campi HubSpot source: ${error}`)
     }
 
     return c.json({

@@ -54,7 +54,8 @@ export interface HubSpotWebhookPayload {
     richiedi_brochure?: 'true' | 'false' | boolean
     richiedi_contratto?: 'true' | 'false' | boolean
     
-    // Filtro fonte (campo NUR)
+    // Filtro fonte (campi HubSpot)
+    hs_object_source?: string // Fonte principale (es. 'FORM', 'IMPORT', 'INTEGRATION', etc.)
     hs_object_source_detail_1?: string // "Form eCura" per lead da www.ecura.it
     
     // Altro
@@ -126,6 +127,9 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
   // Mappa piano (default BASE se non specificato)
   const pacchetto = (props.piano_ecura || 'BASE').toUpperCase()
 
+  // Calcola dettaglio_fonte da hs_object_source
+  const dettaglioFonte = props.hs_object_source || 'N/A'
+
   return {
     id: leadId,
     
@@ -151,6 +155,9 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
     
     // Fonte
     fonte: 'Form eCura',
+    hs_object_source: props.hs_object_source || null,
+    hs_object_source_detail_1: props.hs_object_source_detail_1 || null,
+    dettaglio_fonte: dettaglioFonte,
     
     // Note
     note: props.note || undefined
@@ -187,9 +194,12 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         vuoleManuale,
         vuoleContratto,
         fonte,
+        hs_object_source,
+        hs_object_source_detail_1,
+        dettaglio_fonte,
         note,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     const result = await db
@@ -209,6 +219,9 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
         lead.vuoleManuale ? 1 : 0,
         lead.vuoleContratto ? 1 : 0,
         lead.fonte || 'Form eCura',
+        lead.hs_object_source || null,
+        lead.hs_object_source_detail_1 || null,
+        lead.dettaglio_fonte || null,
         lead.note || null,
         'NEW'
       )

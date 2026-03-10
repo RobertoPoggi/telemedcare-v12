@@ -443,6 +443,9 @@ export interface LeadData {
   vuoleManuale: boolean
   vuoleContratto: boolean
   fonte?: string
+  hs_object_source?: string | null // Fonte HubSpot (es. 'FORM', 'IMPORT', 'INTEGRATION')
+  hs_object_source_detail_1?: string | null // Dettaglio fonte (es. 'Form eCura')
+  dettaglio_fonte?: string | null // Campo calcolato basato su hs_object_source
   cfIntestatario?: string
   indirizzoIntestatario?: string
   cfAssistito?: string
