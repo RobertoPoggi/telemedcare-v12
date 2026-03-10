@@ -12455,19 +12455,62 @@ app.post('/api/contracts/sign', async (c) => {
     
     console.log(`✅ Contratto firmato: ${contractId} da IP ${clientIp}`)
     
-    // ❌ DISABILITATO: Email conferma firma (ridondante e confusionaria)
-    // Il cliente riceverà direttamente l'email con la proforma che include tutte le info necessarie
-    // Recupera lead per inviare email
+    // ✅ RIABILITATO: Email notifica firma a info@telemedcare.it con PDF contratto firmato
     try {
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
       if (lead && c.env.RESEND_API_KEY) {
-        console.log(`📧 [SKIP] Email conferma firma NON inviata (riceverà proforma direttamente)`)
-        // EMAIL CONFERMA FIRMA DISABILITATA - il cliente riceverà la proforma
+        console.log(`📧 [FIRMA] Invio notifica firma contratto a info@telemedcare.it`)
+        
+        // Importa EmailService
+        const EmailService = (await import('./modules/email-service')).default
+        const emailService = EmailService.getInstance()
+        
+        // Genera link PDF contratto firmato
+        const baseUrl = c.req.url.split('/api/')[0]
+        const pdfUrl = `${baseUrl}/api/contratti/${contractId}/pdf-print`
+        
+        // Invia email a info@telemedcare.it
+        await emailService.sendEmail({
+          to: 'info@telemedcare.it',
+          subject: `✅ Contratto Firmato - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #16a34a;">✅ Contratto Firmato Digitalmente</h2>
+              
+              <p>Un nuovo contratto è stato firmato digitalmente:</p>
+              
+              <div style="background: #f0f9ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
+                <p style="margin: 5px 0;"><strong>Email:</strong> ${lead.email}</p>
+                <p style="margin: 5px 0;"><strong>Telefono:</strong> ${lead.telefono || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Codice Contratto:</strong> ${contractId}</p>
+                <p style="margin: 5px 0;"><strong>Data Firma:</strong> ${new Date().toLocaleString('it-IT')}</p>
+                <p style="margin: 5px 0;"><strong>IP Cliente:</strong> ${clientIp}</p>
+              </div>
+              
+              <p><strong>📄 Visualizza/Scarica Contratto Firmato:</strong></p>
+              <p style="margin: 20px 0;">
+                <a href="${pdfUrl}" 
+                   style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                  📥 Visualizza Contratto con Firma
+                </a>
+              </p>
+              
+              <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">
+                Questo è un messaggio automatico generato dal sistema TeleMedCare V12.0
+              </p>
+            </div>
+          `,
+          text: `Contratto firmato da ${lead.nomeRichiedente} ${lead.cognomeRichiedente}. Visualizza: ${pdfUrl}`
+        }, c.env)
+        
+        console.log(`✅ [FIRMA] Email notifica inviata a info@telemedcare.it`)
       }
     } catch (emailError) {
-      console.error('⚠️ Errore check email (firma salvata comunque):', emailError)
+      console.error('⚠️ Errore invio email notifica firma:', emailError)
+      // Non bloccare il processo se l'email fallisce
     }
     
     // ✅ CRITICAL FIX: Trigger automatico generazione e invio proforma dopo firma

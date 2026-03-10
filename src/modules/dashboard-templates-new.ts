@@ -5114,6 +5114,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Scadenza</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="contractsTable">
@@ -5523,6 +5524,18 @@ export const data_dashboard = `<!DOCTYPE html>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
                         <td class="py-3">\${scadenzaHtml}</td>
+                        <td class="py-3 text-center">
+                            \${contract.status === 'SIGNED' ? \`
+                                <a href="/api/contratti/\${contract.id}/pdf-print" 
+                                   target="_blank"
+                                   title="Visualizza contratto firmato con firma"
+                                   class="inline-block px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+                                    ✍️ Firmato
+                                </a>
+                            \` : \`
+                                <span class="text-gray-400 text-xs">N/A</span>
+                            \`}
+                        </td>
                     </tr>
                 \`;
             }).join('');
