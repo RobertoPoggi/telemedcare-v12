@@ -8433,6 +8433,317 @@ app.get('/api/contratti/:id/download', async (c) => {
   }
 })
 
+// GET /api/contratti/:id/pdf-print - Genera HTML stampabile come PDF con firma grafica
+app.get('/api/contratti/:id/pdf-print', async (c) => {
+  const id = c.req.param('id')
+  
+  try {
+    if (!c.env?.DB) {
+      return c.html('<h1>Database non configurato</h1>', 500)
+    }
+    
+    // Recupera contratto con dati lead
+    const contract = await c.env.DB.prepare(`
+      SELECT c.*, 
+        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono,
+        l.cfIntestatario, l.indirizzoIntestatario,
+        l.nomeAssistito, l.cognomeAssistito
+      FROM contracts c
+      LEFT JOIN leads l ON c.leadId = l.id
+      WHERE c.id = ?
+    `).bind(id).first() as any
+    
+    if (!contract) {
+      return c.html('<h1>Contratto non trovato</h1>', 404)
+    }
+    
+    // Genera HTML stampabile con firma
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contratto ${contract.id} - ${contract.nomeRichiedente} ${contract.cognomeRichiedente}</title>
+  <style>
+    @media print {
+      @page { margin: 2cm; size: A4; }
+      .no-print { display: none !important; }
+      button { display: none !important; }
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 21cm;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      color: #2563eb;
+      margin: 0;
+      font-size: 28px;
+    }
+    
+    .header p {
+      margin: 5px 0;
+      color: #666;
+    }
+    
+    .section {
+      margin: 25px 0;
+      padding: 15px;
+      border-left: 4px solid #2563eb;
+      background: #f8fafc;
+    }
+    
+    .section h2 {
+      color: #2563eb;
+      font-size: 18px;
+      margin: 0 0 15px 0;
+    }
+    
+    .field {
+      margin: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #ddd;
+      padding: 5px 0;
+    }
+    
+    .field strong {
+      color: #1e40af;
+      min-width: 200px;
+    }
+    
+    .signature-section {
+      margin-top: 40px;
+      padding: 20px;
+      border: 2px solid #2563eb;
+      background: #f0f9ff;
+      border-radius: 8px;
+    }
+    
+    .signature-box {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .signature-box img {
+      max-width: 400px;
+      max-height: 120px;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      background: white;
+    }
+    
+    .signature-meta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+    
+    .status-signed {
+      background: #dcfce7;
+      color: #166534;
+      border: 2px solid #16a34a;
+    }
+    
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 2px solid #f59e0b;
+    }
+    
+    .print-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    
+    .print-button:hover {
+      background: #1d4ed8;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 2px solid #e2e8f0;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <button class="print-button no-print" onclick="window.print()">
+    🖨️ Stampa / Salva PDF
+  </button>
+  
+  <div class="header">
+    <h1>📄 CONTRATTO DI SERVIZIO</h1>
+    <p><strong>TeleMedCare V12.0</strong></p>
+    <p>Assistenza Sanitaria Domiciliare</p>
+  </div>
+  
+  <div class="section">
+    <h2>📋 Informazioni Contratto</h2>
+    <div class="field">
+      <strong>Codice Contratto:</strong>
+      <span>${contract.id}</span>
+    </div>
+    <div class="field">
+      <strong>Tipo Servizio:</strong>
+      <span>${contract.tipo || contract.contractType || 'N/A'}</span>
+    </div>
+    <div class="field">
+      <strong>Data Creazione:</strong>
+      <span>${contract.created_at ? new Date(contract.created_at).toLocaleDateString('it-IT', {year: 'numeric', month: 'long', day: 'numeric'}) : 'N/A'}</span>
+    </div>
+    <div class="field">
+      <strong>Stato:</strong>
+      <span class="status-badge ${contract.status === 'SIGNED' ? 'status-signed' : 'status-pending'}">
+        ${contract.status === 'SIGNED' ? '✅ FIRMATO' : '⏳ IN ATTESA'}
+      </span>
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>👤 Dati Cliente / Intestatario</h2>
+    <div class="field">
+      <strong>Nome Completo:</strong>
+      <span>${contract.nomeRichiedente || 'N/A'} ${contract.cognomeRichiedente || ''}</span>
+    </div>
+    <div class="field">
+      <strong>Codice Fiscale:</strong>
+      <span>${contract.cfIntestatario || 'N/A'}</span>
+    </div>
+    <div class="field">
+      <strong>Indirizzo:</strong>
+      <span>${contract.indirizzoIntestatario || 'N/A'}</span>
+    </div>
+    <div class="field">
+      <strong>Email:</strong>
+      <span>${contract.email || 'N/A'}</span>
+    </div>
+    <div class="field">
+      <strong>Telefono:</strong>
+      <span>${contract.telefono || 'N/A'}</span>
+    </div>
+  </div>
+  
+  ${contract.nomeAssistito ? `
+  <div class="section">
+    <h2>🏥 Dati Assistito</h2>
+    <div class="field">
+      <strong>Nome Completo:</strong>
+      <span>${contract.nomeAssistito} ${contract.cognomeAssistito || ''}</span>
+    </div>
+  </div>
+  ` : ''}
+  
+  <div class="section">
+    <h2>💰 Dettagli Economici</h2>
+    <div class="field">
+      <strong>Prezzo Totale:</strong>
+      <span style="font-size: 20px; font-weight: bold; color: #16a34a;">
+        €${contract.prezzo_totale || contract.prezzoTotale || '0.00'}
+      </span>
+    </div>
+    ${contract.prezzo_mensile ? `
+    <div class="field">
+      <strong>Prezzo Mensile:</strong>
+      <span>€${contract.prezzo_mensile}</span>
+    </div>
+    ` : ''}
+  </div>
+  
+  ${contract.status === 'SIGNED' && contract.signature_data ? `
+  <div class="signature-section">
+    <h2 style="margin: 0 0 10px 0; color: #16a34a;">✅ CONTRATTO FIRMATO DIGITALMENTE</h2>
+    <p style="margin: 0 0 15px 0; color: #64748b;">Il cliente ha apposto la propria firma digitale al presente contratto:</p>
+    
+    <div class="signature-box">
+      <img src="${contract.signature_data}" alt="Firma Digitale" />
+      <div class="signature-meta">
+        <p style="margin: 5px 0;"><strong>Data Firma:</strong> ${contract.signed_at ? new Date(contract.signed_at).toLocaleString('it-IT') : 'N/A'}</p>
+        ${contract.signature_ip ? `<p style="margin: 5px 0;"><strong>IP:</strong> ${contract.signature_ip}</p>` : ''}
+        ${contract.signature_timestamp ? `<p style="margin: 5px 0;"><strong>Timestamp:</strong> ${new Date(contract.signature_timestamp).toLocaleString('it-IT')}</p>` : ''}
+      </div>
+    </div>
+  </div>
+  ` : `
+  <div class="signature-section" style="background: #fef3c7; border-color: #f59e0b;">
+    <h2 style="margin: 0; color: #92400e;">⏳ IN ATTESA DI FIRMA</h2>
+    <p style="margin: 10px 0 0 0; color: #78350f;">Il contratto è in attesa di firma digitale da parte del cliente.</p>
+  </div>
+  `}
+  
+  <div class="footer">
+    <p><strong>TeleMedCare V12.0</strong> - Assistenza Sanitaria Domiciliare</p>
+    <p>Documento generato il ${new Date().toLocaleString('it-IT')}</p>
+    <p style="margin-top: 10px; font-size: 10px;">
+      Questo documento è stato generato automaticamente dal sistema TeleMedCare.<br>
+      La firma digitale apposta è valida e verificabile tramite timestamp e indirizzo IP.
+    </p>
+  </div>
+  
+  <script>
+    // Auto-print quando richiesto via URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('auto-print') === 'true') {
+      window.onload = () => {
+        setTimeout(() => window.print(), 500);
+      };
+    }
+  </script>
+</body>
+</html>`
+    
+    return c.html(html)
+    
+  } catch (error) {
+    console.error('❌ Errore generazione PDF contratto:', error)
+    return c.html(`<h1>Errore generazione PDF</h1><p>${error.message}</p>`, 500)
+  }
+})
+
 // ========================================
 // CRUD COMPLETO - CONTRATTI
 // ========================================
