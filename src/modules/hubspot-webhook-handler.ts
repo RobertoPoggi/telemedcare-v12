@@ -127,8 +127,9 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
   // Mappa piano (default BASE se non specificato)
   const pacchetto = (props.piano_ecura || 'BASE').toUpperCase()
 
-  // Calcola dettaglio_fonte da hs_object_source
-  const dettaglioFonte = props.hs_object_source || 'N/A'
+  // NOTA: dettaglio_fonte è un campo calcolato/manuale (modificabile via CRUD)
+  // Non viene popolato automaticamente dal webhook HubSpot
+  const dettaglioFonte = null
 
   return {
     id: leadId,
