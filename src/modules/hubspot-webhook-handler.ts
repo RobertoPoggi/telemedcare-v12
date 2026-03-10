@@ -127,9 +127,10 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
   // Mappa piano (default BASE se non specificato)
   const pacchetto = (props.piano_ecura || 'BASE').toUpperCase()
 
-  // Calcola dettaglio_fonte da hs_object_source (es: FORM, IMPORT, INTEGRATION)
+  // Calcola dettaglio_fonte da hs_object_source_detail_1
+  // Es: "Form eCura" → dettaglio_fonte = "Form eCura"
   // Campo calcolato automaticamente ma modificabile via CRUD
-  const dettaglioFonte = props.hs_object_source || null
+  const dettaglioFonte = props.hs_object_source_detail_1 || null
 
   return {
     id: leadId,
