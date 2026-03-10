@@ -165,11 +165,12 @@ export function mapHubSpotToLead(payload: HubSpotWebhookPayload): LeadData {
 }
 
 /**
- * Salva il lead nel database D1
+ * Salva o aggiorna il lead nel database D1 (UPSERT)
+ * IMPORTANTE: Aggiorna solo i campi forniti, NON cancella mai campi esistenti!
  */
 export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log('💾 Tentativo salvataggio lead:', {
+    console.log('💾 Tentativo salvataggio/aggiornamento lead:', {
       id: lead.id,
       nome: lead.nomeRichiedente,
       cognome: lead.cognomeRichiedente,
@@ -177,6 +178,44 @@ export async function saveLeadToDB(lead: LeadData, db: D1Database): Promise<{ su
       pacchetto: lead.pacchetto,
       fonte: lead.fonte
     })
+    
+    // 1. Verifica se esiste già un lead con questa email
+    const existingLead = await db
+      .prepare('SELECT id, email FROM leads WHERE email = ? LIMIT 1')
+      .bind(lead.email)
+      .first()
+
+    if (existingLead) {
+      // Lead esiste già → UPDATE solo i campi HubSpot (NON sovrascrivere altri campi!)
+      console.log(`🔄 Lead esistente trovato (email: ${lead.email}), aggiornamento campi HubSpot...`)
+      
+      const updateQuery = `
+        UPDATE leads 
+        SET 
+          hs_object_source = COALESCE(?, hs_object_source),
+          hs_object_source_detail_1 = COALESCE(?, hs_object_source_detail_1),
+          dettaglio_fonte = COALESCE(?, dettaglio_fonte),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE email = ?
+      `
+      
+      const result = await db
+        .prepare(updateQuery)
+        .bind(
+          lead.hs_object_source || null,
+          lead.hs_object_source_detail_1 || null,
+          lead.dettaglio_fonte || null,
+          lead.email
+        )
+        .run()
+
+      console.log(`✅ Lead ${existingLead.id} aggiornato. Campi HubSpot popolati senza cancellare dati esistenti.`)
+      
+      return { success: true }
+    }
+
+    // 2. Lead non esiste → INSERT nuovo
+    console.log('📝 Nuovo lead, inserimento nel database...')
     
     const insertQuery = `
       INSERT INTO leads (

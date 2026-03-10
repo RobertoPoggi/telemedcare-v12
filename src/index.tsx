@@ -14305,12 +14305,34 @@ app.get('/api/debug/leads-fonte', async (c) => {
       WHERE dettaglio_fonte IS NOT NULL
     `).first()
 
+    // Count per hs_object_source (campo HubSpot)
+    const hsObjectSourceStats = await c.env.DB.prepare(`
+      SELECT 
+        hs_object_source,
+        COUNT(*) as count
+      FROM leads
+      GROUP BY hs_object_source
+      ORDER BY count DESC
+    `).all()
+
+    // Count per hs_object_source_detail_1 (campo HubSpot)
+    const hsObjectSourceDetail1Stats = await c.env.DB.prepare(`
+      SELECT 
+        hs_object_source_detail_1,
+        COUNT(*) as count
+      FROM leads
+      GROUP BY hs_object_source_detail_1
+      ORDER BY count DESC
+    `).all()
+
     return c.json({
       success: true,
       report: {
         total_leads: totalCount?.count || 0,
         fonte_distribution: fonteStats.results || [],
         dettaglio_fonte_distribution: dettaglioStats.results || [],
+        hs_object_source_distribution: hsObjectSourceStats.results || [],
+        hs_object_source_detail_1_distribution: hsObjectSourceDetail1Stats.results || [],
         form_ecura_all: eCuraTotal?.count || 0,
         form_ecura_from_29jan: eCuraFrom29Jan?.count || 0,
         with_dettaglio_fonte: withDettaglio?.count || 0
