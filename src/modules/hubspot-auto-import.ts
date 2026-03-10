@@ -25,6 +25,7 @@ export interface AutoImportResult {
   success: boolean
   message: string
   imported: number
+  updated: number
   skipped: number
   errors: number
   errorDetails: string[]
@@ -85,6 +86,7 @@ export async function executeAutoImport(
     success: false,
     message: '',
     imported: 0,
+    updated: 0,
     skipped: 0,
     errors: 0,
     errorDetails: [],
@@ -209,49 +211,109 @@ export async function executeAutoImport(
         
         console.log(`📧 [AUTO-IMPORT] Email: ${emailSafe}, Telefono: ${telefonoSafe}`)
         
-        // Inserisci nel database con PREZZI (usa campi esistenti)
-        // ⚠️ IMPORTANTE: DB ha sia email che email (legacy compatibility)
-        await db.prepare(`
-          INSERT INTO leads (
-            id, nomeRichiedente, cognomeRichiedente, email, telefono,
-            nomeAssistito, cognomeAssistito,
-            servizio, piano, tipoServizio,
-            prezzo_anno, prezzo_rinnovo,
-            fonte, external_source_id, status, note,
-            vuoleContratto, vuoleBrochure, vuoleManuale,
-            gdprConsent, consensoMarketing, consensoTerze,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          leadId,
-          leadData.nomeRichiedente,
-          leadData.cognomeRichiedente,
-          emailSafe, // ✅ email
-          telefonoSafe, // ✅ telefono
-          leadData.nomeAssistito,
-          leadData.cognomeAssistito,
-          leadData.servizio,
-          leadData.piano,
-          leadData.tipoServizio,
-          leadData.prezzo_anno || null,
-          leadData.prezzo_rinnovo || null,
-          leadData.fonte,
-          leadData.external_source_id,
-          leadData.status,
-          leadData.note,
-          leadData.vuoleContratto,
-          leadData.vuoleBrochure,
-          leadData.vuoleManuale,
-          leadData.gdprConsent ? 1 : 0,
-          leadData.consensoMarketing ? 1 : 0,
-          leadData.consensoTerze ? 1 : 0,
-          new Date().toISOString(),
-          new Date().toISOString()
-        ).run()
+        // ✅ UPSERT LOGIC: Se lead esiste, aggiorna SOLO campi NULL o vuoti
+        // Verifica se lead già presente (double-check per sicurezza)
+        const existingLead = await db.prepare(`
+          SELECT id, email, nomeRichiedente, telefono, fonte, hs_object_source, hs_object_source_detail_1, dettaglio_fonte
+          FROM leads 
+          WHERE email = ? OR external_source_id = ?
+          LIMIT 1
+        `).bind(emailSafe, contact.id).first()
         
-        console.log(`✅ [AUTO-IMPORT] Lead creato: ${leadId} from HubSpot ${contact.id}`)
+        if (existingLead) {
+          console.log(`🔄 [AUTO-IMPORT] Lead già esistente: ${existingLead.id}, eseguo UPDATE campi NULL/vuoti`)
+          
+          // UPDATE solo campi NULL o vuoti
+          await db.prepare(`
+            UPDATE leads SET
+              nomeRichiedente = CASE WHEN nomeRichiedente IS NULL OR nomeRichiedente = '' THEN ? ELSE nomeRichiedente END,
+              cognomeRichiedente = CASE WHEN cognomeRichiedente IS NULL OR cognomeRichiedente = '' THEN ? ELSE cognomeRichiedente END,
+              telefono = CASE WHEN telefono IS NULL OR telefono = '' THEN ? ELSE telefono END,
+              nomeAssistito = CASE WHEN nomeAssistito IS NULL OR nomeAssistito = '' THEN ? ELSE nomeAssistito END,
+              cognomeAssistito = CASE WHEN cognomeAssistito IS NULL OR cognomeAssistito = '' THEN ? ELSE cognomeAssistito END,
+              servizio = CASE WHEN servizio IS NULL OR servizio = '' THEN ? ELSE servizio END,
+              piano = CASE WHEN piano IS NULL OR piano = '' THEN ? ELSE piano END,
+              tipoServizio = CASE WHEN tipoServizio IS NULL OR tipoServizio = '' THEN ? ELSE tipoServizio END,
+              prezzo_anno = CASE WHEN prezzo_anno IS NULL THEN ? ELSE prezzo_anno END,
+              prezzo_rinnovo = CASE WHEN prezzo_rinnovo IS NULL THEN ? ELSE prezzo_rinnovo END,
+              note = CASE WHEN note IS NULL OR note = '' THEN ? ELSE note END,
+              hs_object_source = CASE WHEN hs_object_source IS NULL OR hs_object_source = '' THEN ? ELSE hs_object_source END,
+              hs_object_source_detail_1 = CASE WHEN hs_object_source_detail_1 IS NULL OR hs_object_source_detail_1 = '' THEN ? ELSE hs_object_source_detail_1 END,
+              dettaglio_fonte = CASE WHEN dettaglio_fonte IS NULL OR dettaglio_fonte = '' THEN ? ELSE dettaglio_fonte END,
+              external_source_id = ?,
+              updated_at = ?
+            WHERE email = ?
+          `).bind(
+            leadData.nomeRichiedente,
+            leadData.cognomeRichiedente,
+            telefonoSafe,
+            leadData.nomeAssistito,
+            leadData.cognomeAssistito,
+            leadData.servizio,
+            leadData.piano,
+            leadData.tipoServizio,
+            leadData.prezzo_anno || null,
+            leadData.prezzo_rinnovo || null,
+            leadData.note,
+            leadData.hs_object_source || null,
+            leadData.hs_object_source_detail_1 || null,
+            leadData.dettaglio_fonte || null,
+            leadData.external_source_id,
+            new Date().toISOString(),
+            emailSafe
+          ).run()
+          
+          console.log(`✅ [AUTO-IMPORT] Lead aggiornato (UPDATE): ${existingLead.id} from HubSpot ${contact.id}`)
+          result.updated = (result.updated || 0) + 1
+        } else {
+          // Lead non esiste, INSERT nuovo
+          await db.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito,
+              servizio, piano, tipoServizio,
+              prezzo_anno, prezzo_rinnovo,
+              fonte, external_source_id, status, note,
+              hs_object_source, hs_object_source_detail_1, dettaglio_fonte,
+              vuoleContratto, vuoleBrochure, vuoleManuale,
+              gdprConsent, consensoMarketing, consensoTerze,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            leadId,
+            leadData.nomeRichiedente,
+            leadData.cognomeRichiedente,
+            emailSafe,
+            telefonoSafe,
+            leadData.nomeAssistito,
+            leadData.cognomeAssistito,
+            leadData.servizio,
+            leadData.piano,
+            leadData.tipoServizio,
+            leadData.prezzo_anno || null,
+            leadData.prezzo_rinnovo || null,
+            leadData.fonte,
+            leadData.external_source_id,
+            leadData.status,
+            leadData.note,
+            leadData.hs_object_source || null,
+            leadData.hs_object_source_detail_1 || null,
+            leadData.dettaglio_fonte || null,
+            leadData.vuoleContratto,
+            leadData.vuoleBrochure,
+            leadData.vuoleManuale,
+            leadData.gdprConsent ? 1 : 0,
+            leadData.consensoMarketing ? 1 : 0,
+            leadData.consensoTerze ? 1 : 0,
+            new Date().toISOString(),
+            new Date().toISOString()
+          ).run()
+          
+          console.log(`✅ [AUTO-IMPORT] Lead creato (INSERT): ${leadId} from HubSpot ${contact.id}`)
+          result.imported++
+        }
+        
         console.log(`🔔 [AUTO-IMPORT] >>> INIZIO BLOCCO EMAIL <<<`)
-        result.imported++
         
         // 📧 INVIA EMAIL DI NOTIFICA ADMIN usando la funzione ufficiale
         try {
@@ -472,11 +534,11 @@ export async function executeAutoImport(
     result.success = true
     result.message = config.dryRun 
       ? `Dry run: ${result.imported} lead sarebbero stati importati` 
-      : `Import completato: ${result.imported} nuovi lead importati, ${result.skipped} già esistenti`
+      : `Import completato: ${result.imported} nuovi, ${result.updated || 0} aggiornati, ${result.skipped} skipped`
     result.performance.processingTimeMs = Date.now() - startTime
     
     console.log(`✅ [AUTO-IMPORT] Completato in ${result.performance.processingTimeMs}ms`)
-    console.log(`📊 [AUTO-IMPORT] Risultati: ${result.imported} importati, ${result.skipped} skipped, ${result.errors} errori`)
+    console.log(`📊 [AUTO-IMPORT] Risultati: ${result.imported} inseriti, ${result.updated || 0} aggiornati, ${result.skipped} skipped, ${result.errors} errori`)
     
     // 💰 NOTA: Fix prezzi viene eseguito tramite endpoint /api/leads/fix-prices
     // Non lo eseguiamo qui per evitare dipendenze circolari

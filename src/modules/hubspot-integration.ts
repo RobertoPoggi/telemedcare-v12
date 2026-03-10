@@ -482,6 +482,11 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     fonte: 'Form eCura',
     external_source_id: contact.id,
     
+    // ✅ HubSpot Source Fields (NUOVI CAMPI per tracciamento dettagliato fonte)
+    hs_object_source: props.hs_object_source || null,
+    hs_object_source_detail_1: props.hs_object_source_detail_1 || null,
+    dettaglio_fonte: props.hs_object_source_detail_1 || null, // Calcolato da hs_object_source_detail_1
+    
     // Metadata
     // ✅ FIX CRITICO: Importa note VERE da HubSpot (NO fallback che sovrascrive!)
     // external_source_id contiene già l'ID HubSpot, quindi non serve duplicarlo in note
