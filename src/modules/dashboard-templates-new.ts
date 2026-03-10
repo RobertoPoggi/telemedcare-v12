@@ -2455,6 +2455,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="Sito web Medica GB">Sito web Medica GB</option>
                         <option value="NETWORKING">NETWORKING</option>
                     </select>
+                    <select id="filterSorgente" class="border-2 border-blue-400 bg-blue-50 rounded-lg px-3 py-2 text-sm font-semibold" onchange="applyFilters()">
+                        <option value="">🔍 Tutte le Sorgenti</option>
+                    </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
                         <option value="FAMILY">FAMILY</option>
@@ -2561,6 +2564,25 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const leadsResponse = await fetch(\`/api/leads?limit=99999&_=\${cacheBuster}\`);
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
+                
+                // ✅ Carica opzioni filtri dinamiche dall'API
+                try {
+                    const filtersResponse = await fetch('/api/leads/filters');
+                    const filtersData = await filtersResponse.json();
+                    if (filtersData.success && filtersData.filters.sorgenti) {
+                        const sorgenteSelect = document.getElementById('filterSorgente');
+                        sorgenteSelect.innerHTML = '<option value="">🔍 Tutte le Sorgenti</option>';
+                        filtersData.filters.sorgenti.forEach(sorgente => {
+                            const option = document.createElement('option');
+                            option.value = sorgente;
+                            option.textContent = sorgente;
+                            sorgenteSelect.appendChild(option);
+                        });
+                        console.log('✅ Filtro Sorgente popolato con', filtersData.filters.sorgenti.length, 'opzioni');
+                    }
+                } catch (error) {
+                    console.error('⚠️ Errore caricamento filtri:', error);
+                }
                 
                 // ✅ USA IL TOTALE REALE DAL SERVER (non allLeads.length)
                 const totalLeads = leadsData.total || allLeads.length;
@@ -3005,6 +3027,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         function applyFilters() {
             const fonteFilter = document.getElementById('filterFonte').value;
+            const sorgenteFilter = document.getElementById('filterSorgente').value;
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
             const cmFilter = document.getElementById('filterCM').value;
@@ -3015,6 +3038,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Filtro Fonte: match esatto con il campo fonte
                 const leadFonte = lead.fonte || '';
                 const matchFonte = !fonteFilter || leadFonte === fonteFilter;
+                
+                // Filtro Sorgente: match esatto con hs_object_source
+                const leadSorgente = lead.hs_object_source || '';
+                const matchSorgente = !sorgenteFilter || leadSorgente === sorgenteFilter;
                 
                 // Filtro Servizio: cerca nel campo servizio o tipoServizio del DB
                 // Normalizza: "eCura PRO" -> "PRO", "eCura FAMILY" -> "FAMILY"
@@ -3053,7 +3080,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
+                return matchFonte && matchSorgente && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
             });
 
             renderLeadsTable(filtered);
