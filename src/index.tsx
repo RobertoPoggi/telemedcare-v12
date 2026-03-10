@@ -5600,6 +5600,7 @@ app.get('/api/leads/filters', async (c) => {
 
     const filters: any = {
       fonti: [],
+      sorgenti: [],
       dettagliFonte: [],
       servizi: [],
       piani: []
@@ -5616,6 +5617,20 @@ app.get('/api/leads/filters', async (c) => {
       filters.fonti = fonti.results?.map((r: any) => r.fonte) || []
     } catch (error) {
       console.error('⚠️ Errore recupero fonti:', error)
+    }
+
+    // Recupera valori distinti di hs_object_source (sorgente)
+    try {
+      const sorgenti = await c.env.DB.prepare(`
+        SELECT DISTINCT hs_object_source 
+        FROM leads 
+        WHERE hs_object_source IS NOT NULL AND hs_object_source != ''
+        ORDER BY hs_object_source
+      `).all()
+      filters.sorgenti = sorgenti.results?.map((r: any) => r.hs_object_source) || []
+    } catch (error) {
+      console.warn('⚠️ Colonna hs_object_source non trovata (eseguire POST /api/db/migrate):', error)
+      filters.sorgenti = []
     }
 
     // Recupera valori distinti di dettaglio_fonte (con fallback se colonna non esiste)
@@ -14213,7 +14228,6 @@ app.post('/api/db/migrate', async (c) => {
 
       // Popola hs_object_source_detail_1 per lead esistenti con fonte "Form eCura" dal 29/01/2026
       // Include anche varianti: "Form eCura x Test", "Form eCura x test"
-      // NOTA: dettaglio_fonte è un campo calcolato/manuale (modificabile via CRUD)
       try {
         const result = await c.env.DB.prepare(`
           UPDATE leads 
@@ -14226,6 +14240,36 @@ app.post('/api/db/migrate', async (c) => {
         migrations.push(`Popolato hs_object_source_detail_1 = 'Form eCura' per ${result.meta?.changes || 0} lead esistenti (dal 29/01/2026)`)
       } catch (error) {
         console.log('⚠️ Errore popolamento hs_object_source_detail_1:', error)
+      }
+
+      // Popola hs_object_source per lead esistenti con fonte "Form eCura" dal 29/01/2026
+      // Valore default: 'FORM' (sarà aggiornato quando arriveranno dati reali da HubSpot)
+      try {
+        const result = await c.env.DB.prepare(`
+          UPDATE leads 
+          SET hs_object_source = 'FORM'
+          WHERE (fonte = 'Form eCura' OR fonte LIKE 'Form eCura x %')
+            AND (created_at >= '2026-01-29' OR timestamp >= '2026-01-29 00:00:00')
+            AND hs_object_source IS NULL
+        `).run()
+        console.log(`✅ Popolato hs_object_source = 'FORM' per ${result.meta?.changes || 0} lead esistenti (dal 29/01/2026)`)
+        migrations.push(`Popolato hs_object_source = 'FORM' per ${result.meta?.changes || 0} lead esistenti (dal 29/01/2026)`)
+      } catch (error) {
+        console.log('⚠️ Errore popolamento hs_object_source:', error)
+      }
+
+      // Popola dettaglio_fonte per lead esistenti (calcolato da hs_object_source_detail_1)
+      try {
+        const result = await c.env.DB.prepare(`
+          UPDATE leads 
+          SET dettaglio_fonte = hs_object_source_detail_1
+          WHERE hs_object_source_detail_1 IS NOT NULL
+            AND (dettaglio_fonte IS NULL OR dettaglio_fonte = '')
+        `).run()
+        console.log(`✅ Popolato dettaglio_fonte da hs_object_source_detail_1 per ${result.meta?.changes || 0} lead esistenti`)
+        migrations.push(`Popolato dettaglio_fonte da hs_object_source_detail_1 per ${result.meta?.changes || 0} lead esistenti`)
+      } catch (error) {
+        console.log('⚠️ Errore popolamento dettaglio_fonte:', error)
       }
 
       console.log('✅ [MIGRATION] Campi HubSpot source aggiunti con successo')

@@ -153,8 +153,8 @@
                     <select id="filterFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutte le Fonti</option>
                     </select>
-                    <select id="filterDettaglioFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
-                        <option value="">Tutti i Dettagli Fonte</option>
+                    <select id="filterSorgente" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">Tutte le Sorgenti</option>
                     </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
@@ -202,7 +202,7 @@
         let allLeads = [];
         let filterOptions = {
             fonti: [],
-            dettagliFonte: [],
+            sorgenti: [],
             servizi: [],
             piani: []
         };
@@ -395,29 +395,29 @@
                 fonteSelect.appendChild(option);
             });
 
-            // Popola filtro Dettaglio Fonte
-            const dettaglioFonteSelect = document.getElementById('filterDettaglioFonte');
-            dettaglioFonteSelect.innerHTML = '<option value="">Tutti i Dettagli Fonte</option>';
-            filterOptions.dettagliFonte.forEach(dettaglio => {
+            // Popola filtro Sorgente (hs_object_source)
+            const sorgenteSelect = document.getElementById('filterSorgente');
+            sorgenteSelect.innerHTML = '<option value="">Tutte le Sorgenti</option>';
+            filterOptions.sorgenti.forEach(sorgente => {
                 const option = document.createElement('option');
-                option.value = dettaglio;
-                option.textContent = dettaglio;
-                dettaglioFonteSelect.appendChild(option);
+                option.value = sorgente;
+                option.textContent = sorgente;
+                sorgenteSelect.appendChild(option);
             });
         }
 
         function applyFilters() {
             const fonteFilter = document.getElementById('filterFonte').value;
-            const dettaglioFonteFilter = document.getElementById('filterDettaglioFonte').value;
+            const sorgenteFilter = document.getElementById('filterSorgente').value;
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
 
             const filtered = allLeads.filter(lead => {
                 const matchFonte = !fonteFilter || lead.fonte === fonteFilter;
-                const matchDettaglioFonte = !dettaglioFonteFilter || lead.dettaglio_fonte === dettaglioFonteFilter;
+                const matchSorgente = !sorgenteFilter || lead.hs_object_source === sorgenteFilter;
                 const matchServizio = !servizioFilter || lead.servizio === servizioFilter;
                 const matchPiano = !pianoFilter || lead.pacchetto === pianoFilter;
-                return matchFonte && matchDettaglioFonte && matchServizio && matchPiano;
+                return matchFonte && matchSorgente && matchServizio && matchPiano;
             });
 
             renderLeadsTable(filtered);
