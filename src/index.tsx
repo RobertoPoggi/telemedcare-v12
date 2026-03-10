@@ -5598,50 +5598,77 @@ app.get('/api/leads/filters', async (c) => {
 
     console.log('🔍 Recupero valori distinti per filtri leads...')
 
-    // Recupera valori distinti di fonte
-    const fonti = await c.env.DB.prepare(`
-      SELECT DISTINCT fonte 
-      FROM leads 
-      WHERE fonte IS NOT NULL AND fonte != ''
-      ORDER BY fonte
-    `).all()
+    const filters: any = {
+      fonti: [],
+      dettagliFonte: [],
+      servizi: [],
+      piani: []
+    }
 
-    // Recupera valori distinti di dettaglio_fonte
-    const dettagliFonte = await c.env.DB.prepare(`
-      SELECT DISTINCT dettaglio_fonte 
-      FROM leads 
-      WHERE dettaglio_fonte IS NOT NULL AND dettaglio_fonte != ''
-      ORDER BY dettaglio_fonte
-    `).all()
+    // Recupera valori distinti di fonte
+    try {
+      const fonti = await c.env.DB.prepare(`
+        SELECT DISTINCT fonte 
+        FROM leads 
+        WHERE fonte IS NOT NULL AND fonte != ''
+        ORDER BY fonte
+      `).all()
+      filters.fonti = fonti.results?.map((r: any) => r.fonte) || []
+    } catch (error) {
+      console.error('⚠️ Errore recupero fonti:', error)
+    }
+
+    // Recupera valori distinti di dettaglio_fonte (con fallback se colonna non esiste)
+    try {
+      const dettagliFonte = await c.env.DB.prepare(`
+        SELECT DISTINCT dettaglio_fonte 
+        FROM leads 
+        WHERE dettaglio_fonte IS NOT NULL AND dettaglio_fonte != ''
+        ORDER BY dettaglio_fonte
+      `).all()
+      filters.dettagliFonte = dettagliFonte.results?.map((r: any) => r.dettaglio_fonte) || []
+    } catch (error) {
+      console.warn('⚠️ Colonna dettaglio_fonte non trovata (eseguire POST /api/db/migrate):', error)
+      filters.dettagliFonte = []
+    }
 
     // Recupera valori distinti di servizio
-    const servizi = await c.env.DB.prepare(`
-      SELECT DISTINCT servizio 
-      FROM leads 
-      WHERE servizio IS NOT NULL AND servizio != ''
-      ORDER BY servizio
-    `).all()
+    try {
+      const servizi = await c.env.DB.prepare(`
+        SELECT DISTINCT servizio 
+        FROM leads 
+        WHERE servizio IS NOT NULL AND servizio != ''
+        ORDER BY servizio
+      `).all()
+      filters.servizi = servizi.results?.map((r: any) => r.servizio) || []
+    } catch (error) {
+      console.error('⚠️ Errore recupero servizi:', error)
+    }
 
     // Recupera valori distinti di pacchetto (piano)
-    const piani = await c.env.DB.prepare(`
-      SELECT DISTINCT pacchetto 
-      FROM leads 
-      WHERE pacchetto IS NOT NULL AND pacchetto != ''
-      ORDER BY pacchetto
-    `).all()
+    try {
+      const piani = await c.env.DB.prepare(`
+        SELECT DISTINCT pacchetto 
+        FROM leads 
+        WHERE pacchetto IS NOT NULL AND pacchetto != ''
+        ORDER BY pacchetto
+      `).all()
+      filters.piani = piani.results?.map((r: any) => r.pacchetto) || []
+    } catch (error) {
+      console.error('⚠️ Errore recupero piani:', error)
+    }
 
     return c.json({
       success: true,
-      filters: {
-        fonti: fonti.results?.map((r: any) => r.fonte) || [],
-        dettagliFonte: dettagliFonte.results?.map((r: any) => r.dettaglio_fonte) || [],
-        servizi: servizi.results?.map((r: any) => r.servizio) || [],
-        piani: piani.results?.map((r: any) => r.pacchetto) || []
-      }
+      filters
     })
   } catch (error) {
     console.error('❌ Errore recupero filtri leads:', error)
-    return c.json({ success: false, error: 'Errore recupero filtri' }, 500)
+    return c.json({ 
+      success: false, 
+      error: 'Errore recupero filtri',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
   }
 })
 
