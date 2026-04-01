@@ -13822,7 +13822,7 @@ app.post('/api/leads', async (c) => {
       data.gdprConsent ? 1 : 0,
       data.intestatarioContratto || 'richiedente',
       data.note || '',
-      data.fonte || data.canale || 'MANUAL_ENTRY',
+      (data.fonte && data.fonte.trim()) || (data.canale && data.canale.trim()) || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
       timestamp,
@@ -14926,6 +14926,39 @@ app.get('/api/debug/leads-fonte', async (c) => {
     return c.json({ 
       success: false, 
       error: 'Errore report',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+// GET /api/debug/fix-empty-fonte - Fix lead con fonte vuota
+app.get('/api/debug/fix-empty-fonte', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    console.log('🔧 Fixing lead con fonte vuota...')
+
+    // Fix: imposta fonte = 'MANUAL_ENTRY' per tutti i lead con fonte vuota
+    const result = await c.env.DB.prepare(`
+      UPDATE leads 
+      SET fonte = 'MANUAL_ENTRY'
+      WHERE fonte IS NULL OR TRIM(fonte) = ''
+    `).run()
+
+    console.log(`✅ Fix completato: ${result.meta.changes} lead aggiornati`)
+
+    return c.json({
+      success: true,
+      message: `${result.meta.changes} lead aggiornati con fonte='MANUAL_ENTRY'`,
+      changes: result.meta.changes
+    })
+  } catch (error) {
+    console.error('❌ Errore fix:', error)
+    return c.json({ 
+      success: false, 
+      error: 'Errore fix',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
