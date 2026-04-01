@@ -14879,6 +14879,14 @@ app.get('/api/debug/leads-fonte', async (c) => {
       WHERE dettaglio_fonte IS NOT NULL
     `).first()
 
+    // 🔍 FIND: Lead con fonte vuota o NULL
+    const emptyFonte = await c.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte, created_at, timestamp
+      FROM leads
+      WHERE fonte IS NULL OR fonte = ''
+      LIMIT 5
+    `).all()
+
     // Count per hs_object_source (campo HubSpot)
     const hsObjectSourceStats = await c.env.DB.prepare(`
       SELECT 
@@ -14909,7 +14917,8 @@ app.get('/api/debug/leads-fonte', async (c) => {
         hs_object_source_detail_1_distribution: hsObjectSourceDetail1Stats.results || [],
         form_ecura_all: eCuraTotal?.count || 0,
         form_ecura_from_29jan: eCuraFrom29Jan?.count || 0,
-        with_dettaglio_fonte: withDettaglio?.count || 0
+        with_dettaglio_fonte: withDettaglio?.count || 0,
+        empty_fonte_leads: emptyFonte.results || []
       }
     })
   } catch (error) {
