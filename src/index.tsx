@@ -13781,11 +13781,10 @@ app.post('/api/leads', async (c) => {
     const leadId = `LEAD-MANUAL-${Date.now()}`
     const timestamp = new Date().toISOString()
     
-    // Inserisci nuovo lead (con tutti i campi completi)
+    // Inserisci nuovo lead (con tutti i campi completi + HubSpot)
     await c.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, 
-        email, telefono,
         email, telefono,
         nomeAssistito, cognomeAssistito, 
         luogoNascitaAssistito, dataNascitaAssistito,
@@ -13795,19 +13794,15 @@ app.post('/api/leads', async (c) => {
         vuoleBrochure, vuoleContratto, vuoleManuale,
         gdprConsent,
         intestazioneContratto,
-        note, fonte, status, timestamp, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        note, fonte, status, timestamp, updated_at,
+        hs_object_source, hs_object_source_detail_1, dettaglio_fonte
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
       data.cognomeRichiedente,
       data.email,
       data.telefono || '',
-      // ✅ FIX: Copia richiedente → intestatario (di default)
-      data.nomeIntestatario || data.nomeRichiedente,
-      data.cognomeIntestatario || data.cognomeRichiedente,
-      data.emailIntestatario || data.email,
-      data.telefonoIntestatario || data.telefono || '',
       data.nomeAssistito || data.nomeRichiedente,
       data.cognomeAssistito || data.cognomeRichiedente,
       data.luogoNascitaAssistito ?? null,
@@ -13816,7 +13811,7 @@ app.post('/api/leads', async (c) => {
       data.capAssistito ?? null,
       data.cittaAssistito ?? null,
       data.provinciaAssistito ?? null,
-      data.cfAssistito ?? data.cfAssistito ?? null,  // Fix: usa cfAssistito
+      data.cfAssistito ?? null,
       data.condizioniSalute || null,
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
@@ -13824,13 +13819,17 @@ app.post('/api/leads', async (c) => {
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',
-      data.gdprConsent ? 1 : 0,  // Fix: semplificato
+      data.gdprConsent ? 1 : 0,
       data.intestatarioContratto || 'richiedente',
       data.note || '',
       data.fonte || data.canale || 'MANUAL_ENTRY',
       'NEW',
       timestamp,
-      timestamp
+      timestamp,
+      // ✅ Campi HubSpot (NULL per lead manuali)
+      null,  // hs_object_source
+      null,  // hs_object_source_detail_1
+      null   // dettaglio_fonte
     ).run()
     
     console.log('✅ Lead creato:', leadId)
