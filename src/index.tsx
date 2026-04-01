@@ -14881,9 +14881,9 @@ app.get('/api/debug/leads-fonte', async (c) => {
 
     // 🔍 FIND: Lead con fonte vuota o NULL
     const emptyFonte = await c.env.DB.prepare(`
-      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte, created_at, timestamp
+      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte, created_at, timestamp, COALESCE(fonte, 'NULL') as fonte_display
       FROM leads
-      WHERE fonte IS NULL OR fonte = ''
+      WHERE fonte IS NULL OR TRIM(fonte) = ''
       LIMIT 5
     `).all()
 

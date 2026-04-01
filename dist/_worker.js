@@ -13623,9 +13623,9 @@ startxref
       FROM leads
       WHERE dettaglio_fonte IS NOT NULL
     `).first(),l=await t.env.DB.prepare(`
-      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte, created_at, timestamp
+      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte, created_at, timestamp, COALESCE(fonte, 'NULL') as fonte_display
       FROM leads
-      WHERE fonte IS NULL OR fonte = ''
+      WHERE fonte IS NULL OR TRIM(fonte) = ''
       LIMIT 5
     `).all(),d=await t.env.DB.prepare(`
       SELECT 
