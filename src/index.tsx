@@ -13992,6 +13992,129 @@ app.post('/api/leads', async (c) => {
         addDebugLog(`⚠️  [LEAD] Contratto NON richiesto - Skip`)
       }
       
+      // ============================================
+      // 4. EMAIL COMPLETAMENTO DATI (SEMPRE per lead manuali)
+      // ============================================
+      try {
+        console.log('📧 [LEAD MANUALE] Invio email completamento dati + brochure...')
+        
+        // Carica EmailService
+        const EmailService = (await import('./modules/email-service')).default
+        
+        // Funzione render template (inline)
+        const renderTemplate = (template: string, data: any) => {
+          return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+            return data[key] !== undefined ? String(data[key]) : match
+          })
+        }
+        
+        // Genera URL form completamento
+        const baseUrl = c.req.url.split('/api/')[0]
+        const completionUrl = `${baseUrl}/form/${leadId}`
+        
+        const template = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Completa la tua richiesta eCura</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="margin: 0; font-size: 28px;">📝 Completa la tua richiesta</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">Siamo quasi pronti per attivare il tuo servizio eCura!</p>
+  </div>
+  
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+    <p>Gentile <strong>{{nomeRichiedente}} {{cognomeRichiedente}}</strong>,</p>
+    
+    <p>Grazie per aver scelto <strong>eCura</strong> di Medica GB! 🎉</p>
+    
+    <p>Per completare la tua richiesta e attivare il servizio, abbiamo bisogno di alcuni <strong>dati aggiuntivi</strong>.</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="{{completionUrl}}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px;">
+        📝 Completa i Dati
+      </a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666;">Oppure copia e incolla questo link nel tuo browser:<br>
+    <a href="{{completionUrl}}" style="color: #667eea; word-break: break-all;">{{completionUrl}}</a></p>
+    
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+    
+    <p><strong>📚 In allegato trovi la brochure informativa</strong> con tutti i dettagli sul servizio eCura.</p>
+    
+    <p style="margin-top: 30px;">Per qualsiasi domanda, siamo a tua disposizione:</p>
+    <ul style="list-style: none; padding: 0;">
+      <li>📧 Email: <a href="mailto:info@telemedcare.it" style="color: #667eea;">info@telemedcare.it</a></li>
+      <li>📞 Telefono: <strong>+39 02 1234567</strong></li>
+    </ul>
+    
+    <p style="margin-top: 30px; color: #666; font-size: 14px;">A presto,<br>
+    <strong>Il Team eCura di Medica GB</strong></p>
+  </div>
+  
+  <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+    <p>Medica GB S.r.l. - Corso Garibaldi 34, Milano<br>
+    Questo è un messaggio automatico, non rispondere a questa email.</p>
+  </div>
+</body>
+</html>
+        `
+        
+        const templateData = {
+          nomeRichiedente: leadData.nomeRichiedente,
+          cognomeRichiedente: leadData.cognomeRichiedente,
+          completionUrl: completionUrl
+        }
+        
+        const emailHtml = renderTemplate(template, templateData)
+        
+        // Carica PDF brochure
+        const { BrochureManager } = await import('./modules/brochure-manager')
+        const brochureManager = new BrochureManager()
+        let brochureBase64: string | null = null
+        let brochureFilename = 'Brochure_eCura.pdf'
+        
+        try {
+          const servizioType = leadData.servizio?.toUpperCase().includes('PREMIUM') ? 'PREMIUM' : 
+                               leadData.servizio?.toUpperCase().includes('FAMILY') ? 'FAMILY' : 'PRO'
+          const result = await brochureManager.getBrochureForService(servizioType, c.env)
+          if (result.success && result.pdfBase64) {
+            brochureBase64 = result.pdfBase64
+            brochureFilename = result.filename || brochureFilename
+            console.log(`✅ [LEAD MANUALE] Brochure caricata: ${brochureFilename}`)
+          }
+        } catch (brochureError) {
+          console.error('⚠️ [LEAD MANUALE] Errore caricamento brochure:', brochureError)
+        }
+        
+        // Invia email con allegato
+        const emailService = new EmailService(c.env)
+        await emailService.sendEmail({
+          to: leadData.email,
+          from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+          subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
+          html: emailHtml,
+          text: `Gentile ${leadData.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Clicca qui: ${completionUrl}`,
+          attachments: brochureBase64 ? [{
+            filename: brochureFilename,
+            content: brochureBase64,
+            type: 'application/pdf',
+            disposition: 'attachment'
+          }] : undefined
+        })
+        
+        console.log(`✅ [LEAD MANUALE] Email completamento + brochure inviata a ${leadData.email}`)
+        emailResults.brochure.sent = true
+        
+      } catch (emailCompletionError) {
+        console.error('❌ [LEAD MANUALE] Errore email completamento:', emailCompletionError)
+        emailResults.brochure.error = emailCompletionError instanceof Error ? emailCompletionError.message : String(emailCompletionError)
+      }
+      
     } catch (error) {
       console.error('❌ Errore generale automazione email:', error)
     }
