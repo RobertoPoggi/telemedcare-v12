@@ -2213,6 +2213,80 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
+
+        // ========== NUOVO ASSISTITO ==========
+        async function nuovoAssistito() {
+            // Reset form
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            setVal('newAssistitoNome', '');
+            setVal('newAssistitoCognome', '');
+            setVal('newAssistitoEmail', '');
+            setVal('newAssistitoTelefono', '');
+            setVal('newAssistitoIMEI', '');
+            setVal('newAssistitoServizio', 'eCura PRO');
+            setVal('newAssistitoPiano', 'AVANZATO');
+            setVal('newAssistitoNomeCaregiver', '');
+            setVal('newAssistitoCognomeCaregiver', '');
+            setVal('newAssistitoParentela', '');
+            setVal('newAssistitoLeadId', '');
+            // Apri modal
+            const modal = document.getElementById('newAssistitoModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        window.nuovoAssistito = nuovoAssistito;
+
+        async function saveNewAssistito() {
+            const nome = document.getElementById('newAssistitoNome')?.value?.trim();
+            const cognome = document.getElementById('newAssistitoCognome')?.value?.trim();
+            const email = document.getElementById('newAssistitoEmail')?.value?.trim() || '';
+            const telefono = document.getElementById('newAssistitoTelefono')?.value?.trim() || '';
+            const imei = document.getElementById('newAssistitoIMEI')?.value?.trim() || '';
+            const servizio = document.getElementById('newAssistitoServizio')?.value || 'eCura PRO';
+            const piano = document.getElementById('newAssistitoPiano')?.value || 'AVANZATO';
+            const nomeCaregiver = document.getElementById('newAssistitoNomeCaregiver')?.value?.trim() || '';
+            const cognomeCaregiver = document.getElementById('newAssistitoCognomeCaregiver')?.value?.trim() || '';
+            const parentela = document.getElementById('newAssistitoParentela')?.value?.trim() || '';
+            const leadId = document.getElementById('newAssistitoLeadId')?.value?.trim() || '';
+
+            if (!nome || !cognome) {
+                alert('⚠️ Nome e Cognome sono obbligatori!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/assistiti', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome, cognome,
+                        nome_assistito: nome,
+                        cognome_assistito: cognome,
+                        email, telefono,
+                        imei: imei || undefined,
+                        servizio, piano,
+                        nome_caregiver: nomeCaregiver,
+                        cognome_caregiver: cognomeCaregiver,
+                        parentela_caregiver: parentela,
+                        lead_id: leadId || undefined,
+                        status: 'ATTIVO'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Assistito ' + nome + ' ' + cognome + ' creato con successo!');
+                    closeModal('newAssistitoModal');
+                    loadDashboardData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.saveNewAssistito = saveNewAssistito;
     </script>
 
     <!-- MODAL: EDIT ASSISTITO -->
