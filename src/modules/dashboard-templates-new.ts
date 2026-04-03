@@ -2215,6 +2215,27 @@ export const dashboard = `<!DOCTYPE html>
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
 
         // ========== NUOVO ASSISTITO ==========
+        const NEW_PREZZI_ECURA = {
+            'eCura FAMILY': { BASE: 390, AVANZATO: 690, rinnovo_BASE: 200, rinnovo_AVANZATO: 500 },
+            'eCura PRO':    { BASE: 480, AVANZATO: 840, rinnovo_BASE: 240, rinnovo_AVANZATO: 600 },
+            'eCura PREMIUM':{ BASE: 590, AVANZATO: 990, rinnovo_BASE: 300, rinnovo_AVANZATO: 750 }
+        };
+        function updateNewPrezzi() {
+            const servizio = document.getElementById('newAssistitoServizio')?.value || 'eCura PRO';
+            const piano    = document.getElementById('newAssistitoPiano')?.value    || 'AVANZATO';
+            const prezzi   = NEW_PREZZI_ECURA[servizio] || NEW_PREZZI_ECURA['eCura PRO'];
+            const prezzo   = prezzi[piano];
+            const rinnovo  = prezzi['rinnovo_' + piano];
+            const sel = document.getElementById('newAssistitoPiano');
+            if (sel) {
+                sel.options[0].text = 'BASE - \u20ac' + prezzi.BASE + '/anno';
+                sel.options[1].text = 'AVANZATO - \u20ac' + prezzi.AVANZATO + '/anno';
+            }
+            const box = document.getElementById('newAssistitoPrezzoLabel');
+            if (box) box.textContent = '\ud83d\udcb6 ' + servizio + ' \u2013 ' + piano + ': \u20ac' + prezzo + '/anno (rinnovo \u20ac' + rinnovo + ')';
+        }
+        window.updateNewPrezzi = updateNewPrezzi;
+
         async function nuovoAssistito() {
             // Reset form
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
@@ -2225,6 +2246,7 @@ export const dashboard = `<!DOCTYPE html>
             setVal('newAssistitoIMEI', '');
             setVal('newAssistitoServizio', 'eCura PRO');
             setVal('newAssistitoPiano', 'AVANZATO');
+            setTimeout(() => updateNewPrezzi(), 50);
             setVal('newAssistitoNomeCaregiver', '');
             setVal('newAssistitoCognomeCaregiver', '');
             setVal('newAssistitoParentela', '');
@@ -2399,7 +2421,7 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
-                        <select id="newAssistitoServizio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <select id="newAssistitoServizio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" onchange="updateNewPrezzi()">
                             <option value="eCura FAMILY">eCura FAMILY (SiDLY CARE PRO)</option>
                             <option value="eCura PRO" selected>eCura PRO (SiDLY CARE PRO)</option>
                             <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
@@ -2407,10 +2429,15 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
-                        <select id="newAssistitoPiano" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <select id="newAssistitoPiano" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" onchange="updateNewPrezzi()">
                             <option value="BASE">BASE - €480/anno</option>
                             <option value="AVANZATO" selected>AVANZATO - €840/anno</option>
                         </select>
+                    </div>
+                    <div class="col-span-2">
+                        <div id="newAssistitoPrezzoBox" class="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                            <span class="font-semibold text-green-800 text-sm" id="newAssistitoPrezzoLabel">💶 eCura PRO – AVANZATO: €840/anno (rinnovo €600)</span>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Collega Lead (opzionale)</label>
