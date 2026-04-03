@@ -898,7 +898,84 @@
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
-        
+
+        async function nuovoAssistito() {
+            const modal = document.getElementById('newAssistitoModal');
+            if (!modal) {
+                console.error('Modal newAssistitoModal non trovato');
+                alert('❌ Errore: Modal non trovato. Ricaricare la pagina.');
+                return;
+            }
+            // Reset form
+            document.getElementById('newNomeAssistito').value = '';
+            document.getElementById('newCognomeAssistito').value = '';
+            document.getElementById('newEmailAssistito').value = '';
+            document.getElementById('newTelefonoAssistito').value = '';
+            document.getElementById('newIMEI').value = '';
+            document.getElementById('newServizioAssistito').value = 'eCura PRO';
+            document.getElementById('newPianoAssistito').value = 'AVANZATO';
+            document.getElementById('newNomeCaregiver').value = '';
+            document.getElementById('newCognomeCaregiver').value = '';
+            document.getElementById('newParentela').value = '';
+            document.getElementById('newLeadId').value = '';
+            // Mostra modal
+            modal.classList.remove('hidden');
+        }
+        window.nuovoAssistito = nuovoAssistito;  // Esponi globalmente
+
+        async function saveNewAssistito() {
+            const nomeAssistito = document.getElementById('newNomeAssistito').value;
+            const cognomeAssistito = document.getElementById('newCognomeAssistito').value;
+            const email = document.getElementById('newEmailAssistito').value;
+            const telefono = document.getElementById('newTelefonoAssistito').value;
+            const imei = document.getElementById('newIMEI').value;
+            const servizio = document.getElementById('newServizioAssistito').value;
+            const nomeCaregiver = document.getElementById('newNomeCaregiver').value;
+            const cognomeCaregiver = document.getElementById('newCognomeCaregiver').value;
+            const parentela = document.getElementById('newParentela').value;
+            const piano = document.getElementById('newPianoAssistito').value;
+            const leadId = document.getElementById('newLeadId').value;
+
+            if (!nomeAssistito || !cognomeAssistito) {
+                alert('⚠️ Nome e Cognome sono obbligatori!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/assistiti', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome: nomeAssistito,
+                        cognome: cognomeAssistito,
+                        nome_assistito: nomeAssistito,
+                        cognome_assistito: cognomeAssistito,
+                        email,
+                        telefono,
+                        imei: imei || undefined,
+                        servizio,
+                        piano,
+                        nome_caregiver: nomeCaregiver,
+                        cognome_caregiver: cognomeCaregiver,
+                        parentela_caregiver: parentela,
+                        lead_id: leadId || undefined,
+                        status: 'ATTIVO'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Assistito ' + nomeAssistito + ' ' + cognomeAssistito + ' creato con successo!');
+                    closeModal('newAssistitoModal');
+                    loadDashboardData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.saveNewAssistito = saveNewAssistito;  // Esponi globalmente
+
         async function editAssistito(id) {
             try {
                 const response = await fetch('/api/assistiti?id=' + id);
@@ -1506,6 +1583,79 @@
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
     </script>
+
+    <!-- MODAL: NUOVO ASSISTITO -->
+    <div id="newAssistitoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-xl font-bold">👤 Nuovo Assistito</h3>
+                <button onclick="closeModal('newAssistitoModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👤 Dati Assistito</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                        <input type="text" id="newNomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome *</label>
+                        <input type="text" id="newCognomeAssistito" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="newEmailAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                        <input type="tel" id="newTelefonoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IMEI Dispositivo</label>
+                        <input type="text" id="newIMEI" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="es. 868298060656916">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
+                        <select id="newServizioAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="eCura FAMILY">eCura FAMILY (SiDLY CARE PRO)</option>
+                            <option value="eCura PRO" selected>eCura PRO (SiDLY CARE PRO)</option>
+                            <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
+                        <select id="newPianoAssistito" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="BASE">BASE - €480/anno</option>
+                            <option value="AVANZATO" selected>AVANZATO - €840/anno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Collega Lead (opzionale)</label>
+                        <input type="text" id="newLeadId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="es. LEAD-IRBEMA-00001">
+                    </div>
+                </div>
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👨‍👩‍👦 Dati Caregiver</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Caregiver</label>
+                        <input type="text" id="newNomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome Caregiver</label>
+                        <input type="text" id="newCognomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Parentela</label>
+                        <input type="text" id="newParentela" placeholder="es. Figlio, Figlia, Coniuge..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('newAssistitoModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">Annulla</button>
+                    <button onclick="saveNewAssistito()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">✅ Crea Assistito</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL: EDIT ASSISTITO -->
     <div id="editAssistitoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
