@@ -2293,6 +2293,79 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- MODAL: NUOVO ASSISTITO -->
+    <div id="newAssistitoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="gradient-bg text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                <h3 class="text-xl font-bold">👤 Nuovo Assistito</h3>
+                <button onclick="closeModal('newAssistitoModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👤 Dati Assistito</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                        <input type="text" id="newAssistitoNome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome *</label>
+                        <input type="text" id="newAssistitoCognome" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="newAssistitoEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefono</label>
+                        <input type="tel" id="newAssistitoTelefono" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IMEI Dispositivo</label>
+                        <input type="text" id="newAssistitoIMEI" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="es. 868298060656916">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Servizio</label>
+                        <select id="newAssistitoServizio" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="eCura FAMILY">eCura FAMILY (SiDLY CARE PRO)</option>
+                            <option value="eCura PRO" selected>eCura PRO (SiDLY CARE PRO)</option>
+                            <option value="eCura PREMIUM">eCura PREMIUM (SiDLY VITAL CARE)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Piano</label>
+                        <select id="newAssistitoPiano" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="BASE">BASE - €480/anno</option>
+                            <option value="AVANZATO" selected>AVANZATO - €840/anno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Collega Lead (opzionale)</label>
+                        <input type="text" id="newAssistitoLeadId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="es. LEAD-IRBEMA-00001">
+                    </div>
+                </div>
+                <h4 class="font-bold text-gray-700 mb-3 border-b pb-2">👨‍👩‍👦 Dati Caregiver</h4>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Caregiver</label>
+                        <input type="text" id="newAssistitoNomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome Caregiver</label>
+                        <input type="text" id="newAssistitoCognomeCaregiver" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Parentela</label>
+                        <input type="text" id="newAssistitoParentela" placeholder="es. Figlio, Figlia, Coniuge..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('newAssistitoModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">Annulla</button>
+                    <button onclick="saveNewAssistito()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">✅ Crea Assistito</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     ${autoImportScript}
 </body>
 </html>
@@ -4274,6 +4347,79 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
         }
         window.deleteAssistito = deleteAssistito;  // Esponi globalmente
+        
+        async function nuovoAssistito() {
+            // Reset form
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            setVal('newAssistitoNome', '');
+            setVal('newAssistitoCognome', '');
+            setVal('newAssistitoEmail', '');
+            setVal('newAssistitoTelefono', '');
+            setVal('newAssistitoIMEI', '');
+            setVal('newAssistitoServizio', 'eCura PRO');
+            setVal('newAssistitoPiano', 'AVANZATO');
+            setVal('newAssistitoNomeCaregiver', '');
+            setVal('newAssistitoCognomeCaregiver', '');
+            setVal('newAssistitoParentela', '');
+            setVal('newAssistitoLeadId', '');
+            // Apri modal
+            const modal = document.getElementById('newAssistitoModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        window.nuovoAssistito = nuovoAssistito;
+        
+        async function saveNewAssistito() {
+            const nome = document.getElementById('newAssistitoNome')?.value?.trim();
+            const cognome = document.getElementById('newAssistitoCognome')?.value?.trim();
+            const email = document.getElementById('newAssistitoEmail')?.value?.trim() || '';
+            const telefono = document.getElementById('newAssistitoTelefono')?.value?.trim() || '';
+            const imei = document.getElementById('newAssistitoIMEI')?.value?.trim() || '';
+            const servizio = document.getElementById('newAssistitoServizio')?.value || 'eCura PRO';
+            const piano = document.getElementById('newAssistitoPiano')?.value || 'AVANZATO';
+            const nomeCaregiver = document.getElementById('newAssistitoNomeCaregiver')?.value?.trim() || '';
+            const cognomeCaregiver = document.getElementById('newAssistitoCognomeCaregiver')?.value?.trim() || '';
+            const parentela = document.getElementById('newAssistitoParentela')?.value?.trim() || '';
+            const leadId = document.getElementById('newAssistitoLeadId')?.value?.trim() || '';
+            
+            if (!nome || !cognome) {
+                alert('⚠️ Nome e Cognome sono obbligatori!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/assistiti', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome, cognome,
+                        nome_assistito: nome,
+                        cognome_assistito: cognome,
+                        email, telefono,
+                        imei: imei || undefined,
+                        servizio, piano,
+                        nome_caregiver: nomeCaregiver,
+                        cognome_caregiver: cognomeCaregiver,
+                        parentela_caregiver: parentela,
+                        lead_id: leadId || undefined,
+                        status: 'ATTIVO'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Assistito ' + nome + ' ' + cognome + ' creato con successo!');
+                    closeModal('newAssistitoModal');
+                    loadDashboardData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('❌ Errore: ' + error.message);
+            }
+        }
+        window.saveNewAssistito = saveNewAssistito;
     </script>
 
     <!-- MODAL: NEW LEAD - Form Stile eCura.it -->
