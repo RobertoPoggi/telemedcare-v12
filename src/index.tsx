@@ -13994,120 +13994,108 @@ app.post('/api/leads', async (c) => {
       
       // ============================================
       // 4. EMAIL COMPLETAMENTO DATI (SEMPRE per lead manuali)
+      // Usa STESSA logica di HubSpot auto-import
       // ============================================
       try {
         console.log('📧 [LEAD MANUALE] Invio email completamento dati + brochure...')
         
-        // Carica EmailService
+        // Import moduli esistenti (stessa logica HubSpot)
+        const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
+        const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+        const { getBaseUrl } = await import('./modules/url-helper')
         const EmailService = (await import('./modules/email-service')).default
         
-        // Funzione render template (inline)
-        const renderTemplate = (template: string, data: any) => {
-          return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-            return data[key] !== undefined ? String(data[key]) : match
-          })
+        // Ottieni configurazione
+        const config = await getSystemConfig(c.env.DB)
+        
+        // Crea token completamento
+        const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
+        console.log(`✅ [LEAD MANUALE] Token creato: ${token.token}`)
+        
+        // Genera URL completamento
+        const baseUrl = getBaseUrl(c.env)
+        const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+        
+        // Ottieni lead appena creato dal DB
+        const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+          .bind(leadId).first()
+        
+        if (!insertedLead) {
+          throw new Error('Lead non trovato in DB dopo inserimento')
         }
         
-        // Genera URL form completamento
-        const baseUrl = c.req.url.split('/api/')[0]
-        const completionUrl = `${baseUrl}/form/${leadId}`
+        // Prepara dati campi mancanti/disponibili
+        const { missing, available } = getMissingFields(insertedLead)
         
-        const template = `
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Completa la tua richiesta eCura</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="margin: 0; font-size: 28px;">📝 Completa la tua richiesta</h1>
-    <p style="margin: 10px 0 0 0; font-size: 16px;">Siamo quasi pronti per attivare il tuo servizio eCura!</p>
-  </div>
-  
-  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-    <p>Gentile <strong>{{nomeRichiedente}} {{cognomeRichiedente}}</strong>,</p>
-    
-    <p>Grazie per aver scelto <strong>eCura</strong> di Medica GB! 🎉</p>
-    
-    <p>Per completare la tua richiesta e attivare il servizio, abbiamo bisogno di alcuni <strong>dati aggiuntivi</strong>.</p>
-    
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="{{completionUrl}}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px;">
-        📝 Completa i Dati
-      </a>
-    </div>
-    
-    <p style="font-size: 14px; color: #666;">Oppure copia e incolla questo link nel tuo browser:<br>
-    <a href="{{completionUrl}}" style="color: #667eea; word-break: break-all;">{{completionUrl}}</a></p>
-    
-    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-    
-    <p><strong>📚 In allegato trovi la brochure informativa</strong> con tutti i dettagli sul servizio eCura.</p>
-    
-    <p style="margin-top: 30px;">Per qualsiasi domanda, siamo a tua disposizione:</p>
-    <ul style="list-style: none; padding: 0;">
-      <li>📧 Email: <a href="mailto:info@telemedcare.it" style="color: #667eea;">info@telemedcare.it</a></li>
-      <li>📞 Telefono: <strong>+39 02 1234567</strong></li>
-    </ul>
-    
-    <p style="margin-top: 30px; color: #666; font-size: 14px;">A presto,<br>
-    <strong>Il Team eCura di Medica GB</strong></p>
-  </div>
-  
-  <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-    <p>Medica GB S.r.l. - Corso Garibaldi 34, Milano<br>
-    Questo è un messaggio automatico, non rispondere a questa email.</p>
-  </div>
-</body>
-</html>
-        `
+        // Carica template dal database (STESSO del pulsante manuale e HubSpot!)
+        const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+        
+        // Prepara lista campi disponibili
+        const availableFieldsList = Object.entries(available).map(([label, value]) => ({
+          FIELD_LABEL: label,
+          FIELD_VALUE: value
+        }))
+        
+        // Prepara lista campi mancanti con metadati
+        const fieldMetadata: Record<string, any> = {
+          'telefono': { label: 'Telefono', type: 'tel', placeholder: '+39 3XX XXX XXXX', required: true },
+          'nomeAssistito': { label: 'Nome Assistito', type: 'text', placeholder: 'Nome', required: true },
+          'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', placeholder: 'Cognome', required: true },
+          'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', placeholder: '', required: true },
+          'cittaAssistito': { label: 'Città Assistito', type: 'text', placeholder: 'Es. Roma', required: true },
+          'cfAssistito': { label: 'Codice Fiscale Assistito', type: 'text', placeholder: 'Es. RSSMRA85M01H501X', required: false },
+          'indirizzoAssistito': { label: 'Indirizzo Assistito', type: 'text', placeholder: 'Via, numero civico', required: false }
+        }
+        
+        const missingFieldsList = missing.map((fieldName: string) => {
+          const meta = fieldMetadata[fieldName] || { 
+            label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1), 
+            type: 'text', 
+            placeholder: '',
+            required: false 
+          }
+          
+          return {
+            FIELD_ID: fieldName,
+            FIELD_NAME: fieldName,
+            FIELD_LABEL: meta.label,
+            INPUT_TYPE: meta.type,
+            PLACEHOLDER: meta.placeholder || '',
+            IS_REQUIRED: meta.required,
+            IS_INPUT: meta.type !== 'select' && meta.type !== 'textarea',
+            IS_SELECT: meta.type === 'select',
+            IS_TEXTAREA: meta.type === 'textarea',
+            OPTIONS: meta.options || []
+          }
+        })
         
         const templateData = {
-          nomeRichiedente: leadData.nomeRichiedente,
-          cognomeRichiedente: leadData.cognomeRichiedente,
-          completionUrl: completionUrl
+          NOME_CLIENTE: insertedLead.nomeRichiedente,
+          COGNOME_CLIENTE: insertedLead.cognomeRichiedente,
+          SERVIZIO: insertedLead.servizio || insertedLead.tipoServizio || 'eCura PRO',
+          PIANO: insertedLead.piano || insertedLead.pacchetto || 'BASE',
+          LEAD_ID: leadId,
+          API_ENDPOINT: baseUrl,
+          COMPLETION_URL: completionUrl,
+          BROCHURE_URL: `${baseUrl}/assets/brochures/brochure-ecura.pdf`,
+          EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
+          AVAILABLE_FIELDS: availableFieldsList,
+          MISSING_FIELDS: missingFieldsList
         }
         
         const emailHtml = renderTemplate(template, templateData)
         
-        // Carica PDF brochure
-        const { BrochureManager } = await import('./modules/brochure-manager')
-        const brochureManager = new BrochureManager()
-        let brochureBase64: string | null = null
-        let brochureFilename = 'Brochure_eCura.pdf'
-        
-        try {
-          const servizioType = leadData.servizio?.toUpperCase().includes('PREMIUM') ? 'PREMIUM' : 
-                               leadData.servizio?.toUpperCase().includes('FAMILY') ? 'FAMILY' : 'PRO'
-          const result = await brochureManager.getBrochureForService(servizioType, c.env)
-          if (result.success && result.pdfBase64) {
-            brochureBase64 = result.pdfBase64
-            brochureFilename = result.filename || brochureFilename
-            console.log(`✅ [LEAD MANUALE] Brochure caricata: ${brochureFilename}`)
-          }
-        } catch (brochureError) {
-          console.error('⚠️ [LEAD MANUALE] Errore caricamento brochure:', brochureError)
-        }
-        
-        // Invia email con allegato
+        // Invia email (IDENTICO a HubSpot)
         const emailService = new EmailService(c.env)
         await emailService.sendEmail({
-          to: leadData.email,
+          to: insertedLead.email || insertedLead.email,
           from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml,
-          text: `Gentile ${leadData.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Clicca qui: ${completionUrl}`,
-          attachments: brochureBase64 ? [{
-            filename: brochureFilename,
-            content: brochureBase64,
-            type: 'application/pdf',
-            disposition: 'attachment'
-          }] : undefined
+          text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
         })
         
-        console.log(`✅ [LEAD MANUALE] Email completamento + brochure inviata a ${leadData.email}`)
+        console.log(`✅ [LEAD MANUALE] Email completamento inviata a ${insertedLead.email}`)
         emailResults.brochure.sent = true
         
       } catch (emailCompletionError) {

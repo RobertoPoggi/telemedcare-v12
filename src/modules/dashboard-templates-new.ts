@@ -4089,14 +4089,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             // Validation campi obbligatori SOLO in modalità nuovo lead
             if (!isEditMode) {
                 if (!formData.nomeRichiedente || !formData.cognomeRichiedente || !formData.email || !formData.telefono) {
-                    alert("⚠️ Compila tutti i campi obbligatori del Richiedente");
+                    alert("⚠️ Compila tutti i campi obbligatori contrassegnati con * (Nome, Cognome, Email, Telefono)");
                     return;
                 }
                 
-                if (!formData.nomeAssistito || !formData.cognomeAssistito) {
-                    alert("⚠️ Compila tutti i campi obbligatori dell'Assistito");
-                    return;
-                }
+                // ✅ RIMOSSO: I campi assistito NON sono obbligatori
+                // Il lead può essere creato senza dati assistito (verranno richiesti dopo via email)
                 
                 if (!formData.gdprConsent) {
                     alert("⚠️ Il consenso Privacy è obbligatorio");
