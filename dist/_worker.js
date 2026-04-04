@@ -14174,37 +14174,23 @@ startxref
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
     `).bind(r,l,a,i,e.nome_caregiver||"",e.cognome_caregiver||"",e.parentela_caregiver||"",e.email||"",e.telefono||"",d,e.servizio||"",e.piano||"",e.lead_id||null,s,s).run(),e.lead_id)try{await t.env.DB.prepare(`
           UPDATE leads SET status = 'CONTRACT_SIGNED', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `).bind(e.lead_id).run(),console.log(`✅ Lead ${e.lead_id} collegato all'assistito ${r}`)}catch(c){console.warn("⚠️ Lead update fallito (non critico):",c)}return console.log("✅ Assistito creato:",r,"Nome:",l),t.json({success:!0,message:"Assistito creato con successo",codice:r,assistito:{codice:r,nome:l,nome_assistito:a,cognome_assistito:i,email:e.email,telefono:e.telefono,imei:e.imei,servizio:e.servizio,piano:e.piano}})}catch(e){return console.error("❌ Errore creazione assistito:",e),t.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});A.put("/api/assistiti/:id",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.param("id"),a=await t.req.json();if(!await t.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return t.json({success:!1,error:"Assistito non trovato"},404);let r=!1;try{await t.env.DB.prepare(`
-        UPDATE assistiti 
-        SET nome = ?, 
-            nome_assistito = ?, 
-            cognome_assistito = ?,
-            nome_caregiver = ?,
-            cognome_caregiver = ?,
-            parentela_caregiver = ?,
-            email = ?, 
-            telefono = ?, 
-            imei = ?,
-            servizio = ?,
-            piano = ?,
-            lead_id = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",a.servizio||"eCura PRO",a.piano||"BASE",a.lead_id||null,e).run(),r=!0,console.log(`✅ Assistito aggiornato con servizio: ${a.servizio||"eCura PRO"}, piano: ${a.piano||"BASE"}`)}catch(s){if(s.message&&(s.message.includes("no column named piano")||s.message.includes("no column named servizio")))console.warn("⚠️ Colonne piano/servizio non trovate, provo UPDATE base"),await t.env.DB.prepare(`
-          UPDATE assistiti 
-          SET nome = ?, 
-              nome_assistito = ?, 
-              cognome_assistito = ?,
-              nome_caregiver = ?,
-              cognome_caregiver = ?,
-              parentela_caregiver = ?,
-              email = ?, 
-              telefono = ?, 
-              imei = ?,
-              lead_id = ?,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).bind(`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A",a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",a.imei||"",a.lead_id||null,e).run(),r=!0,console.log("✅ Assistito aggiornato (senza piano/servizio)");else throw s}return console.log("✅ Assistito aggiornato:",e),t.json({success:!0,message:"Assistito aggiornato con successo"})}catch(e){return console.error("❌ Errore aggiornamento assistito:",e),t.json({success:!1,error:"Errore aggiornamento assistito",details:e instanceof Error?e.message:String(e)},500)}});A.post("/api/setup-email-counter",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(console.log("📊 Setup email counter..."),await t.env.DB.prepare(`
+        `).bind(e.lead_id).run(),console.log(`✅ Lead ${e.lead_id} collegato all'assistito ${r}`)}catch(c){console.warn("⚠️ Lead update fallito (non critico):",c)}return console.log("✅ Assistito creato:",r,"Nome:",l),t.json({success:!0,message:"Assistito creato con successo",codice:r,assistito:{codice:r,nome:l,nome_assistito:a,cognome_assistito:i,email:e.email,telefono:e.telefono,imei:e.imei,servizio:e.servizio,piano:e.piano}})}catch(e){return console.error("❌ Errore creazione assistito:",e),t.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});A.put("/api/assistiti/:id",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.param("id"),a=await t.req.json();if(!await t.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return t.json({success:!1,error:"Assistito non trovato"},404);const r=a.imei&&a.imei.trim()!==""?a.imei.trim():null,s=`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A";return await t.env.DB.prepare(`
+      UPDATE assistiti 
+      SET nome = ?, 
+          nome_assistito = ?, 
+          cognome_assistito = ?,
+          nome_caregiver = ?,
+          cognome_caregiver = ?,
+          parentela_caregiver = ?,
+          email = ?, 
+          telefono = ?, 
+          imei = ?,
+          servizio = ?,
+          piano = ?,
+          lead_id = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(s,a.nome_assistito||"",a.cognome_assistito||"",a.nome_caregiver||"",a.cognome_caregiver||"",a.parentela_caregiver||"",a.email||"",a.telefono||"",r,a.servizio||"eCura PRO",a.piano||"BASE",a.lead_id||null,e).run(),t.json({success:!0,message:"Assistito aggiornato con successo"})}catch(e){return console.error("❌ Errore aggiornamento assistito:",e),t.json({success:!1,error:"Errore aggiornamento assistito",details:e instanceof Error?e.message:String(e)},500)}});A.post("/api/setup-email-counter",async t=>{var o;try{return(o=t.env)!=null&&o.DB?(console.log("📊 Setup email counter..."),await t.env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS stats (
         id INTEGER PRIMARY KEY DEFAULT 1,
         emails_sent_30days INTEGER DEFAULT 0,

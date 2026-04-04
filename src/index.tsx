@@ -18890,84 +18890,43 @@ app.put('/api/assistiti/:id', async (c) => {
       return c.json({ success: false, error: 'Assistito non trovato' }, 404)
     }
 
-    // Prima prova UPDATE con piano e servizio
-    let updateSuccess = false
-    try {
-      await c.env.DB.prepare(`
-        UPDATE assistiti 
-        SET nome = ?, 
-            nome_assistito = ?, 
-            cognome_assistito = ?,
-            nome_caregiver = ?,
-            cognome_caregiver = ?,
-            parentela_caregiver = ?,
-            email = ?, 
-            telefono = ?, 
-            imei = ?,
-            servizio = ?,
-            piano = ?,
-            lead_id = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).bind(
-        `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
-        data.nome_assistito || '',
-        data.cognome_assistito || '',
-        data.nome_caregiver || '',
-        data.cognome_caregiver || '',
-        data.parentela_caregiver || '',
-        data.email || '',
-        data.telefono || '',
-        data.imei || '',
-        data.servizio || 'eCura PRO',
-        data.piano || 'BASE',
-        data.lead_id || null,
-        id
-      ).run()
-      
-      updateSuccess = true
-      console.log(`✅ Assistito aggiornato con servizio: ${data.servizio || 'eCura PRO'}, piano: ${data.piano || 'BASE'}`)
-    } catch (columnError: any) {
-      // Se fallisce con errore colonna, prova senza piano/servizio
-      if (columnError.message && (columnError.message.includes('no column named piano') || columnError.message.includes('no column named servizio'))) {
-        console.warn('⚠️ Colonne piano/servizio non trovate, provo UPDATE base')
-        
-        await c.env.DB.prepare(`
-          UPDATE assistiti 
-          SET nome = ?, 
-              nome_assistito = ?, 
-              cognome_assistito = ?,
-              nome_caregiver = ?,
-              cognome_caregiver = ?,
-              parentela_caregiver = ?,
-              email = ?, 
-              telefono = ?, 
-              imei = ?,
-              lead_id = ?,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).bind(
-          `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A',
-          data.nome_assistito || '',
-          data.cognome_assistito || '',
-          data.nome_caregiver || '',
-          data.cognome_caregiver || '',
-          data.parentela_caregiver || '',
-          data.email || '',
-          data.telefono || '',
-          data.imei || '',
-          data.lead_id || null,
-          id
-        ).run()
-        
-        updateSuccess = true
-        console.log('✅ Assistito aggiornato (senza piano/servizio)')
-      } else {
-        throw columnError
-      }
-    }
+    // IMEI è UNIQUE: se vuoto usa NULL per evitare UNIQUE constraint violation
+    const imeiValue = data.imei && data.imei.trim() !== '' ? data.imei.trim() : null
 
-    console.log('✅ Assistito aggiornato:', id)
+    // Nome completo da nome_assistito + cognome_assistito
+    const nomeCompleto = `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A'
+
+    await c.env.DB.prepare(`
+      UPDATE assistiti 
+      SET nome = ?, 
+          nome_assistito = ?, 
+          cognome_assistito = ?,
+          nome_caregiver = ?,
+          cognome_caregiver = ?,
+          parentela_caregiver = ?,
+          email = ?, 
+          telefono = ?, 
+          imei = ?,
+          servizio = ?,
+          piano = ?,
+          lead_id = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      nomeCompleto,
+      data.nome_assistito || '',
+      data.cognome_assistito || '',
+      data.nome_caregiver || '',
+      data.cognome_caregiver || '',
+      data.parentela_caregiver || '',
+      data.email || '',
+      data.telefono || '',
+      imeiValue,
+      data.servizio || 'eCura PRO',
+      data.piano || 'BASE',
+      data.lead_id || null,
+      id
+    ).run()
 
     return c.json({ 
       success: true, 
