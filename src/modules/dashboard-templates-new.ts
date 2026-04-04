@@ -1876,17 +1876,20 @@ export const dashboard = `<!DOCTYPE html>
                 imei
             });
             
-            if (!nomeAssistito || !cognomeAssistito || !imei) {
-                alert('⚠️ Campi obbligatori: Nome, Cognome e IMEI');
+            if (!nomeAssistito || !cognomeAssistito) {
+                alert('⚠️ Campi obbligatori: Nome e Cognome');
                 return;
             }
+
+            // IMEI: invia null se vuoto (colonna UNIQUE - stringa vuota causa conflitto)
+            const imeiPulito = imei && imei.trim() !== '' ? imei.trim() : null;
             
             const payload = {
                 nome_assistito: nomeAssistito,
                 cognome_assistito: cognomeAssistito,
                 email: email,
                 telefono: telefono,
-                imei: imei,
+                imei: imeiPulito,
                 servizio: servizio,
                 nome_caregiver: nomeCaregiver,
                 cognome_caregiver: cognomeCaregiver,

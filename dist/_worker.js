@@ -3962,17 +3962,20 @@ ${370+e.length}
                 imei
             });
             
-            if (!nomeAssistito || !cognomeAssistito || !imei) {
-                alert('⚠️ Campi obbligatori: Nome, Cognome e IMEI');
+            if (!nomeAssistito || !cognomeAssistito) {
+                alert('⚠️ Campi obbligatori: Nome e Cognome');
                 return;
             }
+
+            // IMEI: invia null se vuoto (colonna UNIQUE - stringa vuota causa conflitto)
+            const imeiPulito = imei && imei.trim() !== '' ? imei.trim() : null;
             
             const payload = {
                 nome_assistito: nomeAssistito,
                 cognome_assistito: cognomeAssistito,
                 email: email,
                 telefono: telefono,
-                imei: imei,
+                imei: imeiPulito,
                 servizio: servizio,
                 nome_caregiver: nomeCaregiver,
                 cognome_caregiver: cognomeCaregiver,
@@ -14174,7 +14177,7 @@ startxref
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
     `).bind(r,l,a,i,e.nome_caregiver||"",e.cognome_caregiver||"",e.parentela_caregiver||"",e.email||"",e.telefono||"",d,e.servizio||"",e.piano||"",e.lead_id||null,s,s).run(),e.lead_id)try{await t.env.DB.prepare(`
           UPDATE leads SET status = 'CONTRACT_SIGNED', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `).bind(e.lead_id).run(),console.log(`✅ Lead ${e.lead_id} collegato all'assistito ${r}`)}catch(c){console.warn("⚠️ Lead update fallito (non critico):",c)}return console.log("✅ Assistito creato:",r,"Nome:",l),t.json({success:!0,message:"Assistito creato con successo",codice:r,assistito:{codice:r,nome:l,nome_assistito:a,cognome_assistito:i,email:e.email,telefono:e.telefono,imei:e.imei,servizio:e.servizio,piano:e.piano}})}catch(e){return console.error("❌ Errore creazione assistito:",e),t.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});A.put("/api/assistiti/:id",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.param("id"),a=await t.req.json();if(!await t.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return t.json({success:!1,error:"Assistito non trovato"},404);const r=a.imei&&a.imei.trim()!==""?a.imei.trim():null,s=`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A";return await t.env.DB.prepare(`
+        `).bind(e.lead_id).run(),console.log(`✅ Lead ${e.lead_id} collegato all'assistito ${r}`)}catch(c){console.warn("⚠️ Lead update fallito (non critico):",c)}return console.log("✅ Assistito creato:",r,"Nome:",l),t.json({success:!0,message:"Assistito creato con successo",codice:r,assistito:{codice:r,nome:l,nome_assistito:a,cognome_assistito:i,email:e.email,telefono:e.telefono,imei:e.imei,servizio:e.servizio,piano:e.piano}})}catch(e){return console.error("❌ Errore creazione assistito:",e),t.json({success:!1,error:"Errore creazione assistito",details:e instanceof Error?e.message:String(e)},500)}});A.put("/api/assistiti/:id",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.param("id"),a=await t.req.json();if(!await t.env.DB.prepare("SELECT id FROM assistiti WHERE id = ?").bind(e).first())return t.json({success:!1,error:"Assistito non trovato"},404);const r=a.imei&&String(a.imei).trim()!==""?String(a.imei).trim():null;if(r){const l=await t.env.DB.prepare("SELECT id, nome FROM assistiti WHERE imei = ? AND id != ?").bind(r,e).first();if(l)return t.json({success:!1,error:`IMEI ${r} già assegnato a: ${l.nome}`},409)}const s=`${a.nome_assistito||""} ${a.cognome_assistito||""}`.trim()||a.nome||"N/A";return await t.env.DB.prepare(`
       UPDATE assistiti 
       SET nome = ?, 
           nome_assistito = ?, 

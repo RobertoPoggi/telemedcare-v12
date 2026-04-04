@@ -18891,7 +18891,20 @@ app.put('/api/assistiti/:id', async (c) => {
     }
 
     // IMEI è UNIQUE: se vuoto usa NULL per evitare UNIQUE constraint violation
-    const imeiValue = data.imei && data.imei.trim() !== '' ? data.imei.trim() : null
+    const imeiValue = data.imei && String(data.imei).trim() !== '' ? String(data.imei).trim() : null
+
+    // Controllo preventivo: IMEI già usato da altro assistito
+    if (imeiValue) {
+      const imeiConflict = await c.env.DB.prepare(
+        'SELECT id, nome FROM assistiti WHERE imei = ? AND id != ?'
+      ).bind(imeiValue, id).first()
+      if (imeiConflict) {
+        return c.json({
+          success: false,
+          error: `IMEI ${imeiValue} già assegnato a: ${imeiConflict.nome}`
+        }, 409)
+      }
+    }
 
     // Nome completo da nome_assistito + cognome_assistito
     const nomeCompleto = `${data.nome_assistito || ''} ${data.cognome_assistito || ''}`.trim() || data.nome || 'N/A'
