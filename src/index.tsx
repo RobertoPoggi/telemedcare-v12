@@ -18788,31 +18788,62 @@ app.post('/api/assistiti', async (c) => {
     const data = await c.req.json()
 
     // Validazione campi obbligatori
-    if (!data.nome || !data.cognome) {
+    const nomeAssistito = (data.nome_assistito || data.nome || '').trim()
+    const cognomeAssistito = (data.cognome_assistito || data.cognome || '').trim()
+
+    if (!nomeAssistito || !cognomeAssistito) {
       return c.json({ 
         success: false, 
         error: 'Campi obbligatori mancanti: nome, cognome' 
       }, 400)
     }
 
-    const codice = `ASS-${data.cognome.toUpperCase()}-${Date.now()}`
+    const codice = `ASS-${cognomeAssistito.toUpperCase().replace(/\s+/g, '-')}-${Date.now()}`
     const timestamp = new Date().toISOString()
+    const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
+
+    // IMEI è UNIQUE: se vuoto usa NULL per evitare unique constraint violation
+    const imeiValue = data.imei && data.imei.trim() !== '' ? data.imei.trim() : null
 
     await c.env.DB.prepare(`
       INSERT INTO assistiti (
-        codice, nome, email, telefono, imei, status, lead_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+        codice, nome, nome_assistito, cognome_assistito,
+        nome_caregiver, cognome_caregiver, parentela_caregiver,
+        email, telefono, imei,
+        servizio, piano, lead_id,
+        status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
     `).bind(
       codice,
-      `${data.nome} ${data.cognome}`,
+      nomeCompleto,
+      nomeAssistito,
+      cognomeAssistito,
+      data.nome_caregiver || '',
+      data.cognome_caregiver || '',
+      data.parentela_caregiver || '',
       data.email || '',
       data.telefono || '',
-      data.imei || '',
+      imeiValue,
+      data.servizio || '',
+      data.piano || '',
       data.lead_id || null,
+      timestamp,
       timestamp
     ).run()
 
-    console.log('✅ Assistito creato:', codice)
+    // Se è stato fornito un lead_id, aggiorna lo stato del lead
+    if (data.lead_id) {
+      try {
+        await c.env.DB.prepare(`
+          UPDATE leads SET status = 'CONTRACT_SIGNED', updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        `).bind(data.lead_id).run()
+        console.log(`✅ Lead ${data.lead_id} collegato all'assistito ${codice}`)
+      } catch (leadErr) {
+        console.warn('⚠️ Lead update fallito (non critico):', leadErr)
+      }
+    }
+
+    console.log('✅ Assistito creato:', codice, 'Nome:', nomeCompleto)
 
     return c.json({ 
       success: true, 
@@ -18820,10 +18851,14 @@ app.post('/api/assistiti', async (c) => {
       codice,
       assistito: {
         codice,
-        nome: `${data.nome} ${data.cognome}`,
+        nome: nomeCompleto,
+        nome_assistito: nomeAssistito,
+        cognome_assistito: cognomeAssistito,
         email: data.email,
         telefono: data.telefono,
-        imei: data.imei
+        imei: data.imei,
+        servizio: data.servizio,
+        piano: data.piano
       }
     })
   } catch (error) {
