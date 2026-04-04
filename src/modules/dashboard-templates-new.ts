@@ -1416,12 +1416,15 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         function refreshData() {
+            // Forza reset flag isLoading (equivalente a Cmd+Shift+R)
+            isLoading = false;
             const icon = document.getElementById('refreshIcon');
-            icon.classList.add('rotating');
+            if (icon) icon.classList.add('rotating');
             loadDashboardData().finally(() => {
-                setTimeout(() => icon.classList.remove('rotating'), 1000);
+                setTimeout(() => { if (icon) icon.classList.remove('rotating'); }, 1000);
             });
         }
+        window.refreshData = refreshData;
 
         function getDispositivoForService(servizio) {
             const dispositivi = {
@@ -2203,14 +2206,17 @@ export const dashboard = `<!DOCTYPE html>
                 alert('Errore di comunicazione: ' + error.message);
             }
         }
+        window.importFromIrbema = importFromIrbema;
 
         function importFromAON() {
             alert('🔄 Import da AON\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/aon\\n\\nQuesta funzionalità permetterà di importare lead dal partner AON.');
         }
+        window.importFromAON = importFromAON;
 
         function importFromDoubleYou() {
             alert('🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.');
         }
+        window.importFromDoubleYou = importFromDoubleYou;
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
 
