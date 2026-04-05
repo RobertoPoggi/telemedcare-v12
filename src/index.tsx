@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
 
 // Force rebuild 2026-01-31 16:45 - Fix dashboard toggle switches
@@ -80,6 +79,10 @@ type Bindings = {
   ENCRYPTION_KEY?: string
   ADMIN_SECRET_TOKEN?: string // 🔒 Token admin per endpoint /api/admin/*
   API_KEY?: string // 🔒 Token per endpoint API sensibili (CRUD lead, contratti)
+  // User passwords (Cloudflare Secrets - NON inserire mai in codice sorgente)
+  USER_ROBERTO_PASSWORD?: string
+  USER_STEFANIA_PASSWORD?: string
+  USER_OPERATOR_PASSWORD?: string
 }
 
 // Configurazione TeleMedCare V12.0 Modular Enterprise
@@ -637,18 +640,82 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Enable CORS for API routes
-app.use('/api/*', cors())
+// 🔒 RATE LIMITING per /api/lead (max 5 richieste per IP ogni 60 secondi)
+// Nota: il Map in-memory è locale all'istanza Worker; su CF Workers con molte istanze
+// si consiglia di usare Cloudflare Rate Limiting o Durable Objects per limiti globali.
+const leadRateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_MAX = 5
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+
+app.use('/api/lead', async (c, next) => {
+  if (c.req.method !== 'POST') return next()
+
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown'
+  const now = Date.now()
+  const entry = leadRateLimitMap.get(ip)
+
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= RATE_LIMIT_MAX) {
+      console.warn(`⚠️ [RATE LIMIT] IP ${ip} ha superato il limite di ${RATE_LIMIT_MAX} richieste/minuto`)
+      return c.json({
+        success: false,
+        error: 'Too Many Requests',
+        message: `Troppe richieste. Riprova tra ${Math.ceil((entry.resetAt - now) / 1000)} secondi.`
+      }, 429)
+    }
+    entry.count++
+  } else {
+    leadRateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+  }
+
+  // Pulizia periodica delle voci scadute (ogni 100 inserimenti circa)
+  if (leadRateLimitMap.size > 1000) {
+    for (const [key, val] of leadRateLimitMap) {
+      if (now >= val.resetAt) leadRateLimitMap.delete(key)
+    }
+  }
+
+  return next()
+})
+
+// Enable CORS for API routes - whitelist of allowed origins
+const CORS_ALLOWED_ORIGINS = [  'https://ecura.it',
+  'https://www.ecura.it',
+  'https://telemedcare.it',
+  'https://www.telemedcare.it',
+  'https://telemedcare-v12.pages.dev',
+  'https://medicagb.it',
+  'https://www.medicagb.it',
+]
+
+app.use('/api/*', async (c, next) => {
+  const origin = c.req.header('Origin')
+  if (origin && CORS_ALLOWED_ORIGINS.includes(origin)) {
+    c.header('Access-Control-Allow-Origin', origin)
+    c.header('Vary', 'Origin')
+  }
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  c.header('Access-Control-Max-Age', '86400')
+  if (c.req.method === 'OPTIONS') {
+    return c.body(null, 204)
+  }
+  return next()
+})
 
 // 🔒 SECURITY MIDDLEWARE: Protegge tutti gli endpoint /api/admin/*
 app.use('/api/admin/*', async (c, next) => {
   const authHeader = c.req.header('Authorization')
   const adminToken = c.env.ADMIN_SECRET_TOKEN
   
-  // Se ADMIN_SECRET_TOKEN non è configurato, logga warning ma permetti accesso (backward compatibility)
+  // Se ADMIN_SECRET_TOKEN non è configurato, blocca l'accesso
   if (!adminToken) {
-    console.warn('⚠️ [SECURITY] ADMIN_SECRET_TOKEN non configurato - endpoint admin NON protetti!')
-    return next()
+    console.error('🔴 [SECURITY] ADMIN_SECRET_TOKEN non configurato - accesso admin NEGATO!')
+    return c.json({
+      success: false,
+      error: 'Service Unavailable',
+      message: 'Configurazione di sicurezza mancante. Contatta l\'amministratore di sistema.'
+    }, 503)
   }
   
   // Verifica token
@@ -790,8 +857,12 @@ app.use('/api/*', async (c, next) => {
   const apiKey = c.env.API_KEY
   
   if (!apiKey) {
-    console.warn('⚠️ [SECURITY] API_KEY non configurata - endpoint sensibili NON protetti!')
-    return next()
+    console.error('🔴 [SECURITY] API_KEY non configurata - accesso endpoint sensibili NEGATO!')
+    return c.json({
+      success: false,
+      error: 'Service Unavailable',
+      message: 'Configurazione di sicurezza mancante. Contatta l\'amministratore di sistema.'
+    }, 503)
   }
   
   if (authHeader && authHeader === `Bearer ${apiKey}`) {
@@ -3949,23 +4020,41 @@ app.post('/api/lead', async (c) => {
       }
     }
     
-    console.log('📝 Dati lead ricevuti:', JSON.stringify(leadData, null, 2))
+    // 🔒 VALIDAZIONE INPUT: Controlla campi obbligatori e formati
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+    const MAX_STRING_LEN = 500
+    const MAX_NOTE_LEN = 2000
+
+    // Campi raw prima della normalizzazione
+    const rawNome = String(leadData.nome || leadData.nomeRichiedente || '').trim()
+    const rawEmail = String(leadData.email || '').toLowerCase().trim()
+    const rawTelefono = String(leadData.telefono || '').trim()
+
+    const validationErrors: string[] = []
+
+    if (!rawNome) validationErrors.push('nome è obbligatorio')
+    else if (rawNome.length > MAX_STRING_LEN) validationErrors.push(`nome supera i ${MAX_STRING_LEN} caratteri`)
+
+    if (!rawEmail) validationErrors.push('email è obbligatoria')
+    else if (!EMAIL_REGEX.test(rawEmail)) validationErrors.push('email non è valida')
+    else if (rawEmail.length > MAX_STRING_LEN) validationErrors.push(`email supera i ${MAX_STRING_LEN} caratteri`)
+
+    if (rawTelefono && rawTelefono.length > 20) validationErrors.push('telefono supera i 20 caratteri')
+
+    if (leadData.note && String(leadData.note).length > MAX_NOTE_LEN)
+      validationErrors.push(`note superano i ${MAX_NOTE_LEN} caratteri`)
+
+    if (validationErrors.length > 0) {
+      return c.json({ success: false, error: 'Dati non validi', details: validationErrors }, 400)
+    }
 
     // Normalizza i nomi dei campi (supporta sia nuovo che vecchio formato)
-    const nome = leadData.nome || leadData.nomeRichiedente || ''
-    const email = leadData.email || leadData.email || ''
-    const telefono = leadData.telefono || leadData.telefono || ''
+    const nome = rawNome
+    const email = rawEmail
+    const telefono = rawTelefono
     const eta = leadData.eta || leadData.etaRichiedente || null
     const servizio = leadData.servizio || leadData.tipoServizio || 'BASIC'
     const azienda = leadData.azienda || leadData.aziendaRichiedente || null
-
-    // Validazione dati obbligatori
-    if (!nome || !email) {
-      return c.json({
-        success: false,
-        error: 'Campi obbligatori mancanti: nome e email sono richiesti'
-      }, 400)
-    }
 
     // Genera ID univoco
     const leadId = generateLeadId()
@@ -4366,8 +4455,12 @@ app.post('/api/admin/init-users', async (c) => {
     
     console.log('✅ [INIT-USERS] Tabella users creata')
     
-    // Inizializza utenti default
-    await AuthService.initializeDefaultUsers(c.env.DB)
+    // Inizializza utenti default passando le password dai Cloudflare Secrets
+    await AuthService.initializeDefaultUsers(c.env.DB, {
+      USER_ROBERTO_PASSWORD: c.env.USER_ROBERTO_PASSWORD,
+      USER_STEFANIA_PASSWORD: c.env.USER_STEFANIA_PASSWORD,
+      USER_OPERATOR_PASSWORD: c.env.USER_OPERATOR_PASSWORD
+    })
     
     // Verifica utenti creati
     const users = await c.env.DB.prepare('SELECT username, role, full_name FROM users').all()

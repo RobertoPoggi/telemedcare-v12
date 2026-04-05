@@ -102,13 +102,29 @@ export function hasPermission(role: UserRole, operation: string): boolean {
 
 /**
  * Inizializza utenti default (da chiamare solo una volta)
+ * Le password hash sono caricate da variabili d'ambiente Cloudflare Secrets:
+ *   USER_ROBERTO_PASSWORD, USER_STEFANIA_PASSWORD, USER_OPERATOR_PASSWORD
  */
-export async function initializeDefaultUsers(db: D1Database): Promise<void> {
+export async function initializeDefaultUsers(db: D1Database, env?: {
+  USER_ROBERTO_PASSWORD?: string
+  USER_STEFANIA_PASSWORD?: string
+  USER_OPERATOR_PASSWORD?: string
+}): Promise<void> {
   try {
+    // Leggi password da env vars (Cloudflare Secrets), con fallback a placeholder non funzionante
+    const robertoPlain = env?.USER_ROBERTO_PASSWORD
+    const stefaniaPlain = env?.USER_STEFANIA_PASSWORD
+    const operatorPlain = env?.USER_OPERATOR_PASSWORD
+
+    if (!robertoPlain || !stefaniaPlain || !operatorPlain) {
+      console.warn('⚠️ [AUTH] Variabili USER_*_PASSWORD non configurate — utenti default NON inizializzati. Configurare i Cloudflare Secrets.')
+      return
+    }
+
     // Hash password
-    const robertoHash = await hashPassword('TpfhJpDgrSIE8yDEeVy+fA==')
-    const stefaniaHash = await hashPassword('TBV8JicyE3nkpUVI2/2igA==')
-    const operatorHash = await hashPassword('xpD7JrCIC9ATHWnF1ULvzA==')
+    const robertoHash = await hashPassword(robertoPlain)
+    const stefaniaHash = await hashPassword(stefaniaPlain)
+    const operatorHash = await hashPassword(operatorPlain)
     
     const now = new Date().toISOString()
     
