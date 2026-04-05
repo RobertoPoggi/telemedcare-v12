@@ -6562,3 +6562,324 @@ export const workflow_manager = `<!DOCTYPE html>
 </html>
 `
 
+
+export const admin_setup = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Setup - TeleMedCare V12</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    .gradient-bg { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    #response-box { white-space: pre-wrap; font-family: monospace; font-size: 0.8rem; }
+    .danger-btn { background: #dc2626 !important; }
+    .danger-btn:hover { background: #b91c1c !important; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; transition: opacity 0.4s; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="gradient-bg text-white shadow-lg">
+    <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <i class="fas fa-tools text-3xl"></i>
+        <div>
+          <h1 class="text-2xl font-bold">Admin Setup</h1>
+          <p class="text-sm text-indigo-200">Gestione avanzata endpoint amministrativi</p>
+        </div>
+      </div>
+      <div class="flex space-x-3">
+        <a href="/admin/data-dashboard" class="px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition text-sm font-medium">
+          <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+        </a>
+        <a href="/home" class="px-4 py-2 bg-white text-indigo-700 rounded-lg hover:bg-indigo-50 transition text-sm font-medium">
+          <i class="fas fa-home mr-1"></i>Home
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8 max-w-5xl">
+
+    <!-- Token Input -->
+    <div class="bg-white rounded-xl shadow-sm border-l-4 border-indigo-500 p-6 mb-8 card-hover">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-key text-indigo-500 text-xl mr-3"></i>
+        <h2 class="text-lg font-bold text-gray-800">Admin Secret Token</h2>
+      </div>
+      <div class="flex gap-3">
+        <input
+          id="admin-token"
+          type="password"
+          placeholder="Inserisci ADMIN_SECRET_TOKEN..."
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+        />
+        <button onclick="toggleTokenVisibility()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition">
+          <i id="token-eye" class="fas fa-eye text-gray-600"></i>
+        </button>
+      </div>
+      <p class="mt-2 text-xs text-gray-500"><i class="fas fa-shield-alt mr-1"></i>Il token non viene mai inviato al di fuori delle richieste API. Ogni richiesta usa <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+
+      <!-- ═══ SEZIONE: Diagnostica ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-stethoscope text-blue-500 mr-2"></i>Diagnostica
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('GET','/api/admin/debug-env')" class="w-full text-left px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm text-blue-800 transition font-medium">
+            <i class="fas fa-eye mr-2"></i>Debug variabili ambiente
+          </button>
+          <button onclick="apiCall('GET','/api/admin/debug-resend')" class="w-full text-left px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm text-blue-800 transition font-medium">
+            <i class="fas fa-envelope-open-text mr-2"></i>Debug servizio email Resend
+          </button>
+          <button onclick="apiCall('GET','/api/admin/leads-dashboard')" class="w-full text-left px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-sm text-blue-800 transition font-medium">
+            <i class="fas fa-chart-bar mr-2"></i>Dati leads dashboard (JSON)
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Inizializzazione DB ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-database text-green-500 mr-2"></i>Inizializzazione Database
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('POST','/api/admin/init-users')" class="w-full text-left px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-800 transition font-medium">
+            <i class="fas fa-users mr-2"></i>Inizializza tabella utenti
+          </button>
+          <button onclick="apiCall('POST','/api/admin/run-migrations')" class="w-full text-left px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-800 transition font-medium">
+            <i class="fas fa-code-branch mr-2"></i>Esegui migrazioni DB
+          </button>
+          <button onclick="apiCall('POST','/api/admin/init-settings')" class="w-full text-left px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-800 transition font-medium">
+            <i class="fas fa-cog mr-2"></i>Inizializza tabella settings
+          </button>
+          <button onclick="apiCall('POST','/api/admin/add-signature-columns')" class="w-full text-left px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-800 transition font-medium">
+            <i class="fas fa-pen-fancy mr-2"></i>Aggiungi colonne firma contratti
+          </button>
+          <button onclick="apiCall('POST','/api/admin/normalize-settings-values')" class="w-full text-left px-4 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-sm text-green-800 transition font-medium">
+            <i class="fas fa-sliders-h mr-2"></i>Normalizza valori settings
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Manutenzione Lead ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-user-tag text-orange-500 mr-2"></i>Manutenzione Lead
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('POST','/api/admin/fix-fonte-irbema')" class="w-full text-left px-4 py-2 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm text-orange-800 transition font-medium">
+            <i class="fas fa-wrench mr-2"></i>Fix campo fonte IRBEMA
+          </button>
+          <button onclick="apiCall('POST','/api/admin/update-fonte-batch')" class="w-full text-left px-4 py-2 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm text-orange-800 transition font-medium">
+            <i class="fas fa-layer-group mr-2"></i>Aggiornamento batch campo fonte
+          </button>
+          <button onclick="apiCall('POST','/api/admin/sync-form-ecura')" class="w-full text-left px-4 py-2 bg-orange-50 hover:bg-orange-100 rounded-lg text-sm text-orange-800 transition font-medium">
+            <i class="fas fa-sync mr-2"></i>Sincronizza form eCura
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Email & Test ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-paper-plane text-purple-500 mr-2"></i>Email & Test
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('POST','/api/admin/test-email')" class="w-full text-left px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm text-purple-800 transition font-medium">
+            <i class="fas fa-envelope mr-2"></i>Invia email di test
+          </button>
+          <button onclick="apiCallWithInput('POST','/api/admin/test-trigger/:leadId','leadId','ID del lead da testare')" class="w-full text-left px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm text-purple-800 transition font-medium">
+            <i class="fas fa-bolt mr-2"></i>Test trigger per lead (richiede ID)
+          </button>
+          <button onclick="apiCallWithInput('POST','/api/admin/resend-completion/:leadId','leadId','ID del lead per reinvio email')" class="w-full text-left px-4 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm text-purple-800 transition font-medium">
+            <i class="fas fa-redo mr-2"></i>Reinvia email completamento (richiede ID)
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Importazione ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-file-import text-teal-500 mr-2"></i>Importazione Dati
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('POST','/api/admin/import-interactions-json')" class="w-full text-left px-4 py-2 bg-teal-50 hover:bg-teal-100 rounded-lg text-sm text-teal-800 transition font-medium">
+            <i class="fas fa-file-code mr-2"></i>Importa interazioni da JSON
+          </button>
+          <p class="text-xs text-gray-400 pl-2"><i class="fas fa-info-circle mr-1"></i>Import Excel richiede body multipart — usa Hoppscotch per file upload</p>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Cleanup ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+        <h3 class="font-bold text-gray-700 mb-4 flex items-center">
+          <i class="fas fa-broom text-yellow-600 mr-2"></i>Cleanup Dati di Test
+        </h3>
+        <div class="space-y-2">
+          <button onclick="apiCall('POST','/api/admin/cleanup-test-leads')" class="w-full text-left px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-sm text-yellow-800 transition font-medium">
+            <i class="fas fa-trash-alt mr-2"></i>Rimuovi lead di test
+          </button>
+          <button onclick="apiCall('POST','/api/admin/fix-test-leads')" class="w-full text-left px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-sm text-yellow-800 transition font-medium">
+            <i class="fas fa-tools mr-2"></i>Ripara lead di test
+          </button>
+          <button onclick="apiCall('POST','/api/admin/restore-real-leads')" class="w-full text-left px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-sm text-yellow-800 transition font-medium">
+            <i class="fas fa-history mr-2"></i>Ripristina lead reali
+          </button>
+          <button onclick="apiCall('POST','/api/admin/cleanup-test-data')" class="w-full text-left px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg text-sm text-yellow-800 transition font-medium">
+            <i class="fas fa-eraser mr-2"></i>Rimuovi tutti dati di test
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ SEZIONE: Azioni Distruttive ═══ -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500 card-hover md:col-span-2">
+        <h3 class="font-bold text-red-700 mb-2 flex items-center">
+          <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Azioni Distruttive — Irreversibili
+        </h3>
+        <p class="text-xs text-red-600 mb-4">Queste operazioni cancellano dati in modo permanente. Usare con estrema cautela.</p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="confirmAndCall('POST','/api/admin/reset-and-regenerate','Conferma RESET COMPLETO e rigenerazione del sistema?')"
+            class="danger-btn px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition">
+            <i class="fas fa-sync-alt mr-2"></i>Reset &amp; Rigenera
+          </button>
+          <button onclick="confirmAndCall('POST','/api/admin/clear-database','Conferma SVUOTAMENTO del database? Tutti i dati saranno eliminati.')"
+            class="danger-btn px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition">
+            <i class="fas fa-bomb mr-2"></i>Svuota Database
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Response Box -->
+    <div class="mt-8 bg-white rounded-xl shadow-sm p-6">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-gray-700 flex items-center">
+          <i class="fas fa-terminal text-gray-500 mr-2"></i>Risposta API
+        </h3>
+        <div class="flex items-center gap-3">
+          <span id="response-status" class="text-xs font-bold px-2 py-1 rounded hidden"></span>
+          <button onclick="clearResponse()" class="text-xs text-gray-400 hover:text-gray-600 transition">
+            <i class="fas fa-times mr-1"></i>Pulisci
+          </button>
+        </div>
+      </div>
+      <div id="response-box" class="bg-gray-900 text-green-400 rounded-lg p-4 min-h-24 text-xs overflow-auto max-h-96">
+        <span class="text-gray-500">// In attesa di una richiesta...</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden">
+    <div id="toast-inner" class="px-5 py-3 rounded-xl shadow-xl text-white text-sm font-medium"></div>
+  </div>
+
+  <script>
+    function getToken() {
+      return document.getElementById('admin-token').value.trim();
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('admin-token');
+      const eye = document.getElementById('token-eye');
+      if (input.type === 'password') {
+        input.type = 'text';
+        eye.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        eye.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+
+    function showToast(msg, isError) {
+      const toast = document.getElementById('toast');
+      const inner = document.getElementById('toast-inner');
+      inner.textContent = msg;
+      inner.className = 'px-5 py-3 rounded-xl shadow-xl text-white text-sm font-medium ' + (isError ? 'bg-red-600' : 'bg-green-600');
+      toast.classList.remove('hidden');
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.classList.add('hidden'), 400);
+      }, 3000);
+    }
+
+    function setResponseBox(text, status) {
+      const box = document.getElementById('response-box');
+      const badge = document.getElementById('response-status');
+      box.textContent = text;
+      badge.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+      if (status >= 200 && status < 300) {
+        badge.className = 'text-xs font-bold px-2 py-1 rounded bg-green-100 text-green-700';
+        badge.textContent = status + ' OK';
+        box.className = 'bg-gray-900 text-green-400 rounded-lg p-4 min-h-24 text-xs overflow-auto max-h-96';
+      } else {
+        badge.className = 'text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-700';
+        badge.textContent = status + ' ERR';
+        box.className = 'bg-gray-900 text-red-400 rounded-lg p-4 min-h-24 text-xs overflow-auto max-h-96';
+      }
+    }
+
+    function clearResponse() {
+      const box = document.getElementById('response-box');
+      const badge = document.getElementById('response-status');
+      box.textContent = '// In attesa di una richiesta...';
+      box.className = 'bg-gray-900 text-green-400 rounded-lg p-4 min-h-24 text-xs overflow-auto max-h-96';
+      badge.classList.add('hidden');
+    }
+
+    async function apiCall(method, path, body) {
+      const token = getToken();
+      if (!token) {
+        showToast('⚠️ Inserisci prima il token admin', true);
+        document.getElementById('admin-token').focus();
+        return;
+      }
+      setResponseBox('// Richiesta in corso...', 200);
+      try {
+        const opts = {
+          method,
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          }
+        };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(path, opts);
+        const text = await res.text();
+        let pretty = text;
+        try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch(_) {}
+        setResponseBox(pretty, res.status);
+        showToast(res.ok ? '✅ Richiesta completata (' + res.status + ')' : '❌ Errore ' + res.status, !res.ok);
+      } catch(e) {
+        setResponseBox('// Errore di rete: ' + e.message, 500);
+        showToast('❌ Errore di rete', true);
+      }
+    }
+
+    async function apiCallWithInput(method, pathTemplate, paramName, promptText) {
+      const value = window.prompt(promptText);
+      if (!value) return;
+      const path = pathTemplate.replace(':' + paramName, encodeURIComponent(value));
+      await apiCall(method, path);
+    }
+
+    async function confirmAndCall(method, path, confirmMsg) {
+      if (!window.confirm(confirmMsg)) return;
+      await apiCall(method, path);
+    }
+  </script>
+</body>
+</html>
+`

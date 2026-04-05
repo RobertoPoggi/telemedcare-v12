@@ -47,7 +47,7 @@ import * as AuthService from './modules/auth-service'
 import type { AuthSession, UserRole } from './modules/auth-service'
 
 // Import Dashboard Templates
-import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates-new'
+import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
@@ -23220,6 +23220,13 @@ app.get('/admin/data-dashboard', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'data')
   return c.html(data_dashboard)
+})
+
+// Admin Setup - Pannello per eseguire operazioni admin via browser (protetto da requireAuth + token)
+app.get('/admin/setup', requireAuth, (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'admin-setup')
+  return c.html(admin_setup)
 })
 
 // Workflow Manager - Gestione completa workflow e forzatura eventi
