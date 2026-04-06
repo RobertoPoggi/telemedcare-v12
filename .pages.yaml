@@ -31,9 +31,9 @@ preview:
     # STRIPE_PUBLIC_KEY: pk_test_51...
     # STRIPE_SECRET_KEY: sk_test_51...
   
-  # ⚠️ Database di TEST - Sostituire database_id con l'ID del DB test
-  # Steps: Cloudflare Dashboard → D1 → crea "telemedcare-leads-test" → copia ID qui sotto
+  # ⚠️ Database di PREVIEW - Sostituire database_id con l'ID del DB preview
+  # Steps: Cloudflare Dashboard → D1 → crea "telemedcare-leads-preview" → copia ID qui sotto
   d1_databases:
     - binding: DB
-      database_name: telemedcare-leads-test
-      database_id: INSERISCI_QUI_DATABASE_ID_TEST  # ⬅️ OBBLIGATORIO: sostituire con l'ID dal Cloudflare Dashboard
+      database_name: telemedcare-leads-preview
+      database_id: INSERISCI_QUI_DATABASE_ID_PREVIEW  # ⬅️ OBBLIGATORIO: sostituire con l'ID dal Cloudflare Dashboard
