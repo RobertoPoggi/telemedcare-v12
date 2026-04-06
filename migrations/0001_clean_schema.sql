@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS document_templates (
 -- Table: contracts
 CREATE TABLE IF NOT EXISTS contracts (
   id TEXT PRIMARY KEY,
-  lead_id TEXT NOT NULL,
+  leadId TEXT NOT NULL,
   contract_code TEXT UNIQUE NOT NULL,
   tipo_servizio TEXT NOT NULL,
   prezzo_base REAL NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   docusign_envelope_id TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (lead_id) REFERENCES leads(id)
+  FOREIGN KEY (leadId) REFERENCES leads(id)
 );
 
 -- Indexes
@@ -76,4 +76,4 @@ CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
 CREATE INDEX IF NOT EXISTS idx_leads_timestamp ON leads(timestamp);
 CREATE INDEX IF NOT EXISTS idx_templates_name ON document_templates(name);
 CREATE INDEX IF NOT EXISTS idx_templates_category ON document_templates(category);
-CREATE INDEX IF NOT EXISTS idx_contracts_lead ON contracts(lead_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_leadId ON contracts(leadId);

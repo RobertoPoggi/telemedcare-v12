@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS document_templates (
 -- 3. Creare tabella contracts (English name come nel codice)
 CREATE TABLE IF NOT EXISTS contracts (
   id TEXT PRIMARY KEY,
-  lead_id TEXT NOT NULL,
+  leadId TEXT NOT NULL,
   contract_type TEXT NOT NULL,
   file_path TEXT,
   content TEXT,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS contracts (
   signature_ip TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (lead_id) REFERENCES leads(id)
+  FOREIGN KEY (leadId) REFERENCES leads(id)
 );
 
 -- 4. Inserire template email essenziali
@@ -153,5 +153,5 @@ INSERT INTO document_templates (id, name, type, subject, html_content, variables
 CREATE INDEX IF NOT EXISTS idx_document_templates_type ON document_templates(type);
 CREATE INDEX IF NOT EXISTS idx_document_templates_category ON document_templates(category);
 CREATE INDEX IF NOT EXISTS idx_document_templates_active ON document_templates(active);
-CREATE INDEX IF NOT EXISTS idx_contracts_lead_id ON contracts(lead_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_leadId ON contracts(leadId);
 CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
