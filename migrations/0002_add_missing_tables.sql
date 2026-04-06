@@ -2,9 +2,7 @@
 -- Aggiunta tabelle mancanti e colonne necessarie
 -- Data: 2025-10-30
 
--- 1. Aggiungere colonna updated_at alla tabella leads
--- SQLite doesn't support CURRENT_TIMESTAMP in ALTER TABLE, so we use a static default
-ALTER TABLE leads ADD COLUMN updated_at TEXT;
+-- 1. updated_at is already defined in 0001_clean_schema.sql, nothing to alter here
 
 -- 2. Creare tabella document_templates per i template email/documenti
 CREATE TABLE IF NOT EXISTS document_templates (
