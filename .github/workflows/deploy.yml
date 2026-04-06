@@ -11,6 +11,7 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
     permissions:
       contents: read
       deployments: write
