@@ -691,6 +691,133 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore creazione tabella settings:', e.message)
       }
 
+      // Crea tabelle da migration 0022: sistema completamento dati lead
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_completion_tokens (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            completed INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            completed_at TEXT DEFAULT NULL,
+            reminder_sent_at TEXT DEFAULT NULL,
+            reminder_count INTEGER DEFAULT 0,
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_lead_id ON lead_completion_tokens(lead_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_token ON lead_completion_tokens(token)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_completed ON lead_completion_tokens(completed)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_expires_at ON lead_completion_tokens(expires_at)').run()
+
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            description TEXT,
+            updated_at TEXT NOT NULL
+          )
+        `).run()
+        const defaultSystemConfig = [
+          ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati per lead incompleti'],
+          ['auto_completion_token_days', '30', 'Giorni validità token completamento'],
+          ['auto_completion_reminder_days', '3', 'Giorni prima invio reminder automatico'],
+          ['auto_completion_max_reminders', '2', 'Numero massimo reminder automatici']
+        ]
+        for (const [key, value, description] of defaultSystemConfig) {
+          await c.env.DB.prepare(
+            `INSERT OR IGNORE INTO system_config (key, value, description, updated_at) VALUES (?, ?, ?, datetime('now'))`
+          ).bind(key, value, description).run()
+        }
+
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_completion_log (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            token_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+            FOREIGN KEY (token_id) REFERENCES lead_completion_tokens(id) ON DELETE CASCADE
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_lead_id ON lead_completion_log(lead_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_action ON lead_completion_log(action)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_created_at ON lead_completion_log(created_at)').run()
+        console.log('✅ Tabelle lead_completion_tokens/system_config/lead_completion_log verificate/create')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabelle completion:', e.message)
+      }
+
+      // Crea tabella contract_otps (migration 0051: OTP firma contratto)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS contract_otps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contract_id TEXT NOT NULL,
+            otp_code TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            sms_sid TEXT,
+            created_at TEXT NOT NULL,
+            verified INTEGER DEFAULT 0,
+            verified_at TEXT,
+            failed_attempts INTEGER DEFAULT 0,
+            UNIQUE(contract_id)
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contract_otps_contract_id ON contract_otps(contract_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contract_otps_verified ON contract_otps(verified)').run()
+        console.log('✅ Tabella contract_otps verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella contract_otps:', e.message)
+      }
+
+      // Crea tabella ddts (Documenti di Trasporto)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS ddts (
+            id TEXT PRIMARY KEY,
+            numero_ddt TEXT UNIQUE NOT NULL,
+            contract_code TEXT,
+            proforma_number TEXT,
+            dispositivo TEXT NOT NULL,
+            serial_number TEXT,
+            quantita INTEGER DEFAULT 1,
+            destinatario_nome TEXT NOT NULL,
+            destinatario_indirizzo TEXT NOT NULL,
+            destinatario_cap TEXT,
+            destinatario_citta TEXT,
+            destinatario_provincia TEXT,
+            destinatario_telefono TEXT,
+            destinatario_email TEXT,
+            corriere TEXT,
+            tracking_number TEXT,
+            peso_kg DECIMAL(5,2),
+            numero_colli INTEGER DEFAULT 1,
+            status TEXT DEFAULT 'preparazione',
+            data_spedizione DATETIME,
+            data_consegna DATETIME,
+            pdf_url TEXT,
+            pdf_generated BOOLEAN DEFAULT FALSE,
+            note TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_numero ON ddts(numero_ddt)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_contract ON ddts(contract_code)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_proforma ON ddts(proforma_number)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_status ON ddts(status)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_tracking ON ddts(tracking_number)').run()
+        console.log('✅ Tabella ddts verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella ddts:', e.message)
+      }
+
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
