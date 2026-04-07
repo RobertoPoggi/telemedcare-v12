@@ -2203,7 +2203,8 @@ export const dashboard = `<!DOCTYPE html>
                         location.reload();
                     }
                 } else {
-                    alert('Errore import: ' + result.error);
+                    const errMsg = result.error + (result.details ? '\\n\\nDettagli: ' + result.details : '');
+                    alert('Errore import: ' + errMsg);
                 }
             } catch (error) {
                 alert('Errore di comunicazione: ' + error.message);

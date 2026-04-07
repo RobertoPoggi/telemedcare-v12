@@ -588,6 +588,30 @@ app.use('*', async (c, next) => {
           console.warn('⚠️ Errore colonna stato leads:', e.message)
         }
       }
+
+      // Aggiungi colonne necessarie per import HubSpot/IRBEMA (mancanti in DB inizializzati con schema legacy)
+      const leadsHubspotColumns = [
+        { name: 'tipoServizio', def: `TEXT DEFAULT 'eCura'` },
+        { name: 'created_at', def: `TEXT DEFAULT (datetime('now'))` },
+        { name: 'external_source_id', def: `TEXT DEFAULT NULL` },
+        { name: 'hs_object_source', def: `TEXT DEFAULT NULL` },
+        { name: 'hs_object_source_detail_1', def: `TEXT DEFAULT NULL` },
+        { name: 'dettaglio_fonte', def: `TEXT DEFAULT NULL` },
+        { name: 'canale', def: `TEXT DEFAULT NULL` },
+        { name: 'nomeAssistito', def: `TEXT DEFAULT NULL` },
+        { name: 'cognomeAssistito', def: `TEXT DEFAULT NULL` },
+        { name: 'external_data', def: `TEXT DEFAULT NULL` },
+      ]
+      for (const col of leadsHubspotColumns) {
+        try {
+          await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+          console.log(`✅ Colonna ${col.name} aggiunta a leads`)
+        } catch (e: any) {
+          if (!e.message?.includes('duplicate column')) {
+            console.warn(`⚠️ Errore colonna ${col.name} leads:`, e.message)
+          }
+        }
+      }
       
       // Crea tabella lead_interactions per tracciare i contatti
       try {
@@ -16977,16 +17001,19 @@ app.post('/api/import/irbema', async (c) => {
     const errors: string[] = []
 
     // Ottieni il prossimo ID lead IRBEMA disponibile
-    const maxIdResult = await c.env.DB.prepare(
-      "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
-    ).first()
-    
     let nextLeadNumber = 1
-    if (maxIdResult?.id) {
-      const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
-      if (match) {
-        nextLeadNumber = parseInt(match[1]) + 1
+    try {
+      const maxIdResult = await c.env.DB.prepare(
+        "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
+      ).first()
+      if (maxIdResult?.id) {
+        const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
+        if (match) {
+          nextLeadNumber = parseInt(match[1]) + 1
+        }
       }
+    } catch (e: any) {
+      console.warn('⚠️ [HUBSPOT] Errore lettura max ID IRBEMA (uso default 1):', e.message)
     }
 
     // ✅ USA API SEARCH con filtro data (non API LIST)
@@ -17049,8 +17076,21 @@ app.post('/api/import/irbema', async (c) => {
         }, 500)
       }
 
-      const data = await response.json()
-      const pageResults = data.results || []
+      let data: any
+      try {
+        data = await response.json()
+      } catch (jsonErr: any) {
+        console.error(`❌ [HUBSPOT] Risposta non-JSON dalla pagina ${totalPages}:`, jsonErr.message)
+        if (totalImported > 0 || totalSkipped > 0) {
+          break
+        }
+        return c.json({
+          success: false,
+          error: `Risposta non valida da HubSpot API`,
+          details: jsonErr.message
+        }, 500)
+      }
+      const pageResults = data?.results || []
       console.log(`✅ [HUBSPOT] Pagina ${totalPages}: ${pageResults.length} contatti`)
 
       totalContacts += pageResults.length
@@ -17365,7 +17405,7 @@ app.post('/api/import/irbema', async (c) => {
       }
 
       // Verifica se ci sono altre pagine
-      if (data.paging?.next?.after) {
+      if (data?.paging?.next?.after) {
         after = data.paging.next.after
         console.log(`➡️ [HUBSPOT] Trovata pagina successiva: ${after}`)
       } else {
