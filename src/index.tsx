@@ -2,8 +2,6 @@ import { Hono } from 'hono'
 import { serveStatic } from 'hono/cloudflare-workers'
 
 // Force rebuild 2026-01-31 16:45 - Fix dashboard toggle switches
-// Import Database Selector Middleware
-import { databaseSelector } from './middleware/database-selector'
 
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'

@@ -48,6 +48,34 @@ function copyPublicHtmlPlugin() {
   }
 }
 
+// Plugin per generare _worker.js.metadata.json con il binding D1 corretto
+// CF_PAGES_BRANCH è iniettato automaticamente da Cloudflare Pages durante la build
+function generateWorkerMetadataPlugin() {
+  return {
+    name: 'generate-worker-metadata',
+    closeBundle() {
+      const branch = process.env.CF_PAGES_BRANCH
+      const distDir = join(process.cwd(), 'dist')
+
+      let bindings: Array<{ type: string; name: string; id: string }> = []
+
+      if (branch === 'main') {
+        // Build di produzione
+        bindings = [{ type: 'd1', name: 'DB', id: 'e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f' }]
+      } else if (branch) {
+        // Build di preview (qualsiasi branch non-main)
+        bindings = [{ type: 'd1', name: 'DB', id: '128fb147-b114-42d9-8c4d-500d70b8cb43' }]
+      }
+      // Se CF_PAGES_BRANCH non è impostato (sviluppo locale) → bindings vuoti,
+      // i binding vengono iniettati dal dashboard di Cloudflare
+
+      const metadata = { main_module: '_worker.js', bindings }
+      writeFileSync(join(distDir, '_worker.js.metadata.json'), JSON.stringify(metadata, null, 2))
+      console.log(`✅ Worker metadata: branch=${branch || 'local'}, bindings=${bindings.length}`)
+    }
+  }
+}
+
 // Plugin per iniettare versione in HTML (anti-cache V11 rollback)
 function injectVersionPlugin() {
   return {
@@ -103,7 +131,8 @@ export default defineConfig({
       entry: 'src/index.tsx'
     }),
     copyPublicHtmlPlugin(),
-    injectVersionPlugin()  // CRITICAL: Anti-cache V11 rollback
+    injectVersionPlugin(),   // CRITICAL: Anti-cache V11 rollback
+    generateWorkerMetadataPlugin()  // Correct D1 binding per environment
   ],
   // Copia file statici da public/ nella build
   publicDir: 'public',
