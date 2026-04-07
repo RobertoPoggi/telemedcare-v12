@@ -659,6 +659,38 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore creazione tabella users:', e.message)
       }
 
+      // Crea tabella settings se non esiste (necessario per /api/settings e import IRBEMA)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            description TEXT,
+            updated_at TEXT DEFAULT (datetime('now'))
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)').run()
+
+        // Popola settings di default (INSERT OR IGNORE = non sovrascrive se già esistono)
+        const defaultSettings = [
+          ['hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot'],
+          ['lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead'],
+          ['admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it'],
+          ['reminder_completion_enabled', 'false', 'Abilita reminder automatici completamento dati lead'],
+          ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati'],
+          ['auto_payment_workflow_enabled', 'false', 'Abilita workflow automatico pagamenti'],
+          ['auto_contract_workflow_enabled', 'false', 'Abilita workflow automatico contratti']
+        ]
+        for (const [key, value, description] of defaultSettings) {
+          await c.env.DB.prepare(
+            `INSERT OR IGNORE INTO settings (key, value, description, updated_at) VALUES (?, ?, ?, datetime('now'))`
+          ).bind(key, value, description).run()
+        }
+        console.log('✅ Tabella settings verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella settings:', e.message)
+      }
+
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
