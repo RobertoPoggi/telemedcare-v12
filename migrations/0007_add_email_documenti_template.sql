@@ -7,7 +7,7 @@
 -- Database: telemedcare-leads
 -- =====================================================
 
-INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active, created_at, updated_at) VALUES
+INSERT OR IGNORE INTO document_templates (id, name, type, subject, html_content, variables, category, active, created_at, updated_at) VALUES
 ('email_documenti_informativi', 'Invio Documenti Informativi', 'email',
  '📚 eCura - Documenti informativi {{SERVIZIO}}',
  '<!DOCTYPE html>

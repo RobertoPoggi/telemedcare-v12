@@ -43,9 +43,10 @@ CREATE TABLE IF NOT EXISTS leads (
 
 -- Table: document_templates (CLEAN VERSION)
 CREATE TABLE IF NOT EXISTS document_templates (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   category TEXT NOT NULL,
+  type TEXT DEFAULT 'email',
   subject TEXT,
   html_content TEXT NOT NULL,
   variables TEXT,
