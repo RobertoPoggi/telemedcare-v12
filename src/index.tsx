@@ -628,6 +628,37 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore aggiornamento Eileen:', e.message)
       }
       
+      // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('ADMIN', 'OPERATOR')),
+            full_name TEXT,
+            email TEXT,
+            last_login TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run()
+        console.log('✅ Tabella users verificata/creata')
+
+        // Inizializza utenti default se le secrets sono disponibili
+        if (c.env.USER_ROBERTO_PASSWORD && c.env.USER_STEFANIA_PASSWORD && c.env.USER_OPERATOR_PASSWORD) {
+          await AuthService.initializeDefaultUsers(c.env.DB, {
+            USER_ROBERTO_PASSWORD: c.env.USER_ROBERTO_PASSWORD,
+            USER_STEFANIA_PASSWORD: c.env.USER_STEFANIA_PASSWORD,
+            USER_OPERATOR_PASSWORD: c.env.USER_OPERATOR_PASSWORD
+          })
+        }
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella users:', e.message)
+      }
+
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
@@ -23134,6 +23165,11 @@ app.post('/api/auth/login', async (c) => {
     })
   } catch (error) {
     console.error('[AUTH] Errore login:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    // Messaggio specifico se la tabella users non esiste ancora
+    if (msg.includes('no such table')) {
+      return c.json({ success: false, error: 'Database non inizializzato. Ricaricare la pagina e riprovare.' }, 503)
+    }
     return c.json({ success: false, error: 'Errore interno' }, 500)
   }
 })
