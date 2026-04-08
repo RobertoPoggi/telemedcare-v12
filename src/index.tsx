@@ -9904,7 +9904,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       
       return c.json({
         success: true,
-        message: `Brochure ${brochureFilename} inviata a ${lead.email}`,
+        message: `Brochure ${brochurePdf.filename} inviata a ${lead.email}`,
         emailStatus: result.success ? 'sent' : 'simulated',
         attachments: attachments.length,
         demoMode: (result as any).demoMode || false,
