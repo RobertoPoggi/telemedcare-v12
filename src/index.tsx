@@ -9811,7 +9811,8 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     // ✅ Usa brochure-manager per caricare PDF corretto per dispositivo
     const { loadBrochurePDF } = await import('./modules/brochure-manager')
-    const baseUrl = getBaseUrl(c.env)
+    const { getBaseUrl: getBaseUrlFn } = await import('./modules/url-helper')
+    const baseUrl = getBaseUrlFn(c.env)
     const servizioNormalized = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
     
     console.log(`📥 [BROCHURE] Caricamento brochure per servizio: ${servizioNormalized}`)
