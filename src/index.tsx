@@ -2,8 +2,6 @@ import { Hono } from 'hono'
 import { serveStatic } from 'hono/cloudflare-workers'
 
 // Force rebuild 2026-01-31 16:45 - Fix dashboard toggle switches
-// Import Database Selector Middleware
-import { databaseSelector } from './middleware/database-selector'
 
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
@@ -47,7 +45,7 @@ import * as AuthService from './modules/auth-service'
 import type { AuthSession, UserRole } from './modules/auth-service'
 
 // Import Dashboard Templates
-import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager } from './modules/dashboard-templates-new'
+import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
@@ -590,6 +588,30 @@ app.use('*', async (c, next) => {
           console.warn('⚠️ Errore colonna stato leads:', e.message)
         }
       }
+
+      // Aggiungi colonne necessarie per import HubSpot/IRBEMA (mancanti in DB inizializzati con schema legacy)
+      const leadsHubspotColumns = [
+        { name: 'tipoServizio', def: `TEXT DEFAULT 'eCura'` },
+        { name: 'created_at', def: `TEXT DEFAULT (datetime('now'))` },
+        { name: 'external_source_id', def: `TEXT DEFAULT NULL` },
+        { name: 'hs_object_source', def: `TEXT DEFAULT NULL` },
+        { name: 'hs_object_source_detail_1', def: `TEXT DEFAULT NULL` },
+        { name: 'dettaglio_fonte', def: `TEXT DEFAULT NULL` },
+        { name: 'canale', def: `TEXT DEFAULT NULL` },
+        { name: 'nomeAssistito', def: `TEXT DEFAULT NULL` },
+        { name: 'cognomeAssistito', def: `TEXT DEFAULT NULL` },
+        { name: 'external_data', def: `TEXT DEFAULT NULL` },
+      ]
+      for (const col of leadsHubspotColumns) {
+        try {
+          await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+          console.log(`✅ Colonna ${col.name} aggiunta a leads`)
+        } catch (e: any) {
+          if (!e.message?.includes('duplicate column')) {
+            console.warn(`⚠️ Errore colonna ${col.name} leads:`, e.message)
+          }
+        }
+      }
       
       // Crea tabella lead_interactions per tracciare i contatti
       try {
@@ -630,6 +652,196 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore aggiornamento Eileen:', e.message)
       }
       
+      // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('ADMIN', 'OPERATOR')),
+            full_name TEXT,
+            email TEXT,
+            last_login TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)').run()
+        console.log('✅ Tabella users verificata/creata')
+
+        // Inizializza utenti default se le secrets sono disponibili
+        if (c.env.USER_ROBERTO_PASSWORD && c.env.USER_STEFANIA_PASSWORD && c.env.USER_OPERATOR_PASSWORD) {
+          await AuthService.initializeDefaultUsers(c.env.DB, {
+            USER_ROBERTO_PASSWORD: c.env.USER_ROBERTO_PASSWORD,
+            USER_STEFANIA_PASSWORD: c.env.USER_STEFANIA_PASSWORD,
+            USER_OPERATOR_PASSWORD: c.env.USER_OPERATOR_PASSWORD
+          })
+        }
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella users:', e.message)
+      }
+
+      // Crea tabella settings se non esiste (necessario per /api/settings e import IRBEMA)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            description TEXT,
+            updated_at TEXT DEFAULT (datetime('now'))
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key)').run()
+
+        // Popola settings di default (INSERT OR IGNORE = non sovrascrive se già esistono)
+        const defaultSettings = [
+          ['hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot'],
+          ['lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead'],
+          ['admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it'],
+          ['reminder_completion_enabled', 'false', 'Abilita reminder automatici completamento dati lead'],
+          ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati'],
+          ['auto_payment_workflow_enabled', 'false', 'Abilita workflow automatico pagamenti'],
+          ['auto_contract_workflow_enabled', 'false', 'Abilita workflow automatico contratti']
+        ]
+        for (const [key, value, description] of defaultSettings) {
+          await c.env.DB.prepare(
+            `INSERT OR IGNORE INTO settings (key, value, description, updated_at) VALUES (?, ?, ?, datetime('now'))`
+          ).bind(key, value, description).run()
+        }
+        console.log('✅ Tabella settings verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella settings:', e.message)
+      }
+
+      // Crea tabelle da migration 0022: sistema completamento dati lead
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_completion_tokens (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            completed INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL,
+            completed_at TEXT DEFAULT NULL,
+            reminder_sent_at TEXT DEFAULT NULL,
+            reminder_count INTEGER DEFAULT 0,
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_lead_id ON lead_completion_tokens(lead_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_token ON lead_completion_tokens(token)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_completed ON lead_completion_tokens(completed)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_tokens_expires_at ON lead_completion_tokens(expires_at)').run()
+
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            description TEXT,
+            updated_at TEXT NOT NULL
+          )
+        `).run()
+        const defaultSystemConfig = [
+          ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati per lead incompleti'],
+          ['auto_completion_token_days', '30', 'Giorni validità token completamento'],
+          ['auto_completion_reminder_days', '3', 'Giorni prima invio reminder automatico'],
+          ['auto_completion_max_reminders', '2', 'Numero massimo reminder automatici']
+        ]
+        for (const [key, value, description] of defaultSystemConfig) {
+          await c.env.DB.prepare(
+            `INSERT OR IGNORE INTO system_config (key, value, description, updated_at) VALUES (?, ?, ?, datetime('now'))`
+          ).bind(key, value, description).run()
+        }
+
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_completion_log (
+            id TEXT PRIMARY KEY,
+            lead_id TEXT NOT NULL,
+            token_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+            FOREIGN KEY (token_id) REFERENCES lead_completion_tokens(id) ON DELETE CASCADE
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_lead_id ON lead_completion_log(lead_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_action ON lead_completion_log(action)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_lead_completion_log_created_at ON lead_completion_log(created_at)').run()
+        console.log('✅ Tabelle lead_completion_tokens/system_config/lead_completion_log verificate/create')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabelle completion:', e.message)
+      }
+
+      // Crea tabella contract_otps (migration 0051: OTP firma contratto)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS contract_otps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contract_id TEXT NOT NULL,
+            otp_code TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            sms_sid TEXT,
+            created_at TEXT NOT NULL,
+            verified INTEGER DEFAULT 0,
+            verified_at TEXT,
+            failed_attempts INTEGER DEFAULT 0,
+            UNIQUE(contract_id)
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contract_otps_contract_id ON contract_otps(contract_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_contract_otps_verified ON contract_otps(verified)').run()
+        console.log('✅ Tabella contract_otps verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella contract_otps:', e.message)
+      }
+
+      // Crea tabella ddts (Documenti di Trasporto)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS ddts (
+            id TEXT PRIMARY KEY,
+            numero_ddt TEXT UNIQUE NOT NULL,
+            contract_code TEXT,
+            proforma_number TEXT,
+            dispositivo TEXT NOT NULL,
+            serial_number TEXT,
+            quantita INTEGER DEFAULT 1,
+            destinatario_nome TEXT NOT NULL,
+            destinatario_indirizzo TEXT NOT NULL,
+            destinatario_cap TEXT,
+            destinatario_citta TEXT,
+            destinatario_provincia TEXT,
+            destinatario_telefono TEXT,
+            destinatario_email TEXT,
+            corriere TEXT,
+            tracking_number TEXT,
+            peso_kg DECIMAL(5,2),
+            numero_colli INTEGER DEFAULT 1,
+            status TEXT DEFAULT 'preparazione',
+            data_spedizione DATETIME,
+            data_consegna DATETIME,
+            pdf_url TEXT,
+            pdf_generated BOOLEAN DEFAULT FALSE,
+            note TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_numero ON ddts(numero_ddt)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_contract ON ddts(contract_code)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_proforma ON ddts(proforma_number)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_status ON ddts(status)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_tracking ON ddts(tracking_number)').run()
+        console.log('✅ Tabella ddts verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella ddts:', e.message)
+      }
+
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
@@ -9599,7 +9811,8 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     
     // ✅ Usa brochure-manager per caricare PDF corretto per dispositivo
     const { loadBrochurePDF } = await import('./modules/brochure-manager')
-    const baseUrl = getBaseUrl(c.env)
+    const { getBaseUrl: getBaseUrlFn } = await import('./modules/url-helper')
+    const baseUrl = getBaseUrlFn(c.env)
     const servizioNormalized = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
     
     console.log(`📥 [BROCHURE] Caricamento brochure per servizio: ${servizioNormalized}`)
@@ -9692,7 +9905,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
       
       return c.json({
         success: true,
-        message: `Brochure ${brochureFilename} inviata a ${lead.email}`,
+        message: `Brochure ${brochurePdf.filename} inviata a ${lead.email}`,
         emailStatus: result.success ? 'sent' : 'simulated',
         attachments: attachments.length,
         demoMode: (result as any).demoMode || false,
@@ -16789,16 +17002,19 @@ app.post('/api/import/irbema', async (c) => {
     const errors: string[] = []
 
     // Ottieni il prossimo ID lead IRBEMA disponibile
-    const maxIdResult = await c.env.DB.prepare(
-      "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
-    ).first()
-    
     let nextLeadNumber = 1
-    if (maxIdResult?.id) {
-      const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
-      if (match) {
-        nextLeadNumber = parseInt(match[1]) + 1
+    try {
+      const maxIdResult = await c.env.DB.prepare(
+        "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
+      ).first()
+      if (maxIdResult?.id) {
+        const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
+        if (match) {
+          nextLeadNumber = parseInt(match[1]) + 1
+        }
       }
+    } catch (e: any) {
+      console.warn('⚠️ [HUBSPOT] Errore lettura max ID IRBEMA (uso default 1):', e.message)
     }
 
     // ✅ USA API SEARCH con filtro data (non API LIST)
@@ -16861,8 +17077,21 @@ app.post('/api/import/irbema', async (c) => {
         }, 500)
       }
 
-      const data = await response.json()
-      const pageResults = data.results || []
+      let data: any
+      try {
+        data = await response.json()
+      } catch (jsonErr: any) {
+        console.error(`❌ [HUBSPOT] Risposta non-JSON dalla pagina ${totalPages}:`, jsonErr.message)
+        if (totalImported > 0 || totalSkipped > 0) {
+          break
+        }
+        return c.json({
+          success: false,
+          error: `Risposta non valida da HubSpot API`,
+          details: jsonErr.message
+        }, 500)
+      }
+      const pageResults = data?.results || []
       console.log(`✅ [HUBSPOT] Pagina ${totalPages}: ${pageResults.length} contatti`)
 
       totalContacts += pageResults.length
@@ -17177,7 +17406,7 @@ app.post('/api/import/irbema', async (c) => {
       }
 
       // Verifica se ci sono altre pagine
-      if (data.paging?.next?.after) {
+      if (data?.paging?.next?.after) {
         after = data.paging.next.after
         console.log(`➡️ [HUBSPOT] Trovata pagina successiva: ${after}`)
       } else {
@@ -23136,6 +23365,11 @@ app.post('/api/auth/login', async (c) => {
     })
   } catch (error) {
     console.error('[AUTH] Errore login:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    // Messaggio specifico se la tabella users non esiste ancora
+    if (msg.includes('no such table')) {
+      return c.json({ success: false, error: 'Database non inizializzato. Ricaricare la pagina e riprovare.' }, 503)
+    }
     return c.json({ success: false, error: 'Errore interno' }, 500)
   }
 })
@@ -23220,6 +23454,13 @@ app.get('/admin/data-dashboard', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'data')
   return c.html(data_dashboard)
+})
+
+// Admin Setup - Pannello per eseguire operazioni admin via browser (protetto da requireAuth + token)
+app.get('/admin/setup', requireAuth, (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'admin-setup')
+  return c.html(admin_setup)
 })
 
 // Workflow Manager - Gestione completa workflow e forzatura eventi

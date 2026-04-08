@@ -15,7 +15,7 @@ ALTER TABLE contracts ADD COLUMN template_utilizzato TEXT;
 
 -- Contenuto e PDF
 ALTER TABLE contracts ADD COLUMN contenuto_html TEXT;
-ALTER TABLE contracts ADD COLUMN pdf_url TEXT;
+-- pdf_url is already present in 0001_clean_schema.sql, skip to avoid duplicate column error
 ALTER TABLE contracts ADD COLUMN pdf_generated INTEGER DEFAULT 0;
 
 -- Pricing
@@ -46,8 +46,3 @@ CREATE INDEX IF NOT EXISTS idx_contracts_servizio ON contracts(servizio);
 CREATE INDEX IF NOT EXISTS idx_contracts_tipo ON contracts(tipo_contratto);
 CREATE INDEX IF NOT EXISTS idx_contracts_data_invio ON contracts(data_invio);
 CREATE INDEX IF NOT EXISTS idx_contracts_assistito_id ON contracts(assistito_id);
-
--- Aggiorna i contratti esistenti se hanno il campo contract_type
-UPDATE contracts 
-SET tipo_contratto = contract_type 
-WHERE contract_type IS NOT NULL AND tipo_contratto IS NULL;

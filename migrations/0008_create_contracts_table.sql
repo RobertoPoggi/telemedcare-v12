@@ -51,8 +51,7 @@ CREATE TABLE IF NOT EXISTS contracts (
     FOREIGN KEY (leadId) REFERENCES leads(id)
 );
 
--- Indici
+-- Indici (only on columns present in the base 0001_clean_schema; extended columns indexed in 0005)
 CREATE INDEX IF NOT EXISTS idx_contracts_leadId ON contracts(leadId);
 CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
-CREATE INDEX IF NOT EXISTS idx_contracts_codice ON contracts(codice_contratto);
 CREATE INDEX IF NOT EXISTS idx_contracts_created_at ON contracts(created_at);

@@ -56,13 +56,13 @@ HUBSPOT_PORTAL_ID = "145726645"
 ENVIRONMENT = "preview"
 HUBSPOT_PORTAL_ID = "145726645"
 
-# ⚠️ Database di TEST - NON usare il database di produzione in preview
-# Per creare il DB di test:
+# ⚠️ Database di PREVIEW - NON usare il database di produzione in preview
+# Per creare il DB di preview:
 #   1. Vai su Cloudflare Dashboard → Workers & Pages → D1
-#   2. Crea un nuovo database "telemedcare-leads-test"
-#   3. Copia l'ID generato e sostituisci INSERISCI_QUI_DATABASE_ID_TEST qui sotto
-#   4. Lancia le migrazioni: wrangler d1 migrations apply telemedcare-leads-test
+#   2. Crea un nuovo database "telemedcare-leads-preview"
+#   3. Copia l'ID generato e sostituisci INSERISCI_QUI_DATABASE_ID_PREVIEW qui sotto
+#   4. Lancia le migrazioni: wrangler d1 migrations apply telemedcare-leads-preview
 [[env.preview.d1_databases]]
 binding = "DB"
-database_name = "telemedcare-leads-test"
-database_id = "INSERISCI_QUI_DATABASE_ID_TEST"  # ⬅️ OBBLIGATORIO: sostituire con l'ID del DB test creato su Cloudflare Dashboard
+database_name = "telemedcare-leads-preview"
+database_id = "128fb147-b114-42d9-8c4d-500d70b8cb43"

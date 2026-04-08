@@ -2,28 +2,30 @@
 -- Aggiunta tabelle mancanti e colonne necessarie
 -- Data: 2025-10-30
 
--- 1. Aggiungere colonna updated_at alla tabella leads
--- SQLite doesn't support CURRENT_TIMESTAMP in ALTER TABLE, so we use a static default
-ALTER TABLE leads ADD COLUMN updated_at TEXT;
+-- 1. Fix document_templates schema.
+--    0001_clean_schema.sql may have created this table with id INTEGER PRIMARY KEY AUTOINCREMENT
+--    and without the 'type' column. We drop and recreate it here so the schema matches
+--    what all subsequent migrations and application code expect (TEXT primary key + type column).
+--    The table is always empty at this point in a fresh migration run.
+DROP TABLE IF EXISTS document_templates;
 
--- 2. Creare tabella document_templates per i template email/documenti
-CREATE TABLE IF NOT EXISTS document_templates (
+CREATE TABLE document_templates (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  type TEXT NOT NULL, -- 'email', 'contract', 'document', 'proforma'
+  name TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL,
+  type TEXT DEFAULT 'email',
   subject TEXT,
   html_content TEXT NOT NULL,
-  variables TEXT, -- JSON array di variabili disponibili
-  category TEXT, -- 'workflow', 'notification', 'marketing', 'system'
-  active BOOLEAN DEFAULT 1,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  variables TEXT,
+  active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- 3. Creare tabella contracts (English name come nel codice)
+-- 2. Creare tabella contracts (English name come nel codice)
 CREATE TABLE IF NOT EXISTS contracts (
   id TEXT PRIMARY KEY,
-  lead_id TEXT NOT NULL,
+  leadId TEXT NOT NULL,
   contract_type TEXT NOT NULL,
   file_path TEXT,
   content TEXT,
@@ -32,11 +34,11 @@ CREATE TABLE IF NOT EXISTS contracts (
   signature_ip TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (lead_id) REFERENCES leads(id)
+  FOREIGN KEY (leadId) REFERENCES leads(id)
 );
 
--- 4. Inserire template email essenziali
-INSERT INTO document_templates (id, name, type, subject, html_content, variables, category, active) VALUES
+-- 3. Inserire template email essenziali
+INSERT OR IGNORE INTO document_templates (id, name, type, subject, html_content, variables, category, active) VALUES
 -- Template notifica nuovo lead
 ('email_notifica_info', 'Notifica Nuovo Lead', 'email', 
  '🚨 TeleMedCare - Nuovo Lead: {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}',
@@ -149,9 +151,9 @@ INSERT INTO document_templates (id, name, type, subject, html_content, variables
  '["NOME_CLIENTE", "PIANO_SERVIZIO", "PREZZO_PIANO", "CODICE_CLIENTE"]',
  'workflow', 1);
 
--- 5. Creare indici per performance
+-- 4. Creare indici per performance
 CREATE INDEX IF NOT EXISTS idx_document_templates_type ON document_templates(type);
 CREATE INDEX IF NOT EXISTS idx_document_templates_category ON document_templates(category);
 CREATE INDEX IF NOT EXISTS idx_document_templates_active ON document_templates(active);
-CREATE INDEX IF NOT EXISTS idx_contracts_lead_id ON contracts(lead_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_leadId ON contracts(leadId);
 CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
