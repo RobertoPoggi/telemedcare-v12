@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler pages dev dist --d1=telemedcare-leads --local --ip 0.0.0.0 --port 3000",
     "dev:vite": "vite",
-    "build": "vite build",
+    "build": "node scripts/ci-build.cjs",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist",
     "deploy:prod": "./scripts/deploy-production.sh",
