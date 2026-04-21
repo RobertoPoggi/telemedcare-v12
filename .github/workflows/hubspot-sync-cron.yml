@@ -1,0 +1,83 @@
+name: HubSpot Auto Import (Form eCura)
+# 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
+# ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
+# 📅 Periodo: Importa lead creati negli ultimi 2 giorni (48h)
+# 🔍 Filtro: ecura.it (hs_analytics_first_url / hs_analytics_last_url)
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Giorni da importare (default: 2)'
+        required: false
+        default: '2'
+        type: string
+      dryRun:
+        description: 'Dry Run (solo simulazione, non salva)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: read
+
+jobs:
+  import-hubspot-leads:
+    name: Import Lead da Form eCura
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📋 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 🔄 Trigger HubSpot Auto-Import
+        run: |
+          DAYS="${{ github.event.inputs.days || '2' }}"
+          DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
+          
+          echo "🔄 Avvio import HubSpot..."
+          echo "📅 Periodo: Ultimi $DAYS giorni"
+          echo "🌐 Target: https://telemedcare-v12.pages.dev"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Action: true" \
+            -d "{\"days\": $DAYS, \"dryRun\": $DRY_RUN, \"enabled\": true, \"startHour\": 0}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+          
+          SUCCESS=$(echo "$BODY" | jq -r '.success // "false"' 2>/dev/null)
+          
+          if [ "$SUCCESS" = "true" ]; then
+            IMPORTED=$(echo "$BODY" | jq -r '.imported // 0' 2>/dev/null)
+            SKIPPED=$(echo "$BODY" | jq -r '.skipped // 0' 2>/dev/null)
+            UPDATED=$(echo "$BODY" | jq -r '.updated // 0' 2>/dev/null)
+            ERRORS_COUNT=$(echo "$BODY" | jq -r 'if (.errors | type) == "array" then (.errors | length) else (.errors // 0) end' 2>/dev/null)
+            echo "✅ Import completato!"
+            echo "📥 Importati: $IMPORTED | 🔄 Aggiornati: $UPDATED | ⏭️ Skipped: $SKIPPED | ❌ Errori: $ERRORS_COUNT"
+            if [ "${ERRORS_COUNT:-0}" -gt 10 ] 2>/dev/null; then
+              echo "🚨 Troppi errori!"
+              exit 1
+            fi
+          elif [ "$HTTP_CODE" = "403" ]; then
+            echo "⏭️ Switch HubSpot auto-import disabilitato"
+            exit 0
+          else
+            echo "❌ Import fallito! (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+      
+      - name: 📊 Riepilogo
+        if: always()
+        run: |
+          echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "📅 Prossima esecuzione: Domani ore 08:00 Italia"
