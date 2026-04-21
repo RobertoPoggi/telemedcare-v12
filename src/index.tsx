@@ -24780,6 +24780,102 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT ONE-SHOT: Diagnostica e inserimento Maria Carmela Mazzarella
+app.post('/api/admin/insert-mazzarella', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const body = await c.req.json().catch(() => ({})) as Record<string, unknown>
+    const action = (body.action as string) || 'diagnose'
+    const results: Record<string, unknown> = { action }
+
+    // STEP 1: Trova lead Alfredo Vassalluzzo
+    const vassalluzzoLeads = await c.env.DB.prepare(
+      `SELECT id, nome, cognome, email, telefono, status FROM leads 
+       WHERE cognome LIKE '%Vassalluzzo%' OR nome LIKE '%Alfredo%'
+       ORDER BY created_at DESC LIMIT 10`
+    ).all()
+    results.vassalluzzo_leads = vassalluzzoLeads.results
+
+    // STEP 2: Trova Laura Calvi nel DB assistiti
+    const lauraCalvi = await c.env.DB.prepare(
+      `SELECT id, nome, nome_assistito, cognome_assistito, imei, status FROM assistiti 
+       WHERE (nome_assistito LIKE '%Laura%' AND cognome_assistito LIKE '%Calvi%')
+          OR nome LIKE '%Laura Calvi%' OR nome LIKE '%Calvi Laura%'
+       LIMIT 5`
+    ).all()
+    results.laura_calvi = lauraCalvi.results
+
+    // STEP 3: Controlla IMEI 862246076803994
+    const imeiOwner = await c.env.DB.prepare(
+      `SELECT id, nome, nome_assistito, cognome_assistito, imei, status FROM assistiti WHERE imei = '862246076803994'`
+    ).all()
+    results.imei_862246076803994_owner = imeiOwner.results
+
+    if (action === 'diagnose') {
+      return c.json({ success: true, diagnostic: results })
+    }
+
+    if (action === 'insert') {
+      const leadId = body.lead_id as string
+      if (!leadId) {
+        return c.json({ success: false, error: 'lead_id richiesto per action=insert' }, 400)
+      }
+
+      // Libera IMEI da Laura Calvi (se assegnato)
+      await c.env.DB.prepare(
+        `UPDATE assistiti SET imei = NULL, updated_at = CURRENT_TIMESTAMP 
+         WHERE imei = '862246076803994'`
+      ).run()
+      results.imei_freed = true
+
+      // Inserisci Maria Carmela Mazzarella
+      const codice = `ASS-MAZZARELLA-${Date.now()}`
+      const timestamp = new Date().toISOString()
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (
+          codice, nome, nome_assistito, cognome_assistito,
+          nome_caregiver, cognome_caregiver, parentela_caregiver,
+          email, telefono, imei,
+          servizio, piano, lead_id,
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(
+        codice,
+        'Maria Carmela Mazzarella',
+        'Maria Carmela',
+        'Mazzarella',
+        'Alfredo',
+        'Vassalluzzo',
+        'figlio',
+        '',
+        '',
+        '862246076803994',
+        'eCura PREMIUM',
+        'AVANZATO',
+        leadId,
+        timestamp,
+        timestamp
+      ).run()
+
+      // Aggiorna lead Vassalluzzo a CONTRACT_SIGNED
+      await c.env.DB.prepare(
+        `UPDATE leads SET status = 'CONTRACT_SIGNED', updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+      ).bind(leadId).run()
+
+      results.inserted = { codice, nome: 'Maria Carmela Mazzarella', imei: '862246076803994', lead_id: leadId }
+      results.lead_updated = leadId
+      return c.json({ success: true, results })
+    }
+
+    return c.json({ success: false, error: 'action deve essere diagnose o insert' }, 400)
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // Version Guard Middleware - Logs all requests with version info
 app.use('*', async (c, next) => {
   const SYSTEM_VERSION = 'V12'
