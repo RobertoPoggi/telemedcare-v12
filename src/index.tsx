@@ -26401,7 +26401,62 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, updated: updatedPdfs, errors: erroriPdf })
     }
 
-    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt' }, 400)
+    // ACTION: check-ddts — legge tutti i DDT nel DB (diagnosi)
+    if (action === 'check-ddts') {
+      const allDdts = await c.env.DB.prepare(
+        'SELECT id, numero_ddt, serial_number, destinatario_nome, pdf_url, status, created_at FROM ddts ORDER BY created_at ASC'
+      ).all()
+      return c.json({ success: true, ddts: allDdts.results, count: allDdts.results.length })
+    }
+
+    // ACTION: fix-ddts-serials — corregge seriali errati e rimuove duplicati nella tabella ddts
+    if (action === 'fix-ddts-serials') {
+      const fixes: string[] = []
+      const errors: string[] = []
+
+      // 1. Rimuovi DDT-008-2026 duplicato (stesso IMEI di DDT-007-2026 per Vassalluzzo)
+      try {
+        const dup = await c.env.DB.prepare("SELECT id FROM ddts WHERE numero_ddt = 'DDT-008-2026'").first()
+        if (dup) {
+          await c.env.DB.prepare("DELETE FROM ddts WHERE numero_ddt = 'DDT-008-2026'").run()
+          fixes.push('Eliminato duplicato DDT-008-2026')
+        } else {
+          fixes.push('DDT-008-2026 non trovato (già rimosso)')
+        }
+      } catch(e) { errors.push('DDT-008-2026: ' + String(e)) }
+
+      // 2. Correggi IMEI Macchi: nella tabella ddts, aggiorna il serial_number del DDT-004-2026
+      try {
+        await c.env.DB.prepare(
+          "UPDATE ddts SET serial_number = '862246076276621', updated_at = CURRENT_TIMESTAMP WHERE numero_ddt = 'DDT-004-2026'"
+        ).run()
+        fixes.push('DDT-004-2026 Macchi: serial_number aggiornato a 862246076276621')
+      } catch(e) { errors.push('DDT-004-2026: ' + String(e)) }
+
+      // 3. Correggi IMEI Macchi nella tabella dispositivi
+      try {
+        const macchiDev = await c.env.DB.prepare(
+          "SELECT serial_number FROM dispositivi WHERE serial_number = '862608061148517'"
+        ).first()
+        if (macchiDev) {
+          await c.env.DB.prepare(
+            "UPDATE dispositivi SET serial_number = '862246076276621', updated_at = CURRENT_TIMESTAMP WHERE serial_number = '862608061148517'"
+          ).run()
+          fixes.push('dispositivi: IMEI Macchi aggiornato 862608061148517 → 862246076276621')
+        } else {
+          fixes.push('dispositivi: IMEI Macchi 862608061148517 non trovato (già corretto o diverso)')
+        }
+      } catch(e) { errors.push('dispositivi Macchi: ' + String(e)) }
+
+      // 4. Leggi stato finale
+      const finalDdts = await c.env.DB.prepare(
+        'SELECT numero_ddt, serial_number, destinatario_nome FROM ddts ORDER BY created_at ASC'
+      ).all()
+
+      return c.json({ success: true, fixes, errors, ddts_after: finalDdts.results })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt, check-ddts, fix-ddts-serials' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }
