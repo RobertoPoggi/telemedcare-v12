@@ -3319,18 +3319,19 @@ app.get('/admin/devices', (c) => {
                         <table class="w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IMEI</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IMEI / S/N</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modello</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Magazzino</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CE</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assegnato a</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Reg.</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Azioni</th>
                                 </tr>
                             </thead>
                             <tbody id="devicesTableBody" class="bg-white divide-y divide-gray-200">
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                                         <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
                                         Caricamento dispositivi...
                                     </td>
@@ -3874,7 +3875,7 @@ app.get('/admin/devices', (c) => {
                 if (!devices || devices.length === 0) {
                     tbody.innerHTML = \`
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-box-open text-3xl mb-2"></i><br>
                                 Nessun dispositivo trovato
                             </td>
@@ -3883,32 +3884,39 @@ app.get('/admin/devices', (c) => {
                     return;
                 }
                 
-                tbody.innerHTML = devices.map(device => \`
+                tbody.innerHTML = devices.map(device => {
+                    const statusKey = device.status_display || (device.status || '').toUpperCase();
+                    const assegnatoA = device.assegnato_a || (device.assegnato_richiedente ? device.assegnato_richiedente : (device.assegnato_assistito || '—'));
+                    return \`
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-4 text-sm font-mono text-gray-900">\${device.imei || 'N/A'}</td>
                         <td class="px-4 py-4 text-sm text-gray-900">\${device.model || 'N/A'}</td>
-                        <td class="px-4 py-4 text-sm text-gray-900">\${device.magazzino || 'N/A'}</td>
+                        <td class="px-4 py-4 text-sm text-gray-900">\${device.magazzino || 'Milano'}</td>
                         <td class="px-4 py-4 text-sm">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full \${getStatusBadgeClass(device.status)}">
-                                \${getStatusLabel(device.status)}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full \${getStatusBadgeClass(statusKey)}">
+                                \${getStatusLabel(statusKey)}
                             </span>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
-                            \${device.ce_marking || 'N/A'}
+                            \${device.ce_marking || 'CE 0051'}
+                        </td>
+                        <td class="px-4 py-4 text-sm text-gray-500" title="\${assegnatoA}">
+                            \${assegnatoA.length > 22 ? assegnatoA.substring(0,22)+'…' : assegnatoA}
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-500">
                             \${device.created_at ? new Date(device.created_at).toLocaleDateString('it-IT') : 'N/A'}
                         </td>
                         <td class="px-4 py-4 text-sm font-medium">
-                            <button onclick="viewDeviceDetails('\${device.device_id}')" class="text-blue-600 hover:text-blue-800 mr-2">
+                            <button onclick="viewDeviceDetails('\${device.device_id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Dettagli">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="editDeviceStatus('\${device.device_id}')" class="text-green-600 hover:text-green-800">
+                            <button onclick="editDeviceStatus('\${device.device_id}')" class="text-green-600 hover:text-green-800" title="Modifica stato">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </td>
                     </tr>
-                \`).join('');
+                \`;
+                }).join('');
             }
 
             // Helper functions per stato dispositivi
@@ -3940,7 +3948,7 @@ app.get('/admin/devices', (c) => {
                 const tbody = document.getElementById('devicesTableBody');
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-red-500">
+                        <td colspan="8" class="px-4 py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-2xl mb-2"></i><br>
                             \${message}
                         </td>
@@ -20503,6 +20511,177 @@ app.post('/api/dispositivi/return', async (c) => {
   }
 })
 
+// ============================================================
+// GET /api/devices/stats  - Statistiche dispositivi (usato dalla dashboard Home)
+// ============================================================
+app.get('/api/devices/stats', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Conta per status dalla tabella dispositivi
+    const allDevices = await c.env.DB.prepare(
+      `SELECT status FROM dispositivi`
+    ).all()
+
+    const rows = (allDevices.results || []) as any[]
+    const totalDevices = rows.length
+
+    const countByStatus: Record<string, number> = {}
+    rows.forEach((r: any) => {
+      const s = (r.status || 'inventory').toUpperCase()
+      countByStatus[s] = (countByStatus[s] || 0) + 1
+    })
+
+    const statusDistribution = Object.entries(countByStatus).map(([status, count]) => ({ status, count }))
+    const availableDevices = countByStatus['INVENTORY'] || countByStatus['inventory'] || 0
+    const activeDevices = countByStatus['ACTIVE'] || countByStatus['active'] || countByStatus['ATTIVO'] || 0
+    const assignedDevices = countByStatus['ASSIGNED'] || countByStatus['assigned'] || 0
+    const shippedDevices = countByStatus['SHIPPED'] || countByStatus['shipped'] || 0
+
+    return c.json({
+      success: true,
+      stats: {
+        totalDevices,
+        availableDevices,
+        activeDevices,
+        assignedDevices,
+        shippedDevices,
+        statusDistribution
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore stats dispositivi:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================
+// GET /api/devices/inventory  - Lista dispositivi con filtri (usato dalla dashboard Home)
+// ============================================================
+app.get('/api/devices/inventory', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { searchParams } = new URL(c.req.url)
+    const statusFilter = searchParams.get('status') || ''
+    const warehouseFilter = searchParams.get('warehouse') || ''
+
+    let query = `
+      SELECT
+        d.id            AS device_id,
+        d.serial_number AS imei,
+        d.modello       AS model,
+        d.status,
+        d.lead_id,
+        d.assigned_at,
+        d.activated_at,
+        d.created_at,
+        'Milano'        AS magazzino,
+        'CE 0051'       AS ce_marking,
+        l.nomeRichiedente || ' ' || l.cognomeRichiedente AS assegnato_richiedente,
+        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito
+      FROM dispositivi d
+      LEFT JOIN leads l   ON d.lead_id = l.id
+      LEFT JOIN assistiti a ON d.serial_number = a.imei
+    `
+    const bindings: string[] = []
+    const conditions: string[] = []
+
+    if (statusFilter) {
+      conditions.push('d.status = ?')
+      bindings.push(statusFilter)
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
+    query += ' ORDER BY d.created_at DESC LIMIT 200'
+
+    const stmt = c.env.DB.prepare(query)
+    const result = bindings.length > 0
+      ? await stmt.bind(...bindings).all()
+      : await stmt.all()
+
+    const devices = (result.results || []) as any[]
+
+    // Arricchisci con nome display
+    const enriched = devices.map((d: any) => ({
+      ...d,
+      assegnato_a: d.assegnato_assistito?.trim() || d.assegnato_richiedente?.trim() || null,
+      status_display: d.status === 'inventory'  ? 'INVENTORY'
+                    : d.status === 'assigned'   ? 'ASSIGNED'
+                    : d.status === 'active'     ? 'ACTIVE'
+                    : d.status === 'shipped'    ? 'SHIPPED'
+                    : d.status === 'returned'   ? 'RETURNED'
+                    : (d.status || 'INVENTORY').toUpperCase()
+    }))
+
+    return c.json({
+      success: true,
+      data: {
+        devices: enriched,
+        total: enriched.length
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore inventory dispositivi:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// ============================================================
+// POST /api/devices/upsert  - Inserisce o aggiorna un dispositivo (da DDT o config-form)
+// ============================================================
+app.post('/api/devices/upsert', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const body = await c.req.json() as any
+    const { imei, modello, lead_id, status = 'assigned' } = body
+
+    if (!imei || !modello) {
+      return c.json({ success: false, error: 'imei e modello obbligatori' }, 400)
+    }
+
+    const now = new Date().toISOString()
+
+    // Verifica se esiste già
+    const existing = await c.env.DB.prepare(
+      'SELECT id, status FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first() as any
+
+    if (existing) {
+      // Aggiorna solo se il nuovo stato è "più avanzato"
+      const statusOrder: Record<string, number> = { inventory: 0, assigned: 1, shipped: 2, active: 3, returned: 0 }
+      const existingRank = statusOrder[existing.status] ?? 0
+      const newRank = statusOrder[status] ?? 0
+
+      if (newRank >= existingRank) {
+        await c.env.DB.prepare(
+          `UPDATE dispositivi SET modello = ?, status = ?, lead_id = COALESCE(?, lead_id), assigned_at = ? WHERE serial_number = ?`
+        ).bind(modello, status, lead_id || null, now, imei).run()
+      }
+
+      return c.json({ success: true, action: 'updated', imei, status })
+    }
+
+    // Inserimento nuovo
+    await c.env.DB.prepare(
+      `INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(imei, modello, status, lead_id || null, lead_id ? now : null, now).run()
+
+    return c.json({ success: true, action: 'inserted', imei, modello, status })
+  } catch (error) {
+    console.error('❌ Errore upsert dispositivo:', error)
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {
@@ -25142,7 +25321,151 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, results })
     }
 
-    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze' }, 400)
+    // ACTION: bulk-ddt — inserisce le DDT storiche nel DB e sincronizza la tabella dispositivi
+    if (action === 'bulk-ddt') {
+      const ddts = [
+        {
+          id: 'DDT-EILEEN-20250514', numero: 'DDT-001-2025', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298061123965',
+          destinatario_nome: 'Eileen Elisabeth King',
+          destinatario_indirizzo: 'Via Gramsci 22', destinatario_cap: '20900',
+          destinatario_citta: 'Monza', destinatario_provincia: 'MB',
+          data: '2025-05-14T00:00:00.000Z', note: 'DDT 1 del 14/05/2025 - Consegna SiDLY CARE PRO a Eileen Elisabeth King. S/N: 868298061123965'
+        },
+        {
+          id: 'DDT-PIZZUTTO-20250520', numero: 'DDT-002-2025', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298060601011',
+          destinatario_nome: 'Paolo Pizzutto',
+          destinatario_indirizzo: 'Via Roma 1', destinatario_cap: '20100',
+          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
+          data: '2025-05-20T00:00:00.000Z', note: 'DDT 2 del 20/05/2025 - Consegna SiDLY CARE PRO a Paolo Pizzutto. S/N: 868298060601011'
+        },
+        {
+          id: 'DDT-PENNACCHIO-20250522', numero: 'DDT-003-2025', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298061123759',
+          destinatario_nome: 'Rita Pennacchio',
+          destinatario_indirizzo: 'Corso Umberto 5', destinatario_cap: '80100',
+          destinatario_citta: 'Napoli', destinatario_provincia: 'NA',
+          data: '2025-05-22T00:00:00.000Z', note: 'DDT 3 del 22/05/2025 - Consegna SiDLY CARE PRO a Rita Pennacchio. S/N: 868298061123759'
+        },
+        {
+          id: 'DDT-BALZAROTTI-20250617', numero: 'DDT-004-2025', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298061206968',
+          destinatario_nome: 'Giuliana Balzarotti',
+          destinatario_indirizzo: 'Via Manzoni 10', destinatario_cap: '20100',
+          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
+          data: '2025-06-17T00:00:00.000Z', note: 'DDT 4 del 17/06/2025 - Consegna SiDLY CARE PRO a Giuliana Balzarotti. S/N: 868298061206968'
+        },
+        {
+          id: 'DDT-LOCATELLI-20260206', numero: 'DDT-002-2026', contract_code: null,
+          dispositivo: 'SiDLY VITAL CARE', serial_number: null,
+          destinatario_nome: 'Giovanni Locatelli',
+          destinatario_indirizzo: 'Via Alpi 4', destinatario_cap: '24060',
+          destinatario_citta: 'Castelli Calepio', destinatario_provincia: 'BG',
+          data: '2026-02-06T00:00:00.000Z', note: 'DDT 2 del 06/02/2026 - Consegna SiDLY VITAL CARE a Giovanni Locatelli'
+        },
+        {
+          id: 'DDT-PEPE-20260209', numero: 'DDT-003-2026', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: null,
+          destinatario_nome: 'Francesco Pepe',
+          destinatario_indirizzo: 'Corso Garibaldi 3', destinatario_cap: '80100',
+          destinatario_citta: 'Napoli', destinatario_provincia: 'NA',
+          data: '2026-02-09T00:00:00.000Z', note: 'DDT 3 del 09/02/2026 - Consegna SiDLY CARE PRO a Francesco Pepe'
+        },
+        {
+          id: 'DDT-MACCHI-20260216', numero: 'DDT-004-2026', contract_code: null,
+          dispositivo: 'SiDLY VITAL CARE', serial_number: null,
+          destinatario_nome: 'Claudio Macchi',
+          destinatario_indirizzo: 'Via della Pace 8', destinatario_cap: '20100',
+          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
+          data: '2026-02-16T00:00:00.000Z', note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi'
+        },
+        {
+          id: 'DDT-RONCA-20260221', numero: 'DDT-005-2026', contract_code: null,
+          dispositivo: 'SiDLY VITAL CARE', serial_number: null,
+          destinatario_nome: 'Maria Grazia Ronca',
+          destinatario_indirizzo: 'Via Nizza 15', destinatario_cap: '00198',
+          destinatario_citta: 'Roma', destinatario_provincia: 'RM',
+          data: '2026-02-21T00:00:00.000Z', note: 'DDT 5 del 21/02/2026 - Consegna SiDLY VITAL CARE a Maria Grazia Ronca'
+        },
+        {
+          id: 'DDT-DELAUDE-20260224', numero: 'DDT-006-2026', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: null,
+          destinatario_nome: 'Margherita Delaude',
+          destinatario_indirizzo: 'Via del Castello 2', destinatario_cap: '38100',
+          destinatario_citta: 'Trento', destinatario_provincia: 'TN',
+          data: '2026-02-24T00:00:00.000Z', note: 'DDT 6 del 24/02/2026 - Consegna SiDLY CARE PRO a Margherita Delaude'
+        },
+        {
+          id: 'DDT-GALLO-20260317', numero: 'DDT-003-2026-MAR', contract_code: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: null,
+          destinatario_nome: 'Giuseppe Gallo',
+          destinatario_indirizzo: 'Via Garibaldi 10', destinatario_cap: '80100',
+          destinatario_citta: 'Napoli', destinatario_provincia: 'NA',
+          data: '2026-03-17T00:00:00.000Z', note: 'DDT 3 del 17/03/2026 - Consegna SiDLY CARE PRO a Giuseppe Gallo'
+        }
+      ]
+
+      const inserted: string[] = []
+      const skipped: string[] = []
+      const devicesUpserted: string[] = []
+
+      for (const ddt of ddts) {
+        try {
+          // Numero DDT univoco – se DDT-003-2026 esiste già (Pepe), usa il nuovo id
+          const existing = await c.env.DB.prepare(
+            'SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?'
+          ).bind(ddt.id, ddt.numero).first()
+
+          if (existing) {
+            skipped.push(ddt.numero)
+            continue
+          }
+
+          await c.env.DB.prepare(`
+            INSERT INTO ddts (
+              id, numero_ddt, contract_code,
+              dispositivo, serial_number,
+              destinatario_nome, destinatario_indirizzo,
+              destinatario_cap, destinatario_citta, destinatario_provincia,
+              quantita, status, note,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, ?)
+          `).bind(
+            ddt.id, ddt.numero, ddt.contract_code,
+            ddt.dispositivo, ddt.serial_number,
+            ddt.destinatario_nome, ddt.destinatario_indirizzo,
+            ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia,
+            ddt.note,
+            ddt.data, ddt.data
+          ).run()
+          inserted.push(ddt.numero)
+
+          // Sincronizza tabella dispositivi se abbiamo un S/N
+          if (ddt.serial_number) {
+            const devExisting = await c.env.DB.prepare(
+              'SELECT id FROM dispositivi WHERE serial_number = ?'
+            ).bind(ddt.serial_number).first()
+
+            if (!devExisting) {
+              const now2 = new Date().toISOString()
+              await c.env.DB.prepare(
+                `INSERT INTO dispositivi (serial_number, modello, status, created_at) VALUES (?, ?, 'active', ?)`
+              ).bind(ddt.serial_number, ddt.dispositivo, now2).run()
+              devicesUpserted.push(ddt.serial_number)
+            }
+          }
+        } catch (e) {
+          console.error(`DDT ${ddt.numero} errore:`, e)
+          skipped.push(`${ddt.numero} (errore: ${e})`)
+        }
+      }
+
+      results.bulk_ddt = { inserted, skipped, devicesUpserted }
+      return c.json({ success: true, results })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }

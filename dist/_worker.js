@@ -11271,18 +11271,19 @@ ${370+e.length}
                         <table class="w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IMEI</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IMEI / S/N</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modello</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Magazzino</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CE</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assegnato a</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Reg.</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Azioni</th>
                                 </tr>
                             </thead>
                             <tbody id="devicesTableBody" class="bg-white divide-y divide-gray-200">
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                                         <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>
                                         Caricamento dispositivi...
                                     </td>
@@ -11826,7 +11827,7 @@ ${370+e.length}
                 if (!devices || devices.length === 0) {
                     tbody.innerHTML = \`
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                                 <i class="fas fa-box-open text-3xl mb-2"></i><br>
                                 Nessun dispositivo trovato
                             </td>
@@ -11835,32 +11836,39 @@ ${370+e.length}
                     return;
                 }
                 
-                tbody.innerHTML = devices.map(device => \`
+                tbody.innerHTML = devices.map(device => {
+                    const statusKey = device.status_display || (device.status || '').toUpperCase();
+                    const assegnatoA = device.assegnato_a || (device.assegnato_richiedente ? device.assegnato_richiedente : (device.assegnato_assistito || '—'));
+                    return \`
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-4 text-sm font-mono text-gray-900">\${device.imei || 'N/A'}</td>
                         <td class="px-4 py-4 text-sm text-gray-900">\${device.model || 'N/A'}</td>
-                        <td class="px-4 py-4 text-sm text-gray-900">\${device.magazzino || 'N/A'}</td>
+                        <td class="px-4 py-4 text-sm text-gray-900">\${device.magazzino || 'Milano'}</td>
                         <td class="px-4 py-4 text-sm">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full \${getStatusBadgeClass(device.status)}">
-                                \${getStatusLabel(device.status)}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full \${getStatusBadgeClass(statusKey)}">
+                                \${getStatusLabel(statusKey)}
                             </span>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
-                            \${device.ce_marking || 'N/A'}
+                            \${device.ce_marking || 'CE 0051'}
+                        </td>
+                        <td class="px-4 py-4 text-sm text-gray-500" title="\${assegnatoA}">
+                            \${assegnatoA.length > 22 ? assegnatoA.substring(0,22)+'…' : assegnatoA}
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-500">
                             \${device.created_at ? new Date(device.created_at).toLocaleDateString('it-IT') : 'N/A'}
                         </td>
                         <td class="px-4 py-4 text-sm font-medium">
-                            <button onclick="viewDeviceDetails('\${device.device_id}')" class="text-blue-600 hover:text-blue-800 mr-2">
+                            <button onclick="viewDeviceDetails('\${device.device_id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Dettagli">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button onclick="editDeviceStatus('\${device.device_id}')" class="text-green-600 hover:text-green-800">
+                            <button onclick="editDeviceStatus('\${device.device_id}')" class="text-green-600 hover:text-green-800" title="Modifica stato">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </td>
                     </tr>
-                \`).join('');
+                \`;
+                }).join('');
             }
 
             // Helper functions per stato dispositivi
@@ -11892,7 +11900,7 @@ ${370+e.length}
                 const tbody = document.getElementById('devicesTableBody');
                 tbody.innerHTML = \`
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-red-500">
+                        <td colspan="8" class="px-4 py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-2xl mb-2"></i><br>
                             \${message}
                         </td>
@@ -14827,7 +14835,24 @@ startxref
           activated_at = NULL,
           updated_at = ?
       WHERE serial_number = ?
-    `).bind(r,e).run(),console.log(`📦 Dispositivo ${e} marcato come restituito. Motivo: ${a||"Non specificato"}`),t.json({success:!0,message:`Dispositivo ${e} restituito`,dispositivo:{imei:e,modello:i.modello,status:"returned",reason:a||"Non specificato",returned_at:r}})}catch(e){return console.error("❌ Errore restituzione dispositivo:",e),t.json({success:!1,error:"Errore restituzione dispositivo",details:e instanceof Error?e.message:String(e)},500)}});A.post("/api/assistiti/debug-eileen",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await t.env.DB.prepare(`
+    `).bind(r,e).run(),console.log(`📦 Dispositivo ${e} marcato come restituito. Motivo: ${a||"Non specificato"}`),t.json({success:!0,message:`Dispositivo ${e} restituito`,dispositivo:{imei:e,modello:i.modello,status:"returned",reason:a||"Non specificato",returned_at:r}})}catch(e){return console.error("❌ Errore restituzione dispositivo:",e),t.json({success:!1,error:"Errore restituzione dispositivo",details:e instanceof Error?e.message:String(e)},500)}});A.get("/api/devices/stats",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const a=(await t.env.DB.prepare("SELECT status FROM dispositivi").all()).results||[],i=a.length,r={};a.forEach(p=>{const g=(p.status||"inventory").toUpperCase();r[g]=(r[g]||0)+1});const s=Object.entries(r).map(([p,g])=>({status:p,count:g})),l=r.INVENTORY||r.inventory||0,d=r.ACTIVE||r.active||r.ATTIVO||0,c=r.ASSIGNED||r.assigned||0,u=r.SHIPPED||r.shipped||0;return t.json({success:!0,stats:{totalDevices:i,availableDevices:l,activeDevices:d,assignedDevices:c,shippedDevices:u,statusDistribution:s}})}catch(e){return console.error("❌ Errore stats dispositivi:",e),t.json({success:!1,error:String(e)},500)}});A.get("/api/devices/inventory",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const{searchParams:e}=new URL(t.req.url),a=e.get("status")||"",i=e.get("warehouse")||"";let r=`
+      SELECT
+        d.id            AS device_id,
+        d.serial_number AS imei,
+        d.modello       AS model,
+        d.status,
+        d.lead_id,
+        d.assigned_at,
+        d.activated_at,
+        d.created_at,
+        'Milano'        AS magazzino,
+        'CE 0051'       AS ce_marking,
+        l.nomeRichiedente || ' ' || l.cognomeRichiedente AS assegnato_richiedente,
+        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito
+      FROM dispositivi d
+      LEFT JOIN leads l   ON d.lead_id = l.id
+      LEFT JOIN assistiti a ON d.serial_number = a.imei
+    `;const s=[],l=[];a&&(l.push("d.status = ?"),s.push(a)),l.length>0&&(r+=" WHERE "+l.join(" AND ")),r+=" ORDER BY d.created_at DESC LIMIT 200";const d=t.env.DB.prepare(r),p=((s.length>0?await d.bind(...s).all():await d.all()).results||[]).map(g=>{var m,v;return{...g,assegnato_a:((m=g.assegnato_assistito)==null?void 0:m.trim())||((v=g.assegnato_richiedente)==null?void 0:v.trim())||null,status_display:g.status==="inventory"?"INVENTORY":g.status==="assigned"?"ASSIGNED":g.status==="active"?"ACTIVE":g.status==="shipped"?"SHIPPED":g.status==="returned"?"RETURNED":(g.status||"INVENTORY").toUpperCase()}});return t.json({success:!0,data:{devices:p,total:p.length}})}catch(e){return console.error("❌ Errore inventory dispositivi:",e),t.json({success:!1,error:String(e)},500)}});A.post("/api/devices/upsert",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=await t.req.json(),{imei:a,modello:i,lead_id:r,status:s="assigned"}=e;if(!a||!i)return t.json({success:!1,error:"imei e modello obbligatori"},400);const l=new Date().toISOString(),d=await t.env.DB.prepare("SELECT id, status FROM dispositivi WHERE serial_number = ?").bind(a).first();if(d){const c={inventory:0,assigned:1,shipped:2,active:3,returned:0},u=c[d.status]??0;return(c[s]??0)>=u&&await t.env.DB.prepare("UPDATE dispositivi SET modello = ?, status = ?, lead_id = COALESCE(?, lead_id), assigned_at = ? WHERE serial_number = ?").bind(i,s,r||null,l,a).run(),t.json({success:!0,action:"updated",imei:a,status:s})}return await t.env.DB.prepare("INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(a,i,s,r||null,r?l:null,l).run(),t.json({success:!0,action:"inserted",imei:a,modello:i,status:s})}catch(e){return console.error("❌ Errore upsert dispositivo:",e),t.json({success:!1,error:String(e)},500)}});A.post("/api/assistiti/debug-eileen",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await t.env.DB.prepare(`
       SELECT * 
       FROM assistiti 
       WHERE (nome_assistito LIKE '%Eileen%' OR cognome_assistito LIKE '%King%')
@@ -16390,7 +16415,16 @@ startxref
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, '2026-04-16T00:00:00.000Z', '2026-04-16T00:00:00.000Z')
       `).bind(p,g,"CTR-MAZZARELLA-2026","SiDLY VITAL CARE","862246076803994","Alfredo Vassalluzzo","Via Alda Merini, 35","00047","Marino","RM","3938700000","alfvas@icloud.com","/ddt/DDT_007_16-04-2026_Vassalluzzo_Mazzarella_SiDLY_VITAL_CARE.pdf","DDT #7 del 16/04/2026 - Consegna SiDLY VITAL CARE a Alfredo Vassalluzzo per assistita Maria Carmela Mazzarella. IMEI: 862246076803994").run(),i.ddt_registered={numero:g,id:p},t.json({success:!0,results:i})}if(a==="fix-scadenze"){const p=await t.env.DB.prepare(`SELECT id, codice_contratto, signed_at, data_scadenza, status FROM contracts 
          WHERE status = 'SIGNED' AND signed_at IS NOT NULL
-         ORDER BY signed_at DESC LIMIT 50`).all(),g=[];for(const m of p.results){const v=new Date(m.signed_at);if(isNaN(v.getTime()))continue;const h=new Date(v.getTime()+365*24*60*60*1e3).toISOString().split("T")[0];await t.env.DB.prepare("UPDATE contracts SET data_scadenza = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(h,m.id).run(),g.push({codice:m.codice_contratto,old:m.data_scadenza,new:h})}return i.fixed_contracts=g,t.json({success:!0,results:i})}return t.json({success:!1,error:"action deve essere: diagnose, insert, registra-ddt, fix-scadenze"},400)}catch(e){return t.json({success:!1,error:String(e)},500)}});A.use("*",async(t,o)=>{const a="033b5c7";t.header("X-System-Version","V12"),t.header("X-Git-Commit",a),t.header("X-Powered-By","TeleMedCare-V12-Protected"),t.req.path.startsWith("/api/")&&console.log(`[V12] ${t.req.method} ${t.req.path}`),await o()});A.post("/api/leads/:id/manual-sign",async t=>{var e;const o=t.req.param("id");try{if(!((e=t.env)!=null&&e.DB))return t.json({success:!1,error:"Database non configurato"},500);const a=await t.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(o).first();if(!a)return t.json({success:!1,error:"Lead non trovato"},404);console.log(`🖊️ [MANUAL-SIGN] Firma manuale contratto per lead ${o}`);const i=Date.now(),r=(a.cognomeAssistito||a.cognomeRichiedente||"UNKNOWN").toUpperCase().replace(/[^A-Z]/g,""),s=new Date().getFullYear(),l=`CONTRACT_CTR-${r}-${s}_${i}`,d=`CTR-${r}-${s}`,c=a.servizio||"eCura PRO",u=a.piano||"BASE",p=c.replace("eCura ","").trim().toUpperCase(),{calculatePrice:g}=await Promise.resolve().then(()=>qo),m=g(p,u.toUpperCase()),v=`
+         ORDER BY signed_at DESC LIMIT 50`).all(),g=[];for(const m of p.results){const v=new Date(m.signed_at);if(isNaN(v.getTime()))continue;const h=new Date(v.getTime()+365*24*60*60*1e3).toISOString().split("T")[0];await t.env.DB.prepare("UPDATE contracts SET data_scadenza = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(h,m.id).run(),g.push({codice:m.codice_contratto,old:m.data_scadenza,new:h})}return i.fixed_contracts=g,t.json({success:!0,results:i})}if(a==="bulk-ddt"){const p=[{id:"DDT-EILEEN-20250514",numero:"DDT-001-2025",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:"868298061123965",destinatario_nome:"Eileen Elisabeth King",destinatario_indirizzo:"Via Gramsci 22",destinatario_cap:"20900",destinatario_citta:"Monza",destinatario_provincia:"MB",data:"2025-05-14T00:00:00.000Z",note:"DDT 1 del 14/05/2025 - Consegna SiDLY CARE PRO a Eileen Elisabeth King. S/N: 868298061123965"},{id:"DDT-PIZZUTTO-20250520",numero:"DDT-002-2025",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:"868298060601011",destinatario_nome:"Paolo Pizzutto",destinatario_indirizzo:"Via Roma 1",destinatario_cap:"20100",destinatario_citta:"Milano",destinatario_provincia:"MI",data:"2025-05-20T00:00:00.000Z",note:"DDT 2 del 20/05/2025 - Consegna SiDLY CARE PRO a Paolo Pizzutto. S/N: 868298060601011"},{id:"DDT-PENNACCHIO-20250522",numero:"DDT-003-2025",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:"868298061123759",destinatario_nome:"Rita Pennacchio",destinatario_indirizzo:"Corso Umberto 5",destinatario_cap:"80100",destinatario_citta:"Napoli",destinatario_provincia:"NA",data:"2025-05-22T00:00:00.000Z",note:"DDT 3 del 22/05/2025 - Consegna SiDLY CARE PRO a Rita Pennacchio. S/N: 868298061123759"},{id:"DDT-BALZAROTTI-20250617",numero:"DDT-004-2025",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:"868298061206968",destinatario_nome:"Giuliana Balzarotti",destinatario_indirizzo:"Via Manzoni 10",destinatario_cap:"20100",destinatario_citta:"Milano",destinatario_provincia:"MI",data:"2025-06-17T00:00:00.000Z",note:"DDT 4 del 17/06/2025 - Consegna SiDLY CARE PRO a Giuliana Balzarotti. S/N: 868298061206968"},{id:"DDT-LOCATELLI-20260206",numero:"DDT-002-2026",contract_code:null,dispositivo:"SiDLY VITAL CARE",serial_number:null,destinatario_nome:"Giovanni Locatelli",destinatario_indirizzo:"Via Alpi 4",destinatario_cap:"24060",destinatario_citta:"Castelli Calepio",destinatario_provincia:"BG",data:"2026-02-06T00:00:00.000Z",note:"DDT 2 del 06/02/2026 - Consegna SiDLY VITAL CARE a Giovanni Locatelli"},{id:"DDT-PEPE-20260209",numero:"DDT-003-2026",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:null,destinatario_nome:"Francesco Pepe",destinatario_indirizzo:"Corso Garibaldi 3",destinatario_cap:"80100",destinatario_citta:"Napoli",destinatario_provincia:"NA",data:"2026-02-09T00:00:00.000Z",note:"DDT 3 del 09/02/2026 - Consegna SiDLY CARE PRO a Francesco Pepe"},{id:"DDT-MACCHI-20260216",numero:"DDT-004-2026",contract_code:null,dispositivo:"SiDLY VITAL CARE",serial_number:null,destinatario_nome:"Claudio Macchi",destinatario_indirizzo:"Via della Pace 8",destinatario_cap:"20100",destinatario_citta:"Milano",destinatario_provincia:"MI",data:"2026-02-16T00:00:00.000Z",note:"DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi"},{id:"DDT-RONCA-20260221",numero:"DDT-005-2026",contract_code:null,dispositivo:"SiDLY VITAL CARE",serial_number:null,destinatario_nome:"Maria Grazia Ronca",destinatario_indirizzo:"Via Nizza 15",destinatario_cap:"00198",destinatario_citta:"Roma",destinatario_provincia:"RM",data:"2026-02-21T00:00:00.000Z",note:"DDT 5 del 21/02/2026 - Consegna SiDLY VITAL CARE a Maria Grazia Ronca"},{id:"DDT-DELAUDE-20260224",numero:"DDT-006-2026",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:null,destinatario_nome:"Margherita Delaude",destinatario_indirizzo:"Via del Castello 2",destinatario_cap:"38100",destinatario_citta:"Trento",destinatario_provincia:"TN",data:"2026-02-24T00:00:00.000Z",note:"DDT 6 del 24/02/2026 - Consegna SiDLY CARE PRO a Margherita Delaude"},{id:"DDT-GALLO-20260317",numero:"DDT-003-2026-MAR",contract_code:null,dispositivo:"SiDLY CARE PRO",serial_number:null,destinatario_nome:"Giuseppe Gallo",destinatario_indirizzo:"Via Garibaldi 10",destinatario_cap:"80100",destinatario_citta:"Napoli",destinatario_provincia:"NA",data:"2026-03-17T00:00:00.000Z",note:"DDT 3 del 17/03/2026 - Consegna SiDLY CARE PRO a Giuseppe Gallo"}],g=[],m=[],v=[];for(const h of p)try{if(await t.env.DB.prepare("SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?").bind(h.id,h.numero).first()){m.push(h.numero);continue}if(await t.env.DB.prepare(`
+            INSERT INTO ddts (
+              id, numero_ddt, contract_code,
+              dispositivo, serial_number,
+              destinatario_nome, destinatario_indirizzo,
+              destinatario_cap, destinatario_citta, destinatario_provincia,
+              quantita, status, note,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, ?)
+          `).bind(h.id,h.numero,h.contract_code,h.dispositivo,h.serial_number,h.destinatario_nome,h.destinatario_indirizzo,h.destinatario_cap,h.destinatario_citta,h.destinatario_provincia,h.note,h.data,h.data).run(),g.push(h.numero),h.serial_number&&!await t.env.DB.prepare("SELECT id FROM dispositivi WHERE serial_number = ?").bind(h.serial_number).first()){const I=new Date().toISOString();await t.env.DB.prepare("INSERT INTO dispositivi (serial_number, modello, status, created_at) VALUES (?, ?, 'active', ?)").bind(h.serial_number,h.dispositivo,I).run(),v.push(h.serial_number)}}catch(E){console.error(`DDT ${h.numero} errore:`,E),m.push(`${h.numero} (errore: ${E})`)}return i.bulk_ddt={inserted:g,skipped:m,devicesUpserted:v},t.json({success:!0,results:i})}return t.json({success:!1,error:"action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt"},400)}catch(e){return t.json({success:!1,error:String(e)},500)}});A.use("*",async(t,o)=>{const a="033b5c7";t.header("X-System-Version","V12"),t.header("X-Git-Commit",a),t.header("X-Powered-By","TeleMedCare-V12-Protected"),t.req.path.startsWith("/api/")&&console.log(`[V12] ${t.req.method} ${t.req.path}`),await o()});A.post("/api/leads/:id/manual-sign",async t=>{var e;const o=t.req.param("id");try{if(!((e=t.env)!=null&&e.DB))return t.json({success:!1,error:"Database non configurato"},500);const a=await t.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(o).first();if(!a)return t.json({success:!1,error:"Lead non trovato"},404);console.log(`🖊️ [MANUAL-SIGN] Firma manuale contratto per lead ${o}`);const i=Date.now(),r=(a.cognomeAssistito||a.cognomeRichiedente||"UNKNOWN").toUpperCase().replace(/[^A-Z]/g,""),s=new Date().getFullYear(),l=`CONTRACT_CTR-${r}-${s}_${i}`,d=`CTR-${r}-${s}`,c=a.servizio||"eCura PRO",u=a.piano||"BASE",p=c.replace("eCura ","").trim().toUpperCase(),{calculatePrice:g}=await Promise.resolve().then(()=>qo),m=g(p,u.toUpperCase()),v=`
       <h1>Contratto ${c} - ${u}</h1>
       <p><strong>Cliente:</strong> ${a.nomeRichiedente} ${a.cognomeRichiedente}</p>
       <p><strong>Assistito:</strong> ${a.nomeAssistito} ${a.cognomeAssistito}</p>
