@@ -25854,11 +25854,11 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         },
         {
           id: 'DDT-MACCHI-20260216', numero: 'DDT-004-2026', contract_code: null,
-          dispositivo: 'SiDLY VITAL CARE', serial_number: '868298061148517',
+          dispositivo: 'SiDLY VITAL CARE', serial_number: '862246076276621',
           destinatario_nome: 'Claudio Macchi',
           destinatario_indirizzo: 'Via Muzio Clementi, 5', destinatario_cap: '20900',
           destinatario_citta: 'Monza', destinatario_provincia: 'MB',
-          data: '2026-02-16T00:00:00.000Z', note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi. S/N: 868298061148517. Contratto firmato del 6 febbraio 2026'
+          data: '2026-02-16T00:00:00.000Z', note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi. IMEI: 862246076276621, SIM: +48723162569. Contratto firmato del 6 febbraio 2026'
         },
         {
           id: 'DDT-RONCA-20260221', numero: 'DDT-005-2026', contract_code: null,
@@ -26033,7 +26033,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         },
         {
           numero: 'DDT-004-2026',
-          serial_number: '868298061148517',
+          serial_number: '862246076276621',
           dispositivo: 'SiDLY VITAL CARE',
           destinatario_nome: 'Claudio Macchi',
           destinatario_indirizzo: 'Via Muzio Clementi, 5',
@@ -26042,7 +26042,8 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
           destinatario_provincia: 'MB',
           contratto_riferimento: 'Contratto firmato del 6 febbraio 2026',
           pdf_url: '/contratti/Documento x Claudio Macchi.pdf',
-          status: 'consegnato'
+          status: 'consegnato',
+          note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi. IMEI: 862246076276621, SIM: +48723162569. Contratto firmato del 6 febbraio 2026'
         },
         {
           numero: 'DDT-005-2026',
@@ -26296,27 +26297,57 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
           destinatario_citta: 'Roma',
           destinatario_provincia: 'RM',
           serial_number: '868298061148517'
+        },
+        {
+          numero: 'DDT-004-2026',
+          pdf_url: null as string | null,
+          destinatario_indirizzo: 'Via Muzio Clementi, 5',
+          destinatario_cap: '20900',
+          destinatario_citta: 'Monza',
+          destinatario_provincia: 'MB',
+          serial_number: '862246076276621',
+          note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi. IMEI: 862246076276621, SIM: +48723162569. Contratto firmato del 6 febbraio 2026'
         }
       ]
       const updatedPdfs: string[] = []
       const erroriPdf: string[] = []
       for (const p of pdfs) {
         try {
-          await c.env.DB.prepare(`
-            UPDATE ddts SET
-              pdf_url = ?,
-              destinatario_indirizzo = ?,
-              destinatario_cap = ?,
-              destinatario_citta = ?,
-              destinatario_provincia = ?,
-              serial_number = COALESCE(serial_number, ?),
-              updated_at = ?
-            WHERE numero_ddt = ?
-          `).bind(
-            p.pdf_url, p.destinatario_indirizzo, p.destinatario_cap,
-            p.destinatario_citta, p.destinatario_provincia,
-            p.serial_number, new Date().toISOString(), p.numero
-          ).run()
+          const hasNote = (p as any).note
+          if (hasNote) {
+            await c.env.DB.prepare(`
+              UPDATE ddts SET
+                pdf_url = COALESCE(?, pdf_url),
+                destinatario_indirizzo = ?,
+                destinatario_cap = ?,
+                destinatario_citta = ?,
+                destinatario_provincia = ?,
+                serial_number = ?,
+                note = ?,
+                updated_at = ?
+              WHERE numero_ddt = ?
+            `).bind(
+              p.pdf_url, p.destinatario_indirizzo, p.destinatario_cap,
+              p.destinatario_citta, p.destinatario_provincia,
+              p.serial_number, hasNote, new Date().toISOString(), p.numero
+            ).run()
+          } else {
+            await c.env.DB.prepare(`
+              UPDATE ddts SET
+                pdf_url = ?,
+                destinatario_indirizzo = ?,
+                destinatario_cap = ?,
+                destinatario_citta = ?,
+                destinatario_provincia = ?,
+                serial_number = COALESCE(serial_number, ?),
+                updated_at = ?
+              WHERE numero_ddt = ?
+            `).bind(
+              p.pdf_url, p.destinatario_indirizzo, p.destinatario_cap,
+              p.destinatario_citta, p.destinatario_provincia,
+              p.serial_number, new Date().toISOString(), p.numero
+            ).run()
+          }
           updatedPdfs.push(p.numero)
         } catch (e) {
           erroriPdf.push(`${p.numero}: ${String(e)}`)
