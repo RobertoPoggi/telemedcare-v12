@@ -8701,8 +8701,12 @@ app.put('/api/ddts/:id', async (c) => {
     
     // Costruisci query UPDATE dinamica
     const allowedFields = [
-      'status', 'corriere', 'tracking_number', 'peso_kg', 
-      'data_spedizione', 'data_consegna', 'note', 'serial_number'
+      'status', 'corriere', 'tracking_number', 'peso_kg',
+      'data_spedizione', 'data_consegna', 'note', 'serial_number',
+      'numero_ddt', 'dispositivo', 'quantita',
+      'destinatario_nome', 'destinatario_indirizzo', 'destinatario_cap',
+      'destinatario_citta', 'destinatario_provincia', 'destinatario_telefono',
+      'destinatario_email', 'pdf_url', 'contract_code'
     ]
     
     const setClause: string[] = []
@@ -8740,6 +8744,22 @@ app.put('/api/ddts/:id', async (c) => {
       success: false,
       error: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// DELETE /api/ddts/:id - Elimina DDT
+app.delete('/api/ddts/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const existing = await c.env.DB.prepare('SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?').bind(id, id).first()
+    if (!existing) return c.json({ success: false, error: 'DDT non trovato' }, 404)
+    await c.env.DB.prepare('DELETE FROM ddts WHERE id = ?').bind(existing.id).run()
+    console.log(`🗑️ DDT eliminato: ${id}`)
+    return c.json({ success: true, message: 'DDT eliminato con successo', id: existing.id })
+  } catch (error) {
+    console.error('❌ Errore eliminazione DDT:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
@@ -25811,9 +25831,10 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
           id: 'DDT-BALZAROTTI-20250617', numero: 'DDT-004-2025', contract_code: null,
           dispositivo: 'SiDLY CARE PRO', serial_number: '868298061206968',
           destinatario_nome: 'Giuliana Balzarotti',
-          destinatario_indirizzo: 'Via Manzoni 10', destinatario_cap: '20100',
-          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
-          data: '2025-06-17T00:00:00.000Z', note: 'DDT 4 del 17/06/2025 - Consegna SiDLY CARE PRO a Giuliana Balzarotti. S/N: 868298061206968'
+          destinatario_indirizzo: 'Via Statale per Lecco 23/A', destinatario_cap: '22100',
+          destinatario_citta: 'Como', destinatario_provincia: 'CO',
+          pdf_url: '/ddt/DDT_004_17-06-2025_Giuliana_Balzarotti_SiDLY_CARE_PRO.pdf',
+          data: '2025-06-17T00:00:00.000Z', note: 'DDT 4 del 17/06/2025 - Consegna SiDLY CARE PRO a Giuliana Balzarotti. S/N: 868298061206968. Contratto del 17 giugno 2025'
         },
         {
           id: 'DDT-LOCATELLI-20260206', numero: 'DDT-002-2026', contract_code: null,
@@ -25833,11 +25854,11 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         },
         {
           id: 'DDT-MACCHI-20260216', numero: 'DDT-004-2026', contract_code: null,
-          dispositivo: 'SiDLY VITAL CARE', serial_number: null,
+          dispositivo: 'SiDLY VITAL CARE', serial_number: '868298061148517',
           destinatario_nome: 'Claudio Macchi',
-          destinatario_indirizzo: 'Via della Pace 8', destinatario_cap: '20100',
-          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
-          data: '2026-02-16T00:00:00.000Z', note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi'
+          destinatario_indirizzo: 'Via Muzio Clementi, 5', destinatario_cap: '20900',
+          destinatario_citta: 'Monza', destinatario_provincia: 'MB',
+          data: '2026-02-16T00:00:00.000Z', note: 'DDT 4 del 16/02/2026 - Consegna SiDLY VITAL CARE a Claudio Macchi. S/N: 868298061148517. Contratto firmato del 6 febbraio 2026'
         },
         {
           id: 'DDT-RONCA-20260221', numero: 'DDT-005-2026', contract_code: null,
@@ -25849,19 +25870,21 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         },
         {
           id: 'DDT-DELAUDE-20260224', numero: 'DDT-006-2026', contract_code: null,
-          dispositivo: 'SiDLY CARE PRO', serial_number: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298061149689',
           destinatario_nome: 'Margherita Delaude',
-          destinatario_indirizzo: 'Via del Castello 2', destinatario_cap: '38100',
-          destinatario_citta: 'Trento', destinatario_provincia: 'TN',
-          data: '2026-02-24T00:00:00.000Z', note: 'DDT 6 del 24/02/2026 - Consegna SiDLY CARE PRO a Margherita Delaude'
+          destinatario_indirizzo: 'Via Lodovico Winter 6', destinatario_cap: '18012',
+          destinatario_citta: 'Bordighera', destinatario_provincia: 'IM',
+          pdf_url: '/ddt/DDT_006_24-02-2026_Margherita_Delaude_SiDLY_CARE_PRO.pdf',
+          data: '2026-02-24T00:00:00.000Z', note: 'DDT 6 del 24/02/2026 - Consegna SiDLY CARE PRO a Margherita Delaude. S/N: 868298061149689. Contratto firmato del 17 febbraio 2026'
         },
         {
           id: 'DDT-GALLO-20260317', numero: 'DDT-003-2026-MAR', contract_code: null,
-          dispositivo: 'SiDLY CARE PRO', serial_number: null,
+          dispositivo: 'SiDLY CARE PRO', serial_number: '868298061148517',
           destinatario_nome: 'Giuseppe Gallo',
-          destinatario_indirizzo: 'Via Garibaldi 10', destinatario_cap: '80100',
-          destinatario_citta: 'Napoli', destinatario_provincia: 'NA',
-          data: '2026-03-17T00:00:00.000Z', note: 'DDT 3 del 17/03/2026 - Consegna SiDLY CARE PRO a Giuseppe Gallo'
+          destinatario_indirizzo: 'Via Andersen 129 int 2', destinatario_cap: '00168',
+          destinatario_citta: 'Roma', destinatario_provincia: 'RM',
+          pdf_url: '/ddt/DDT_003_17-03-2026_Giuseppe_Gallo_SiDLY_CARE_PRO.pdf',
+          data: '2026-03-17T00:00:00.000Z', note: 'DDT 3 del 17/03/2026 - Consegna SiDLY CARE PRO a Giuseppe Gallo. S/N: 868298061148517. Contratto firmato del 10 marzo 2026'
         }
       ]
 
@@ -25924,7 +25947,385 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, results })
     }
 
-    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt' }, 400)
+    // ACTION: fix-14-ddt — aggiorna DDT esistenti con IMEI reali, modelli, link contratti e PDF; aggiunge 3 DDT mancanti
+    if (action === 'fix-14-ddt') {
+      const now = new Date().toISOString()
+
+      // Mapping completo: numero DDT → dati aggiornati (da file Excel reali)
+      const updates = [
+        {
+          numero: 'DDT-001-2025',
+          serial_number: '868298061123965',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Eileen Elisabeth King',
+          destinatario_indirizzo: 'Via Armando Diaz, 34',
+          destinatario_cap: '20063',
+          destinatario_citta: 'Cernusco sul Naviglio',
+          destinatario_provincia: 'MI',
+          contratto_riferimento: 'Contratto del 5 maggio 2025',
+          pdf_url: '/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza Avanzato SIDLY FIRMATO_Eileen King.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-002-2025',
+          serial_number: '868298060601011',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Paolo Pizzutto',
+          destinatario_indirizzo: 'Via Costituzione, 5',
+          destinatario_cap: '10099',
+          destinatario_citta: 'S. Mauro Torinese',
+          destinatario_provincia: 'TO',
+          contratto_riferimento: 'Contratto del 8 maggio 2025',
+          pdf_url: '/contratti/12.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Gianni Paolo Pizzutto_firmato.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-003-2025',
+          serial_number: '868298061123759',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Rita Pennacchio',
+          destinatario_indirizzo: 'Via Antonio Fogazzaro 28',
+          destinatario_cap: '80014',
+          destinatario_citta: 'Giugliano',
+          destinatario_provincia: 'NA',
+          contratto_riferimento: 'Contratto del 8 maggio 2025',
+          pdf_url: '/contratti/12.05.2025_Contratto firmato SIDLY BASE_Pennacchio Rita - Contratto firmato.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-004-2025',
+          serial_number: '868298061206968',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Giuliana Balzarotti',
+          destinatario_indirizzo: 'Via Statale per Lecco 23/A',
+          destinatario_cap: '22100',
+          destinatario_citta: 'Como',
+          destinatario_provincia: 'CO',
+          contratto_riferimento: 'Contratto del 17 giugno 2025',
+          pdf_url: '/ddt/DDT_004_17-06-2025_Giuliana_Balzarotti_SiDLY_CARE_PRO.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-002-2026',
+          serial_number: '862246073871101',
+          dispositivo: 'SiDLY VITAL CARE',
+          destinatario_nome: 'Giovanni Locatelli',
+          destinatario_indirizzo: 'Viale Caterina da Forlì 32',
+          destinatario_cap: '20144',
+          destinatario_citta: 'Milano',
+          destinatario_provincia: 'MI',
+          contratto_riferimento: 'Contratto firmato del 2 febbraio 2026',
+          pdf_url: '/contratti/03.02.2026_signor Locatelli_BASE_SIDLY VITAL CARE.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-003-2026',
+          serial_number: '868298060656916',
+          dispositivo: 'SiDLY VITAL CARE',
+          destinatario_nome: 'Francesco Pepe',
+          destinatario_indirizzo: "Piazza Martiri di Nassirya 8",
+          destinatario_cap: '84010',
+          destinatario_citta: "Sant'Egidio del Monte Albino",
+          destinatario_provincia: 'SA',
+          contratto_riferimento: 'Contratto firmato del 6 febbraio 2026',
+          pdf_url: '/contratti/27.01.2026_Pepe Francesco Contratto.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-004-2026',
+          serial_number: '868298061148517',
+          dispositivo: 'SiDLY VITAL CARE',
+          destinatario_nome: 'Claudio Macchi',
+          destinatario_indirizzo: 'Via Muzio Clementi, 5',
+          destinatario_cap: '20900',
+          destinatario_citta: 'Monza',
+          destinatario_provincia: 'MB',
+          contratto_riferimento: 'Contratto firmato del 6 febbraio 2026',
+          pdf_url: '/contratti/Documento x Claudio Macchi.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-005-2026',
+          serial_number: '862246076804059',
+          dispositivo: 'SiDLY VITAL CARE',
+          destinatario_nome: 'Maria Grazia Ronca',
+          destinatario_indirizzo: 'Via Cosseria N°2',
+          destinatario_cap: '20136',
+          destinatario_citta: 'Milano',
+          destinatario_provincia: 'MI',
+          contratto_riferimento: 'Contratto firmato del 21 febbraio 2026',
+          pdf_url: null,
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-006-2026',
+          serial_number: '868298061149689',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Margherita Delaude',
+          destinatario_indirizzo: 'Via Lodovico Winter 6',
+          destinatario_cap: '18012',
+          destinatario_citta: 'Bordighera',
+          destinatario_provincia: 'IM',
+          contratto_riferimento: 'Contratto firmato del 17 febbraio 2026',
+          pdf_url: '/ddt/DDT_006_24-02-2026_Margherita_Delaude_SiDLY_CARE_PRO.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-003-2026-MAR',
+          serial_number: '868298061148517',
+          dispositivo: 'SiDLY CARE PRO',
+          destinatario_nome: 'Giuseppe Gallo',
+          destinatario_indirizzo: 'Via Andersen 129 int 2',
+          destinatario_cap: '00168',
+          destinatario_citta: 'Roma',
+          destinatario_provincia: 'RM',
+          contratto_riferimento: 'Contratto firmato del 10 marzo 2026',
+          pdf_url: '/ddt/DDT_003_17-03-2026_Giuseppe_Gallo_SiDLY_CARE_PRO.pdf',
+          status: 'consegnato'
+        },
+        {
+          numero: 'DDT-007-2026',
+          serial_number: '862246076803994',
+          dispositivo: 'SiDLY VITAL CARE',
+          destinatario_nome: 'Alfredo Vassalluzzo',
+          destinatario_indirizzo: 'Via Alda Merini, 35',
+          destinatario_cap: '00047',
+          destinatario_citta: 'Marino',
+          destinatario_provincia: 'RM',
+          contratto_riferimento: 'CTR-MAZZARELLA-2026',
+          pdf_url: '/ddt/DDT_007_16-04-2026_Vassalluzzo_Mazzarella_SiDLY_VITAL_CARE.pdf',
+          status: 'consegnato'
+        }
+      ]
+
+      // 3 DDT aggiuntivi da creare (senza PDF reale - da completare)
+      const newDDTs = [
+        {
+          id: 'DDT-SAGLIA-20250505',
+          numero: 'DDT-005-2025',
+          dispositivo: 'SiDLY CARE PRO',
+          serial_number: '864866054770732',
+          destinatario_nome: 'Elena Saglia',
+          destinatario_indirizzo: 'Indirizzo da completare',
+          destinatario_cap: '00000',
+          destinatario_citta: 'Da completare',
+          destinatario_provincia: 'XX',
+          contratto_riferimento: 'Contratto del 5 maggio 2025',
+          pdf_url: '/contratti/05.05.2025_Contratto Medica GB_TeleAssistenza Avanzata SIDLY_Sig.ra Elena Saglia.pdf',
+          data: '2025-05-05T00:00:00.000Z',
+          note: 'DDT consegna SiDLY CARE PRO a Elena Saglia. S/N: 864866054770732. Indirizzo da completare.',
+          status: 'consegnato'
+        },
+        {
+          id: 'DDT-DALTERIO-20250508',
+          numero: 'DDT-006-2025',
+          dispositivo: 'SiDLY CARE PRO',
+          serial_number: '868298061148327',
+          destinatario_nome: "Caterina D'Alterio",
+          destinatario_indirizzo: 'Indirizzo da completare',
+          destinatario_cap: '00000',
+          destinatario_citta: 'Da completare',
+          destinatario_provincia: 'XX',
+          contratto_riferimento: 'Contratto del 8 maggio 2025',
+          pdf_url: "/contratti/08.05.2025_Contratto Medica GB_TeleAssistenza SIDLY BASE_Sig.ra Caterina D'Alterio .pdf",
+          data: '2025-05-08T00:00:00.000Z',
+          note: "DDT consegna SiDLY CARE PRO a Caterina D'Alterio. S/N: 868298061148327. Indirizzo da completare.",
+          status: 'consegnato'
+        },
+        {
+          id: 'DDT-MAZZARELLA-20260416',
+          numero: 'DDT-008-2026',
+          dispositivo: 'SiDLY VITAL CARE',
+          serial_number: '862246076803994',
+          destinatario_nome: 'Maria Carmela Mazzarella',
+          destinatario_indirizzo: 'Indirizzo da completare',
+          destinatario_cap: '00000',
+          destinatario_citta: 'Da completare',
+          destinatario_provincia: 'XX',
+          contratto_riferimento: 'CTR-MAZZARELLA-2026',
+          pdf_url: '/ddt/DDT_007_16-04-2026_Vassalluzzo_Mazzarella_SiDLY_VITAL_CARE.pdf',
+          data: '2026-04-16T00:00:00.000Z',
+          note: 'DDT consegna SiDLY VITAL CARE a Maria Carmela Mazzarella (c/o Alfredo Vassalluzzo). S/N: 862246076803994.',
+          status: 'consegnato'
+        }
+      ]
+
+      const updateResults: string[] = []
+      const insertResults: string[] = []
+      const devicesFixed: string[] = []
+      const errori: string[] = []
+
+      // Aggiorna DDT esistenti
+      for (const upd of updates) {
+        try {
+          const existing = await c.env.DB.prepare('SELECT id FROM ddts WHERE numero_ddt = ?').bind(upd.numero).first()
+          if (!existing) {
+            errori.push(`${upd.numero}: non trovato`)
+            continue
+          }
+          await c.env.DB.prepare(`
+            UPDATE ddts SET
+              serial_number = ?,
+              dispositivo = ?,
+              destinatario_nome = ?,
+              destinatario_indirizzo = ?,
+              destinatario_cap = ?,
+              destinatario_citta = ?,
+              destinatario_provincia = ?,
+              note = ?,
+              pdf_url = ?,
+              status = ?
+            WHERE numero_ddt = ?
+          `).bind(
+            upd.serial_number, upd.dispositivo,
+            upd.destinatario_nome, upd.destinatario_indirizzo,
+            upd.destinatario_cap, upd.destinatario_citta, upd.destinatario_provincia,
+            upd.contratto_riferimento, upd.pdf_url, upd.status,
+            upd.numero
+          ).run()
+          updateResults.push(upd.numero)
+
+          // Sincronizza dispositivo se ha S/N
+          if (upd.serial_number) {
+            const devEx = await c.env.DB.prepare('SELECT id, modello FROM dispositivi WHERE serial_number = ?').bind(upd.serial_number).first()
+            const cleanModello = upd.dispositivo.includes('VITAL') ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+            if (!devEx) {
+              await c.env.DB.prepare(`INSERT INTO dispositivi (serial_number, modello, status, created_at) VALUES (?, ?, 'active', ?)`).bind(upd.serial_number, cleanModello, now).run()
+              devicesFixed.push(`inserted:${upd.serial_number}`)
+            } else if (!['SiDLY CARE PRO', 'SiDLY VITAL CARE'].includes(devEx.modello as string)) {
+              try {
+                await c.env.DB.prepare(`UPDATE dispositivi SET modello = ? WHERE serial_number = ?`).bind(cleanModello, upd.serial_number).run()
+              } catch(_) {
+                await c.env.DB.prepare(`UPDATE dispositivi SET modello = ? WHERE serial_number = ?`).bind(cleanModello, upd.serial_number).run()
+              }
+              devicesFixed.push(`fixed_model:${upd.serial_number}`)
+            }
+          }
+        } catch (e) {
+          errori.push(`${upd.numero}: ${String(e)}`)
+        }
+      }
+
+      // Inserisci 3 nuovi DDT mancanti
+      for (const nd of newDDTs) {
+        try {
+          const ex = await c.env.DB.prepare('SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?').bind(nd.id, nd.numero).first()
+          if (ex) { insertResults.push(`${nd.numero}: già presente`); continue }
+
+          await c.env.DB.prepare(`
+            INSERT INTO ddts (id, numero_ddt, dispositivo, serial_number, destinatario_nome, destinatario_indirizzo, destinatario_cap, destinatario_citta, destinatario_provincia, quantita, status, note, pdf_url, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+          `).bind(nd.id, nd.numero, nd.dispositivo, nd.serial_number, nd.destinatario_nome, nd.destinatario_indirizzo, nd.destinatario_cap, nd.destinatario_citta, nd.destinatario_provincia, nd.status, nd.note, nd.pdf_url, nd.data).run()
+          insertResults.push(`${nd.numero}: inserito`)
+
+          if (nd.serial_number) {
+            const devEx = await c.env.DB.prepare('SELECT id FROM dispositivi WHERE serial_number = ?').bind(nd.serial_number).first()
+            if (!devEx) {
+              const cleanModello = nd.dispositivo.includes('VITAL') ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+              await c.env.DB.prepare(`INSERT INTO dispositivi (serial_number, modello, status, created_at) VALUES (?, ?, 'active', ?)`).bind(nd.serial_number, cleanModello, now).run()
+              devicesFixed.push(`inserted:${nd.serial_number}`)
+            }
+          }
+        } catch (e) {
+          errori.push(`${nd.numero}: ${String(e)}`)
+        }
+      }
+
+      // Pulisci dispositivi con modelli non standard (V10, V12, PLUS)
+      const badDevices = await c.env.DB.prepare(`
+        SELECT id, serial_number, modello FROM dispositivi
+        WHERE modello NOT IN ('SiDLY CARE PRO', 'SiDLY VITAL CARE')
+      `).all()
+      for (const dev of (badDevices.results || [])) {
+        const sn = dev.serial_number as string || ''
+        const m = dev.modello as string || ''
+        const cleanM = m.includes('VITAL') ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+        await c.env.DB.prepare(`UPDATE dispositivi SET modello = ? WHERE id = ?`).bind(cleanM, dev.id).run()
+        devicesFixed.push(`normalized:${sn}→${cleanM}`)
+      }
+
+      // Rimuovi dispositivi con IMEI fittizi (quelli con numeri ripetuti come 86234660...)
+      const fakeDevices = await c.env.DB.prepare(`
+        SELECT id, serial_number FROM dispositivi
+        WHERE LENGTH(serial_number) > 16 OR serial_number LIKE '%0000%'
+      `).all()
+      const deletedFake: string[] = []
+      for (const dev of (fakeDevices.results || [])) {
+        await c.env.DB.prepare('DELETE FROM dispositivi WHERE id = ?').bind(dev.id).run()
+        deletedFake.push(dev.serial_number as string)
+      }
+
+      return c.json({
+        success: true,
+        results: {
+          ddt_aggiornati: updateResults,
+          ddt_inseriti: insertResults,
+          dispositivi_aggiornati: devicesFixed,
+          dispositivi_fake_rimossi: deletedFake,
+          errori
+        }
+      })
+    }
+
+    // ACTION: fix-pdf-ddt — aggiorna pdf_url e indirizzi per le 3 DDT con PDF ora disponibili
+    if (action === 'fix-pdf-ddt') {
+      const pdfs = [
+        {
+          numero: 'DDT-004-2025',
+          pdf_url: '/ddt/DDT_004_17-06-2025_Giuliana_Balzarotti_SiDLY_CARE_PRO.pdf',
+          destinatario_indirizzo: 'Via Statale per Lecco 23/A',
+          destinatario_cap: '22100',
+          destinatario_citta: 'Como',
+          destinatario_provincia: 'CO',
+          serial_number: '868298061206968'
+        },
+        {
+          numero: 'DDT-006-2026',
+          pdf_url: '/ddt/DDT_006_24-02-2026_Margherita_Delaude_SiDLY_CARE_PRO.pdf',
+          destinatario_indirizzo: 'Via Lodovico Winter 6',
+          destinatario_cap: '18012',
+          destinatario_citta: 'Bordighera',
+          destinatario_provincia: 'IM',
+          serial_number: '868298061149689'
+        },
+        {
+          numero: 'DDT-003-2026-MAR',
+          pdf_url: '/ddt/DDT_003_17-03-2026_Giuseppe_Gallo_SiDLY_CARE_PRO.pdf',
+          destinatario_indirizzo: 'Via Andersen 129 int 2',
+          destinatario_cap: '00168',
+          destinatario_citta: 'Roma',
+          destinatario_provincia: 'RM',
+          serial_number: '868298061148517'
+        }
+      ]
+      const updatedPdfs: string[] = []
+      const erroriPdf: string[] = []
+      for (const p of pdfs) {
+        try {
+          await c.env.DB.prepare(`
+            UPDATE ddts SET
+              pdf_url = ?,
+              destinatario_indirizzo = ?,
+              destinatario_cap = ?,
+              destinatario_citta = ?,
+              destinatario_provincia = ?,
+              serial_number = COALESCE(serial_number, ?),
+              updated_at = ?
+            WHERE numero_ddt = ?
+          `).bind(
+            p.pdf_url, p.destinatario_indirizzo, p.destinatario_cap,
+            p.destinatario_citta, p.destinatario_provincia,
+            p.serial_number, new Date().toISOString(), p.numero
+          ).run()
+          updatedPdfs.push(p.numero)
+        } catch (e) {
+          erroriPdf.push(`${p.numero}: ${String(e)}`)
+        }
+      }
+      return c.json({ success: true, updated: updatedPdfs, errors: erroriPdf })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }

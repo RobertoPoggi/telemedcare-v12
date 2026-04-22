@@ -1174,32 +1174,120 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- ACCESSO RAPIDO: DDT e Dispositivi -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-        <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
-            <i class="fas fa-bolt text-yellow-500 mr-2"></i>Accesso Rapido
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a href="/admin/ddt" class="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-teal-400 hover:shadow-md transition-all p-5 group">
-                <div class="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-200 transition-colors">
-                    <i class="fas fa-truck text-2xl text-teal-600"></i>
+    <!-- ============================================================ -->
+    <!-- TABELLA DDT (inline nel dashboard operativo)                -->
+    <!-- ============================================================ -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-truck text-teal-500 mr-2"></i>
+                    DDT – Documenti di Trasporto
+                    <span id="ddtCount" class="ml-3 text-sm bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-bold">0</span>
+                </h3>
+                <div class="flex gap-2 flex-wrap">
+                    <input type="text" id="searchDDT" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48" placeholder="🔍 Cerca DDT..." oninput="filterDDTTable()">
+                    <select id="filterDDTStatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="filterDDTTable()">
+                        <option value="">Tutti gli stati</option>
+                        <option value="consegnato">Consegnato</option>
+                        <option value="spedito">Spedito</option>
+                        <option value="preparazione">In preparazione</option>
+                    </select>
+                    <button onclick="openDDTCreate()" class="flex items-center px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors text-sm">
+                        <i class="fas fa-plus mr-2"></i>Nuovo DDT
+                    </button>
+                    <a href="/admin/ddt" class="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-external-link-alt mr-1"></i>Vista completa
+                    </a>
                 </div>
-                <div>
-                    <div class="font-bold text-gray-900 text-base">Gestione DDT</div>
-                    <div class="text-sm text-gray-500 mt-0.5">Lista documenti di trasporto, stati spedizione, export CSV</div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">N° DDT</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Destinatario</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Dispositivo</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">IMEI / S/N</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Contratto</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">PDF</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Stato</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ddtTable">
+                        <tr><td colspan="9" class="py-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-2"></i><p>Caricamento DDT...</p>
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TABELLA DISPOSITIVI (inline nel dashboard operativo)         -->
+    <!-- ============================================================ -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-mobile-alt text-cyan-500 mr-2"></i>
+                    Magazzino Dispositivi SiDLY
+                    <span id="devCount" class="ml-3 text-sm bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full font-bold">0</span>
+                </h3>
+                <div class="flex gap-2 flex-wrap">
+                    <input type="text" id="searchDev" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48" placeholder="🔍 Cerca IMEI / nome..." oninput="filterDevTable()">
+                    <select id="filterDevStatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="filterDevTable()">
+                        <option value="">Tutti gli stati</option>
+                        <option value="inventory">Magazzino</option>
+                        <option value="assigned">Assegnato</option>
+                        <option value="active">Attivo</option>
+                        <option value="returned">Reso</option>
+                    </select>
+                    <select id="filterDevModello" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="filterDevTable()">
+                        <option value="">Tutti i modelli</option>
+                        <option value="SiDLY CARE PRO">SiDLY CARE PRO</option>
+                        <option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>
+                    </select>
+                    <a href="/admin/devices" class="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-external-link-alt mr-1"></i>Gestione completa
+                    </a>
                 </div>
-                <i class="fas fa-chevron-right text-gray-300 group-hover:text-teal-500 ml-auto transition-colors"></i>
-            </a>
-            <a href="/admin/devices" class="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-cyan-400 hover:shadow-md transition-all p-5 group">
-                <div class="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-200 transition-colors">
-                    <i class="fas fa-mobile-alt text-2xl text-cyan-600"></i>
-                </div>
-                <div>
-                    <div class="font-bold text-gray-900 text-base">Gestione Dispositivi</div>
-                    <div class="text-sm text-gray-500 mt-0.5">Inventario SiDLY, stati magazzino, assegnazioni assistiti</div>
-                </div>
-                <i class="fas fa-chevron-right text-gray-300 group-hover:text-cyan-500 ml-auto transition-colors"></i>
-            </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-left">
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">IMEI / S/N</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Modello</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Stato</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Assegnato a</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data reg.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devTable">
+                        <tr><td colspan="5" class="py-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-2"></i><p>Caricamento dispositivi...</p>
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- DDT CRUD MODAL -->
+    <div id="ddtModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-screen overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h3 class="text-lg font-bold text-gray-800" id="ddtModalTitle">Dettaglio DDT</h3>
+                <button onclick="closeDDTModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6" id="ddtModalBody"></div>
+            <div class="px-6 pb-6 flex justify-end gap-2" id="ddtModalFooter">
+                <button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>
+            </div>
         </div>
     </div>
 
@@ -1220,8 +1308,312 @@ export const dashboard = `<!DOCTYPE html>
         let refreshInterval;
         let isLoading = false;
 
+        // ── DDT TABLE ────────────────────────────────────────────────
+        let allDDTs = [];
+        let allDevices = [];
+
+        async function loadDDTTable() {
+            try {
+                const res = await fetch('/api/ddts');
+                const data = await res.json();
+                allDDTs = data.ddts || [];
+                document.getElementById('ddtCount').textContent = allDDTs.length;
+                filterDDTTable();
+            } catch(e) {
+                console.error('DDT load error:', e);
+                const tb = document.getElementById('ddtTable');
+                if (tb) tb.innerHTML = '<tr><td colspan="9" class="py-4 text-center text-red-400">Errore caricamento DDT</td></tr>';
+            }
+        }
+
+        function filterDDTTable() {
+            const q = (document.getElementById('searchDDT')?.value || '').toLowerCase();
+            const st = (document.getElementById('filterDDTStatus')?.value || '').toLowerCase();
+            let filtered = allDDTs.filter(d => {
+                const matchQ = !q || (d.numero_ddt||'').toLowerCase().includes(q) || (d.destinatario_nome||'').toLowerCase().includes(q) || (d.serial_number||'').toLowerCase().includes(q);
+                const matchSt = !st || (d.status||'').toLowerCase() === st;
+                return matchQ && matchSt;
+            });
+            renderDDTTable(filtered);
+        }
+
+        function renderDDTTable(list) {
+            const tb = document.getElementById('ddtTable');
+            if (!tb) return;
+            if (!list.length) {
+                tb.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-gray-400">Nessun DDT trovato</td></tr>';
+                return;
+            }
+            const statusMap = {
+                consegnato: ['bg-green-100 text-green-700','fa-check-circle','Consegnato'],
+                spedito:    ['bg-yellow-100 text-yellow-700','fa-shipping-fast','Spedito'],
+                preparazione:['bg-blue-100 text-blue-700','fa-box-open','Preparazione'],
+                annullato:  ['bg-red-100 text-red-700','fa-times-circle','Annullato']
+            };
+            tb.innerHTML = list.map(d => {
+                const s = statusMap[d.status] || ['bg-gray-100 text-gray-600','fa-question','—'];
+                const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
+                const pdfBtn = d.pdf_url
+                    ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-500 hover:text-red-700" title="Apri PDF"><i class="fas fa-file-pdf"></i></a>'
+                    : '<span class="text-gray-300" title="Nessun PDF"><i class="fas fa-file-pdf"></i></span>';
+                const contractLink = d.note
+                    ? '<span class="text-xs text-gray-500 max-w-xs truncate block" title="' + escapeHtml(d.note) + '">' + escapeHtml(d.note).substring(0,30) + (d.note.length>30?'…':'') + '</span>'
+                    : '—';
+                const snDisplay = d.serial_number ? '<span class="font-mono text-xs">' + escapeHtml(d.serial_number) + '</span>' : '<span class="text-gray-300">—</span>';
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                    '<td class="px-2 py-3 font-mono text-xs font-semibold text-teal-700 whitespace-nowrap">' + escapeHtml(d.numero_ddt||'—') + '</td>' +
+                    '<td class="px-2 py-3 text-xs text-gray-500 whitespace-nowrap">' + dtStr + '</td>' +
+                    '<td class="px-2 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">' + escapeHtml(d.destinatario_nome||'—') + '</td>' +
+                    '<td class="px-2 py-3 text-xs text-gray-600">' + escapeHtml(d.dispositivo||'—') + '</td>' +
+                    '<td class="px-2 py-3">' + snDisplay + '</td>' +
+                    '<td class="px-2 py-3">' + contractLink + '</td>' +
+                    '<td class="px-2 py-3 text-center">' + pdfBtn + '</td>' +
+                    '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
+                    '<td class="px-2 py-3 whitespace-nowrap">' +
+                        '<button onclick="openDDTDetail(\'' + escapeHtml(d.id||d.numero_ddt) + '\')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
+                        '<button onclick="openDDTEdit(\'' + escapeHtml(d.id||d.numero_ddt) + '\')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="deleteDDT(\'' + escapeHtml(d.id||d.numero_ddt) + '\')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
+                    '</td></tr>';
+            }).join('');
+        }
+
+        function openDDTDetail(id) {
+            const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
+            if (!d) return;
+            document.getElementById('ddtModalTitle').textContent = 'DDT ' + (d.numero_ddt||d.id);
+            const pdfLink = d.pdf_url ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-600 hover:underline"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>' : '<span class="text-gray-400">Nessun PDF</span>';
+            document.getElementById('ddtModalBody').innerHTML =
+                '<div class="grid grid-cols-2 gap-3 text-sm">' +
+                '<div><span class="font-semibold text-gray-500">N° DDT:</span><p class="font-mono">' + escapeHtml(d.numero_ddt) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Data:</span><p>' + (d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Destinatario:</span><p>' + escapeHtml(d.destinatario_nome||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Città:</span><p>' + escapeHtml((d.destinatario_citta||'') + (d.destinatario_provincia ? ' (' + d.destinatario_provincia + ')' : '')) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Indirizzo:</span><p>' + escapeHtml(d.destinatario_indirizzo||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">CAP:</span><p>' + escapeHtml(d.destinatario_cap||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Dispositivo:</span><p>' + escapeHtml(d.dispositivo||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">IMEI / S/N:</span><p class="font-mono">' + escapeHtml(d.serial_number||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Stato:</span><p>' + escapeHtml(d.status||'—') + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">PDF:</span><p>' + pdfLink + '</p></div>' +
+                (d.note ? '<div class="col-span-2"><span class="font-semibold text-gray-500">Note / Contratto:</span><p class="text-gray-600 text-xs">' + escapeHtml(d.note) + '</p></div>' : '') +
+                '</div>';
+            document.getElementById('ddtModalFooter').innerHTML =
+                '<button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>' +
+                '<button onclick="openDDTEdit(\'' + escapeHtml(d.id||d.numero_ddt) + '\')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2">Modifica</button>';
+            document.getElementById('ddtModal').classList.remove('hidden');
+        }
+
+        function openDDTEdit(id) {
+            const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
+            if (!d) return;
+            document.getElementById('ddtModalTitle').textContent = 'Modifica DDT ' + (d.numero_ddt||d.id);
+            document.getElementById('ddtModalBody').innerHTML =
+                '<form id="ddtEditForm" class="grid grid-cols-2 gap-3 text-sm">' +
+                '<div class="col-span-2 sm:col-span-1"><label class="font-semibold text-gray-600">Destinatario</label>' +
+                '<input name="destinatario_nome" value="' + escapeHtml(d.destinatario_nome||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Indirizzo</label>' +
+                '<input name="destinatario_indirizzo" value="' + escapeHtml(d.destinatario_indirizzo||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">CAP</label>' +
+                '<input name="destinatario_cap" value="' + escapeHtml(d.destinatario_cap||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Città</label>' +
+                '<input name="destinatario_citta" value="' + escapeHtml(d.destinatario_citta||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Provincia</label>' +
+                '<input name="destinatario_provincia" value="' + escapeHtml(d.destinatario_provincia||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" maxlength="2"></div>' +
+                '<div><label class="font-semibold text-gray-600">Dispositivo</label>' +
+                '<select name="dispositivo" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+                '<option value="SiDLY CARE PRO"' + (d.dispositivo==='SiDLY CARE PRO'?' selected':'') + '>SiDLY CARE PRO</option>' +
+                '<option value="SiDLY VITAL CARE"' + (d.dispositivo==='SiDLY VITAL CARE'?' selected':'') + '>SiDLY VITAL CARE</option>' +
+                '</select></div>' +
+                '<div><label class="font-semibold text-gray-600">IMEI / S/N</label>' +
+                '<input name="serial_number" value="' + escapeHtml(d.serial_number||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm font-mono"></div>' +
+                '<div><label class="font-semibold text-gray-600">Stato</label>' +
+                '<select name="status" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+                '<option value="consegnato"' + (d.status==='consegnato'?' selected':'') + '>Consegnato</option>' +
+                '<option value="spedito"' + (d.status==='spedito'?' selected':'') + '>Spedito</option>' +
+                '<option value="preparazione"' + (d.status==='preparazione'?' selected':'') + '>In preparazione</option>' +
+                '<option value="annullato"' + (d.status==='annullato'?' selected':'') + '>Annullato</option>' +
+                '</select></div>' +
+                '<div class="col-span-2"><label class="font-semibold text-gray-600">URL PDF</label>' +
+                '<input name="pdf_url" value="' + escapeHtml(d.pdf_url||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="/contratti/file.pdf"></div>' +
+                '<div class="col-span-2"><label class="font-semibold text-gray-600">Note / Rif. Contratto</label>' +
+                '<textarea name="note" rows="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' + escapeHtml(d.note||'') + '</textarea></div>' +
+                '</form>';
+            document.getElementById('ddtModalFooter').innerHTML =
+                '<button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
+                '<button onclick="saveDDTEdit(\'' + escapeHtml(d.id||d.numero_ddt) + '\')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2"><i class="fas fa-save mr-1"></i>Salva</button>';
+            document.getElementById('ddtModal').classList.remove('hidden');
+        }
+
+        async function saveDDTEdit(id) {
+            const form = document.getElementById('ddtEditForm');
+            if (!form) return;
+            const fd = new FormData(form);
+            const payload = {};
+            fd.forEach((v, k) => { payload[k] = v; });
+            try {
+                const res = await fetch('/api/ddts/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.success) {
+                    closeDDTModal();
+                    await loadDDTTable();
+                    showToast('DDT aggiornato con successo', 'success');
+                } else {
+                    showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+                }
+            } catch(e) { showToast('Errore di rete', 'error'); }
+        }
+
+        function openDDTCreate() {
+            document.getElementById('ddtModalTitle').textContent = 'Nuovo DDT';
+            document.getElementById('ddtModalBody').innerHTML =
+                '<form id="ddtCreateForm" class="grid grid-cols-2 gap-3 text-sm">' +
+                '<div class="col-span-2 sm:col-span-1"><label class="font-semibold text-gray-600">Destinatario *</label>' +
+                '<input name="destinatario_nome" required class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Indirizzo</label>' +
+                '<input name="destinatario_indirizzo" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">CAP</label>' +
+                '<input name="destinatario_cap" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Città</label>' +
+                '<input name="destinatario_citta" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+                '<div><label class="font-semibold text-gray-600">Provincia</label>' +
+                '<input name="destinatario_provincia" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" maxlength="2"></div>' +
+                '<div><label class="font-semibold text-gray-600">Dispositivo *</label>' +
+                '<select name="dispositivo" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+                '<option value="SiDLY CARE PRO">SiDLY CARE PRO</option>' +
+                '<option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>' +
+                '</select></div>' +
+                '<div><label class="font-semibold text-gray-600">IMEI / S/N</label>' +
+                '<input name="serial_number" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm font-mono" placeholder="868298..."></div>' +
+                '<div><label class="font-semibold text-gray-600">Stato</label>' +
+                '<select name="status" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+                '<option value="preparazione">In preparazione</option>' +
+                '<option value="spedito">Spedito</option>' +
+                '<option value="consegnato">Consegnato</option>' +
+                '</select></div>' +
+                '<div class="col-span-2"><label class="font-semibold text-gray-600">URL PDF</label>' +
+                '<input name="pdf_url" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="/contratti/file.pdf"></div>' +
+                '<div class="col-span-2"><label class="font-semibold text-gray-600">Note / Rif. Contratto</label>' +
+                '<textarea name="note" rows="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>' +
+                '</form>';
+            document.getElementById('ddtModalFooter').innerHTML =
+                '<button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
+                '<button onclick="createDDT()" class="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 ml-2"><i class="fas fa-plus mr-1"></i>Crea DDT</button>';
+            document.getElementById('ddtModal').classList.remove('hidden');
+        }
+
+        async function createDDT() {
+            const form = document.getElementById('ddtCreateForm');
+            if (!form) return;
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+            const fd = new FormData(form);
+            const payload = {};
+            fd.forEach((v, k) => { payload[k] = v; });
+            payload.quantita = 1;
+            try {
+                const res = await fetch('/api/ddts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.success) {
+                    closeDDTModal();
+                    await loadDDTTable();
+                    showToast('DDT creato con successo', 'success');
+                } else {
+                    showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+                }
+            } catch(e) { showToast('Errore di rete', 'error'); }
+        }
+
+        async function deleteDDT(id) {
+            if (!confirm('Eliminare il DDT ' + id + '?')) return;
+            try {
+                const res = await fetch('/api/ddts/' + id, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    await loadDDTTable();
+                    showToast('DDT eliminato', 'success');
+                } else {
+                    showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+                }
+            } catch(e) { showToast('Errore di rete', 'error'); }
+        }
+
+        function closeDDTModal() {
+            document.getElementById('ddtModal').classList.add('hidden');
+        }
+
+        // ── DEVICES TABLE ─────────────────────────────────────────────
+        async function loadDevTable() {
+            try {
+                const res = await fetch('/api/devices/inventory');
+                const data = await res.json();
+                allDevices = (data.data?.devices || data.devices || []);
+                document.getElementById('devCount').textContent = allDevices.length;
+                filterDevTable();
+            } catch(e) {
+                console.error('Devices load error:', e);
+                const tb = document.getElementById('devTable');
+                if (tb) tb.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Errore caricamento dispositivi</td></tr>';
+            }
+        }
+
+        function filterDevTable() {
+            const q = (document.getElementById('searchDev')?.value || '').toLowerCase();
+            const st = (document.getElementById('filterDevStatus')?.value || '').toLowerCase();
+            const md = (document.getElementById('filterDevModello')?.value || '').toLowerCase();
+            let filtered = allDevices.filter(d => {
+                const matchQ = !q || (d.imei||'').toLowerCase().includes(q) || (d.assegnato_a||'').toLowerCase().includes(q) || (d.model||d.modello||'').toLowerCase().includes(q);
+                const matchSt = !st || (d.status||'').toLowerCase() === st;
+                const matchMd = !md || (d.model||d.modello||'').toLowerCase().includes(md);
+                return matchQ && matchSt && matchMd;
+            });
+            renderDevTable(filtered);
+        }
+
+        function renderDevTable(list) {
+            const tb = document.getElementById('devTable');
+            if (!tb) return;
+            if (!list.length) {
+                tb.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-400">Nessun dispositivo trovato</td></tr>';
+                return;
+            }
+            const statusMap = {
+                active:    ['bg-green-100 text-green-700','fa-check-circle','Attivo'],
+                assigned:  ['bg-blue-100 text-blue-700','fa-user-check','Assegnato'],
+                inventory: ['bg-gray-100 text-gray-600','fa-warehouse','Magazzino'],
+                shipped:   ['bg-yellow-100 text-yellow-700','fa-shipping-fast','Spedito'],
+                returned:  ['bg-red-100 text-red-700','fa-undo','Reso']
+            };
+            tb.innerHTML = list.map(d => {
+                const rawStatus = (d.status||'').toLowerCase();
+                const s = statusMap[rawStatus] || ['bg-gray-100 text-gray-600','fa-question','—'];
+                const modello = d.model || d.modello || '—';
+                const imei = d.imei || d.serial_number || '—';
+                const assigned = d.assegnato_a || d.assegnato_assistito || '—';
+                const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                    '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +
+                    '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(modello) + '</td>' +
+                    '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
+                    '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(assigned) + '</td>' +
+                    '<td class="px-2 py-3 text-xs text-gray-400">' + dtStr + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function showToast(msg, type) {
+            const existing = document.getElementById('toastMsg');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.id = 'toastMsg';
+            toast.className = 'fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-semibold ' +
+                (type === 'success' ? 'bg-green-500' : 'bg-red-500');
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
         // Carica dati iniziali
         loadDashboardData();
+        loadDDTTable();
+        loadDevTable();
 
         // Auto-refresh ogni 30 secondi (solo se non sta già caricando)
         refreshInterval = setInterval(() => {

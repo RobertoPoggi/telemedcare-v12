@@ -35,10 +35,16 @@
           <i class="fas fa-truck mr-1 text-teal-600"></i>Gestione DDT
         </span>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="/home" class="text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors">
+          <i class="fas fa-home mr-1"></i>Dashboard
+        </a>
         <a href="/admin/devices" class="text-sm bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 px-3 py-1.5 rounded-lg transition-colors">
           <i class="fas fa-mobile-alt mr-1"></i>Dispositivi
         </a>
+        <button onclick="openCreateModal()" class="text-sm bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+          <i class="fas fa-plus mr-1"></i>Nuovo DDT
+        </button>
         <button onclick="exportCSV()" class="text-sm bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg transition-colors">
           <i class="fas fa-download mr-1"></i>CSV
         </button>
@@ -173,6 +179,18 @@
     <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
       <span class="text-xs text-gray-500" id="tableFooter">—</span>
     </div>
+  </div>
+</div>
+
+<!-- MODAL CRUD (Create/Edit) -->
+<div id="crudModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
+      <h3 class="text-lg font-bold text-gray-800" id="crudModalTitle">DDT</h3>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="px-6 py-5" id="crudModalBody"></div>
+    <div class="px-6 py-4 border-t flex justify-end gap-2" id="crudModalFooter"></div>
   </div>
 </div>
 
@@ -330,7 +348,9 @@ function renderTable() {
     html += '<td class="px-4 py-3">' + contractLink + '</td>';
     html += '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>';
     html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn;
-    html += '<button onclick="showDetail(' + "'" + rowId + "'" + ')" class="text-gray-400 hover:text-teal-600" title="Dettaglio"><i class="fas fa-info-circle"></i></button>';
+    html += '<button onclick="showDetail(' + "'" + rowId + "'" + ')" class="text-gray-400 hover:text-teal-600 mr-1" title="Dettaglio"><i class="fas fa-info-circle"></i></button>';
+    html += '<button onclick="openEditModal(' + "'" + rowId + "'" + ')" class="text-green-500 hover:text-green-700 mr-1" title="Modifica"><i class="fas fa-edit"></i></button>';
+    html += '<button onclick="confirmDelete(' + "'" + rowId + "'" + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>';
     html += '</td></tr>';
   });
 
@@ -389,11 +409,120 @@ function showDetail(id) {
 
 function closeModal() {
   document.getElementById('detailModal').classList.add('hidden');
+  document.getElementById('crudModal').classList.add('hidden');
 }
 
 document.getElementById('detailModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// ── CRUD FUNCTIONS ────────────────────────────────────────────
+function getCrudFormHtml(d) {
+  d = d || {};
+  return '<div class="grid grid-cols-2 gap-3 text-sm">' +
+    '<div class="col-span-2 sm:col-span-1"><label class="font-semibold text-gray-600">Destinatario *</label>' +
+    '<input name="destinatario_nome" value="' + esc(d.destinatario_nome||'') + '" required class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+    '<div><label class="font-semibold text-gray-600">Indirizzo</label>' +
+    '<input name="destinatario_indirizzo" value="' + esc(d.destinatario_indirizzo||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+    '<div><label class="font-semibold text-gray-600">CAP</label>' +
+    '<input name="destinatario_cap" value="' + esc(d.destinatario_cap||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+    '<div><label class="font-semibold text-gray-600">Città</label>' +
+    '<input name="destinatario_citta" value="' + esc(d.destinatario_citta||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+    '<div><label class="font-semibold text-gray-600">Provincia</label>' +
+    '<input name="destinatario_provincia" value="' + esc(d.destinatario_provincia||'') + '" maxlength="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></div>' +
+    '<div><label class="font-semibold text-gray-600">Dispositivo *</label>' +
+    '<select name="dispositivo" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+    '<option value="SiDLY CARE PRO"' + (d.dispositivo==='SiDLY CARE PRO'?' selected':'') + '>SiDLY CARE PRO</option>' +
+    '<option value="SiDLY VITAL CARE"' + (d.dispositivo==='SiDLY VITAL CARE'?' selected':'') + '>SiDLY VITAL CARE</option>' +
+    '</select></div>' +
+    '<div><label class="font-semibold text-gray-600">IMEI / S/N</label>' +
+    '<input name="serial_number" value="' + esc(d.serial_number||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm font-mono"></div>' +
+    '<div><label class="font-semibold text-gray-600">Stato</label>' +
+    '<select name="status" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' +
+    '<option value="preparazione"' + (d.status==='preparazione'?' selected':'') + '>In preparazione</option>' +
+    '<option value="spedito"' + (d.status==='spedito'?' selected':'') + '>Spedito</option>' +
+    '<option value="consegnato"' + (d.status==='consegnato'?' selected':'') + '>Consegnato</option>' +
+    '<option value="annullato"' + (d.status==='annullato'?' selected':'') + '>Annullato</option>' +
+    '</select></div>' +
+    '<div class="col-span-2"><label class="font-semibold text-gray-600">URL PDF</label>' +
+    '<input name="pdf_url" value="' + esc(d.pdf_url||'') + '" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="/contratti/file.pdf"></div>' +
+    '<div class="col-span-2"><label class="font-semibold text-gray-600">Note / Rif. Contratto</label>' +
+    '<textarea name="note" rows="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' + esc(d.note||'') + '</textarea></div>' +
+    '</div>';
+}
+
+function openCreateModal() {
+  document.getElementById('crudModalTitle').textContent = 'Nuovo DDT';
+  document.getElementById('crudModalBody').innerHTML = '<form id="crudForm">' + getCrudFormHtml() + '</form>';
+  document.getElementById('crudModalFooter').innerHTML =
+    '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Annulla</button>' +
+    '<button onclick="submitCreateDDT()" class="px-4 py-2 text-sm bg-teal-500 hover:bg-teal-600 text-white rounded-lg ml-2"><i class="fas fa-plus mr-1"></i>Crea DDT</button>';
+  document.getElementById('crudModal').classList.remove('hidden');
+}
+
+async function submitCreateDDT() {
+  var form = document.getElementById('crudForm');
+  if (!form || !form.checkValidity()) { if(form) form.reportValidity(); return; }
+  var fd = new FormData(form);
+  var payload = {};
+  fd.forEach(function(v, k) { payload[k] = v; });
+  payload.quantita = 1;
+  try {
+    var res = await fetch('/api/ddts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var data = await res.json();
+    if (data.success) { closeModal(); loadDDTs(); showToast('DDT creato con successo', 'success'); }
+    else showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+  } catch(e) { showToast('Errore di rete', 'error'); }
+}
+
+function openEditModal(id) {
+  var d = null;
+  for (var i = 0; i < allDDTs.length; i++) {
+    if (allDDTs[i].id === id || allDDTs[i].numero_ddt === id) { d = allDDTs[i]; break; }
+  }
+  if (!d) return;
+  document.getElementById('crudModalTitle').textContent = 'Modifica DDT ' + (d.numero_ddt||d.id);
+  document.getElementById('crudModalBody').innerHTML = '<form id="crudForm">' + getCrudFormHtml(d) + '</form>';
+  document.getElementById('crudModalFooter').innerHTML =
+    '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Annulla</button>' +
+    '<button onclick="submitEditDDT(' + "'" + esc(d.id||d.numero_ddt) + "'" + ')" class="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg ml-2"><i class="fas fa-save mr-1"></i>Salva</button>';
+  document.getElementById('crudModal').classList.remove('hidden');
+}
+
+async function submitEditDDT(id) {
+  var form = document.getElementById('crudForm');
+  if (!form) return;
+  var fd = new FormData(form);
+  var payload = {};
+  fd.forEach(function(v, k) { payload[k] = v; });
+  try {
+    var res = await fetch('/api/ddts/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var data = await res.json();
+    if (data.success) { closeModal(); loadDDTs(); showToast('DDT aggiornato', 'success'); }
+    else showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+  } catch(e) { showToast('Errore di rete', 'error'); }
+}
+
+async function confirmDelete(id) {
+  if (!confirm('Eliminare il DDT ' + id + '? Questa azione non può essere annullata.')) return;
+  try {
+    var res = await fetch('/api/ddts/' + id, { method: 'DELETE' });
+    var data = await res.json();
+    if (data.success) { loadDDTs(); showToast('DDT eliminato', 'success'); }
+    else showToast('Errore: ' + (data.error||'Sconosciuto'), 'error');
+  } catch(e) { showToast('Errore di rete', 'error'); }
+}
+
+function showToast(msg, type) {
+  var existing = document.getElementById('toastMsg');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.id = 'toastMsg';
+  t.style = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;padding:0.75rem 1.25rem;border-radius:0.75rem;color:#fff;font-weight:600;font-size:0.875rem;' + (type==='success'?'background:#22c55e':'background:#ef4444');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3000);
+}
 
 function exportCSV() {
   var headers = ['N° DDT','Data','Destinatario','Città','Prov','Dispositivo','S/N','Contratto','Stato','Note'];
