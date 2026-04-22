@@ -539,7 +539,7 @@ export const home = `<!DOCTYPE html>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Magazzino DM</h3>
                     <p class="text-gray-600 text-sm mb-4">Gestione completa dispositivi medici e inventario</p>
-                    <a href="/admin/warehouse" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded text-sm transition-colors">
+                    <a href="/admin/ddt" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-boxes mr-1"></i>Gestisci
                     </a>
                 </div>
@@ -615,6 +615,20 @@ export const home = `<!DOCTYPE html>
                     <p class="text-gray-600 mb-4">Registrazione e monitoring dispositivi SiDLY</p>
                     <a href="/admin/devices" class="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2 rounded-lg transition-colors">
                         <i class="fas fa-cogs mr-2"></i>Gestisci
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gestione DDT -->
+            <div class="card-hover bg-white rounded-xl p-6 shadow-lg">
+                <div class="text-center">
+                    <div class="text-5xl text-teal-500 mb-4 icon-bounce">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Gestione DDT</h3>
+                    <p class="text-gray-600 mb-4">Lista spedizioni e documenti di trasporto</p>
+                    <a href="/admin/ddt" class="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-list mr-2"></i>Visualizza
                     </a>
                 </div>
             </div>

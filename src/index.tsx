@@ -2936,6 +2936,432 @@ app.get('/admin/backup-system', (c) => {
   `)
 })
 
+// ============================================================
+// GET /admin/ddt  - Lista DDT con filtri, stato, link PDF
+// ============================================================
+app.get('/admin/ddt', (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione DDT | TeleMedCare V12</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background: #f1f5f9; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-consegnato  { background:#dcfce7; color:#166534; }
+    .badge-spedito     { background:#fef9c3; color:#854d0e; }
+    .badge-preparazione{ background:#dbeafe; color:#1e40af; }
+    .badge-annullato   { background:#fee2e2; color:#991b1b; }
+    .badge-default     { background:#f3f4f6; color:#374151; }
+    tr:hover td { background:#f8fafc; }
+    .sortable { cursor:pointer; user-select:none; }
+    .sortable:hover { color:#2563eb; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- NAVBAR -->
+<nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-14">
+      <div class="flex items-center gap-3">
+        <a href="/home" class="text-gray-400 hover:text-blue-600 transition-colors text-sm">
+          <i class="fas fa-home mr-1"></i>Home
+        </a>
+        <span class="text-gray-300">/</span>
+        <span class="text-gray-700 font-semibold text-sm">
+          <i class="fas fa-truck mr-1 text-teal-600"></i>Gestione DDT
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportCSV()" class="text-sm bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg transition-colors">
+          <i class="fas fa-download mr-1"></i>CSV
+        </button>
+        <button onclick="loadDDTs()" class="text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors">
+          <i class="fas fa-sync mr-1"></i>Aggiorna
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        <i class="fas fa-truck text-teal-600 mr-2"></i>Documenti di Trasporto (DDT)
+      </h1>
+      <p class="text-gray-500 text-sm mt-1">Storico spedizioni dispositivi SiDLY</p>
+    </div>
+    <!-- KPI STRIP -->
+    <div class="flex gap-3" id="kpiStrip">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+        <div class="text-2xl font-bold text-gray-800" id="kpiTotal">—</div>
+        <div class="text-xs text-gray-500">Totali</div>
+      </div>
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+        <div class="text-2xl font-bold text-green-600" id="kpiConsegnati">—</div>
+        <div class="text-xs text-gray-500">Consegnati</div>
+      </div>
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+        <div class="text-2xl font-bold text-yellow-600" id="kpiSpediti">—</div>
+        <div class="text-xs text-gray-500">In transito</div>
+      </div>
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+        <div class="text-2xl font-bold text-blue-600" id="kpiPreparazione">—</div>
+        <div class="text-xs text-gray-500">In prep.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTRI -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Cerca</label>
+        <input id="searchInput" type="text" placeholder="Destinatario, n° DDT, S/N…"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          oninput="applyFilters()">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Stato</label>
+        <select id="statusFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" onchange="applyFilters()">
+          <option value="">Tutti</option>
+          <option value="consegnato">Consegnato</option>
+          <option value="spedito">Spedito</option>
+          <option value="preparazione">In preparazione</option>
+          <option value="annullato">Annullato</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Dispositivo</label>
+        <select id="deviceFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" onchange="applyFilters()">
+          <option value="">Tutti</option>
+          <option value="SiDLY CARE PRO">SiDLY CARE PRO</option>
+          <option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Anno</label>
+        <select id="yearFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400" onchange="applyFilters()">
+          <option value="">Tutti</option>
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mt-3">
+      <span class="text-xs text-gray-500" id="resultCount"></span>
+      <button onclick="resetFilters()" class="text-xs text-gray-400 hover:text-gray-600 underline">
+        <i class="fas fa-times mr-1"></i>Azzera filtri
+      </button>
+    </div>
+  </div>
+
+  <!-- TABELLA -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable" onclick="sortTable('numero_ddt')">
+              N° DDT <i class="fas fa-sort ml-1 text-gray-300" id="sort-numero_ddt"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable" onclick="sortTable('created_at')">
+              Data <i class="fas fa-sort ml-1 text-gray-300" id="sort-created_at"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Destinatario
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Città
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable" onclick="sortTable('dispositivo')">
+              Dispositivo <i class="fas fa-sort ml-1 text-gray-300" id="sort-dispositivo"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              S/N · IMEI
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Contratto
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable" onclick="sortTable('status')">
+              Stato <i class="fas fa-sort ml-1 text-gray-300" id="sort-status"></i>
+            </th>
+            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Azioni
+            </th>
+          </tr>
+        </thead>
+        <tbody id="ddtTableBody" class="divide-y divide-gray-100">
+          <tr>
+            <td colspan="9" class="px-4 py-10 text-center text-gray-400">
+              <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>
+              Caricamento DDT…
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINAZIONE / FOOTER -->
+    <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+      <span class="text-xs text-gray-500" id="tableFooter">—</span>
+      <div class="flex gap-2" id="paginationControls"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETTAGLIO -->
+<div id="detailModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+      <h3 class="text-lg font-bold text-gray-800" id="modalTitle">Dettaglio DDT</h3>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="px-6 py-5" id="modalBody">…</div>
+    <div class="px-6 py-4 border-t flex justify-end gap-2" id="modalFooter">
+      <button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allDDTs = [];
+  let filteredDDTs = [];
+  let sortField = 'created_at';
+  let sortDir = -1; // -1 = desc
+
+  // ── LOAD ──────────────────────────────────────────────────
+  async function loadDDTs() {
+    try {
+      const res = await fetch('/api/ddts');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Errore API');
+      allDDTs = data.ddts || [];
+      applyFilters();
+      updateKPIs();
+    } catch (e) {
+      document.getElementById('ddtTableBody').innerHTML =
+        '<tr><td colspan="9" class="px-4 py-10 text-center text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>' + e.message + '</td></tr>';
+    }
+  }
+
+  // ── KPI ───────────────────────────────────────────────────
+  function updateKPIs() {
+    const counts = { consegnato: 0, spedito: 0, preparazione: 0 };
+    allDDTs.forEach(d => { if (counts[d.status] !== undefined) counts[d.status]++; });
+    document.getElementById('kpiTotal').textContent = allDDTs.length;
+    document.getElementById('kpiConsegnati').textContent = counts.consegnato;
+    document.getElementById('kpiSpediti').textContent = counts.spedito;
+    document.getElementById('kpiPreparazione').textContent = counts.preparazione;
+  }
+
+  // ── FILTRI ────────────────────────────────────────────────
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const status = document.getElementById('statusFilter').value;
+    const device = document.getElementById('deviceFilter').value;
+    const year   = document.getElementById('yearFilter').value;
+
+    filteredDDTs = allDDTs.filter(d => {
+      if (status && d.status !== status) return false;
+      if (device && !(d.dispositivo || '').includes(device)) return false;
+      if (year) {
+        const dateStr = d.created_at || d.data_spedizione || '';
+        if (!dateStr.includes(year)) return false;
+      }
+      if (search) {
+        const haystack = [
+          d.numero_ddt, d.destinatario_nome, d.destinatario_citta,
+          d.serial_number, d.dispositivo, d.contract_code, d.tracking_number
+        ].join(' ').toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+
+    sortData();
+    renderTable();
+    document.getElementById('resultCount').textContent =
+      filteredDDTs.length + ' DDT trovati' + (filteredDDTs.length !== allDDTs.length ? ' su ' + allDDTs.length : '');
+  }
+
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('deviceFilter').value = '';
+    document.getElementById('yearFilter').value = '';
+    applyFilters();
+  }
+
+  // ── SORT ──────────────────────────────────────────────────
+  function sortTable(field) {
+    if (sortField === field) sortDir *= -1;
+    else { sortField = field; sortDir = -1; }
+    document.querySelectorAll('[id^="sort-"]').forEach(el => el.className = 'fas fa-sort ml-1 text-gray-300');
+    const icon = document.getElementById('sort-' + field);
+    if (icon) icon.className = 'fas fa-sort-' + (sortDir === 1 ? 'up' : 'down') + ' ml-1 text-teal-500';
+    sortData();
+    renderTable();
+  }
+
+  function sortData() {
+    filteredDDTs.sort((a, b) => {
+      const va = (a[sortField] || '').toString();
+      const vb = (b[sortField] || '').toString();
+      return va.localeCompare(vb) * sortDir;
+    });
+  }
+
+  // ── RENDER ────────────────────────────────────────────────
+  function statusBadge(s) {
+    const map = {
+      consegnato:   ['badge-consegnato',   'fa-check-circle',    'Consegnato'],
+      spedito:      ['badge-spedito',      'fa-shipping-fast',   'Spedito'],
+      preparazione: ['badge-preparazione', 'fa-box-open',        'In preparazione'],
+      annullato:    ['badge-annullato',    'fa-times-circle',    'Annullato'],
+    };
+    const [cls, icon, label] = map[s] || ['badge-default', 'fa-question-circle', s || 'N/D'];
+    return '<span class="badge ' + cls + '"><i class="fas ' + icon + ' mr-1"></i>' + label + '</span>';
+  }
+
+  function fmtDate(str) {
+    if (!str) return '—';
+    try { return new Date(str).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' }); }
+    catch { return str; }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('ddtTableBody');
+    if (filteredDDTs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-2 block"></i>Nessuna DDT trovata</td></tr>';
+      document.getElementById('tableFooter').textContent = '0 risultati';
+      return;
+    }
+
+    tbody.innerHTML = filteredDDTs.map(d => {
+      const pdfUrl = d.pdf_url
+        ? '<a href="' + d.pdf_url + '" target="_blank" class="text-blue-600 hover:text-blue-800 mr-2" title="Apri PDF"><i class="fas fa-file-pdf"></i></a>'
+        : '';
+      const printUrl = '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Visualizza DDT"><i class="fas fa-eye"></i></a>';
+      const contractLink = d.contract_code
+        ? '<a href="/admin/leads-dashboard" class="text-teal-600 hover:underline font-mono text-xs">' + d.contract_code + '</a>'
+        : '<span class="text-gray-300 text-xs">—</span>';
+      const sn = d.serial_number || '—';
+      const city = [d.destinatario_citta, d.destinatario_provincia ? '(' + d.destinatario_provincia + ')' : ''].filter(Boolean).join(' ') || '—';
+
+      return '<tr>' +
+        '<td class="px-4 py-3 font-mono text-xs text-gray-800 whitespace-nowrap">' + (d.numero_ddt || '—') + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">' + fmtDate(d.created_at) + '</td>' +
+        '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + (d.destinatario_nome || '—') + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-600">' + city + '</td>' +
+        '<td class="px-4 py-3 text-xs text-gray-700">' + (d.dispositivo || '—') + '</td>' +
+        '<td class="px-4 py-3 font-mono text-xs text-gray-500" title="' + sn + '">' + (sn.length > 16 ? sn.substring(0,15)+'…' : sn) + '</td>' +
+        '<td class="px-4 py-3">' + contractLink + '</td>' +
+        '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>' +
+        '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfUrl + printUrl +
+          '<button onclick="showDetail(\'' + (d.id || d.numero_ddt) + '\')" class="text-gray-400 hover:text-gray-600" title="Dettaglio completo"><i class="fas fa-info-circle"></i></button>' +
+        '</td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('tableFooter').textContent =
+      'Visualizzati ' + filteredDDTs.length + ' di ' + allDDTs.length + ' DDT';
+  }
+
+  // ── DETTAGLIO MODALE ──────────────────────────────────────
+  function showDetail(id) {
+    const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
+    if (!d) return;
+
+    document.getElementById('modalTitle').textContent = 'DDT ' + (d.numero_ddt || d.id);
+
+    const rows = [
+      ['N° DDT',        d.numero_ddt],
+      ['Data',          fmtDate(d.created_at)],
+      ['Destinatario',  d.destinatario_nome],
+      ['Indirizzo',     [d.destinatario_indirizzo, d.destinatario_cap, d.destinatario_citta, d.destinatario_provincia].filter(Boolean).join(', ')],
+      ['Telefono',      d.destinatario_telefono],
+      ['Email',         d.destinatario_email],
+      ['Dispositivo',   d.dispositivo],
+      ['S/N · IMEI',    d.serial_number],
+      ['Quantità',      d.quantita],
+      ['Corriere',      d.corriere],
+      ['Tracking',      d.tracking_number],
+      ['Contratto',     d.contract_code],
+      ['Proforma',      d.proforma_number],
+      ['Stato',         d.status],
+      ['Data spedizione', fmtDate(d.data_spedizione)],
+      ['Data consegna',   fmtDate(d.data_consegna)],
+      ['Note',          d.note],
+    ].filter(([, v]) => v && v !== 'null' && v !== 'undefined');
+
+    document.getElementById('modalBody').innerHTML =
+      '<dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">' +
+      rows.map(([k,v]) =>
+        '<dt class="text-gray-500 font-medium">' + k + '</dt>' +
+        '<dd class="text-gray-800">' + v + '</dd>'
+      ).join('') +
+      '</dl>';
+
+    const footerBtns = [];
+    if (d.pdf_url) {
+      footerBtns.push('<a href="' + d.pdf_url + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>');
+    }
+    footerBtns.push('<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors"><i class="fas fa-eye mr-1"></i>Visualizza DDT</a>');
+    footerBtns.push('<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Chiudi</button>');
+    document.getElementById('modalFooter').innerHTML = footerBtns.join('');
+
+    document.getElementById('detailModal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+  }
+
+  // Chiudi modal cliccando sfondo
+  document.getElementById('detailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── EXPORT CSV ────────────────────────────────────────────
+  function exportCSV() {
+    const headers = ['N° DDT','Data','Destinatario','Città','Prov','Dispositivo','S/N','Contratto','Stato','Note'];
+    const rows = filteredDDTs.map(d => [
+      d.numero_ddt || '',
+      fmtDate(d.created_at),
+      d.destinatario_nome || '',
+      d.destinatario_citta || '',
+      d.destinatario_provincia || '',
+      d.dispositivo || '',
+      d.serial_number || '',
+      d.contract_code || '',
+      d.status || '',
+      (d.note || '').replace(/,/g, ';').replace(/\\n/g, ' ')
+    ]);
+
+    const csv = [headers, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'DDT_TeleMedCare_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  loadDDTs();
+</script>
+</body>
+</html>`)
+})
+
 // Route per registrazione dispositivi
 app.get('/admin/devices', (c) => {
   return c.html(`

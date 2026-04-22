@@ -517,7 +517,7 @@ export const home = `<!DOCTYPE html>
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">Magazzino DM</h3>
                     <p class="text-gray-600 text-sm mb-4">Gestione completa dispositivi medici e inventario</p>
-                    <a href="/admin/warehouse" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded text-sm transition-colors">
+                    <a href="/admin/ddt" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded text-sm transition-colors">
                         <i class="fas fa-boxes mr-1"></i>Gestisci
                     </a>
                 </div>
