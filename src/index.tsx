@@ -26490,7 +26490,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       // 2. Correggi modello di Gallo (S/N 868298061148517): deve essere SiDLY CARE PRO non VITAL
       try {
         await c.env.DB.prepare(
-          "UPDATE dispositivi SET modello = 'SiDLY CARE PRO', updated_at = CURRENT_TIMESTAMP WHERE serial_number = '868298061148517'"
+          "UPDATE dispositivi SET modello = 'SiDLY CARE PRO' WHERE serial_number = '868298061148517'"
         ).run()
         fixes.push('Gallo (868298061148517): modello corretto → SiDLY CARE PRO')
       } catch(e) { errors.push('Gallo modello: ' + String(e)) }
