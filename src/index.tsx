@@ -2937,10 +2937,9 @@ app.get('/admin/backup-system', (c) => {
 })
 
 // ============================================================
-// GET /admin/ddt  - Lista DDT con filtri, stato, link PDF
+// GET /admin/ddt  - Lista DDT (HTML statico embeddato)
 // ============================================================
-app.get('/admin/ddt', (c) => {
-  return c.html(`<!DOCTYPE html>
+const _adminDdtHtml = String.raw`<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -2951,14 +2950,15 @@ app.get('/admin/ddt', (c) => {
   <style>
     body { background: #f1f5f9; }
     .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-consegnato  { background:#dcfce7; color:#166534; }
-    .badge-spedito     { background:#fef9c3; color:#854d0e; }
-    .badge-preparazione{ background:#dbeafe; color:#1e40af; }
-    .badge-annullato   { background:#fee2e2; color:#991b1b; }
-    .badge-default     { background:#f3f4f6; color:#374151; }
-    tr:hover td { background:#f8fafc; }
-    .sortable { cursor:pointer; user-select:none; }
-    .sortable:hover { color:#2563eb; }
+    .badge-consegnato   { background: #dcfce7; color: #166534; }
+    .badge-spedito      { background: #fef9c3; color: #854d0e; }
+    .badge-preparazione { background: #dbeafe; color: #1e40af; }
+    .badge-annullato    { background: #fee2e2; color: #991b1b; }
+    .badge-default      { background: #f3f4f6; color: #374151; }
+    tr:hover td { background: #f8fafc; }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable:hover { color: #0d9488; }
+    .kpi-card { min-width: 80px; text-align: center; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -2968,7 +2968,7 @@ app.get('/admin/ddt', (c) => {
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-14">
       <div class="flex items-center gap-3">
-        <a href="/home" class="text-gray-400 hover:text-blue-600 transition-colors text-sm">
+        <a href="/home" class="text-gray-400 hover:text-teal-600 transition-colors text-sm">
           <i class="fas fa-home mr-1"></i>Home
         </a>
         <span class="text-gray-300">/</span>
@@ -2977,6 +2977,9 @@ app.get('/admin/ddt', (c) => {
         </span>
       </div>
       <div class="flex items-center gap-2">
+        <a href="/admin/devices" class="text-sm bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 px-3 py-1.5 rounded-lg transition-colors">
+          <i class="fas fa-mobile-alt mr-1"></i>Dispositivi
+        </a>
         <button onclick="exportCSV()" class="text-sm bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg transition-colors">
           <i class="fas fa-download mr-1"></i>CSV
         </button>
@@ -2988,8 +2991,10 @@ app.get('/admin/ddt', (c) => {
   </div>
 </nav>
 
-<!-- HEADER -->
+<!-- MAIN -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <!-- HEADER + KPI -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">
@@ -2997,21 +3002,20 @@ app.get('/admin/ddt', (c) => {
       </h1>
       <p class="text-gray-500 text-sm mt-1">Storico spedizioni dispositivi SiDLY</p>
     </div>
-    <!-- KPI STRIP -->
-    <div class="flex gap-3" id="kpiStrip">
-      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+    <div class="flex gap-3">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border kpi-card">
         <div class="text-2xl font-bold text-gray-800" id="kpiTotal">—</div>
         <div class="text-xs text-gray-500">Totali</div>
       </div>
-      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border kpi-card">
         <div class="text-2xl font-bold text-green-600" id="kpiConsegnati">—</div>
         <div class="text-xs text-gray-500">Consegnati</div>
       </div>
-      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border kpi-card">
         <div class="text-2xl font-bold text-yellow-600" id="kpiSpediti">—</div>
         <div class="text-xs text-gray-500">In transito</div>
       </div>
-      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border text-center min-w-[80px]">
+      <div class="bg-white rounded-lg px-4 py-2 shadow-sm border kpi-card">
         <div class="text-2xl font-bold text-blue-600" id="kpiPreparazione">—</div>
         <div class="text-xs text-gray-500">In prep.</div>
       </div>
@@ -3107,232 +3111,236 @@ app.get('/admin/ddt', (c) => {
         </tbody>
       </table>
     </div>
-
-    <!-- PAGINAZIONE / FOOTER -->
     <div class="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
       <span class="text-xs text-gray-500" id="tableFooter">—</span>
-      <div class="flex gap-2" id="paginationControls"></div>
     </div>
   </div>
 </div>
 
 <!-- MODAL DETTAGLIO -->
 <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-    <div class="flex items-center justify-between px-6 py-4 border-b">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
       <h3 class="text-lg font-bold text-gray-800" id="modalTitle">Dettaglio DDT</h3>
       <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <div class="px-6 py-5" id="modalBody">…</div>
+    <div class="px-6 py-5" id="modalBody"></div>
     <div class="px-6 py-4 border-t flex justify-end gap-2" id="modalFooter">
-      <button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Chiudi</button>
+      <button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Chiudi</button>
     </div>
   </div>
 </div>
 
 <script>
-  let allDDTs = [];
-  let filteredDDTs = [];
-  let sortField = 'created_at';
-  let sortDir = -1; // -1 = desc
+var allDDTs = [];
+var filteredDDTs = [];
+var sortField = 'created_at';
+var sortDir = -1;
 
-  // ── LOAD ──────────────────────────────────────────────────
-  async function loadDDTs() {
-    try {
-      const res = await fetch('/api/ddts');
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Errore API');
-      allDDTs = data.ddts || [];
-      applyFilters();
-      updateKPIs();
-    } catch (e) {
-      document.getElementById('ddtTableBody').innerHTML =
-        '<tr><td colspan="9" class="px-4 py-10 text-center text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>' + e.message + '</td></tr>';
-    }
-  }
-
-  // ── KPI ───────────────────────────────────────────────────
-  function updateKPIs() {
-    const counts = { consegnato: 0, spedito: 0, preparazione: 0 };
-    allDDTs.forEach(d => { if (counts[d.status] !== undefined) counts[d.status]++; });
-    document.getElementById('kpiTotal').textContent = allDDTs.length;
-    document.getElementById('kpiConsegnati').textContent = counts.consegnato;
-    document.getElementById('kpiSpediti').textContent = counts.spedito;
-    document.getElementById('kpiPreparazione').textContent = counts.preparazione;
-  }
-
-  // ── FILTRI ────────────────────────────────────────────────
-  function applyFilters() {
-    const search = document.getElementById('searchInput').value.toLowerCase().trim();
-    const status = document.getElementById('statusFilter').value;
-    const device = document.getElementById('deviceFilter').value;
-    const year   = document.getElementById('yearFilter').value;
-
-    filteredDDTs = allDDTs.filter(d => {
-      if (status && d.status !== status) return false;
-      if (device && !(d.dispositivo || '').includes(device)) return false;
-      if (year) {
-        const dateStr = d.created_at || d.data_spedizione || '';
-        if (!dateStr.includes(year)) return false;
-      }
-      if (search) {
-        const haystack = [
-          d.numero_ddt, d.destinatario_nome, d.destinatario_citta,
-          d.serial_number, d.dispositivo, d.contract_code, d.tracking_number
-        ].join(' ').toLowerCase();
-        if (!haystack.includes(search)) return false;
-      }
-      return true;
-    });
-
-    sortData();
-    renderTable();
-    document.getElementById('resultCount').textContent =
-      filteredDDTs.length + ' DDT trovati' + (filteredDDTs.length !== allDDTs.length ? ' su ' + allDDTs.length : '');
-  }
-
-  function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('deviceFilter').value = '';
-    document.getElementById('yearFilter').value = '';
+async function loadDDTs() {
+  try {
+    var res = await fetch('/api/ddts');
+    var data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Errore API');
+    allDDTs = data.ddts || [];
     applyFilters();
+    updateKPIs();
+  } catch(e) {
+    document.getElementById('ddtTableBody').innerHTML =
+      '<tr><td colspan="9" class="px-4 py-10 text-center text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>' + e.message + '</td></tr>';
   }
+}
 
-  // ── SORT ──────────────────────────────────────────────────
-  function sortTable(field) {
-    if (sortField === field) sortDir *= -1;
-    else { sortField = field; sortDir = -1; }
-    document.querySelectorAll('[id^="sort-"]').forEach(el => el.className = 'fas fa-sort ml-1 text-gray-300');
-    const icon = document.getElementById('sort-' + field);
-    if (icon) icon.className = 'fas fa-sort-' + (sortDir === 1 ? 'up' : 'down') + ' ml-1 text-teal-500';
-    sortData();
-    renderTable();
-  }
+function updateKPIs() {
+  var counts = { consegnato: 0, spedito: 0, preparazione: 0 };
+  allDDTs.forEach(function(d) {
+    if (counts[d.status] !== undefined) counts[d.status]++;
+  });
+  document.getElementById('kpiTotal').textContent = allDDTs.length;
+  document.getElementById('kpiConsegnati').textContent = counts.consegnato;
+  document.getElementById('kpiSpediti').textContent = counts.spedito;
+  document.getElementById('kpiPreparazione').textContent = counts.preparazione;
+}
 
-  function sortData() {
-    filteredDDTs.sort((a, b) => {
-      const va = (a[sortField] || '').toString();
-      const vb = (b[sortField] || '').toString();
-      return va.localeCompare(vb) * sortDir;
-    });
-  }
+function applyFilters() {
+  var search = document.getElementById('searchInput').value.toLowerCase().trim();
+  var status = document.getElementById('statusFilter').value;
+  var device = document.getElementById('deviceFilter').value;
+  var year   = document.getElementById('yearFilter').value;
 
-  // ── RENDER ────────────────────────────────────────────────
-  function statusBadge(s) {
-    const map = {
-      consegnato:   ['badge-consegnato',   'fa-check-circle',    'Consegnato'],
-      spedito:      ['badge-spedito',      'fa-shipping-fast',   'Spedito'],
-      preparazione: ['badge-preparazione', 'fa-box-open',        'In preparazione'],
-      annullato:    ['badge-annullato',    'fa-times-circle',    'Annullato'],
-    };
-    const [cls, icon, label] = map[s] || ['badge-default', 'fa-question-circle', s || 'N/D'];
-    return '<span class="badge ' + cls + '"><i class="fas ' + icon + ' mr-1"></i>' + label + '</span>';
-  }
-
-  function fmtDate(str) {
-    if (!str) return '—';
-    try { return new Date(str).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' }); }
-    catch { return str; }
-  }
-
-  function renderTable() {
-    const tbody = document.getElementById('ddtTableBody');
-    if (filteredDDTs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-2 block"></i>Nessuna DDT trovata</td></tr>';
-      document.getElementById('tableFooter').textContent = '0 risultati';
-      return;
+  filteredDDTs = allDDTs.filter(function(d) {
+    if (status && d.status !== status) return false;
+    if (device && (d.dispositivo || '').indexOf(device) === -1) return false;
+    if (year) {
+      var dateStr = d.created_at || d.data_spedizione || '';
+      if (dateStr.indexOf(year) === -1) return false;
     }
-
-    tbody.innerHTML = filteredDDTs.map(d => {
-      const pdfUrl = d.pdf_url
-        ? '<a href="' + d.pdf_url + '" target="_blank" class="text-blue-600 hover:text-blue-800 mr-2" title="Apri PDF"><i class="fas fa-file-pdf"></i></a>'
-        : '';
-      const printUrl = '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Visualizza DDT"><i class="fas fa-eye"></i></a>';
-      const contractLink = d.contract_code
-        ? '<a href="/admin/leads-dashboard" class="text-teal-600 hover:underline font-mono text-xs">' + d.contract_code + '</a>'
-        : '<span class="text-gray-300 text-xs">—</span>';
-      const sn = d.serial_number || '—';
-      const city = [d.destinatario_citta, d.destinatario_provincia ? '(' + d.destinatario_provincia + ')' : ''].filter(Boolean).join(' ') || '—';
-
-      return '<tr>' +
-        '<td class="px-4 py-3 font-mono text-xs text-gray-800 whitespace-nowrap">' + (d.numero_ddt || '—') + '</td>' +
-        '<td class="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">' + fmtDate(d.created_at) + '</td>' +
-        '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + (d.destinatario_nome || '—') + '</td>' +
-        '<td class="px-4 py-3 text-xs text-gray-600">' + city + '</td>' +
-        '<td class="px-4 py-3 text-xs text-gray-700">' + (d.dispositivo || '—') + '</td>' +
-        '<td class="px-4 py-3 font-mono text-xs text-gray-500" title="' + sn + '">' + (sn.length > 16 ? sn.substring(0,15)+'…' : sn) + '</td>' +
-        '<td class="px-4 py-3">' + contractLink + '</td>' +
-        '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>' +
-        '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfUrl + printUrl +
-          '<button onclick="showDetail(\'' + (d.id || d.numero_ddt) + '\')" class="text-gray-400 hover:text-gray-600" title="Dettaglio completo"><i class="fas fa-info-circle"></i></button>' +
-        '</td>' +
-        '</tr>';
-    }).join('');
-
-    document.getElementById('tableFooter').textContent =
-      'Visualizzati ' + filteredDDTs.length + ' di ' + allDDTs.length + ' DDT';
-  }
-
-  // ── DETTAGLIO MODALE ──────────────────────────────────────
-  function showDetail(id) {
-    const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
-    if (!d) return;
-
-    document.getElementById('modalTitle').textContent = 'DDT ' + (d.numero_ddt || d.id);
-
-    const rows = [
-      ['N° DDT',        d.numero_ddt],
-      ['Data',          fmtDate(d.created_at)],
-      ['Destinatario',  d.destinatario_nome],
-      ['Indirizzo',     [d.destinatario_indirizzo, d.destinatario_cap, d.destinatario_citta, d.destinatario_provincia].filter(Boolean).join(', ')],
-      ['Telefono',      d.destinatario_telefono],
-      ['Email',         d.destinatario_email],
-      ['Dispositivo',   d.dispositivo],
-      ['S/N · IMEI',    d.serial_number],
-      ['Quantità',      d.quantita],
-      ['Corriere',      d.corriere],
-      ['Tracking',      d.tracking_number],
-      ['Contratto',     d.contract_code],
-      ['Proforma',      d.proforma_number],
-      ['Stato',         d.status],
-      ['Data spedizione', fmtDate(d.data_spedizione)],
-      ['Data consegna',   fmtDate(d.data_consegna)],
-      ['Note',          d.note],
-    ].filter(([, v]) => v && v !== 'null' && v !== 'undefined');
-
-    document.getElementById('modalBody').innerHTML =
-      '<dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">' +
-      rows.map(([k,v]) =>
-        '<dt class="text-gray-500 font-medium">' + k + '</dt>' +
-        '<dd class="text-gray-800">' + v + '</dd>'
-      ).join('') +
-      '</dl>';
-
-    const footerBtns = [];
-    if (d.pdf_url) {
-      footerBtns.push('<a href="' + d.pdf_url + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>');
+    if (search) {
+      var haystack = [d.numero_ddt, d.destinatario_nome, d.destinatario_citta,
+        d.serial_number, d.dispositivo, d.contract_code, d.tracking_number].join(' ').toLowerCase();
+      if (haystack.indexOf(search) === -1) return false;
     }
-    footerBtns.push('<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors"><i class="fas fa-eye mr-1"></i>Visualizza DDT</a>');
-    footerBtns.push('<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Chiudi</button>');
-    document.getElementById('modalFooter').innerHTML = footerBtns.join('');
-
-    document.getElementById('detailModal').classList.remove('hidden');
-  }
-
-  function closeModal() {
-    document.getElementById('detailModal').classList.add('hidden');
-  }
-
-  // Chiudi modal cliccando sfondo
-  document.getElementById('detailModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
+    return true;
   });
 
-  // ── EXPORT CSV ────────────────────────────────────────────
-  function exportCSV() {
-    const headers = ['N° DDT','Data','Destinatario','Città','Prov','Dispositivo','S/N','Contratto','Stato','Note'];
-    const rows = filteredDDTs.map(d => [
+  sortData();
+  renderTable();
+  document.getElementById('resultCount').textContent =
+    filteredDDTs.length + ' DDT trovati' + (filteredDDTs.length !== allDDTs.length ? ' su ' + allDDTs.length : '');
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('deviceFilter').value = '';
+  document.getElementById('yearFilter').value = '';
+  applyFilters();
+}
+
+function sortTable(field) {
+  if (sortField === field) sortDir *= -1;
+  else { sortField = field; sortDir = -1; }
+  document.querySelectorAll('[id^="sort-"]').forEach(function(el) {
+    el.className = 'fas fa-sort ml-1 text-gray-300';
+  });
+  var icon = document.getElementById('sort-' + field);
+  if (icon) icon.className = 'fas fa-sort-' + (sortDir === 1 ? 'up' : 'down') + ' ml-1 text-teal-500';
+  sortData();
+  renderTable();
+}
+
+function sortData() {
+  filteredDDTs.sort(function(a, b) {
+    var va = (a[sortField] || '').toString();
+    var vb = (b[sortField] || '').toString();
+    return va.localeCompare(vb) * sortDir;
+  });
+}
+
+function statusBadge(s) {
+  var map = {
+    consegnato:   ['badge-consegnato',   'fa-check-circle',  'Consegnato'],
+    spedito:      ['badge-spedito',      'fa-shipping-fast', 'Spedito'],
+    preparazione: ['badge-preparazione', 'fa-box-open',      'In preparazione'],
+    annullato:    ['badge-annullato',    'fa-times-circle',  'Annullato']
+  };
+  var entry = map[s] || ['badge-default', 'fa-question-circle', s || 'N/D'];
+  return '<span class="badge ' + entry[0] + '"><i class="fas ' + entry[1] + ' mr-1"></i>' + entry[2] + '</span>';
+}
+
+function fmtDate(str) {
+  if (!str) return '—';
+  try {
+    return new Date(str).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch(e) { return str; }
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTable() {
+  var tbody = document.getElementById('ddtTableBody');
+  if (filteredDDTs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400"><i class="fas fa-inbox text-3xl mb-2 block"></i>Nessuna DDT trovata</td></tr>';
+    document.getElementById('tableFooter').textContent = '0 risultati';
+    return;
+  }
+
+  var html = '';
+  filteredDDTs.forEach(function(d) {
+    var sn = d.serial_number || '—';
+    var snShort = sn.length > 16 ? sn.substring(0, 15) + '…' : sn;
+    var city = [d.destinatario_citta, d.destinatario_provincia ? '(' + d.destinatario_provincia + ')' : ''].filter(Boolean).join(' ') || '—';
+    var contractLink = d.contract_code
+      ? '<a href="/admin/leads-dashboard" class="text-teal-600 hover:underline font-mono text-xs">' + esc(d.contract_code) + '</a>'
+      : '<span class="text-gray-300 text-xs">—</span>';
+    var pdfBtn = d.pdf_url
+      ? '<a href="' + esc(d.pdf_url) + '" target="_blank" class="text-blue-600 hover:text-blue-800 mr-2" title="PDF"><i class="fas fa-file-pdf"></i></a>'
+      : '';
+    var viewBtn = '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Visualizza"><i class="fas fa-eye"></i></a>';
+    var rowId = esc(d.id || d.numero_ddt);
+
+    html += '<tr>';
+    html += '<td class="px-4 py-3 font-mono text-xs text-gray-800 whitespace-nowrap">' + esc(d.numero_ddt || '—') + '</td>';
+    html += '<td class="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">' + fmtDate(d.created_at) + '</td>';
+    html += '<td class="px-4 py-3 text-sm font-medium text-gray-900">' + esc(d.destinatario_nome || '—') + '</td>';
+    html += '<td class="px-4 py-3 text-xs text-gray-600">' + esc(city) + '</td>';
+    html += '<td class="px-4 py-3 text-xs text-gray-700">' + esc(d.dispositivo || '—') + '</td>';
+    html += '<td class="px-4 py-3 font-mono text-xs text-gray-500" title="' + esc(sn) + '">' + esc(snShort) + '</td>';
+    html += '<td class="px-4 py-3">' + contractLink + '</td>';
+    html += '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>';
+    html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn;
+    html += '<button onclick="showDetail(' + "'" + rowId + "'" + ')" class="text-gray-400 hover:text-teal-600" title="Dettaglio"><i class="fas fa-info-circle"></i></button>';
+    html += '</td></tr>';
+  });
+
+  tbody.innerHTML = html;
+  document.getElementById('tableFooter').textContent =
+    'Visualizzati ' + filteredDDTs.length + ' di ' + allDDTs.length + ' DDT';
+}
+
+function showDetail(id) {
+  var d = null;
+  for (var i = 0; i < allDDTs.length; i++) {
+    if (allDDTs[i].id === id || allDDTs[i].numero_ddt === id) { d = allDDTs[i]; break; }
+  }
+  if (!d) return;
+
+  document.getElementById('modalTitle').textContent = 'DDT ' + (d.numero_ddt || d.id);
+
+  var rows = [
+    ['N° DDT', d.numero_ddt],
+    ['Data', fmtDate(d.created_at)],
+    ['Destinatario', d.destinatario_nome],
+    ['Indirizzo', [d.destinatario_indirizzo, d.destinatario_cap, d.destinatario_citta, d.destinatario_provincia].filter(Boolean).join(', ')],
+    ['Telefono', d.destinatario_telefono],
+    ['Email', d.destinatario_email],
+    ['Dispositivo', d.dispositivo],
+    ['S/N · IMEI', d.serial_number],
+    ['Quantità', d.quantita],
+    ['Corriere', d.corriere],
+    ['Tracking', d.tracking_number],
+    ['Contratto', d.contract_code],
+    ['Proforma', d.proforma_number],
+    ['Stato', d.status],
+    ['Data spedizione', fmtDate(d.data_spedizione)],
+    ['Data consegna', fmtDate(d.data_consegna)],
+    ['Note', d.note]
+  ].filter(function(r) { return r[1] && r[1] !== 'null' && r[1] !== 'undefined'; });
+
+  var dlHtml = '<dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">';
+  rows.forEach(function(r) {
+    dlHtml += '<dt class="text-gray-500 font-medium">' + esc(r[0]) + '</dt>';
+    dlHtml += '<dd class="text-gray-800 break-words">' + esc(String(r[1])) + '</dd>';
+  });
+  dlHtml += '</dl>';
+  document.getElementById('modalBody').innerHTML = dlHtml;
+
+  var btns = '';
+  if (d.pdf_url) {
+    btns += '<a href="' + esc(d.pdf_url) + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"><i class="fas fa-file-pdf mr-1"></i>PDF</a>';
+  }
+  btns += '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg"><i class="fas fa-eye mr-1"></i>Visualizza DDT</a>';
+  btns += '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Chiudi</button>';
+  document.getElementById('modalFooter').innerHTML = btns;
+
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.add('hidden');
+}
+
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function exportCSV() {
+  var headers = ['N° DDT','Data','Destinatario','Città','Prov','Dispositivo','S/N','Contratto','Stato','Note'];
+  var csvRows = [headers];
+  filteredDDTs.forEach(function(d) {
+    csvRows.push([
       d.numero_ddt || '',
       fmtDate(d.created_at),
       d.destinatario_nome || '',
@@ -3344,22 +3352,29 @@ app.get('/admin/ddt', (c) => {
       d.status || '',
       (d.note || '').replace(/,/g, ';').replace(/\\n/g, ' ')
     ]);
+  });
+  var csv = csvRows.map(function(r) {
+    return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+  }).join('\\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'DDT_TeleMedCare_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-    const csv = [headers, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'DDT_TeleMedCare_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ── INIT ──────────────────────────────────────────────────
-  loadDDTs();
+loadDDTs();
 </script>
 </body>
-</html>`)
+</html>
+`
+
+app.get('/admin/ddt', (c) => {
+  return new Response(_adminDdtHtml, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  })
 })
 
 // Route per registrazione dispositivi
@@ -3727,13 +3742,18 @@ app.get('/admin/devices', (c) => {
                                 <option value="Torino">Torino</option>
                                 <option value="Napoli">Napoli</option>
                             </select>
+                            <select id="modelFilter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="">Tutti i modelli</option>
+                                <option value="SiDLY CARE PRO">SiDLY CARE PRO</option>
+                                <option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>
+                            </select>
                             <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="">Tutti gli stati</option>
-                                <option value="INVENTORY">In Magazzino</option>
-                                <option value="ASSIGNED">Assegnato</option>
-                                <option value="SHIPPED">Spedito</option>
-                                <option value="ACTIVE">Attivo</option>
-                                <option value="MAINTENANCE">Manutenzione</option>
+                                <option value="inventory">In Magazzino</option>
+                                <option value="assigned">Assegnato</option>
+                                <option value="shipped">Spedito</option>
+                                <option value="active">Attivo</option>
+                                <option value="returned">Restituito</option>
                             </select>
                             <button onclick="loadDevicesList()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                                 <i class="fas fa-sync mr-2"></i>Aggiorna
@@ -4273,11 +4293,13 @@ app.get('/admin/devices', (c) => {
                 try {
                     const warehouseFilter = document.getElementById('warehouseFilter').value;
                     const statusFilter = document.getElementById('statusFilter').value;
+                    const modelFilter = document.getElementById('modelFilter') ? document.getElementById('modelFilter').value : '';
                     
                     let url = '/api/devices/inventory';
                     const params = new URLSearchParams();
                     if (warehouseFilter) params.append('warehouse', warehouseFilter);
                     if (statusFilter) params.append('status', statusFilter);
+                    if (modelFilter) params.append('model', modelFilter);
                     if (params.toString()) url += '?' + params.toString();
                     
                     const response = await fetch(url);
@@ -20995,12 +21017,16 @@ app.get('/api/devices/inventory', async (c) => {
     const { searchParams } = new URL(c.req.url)
     const statusFilter = searchParams.get('status') || ''
     const warehouseFilter = searchParams.get('warehouse') || ''
+    const modelFilter = searchParams.get('model') || ''
 
     let query = `
       SELECT
         d.id            AS device_id,
         d.serial_number AS imei,
-        d.modello       AS model,
+        CASE
+          WHEN d.modello LIKE '%VITAL%' THEN 'SiDLY VITAL CARE'
+          ELSE 'SiDLY CARE PRO'
+        END             AS model,
         d.status,
         d.lead_id,
         d.assigned_at,
@@ -21020,6 +21046,13 @@ app.get('/api/devices/inventory', async (c) => {
     if (statusFilter) {
       conditions.push('d.status = ?')
       bindings.push(statusFilter)
+    }
+    if (modelFilter) {
+      if (modelFilter === 'SiDLY VITAL CARE') {
+        conditions.push("d.modello LIKE '%VITAL%'")
+      } else {
+        conditions.push("d.modello NOT LIKE '%VITAL%'")
+      }
     }
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ')

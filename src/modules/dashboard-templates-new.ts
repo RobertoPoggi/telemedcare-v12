@@ -1174,6 +1174,35 @@ export const dashboard = `<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- ACCESSO RAPIDO: DDT e Dispositivi -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+        <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+            <i class="fas fa-bolt text-yellow-500 mr-2"></i>Accesso Rapido
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href="/admin/ddt" class="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-teal-400 hover:shadow-md transition-all p-5 group">
+                <div class="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-teal-200 transition-colors">
+                    <i class="fas fa-truck text-2xl text-teal-600"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-gray-900 text-base">Gestione DDT</div>
+                    <div class="text-sm text-gray-500 mt-0.5">Lista documenti di trasporto, stati spedizione, export CSV</div>
+                </div>
+                <i class="fas fa-chevron-right text-gray-300 group-hover:text-teal-500 ml-auto transition-colors"></i>
+            </a>
+            <a href="/admin/devices" class="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-cyan-400 hover:shadow-md transition-all p-5 group">
+                <div class="w-14 h-14 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-200 transition-colors">
+                    <i class="fas fa-mobile-alt text-2xl text-cyan-600"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-gray-900 text-base">Gestione Dispositivi</div>
+                    <div class="text-sm text-gray-500 mt-0.5">Inventario SiDLY, stati magazzino, assegnazioni assistiti</div>
+                </div>
+                <i class="fas fa-chevron-right text-gray-300 group-hover:text-cyan-500 ml-auto transition-colors"></i>
+            </a>
+        </div>
+    </div>
+
     <script>
         // Helper function to escape HTML special characters
         function escapeHtml(text) {
