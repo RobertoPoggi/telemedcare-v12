@@ -3,139 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Orchestrator / Admin Actions</title>
+  <title>Admin – DDT Actions</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; }
-    h2 { margin-top: 32px; border-top: 2px solid #eee; padding-top: 16px; }
+    body { font-family: Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 20px; background: #f8f9fa; }
+    h1 { color: #333; }
+    h2 { margin-top: 28px; border-top: 2px solid #dee2e6; padding-top: 14px; color: #444; font-size: 1.1rem; }
+    .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    p { color: #666; font-size: 0.9rem; margin: 6px 0 12px; }
     button {
-      background: #667eea; color: white; border: none;
-      padding: 12px 24px; font-size: 15px; border-radius: 6px;
-      cursor: pointer; margin: 6px 4px;
+      color: white; border: none; padding: 11px 22px; font-size: 14px;
+      border-radius: 6px; cursor: pointer; margin: 4px 0;
+      display: inline-flex; align-items: center; gap: 6px;
     }
-    button:hover { background: #5568d3; }
-    button.green { background: #28a745; }
-    button.green:hover { background: #1e7e34; }
-    button.orange { background: #e67e22; }
-    button.orange:hover { background: #ca6f1e; }
-    button.red { background: #c0392b; }
-    button.red:hover { background: #922b21; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-green  { background: #28a745; } .btn-green:hover:not(:disabled)  { background: #218838; }
+    .btn-blue   { background: #0069d9; } .btn-blue:hover:not(:disabled)   { background: #0056b3; }
+    .btn-orange { background: #e67e22; } .btn-orange:hover:not(:disabled) { background: #ca6f1e; }
+    .btn-gray   { background: #6c757d; } .btn-gray:hover:not(:disabled)   { background: #5a6268; }
     .result {
-      margin-top: 16px; padding: 14px; border-radius: 6px;
-      white-space: pre-wrap; font-family: monospace; font-size: 13px;
+      margin-top: 14px; padding: 14px; border-radius: 8px;
+      white-space: pre-wrap; font-family: monospace; font-size: 12px;
+      max-height: 400px; overflow-y: auto;
     }
     .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
     .error   { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
     .info    { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-    input, textarea {
-      width: 100%; padding: 8px; margin: 4px 0 10px 0;
-      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-    }
-    label { font-weight: bold; display: block; margin-top: 8px; }
-    .token-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 16px; }
+    .spinner { display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: white;
+      border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <h1>🛠️ Admin / Orchestrator Actions</h1>
+  <h1>🛠️ Admin – DDT Actions</h1>
 
-  <div class="token-box">
-    <label>🔑 Admin Secret Token (richiesto per azioni /api/admin/*):</label>
-    <input type="password" id="adminToken" placeholder="Incolla qui il tuo ADMIN_SECRET_TOKEN">
+  <!-- ── Fix PDF + indirizzi + seriali ── -->
+  <div class="card">
+    <h2>📦 Fix PDF, indirizzi e seriali DDT</h2>
+    <p>Aggiorna nel DB live:<br>
+      • <b>PDF</b> per Balzarotti, Delaude, Gallo, Ronca<br>
+      • <b>Indirizzo</b> Delaude → Bordighera (IM), Ronca → Milano (MI)<br>
+      • <b>IMEI Macchi</b> → 862246076276621, SIM +48723162569
+    </p>
+    <button class="btn-green" id="btnFixPdf" onclick="callAction('fix-pdf-ddt','btnFixPdf')">✅ Esegui fix-pdf-ddt</button>
+    <div id="result-fix-pdf-ddt" class="result info" style="display:none"></div>
   </div>
 
-  <!-- ────────────────────────────────────────────── -->
-  <h2>📦 DDT – Fix PDF, indirizzi e seriali</h2>
-  <p>Aggiorna nel DB live: PDF URL per Balzarotti, Delaude, Gallo; indirizzo Delaude; IMEI Macchi (862246076276621) e SIM (+48723162569).</p>
-  <button class="green" onclick="callOrchestrate('fix-pdf-ddt')">✅ Esegui fix-pdf-ddt</button>
+  <!-- ── Bulk DDT ── -->
+  <div class="card">
+    <h2>📥 Bulk insert DDT storici</h2>
+    <p>Inserisce tutte le DDT storiche nel DB (salta quelle già presenti).</p>
+    <button class="btn-blue" id="btnBulk" onclick="callAction('bulk-ddt','btnBulk')">📥 Esegui bulk-ddt</button>
+    <div id="result-bulk-ddt" class="result info" style="display:none"></div>
+  </div>
 
-  <!-- ────────────────────────────────────────────── -->
-  <h2>📦 DDT – Bulk insert storici</h2>
-  <p>Inserisce le DDT storiche nel DB (skip se già esistenti).</p>
-  <button onclick="callOrchestrate('bulk-ddt')">📥 Esegui bulk-ddt</button>
+  <!-- ── Fix 14 DDT ── -->
+  <div class="card">
+    <h2>🔧 Fix 14 DDT (seriali e dati)</h2>
+    <p>Corregge serial_number, indirizzi e note per le 14 DDT nel DB.</p>
+    <button class="btn-orange" id="btnFix14" onclick="callAction('fix-14-ddt','btnFix14')">🔧 Esegui fix-14-ddt</button>
+    <div id="result-fix-14-ddt" class="result info" style="display:none"></div>
+  </div>
 
-  <!-- ────────────────────────────────────────────── -->
-  <h2>🔧 DDT – Fix 14 DDT (seriali e dati)</h2>
-  <button onclick="callOrchestrate('fix-14-ddt')">🔧 Esegui fix-14-ddt</button>
+  <!-- ── Fix scadenze ── -->
+  <div class="card">
+    <h2>📅 Fix scadenze contratti</h2>
+    <button class="btn-gray" id="btnScadenze" onclick="callAction('fix-scadenze','btnScadenze')">📅 Esegui fix-scadenze</button>
+    <div id="result-fix-scadenze" class="result info" style="display:none"></div>
+  </div>
 
-  <!-- ────────────────────────────────────────────── -->
-  <h2>📅 Fix scadenze contratti</h2>
-  <button onclick="callOrchestrate('fix-scadenze')">📅 Esegui fix-scadenze</button>
-
-  <!-- ────────────────────────────────────────────── -->
-  <h2>🔍 Diagnosi DB</h2>
-  <button onclick="callOrchestrate('diagnose')">🔍 Esegui diagnose</button>
-
-  <!-- ────────────────────────────────────────────── -->
-  <h2>📧 Test Email / Completamento Lead</h2>
-  <label>Lead ID:</label>
-  <input type="text" id="leadId" value="LEAD-IRBEMA-00169" placeholder="LEAD-IRBEMA-00169">
-  <label>Email Destinatario:</label>
-  <input type="email" id="email" value="roberto.pgg@gmail.com">
-  <label>Nome:</label>
-  <input type="text" id="nome" value="Rosaria">
-  <label>Cognome:</label>
-  <input type="text" id="cognome" value="Ressa">
-  <button onclick="testDirectAPI()">📧 Test request-completion</button>
-  <button onclick="checkSwitches()">🔍 Verifica Switches</button>
-
-  <!-- ────────────────────────────────────────────── -->
-  <div id="result" class="result info" style="margin-top:24px;">In attesa di un'azione...</div>
+  <!-- ── Diagnose ── -->
+  <div class="card">
+    <h2>🔍 Diagnosi DB</h2>
+    <button class="btn-gray" id="btnDiagnose" onclick="callAction('diagnose','btnDiagnose')">🔍 Esegui diagnose</button>
+    <div id="result-diagnose" class="result info" style="display:none"></div>
+  </div>
 
   <script>
-    const baseUrl = 'https://telemedcare-v12.pages.dev';
+    const ENDPOINT = 'https://telemedcare-v12.pages.dev/api/oneshot-mazzarella-7x9k2p';
 
-    function showResult(message, type = 'info') {
-      const el = document.getElementById('result');
-      el.className = 'result ' + type;
-      el.textContent = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
-    }
+    async function callAction(action, btnId) {
+      const btn = document.getElementById(btnId);
+      const resultEl = document.getElementById('result-' + action);
 
-    function getToken() {
-      return document.getElementById('adminToken').value.trim();
-    }
+      // Disable button and show spinner
+      btn.disabled = true;
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> In corso…';
 
-    async function callOrchestrate(action) {
-      const token = getToken();
-      if (!token) { showResult('⚠️ Inserisci il Admin Secret Token prima di procedere.', 'error'); return; }
-      showResult(`⏳ Chiamata action="${action}"...`, 'info');
+      resultEl.style.display = 'block';
+      resultEl.className = 'result info';
+      resultEl.textContent = '⏳ Chiamata in corso per action="' + action + '"…';
+
       try {
-        const res = await fetch(`${baseUrl}/api/admin/orchestrate`, {
+        const res = await fetch(ENDPOINT, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action })
         });
-        const data = await res.json();
-        showResult(data, data.success ? 'success' : 'error');
-      } catch (e) {
-        showResult('❌ Errore di rete: ' + e.message, 'error');
-      }
-    }
 
-    async function checkSwitches() {
-      showResult('Controllo switches...', 'info');
-      try {
-        const res = await fetch(`${baseUrl}/api/settings`);
         const data = await res.json();
-        showResult(data, 'success');
+        resultEl.className = 'result ' + (data.success ? 'success' : 'error');
+        resultEl.textContent = JSON.stringify(data, null, 2);
       } catch (e) {
-        showResult('❌ Errore: ' + e.message, 'error');
-      }
-    }
-
-    async function testDirectAPI() {
-      const leadId = document.getElementById('leadId').value;
-      showResult(`Invio richiesta completamento per ${leadId}...`, 'info');
-      try {
-        const res = await fetch(
-          `${baseUrl}/api/leads/${leadId}/request-completion?sendEmail=true`,
-          { method: 'POST' }
-        );
-        const data = await res.json();
-        showResult(data, data.success ? 'success' : 'error');
-      } catch (e) {
-        showResult('❌ Errore: ' + e.message, 'error');
+        resultEl.className = 'result error';
+        resultEl.textContent = '❌ Errore di rete: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origText;
       }
     }
   </script>
