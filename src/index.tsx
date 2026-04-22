@@ -3529,9 +3529,8 @@ app.get('/admin/devices', (c) => {
                                     <div>
                                         <label class="block text-gray-700 font-semibold mb-2">Modello</label>
                                         <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                            <option value="SiDLY Care Pro">SiDLY Care Pro</option>
-                                            <option value="SiDLY Care Pro V10">SiDLY Care Pro V10</option>
-                                            <option value="SiDLY Care Pro V12">SiDLY Care Pro V12</option>
+                                            <option value="SiDLY CARE PRO">SiDLY CARE PRO</option>
+                                            <option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>
                                         </select>
                                     </div>
                                 </div>
@@ -4512,7 +4511,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
       try {
         // Utilizza il DocumentRepository esistente
         const requestResult = await DocumentRepository.processDocumentRequest({
-          deviceModel: 'SiDLY Care Pro V12.0',
+          deviceModel: 'SiDLY CARE PRO',
           documentTypes: documentiRichiesti,
           language: 'it',
           customerInfo: {
@@ -6068,7 +6067,7 @@ app.post('/api/admin/reset-and-regenerate', async (c) => {
       `).bind(
         `DM-202410${String(i).padStart(2, '0')}`,
         `86012345678901${String(i).padStart(2, '0')}`,
-        `SiDLY Care Pro V12.0 #${i}`,
+        `SiDLY CARE PRO #${i}`,
         deviceStatuses[i - 1]
       ).run();
     }
@@ -21874,7 +21873,7 @@ app.post('/api/test/complete-workflow', async (c) => {
         const deviceData = {
           device_id: `SiDLY${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`,
           imei: `86012345678${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`,
-          model: 'SiDLY Care Pro V12',
+          model: 'SiDLY CARE PRO',
           status: 'ASSIGNED'
         }
         
@@ -23523,7 +23522,7 @@ app.get('/api/devices/registry', async (c) => {
       devices = [
         {
           id: 'DEV001',
-          nome: 'SiDLY Care Pro V12.0 #001',
+          nome: 'SiDLY CARE PRO #001',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110001',
           stato: 'attivo',
@@ -23536,7 +23535,7 @@ app.get('/api/devices/registry', async (c) => {
         },
         {
           id: 'DEV002',
-          nome: 'SiDLY Care Pro V12.0 #002',
+          nome: 'SiDLY CARE PRO #002',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110002',
           stato: 'manutenzione',
@@ -23549,7 +23548,7 @@ app.get('/api/devices/registry', async (c) => {
         },
         {
           id: 'DEV003',
-          nome: 'SiDLY Care Pro V12.0 #003',
+          nome: 'SiDLY CARE PRO #003',
           tipo: 'dispositivo_principale',
           seriale: 'SCP110003',
           stato: 'attivo',

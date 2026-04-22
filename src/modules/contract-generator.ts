@@ -545,7 +545,7 @@ export class ContractGenerator {
     <p>Il presente contratto ha per oggetto la fornitura del servizio <strong>{{TIPO_SERVIZIO}}</strong>, 
     che include:</p>
     <ul>
-      <li>Dispositivo medico SiDLY Care Pro V12.0 in comodato d'uso</li>
+      <li>Dispositivo medico SiDLY CARE PRO in comodato d'uso</li>
       <li>Servizio di telemonitoraggio parametri vitali</li>
       <li>Supporto tecnico telefonico (ore ufficio)</li>
       <li>Manutenzione ordinaria e straordinaria del dispositivo</li>

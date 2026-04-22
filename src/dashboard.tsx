@@ -198,9 +198,8 @@ app.get('/admin/devices', (c) => {
                                     <div>
                                         <label class="block text-gray-700 font-semibold mb-2">Modello</label>
                                         <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                            <option value="SiDLY Care Pro">SiDLY Care Pro</option>
-                                            <option value="SiDLY Care Pro V10">SiDLY Care Pro V10</option>
-                                            <option value="SiDLY Care Pro V12">SiDLY Care Pro V12</option>
+                                            <option value="SiDLY CARE PRO">SiDLY CARE PRO</option>
+                                            <option value="SiDLY VITAL CARE">SiDLY VITAL CARE</option>
                                         </select>
                                     </div>
                                 </div>
@@ -633,7 +632,7 @@ async function elaboraWorkflowEmail(leadData: any, leadId: string, db?: D1Databa
       try {
         // Utilizza il DocumentRepository esistente
         const requestResult = await DocumentRepository.processDocumentRequest({
-          deviceModel: 'SiDLY Care Pro V12.0',
+          deviceModel: 'SiDLY CARE PRO',
           documentTypes: documentiRichiesti,
           language: 'it',
           customerInfo: {
@@ -1964,7 +1963,7 @@ app.post('/api/enterprise/devices/scan-label', async (c) => {
       
       try {
         supplementaryData = await DocumentRepository.getSupplementaryInfoFromManual(
-          labelData.model || 'SiDLY Care Pro V12.0',
+          labelData.model || 'SiDLY CARE PRO',
           missingInfo as any
         )
         
@@ -2082,7 +2081,7 @@ app.post('/api/enterprise/devices/scan-label', async (c) => {
       success: true, 
       deviceId,
       imei: finalIMEI,
-      model: labelData.model || 'SiDLY Care Pro V12.0',
+      model: labelData.model || 'SiDLY CARE PRO',
       manufacturer: labelData.manufacturer,
       message: 'Dispositivo registrato con successo da etichetta',
       labelData: {
