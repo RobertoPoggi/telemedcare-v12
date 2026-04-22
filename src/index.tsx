@@ -21163,6 +21163,75 @@ app.post('/api/devices/upsert', async (c) => {
   }
 })
 
+// PUT /api/devices/update/:imei - Aggiorna un dispositivo (modello, status, assegnato_a)
+app.put('/api/devices/update/:imei', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const imei = c.req.param('imei')
+    const body = await c.req.json() as any
+    const { modello, status, assegnato_a } = body
+
+    // Verifica esistenza
+    const existing = await c.env.DB.prepare(
+      'SELECT id, serial_number FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first() as any
+    if (!existing) return c.json({ success: false, error: 'Dispositivo non trovato' }, 404)
+
+    const now = new Date().toISOString()
+    const fields: string[] = []
+    const vals: any[] = []
+
+    if (modello !== undefined) { fields.push('modello = ?'); vals.push(modello) }
+    if (status  !== undefined) { fields.push('status = ?');  vals.push(status) }
+    if (assegnato_a !== undefined) {
+      // Aggiorna anche assigned_at se viene assegnato ora
+      if (assegnato_a) { fields.push('assigned_at = ?'); vals.push(now) }
+    }
+    if (fields.length === 0) return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+
+    vals.push(imei)
+    await c.env.DB.prepare(
+      `UPDATE dispositivi SET ${fields.join(', ')} WHERE serial_number = ?`
+    ).bind(...vals).run()
+
+    // Se assegnato_a modificato, aggiorna anche nella tabella assistiti (imei)
+    if (assegnato_a !== undefined) {
+      // Scollega vecchio assistito da questo IMEI
+      await c.env.DB.prepare(
+        "UPDATE assistiti SET imei = NULL WHERE imei = ?"
+      ).bind(imei).run().catch(() => {})
+    }
+
+    return c.json({ success: true, imei, updated: { modello, status } })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
+// DELETE /api/devices/:imei - Elimina un dispositivo dal magazzino
+app.delete('/api/devices/:imei', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const imei = c.req.param('imei')
+
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM dispositivi WHERE serial_number = ?'
+    ).bind(imei).first()
+    if (!existing) return c.json({ success: false, error: 'Dispositivo non trovato' }, 404)
+
+    // Scollega da assistiti prima di eliminare
+    await c.env.DB.prepare(
+      "UPDATE assistiti SET imei = NULL WHERE imei = ?"
+    ).bind(imei).run().catch(() => {})
+
+    await c.env.DB.prepare('DELETE FROM dispositivi WHERE serial_number = ?').bind(imei).run()
+
+    return c.json({ success: true, deleted: imei })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // POST /api/assistiti/debug-eileen - Debug info Eileen
 app.post('/api/assistiti/debug-eileen', async (c) => {
   try {

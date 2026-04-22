@@ -1265,6 +1265,7 @@ export const dashboard = `<!DOCTYPE html>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Stato</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Assegnato a</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data ass.</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase text-center">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="devTable">
@@ -1273,6 +1274,20 @@ export const dashboard = `<!DOCTYPE html>
                         </td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEVICE CRUD MODAL -->
+    <div id="devModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-screen overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h3 class="text-lg font-bold text-gray-800" id="devModalTitle">Dispositivo</h3>
+                <button onclick="closeDevModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6" id="devModalBody"></div>
+            <div class="px-6 pb-6 flex justify-end gap-2" id="devModalFooter">
+                <button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>
             </div>
         </div>
     </div>
@@ -1573,11 +1588,15 @@ export const dashboard = `<!DOCTYPE html>
             renderDevTable(filtered);
         }
 
+        // ── Device store (parallelo ad allDDTs)
+        let allDevices = [];
+
         function renderDevTable(list) {
+            allDevices = list;
             const tb = document.getElementById('devTable');
             if (!tb) return;
             if (!list.length) {
-                tb.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-400">Nessun dispositivo trovato</td></tr>';
+                tb.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-gray-400">Nessun dispositivo trovato</td></tr>';
                 return;
             }
             const statusMap = {
@@ -1588,16 +1607,12 @@ export const dashboard = `<!DOCTYPE html>
                 returned:  ['bg-red-100 text-red-700','fa-undo','Reso'],
                 unassigned:['bg-orange-100 text-orange-700','fa-box-open','Non assegnato']
             };
-            tb.innerHTML = list.map(d => {
+            tb.innerHTML = list.map((d, idx) => {
                 const modello = d.model || d.modello || '—';
                 const imei = d.imei || d.serial_number || '—';
                 const assigned = d.assegnato_a || d.assegnato_assistito || '';
-                // Regola: se c'è un assistito → sempre "Assegnato"; se non c'è → "Non assegnato"
-                const effectiveStatus = assigned
-                    ? 'assigned'
-                    : 'unassigned';
+                const effectiveStatus = assigned ? 'assigned' : 'unassigned';
                 const s = statusMap[effectiveStatus];
-                // Data assegnazione: usa la data della DDT se disponibile, altrimenti assigned_at
                 const ddtDate = d.ddt_date || d.assigned_at;
                 const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
                 const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
@@ -1607,8 +1622,135 @@ export const dashboard = `<!DOCTYPE html>
                     '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
                     '<td class="px-2 py-3 text-sm text-gray-700">' + assignedDisplay + '</td>' +
                     '<td class="px-2 py-3 text-xs text-gray-400">' + dtStr + '</td>' +
+                    '<td class="px-2 py-3 text-center whitespace-nowrap">' +
+                        '<button onclick="openDevDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
+                        '<button onclick="openDevEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="deleteDevice(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
+                    '</td>' +
                     '</tr>';
             }).join('');
+        }
+
+        function openDevModal() { document.getElementById('devModal').classList.remove('hidden'); }
+        function closeDevModal() { document.getElementById('devModal').classList.add('hidden'); }
+
+        function openDevDetail(idx) {
+            const d = allDevices[idx];
+            if (!d) return;
+            const imei = d.imei || d.serial_number || '—';
+            const modello = d.model || d.modello || '—';
+            const assigned = d.assegnato_a || '—';
+            const ddtDate = d.ddt_date || d.assigned_at;
+            const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
+            const ddt = d.ddt_numero || '—';
+            document.getElementById('devModalTitle').textContent = 'Dispositivo ' + imei;
+            document.getElementById('devModalBody').innerHTML =
+                '<div class="grid grid-cols-2 gap-4 text-sm">' +
+                '<div><span class="font-semibold text-gray-500">IMEI / S/N</span><p class="font-mono mt-1">' + escapeHtml(imei) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Modello</span><p class="mt-1">' + escapeHtml(modello) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Assegnato a</span><p class="mt-1">' + escapeHtml(assigned) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Data assegnazione</span><p class="mt-1">' + dtStr + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">N° DDT</span><p class="font-mono mt-1">' + escapeHtml(ddt) + '</p></div>' +
+                '<div><span class="font-semibold text-gray-500">Stato DB</span><p class="mt-1 capitalize">' + escapeHtml(d.status || '—') + '</p></div>' +
+                '</div>';
+            document.getElementById('devModalFooter').innerHTML =
+                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>' +
+                '<button onclick="openDevEdit(' + idx + ')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><i class="fas fa-edit mr-1"></i>Modifica</button>';
+            openDevModal();
+        }
+
+        function openDevEdit(idx) {
+            const d = allDevices[idx];
+            if (!d) return;
+            const imei = d.imei || d.serial_number || '';
+            const modello = d.model || d.modello || '';
+            const status = d.status || 'assigned';
+            document.getElementById('devModalTitle').textContent = 'Modifica dispositivo';
+            document.getElementById('devModalBody').innerHTML =
+                '<div class="space-y-4 text-sm">' +
+                '<div>' +
+                '  <label class="block font-semibold text-gray-600 mb-1">IMEI / S/N</label>' +
+                '  <input id="editDevImei" type="text" value="' + escapeHtml(imei) + '" readonly class="w-full border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 font-mono text-xs text-gray-500">' +
+                '</div>' +
+                '<div>' +
+                '  <label class="block font-semibold text-gray-600 mb-1">Modello</label>' +
+                '  <select id="editDevModello" class="w-full border border-gray-300 rounded-lg px-3 py-2">' +
+                '    <option value="SiDLY CARE PRO"' + (modello === 'SiDLY CARE PRO' ? ' selected' : '') + '>SiDLY CARE PRO</option>' +
+                '    <option value="SiDLY VITAL CARE"' + (modello === 'SiDLY VITAL CARE' ? ' selected' : '') + '>SiDLY VITAL CARE</option>' +
+                '  </select>' +
+                '</div>' +
+                '<div>' +
+                '  <label class="block font-semibold text-gray-600 mb-1">Stato</label>' +
+                '  <select id="editDevStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2">' +
+                '    <option value="inventory"'  + (status === 'inventory'  ? ' selected' : '') + '>Magazzino</option>' +
+                '    <option value="assigned"'   + (status === 'assigned'   ? ' selected' : '') + '>Assegnato</option>' +
+                '    <option value="active"'     + (status === 'active'     ? ' selected' : '') + '>Attivo</option>' +
+                '    <option value="shipped"'    + (status === 'shipped'    ? ' selected' : '') + '>Spedito</option>' +
+                '    <option value="returned"'   + (status === 'returned'   ? ' selected' : '') + '>Reso</option>' +
+                '  </select>' +
+                '</div>' +
+                '<p id="editDevError" class="text-red-600 text-xs hidden"></p>' +
+                '</div>';
+            document.getElementById('devModalFooter').innerHTML =
+                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
+                '<button onclick="saveDevEdit()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"><i class="fas fa-save mr-1"></i>Salva</button>';
+            openDevModal();
+        }
+
+        async function saveDevEdit() {
+            const imei = document.getElementById('editDevImei').value;
+            const modello = document.getElementById('editDevModello').value;
+            const status = document.getElementById('editDevStatus').value;
+            const errEl = document.getElementById('editDevError');
+            try {
+                const res = await fetch('/api/devices/update/' + encodeURIComponent(imei), {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modello, status })
+                });
+                const j = await res.json();
+                if (!j.success) throw new Error(j.error || 'Errore sconosciuto');
+                closeDevModal();
+                showToast('Dispositivo aggiornato ✓', 'success');
+                loadDevTable();
+            } catch(e) {
+                errEl.textContent = e.message;
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        function deleteDevice(idx) {
+            const d = allDevices[idx];
+            if (!d) return;
+            const imei = d.imei || d.serial_number || '';
+            const nome = d.assegnato_a ? d.assegnato_a : 'nessun assistito';
+            document.getElementById('devModalTitle').innerHTML = '<span class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Elimina dispositivo</span>';
+            document.getElementById('devModalBody').innerHTML =
+                '<div class="text-sm space-y-3">' +
+                '<p class="text-gray-700">Sei sicuro di voler eliminare il dispositivo:</p>' +
+                '<div class="bg-red-50 border border-red-200 rounded-lg p-3">' +
+                '<p class="font-mono font-semibold text-gray-800">' + escapeHtml(imei) + '</p>' +
+                '<p class="text-gray-600">' + escapeHtml(d.model || d.modello || '') + ' — ' + escapeHtml(nome) + '</p>' +
+                '</div>' +
+                '<p class="text-red-600 font-semibold">⚠️ Questa operazione è irreversibile.</p>' +
+                '</div>';
+            document.getElementById('devModalFooter').innerHTML =
+                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
+                '<button onclick="confirmDeleteDevice(\'' + imei.replace(/'/g, "\\'") + '\')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><i class="fas fa-trash mr-1"></i>Elimina</button>';
+            openDevModal();
+        }
+
+        async function confirmDeleteDevice(imei) {
+            try {
+                const res = await fetch('/api/devices/' + encodeURIComponent(imei), { method: 'DELETE' });
+                const j = await res.json();
+                if (!j.success) throw new Error(j.error || 'Errore');
+                closeDevModal();
+                showToast('Dispositivo eliminato ✓', 'success');
+                loadDevTable();
+            } catch(e) {
+                showToast('Errore: ' + e.message, 'error');
+            }
         }
 
         function showToast(msg, type) {
