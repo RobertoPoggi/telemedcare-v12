@@ -10839,12 +10839,169 @@ app.post('/api/configurations/submit', async (c) => {
       // Non blocchiamo il flusso se le email falliscono
     }
     
+    // ========================================================
+    // 6️⃣ AUTOMAZIONE: Crea assistito + DDT automaticamente
+    // ========================================================
+    let assistitoCreato = false
+    let ddtCreato = false
+    let assistitoCodice: string | null = null
+    let ddtNumero: string | null = null
+    
+    try {
+      console.log(`🤖 [AUTO] Avvio creazione automatica assistito + DDT per lead ${leadId}`)
+      
+      // Recupera contratto firmato associato al lead
+      const contractRow = await db.prepare(
+        `SELECT id, codice_contratto, servizio, piano, imei_dispositivo FROM contracts 
+         WHERE leadId = ? AND status = 'SIGNED' ORDER BY signed_at DESC LIMIT 1`
+      ).bind(leadId).first() as any
+      
+      // Recupera IMEI dal dispositivo assegnato (se non nel contratto)
+      let imeiDispositivo: string | null = contractRow?.imei_dispositivo || null
+      if (!imeiDispositivo) {
+        // Cerca nell'assignment dei dispositivi
+        const deviceRow = await db.prepare(
+          `SELECT imei FROM dispositivi WHERE lead_id = ? AND status IN ('ASSIGNED','SHIPPED','DELIVERED','ACTIVE') LIMIT 1`
+        ).bind(leadId).first() as any
+        imeiDispositivo = deviceRow?.imei || null
+      }
+      
+      // Verifica se assistito già esiste per questo lead
+      const existingAssistito = await db.prepare(
+        `SELECT id, codice FROM assistiti WHERE lead_id = ? LIMIT 1`
+      ).bind(leadId).first() as any
+      
+      if (!existingAssistito) {
+        // Crea il codice assistito
+        const codiceAssistito = `ASS-${(lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')}-${Date.now()}`
+        const nomeAssistito = configData.nome || lead.nomeAssistito || lead.nomeRichiedente || ''
+        const cognomeAssistito = configData.cognome || lead.cognomeAssistito || lead.cognomeRichiedente || ''
+        const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
+        const servizioAssistito = contractRow?.servizio || lead.servizio || 'eCura PRO'
+        const pianoAssistito = contractRow?.piano || lead.piano || 'BASE'
+        const now = new Date().toISOString()
+        
+        await db.prepare(`
+          INSERT INTO assistiti (
+            codice, nome, nome_assistito, cognome_assistito,
+            nome_caregiver, cognome_caregiver, parentela_caregiver,
+            email, telefono, imei,
+            servizio, piano, lead_id,
+            status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+        `).bind(
+          codiceAssistito,
+          nomeCompleto,
+          nomeAssistito,
+          cognomeAssistito,
+          lead.nomeRichiedente || '',
+          lead.cognomeRichiedente || '',
+          lead.parentelaConCaregiver || 'caregiver',
+          configData.email || lead.email || '',
+          configData.telefono || lead.telefono || '',
+          imeiDispositivo,
+          servizioAssistito,
+          pianoAssistito,
+          leadId,
+          now,
+          now
+        ).run()
+        
+        assistitoCodice = codiceAssistito
+        assistitoCreato = true
+        console.log(`✅ [AUTO] Assistito creato automaticamente: ${codiceAssistito}`)
+        
+        // Aggiorna stato lead
+        await db.prepare(
+          `UPDATE leads SET status = 'CONFIGURATION_SENT', updated_at = ? WHERE id = ?`
+        ).bind(now, leadId).run()
+        
+      } else {
+        assistitoCodice = existingAssistito.codice
+        console.log(`ℹ️ [AUTO] Assistito già presente: ${assistitoCodice}`)
+      }
+      
+      // Verifica se DDT già esiste per questo lead/contratto
+      const existingDDT = await db.prepare(
+        `SELECT id, numero_ddt FROM ddts WHERE contract_code = ? LIMIT 1`
+      ).bind(contractRow?.codice_contratto || '').first() as any
+      
+      if (!existingDDT && contractRow) {
+        // Genera numero DDT progressivo
+        const lastDDT = await db.prepare(
+          `SELECT numero_ddt FROM ddts ORDER BY created_at DESC LIMIT 1`
+        ).first() as any
+        
+        let nextNum = 1
+        if (lastDDT?.numero_ddt) {
+          const match = lastDDT.numero_ddt.match(/(\d+)$/)
+          if (match) nextNum = parseInt(match[1]) + 1
+        }
+        
+        const ddtId = `DDT-${Date.now()}`
+        const numeroDDT = `DDT-${String(nextNum).padStart(3, '0')}-${new Date().getFullYear()}`
+        const destinatarioNome = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+        const destinatarioIndirizzo = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+        const destinatarioCap = lead.capIntestatario || lead.capAssistito || ''
+        const destinatarioCitta = lead.cittaIntestatario || lead.cittaAssistito || ''
+        const destinatarioProvincia = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+        const servizioLabel = contractRow?.servizio || lead.servizio || 'eCura PRO'
+        const dispositivoLabel = servizioLabel.includes('VITAL') || servizioLabel.includes('FAMILY') 
+          ? 'SiDLY VITAL CARE' 
+          : servizioLabel.includes('PREMIUM') 
+            ? 'SiDLY VITAL CARE' 
+            : 'SiDLY Care PRO'
+        
+        await db.prepare(`
+          INSERT INTO ddts (
+            id, numero_ddt, contract_code,
+            dispositivo, serial_number,
+            destinatario_nome, destinatario_indirizzo,
+            destinatario_cap, destinatario_citta, destinatario_provincia,
+            destinatario_telefono, destinatario_email,
+            quantita, status, note,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `).bind(
+          ddtId,
+          numeroDDT,
+          contractRow.codice_contratto,
+          dispositivoLabel,
+          imeiDispositivo || '',
+          destinatarioNome,
+          destinatarioIndirizzo,
+          destinatarioCap,
+          destinatarioCitta,
+          destinatarioProvincia,
+          configData.telefono || lead.telefono || '',
+          configData.email || lead.email || '',
+          `Generato automaticamente al completamento form configurazione. IMEI: ${imeiDispositivo || 'N/D'}`
+        ).run()
+        
+        ddtNumero = numeroDDT
+        ddtCreato = true
+        console.log(`✅ [AUTO] DDT creato automaticamente: ${numeroDDT}`)
+        
+      } else if (existingDDT) {
+        ddtNumero = existingDDT.numero_ddt
+        console.log(`ℹ️ [AUTO] DDT già presente: ${ddtNumero}`)
+      }
+      
+    } catch (autoError) {
+      console.error('⚠️ [AUTO] Errore creazione automatica assistito/DDT (non critico):', autoError)
+      // Non blocca il flusso principale
+    }
+    
     return c.json({
       success: true,
       leadId: leadId,
       emailConfigSent,
       emailBenvenutoSent,
-      message: 'Configurazione salvata' + (emailConfigSent ? ', email inviata a info@' : '') + (emailBenvenutoSent ? ' e email benvenuto inviata al cliente' : '')
+      assistitoCreato,
+      assistitoCodice,
+      ddtCreato,
+      ddtNumero,
+      message: 'Configurazione salvata' + (emailConfigSent ? ', email inviata a info@' : '') + (emailBenvenutoSent ? ' e email benvenuto inviata al cliente' : '') + (assistitoCreato ? `, assistito creato (${assistitoCodice})` : '') + (ddtCreato ? `, DDT creato (${ddtNumero})` : '')
     })
     
   } catch (error) {
@@ -12875,8 +13032,9 @@ app.post('/api/contracts/sign', async (c) => {
         }
         
         // 5. INVIA EMAIL con PDF ALLEGATO
-        const EmailService = (await import('./modules/email-service')).default
-        const emailService = EmailService.getInstance()
+        // ✅ FIX: usa new EmailService(c.env) invece di getInstance() per avere RESEND_API_KEY
+        const EmailServiceModule = (await import('./modules/email-service'))
+        const emailService = new EmailServiceModule.EmailService(c.env)
         
         const pdfUrl = `${baseUrl}/api/contratti/${contractId}/pdf-print`
         const pdfBase64 = pdfBuffer ? Buffer.from(pdfBuffer).toString('base64') : null
@@ -12918,12 +13076,47 @@ app.post('/api/contracts/sign', async (c) => {
           attachments: pdfBase64 ? [{
             filename: `Contratto_${lead.cognomeRichiedente}_${contractId}_FIRMATO.pdf`,
             content: pdfBase64,
-            type: 'application/pdf',
-            disposition: 'attachment'
+            contentType: 'application/pdf'
           }] : undefined
-        }, c.env)
+        })
         
-        console.log(`✅ [FIRMA] Email con PDF allegato inviata a info@telemedcare.it`)
+        console.log(`✅ [FIRMA] Email notifica inviata a info@telemedcare.it`)
+        
+        // 6. INVIA COPIA CONTRATTO FIRMATO AL CLIENTE
+        if (lead.email) {
+          try {
+            await emailService.sendEmail({
+              to: lead.email,
+              subject: `✅ Contratto firmato - ${contract.codice_contratto || contractId}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #16a34a;">✅ Contratto firmato con successo</h2>
+                  <p>Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
+                  <p>La confermiamo che il suo contratto è stato firmato digitalmente il <strong>${new Date().toLocaleString('it-IT')}</strong>.</p>
+                  <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Contratto:</strong> ${contract.codice_contratto || contractId}</p>
+                    <p style="margin: 5px 0;"><strong>Servizio:</strong> ${contract.servizio || 'N/A'} – Piano ${contract.piano || 'N/A'}</p>
+                    <p style="margin: 5px 0;"><strong>Data firma:</strong> ${new Date().toLocaleString('it-IT')}</p>
+                  </div>
+                  <p>Può visualizzare il contratto firmato in qualsiasi momento al seguente link:</p>
+                  <p style="margin: 20px 0;">
+                    <a href="${pdfUrl}" style="display: inline-block; padding: 12px 24px; background: #16a34a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                      📄 Visualizza contratto firmato
+                    </a>
+                  </p>
+                  <p>Per qualsiasi necessità contatti il nostro team: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+                  <p style="color: #6b7280; font-size: 12px; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                    TeleMedCare – eCura ${contract.servizio || ''}<br>info@telemedcare.it
+                  </p>
+                </div>
+              `,
+              text: `Contratto ${contract.codice_contratto} firmato il ${new Date().toLocaleString('it-IT')}. Visualizza: ${pdfUrl}`
+            })
+            console.log(`✅ [FIRMA] Email copia contratto inviata al cliente: ${lead.email}`)
+          } catch (clientEmailError) {
+            console.error('⚠️ [FIRMA] Errore invio email cliente (non critico):', clientEmailError)
+          }
+        }
       }
     } catch (emailError) {
       console.error('⚠️ Errore invio email notifica firma:', emailError)
@@ -24820,6 +25013,27 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
     ).all()
     results.imei_862246076803994_owner = imeiOwner.results
 
+    // STEP 4: Scopri schema reale della tabella contracts
+    const contractsSchema = await c.env.DB.prepare(
+      `PRAGMA table_info(contracts)`
+    ).all()
+    results.contracts_columns = contractsSchema.results.map((r: any) => r.name)
+    
+    // Cerca contratti recenti per capire la struttura
+    const contractsRecent = await c.env.DB.prepare(
+      `SELECT * FROM contracts ORDER BY created_at DESC LIMIT 5`
+    ).all()
+    results.contracts_recent = contractsRecent.results
+
+    // STEP 5: Verifica assistiti già inseriti per Mazzarella
+    const mazzarellaAssistiti = await c.env.DB.prepare(
+      `SELECT id, codice, nome, nome_assistito, cognome_assistito, imei, status, lead_id, created_at FROM assistiti 
+       WHERE (nome_assistito LIKE '%Mazzarella%' OR cognome_assistito LIKE '%Mazzarella%' OR nome LIKE '%Mazzarella%')
+          OR (nome_assistito LIKE '%Maria Carmela%' OR cognome_assistito LIKE '%Maria%')
+       LIMIT 10`
+    ).all()
+    results.mazzarella_assistiti = mazzarellaAssistiti.results
+
     if (action === 'diagnose') {
       return c.json({ success: true, diagnostic: results })
     }
@@ -24876,7 +25090,59 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, results })
     }
 
-    return c.json({ success: false, error: 'action deve essere diagnose o insert' }, 400)
+    // ACTION: registra-ddt — registra DDT Vassalluzzo nel DB
+    if (action === 'registra-ddt') {
+      // Registra DDT 7 del 16/04/2026 per Vassalluzzo / Mazzarella
+      const ddtId = `DDT-VASSALLUZZO-20260416`
+      const numeroDDT = `DDT-007-2026`
+      await c.env.DB.prepare(`
+        INSERT OR REPLACE INTO ddts (
+          id, numero_ddt, contract_code,
+          dispositivo, serial_number,
+          destinatario_nome, destinatario_indirizzo,
+          destinatario_cap, destinatario_citta, destinatario_provincia,
+          destinatario_telefono, destinatario_email,
+          quantita, status, pdf_url, note,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, '2026-04-16T00:00:00.000Z', '2026-04-16T00:00:00.000Z')
+      `).bind(
+        ddtId, numeroDDT, 'CTR-MAZZARELLA-2026',
+        'SiDLY VITAL CARE', '862246076803994',
+        'Alfredo Vassalluzzo', 'Via Alda Merini, 35',
+        '00047', 'Marino', 'RM',
+        '3938700000', 'alfvas@icloud.com',
+        '/ddt/DDT_007_16-04-2026_Vassalluzzo_Mazzarella_SiDLY_VITAL_CARE.pdf',
+        'DDT #7 del 16/04/2026 - Consegna SiDLY VITAL CARE a Alfredo Vassalluzzo per assistita Maria Carmela Mazzarella. IMEI: 862246076803994'
+      ).run()
+      results.ddt_registered = { numero: numeroDDT, id: ddtId }
+      return c.json({ success: true, results })
+    }
+
+    // ACTION: fix-scadenze — aggiorna data_scadenza contratti firmati (1 anno dalla firma)
+    if (action === 'fix-scadenze') {
+      const contractsToFix = await c.env.DB.prepare(
+        `SELECT id, codice_contratto, signed_at, data_scadenza, status FROM contracts 
+         WHERE status = 'SIGNED' AND signed_at IS NOT NULL
+         ORDER BY signed_at DESC LIMIT 50`
+      ).all()
+      
+      const fixed = []
+      for (const ct of (contractsToFix.results as any[])) {
+        const signedDate = new Date(ct.signed_at)
+        if (isNaN(signedDate.getTime())) continue
+        // Data scadenza = 1 anno dalla firma
+        const newScadenza = new Date(signedDate.getTime() + 365 * 24 * 60 * 60 * 1000)
+          .toISOString().split('T')[0]
+        await c.env.DB.prepare(
+          `UPDATE contracts SET data_scadenza = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+        ).bind(newScadenza, ct.id).run()
+        fixed.push({ codice: ct.codice_contratto, old: ct.data_scadenza, new: newScadenza })
+      }
+      results.fixed_contracts = fixed
+      return c.json({ success: true, results })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }

@@ -5368,7 +5368,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Valore</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Data</th>
-                            <th class="pb-3 text-sm font-semibold text-gray-600">Scadenza</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600" title="Scadenza entro cui il contratto deve essere firmato (30 giorni dall'invio). Non è la durata del servizio.">Scad. firma ⓘ</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600 text-center">Azioni</th>
                         </tr>
                     </thead>
@@ -5778,7 +5778,7 @@ export const data_dashboard = `<!DOCTYPE html>
                             </span>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
-                        <td class="py-3">\${scadenzaHtml}</td>
+                        <td class="py-3" title="Termine entro cui il contratto doveva essere firmato (30gg dall'invio). Se già firmato, questo dato è storico.">\${scadenzaHtml}</td>
                         <td class="py-3 text-center">
                             \${contract.status === 'SIGNED' ? \`
                                 <a href="/api/contratti/\${contract.id}/pdf-print" 
