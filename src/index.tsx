@@ -1015,6 +1015,11 @@ app.use('/api/*', async (c, next) => {
   if (path === '/api/hubspot/webhook' && method === 'POST') {
     return next() // Webhook HubSpot
   }
+
+  // ONE-SHOT: Endpoint temporaneo inserimento Mazzarella (da rimuovere dopo uso)
+  if (path === '/api/oneshot-mazzarella-7x9k2p' && method === 'POST') {
+    return next()
+  }
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
@@ -24781,7 +24786,7 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
 })
 
 // 🔧 ENDPOINT ONE-SHOT: Diagnostica e inserimento Maria Carmela Mazzarella
-app.post('/api/admin/insert-mazzarella', async (c) => {
+app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
@@ -24793,8 +24798,9 @@ app.post('/api/admin/insert-mazzarella', async (c) => {
 
     // STEP 1: Trova lead Alfredo Vassalluzzo
     const vassalluzzoLeads = await c.env.DB.prepare(
-      `SELECT id, nome, cognome, email, telefono, status FROM leads 
-       WHERE cognome LIKE '%Vassalluzzo%' OR nome LIKE '%Alfredo%'
+      `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, telefono, status FROM leads 
+       WHERE cognomeRichiedente LIKE '%Vassalluzzo%' OR nomeRichiedente LIKE '%Alfredo%'
+          OR cognomeAssistito LIKE '%Vassalluzzo%' OR nomeAssistito LIKE '%Alfredo%'
        ORDER BY created_at DESC LIMIT 10`
     ).all()
     results.vassalluzzo_leads = vassalluzzoLeads.results
