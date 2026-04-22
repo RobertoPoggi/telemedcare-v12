@@ -26463,7 +26463,47 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, fixes, errors, ddts_after: finalDdts.results })
     }
 
-    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt, check-ddts, fix-ddts-serials' }, 400)
+    // ACTION: fix-device-duplicates — rimuove dispositivi con IMEI errato (già sostituiti da IMEI corretto) e corregge modelli
+    if (action === 'fix-device-duplicates') {
+      const fixes: string[] = []
+      const errors: string[] = []
+
+      // 1. Elimina dispositivo con IMEI errato di Pepe (IMEI corretto 868298060656916 già presente)
+      const wrongImeisToDelete = [
+        { imei: '862608066560916', nome: 'Pepe (IMEI errato)' },
+        { imei: '862346607387161', nome: 'A.Locatelli (IMEI errato)' },
+      ]
+      for (const w of wrongImeisToDelete) {
+        try {
+          const exists = await c.env.DB.prepare('SELECT serial_number FROM dispositivi WHERE serial_number = ?').bind(w.imei).first()
+          if (exists) {
+            // Prima scollega da assistiti e leads se necessario
+            await c.env.DB.prepare("UPDATE assistiti SET imei = NULL WHERE imei = ?").bind(w.imei).run().catch(() => {})
+            await c.env.DB.prepare("DELETE FROM dispositivi WHERE serial_number = ?").bind(w.imei).run()
+            fixes.push(`Eliminato dispositivo con IMEI errato: ${w.imei} (${w.nome})`)
+          } else {
+            fixes.push(`${w.nome}: IMEI ${w.imei} non trovato in dispositivi (già rimosso)`)
+          }
+        } catch(e) { errors.push(`${w.nome}: ${String(e)}`) }
+      }
+
+      // 2. Correggi modello di Gallo (S/N 868298061148517): deve essere SiDLY CARE PRO non VITAL
+      try {
+        await c.env.DB.prepare(
+          "UPDATE dispositivi SET modello = 'SiDLY CARE PRO', updated_at = CURRENT_TIMESTAMP WHERE serial_number = '868298061148517'"
+        ).run()
+        fixes.push('Gallo (868298061148517): modello corretto → SiDLY CARE PRO')
+      } catch(e) { errors.push('Gallo modello: ' + String(e)) }
+
+      // 3. Stato finale dispositivi
+      const finalDevs = await c.env.DB.prepare(
+        'SELECT serial_number, modello, status FROM dispositivi ORDER BY created_at DESC'
+      ).all()
+
+      return c.json({ success: true, fixes, errors, devices_after: finalDevs.results, count: finalDevs.results.length })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt, check-ddts, fix-ddts-serials, fix-device-duplicates' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }
