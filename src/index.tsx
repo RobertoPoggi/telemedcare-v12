@@ -25804,6 +25804,39 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
 
     // ACTION: bulk-ddt — inserisce le DDT storiche nel DB e sincronizza la tabella dispositivi
     if (action === 'bulk-ddt') {
+      // Assicura che la tabella ddts esista prima di procedere
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS ddts (
+          id TEXT PRIMARY KEY,
+          numero_ddt TEXT UNIQUE NOT NULL,
+          contract_code TEXT,
+          proforma_number TEXT,
+          dispositivo TEXT NOT NULL,
+          serial_number TEXT,
+          quantita INTEGER DEFAULT 1,
+          destinatario_nome TEXT NOT NULL,
+          destinatario_indirizzo TEXT NOT NULL,
+          destinatario_cap TEXT,
+          destinatario_citta TEXT,
+          destinatario_provincia TEXT,
+          destinatario_telefono TEXT,
+          destinatario_email TEXT,
+          corriere TEXT,
+          tracking_number TEXT,
+          peso_kg DECIMAL(5,2),
+          numero_colli INTEGER DEFAULT 1,
+          status TEXT DEFAULT 'preparazione',
+          data_spedizione DATETIME,
+          data_consegna DATETIME,
+          pdf_url TEXT,
+          pdf_generated BOOLEAN DEFAULT FALSE,
+          note TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run()
+      await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_ddts_numero ON ddts(numero_ddt)').run().catch(() => {})
+
       const ddts = [
         {
           id: 'DDT-EILEEN-20250514', numero: 'DDT-001-2025', contract_code: null,
@@ -25913,15 +25946,15 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
               dispositivo, serial_number,
               destinatario_nome, destinatario_indirizzo,
               destinatario_cap, destinatario_citta, destinatario_provincia,
-              quantita, status, note,
+              quantita, status, note, pdf_url,
               created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'consegnato', ?, ?, ?, ?)
           `).bind(
             ddt.id, ddt.numero, ddt.contract_code,
             ddt.dispositivo, ddt.serial_number,
             ddt.destinatario_nome, ddt.destinatario_indirizzo,
             ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia,
-            ddt.note,
+            ddt.note, ddt.pdf_url ?? null,
             ddt.data, ddt.data
           ).run()
           inserted.push(ddt.numero)
