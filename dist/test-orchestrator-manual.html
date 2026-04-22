@@ -3,150 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Orchestrator Email Manuale</title>
+  <title>Test Orchestrator / Admin Actions</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-    }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; }
+    h2 { margin-top: 32px; border-top: 2px solid #eee; padding-top: 16px; }
     button {
-      background: #667eea;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 10px 0;
+      background: #667eea; color: white; border: none;
+      padding: 12px 24px; font-size: 15px; border-radius: 6px;
+      cursor: pointer; margin: 6px 4px;
     }
-    button:hover {
-      background: #5568d3;
-    }
+    button:hover { background: #5568d3; }
+    button.green { background: #28a745; }
+    button.green:hover { background: #1e7e34; }
+    button.orange { background: #e67e22; }
+    button.orange:hover { background: #ca6f1e; }
+    button.red { background: #c0392b; }
+    button.red:hover { background: #922b21; }
     .result {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 6px;
-      white-space: pre-wrap;
+      margin-top: 16px; padding: 14px; border-radius: 6px;
+      white-space: pre-wrap; font-family: monospace; font-size: 13px;
     }
-    .success {
-      background: #d4edda;
-      border: 1px solid #c3e6cb;
-      color: #155724;
+    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .error   { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    .info    { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    input, textarea {
+      width: 100%; padding: 8px; margin: 4px 0 10px 0;
+      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
     }
-    .error {
-      background: #f8d7da;
-      border: 1px solid #f5c6cb;
-      color: #721c24;
-    }
-    .info {
-      background: #d1ecf1;
-      border: 1px solid #bee5eb;
-      color: #0c5460;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
-    }
+    label { font-weight: bold; display: block; margin-top: 8px; }
+    .token-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
-  <h1>🧪 Test Email Completamento Dati</h1>
-  <p>Test manuale del WorkflowOrchestrator per verificare invio email completamento dati.</p>
+  <h1>🛠️ Admin / Orchestrator Actions</h1>
 
+  <div class="token-box">
+    <label>🔑 Admin Secret Token (richiesto per azioni /api/admin/*):</label>
+    <input type="password" id="adminToken" placeholder="Incolla qui il tuo ADMIN_SECRET_TOKEN">
+  </div>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>📦 DDT – Fix PDF, indirizzi e seriali</h2>
+  <p>Aggiorna nel DB live: PDF URL per Balzarotti, Delaude, Gallo; indirizzo Delaude; IMEI Macchi (862246076276621) e SIM (+48723162569).</p>
+  <button class="green" onclick="callOrchestrate('fix-pdf-ddt')">✅ Esegui fix-pdf-ddt</button>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>📦 DDT – Bulk insert storici</h2>
+  <p>Inserisce le DDT storiche nel DB (skip se già esistenti).</p>
+  <button onclick="callOrchestrate('bulk-ddt')">📥 Esegui bulk-ddt</button>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>🔧 DDT – Fix 14 DDT (seriali e dati)</h2>
+  <button onclick="callOrchestrate('fix-14-ddt')">🔧 Esegui fix-14-ddt</button>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>📅 Fix scadenze contratti</h2>
+  <button onclick="callOrchestrate('fix-scadenze')">📅 Esegui fix-scadenze</button>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>🔍 Diagnosi DB</h2>
+  <button onclick="callOrchestrate('diagnose')">🔍 Esegui diagnose</button>
+
+  <!-- ────────────────────────────────────────────── -->
+  <h2>📧 Test Email / Completamento Lead</h2>
   <label>Lead ID:</label>
   <input type="text" id="leadId" value="LEAD-IRBEMA-00169" placeholder="LEAD-IRBEMA-00169">
-
   <label>Email Destinatario:</label>
-  <input type="email" id="email" value="roberto.pgg@gmail.com" placeholder="roberto.pgg@gmail.com">
-
+  <input type="email" id="email" value="roberto.pgg@gmail.com">
   <label>Nome:</label>
-  <input type="text" id="nome" value="Rosaria" placeholder="Nome">
-
+  <input type="text" id="nome" value="Rosaria">
   <label>Cognome:</label>
-  <input type="text" id="cognome" value="Ressa" placeholder="Cognome">
-
-  <button onclick="testWorkflowOrchestrator()">🚀 Test Workflow Orchestrator</button>
-  <button onclick="testDirectAPI()">📧 Test API Diretta (/api/leads/:id/request-completion)</button>
+  <input type="text" id="cognome" value="Ressa">
+  <button onclick="testDirectAPI()">📧 Test request-completion</button>
   <button onclick="checkSwitches()">🔍 Verifica Switches</button>
 
-  <div id="result"></div>
+  <!-- ────────────────────────────────────────────── -->
+  <div id="result" class="result info" style="margin-top:24px;">In attesa di un'azione...</div>
 
   <script>
     const baseUrl = 'https://telemedcare-v12.pages.dev';
 
     function showResult(message, type = 'info') {
-      const resultDiv = document.getElementById('result');
-      resultDiv.className = `result ${type}`;
-      resultDiv.textContent = message;
+      const el = document.getElementById('result');
+      el.className = 'result ' + type;
+      el.textContent = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
+    }
+
+    function getToken() {
+      return document.getElementById('adminToken').value.trim();
+    }
+
+    async function callOrchestrate(action) {
+      const token = getToken();
+      if (!token) { showResult('⚠️ Inserisci il Admin Secret Token prima di procedere.', 'error'); return; }
+      showResult(`⏳ Chiamata action="${action}"...`, 'info');
+      try {
+        const res = await fetch(`${baseUrl}/api/admin/orchestrate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        showResult(data, data.success ? 'success' : 'error');
+      } catch (e) {
+        showResult('❌ Errore di rete: ' + e.message, 'error');
+      }
     }
 
     async function checkSwitches() {
       showResult('Controllo switches...', 'info');
       try {
-        const response = await fetch(`${baseUrl}/api/settings`);
-        const data = await response.json();
-        
-        const admin = data.settings.admin_email_notifications_enabled.value;
-        const lead = data.settings.lead_email_notifications_enabled.value;
-        
-        showResult(
-          `✅ Switches verificati:\n` +
-          `- admin_email_notifications_enabled: ${admin}\n` +
-          `- lead_email_notifications_enabled: ${lead}\n\n` +
-          JSON.stringify(data, null, 2),
-          'success'
-        );
-      } catch (error) {
-        showResult(`❌ Errore: ${error.message}`, 'error');
+        const res = await fetch(`${baseUrl}/api/settings`);
+        const data = await res.json();
+        showResult(data, 'success');
+      } catch (e) {
+        showResult('❌ Errore: ' + e.message, 'error');
       }
     }
 
     async function testDirectAPI() {
       const leadId = document.getElementById('leadId').value;
       showResult(`Invio richiesta completamento per ${leadId}...`, 'info');
-      
       try {
-        const response = await fetch(
+        const res = await fetch(
           `${baseUrl}/api/leads/${leadId}/request-completion?sendEmail=true`,
           { method: 'POST' }
         );
-        const data = await response.json();
-        
-        if (data.success) {
-          showResult(
-            `✅ Successo!\n\n` +
-            `Token creato: ${data.token.id}\n` +
-            `Link: ${data.token.completionUrl}\n` +
-            `Scadenza: ${data.token.expiresAt}\n\n` +
-            `Email inviata: ${data.message.includes('email inviata') ? 'SÌ' : 'NO'}\n\n` +
-            JSON.stringify(data, null, 2),
-            'success'
-          );
-        } else {
-          showResult(`❌ Errore: ${data.error}`, 'error');
-        }
-      } catch (error) {
-        showResult(`❌ Errore: ${error.message}`, 'error');
+        const data = await res.json();
+        showResult(data, data.success ? 'success' : 'error');
+      } catch (e) {
+        showResult('❌ Errore: ' + e.message, 'error');
       }
-    }
-
-    async function testWorkflowOrchestrator() {
-      const leadId = document.getElementById('leadId').value;
-      const email = document.getElementById('email').value;
-      const nome = document.getElementById('nome').value;
-      const cognome = document.getElementById('cognome').value;
-      
-      showResult(`Test WorkflowOrchestrator non disponibile via API diretta.\n\nUsa invece il test API diretta che chiama lo stesso flusso.`, 'info');
     }
   </script>
 </body>
