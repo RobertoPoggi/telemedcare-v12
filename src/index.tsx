@@ -25862,11 +25862,12 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         },
         {
           id: 'DDT-RONCA-20260221', numero: 'DDT-005-2026', contract_code: null,
-          dispositivo: 'SiDLY VITAL CARE', serial_number: null,
+          dispositivo: 'SiDLY VITAL CARE', serial_number: '862246076804059',
           destinatario_nome: 'Maria Grazia Ronca',
-          destinatario_indirizzo: 'Via Nizza 15', destinatario_cap: '00198',
-          destinatario_citta: 'Roma', destinatario_provincia: 'RM',
-          data: '2026-02-21T00:00:00.000Z', note: 'DDT 5 del 21/02/2026 - Consegna SiDLY VITAL CARE a Maria Grazia Ronca'
+          destinatario_indirizzo: 'Via Cosseria N°2', destinatario_cap: '20136',
+          destinatario_citta: 'Milano', destinatario_provincia: 'MI',
+          pdf_url: '/ddt/DDT_005_21-02-2026_Maria_Grazia_Ronca_SiDLY_VITAL_CARE.pdf',
+          data: '2026-02-21T00:00:00.000Z', note: 'DDT 5 del 21/02/2026 - Consegna SiDLY VITAL CARE a Maria Grazia Ronca. S/N: 862246076804059. Contratto firmato del 21 febbraio 2026'
         },
         {
           id: 'DDT-DELAUDE-20260224', numero: 'DDT-006-2026', contract_code: null,
@@ -26055,7 +26056,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
           destinatario_citta: 'Milano',
           destinatario_provincia: 'MI',
           contratto_riferimento: 'Contratto firmato del 21 febbraio 2026',
-          pdf_url: null,
+          pdf_url: '/ddt/DDT_005_21-02-2026_Maria_Grazia_Ronca_SiDLY_VITAL_CARE.pdf',
           status: 'consegnato'
         },
         {
@@ -26297,6 +26298,15 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
           destinatario_citta: 'Roma',
           destinatario_provincia: 'RM',
           serial_number: '868298061148517'
+        },
+        {
+          numero: 'DDT-005-2026',
+          pdf_url: '/ddt/DDT_005_21-02-2026_Maria_Grazia_Ronca_SiDLY_VITAL_CARE.pdf',
+          destinatario_indirizzo: 'Via Cosseria N°2',
+          destinatario_cap: '20136',
+          destinatario_citta: 'Milano',
+          destinatario_provincia: 'MI',
+          serial_number: '862246076804059'
         },
         {
           numero: 'DDT-004-2026',

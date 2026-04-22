@@ -1585,20 +1585,25 @@ export const dashboard = `<!DOCTYPE html>
                 assigned:  ['bg-blue-100 text-blue-700','fa-user-check','Assegnato'],
                 inventory: ['bg-gray-100 text-gray-600','fa-warehouse','Magazzino'],
                 shipped:   ['bg-yellow-100 text-yellow-700','fa-shipping-fast','Spedito'],
-                returned:  ['bg-red-100 text-red-700','fa-undo','Reso']
+                returned:  ['bg-red-100 text-red-700','fa-undo','Reso'],
+                unassigned:['bg-orange-100 text-orange-700','fa-box-open','Non assegnato']
             };
             tb.innerHTML = list.map(d => {
-                const rawStatus = (d.status||'').toLowerCase();
-                const s = statusMap[rawStatus] || ['bg-gray-100 text-gray-600','fa-question','—'];
                 const modello = d.model || d.modello || '—';
                 const imei = d.imei || d.serial_number || '—';
-                const assigned = d.assegnato_a || d.assegnato_assistito || '—';
+                const assigned = d.assegnato_a || d.assegnato_assistito || '';
+                // Regola: se c'è un assistito → sempre "Assegnato"; se non c'è → "Non assegnato"
+                const effectiveStatus = assigned
+                    ? 'assigned'
+                    : 'unassigned';
+                const s = statusMap[effectiveStatus];
                 const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
+                const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
                     '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +
                     '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(modello) + '</td>' +
                     '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
-                    '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(assigned) + '</td>' +
+                    '<td class="px-2 py-3 text-sm text-gray-700">' + assignedDisplay + '</td>' +
                     '<td class="px-2 py-3 text-xs text-gray-400">' + dtStr + '</td>' +
                     '</tr>';
             }).join('');
