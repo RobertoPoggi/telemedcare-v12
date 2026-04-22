@@ -26433,20 +26433,27 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
         fixes.push('DDT-004-2026 Macchi: serial_number aggiornato a 862246076276621')
       } catch(e) { errors.push('DDT-004-2026: ' + String(e)) }
 
-      // 3. Correggi IMEI Macchi nella tabella dispositivi
-      try {
-        const macchiDev = await c.env.DB.prepare(
-          "SELECT serial_number FROM dispositivi WHERE serial_number = '862608061148517'"
-        ).first()
-        if (macchiDev) {
-          await c.env.DB.prepare(
-            "UPDATE dispositivi SET serial_number = '862246076276621', updated_at = CURRENT_TIMESTAMP WHERE serial_number = '862608061148517'"
-          ).run()
-          fixes.push('dispositivi: IMEI Macchi aggiornato 862608061148517 → 862246076276621')
-        } else {
-          fixes.push('dispositivi: IMEI Macchi 862608061148517 non trovato (già corretto o diverso)')
-        }
-      } catch(e) { errors.push('dispositivi Macchi: ' + String(e)) }
+      // 3. Correggi IMEI nella tabella dispositivi per i 3 casi con serial errato
+      const imeiCorrections = [
+        { old: '862608061148517', new: '862246076276621', nome: 'Macchi' },
+        { old: '862608066560916', new: '868298060656916', nome: 'Pepe' },
+        { old: '862346607387161', new: '862246073871101', nome: 'A.Locatelli' },
+      ]
+      for (const corr of imeiCorrections) {
+        try {
+          const dev = await c.env.DB.prepare(
+            'SELECT serial_number FROM dispositivi WHERE serial_number = ?'
+          ).bind(corr.old).first()
+          if (dev) {
+            await c.env.DB.prepare(
+              'UPDATE dispositivi SET serial_number = ? WHERE serial_number = ?'
+            ).bind(corr.new, corr.old).run()
+            fixes.push(`dispositivi: IMEI ${corr.nome} aggiornato ${corr.old} → ${corr.new}`)
+          } else {
+            fixes.push(`dispositivi: ${corr.nome} IMEI ${corr.old} non trovato`)
+          }
+        } catch(e) { errors.push(`dispositivi ${corr.nome}: ${String(e)}`) }
+      }
 
       // 4. Leggi stato finale
       const finalDdts = await c.env.DB.prepare(
