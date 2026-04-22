@@ -3347,7 +3347,7 @@ ${370+e.length}
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Modello</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Stato</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Assegnato a</th>
-                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data reg.</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data ass.</th>
                         </tr>
                     </thead>
                     <tbody id="devTable">
@@ -3680,7 +3680,9 @@ ${370+e.length}
                     ? 'assigned'
                     : 'unassigned';
                 const s = statusMap[effectiveStatus];
-                const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
+                // Data assegnazione: usa la data della DDT se disponibile, altrimenti assigned_at
+                const ddtDate = d.ddt_date || d.assigned_at;
+                const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
                 const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
                     '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +
@@ -16163,10 +16165,13 @@ startxref
         'Milano'        AS magazzino,
         'CE 0051'       AS ce_marking,
         l.nomeRichiedente || ' ' || l.cognomeRichiedente AS assegnato_richiedente,
-        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito
+        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito,
+        dt.created_at   AS ddt_date,
+        dt.numero_ddt   AS ddt_numero
       FROM dispositivi d
       LEFT JOIN leads l   ON d.lead_id = l.id
       LEFT JOIN assistiti a ON d.serial_number = a.imei
+      LEFT JOIN ddts dt ON d.serial_number = dt.serial_number
     `;const l=[],d=[];a&&(d.push("d.status = ?"),l.push(a)),s&&(s==="SiDLY VITAL CARE"?d.push("d.modello LIKE '%VITAL%'"):d.push("d.modello NOT LIKE '%VITAL%'")),d.length>0&&(r+=" WHERE "+d.join(" AND ")),r+=" ORDER BY d.created_at DESC LIMIT 200";const c=t.env.DB.prepare(r),g=((l.length>0?await c.bind(...l).all():await c.all()).results||[]).map(m=>{var v,f;return{...m,assegnato_a:((v=m.assegnato_assistito)==null?void 0:v.trim())||((f=m.assegnato_richiedente)==null?void 0:f.trim())||null,status_display:m.status==="inventory"?"INVENTORY":m.status==="assigned"?"ASSIGNED":m.status==="active"?"ACTIVE":m.status==="shipped"?"SHIPPED":m.status==="returned"?"RETURNED":(m.status||"INVENTORY").toUpperCase()}});return t.json({success:!0,data:{devices:g,total:g.length}})}catch(e){return console.error("❌ Errore inventory dispositivi:",e),t.json({success:!1,error:String(e)},500)}});A.post("/api/devices/upsert",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=await t.req.json(),{imei:a,modello:i,lead_id:s,status:r="assigned"}=e;if(!a||!i)return t.json({success:!1,error:"imei e modello obbligatori"},400);const l=new Date().toISOString(),d=await t.env.DB.prepare("SELECT id, status FROM dispositivi WHERE serial_number = ?").bind(a).first();if(d){const c={inventory:0,assigned:1,shipped:2,active:3,returned:0},u=c[d.status]??0;return(c[r]??0)>=u&&await t.env.DB.prepare("UPDATE dispositivi SET modello = ?, status = ?, lead_id = COALESCE(?, lead_id), assigned_at = ? WHERE serial_number = ?").bind(i,r,s||null,l,a).run(),t.json({success:!0,action:"updated",imei:a,status:r})}return await t.env.DB.prepare("INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(a,i,r,s||null,s?l:null,l).run(),t.json({success:!0,action:"inserted",imei:a,modello:i,status:r})}catch(e){return console.error("❌ Errore upsert dispositivo:",e),t.json({success:!1,error:String(e)},500)}});A.post("/api/assistiti/debug-eileen",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Debug Eileen Elisabeth King...");const e=await t.env.DB.prepare(`
       SELECT * 
       FROM assistiti 

@@ -1264,7 +1264,7 @@ export const dashboard = `<!DOCTYPE html>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Modello</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Stato</th>
                             <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase">Assegnato a</th>
-                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data reg.</th>
+                            <th class="pb-3 px-2 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Data ass.</th>
                         </tr>
                     </thead>
                     <tbody id="devTable">
@@ -1597,7 +1597,9 @@ export const dashboard = `<!DOCTYPE html>
                     ? 'assigned'
                     : 'unassigned';
                 const s = statusMap[effectiveStatus];
-                const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
+                // Data assegnazione: usa la data della DDT se disponibile, altrimenti assigned_at
+                const ddtDate = d.ddt_date || d.assigned_at;
+                const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
                 const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
                     '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +

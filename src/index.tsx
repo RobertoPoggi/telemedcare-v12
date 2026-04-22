@@ -21054,10 +21054,13 @@ app.get('/api/devices/inventory', async (c) => {
         'Milano'        AS magazzino,
         'CE 0051'       AS ce_marking,
         l.nomeRichiedente || ' ' || l.cognomeRichiedente AS assegnato_richiedente,
-        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito
+        a.nome_assistito || ' ' || a.cognome_assistito   AS assegnato_assistito,
+        dt.created_at   AS ddt_date,
+        dt.numero_ddt   AS ddt_numero
       FROM dispositivi d
       LEFT JOIN leads l   ON d.lead_id = l.id
       LEFT JOIN assistiti a ON d.serial_number = a.imei
+      LEFT JOIN ddts dt ON d.serial_number = dt.serial_number
     `
     const bindings: string[] = []
     const conditions: string[] = []
