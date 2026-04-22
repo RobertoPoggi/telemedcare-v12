@@ -3433,7 +3433,7 @@ ${370+e.length}
                 preparazione:['bg-blue-100 text-blue-700','fa-box-open','Preparazione'],
                 annullato:  ['bg-red-100 text-red-700','fa-times-circle','Annullato']
             };
-            tb.innerHTML = list.map(d => {
+            tb.innerHTML = list.map((d, idx) => {
                 const s = statusMap[d.status] || ['bg-gray-100 text-gray-600','fa-question','—'];
                 const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
                 const pdfBtn = d.pdf_url
@@ -3453,15 +3453,15 @@ ${370+e.length}
                     '<td class="px-2 py-3 text-center">' + pdfBtn + '</td>' +
                     '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
                     '<td class="px-2 py-3 whitespace-nowrap">' +
-                        '<button onclick="openDDTDetail('' + escapeHtml(d.id||d.numero_ddt) + '')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
-                        '<button onclick="openDDTEdit('' + escapeHtml(d.id||d.numero_ddt) + '')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
-                        '<button onclick="deleteDDT('' + escapeHtml(d.id||d.numero_ddt) + '')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
+                        '<button onclick="openDDTDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
+                        '<button onclick="openDDTEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="deleteDDT(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td></tr>';
             }).join('');
         }
 
-        function openDDTDetail(id) {
-            const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
+        function openDDTDetail(idx) {
+            const d = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(x => x.id === idx || x.numero_ddt === idx);
             if (!d) return;
             document.getElementById('ddtModalTitle').textContent = 'DDT ' + (d.numero_ddt||d.id);
             const pdfLink = d.pdf_url ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-600 hover:underline"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>' : '<span class="text-gray-400">Nessun PDF</span>';
@@ -3479,14 +3479,15 @@ ${370+e.length}
                 '<div><span class="font-semibold text-gray-500">PDF:</span><p>' + pdfLink + '</p></div>' +
                 (d.note ? '<div class="col-span-2"><span class="font-semibold text-gray-500">Note / Contratto:</span><p class="text-gray-600 text-xs">' + escapeHtml(d.note) + '</p></div>' : '') +
                 '</div>';
+            const dIdx = allDDTs.indexOf(d);
             document.getElementById('ddtModalFooter').innerHTML =
                 '<button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>' +
-                '<button onclick="openDDTEdit('' + escapeHtml(d.id||d.numero_ddt) + '')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2">Modifica</button>';
+                '<button onclick="openDDTEdit(' + dIdx + ')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2">Modifica</button>';
             document.getElementById('ddtModal').classList.remove('hidden');
         }
 
-        function openDDTEdit(id) {
-            const d = allDDTs.find(x => x.id === id || x.numero_ddt === id);
+        function openDDTEdit(idx) {
+            const d = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(x => x.id === idx || x.numero_ddt === idx);
             if (!d) return;
             document.getElementById('ddtModalTitle').textContent = 'Modifica DDT ' + (d.numero_ddt||d.id);
             document.getElementById('ddtModalBody').innerHTML =
@@ -3520,13 +3521,16 @@ ${370+e.length}
                 '<div class="col-span-2"><label class="font-semibold text-gray-600">Note / Rif. Contratto</label>' +
                 '<textarea name="note" rows="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">' + escapeHtml(d.note||'') + '</textarea></div>' +
                 '</form>';
+            const editIdx = allDDTs.indexOf(d);
             document.getElementById('ddtModalFooter').innerHTML =
                 '<button onclick="closeDDTModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
-                '<button onclick="saveDDTEdit('' + escapeHtml(d.id||d.numero_ddt) + '')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2"><i class="fas fa-save mr-1"></i>Salva</button>';
+                '<button onclick="saveDDTEdit(' + editIdx + ')" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 ml-2"><i class="fas fa-save mr-1"></i>Salva</button>';
             document.getElementById('ddtModal').classList.remove('hidden');
         }
 
-        async function saveDDTEdit(id) {
+        async function saveDDTEdit(idx) {
+            const dObj = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(x => x.id === idx || x.numero_ddt === idx);
+            const id = dObj ? (dObj.id || dObj.numero_ddt) : idx;
             const form = document.getElementById('ddtEditForm');
             if (!form) return;
             const fd = new FormData(form);
@@ -3604,10 +3608,12 @@ ${370+e.length}
             } catch(e) { showToast('Errore di rete', 'error'); }
         }
 
-        async function deleteDDT(id) {
-            if (!confirm('Eliminare il DDT ' + id + '?')) return;
+        async function deleteDDT(idx) {
+            const dObj = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(x => x.id === idx || x.numero_ddt === idx);
+            const id = dObj ? (dObj.id || dObj.numero_ddt) : idx;
+            if (!confirm('Eliminare il DDT ' + (dObj ? (dObj.numero_ddt || id) : id) + '?')) return;
             try {
-                const res = await fetch('/api/ddts/' + id, { method: 'DELETE' });
+                const res = await fetch('/api/ddts/' + encodeURIComponent(id), { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     await loadDDTTable();
