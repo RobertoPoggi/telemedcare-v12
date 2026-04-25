@@ -3671,11 +3671,7 @@ ${370+e.length}
             renderDevTable(filtered);
         }
 
-        // ── Device store (parallelo ad allDDTs)
-        let allDevices = [];
-
         function renderDevTable(list) {
-            allDevices = list;
             const tb = document.getElementById('devTable');
             if (!tb) return;
             if (!list.length) {
@@ -3690,7 +3686,7 @@ ${370+e.length}
                 returned:  ['bg-red-100 text-red-700','fa-undo','Reso'],
                 unassigned:['bg-orange-100 text-orange-700','fa-box-open','Non assegnato']
             };
-            tb.innerHTML = list.map((d, idx) => {
+            tb.innerHTML = list.map(d => {
                 const modello = d.model || d.modello || '—';
                 const imei = d.imei || d.serial_number || '—';
                 const assigned = d.assegnato_a || d.assegnato_assistito || '';
@@ -3699,6 +3695,7 @@ ${370+e.length}
                 const ddtDate = d.ddt_date || d.assigned_at;
                 const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
                 const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
+                const safeImei = imei.replace(/'/g, "\\'");
                 return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
                     '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +
                     '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(modello) + '</td>' +
@@ -3706,9 +3703,9 @@ ${370+e.length}
                     '<td class="px-2 py-3 text-sm text-gray-700">' + assignedDisplay + '</td>' +
                     '<td class="px-2 py-3 text-xs text-gray-400">' + dtStr + '</td>' +
                     '<td class="px-2 py-3 text-center whitespace-nowrap">' +
-                        '<button onclick="openDevDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
-                        '<button onclick="openDevEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
-                        '<button onclick="deleteDevice(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
+                        '<button onclick="openDevDetail('' + safeImei + '')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
+                        '<button onclick="openDevEdit('' + safeImei + '')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="deleteDevice('' + safeImei + '')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td>' +
                     '</tr>';
             }).join('');
@@ -3717,15 +3714,15 @@ ${370+e.length}
         function openDevModal() { document.getElementById('devModal').classList.remove('hidden'); }
         function closeDevModal() { document.getElementById('devModal').classList.add('hidden'); }
 
-        function openDevDetail(idx) {
-            const d = allDevices[idx];
+        function openDevDetail(imei) {
+            const d = allDevices.find(x => (x.imei || x.serial_number) === imei);
             if (!d) return;
-            const imei = d.imei || d.serial_number || '—';
             const modello = d.model || d.modello || '—';
             const assigned = d.assegnato_a || '—';
             const ddtDate = d.ddt_date || d.assigned_at;
             const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
             const ddt = d.ddt_numero || '—';
+            const safeImei = imei.replace(/'/g, "\\'");
             document.getElementById('devModalTitle').textContent = 'Dispositivo ' + imei;
             document.getElementById('devModalBody').innerHTML =
                 '<div class="grid grid-cols-2 gap-4 text-sm">' +
@@ -3738,14 +3735,13 @@ ${370+e.length}
                 '</div>';
             document.getElementById('devModalFooter').innerHTML =
                 '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>' +
-                '<button onclick="openDevEdit(' + idx + ')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><i class="fas fa-edit mr-1"></i>Modifica</button>';
+                '<button onclick="openDevEdit('' + safeImei + '')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><i class="fas fa-edit mr-1"></i>Modifica</button>';
             openDevModal();
         }
 
-        function openDevEdit(idx) {
-            const d = allDevices[idx];
+        function openDevEdit(imei) {
+            const d = allDevices.find(x => (x.imei || x.serial_number) === imei);
             if (!d) return;
-            const imei = d.imei || d.serial_number || '';
             const modello = d.model || d.modello || '';
             const status = d.status || 'assigned';
             document.getElementById('devModalTitle').textContent = 'Modifica dispositivo';
@@ -3802,10 +3798,9 @@ ${370+e.length}
             }
         }
 
-        function deleteDevice(idx) {
-            const d = allDevices[idx];
+        function deleteDevice(imei) {
+            const d = allDevices.find(x => (x.imei || x.serial_number) === imei);
             if (!d) return;
-            const imei = d.imei || d.serial_number || '';
             const nome = d.assegnato_a ? d.assegnato_a : 'nessun assistito';
             document.getElementById('devModalTitle').innerHTML = '<span class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Elimina dispositivo</span>';
             document.getElementById('devModalBody').innerHTML =
