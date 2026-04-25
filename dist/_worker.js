@@ -3695,17 +3695,16 @@ ${370+e.length}
                 const ddtDate = d.ddt_date || d.assigned_at;
                 const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
                 const assignedDisplay = assigned || '<span class="text-orange-400 italic">Non assegnato</span>';
-                const safeImei = imei.replace(/'/g, "\\'");
-                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                return '<tr class="border-b border-gray-100 hover:bg-gray-50" data-imei="' + escapeHtml(imei) + '">' +
                     '<td class="px-2 py-3 font-mono text-xs font-medium text-gray-800">' + escapeHtml(imei) + '</td>' +
                     '<td class="px-2 py-3 text-sm text-gray-700">' + escapeHtml(modello) + '</td>' +
                     '<td class="px-2 py-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' + s[0] + '"><i class="fas ' + s[1] + '"></i>' + s[2] + '</span></td>' +
                     '<td class="px-2 py-3 text-sm text-gray-700">' + assignedDisplay + '</td>' +
                     '<td class="px-2 py-3 text-xs text-gray-400">' + dtStr + '</td>' +
                     '<td class="px-2 py-3 text-center whitespace-nowrap">' +
-                        '<button onclick="openDevDetail('' + safeImei + '')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
-                        '<button onclick="openDevEdit('' + safeImei + '')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
-                        '<button onclick="deleteDevice('' + safeImei + '')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
+                        '<button data-action="detail" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
+                        '<button data-action="edit"   class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button data-action="delete" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td>' +
                     '</tr>';
             }).join('');
@@ -3713,6 +3712,19 @@ ${370+e.length}
 
         function openDevModal() { document.getElementById('devModal').classList.remove('hidden'); }
         function closeDevModal() { document.getElementById('devModal').classList.add('hidden'); }
+
+        // Event delegation per i pulsanti CRUD dispositivi
+        document.getElementById('devTable').addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const row = btn.closest('tr[data-imei]');
+            if (!row) return;
+            const imei = row.getAttribute('data-imei');
+            const action = btn.getAttribute('data-action');
+            if (action === 'detail') openDevDetail(imei);
+            else if (action === 'edit') openDevEdit(imei);
+            else if (action === 'delete') deleteDevice(imei);
+        });
 
         function openDevDetail(imei) {
             const d = allDevices.find(x => (x.imei || x.serial_number) === imei);
@@ -3722,7 +3734,6 @@ ${370+e.length}
             const ddtDate = d.ddt_date || d.assigned_at;
             const dtStr = ddtDate ? new Date(ddtDate).toLocaleDateString('it-IT') : '—';
             const ddt = d.ddt_numero || '—';
-            const safeImei = imei.replace(/'/g, "\\'");
             document.getElementById('devModalTitle').textContent = 'Dispositivo ' + imei;
             document.getElementById('devModalBody').innerHTML =
                 '<div class="grid grid-cols-2 gap-4 text-sm">' +
@@ -3733,9 +3744,18 @@ ${370+e.length}
                 '<div><span class="font-semibold text-gray-500">N° DDT</span><p class="font-mono mt-1">' + escapeHtml(ddt) + '</p></div>' +
                 '<div><span class="font-semibold text-gray-500">Stato DB</span><p class="mt-1 capitalize">' + escapeHtml(d.status || '—') + '</p></div>' +
                 '</div>';
-            document.getElementById('devModalFooter').innerHTML =
-                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Chiudi</button>' +
-                '<button onclick="openDevEdit('' + safeImei + '')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"><i class="fas fa-edit mr-1"></i>Modifica</button>';
+            const footerEditBtn = document.createElement('button');
+            footerEditBtn.className = 'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
+            footerEditBtn.innerHTML = '<i class="fas fa-edit mr-1"></i>Modifica';
+            footerEditBtn.onclick = function() { openDevEdit(imei); };
+            const footerCloseBtn = document.createElement('button');
+            footerCloseBtn.className = 'px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50';
+            footerCloseBtn.textContent = 'Chiudi';
+            footerCloseBtn.onclick = closeDevModal;
+            const footer = document.getElementById('devModalFooter');
+            footer.innerHTML = '';
+            footer.appendChild(footerCloseBtn);
+            footer.appendChild(footerEditBtn);
             openDevModal();
         }
 
@@ -3770,9 +3790,18 @@ ${370+e.length}
                 '</div>' +
                 '<p id="editDevError" class="text-red-600 text-xs hidden"></p>' +
                 '</div>';
-            document.getElementById('devModalFooter').innerHTML =
-                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
-                '<button onclick="saveDevEdit()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"><i class="fas fa-save mr-1"></i>Salva</button>';
+            const footer2 = document.getElementById('devModalFooter');
+            footer2.innerHTML = '';
+            const cancelBtn2 = document.createElement('button');
+            cancelBtn2.className = 'px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50';
+            cancelBtn2.textContent = 'Annulla';
+            cancelBtn2.onclick = closeDevModal;
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700';
+            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i>Salva';
+            saveBtn.onclick = saveDevEdit;
+            footer2.appendChild(cancelBtn2);
+            footer2.appendChild(saveBtn);
             openDevModal();
         }
 
@@ -3812,9 +3841,18 @@ ${370+e.length}
                 '</div>' +
                 '<p class="text-red-600 font-semibold">⚠️ Questa operazione è irreversibile.</p>' +
                 '</div>';
-            document.getElementById('devModalFooter').innerHTML =
-                '<button onclick="closeDevModal()" class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50">Annulla</button>' +
-                '<button onclick="confirmDeleteDevice('' + imei.replace(/'/g, "\\'") + '')" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"><i class="fas fa-trash mr-1"></i>Elimina</button>';
+            const footer3 = document.getElementById('devModalFooter');
+            footer3.innerHTML = '';
+            const cancelBtn3 = document.createElement('button');
+            cancelBtn3.className = 'px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50';
+            cancelBtn3.textContent = 'Annulla';
+            cancelBtn3.onclick = closeDevModal;
+            const delBtn = document.createElement('button');
+            delBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
+            delBtn.innerHTML = '<i class="fas fa-trash mr-1"></i>Elimina';
+            delBtn.onclick = function() { confirmDeleteDevice(imei); };
+            footer3.appendChild(cancelBtn3);
+            footer3.appendChild(delBtn);
             openDevModal();
         }
 
