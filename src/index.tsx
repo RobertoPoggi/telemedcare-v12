@@ -17516,10 +17516,34 @@ app.post('/api/cron/send-reminders', async (c) => {
     
     console.log(`✅ [CRON] Processo reminder completato: ${result.success}/${result.total} successo, ${result.failed} falliti`)
     
+    // ✅ CRON: dopo i reminder, esegui anche l'auto-import HubSpot per eCura
+    // (aggiorna hs_object_source_detail_1 con META/GOOGLE/ALTRO e importa nuovi lead)
+    let importResult: any = null
+    try {
+      const { executeAutoImport } = await import('./modules/hubspot-auto-import')
+      const baseUrl = env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+      // Ultimi 7 giorni per aggiornare i lead recenti (il sync completo è manuale)
+      importResult = await executeAutoImport(db, env, baseUrl, {
+        enabled: true,
+        startHour: 0,
+        days: 7,
+        onlyEcura: true,
+        dryRun: false
+      })
+      console.log(`✅ [CRON] Auto-import eCura: ${importResult.imported} importati, ${importResult.updated} canali aggiornati`)
+    } catch (importErr) {
+      console.warn('⚠️ [CRON] Auto-import eCura fallito (non critico):', importErr)
+    }
+    
     return c.json({
       success: true,
       message: 'Processo reminder completato',
-      stats: result
+      stats: result,
+      ecuraImport: importResult ? {
+        imported: importResult.imported,
+        updated: importResult.updated,
+        skipped: importResult.skipped
+      } : null
     })
     
   } catch (error) {
