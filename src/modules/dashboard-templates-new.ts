@@ -2320,9 +2320,13 @@ export const dashboard = `<!DOCTYPE html>
             
             leads.forEach(lead => {
                 const dettaglio = lead.hs_object_source_detail_1 || lead.dettaglio_fonte || '';
-                // Se il dettaglio è un valore "Form eCura_*" lo usiamo come chiave,
-                // altrimenti ricadiamo su lead.fonte
-                const fonte = (dettaglio && dettaglio.startsWith('Form eCura'))
+                // PRIORITÀ CORRETTA:
+                // 1. Se il dettaglio è specifico (Form eCura_ META/GOOGLE/DIRETTO/ALTRO)
+                //    → usa dettaglio (contiene info canale che fonte non ha)
+                // 2. Altrimenti usa lead.fonte (es. 'Form eCura x Test', 'IRBEMA', ecc.)
+                //    IMPORTANTE: NON sovrascrivere fonte specifica con dettaglio generico 'Form eCura'
+                const dettaglioSpecifico = dettaglio && dettaglio.match(/Form eCura[_ ].+/);
+                const fonte = dettaglioSpecifico
                     ? dettaglio
                     : (lead.fonte || 'Non specificata');
                 fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
@@ -3718,7 +3722,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // PRIORITÀ: se hs_object_source_detail_1 inizia con "Form eCura"
                 // usiamo quello (cattura META/GOOGLE/ALTRO); altrimenti lead.fonte
                 const dettaglio = l.hs_object_source_detail_1 || l.dettaglio_fonte || '';
-                const fonte = (dettaglio && dettaglio.startsWith('Form eCura'))
+                // PRIORITÀ CORRETTA:
+                // 1. Se dettaglio è specifico (Form eCura_ META/GOOGLE/DIRETTO/ALTRO) → usa dettaglio
+                // 2. Altrimenti usa l.fonte (preserva 'Form eCura x Test', 'IRBEMA', ecc.)
+                //    IMPORTANTE: NON sovrascrivere fonte specifica con dettaglio generico 'Form eCura'
+                const dettaglioSpecifico = dettaglio && dettaglio.match(/Form eCura[_ ].+/);
+                const fonte = dettaglioSpecifico
                     ? dettaglio
                     : (l.fonte || 'Non specificato');
                 sources[fonte] = (sources[fonte] || 0) + 1;
