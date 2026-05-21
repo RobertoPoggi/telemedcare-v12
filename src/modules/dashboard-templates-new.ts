@@ -3421,7 +3421,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="NETWORKING">NETWORKING</option>
                     </select>
                     <select id="filterSorgente" class="border-2 border-blue-400 bg-blue-50 rounded-lg px-3 py-2 text-sm font-semibold" onchange="applyFilters()">
-                        <option value="">🔍 Tutte le Sorgenti</option>
+                        <option value="">📡 Tutti i Canali</option>
+                        <!-- Popolato dinamicamente da /api/leads/filters con i valori di canale_acquisizione -->
                     </select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
@@ -3536,14 +3537,21 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const filtersData = await filtersResponse.json();
                     if (filtersData.success && filtersData.filters.sorgenti) {
                         const sorgenteSelect = document.getElementById('filterSorgente');
-                        sorgenteSelect.innerHTML = '<option value="">🔍 Tutte le Sorgenti</option>';
+                        // Icone per i canali acquisizione
+                        const canaleIcons = {
+                            'META':    '📘 Meta (FB/IG)',
+                            'GOOGLE':  '🔍 Google',
+                            'DIRETTO': '🔗 Diretto',
+                            'ALTRO':   '📎 Altro'
+                        };
+                        sorgenteSelect.innerHTML = '<option value="">📡 Tutti i Canali</option>';
                         filtersData.filters.sorgenti.forEach(sorgente => {
                             const option = document.createElement('option');
                             option.value = sorgente;
-                            option.textContent = sorgente;
+                            option.textContent = canaleIcons[sorgente] || sorgente;
                             sorgenteSelect.appendChild(option);
                         });
-                        console.log('✅ Filtro Sorgente popolato con', filtersData.filters.sorgenti.length, 'opzioni');
+                        console.log('✅ Filtro Canale popolato con', filtersData.filters.sorgenti.length, 'opzioni');
                     }
                 } catch (error) {
                     console.error('⚠️ Errore caricamento filtri:', error);
@@ -4106,8 +4114,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                     }
                 }
                 
-                // Filtro Sorgente: match esatto con hs_object_source
-                const leadSorgente = lead.hs_object_source || '';
+                // Filtro Sorgente: match su canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
+                // canale_acquisizione è il nuovo campo derivato da hs_analytics_source
+                const leadSorgente = lead.canale_acquisizione || lead.hs_object_source || '';
                 const matchSorgente = !sorgenteFilter || leadSorgente === sorgenteFilter;
                 
                 // Filtro Servizio: cerca nel campo servizio o tipoServizio del DB

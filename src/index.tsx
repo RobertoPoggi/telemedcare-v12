@@ -598,6 +598,11 @@ app.use('*', async (c, next) => {
         { name: 'hs_object_source_detail_1', def: `TEXT DEFAULT NULL` },
         { name: 'dettaglio_fonte', def: `TEXT DEFAULT NULL` },
         { name: 'canale', def: `TEXT DEFAULT NULL` },
+        // ✅ NUOVI CAMPI: analytics HubSpot per tracciamento canale acquisizione
+        { name: 'hs_analytics_source', def: `TEXT DEFAULT NULL` },
+        // canale_acquisizione: valore derivato da hs_analytics_source/hs_object_source_detail_1
+        // Valori: 'META' | 'GOOGLE' | 'DIRETTO' | 'ALTRO' | NULL
+        { name: 'canale_acquisizione', def: `TEXT DEFAULT NULL` },
         { name: 'nomeAssistito', def: `TEXT DEFAULT NULL` },
         { name: 'cognomeAssistito', def: `TEXT DEFAULT NULL` },
         { name: 'external_data', def: `TEXT DEFAULT NULL` },
@@ -6391,18 +6396,31 @@ app.get('/api/leads/filters', async (c) => {
       console.error('⚠️ Errore recupero fonti:', error)
     }
 
-    // Recupera valori distinti di hs_object_source (sorgente)
+    // Recupera valori distinti di canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
+    // Usato dal filtro "Sorgente" nella leads dashboard
     try {
-      const sorgenti = await c.env.DB.prepare(`
-        SELECT DISTINCT hs_object_source 
-        FROM leads 
-        WHERE hs_object_source IS NOT NULL AND hs_object_source != ''
-        ORDER BY hs_object_source
+      const canali = await c.env.DB.prepare(`
+        SELECT DISTINCT canale_acquisizione
+        FROM leads
+        WHERE canale_acquisizione IS NOT NULL AND canale_acquisizione != ''
+        ORDER BY canale_acquisizione
       `).all()
-      filters.sorgenti = sorgenti.results?.map((r: any) => r.hs_object_source) || []
+      // Ordine fisso per la UI: META → GOOGLE → DIRETTO → ALTRO
+      const ordine = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO']
+      const canaliRaw = canali.results?.map((r: any) => r.canale_acquisizione) || []
+      filters.sorgenti = ordine.filter(c => canaliRaw.includes(c))
+        .concat(canaliRaw.filter((c: string) => !ordine.includes(c)))
     } catch (error) {
-      console.warn('⚠️ Colonna hs_object_source non trovata (eseguire POST /api/db/migrate):', error)
-      filters.sorgenti = []
+      console.warn('⚠️ Colonna canale_acquisizione non trovata, fallback su hs_object_source:', error)
+      // Fallback legacy: hs_object_source
+      try {
+        const sorgenti = await c.env.DB.prepare(`
+          SELECT DISTINCT hs_object_source FROM leads
+          WHERE hs_object_source IS NOT NULL AND hs_object_source != ''
+          ORDER BY hs_object_source
+        `).all()
+        filters.sorgenti = sorgenti.results?.map((r: any) => r.hs_object_source) || []
+      } catch { filters.sorgenti = [] }
     }
 
     // Recupera valori distinti di dettaglio_fonte (con fallback se colonna non esiste)

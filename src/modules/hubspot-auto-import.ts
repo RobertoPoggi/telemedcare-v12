@@ -117,7 +117,7 @@ export async function executeAutoImport(
     }
     
     // Import modulo HubSpot
-    const { HubSpotClient, mapHubSpotContactToLead } = await import('./hubspot-integration')
+    const { HubSpotClient, mapHubSpotContactToLead, deriveCanaleName } = await import('./hubspot-integration')
     
     // Calcola intervallo temporale (ultimi X giorni configurabili)
     const createdAfter = getIncrementalStartTime(config)
@@ -188,13 +188,14 @@ export async function executeAutoImport(
         `).bind(contact.properties.email, contact.id).first()
         
         if (existing) {
-          // ✅ Lead già esistente: aggiorna hs_object_source_detail_1 se HubSpot ha valore più specifico
-          // (es: 'Form eCura_ META' sostituisce il vecchio 'Form eCura' generico)
+          // ✅ Lead già esistente: aggiorna i campi canale se HubSpot ha dati più specifici
           const leadData = await mapHubSpotContactToLead(contact)
           const newDetail = leadData.hs_object_source_detail_1 || null
-          
-          if (newDetail && newDetail !== 'Form eCura' && newDetail.startsWith('Form eCura')) {
-            // Nuovo valore specifico (META/GOOGLE/ALTRO) — aggiorna il DB
+          const newCanale = leadData.canale_acquisizione || null  // META/GOOGLE/DIRETTO/ALTRO
+          const newAnalytics = leadData.hs_analytics_source || null
+
+          if (newCanale) {
+            // Aggiorna hs_object_source_detail_1, canale_acquisizione e hs_analytics_source
             await db.prepare(`
               UPDATE leads SET
                 hs_object_source_detail_1 = CASE
@@ -207,20 +208,22 @@ export async function executeAutoImport(
                   WHEN dettaglio_fonte = 'Form eCura' THEN ?
                   ELSE dettaglio_fonte
                 END,
+                hs_analytics_source = COALESCE(hs_analytics_source, ?),
+                canale_acquisizione = COALESCE(canale_acquisizione, ?),
                 updated_at = ?
               WHERE id = ?
             `).bind(
               newDetail, newDetail,
               newDetail, newDetail,
+              newAnalytics,
+              newCanale,
               new Date().toISOString(),
               (existing as any).id
             ).run()
-            console.log(`🔄 [AUTO-IMPORT] Canale aggiornato: lead ${(existing as any).id} → ${newDetail}`)
+            console.log(`🔄 [AUTO-IMPORT] Canale aggiornato: lead ${(existing as any).id} → ${newCanale} (${newAnalytics || 'analytics n/a'})`)
             result.updated = (result.updated || 0) + 1
           } else {
-            // newDetail è null, 'Form eCura' o non ha suffisso canale:
-            // HubSpot non ha info sul canale (DIRECT_TRAFFIC, no analytics) → non aggiornabile
-            console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) canale non determinabile (${newDetail || 'null'}), skip`)
+            console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) nessun dato canale da HubSpot, skip`)
             result.skipped++
           }
           continue
@@ -304,6 +307,8 @@ export async function executeAutoImport(
                 WHEN dettaglio_fonte = 'Form eCura' AND ? IS NOT NULL AND ? != '' AND ? != 'Form eCura' THEN ?
                 ELSE dettaglio_fonte
               END,
+              hs_analytics_source = COALESCE(hs_analytics_source, ?),
+              canale_acquisizione = COALESCE(canale_acquisizione, ?),
               external_source_id = ?,
               updated_at = ?
             WHERE email = ?
@@ -334,12 +339,14 @@ export async function executeAutoImport(
             leadData.dettaglio_fonte || null,
             leadData.dettaglio_fonte || null,
             leadData.dettaglio_fonte || null,
+            leadData.hs_analytics_source || null,
+            leadData.canale_acquisizione || null,
             leadData.external_source_id,
             new Date().toISOString(),
             emailSafe
           ).run()
           
-          console.log(`✅ [AUTO-IMPORT] Lead aggiornato (UPDATE): ${existingLead.id} from HubSpot ${contact.id}`)
+          console.log(`✅ [AUTO-IMPORT] Lead aggiornato (UPDATE): ${existingLead.id} from HubSpot ${contact.id} canale=${leadData.canale_acquisizione || 'n/a'}`)
           result.updated = (result.updated || 0) + 1
         } else {
           // Lead non esiste, INSERT nuovo
@@ -351,10 +358,11 @@ export async function executeAutoImport(
               prezzo_anno, prezzo_rinnovo,
               fonte, external_source_id, status, note,
               hs_object_source, hs_object_source_detail_1, dettaglio_fonte,
+              hs_analytics_source, canale_acquisizione,
               vuoleContratto, vuoleBrochure, vuoleManuale,
               gdprConsent, consensoMarketing, consensoTerze,
               created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             leadId,
             leadData.nomeRichiedente,
@@ -375,6 +383,8 @@ export async function executeAutoImport(
             leadData.hs_object_source || null,
             leadData.hs_object_source_detail_1 || null,
             leadData.dettaglio_fonte || null,
+            leadData.hs_analytics_source || null,
+            leadData.canale_acquisizione || null,
             leadData.vuoleContratto,
             leadData.vuoleBrochure,
             leadData.vuoleManuale,

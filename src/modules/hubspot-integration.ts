@@ -363,28 +363,42 @@ function deriveChannelDetail(props: Record<string, any>): string | null {
 
   switch (source) {
     case 'PAID_SOCIAL':
-      // Facebook Ads, Instagram Ads → Meta
-      return 'Form eCura_ META'
-
-    case 'PAID_SEARCH':
-      // Google Ads (e altri motori a pagamento) → Google
-      return 'Form eCura_ GOOGLE'
-
-    case 'ORGANIC_SEARCH':
-      // Google organico, Bing organico → Google
-      return 'Form eCura_ GOOGLE'
-
     case 'SOCIAL_MEDIA':
-      // Social organico (Facebook page, Instagram organico, ecc.) → Meta
       return 'Form eCura_ META'
-
+    case 'PAID_SEARCH':
+    case 'ORGANIC_SEARCH':
+      return 'Form eCura_ GOOGLE'
     case 'DIRECT_TRAFFIC':
-      // Traffico diretto (URL digitato, bookmark, link senza tracking) → Diretto
       return 'Form eCura_ DIRETTO'
-
     default:
-      // EMAIL_MARKETING, REFERRALS, OTHER_CAMPAIGNS, OFFLINE, ecc. → Altro
+      // EMAIL_MARKETING, REFERRALS, OTHER_CAMPAIGNS, OFFLINE, ecc.
       return 'Form eCura_ ALTRO'
+  }
+}
+
+/**
+ * Estrae il nome corto del canale acquisizione dal valore derivato o da analytics source.
+ * Ritorna: 'META' | 'GOOGLE' | 'DIRETTO' | 'ALTRO' | null
+ */
+export function deriveCanaleName(props: Record<string, any>): string | null {
+  // Prima controlla il detail già presente (post-12/05 o appena derivato)
+  const detail = (props.hs_object_source_detail_1 || '').toUpperCase()
+  if (detail.includes('META'))    return 'META'
+  if (detail.includes('GOOGLE'))  return 'GOOGLE'
+  if (detail.includes('DIRETTO')) return 'DIRETTO'
+  if (detail.includes('ALTRO'))   return 'ALTRO'
+
+  // Poi da hs_analytics_source
+  const source = (props.hs_analytics_source || props.hs_latest_source || '').toUpperCase().trim()
+  if (!source) return null
+
+  switch (source) {
+    case 'PAID_SOCIAL':
+    case 'SOCIAL_MEDIA':    return 'META'
+    case 'PAID_SEARCH':
+    case 'ORGANIC_SEARCH':  return 'GOOGLE'
+    case 'DIRECT_TRAFFIC':  return 'DIRETTO'
+    default:                return 'ALTRO'
   }
 }
 
@@ -571,6 +585,9 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
       return ch
     })(),
     dettaglio_fonte: deriveChannelDetail(props),
+    // ✅ NUOVI CAMPI DB
+    hs_analytics_source: props.hs_analytics_source || props.hs_latest_source || null,
+    canale_acquisizione: deriveCanaleName(props),
     
     // Metadata
     // ✅ FIX CRITICO: Importa note VERE da HubSpot (NO fallback che sovrascrive!)
