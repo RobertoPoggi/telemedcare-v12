@@ -213,7 +213,16 @@ export class HubSpotClient {
     const properties = filters.properties || [
       'firstname', 'lastname', 'email', 'phone', 'mobilephone',
       'hs_lead_status', 'lifecyclestage', 'createdate', 'lastmodifieddate',
-      'hs_object_source_detail_1', // Form source
+      'hs_object_source_detail_1', // Form source (nuovo: 'Form eCura_ META' ecc.)
+      // ✅ CAMPI ANALYTICS per risalire al canale sui lead storici (pre-12/05/2026)
+      // hs_analytics_source: 'PAID_SOCIAL' → Meta, 'PAID_SEARCH' → Google
+      // hs_analytics_source_data_1: nome campagna/rete (es. 'facebook', 'google')
+      // hs_analytics_source_data_2: dettaglio ulteriore (es. nome campagna)
+      'hs_analytics_source',        // 'PAID_SOCIAL' / 'PAID_SEARCH' / 'DIRECT_TRAFFIC' ecc.
+      'hs_analytics_source_data_1', // nome rete/campagna (facebook, google, instagram...)
+      'hs_analytics_source_data_2', // dettaglio campagna
+      'hs_latest_source',           // fonte più recente (stessa logica ma last touch)
+      'hs_latest_source_data_1',    // dettaglio last touch
       'servizio_ecura', // ✅ Custom property: FAMILY/PRO/PREMIUM
       'piano_ecura', // ✅ Custom property: BASE/AVANZATO
       'servizio_di_interesse', // ✅ Campo alternativo da form ecura.it
@@ -313,6 +322,75 @@ export class HubSpotClient {
 /**
  * Mappa un contatto HubSpot in un lead TeleMedCare
  */
+/**
+ * Deriva il canale dettagliato del lead eCura.
+ *
+ * Priorità:
+ * 1. hs_object_source_detail_1 con suffisso specifico (post-12/05/2026)
+ *    es. 'Form eCura_ META' / 'Form eCura_ GOOGLE' / 'Form eCura_ ALTRO'
+ * 2. Fallback su hs_analytics_source (campo HubSpot standard, presente anche su lead storici):
+ *    - 'PAID_SOCIAL'   → proviene da Facebook/Instagram Ads → 'Form eCura_ META'
+ *    - 'PAID_SEARCH'   → proviene da Google Ads            → 'Form eCura_ GOOGLE'
+ *    - qualsiasi altro → canale non identificabile          → 'Form eCura_ ALTRO'
+ *    Se anche analytics è vuoto/generico → ritorna 'Form eCura' (invariato)
+ *
+ * I valori possibili di hs_analytics_source secondo HubSpot:
+ *   PAID_SOCIAL, PAID_SEARCH, ORGANIC_SEARCH, SOCIAL_MEDIA,
+ *   EMAIL_MARKETING, DIRECT_TRAFFIC, REFERRALS, OTHER_CAMPAIGNS, OFFLINE
+ */
+function deriveChannelDetail(props: Record<string, any>): string | null {
+  // Priorità 1: valore già specifico (post-12/05/2026)
+  const detail = props.hs_object_source_detail_1 || ''
+  if (detail && detail !== 'Form eCura' && detail.startsWith('Form eCura')) {
+    return detail // es. 'Form eCura_ META' — già corretto, usa così com'è
+  }
+
+  // Priorità 2: deriva da hs_analytics_source (disponibile anche per lead storici)
+  // Usa first-touch; se manca, prova last-touch
+  const source = (props.hs_analytics_source || props.hs_latest_source || '').toUpperCase()
+  const sourceData1 = (props.hs_analytics_source_data_1 || props.hs_latest_source_data_1 || '').toLowerCase()
+
+  if (!source) return detail || null // nessun dato analytics → lascia il valore esistente
+
+  if (source === 'PAID_SOCIAL') {
+    // Facebook Ads, Instagram Ads, TikTok Ads → Meta
+    return 'Form eCura_ META'
+  }
+
+  if (source === 'PAID_SEARCH') {
+    // Google Ads, Bing Ads → Google
+    // Doppio controllo su sourceData1 per escludere Bing/altri
+    if (!sourceData1 || sourceData1.includes('google') || sourceData1.includes('adwords') || sourceData1 === '') {
+      return 'Form eCura_ GOOGLE'
+    }
+    // Bing o altro motore di ricerca a pagamento → ALTRO
+    return 'Form eCura_ ALTRO'
+  }
+
+  if (source === 'SOCIAL_MEDIA') {
+    // Social organico: Facebook/Instagram organico → META; altri → ALTRO
+    if (sourceData1.includes('facebook') || sourceData1.includes('instagram')) {
+      return 'Form eCura_ META'
+    }
+    return 'Form eCura_ ALTRO'
+  }
+
+  if (source === 'ORGANIC_SEARCH') {
+    // Google organico → GOOGLE
+    return 'Form eCura_ GOOGLE'
+  }
+
+  // EMAIL_MARKETING, DIRECT_TRAFFIC, REFERRALS, OTHER_CAMPAIGNS, OFFLINE, ecc.
+  // Se il source esiste ma non è identificabile come Meta/Google → ALTRO
+  if (source && source !== 'DIRECT_TRAFFIC') {
+    return 'Form eCura_ ALTRO'
+  }
+
+  // DIRECT_TRAFFIC o source vuoto → non possiamo determinare il canale
+  // Ritorna il valore esistente (tipicamente 'Form eCura' per i lead storici)
+  return detail || null
+}
+
 export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<any> {
   const props = contact.properties
   
@@ -484,10 +562,18 @@ export async function mapHubSpotContactToLead(contact: HubSpotContact): Promise<
     fonte: 'Form eCura',
     external_source_id: contact.id,
     
-    // ✅ HubSpot Source Fields (NUOVI CAMPI per tracciamento dettagliato fonte)
+    // ✅ HubSpot Source Fields — con fallback da analytics source per lead storici
     hs_object_source: props.hs_object_source || null,
-    hs_object_source_detail_1: props.hs_object_source_detail_1 || null,
-    dettaglio_fonte: props.hs_object_source_detail_1 || null, // Calcolato da hs_object_source_detail_1
+    hs_object_source_detail_1: (() => {
+      const ch = deriveChannelDetail(props)
+      console.log(`📡 [HUBSPOT MAPPING] Canale derivato per ${props.email || contact.id}: ` +
+        `hs_object_source_detail_1="${props.hs_object_source_detail_1 || ''}" ` +
+        `hs_analytics_source="${props.hs_analytics_source || ''}" ` +
+        `hs_analytics_source_data_1="${props.hs_analytics_source_data_1 || ''}" ` +
+        `→ "${ch}"`)
+      return ch
+    })(),
+    dettaglio_fonte: deriveChannelDetail(props),
     
     // Metadata
     // ✅ FIX CRITICO: Importa note VERE da HubSpot (NO fallback che sovrascrive!)

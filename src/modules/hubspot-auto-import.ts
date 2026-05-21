@@ -195,7 +195,9 @@ export async function executeAutoImport(
             console.log(`🔄 [AUTO-IMPORT] Canale aggiornato: lead ${(existing as any).id} → ${newDetail}`)
             result.updated = (result.updated || 0) + 1
           } else {
-            console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) già aggiornato, skip`)
+            // newDetail è null, 'Form eCura' o non ha suffisso canale:
+            // HubSpot non ha info sul canale (DIRECT_TRAFFIC, no analytics) → non aggiornabile
+            console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) canale non determinabile (${newDetail || 'null'}), skip`)
             result.skipped++
           }
           continue
