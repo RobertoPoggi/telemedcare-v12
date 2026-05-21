@@ -44,3 +44,4 @@ documents/proforma/*.backup
 # HubSpot check scripts (contain tokens)
 check_hubspot*.py
 hubspot_*
+core

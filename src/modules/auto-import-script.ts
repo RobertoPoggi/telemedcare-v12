@@ -101,6 +101,17 @@ export const autoImportScript = `
           setTimeout(() => window.refreshDashboardData(), 1000);
         }
         
+        // ✅ Aggiorna sempre le statistiche canale eCura dopo auto-import
+        // (loadDashboardData le include già, ma chiamiamo esplicitamente come fallback
+        //  per le pagine che non hanno refreshDashboardData)
+        if (typeof window.loadEcuraChannelStats === 'function') {
+          console.log('📊 [AUTO-IMPORT] Aggiorno statistiche canale eCura...');
+          setTimeout(() => window.loadEcuraChannelStats(), 2000);
+        } else if (typeof window.loadLeadsEcuraChannelStats === 'function') {
+          console.log('📊 [AUTO-IMPORT] Aggiorno statistiche canale eCura (leads)...');
+          setTimeout(() => window.loadLeadsEcuraChannelStats(), 2000);
+        }
+        
         // Mostra notifica solo se importati nuovi lead
         if (result.imported > 0 && AUTO_IMPORT_CONFIG.showSuccessToast) {
           showAutoImportToast(\`✅ \${result.imported} nuovi lead importati da HubSpot\`, 'success');

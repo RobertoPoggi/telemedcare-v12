@@ -165,8 +165,39 @@ export async function executeAutoImport(
         `).bind(contact.properties.email, contact.id).first()
         
         if (existing) {
-          console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) già esistente, skip`)
-          result.skipped++
+          // ✅ Lead già esistente: aggiorna hs_object_source_detail_1 se HubSpot ha valore più specifico
+          // (es: 'Form eCura_ META' sostituisce il vecchio 'Form eCura' generico)
+          const leadData = await mapHubSpotContactToLead(contact)
+          const newDetail = leadData.hs_object_source_detail_1 || null
+          
+          if (newDetail && newDetail !== 'Form eCura' && newDetail.startsWith('Form eCura')) {
+            // Nuovo valore specifico (META/GOOGLE/ALTRO) — aggiorna il DB
+            await db.prepare(`
+              UPDATE leads SET
+                hs_object_source_detail_1 = CASE
+                  WHEN hs_object_source_detail_1 IS NULL OR hs_object_source_detail_1 = '' THEN ?
+                  WHEN hs_object_source_detail_1 = 'Form eCura' THEN ?
+                  ELSE hs_object_source_detail_1
+                END,
+                dettaglio_fonte = CASE
+                  WHEN dettaglio_fonte IS NULL OR dettaglio_fonte = '' THEN ?
+                  WHEN dettaglio_fonte = 'Form eCura' THEN ?
+                  ELSE dettaglio_fonte
+                END,
+                updated_at = ?
+              WHERE id = ?
+            `).bind(
+              newDetail, newDetail,
+              newDetail, newDetail,
+              new Date().toISOString(),
+              (existing as any).id
+            ).run()
+            console.log(`🔄 [AUTO-IMPORT] Canale aggiornato: lead ${(existing as any).id} → ${newDetail}`)
+            result.updated = (result.updated || 0) + 1
+          } else {
+            console.log(`⏭️  [AUTO-IMPORT] Contact ${contact.id} (${contact.properties.email}) già aggiornato, skip`)
+            result.skipped++
+          }
           continue
         }
         
@@ -238,8 +269,16 @@ export async function executeAutoImport(
               prezzo_rinnovo = CASE WHEN prezzo_rinnovo IS NULL THEN ? ELSE prezzo_rinnovo END,
               note = CASE WHEN note IS NULL OR note = '' THEN ? ELSE note END,
               hs_object_source = CASE WHEN hs_object_source IS NULL OR hs_object_source = '' THEN ? ELSE hs_object_source END,
-              hs_object_source_detail_1 = CASE WHEN hs_object_source_detail_1 IS NULL OR hs_object_source_detail_1 = '' THEN ? ELSE hs_object_source_detail_1 END,
-              dettaglio_fonte = CASE WHEN dettaglio_fonte IS NULL OR dettaglio_fonte = '' THEN ? ELSE dettaglio_fonte END,
+              hs_object_source_detail_1 = CASE
+                WHEN hs_object_source_detail_1 IS NULL OR hs_object_source_detail_1 = '' THEN ?
+                WHEN hs_object_source_detail_1 = 'Form eCura' AND ? IS NOT NULL AND ? != '' AND ? != 'Form eCura' THEN ?
+                ELSE hs_object_source_detail_1
+              END,
+              dettaglio_fonte = CASE
+                WHEN dettaglio_fonte IS NULL OR dettaglio_fonte = '' THEN ?
+                WHEN dettaglio_fonte = 'Form eCura' AND ? IS NOT NULL AND ? != '' AND ? != 'Form eCura' THEN ?
+                ELSE dettaglio_fonte
+              END,
               external_source_id = ?,
               updated_at = ?
             WHERE email = ?
@@ -256,7 +295,19 @@ export async function executeAutoImport(
             leadData.prezzo_rinnovo || null,
             leadData.note,
             leadData.hs_object_source || null,
+            // hs_object_source_detail_1: 5 parametri per la CASE
+            // WHEN NULL OR '' THEN newVal
             leadData.hs_object_source_detail_1 || null,
+            // WHEN = 'Form eCura' AND newVal IS NOT NULL AND != '' AND != 'Form eCura' THEN newVal
+            leadData.hs_object_source_detail_1 || null,
+            leadData.hs_object_source_detail_1 || null,
+            leadData.hs_object_source_detail_1 || null,
+            leadData.hs_object_source_detail_1 || null,
+            // dettaglio_fonte: 5 parametri per la CASE
+            leadData.dettaglio_fonte || null,
+            leadData.dettaglio_fonte || null,
+            leadData.dettaglio_fonte || null,
+            leadData.dettaglio_fonte || null,
             leadData.dettaglio_fonte || null,
             leadData.external_source_id,
             new Date().toISOString(),

@@ -601,6 +601,12 @@ app.use('*', async (c, next) => {
         { name: 'nomeAssistito', def: `TEXT DEFAULT NULL` },
         { name: 'cognomeAssistito', def: `TEXT DEFAULT NULL` },
         { name: 'external_data', def: `TEXT DEFAULT NULL` },
+        // Colonne reminder firma contratto
+        { name: 'reminder_firma_sent_at', def: `TEXT DEFAULT NULL` },
+        { name: 'reminder_firma_count', def: `INTEGER DEFAULT 0` },
+        // Colonne reminder pagamento proforma
+        { name: 'reminder_proforma_sent_at', def: `TEXT DEFAULT NULL` },
+        { name: 'reminder_proforma_count', def: `INTEGER DEFAULT 0` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -700,7 +706,7 @@ app.use('*', async (c, next) => {
           ['hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot'],
           ['lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead'],
           ['admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it'],
-          ['reminder_completion_enabled', 'false', 'Abilita reminder automatici completamento dati lead'],
+          ['reminder_completion_enabled', 'true', 'Abilita reminder automatici completamento dati lead'],
           ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati'],
           ['auto_payment_workflow_enabled', 'false', 'Abilita workflow automatico pagamenti'],
           ['auto_contract_workflow_enabled', 'false', 'Abilita workflow automatico contratti']
@@ -747,8 +753,9 @@ app.use('*', async (c, next) => {
         const defaultSystemConfig = [
           ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati per lead incompleti'],
           ['auto_completion_token_days', '30', 'Giorni validità token completamento'],
-          ['auto_completion_reminder_days', '3', 'Giorni prima invio reminder automatico'],
-          ['auto_completion_max_reminders', '2', 'Numero massimo reminder automatici']
+          ['auto_completion_reminder_days', '7', 'Giorni prima invio reminder automatico'],
+          ['auto_completion_max_reminders', '3', 'Numero massimo reminder automatici'],
+          ['cron_enabled', 'true', 'Abilita esecuzione cron reminder automatici']
         ]
         for (const [key, value, description] of defaultSystemConfig) {
           await c.env.DB.prepare(
@@ -6449,6 +6456,146 @@ app.get('/api/leads/filters', async (c) => {
       error: 'Errore recupero filtri',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// GET /api/leads/channel-stats — Statistiche canali Form eCura (Meta / Google / Altro / Diretto)
+//
+// LOGICA CORRETTA (due query separate):
+// 1. totalEcura  = COUNT leads con fonte = 'Form eCura' (campo affidabile per TUTTI i lead storici)
+// 2. META/GOOGLE/ALTRO = COUNT da hs_object_source_detail_1 per i lead che hanno il suffisso canale
+//    (presenti solo nei lead importati dopo il 12-13/05/2026 con CONTAINS_TOKEN)
+// 3. diretto = totalEcura - meta - google - altro (lead vecchi senza suffisso canale)
+//
+// Nota: i lead storici hanno hs_object_source_detail_1 = 'Form eCura' (vecchio valore esatto)
+// oppure NULL; solo i nuovi hanno 'Form eCura_ META' / 'Form eCura_ GOOGLE' / 'Form eCura_ ALTRO'
+app.get('/api/leads/channel-stats', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Database D1 non configurato' }, 400)
+    }
+
+    // Query 1 — totale lead eCura (DISTINCT per email per evitare doppi conteggi)
+    // Cattura:
+    //   a) fonte = 'Form eCura'  → lead importati correttamente
+    //   b) hs_object_source_detail_1 LIKE 'Form eCura%' → lead con canale specifico
+    //      ma eventualmente con fonte diversa (IRBEMA, NULL, ecc.)
+    let totalEcura = 0
+    try {
+      const r = await c.env.DB.prepare(`
+        SELECT COUNT(DISTINCT COALESCE(NULLIF(email,''), CAST(id AS TEXT))) as count
+        FROM leads
+        WHERE fonte = 'Form eCura'
+           OR hs_object_source_detail_1 LIKE 'Form eCura%'
+      `).first() as any
+      totalEcura = Number(r?.count) || 0
+    } catch (err) {
+      console.warn('⚠️ channel-stats: errore query totalEcura', err)
+    }
+
+    // Query 2 — breakdown per canale usando hs_object_source_detail_1
+    // Cattura sia 'Form eCura_ META' (nuovo) sia 'Form eCura_ META' con spazio/underscore varianti
+    let meta = 0
+    let google = 0
+    let altro = 0
+    let breakdown: any[] = []
+    try {
+      const result = await c.env.DB.prepare(`
+        SELECT hs_object_source_detail_1, COUNT(*) as count
+        FROM leads
+        WHERE hs_object_source_detail_1 IS NOT NULL
+          AND hs_object_source_detail_1 != ''
+          AND hs_object_source_detail_1 != 'Form eCura'
+          AND hs_object_source_detail_1 LIKE 'Form eCura%'
+        GROUP BY hs_object_source_detail_1
+        ORDER BY count DESC
+      `).all()
+      const rows = result.results || []
+
+      rows.forEach((row: any) => {
+        const val: string = (row.hs_object_source_detail_1 || '').toUpperCase()
+        const cnt = Number(row.count) || 0
+        if (val.includes('META')) {
+          meta += cnt
+        } else if (val.includes('GOOGLE')) {
+          google += cnt
+        } else if (val.includes('ALTRO')) {
+          altro += cnt
+        }
+        breakdown.push({ label: row.hs_object_source_detail_1, count: cnt })
+      })
+    } catch (err) {
+      console.warn('⚠️ channel-stats: colonna hs_object_source_detail_1 non trovata', err)
+    }
+
+    // diretto = lead senza suffisso canale (vecchi lead storici)
+    const diretto = Math.max(0, totalEcura - meta - google - altro)
+
+    return c.json({
+      success: true,
+      totalEcura,
+      meta,
+      google,
+      altro,
+      diretto,
+      breakdown
+    })
+  } catch (error) {
+    console.error('❌ Errore channel-stats:', error)
+    return c.json({ success: false, error: 'Errore recupero statistiche canale' }, 500)
+  }
+})
+
+// POST /api/leads/sync-ecura-channels — Re-sincronizza hs_object_source_detail_1
+// per i lead degli ultimi N giorni (default 45) tramite auto-import HubSpot.
+// Serve a popolare il campo canale (META/GOOGLE/ALTRO) sui lead già presenti nel DB
+// che non ce l'hanno ancora (importati prima del 12-13/05/2026 o tramite tasto IRBEMA).
+app.post('/api/leads/sync-ecura-channels', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+    if (!c.env?.HUBSPOT_ACCESS_TOKEN) {
+      return c.json({ success: false, error: 'HUBSPOT_ACCESS_TOKEN non configurato' }, 500)
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+
+    // Calcola giorni dall'inizio campagna HubSpot eCura (30 gennaio 2026) ad oggi
+    // così copriamo TUTTI i 235 lead indipendentemente da quando sono stati creati
+    const campaignStart = new Date('2026-01-30T00:00:00Z')
+    const daysSinceCampaign = Math.ceil((Date.now() - campaignStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const days = Math.min(Number(body.days) || daysSinceCampaign, 365) // default = dall'inizio campagna
+
+    console.log(`🔄 [SYNC-CHANNELS] Re-sync canali eCura ultimi ${days} giorni (dal ${campaignStart.toLocaleDateString('it-IT')})...`)
+
+    const { executeAutoImport } = await import('./modules/hubspot-auto-import')
+    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+
+    const result = await executeAutoImport(c.env.DB, c.env, baseUrl, {
+      enabled: true,
+      startHour: 0,
+      days,
+      onlyEcura: true,
+      dryRun: false
+    })
+
+    console.log(`✅ [SYNC-CHANNELS] Completato: ${result.imported} importati, ${result.updated} aggiornati`)
+
+    return c.json({
+      success: result.success,
+      message: result.message,
+      days,
+      from: result.timeRange?.from ?? campaignStart.toISOString(),
+      imported: result.imported,
+      updated: result.updated,
+      skipped: result.skipped,
+      hubspotContacts: result.performance?.hubspotContacts ?? 0,
+      errors: result.errorDetails ?? []
+    })
+  } catch (error) {
+    console.error('❌ sync-ecura-channels error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
   }
 })
 
@@ -17428,6 +17575,120 @@ app.get('/api/cron/send-reminders', async (c) => {
   }
 })
 
+// POST /api/admin/reminder-config - Abilita/disabilita cron e configura reminder
+app.post('/api/admin/reminder-config', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    if (!db) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    
+    const body = await c.req.json().catch(() => ({}))
+    const now = new Date().toISOString()
+    
+    // Aggiorna le configurazioni passate nel body
+    const updates: Record<string, string> = {}
+    
+    if (body.cron_enabled !== undefined) updates['cron_enabled'] = String(body.cron_enabled)
+    if (body.reminder_days !== undefined) updates['auto_completion_reminder_days'] = String(body.reminder_days)
+    if (body.max_reminders !== undefined) updates['auto_completion_max_reminders'] = String(body.max_reminders)
+    if (body.auto_completion_enabled !== undefined) updates['auto_completion_enabled'] = String(body.auto_completion_enabled)
+    
+    // Se nessun parametro passato, abilita tutto con valori consigliati
+    if (Object.keys(updates).length === 0) {
+      updates['cron_enabled'] = 'true'
+      updates['auto_completion_enabled'] = 'true'
+      updates['auto_completion_reminder_days'] = '7'
+      updates['auto_completion_max_reminders'] = '3'
+    }
+    
+    for (const [key, value] of Object.entries(updates)) {
+      await db.prepare(
+        `INSERT INTO system_config (key, value, description, updated_at) 
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+      ).bind(key, value, `Configurazione reminder - aggiornato ${now}`, now).run()
+    }
+    
+    // Leggi config aggiornata
+    const config = await db.prepare('SELECT key, value FROM system_config').all()
+    const configMap: Record<string, string> = {}
+    for (const row of config.results as any[]) {
+      configMap[row.key] = row.value
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Configurazione reminder aggiornata',
+      updated: updates,
+      current_config: configMap
+    })
+  } catch (error) {
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// GET /api/admin/reminder-status - Stato del sistema reminder
+app.get('/api/admin/reminder-status', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    if (!db) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    
+    // Config attuale
+    const config = await db.prepare('SELECT key, value FROM system_config').all()
+    const configMap: Record<string, string> = {}
+    for (const row of config.results as any[]) {
+      configMap[row.key] = row.value
+    }
+    
+    // Token in attesa reminder (completamento dati)
+    const pendingTokens = await db.prepare(`
+      SELECT COUNT(*) as count FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0 AND t.expires_at > datetime('now')
+        AND l.status NOT IN ('CONTRACT_SIGNED','ACTIVE','NOT_INTERESTED')
+    `).first<{count: number}>()
+    
+    // Lead con contratto da firmare
+    const pendingFirma = await db.prepare(`
+      SELECT COUNT(*) as count FROM leads l
+      JOIN contracts c ON c.leadId = l.id
+      WHERE l.status = 'CONTRACT_SENT' AND c.status NOT IN ('SIGNED','PAID')
+    `).first<{count: number}>()
+    
+    // Lead con proforma da pagare
+    const pendingProforma = await db.prepare(`
+      SELECT COUNT(*) as count FROM leads l
+      JOIN proforma p ON p.lead_id = l.id
+      WHERE l.status = 'PROFORMA_SENT' AND p.status NOT IN ('paid','PAID')
+    `).first<{count: number}>()
+    
+    // Ultimi reminder inviati
+    const lastReminders = await db.prepare(`
+      SELECT l.nomeRichiedente, l.cognomeRichiedente, l.email, l.status,
+             l.reminder_firma_sent_at, l.reminder_proforma_sent_at
+      FROM leads l
+      WHERE l.reminder_firma_sent_at IS NOT NULL OR l.reminder_proforma_sent_at IS NOT NULL
+      ORDER BY MAX(COALESCE(l.reminder_firma_sent_at,''), COALESCE(l.reminder_proforma_sent_at,'')) DESC
+      LIMIT 10
+    `).all()
+    
+    return c.json({
+      success: true,
+      config: configMap,
+      stats: {
+        pending_completamento: pendingTokens?.count || 0,
+        pending_firma: pendingFirma?.count || 0,
+        pending_proforma: pendingProforma?.count || 0
+      },
+      last_reminders: lastReminders.results,
+      cron_active: configMap['cron_enabled'] === 'true',
+      next_run: 'Ogni giorno alle 08:00 (GitHub Action)',
+      endpoint: 'POST /api/cron/send-reminders (requires Authorization: Bearer <CRON_SECRET>)'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
 // POST /api/init-workflow-leads - Inizializza lead per workflow manager
 app.post('/api/init-workflow-leads', async (c) => {
   try {
@@ -26572,7 +26833,45 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: true, fixes, errors, devices_after: finalDevs.results, count: finalDevs.results.length })
     }
 
-    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt, check-ddts, fix-ddts-serials, fix-device-duplicates' }, 400)
+    // ACTION: enable-cron — abilita il cron reminder nel DB
+    if (action === 'enable-cron') {
+      const now = new Date().toISOString()
+      const configUpdates = [
+        ['cron_enabled', 'true', 'Abilita esecuzione cron reminder automatici'],
+        ['auto_completion_enabled', 'true', 'Abilita invio automatico email completamento dati'],
+        ['auto_completion_reminder_days', '7', 'Giorni prima invio reminder automatico'],
+        ['auto_completion_max_reminders', '3', 'Numero massimo reminder automatici'],
+      ]
+      const cronResults: any[] = []
+      for (const [key, value, description] of configUpdates) {
+        try {
+          // Compatibile con tutti gli schemi: prova con tutte le colonne opzionali, poi fallback
+          let inserted = false
+          const insertAttempts = [
+            [`INSERT INTO system_config (key, value, description, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`, [key, value, description, now]],
+            [`INSERT INTO system_config (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`, [key, value, now]],
+            [`INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)`, [key, value]],
+          ]
+          for (const [sql, params] of insertAttempts) {
+            if (inserted) break
+            try {
+              await c.env.DB.prepare(sql as string).bind(...(params as any[])).run()
+              inserted = true
+            } catch (_e) { /* try next */ }
+          }
+          cronResults.push({ key, value, status: 'ok' })
+        } catch (e: any) {
+          cronResults.push({ key, value, status: 'error', error: e.message })
+        }
+      }
+      // Leggi config finale
+      const finalConfig = await c.env.DB.prepare('SELECT key, value FROM system_config').all()
+      const configMap: Record<string, string> = {}
+      for (const row of finalConfig.results as any[]) { configMap[(row as any).key] = (row as any).value }
+      return c.json({ success: true, message: 'Cron reminder abilitato', updates: cronResults, config: configMap })
+    }
+
+    return c.json({ success: false, error: 'action deve essere: diagnose, insert, registra-ddt, fix-scadenze, bulk-ddt, fix-14-ddt, fix-pdf-ddt, check-ddts, fix-ddts-serials, fix-device-duplicates, enable-cron' }, 400)
   } catch (error) {
     return c.json({ success: false, error: String(error) }, 500)
   }

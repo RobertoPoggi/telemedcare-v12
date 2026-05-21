@@ -487,6 +487,182 @@ export async function sendReminderEmail(
 }
 
 /**
+ * Invia email reminder per firma contratto
+ * 
+ * @param db - Database D1
+ * @param env - Environment variables
+ * @param leadData - Dati del lead con contratto da firmare
+ * @param contractData - Dati del contratto
+ * @returns Promise<boolean>
+ */
+export async function sendReminderFirma(
+  db: D1Database,
+  env: any,
+  leadData: any,
+  contractData: any
+): Promise<boolean> {
+  try {
+    const EmailService = (await import('./email-service')).default
+    const emailService = new EmailService(env)
+    
+    const baseUrl = getBaseUrl(env)
+    const firmaLink = contractData.pdf_url || `${baseUrl}/firma-contratto?id=${contractData.id}`
+    
+    const nomeCliente = `${leadData.nomeRichiedente || 'Cliente'} ${leadData.cognomeRichiedente || ''}`.trim()
+    
+    const emailHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><title>Promemoria firma contratto</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Promemoria Firma Contratto</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">TeleMedCare – eCura</p>
+  </div>
+  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Gentile <strong>${nomeCliente}</strong>,</p>
+    <p style="color: #4b5563; line-height: 1.6;">
+      Le ricordiamo che il Suo contratto <strong>${contractData.codice_contratto || ''}</strong> per il servizio 
+      <strong>${leadData.servizio || 'eCura'}</strong> è in attesa della Sua firma.
+    </p>
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
+      <p style="margin: 0; color: #92400e; font-weight: 600;">⚠️ Il contratto richiede la Sua firma per essere attivato.</p>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${firmaLink}" 
+         style="display: inline-block; background: #1a56db; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+        ✍️ Firma il Contratto
+      </a>
+    </div>
+    <p style="color: #6b7280; font-size: 14px; text-align: center;">
+      Se ha già firmato il contratto, ignori questa email.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      TeleMedCare S.r.l. | <a href="https://telemedcare.it" style="color: #9ca3af;">telemedcare.it</a>
+    </p>
+  </div>
+</body>
+</html>`
+    
+    const result = await emailService.sendEmail({
+      to: leadData.email,
+      subject: `⏰ Promemoria: Il Suo contratto TeleMedCare è in attesa di firma`,
+      html: emailHtml,
+      tags: [
+        { name: 'tipo', value: 'reminder_firma' },
+        { name: 'lead_id', value: leadData.id }
+      ]
+    })
+    
+    if (result.success) {
+      // Aggiorna reminder_firma_sent_at nel DB (campo leads)
+      const now = new Date().toISOString()
+      await db.prepare(
+        `UPDATE leads SET reminder_firma_sent_at = ?, reminder_firma_count = COALESCE(reminder_firma_count, 0) + 1, updated_at = ? WHERE id = ?`
+      ).bind(now, now, leadData.id).run()
+      console.log(`✅ [REMINDER-FIRMA] Email inviata a ${leadData.email} (lead ${leadData.id})`)
+      return true
+    } else {
+      console.error(`❌ [REMINDER-FIRMA] Errore:`, result.error)
+      return false
+    }
+  } catch (error) {
+    console.error(`❌ [REMINDER-FIRMA] Eccezione:`, error)
+    return false
+  }
+}
+
+/**
+ * Invia email reminder per pagamento proforma
+ * 
+ * @param db - Database D1
+ * @param env - Environment variables
+ * @param leadData - Dati del lead con proforma da pagare
+ * @param proformaData - Dati della proforma
+ * @returns Promise<boolean>
+ */
+export async function sendReminderProforma(
+  db: D1Database,
+  env: any,
+  leadData: any,
+  proformaData: any
+): Promise<boolean> {
+  try {
+    const EmailService = (await import('./email-service')).default
+    const emailService = new EmailService(env)
+    
+    const baseUrl = getBaseUrl(env)
+    const pagamentoLink = proformaData.payment_url || `${baseUrl}/pagamento?proforma=${proformaData.id}`
+    
+    const nomeCliente = `${leadData.nomeRichiedente || 'Cliente'} ${leadData.cognomeRichiedente || ''}`.trim()
+    const importo = proformaData.prezzo_totale ? `€ ${Number(proformaData.prezzo_totale).toFixed(2)}` : ''
+    
+    const emailHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><title>Promemoria pagamento proforma</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Promemoria Pagamento</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">TeleMedCare – eCura</p>
+  </div>
+  <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Gentile <strong>${nomeCliente}</strong>,</p>
+    <p style="color: #4b5563; line-height: 1.6;">
+      Le ricordiamo che la proforma <strong>${proformaData.numero_proforma || ''}</strong> 
+      ${importo ? `di <strong>${importo}</strong>` : ''} per il servizio 
+      <strong>${leadData.servizio || 'eCura'}</strong> è in attesa di pagamento.
+    </p>
+    <div style="background: #d1fae5; border-left: 4px solid #059669; padding: 16px; margin: 20px 0; border-radius: 4px;">
+      <p style="margin: 0; color: #065f46; font-weight: 600;">💳 Il pagamento è necessario per completare l'attivazione del servizio.</p>
+    </div>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${pagamentoLink}" 
+         style="display: inline-block; background: #059669; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-size: 16px; font-weight: 600;">
+        💳 Procedi al Pagamento
+      </a>
+    </div>
+    <p style="color: #6b7280; font-size: 14px; text-align: center;">
+      Se ha già effettuato il pagamento, ignori questa email.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
+      TeleMedCare S.r.l. | <a href="https://telemedcare.it" style="color: #9ca3af;">telemedcare.it</a>
+    </p>
+  </div>
+</body>
+</html>`
+    
+    const result = await emailService.sendEmail({
+      to: leadData.email || proformaData.cliente_email,
+      subject: `⏰ Promemoria: Pagamento proforma TeleMedCare in attesa`,
+      html: emailHtml,
+      tags: [
+        { name: 'tipo', value: 'reminder_proforma' },
+        { name: 'lead_id', value: leadData.id },
+        { name: 'proforma_id', value: proformaData.id }
+      ]
+    })
+    
+    if (result.success) {
+      const now = new Date().toISOString()
+      await db.prepare(
+        `UPDATE leads SET reminder_proforma_sent_at = ?, reminder_proforma_count = COALESCE(reminder_proforma_count, 0) + 1, updated_at = ? WHERE id = ?`
+      ).bind(now, now, leadData.id).run()
+      console.log(`✅ [REMINDER-PROFORMA] Email inviata a ${leadData.email || proformaData.cliente_email} (lead ${leadData.id})`)
+      return true
+    } else {
+      console.error(`❌ [REMINDER-PROFORMA] Errore:`, result.error)
+      return false
+    }
+  } catch (error) {
+    console.error(`❌ [REMINDER-PROFORMA] Eccezione:`, error)
+    return false
+  }
+}
+
+/**
  * Processo batch di invio reminder
  * 
  * @param db - Database D1
@@ -579,6 +755,9 @@ export async function processReminders(
   let success = 0
   let failed = 0
   
+  // ============================================
+  // 1️⃣ REMINDER COMPLETAMENTO DATI
+  // ============================================
   for (const token of tokensToProcess) {
     try {
       // Ottieni dati lead
@@ -607,6 +786,141 @@ export async function processReminders(
       console.error(`❌ [REMINDER] Errore processando token ${token.id}:`, error)
       failed++
     }
+  }
+
+  // ============================================
+  // 2️⃣ REMINDER FIRMA CONTRATTO
+  // Lead con status CONTRACT_SENT da più di reminderDays giorni
+  // e non hanno ricevuto reminder_firma nelle ultime 23 ore
+  // ============================================
+  const firmaReminderDate = new Date()
+  firmaReminderDate.setDate(firmaReminderDate.getDate() - config.auto_completion_reminder_days)
+  const firmaMinTime = new Date()
+  firmaMinTime.setHours(firmaMinTime.getHours() - 23)
+  
+  try {
+    const contractLeads = await db.prepare(`
+      SELECT l.*, 
+             c.id as contract_id, c.codice_contratto, c.pdf_url, c.status as contract_status
+      FROM leads l
+      JOIN contracts c ON c.leadId = l.id
+      WHERE l.status = 'CONTRACT_SENT'
+        AND c.status NOT IN ('SIGNED', 'PAID')
+        AND l.email IS NOT NULL AND l.email != ''
+        AND l.updated_at < ?
+        AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        AND COALESCE(l.reminder_firma_count, 0) < ?
+        AND (
+          l.reminder_firma_sent_at IS NULL
+          OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)
+        )
+      ORDER BY l.updated_at ASC
+      LIMIT 5
+    `).bind(
+      firmaReminderDate.toISOString(),
+      config.auto_completion_max_reminders,
+      firmaReminderDate.toISOString(),
+      firmaMinTime.toISOString()
+    ).all()
+    
+    const firmaLeads = (contractLeads.results || []) as any[]
+    console.log(`✍️ [REMINDER-FIRMA] Trovati ${firmaLeads.length} lead con contratto da firmare`)
+    
+    for (const lead of firmaLeads) {
+      // Blacklist check
+      const nomeCognome = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+      const isBlacklisted = MANUAL_CONTRACTS_BLACKLIST.some(name =>
+        nomeCognome.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(nomeCognome.toLowerCase())
+      )
+      if (isBlacklisted) {
+        console.log(`🚫 [REMINDER-FIRMA] Skipped (blacklist): ${nomeCognome}`)
+        continue
+      }
+      
+      const contractData = {
+        id: lead.contract_id,
+        codice_contratto: lead.codice_contratto,
+        pdf_url: lead.pdf_url
+      }
+      
+      const sent = await sendReminderFirma(db, env, lead, contractData)
+      if (sent) success++
+      else failed++
+      
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+  } catch (firmaError) {
+    console.error(`❌ [REMINDER-FIRMA] Errore query:`, firmaError)
+    // Non bloccare il processo principale
+  }
+
+  // ============================================
+  // 3️⃣ REMINDER PAGAMENTO PROFORMA
+  // Lead con status PROFORMA_SENT da più di reminderDays giorni
+  // ============================================
+  const proformaReminderDate = new Date()
+  proformaReminderDate.setDate(proformaReminderDate.getDate() - config.auto_completion_reminder_days)
+  const proformaMinTime = new Date()
+  proformaMinTime.setHours(proformaMinTime.getHours() - 23)
+  
+  try {
+    const proformaLeads = await db.prepare(`
+      SELECT l.*,
+             p.id as proforma_id, p.numero_proforma, p.prezzo_totale, 
+             p.payment_url, p.cliente_email, p.status as proforma_status
+      FROM leads l
+      JOIN proforma p ON p.leadId = l.id
+      WHERE l.status = 'PROFORMA_SENT'
+        AND p.status NOT IN ('paid', 'PAID')
+        AND (l.email IS NOT NULL AND l.email != '' OR p.cliente_email IS NOT NULL AND p.cliente_email != '')
+        AND l.updated_at < ?
+        AND COALESCE(l.reminder_proforma_count, 0) < ?
+        AND (
+          l.reminder_proforma_sent_at IS NULL
+          OR (l.reminder_proforma_sent_at < ? AND l.reminder_proforma_sent_at < ?)
+        )
+      ORDER BY l.updated_at ASC
+      LIMIT 5
+    `).bind(
+      proformaReminderDate.toISOString(),
+      config.auto_completion_max_reminders,
+      proformaReminderDate.toISOString(),
+      proformaMinTime.toISOString()
+    ).all()
+    
+    const pLeads = (proformaLeads.results || []) as any[]
+    console.log(`💳 [REMINDER-PROFORMA] Trovati ${pLeads.length} lead con proforma da pagare`)
+    
+    for (const lead of pLeads) {
+      const nomeCognome = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+      const isBlacklisted = MANUAL_CONTRACTS_BLACKLIST.some(name =>
+        nomeCognome.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(nomeCognome.toLowerCase())
+      )
+      if (isBlacklisted) {
+        console.log(`🚫 [REMINDER-PROFORMA] Skipped (blacklist): ${nomeCognome}`)
+        continue
+      }
+      
+      const proformaData = {
+        id: lead.proforma_id,
+        numero_proforma: lead.numero_proforma,
+        prezzo_totale: lead.prezzo_totale,
+        payment_url: lead.payment_url,
+        cliente_email: lead.cliente_email,
+        proforma_status: lead.proforma_status
+      }
+      
+      const sent = await sendReminderProforma(db, env, lead, proformaData)
+      if (sent) success++
+      else failed++
+      
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+  } catch (proformaError) {
+    console.error(`❌ [REMINDER-PROFORMA] Errore query:`, proformaError)
+    // Non bloccare il processo principale
   }
   
   return {
@@ -637,5 +951,7 @@ export default {
   getTokensNeedingReminder,
   logCompletionAction,
   sendReminderEmail,
+  sendReminderFirma,
+  sendReminderProforma,
   processReminders
 }

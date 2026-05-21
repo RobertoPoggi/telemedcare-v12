@@ -195,11 +195,13 @@ export class HubSpotClient {
       })
     }
     
-    // ✅ FILTRO FORM ECURA
+    // ✅ FILTRO FORM ECURA — usa CONTAINS_TOKEN per catturare anche
+    // "Form eCura_ META", "Form eCura_ GOOGLE", "Form eCura_ ALTRO"
+    // introdotti da HubSpot il 12-13 maggio 2026 con integrazione campaign tracking
     if (filters.hs_object_source_detail_1) {
       filtersArray.push({
         propertyName: 'hs_object_source_detail_1',
-        operator: 'EQ',
+        operator: 'CONTAINS_TOKEN',
         value: filters.hs_object_source_detail_1
       })
     }

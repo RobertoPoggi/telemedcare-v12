@@ -1136,6 +1136,41 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- eCura Form: Statistiche Canale (Meta / Google / Altro) -->
+        <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-bullhorn text-blue-500 mr-2"></i>
+                    Form eCura — Canali di Provenienza
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button id="btnSyncChannels" onclick="syncEcuraChannels()" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> Sincronizza canali
+                    </button>
+                    <span class="text-xs text-gray-400" id="ecuraChannelUpdated">Caricamento...</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="ecuraChannelGrid">
+                <!-- Popolato da loadEcuraChannelStats() -->
+                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
+                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
+                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
+                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
+                </div>
+                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
+                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Ultimi Lead Ricevuti -->
         <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 lg:p-8">
             <div class="flex items-center justify-between mb-6">
@@ -1803,6 +1838,11 @@ export const dashboard = `<!DOCTYPE html>
         loadDDTTable();
         loadDevTable();
 
+        // ✅ Esponi refreshDashboardData per auto-import script e altri trigger esterni
+        window.refreshDashboardData = function() {
+            loadDashboardData();
+        };
+
         // Auto-refresh ogni 30 secondi (solo se non sta già caricando)
         refreshInterval = setInterval(() => {
             if (!isLoading) {
@@ -1972,6 +2012,9 @@ export const dashboard = `<!DOCTYPE html>
                 updateServicesChart(assistiti);  // ⚠️ FIX: usa assistiti non lead
                 updatePlansChart(allLeads);
                 //                 updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
+
+                // Carica statistiche canale Form eCura (Meta / Google / Altro)
+                loadEcuraChannelStats();
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
@@ -2257,21 +2300,31 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         function updateFontesDistribution(leads) {
-            // Analizza le fonti dei lead
+            // Analizza le fonti dei lead.
+            // PRIORITÀ: se hs_object_source_detail_1 inizia con "Form eCura"
+            // usiamo quello (cattura META/GOOGLE/ALTRO); altrimenti usiamo lead.fonte
             const fonteCounts = {};
             const fonteColors = {
-                'Sito www.eCura.it': 'bg-cyan-500',
-                'Privati IRBEMA': 'bg-blue-500',
-                'Form eCura': 'bg-green-500',
-                'Form eCura x Test': 'bg-yellow-500',
-                'B2B IRBEMA': 'bg-purple-500',
+                'Sito www.eCura.it':  'bg-cyan-500',
+                'Privati IRBEMA':     'bg-blue-500',
+                'Form eCura':         'bg-green-500',
+                'Form eCura_ META':   'bg-indigo-500',
+                'Form eCura_ GOOGLE': 'bg-red-500',
+                'Form eCura_ ALTRO':  'bg-yellow-500',
+                'Form eCura x Test':  'bg-yellow-300',
+                'B2B IRBEMA':         'bg-purple-500',
                 'Sito web Medica GB': 'bg-pink-500',
-                'NETWORKING': 'bg-indigo-500',
-                'Form Contattaci': 'bg-teal-500'
+                'NETWORKING':         'bg-teal-500',
+                'Form Contattaci':    'bg-orange-400'
             };
             
             leads.forEach(lead => {
-                const fonte = lead.fonte || 'Non specificata';
+                const dettaglio = lead.hs_object_source_detail_1 || lead.dettaglio_fonte || '';
+                // Se il dettaglio è un valore "Form eCura_*" lo usiamo come chiave,
+                // altrimenti ricadiamo su lead.fonte
+                const fonte = (dettaglio && dettaglio.startsWith('Form eCura'))
+                    ? dettaglio
+                    : (lead.fonte || 'Non specificata');
                 fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
             });
             
@@ -2306,6 +2359,81 @@ export const dashboard = `<!DOCTYPE html>
             
             document.getElementById('fontesDistribution').innerHTML = html;
         }
+
+        // ========== eCURA CHANNEL STATS ==========
+        async function loadEcuraChannelStats() {
+            try {
+                const res = await fetch('/api/leads/channel-stats');
+                const data = await res.json();
+                if (!data.success) return;
+
+                const { totalEcura, meta, google, altro, diretto } = data;
+
+                // 5 box: Totale | Meta | Google | Altro | Senza canale (vecchi lead)
+                const boxes = [
+                    { label: 'Totale Form eCura',         value: totalEcura, color: 'bg-blue-100 text-blue-700',     border: 'border-blue-300',   icon: 'fa-file-alt' },
+                    { label: 'Meta (Facebook/IG)',         value: meta,       color: 'bg-indigo-100 text-indigo-700', border: 'border-indigo-300', icon: 'fa-hashtag' },
+                    { label: 'Google Ads',                 value: google,     color: 'bg-red-100 text-red-700',       border: 'border-red-300',    icon: 'fa-search' },
+                    { label: 'Altro',                     value: altro,      color: 'bg-yellow-100 text-yellow-700', border: 'border-yellow-300', icon: 'fa-question-circle' },
+                    { label: 'Canale non tracciato',      value: diretto,    color: 'bg-gray-100 text-gray-500',     border: 'border-gray-300',   icon: 'fa-minus-circle' },
+                ];
+
+                const html = boxes.map(b => \`
+                    <div class="flex flex-col items-center justify-center rounded-lg p-4 border-2 \${b.border} \${b.color}">
+                        <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
+                        <span class="text-3xl font-extrabold">\${b.value}</span>
+                        <span class="text-xs font-semibold mt-1 text-center">\${b.label}</span>
+                    </div>
+                \`).join('');
+
+                // Aggiorna griglia (5 colonne)
+                const grid = document.getElementById('ecuraChannelGrid');
+                if (grid) {
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4';
+                    grid.innerHTML = html;
+                }
+
+                const upd = document.getElementById('ecuraChannelUpdated');
+                if (upd) upd.textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
+            } catch (err) {
+                console.warn('⚠️ loadEcuraChannelStats error:', err);
+            }
+        }
+
+        // ✅ Esponi globalmente per auto-import script e trigger esterni
+        window.loadEcuraChannelStats = loadEcuraChannelStats;
+
+        async function syncEcuraChannels() {
+            const btn = document.getElementById('btnSyncChannels');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizzazione...';
+            }
+            try {
+                const res = await fetch('/api/leads/sync-ecura-channels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // server calcola giorni da inizio campagna 30/01/2026
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await loadEcuraChannelStats();
+                    const fromDate = data.from ? new Date(data.from).toLocaleDateString('it-IT') : '30/01/2026';
+                    const msg = \`✅ Sincronizzazione completata!\\n\\nFinestra: dal \${fromDate} ad oggi (\${data.days} giorni)\\nContatti HubSpot trovati: \${data.hubspotContacts}\\nNuovi importati: \${data.imported}\\nAggiornati con canale: \${data.updated}\\nGià aggiornati / skip: \${data.skipped}\`;
+                    alert(msg);
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                }
+            } catch (err) {
+                alert('❌ Errore di comunicazione: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizza canali';
+                }
+            }
+        }
+        window.syncEcuraChannels = syncEcuraChannels;
 
         // ========== CRUD ASSISTITI (DEFINITE PRIMA DI renderAssistitiTable) ==========
         
@@ -2825,6 +2953,11 @@ export const dashboard = `<!DOCTYPE html>
                         // Fallback: reload pagina
                         location.reload();
                     }
+                    
+                    // ✅ Aggiorna statistiche canale eCura dopo import
+                    if (typeof loadEcuraChannelStats === 'function') {
+                        setTimeout(() => loadEcuraChannelStats(), 1500);
+                    }
                 } else {
                     const errMsg = result.error + (result.details ? '\\n\\nDettagli: ' + result.details : '');
                     alert('Errore import: ' + errMsg);
@@ -3237,6 +3370,27 @@ export const leads_dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- eCura Form: Canali di Provenienza (Meta / Google / Altro) -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-bullhorn text-blue-500 mr-2"></i>
+                    Form eCura — Canali di Provenienza
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button id="btnLeadsSyncChannels" onclick="leadssSyncEcuraChannels()" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> Sincronizza canali
+                    </button>
+                    <span class="text-xs text-gray-400" id="leadsEcuraChannelUpdated">Caricamento...</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="leadsEcuraChannelGrid">
+                <div class="text-center text-gray-400 text-sm col-span-4 py-4">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Caricamento statistiche canale...
+                </div>
+            </div>
+        </div>
+
         <!-- Tabella Lead Dettagliata -->
         <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="flex items-center justify-between mb-6">
@@ -3256,7 +3410,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="">Tutte le Fonti</option>
                         <option value="Sito www.eCura.it">Sito www.eCura.it</option>
                         <option value="Privati IRBEMA">Privati IRBEMA</option>
-                        <option value="Form eCura">Form eCura</option>
+                        <option value="Form eCura">Form eCura (tutti i canali)</option>
+                        <option value="Form eCura_ META">↳ Form eCura — Meta (FB/IG)</option>
+                        <option value="Form eCura_ GOOGLE">↳ Form eCura — Google</option>
+                        <option value="Form eCura_ ALTRO">↳ Form eCura — Altro</option>
                         <option value="Form eCura x Test">Form eCura x Test</option>
                         <option value="B2B IRBEMA">B2B IRBEMA</option>
                         <option value="Sito web Medica GB">Sito web Medica GB</option>
@@ -3431,6 +3588,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 updatePlansBreakdown(allLeads);
                 updateChannelsBreakdown(allLeads);
 
+                // Carica statistiche canale eCura Form (Meta / Google / Altro)
+                loadLeadsEcuraChannelStats();
+
                 // Popola tabella
                 renderLeadsTable(allLeads);
 
@@ -3546,8 +3706,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             const sources = {};
             leads.forEach(l => {
-                // PRIORITÀ: fonte è il campo principale
-                const fonte = l.fonte || 'Non specificato';
+                // PRIORITÀ: se hs_object_source_detail_1 inizia con "Form eCura"
+                // usiamo quello (cattura META/GOOGLE/ALTRO); altrimenti lead.fonte
+                const dettaglio = l.hs_object_source_detail_1 || l.dettaglio_fonte || '';
+                const fonte = (dettaglio && dettaglio.startsWith('Form eCura'))
+                    ? dettaglio
+                    : (l.fonte || 'Non specificato');
                 sources[fonte] = (sources[fonte] || 0) + 1;
             });
             
@@ -3558,16 +3722,19 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             const total = leads.length || 1;
             
-            // Colori per le fonti
+            // Colori per le fonti (include i nuovi canali eCura da 12-13/05/2026)
             const fonteColors = {
-                'Sito www.eCura.it': 'bg-cyan-500',
-                'Privati IRBEMA': 'bg-blue-500',
-                'Form eCura': 'bg-green-500',
-                'Form eCura x Test': 'bg-yellow-500',
-                'B2B IRBEMA': 'bg-purple-500',
+                'Sito www.eCura.it':  'bg-cyan-500',
+                'Privati IRBEMA':     'bg-blue-500',
+                'Form eCura':         'bg-green-500',
+                'Form eCura_ META':   'bg-indigo-500',
+                'Form eCura_ GOOGLE': 'bg-red-500',
+                'Form eCura_ ALTRO':  'bg-yellow-500',
+                'Form eCura x Test':  'bg-yellow-300',
+                'B2B IRBEMA':         'bg-purple-500',
                 'Sito web Medica GB': 'bg-pink-500',
-                'NETWORKING': 'bg-indigo-500',
-                'Form Contattaci': 'bg-teal-500'
+                'NETWORKING':         'bg-teal-500',
+                'Form Contattaci':    'bg-orange-400'
             };
             
             // Genera HTML con barre colorate come gli altri box
@@ -3591,6 +3758,80 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             document.getElementById('channelsBreakdown').innerHTML = html || '<p class="text-gray-400 text-sm">Nessuna fonte disponibile</p>';
         }
+
+        async function loadLeadsEcuraChannelStats() {
+            try {
+                const res = await fetch('/api/leads/channel-stats');
+                const data = await res.json();
+                if (!data.success) return;
+
+                const { totalEcura, meta, google, altro, diretto } = data;
+
+                // 5 box: Totale | Meta | Google | Altro | Senza canale (vecchi lead)
+                const boxes = [
+                    { label: 'Totale Form eCura',    value: totalEcura, colorBg: '#EFF6FF', colorBorder: '#93C5FD', colorText: '#1D4ED8', icon: 'fa-file-alt' },
+                    { label: 'Meta (Facebook/IG)',    value: meta,       colorBg: '#EEF2FF', colorBorder: '#A5B4FC', colorText: '#4338CA', icon: 'fa-hashtag' },
+                    { label: 'Google Ads',            value: google,     colorBg: '#FEF2F2', colorBorder: '#FCA5A5', colorText: '#B91C1C', icon: 'fa-search' },
+                    { label: 'Altro',                value: altro,      colorBg: '#FEFCE8', colorBorder: '#FDE68A', colorText: '#92400E', icon: 'fa-question-circle' },
+                    { label: 'Canale non tracciato', value: diretto,    colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
+                ];
+
+                const html = boxes.map(b => \`
+                    <div style="background:\${b.colorBg};border:2px solid \${b.colorBorder};color:\${b.colorText}"
+                         class="flex flex-col items-center justify-center rounded-lg p-4">
+                        <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
+                        <span class="text-3xl font-extrabold">\${b.value}</span>
+                        <span class="text-xs font-semibold mt-1 text-center">\${b.label}</span>
+                    </div>
+                \`).join('');
+
+                const grid = document.getElementById('leadsEcuraChannelGrid');
+                if (grid) {
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4';
+                    grid.innerHTML = html;
+                }
+
+                const upd = document.getElementById('leadsEcuraChannelUpdated');
+                if (upd) upd.textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
+            } catch (err) {
+                console.warn('⚠️ loadLeadsEcuraChannelStats error:', err);
+            }
+        }
+
+        // ✅ Esponi globalmente per auto-import script e trigger esterni
+        window.loadLeadsEcuraChannelStats = loadLeadsEcuraChannelStats;
+
+        async function leadssSyncEcuraChannels() {
+            const btn = document.getElementById('btnLeadsSyncChannels');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizzazione...';
+            }
+            try {
+                const res = await fetch('/api/leads/sync-ecura-channels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // server calcola giorni da inizio campagna 30/01/2026
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await loadLeadsEcuraChannelStats();
+                    const fromDate = data.from ? new Date(data.from).toLocaleDateString('it-IT') : '30/01/2026';
+                    const msg = \`✅ Sincronizzazione completata!\\n\\nFinestra: dal \${fromDate} ad oggi (\${data.days} giorni)\\nContatti HubSpot trovati: \${data.hubspotContacts}\\nNuovi importati: \${data.imported}\\nAggiornati con canale: \${data.updated}\\nGià aggiornati / skip: \${data.skipped}\`;
+                    alert(msg);
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                }
+            } catch (err) {
+                alert('❌ Errore di comunicazione: ' + err.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizza canali';
+                }
+            }
+        }
+        window.leadssSyncEcuraChannels = leadssSyncEcuraChannels;
 
         function renderLeadsTable(leads) {
             console.log('🔧 renderLeadsTable v2026-02-14-01:30 - SORT DESC + cache-buster');
@@ -3842,9 +4083,26 @@ export const leads_dashboard = `<!DOCTYPE html>
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
-                // Filtro Fonte: match esatto con il campo fonte
+                // Filtro Fonte: match su lead.fonte (campo testuale) OPPURE
+                // su lead.hs_object_source_detail_1 per i nuovi valori META/GOOGLE/ALTRO
+                // introdotti da HubSpot il 12-13/05/2026.
+                // Caso speciale: "Form eCura" (senza suffisso) matcha TUTTI i lead con
+                // hs_object_source_detail_1 che inizia con "Form eCura".
                 const leadFonte = lead.fonte || '';
-                const matchFonte = !fonteFilter || leadFonte === fonteFilter;
+                const leadDettaglio = (lead.hs_object_source_detail_1 || lead.dettaglio_fonte || '').toUpperCase();
+                let matchFonte = !fonteFilter;
+                if (fonteFilter) {
+                    if (fonteFilter === 'Form eCura') {
+                        // Seleziona tutti i lead eCura (qualunque canale)
+                        matchFonte = leadFonte === 'Form eCura' ||
+                                     leadDettaglio.startsWith('FORM ECURA');
+                    } else if (fonteFilter.startsWith('Form eCura_ ')) {
+                        // Seleziona solo il canale specifico (META / GOOGLE / ALTRO)
+                        matchFonte = leadDettaglio === fonteFilter.toUpperCase();
+                    } else {
+                        matchFonte = leadFonte === fonteFilter;
+                    }
+                }
                 
                 // Filtro Sorgente: match esatto con hs_object_source
                 const leadSorgente = lead.hs_object_source || '';
