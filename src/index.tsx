@@ -6556,15 +6556,17 @@ app.get('/api/leads/channel-stats', async (c) => {
   }
 })
 
-// GET /api/leads/channel-debug — Mostra i valori ESATTI di hs_object_source_detail_1
-// presenti nel DB per i lead eCura: utile per capire cosa si nasconde in "Altro" e "Non tracciato"
+// GET /api/leads/channel-debug — Interroga HubSpot per vedere i valori ESATTI di
+// hs_analytics_source per i lead "ALTRO" e "NON TRACCIATI" nel nostro DB
 app.get('/api/leads/channel-debug', async (c) => {
   try {
     if (!c.env.DB) return c.json({ error: 'DB non configurato' }, 400)
+    if (!c.env.HUBSPOT_ACCESS_TOKEN) return c.json({ error: 'HUBSPOT_ACCESS_TOKEN mancante' }, 400)
 
     const db = c.env.DB as D1Database
+    const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
 
-    // 1. Tutti i valori distinti di hs_object_source_detail_1 per lead eCura
+    // 1. Riepilogo DB (valori distinti hs_object_source_detail_1)
     const detailRows = await db.prepare(`
       SELECT
         COALESCE(NULLIF(hs_object_source_detail_1,''), '(NULL/vuoto)') as valore,
@@ -6576,41 +6578,98 @@ app.get('/api/leads/channel-debug', async (c) => {
       ORDER BY count DESC
     `).all()
 
-    // 2. Per i lead "non tracciati" (Form eCura generico o NULL):
-    //    mostra i valori di hs_analytics_source che hanno nel DB
-    //    (campo salvato? no — non salviamo hs_analytics_source nel DB, è solo da HubSpot)
-    //    Quindi mostriamo semplicemente quanti lead sono nella categoria non-tracciata
-    const nonTraccRows = await db.prepare(`
-      SELECT COUNT(*) as count
+    // 2. Prendi gli external_source_id (HubSpot ID) dei lead ALTRO e NON TRACCIATI
+    const targetRows = await db.prepare(`
+      SELECT external_source_id, email, nomeRichiedente, hs_object_source_detail_1
       FROM leads
       WHERE (fonte = 'Form eCura' OR hs_object_source_detail_1 LIKE 'Form eCura%')
-        AND (hs_object_source_detail_1 IS NULL
+        AND (
+          hs_object_source_detail_1 LIKE '%ALTRO%'
+          OR hs_object_source_detail_1 IS NULL
           OR hs_object_source_detail_1 = ''
-          OR hs_object_source_detail_1 = 'Form eCura')
-    `).first() as any
-
-    // 3. Per i lead "ALTRO": mostra i valori esatti
-    const altroRows = await db.prepare(`
-      SELECT hs_object_source_detail_1, COUNT(*) as count
-      FROM leads
-      WHERE hs_object_source_detail_1 LIKE 'Form eCura%'
-        AND hs_object_source_detail_1 NOT IN ('Form eCura')
-        AND hs_object_source_detail_1 NOT LIKE '%META%'
-        AND hs_object_source_detail_1 NOT LIKE '%GOOGLE%'
-        AND hs_object_source_detail_1 NOT LIKE '%DIRETTO%'
-      GROUP BY hs_object_source_detail_1
-      ORDER BY count DESC
+          OR hs_object_source_detail_1 = 'Form eCura'
+        )
+        AND external_source_id IS NOT NULL
+        AND external_source_id != ''
+      LIMIT 60
     `).all()
+
+    const targets = (targetRows.results || []) as any[]
+    console.log(`🔍 [CHANNEL-DEBUG] Trovati ${targets.length} lead da interrogare su HubSpot`)
+
+    // 3. Interroga HubSpot per ogni lead (batch di 100 via /search con IN filter)
+    const hubspotIds = targets.map((r: any) => r.external_source_id).filter(Boolean)
+    let hubspotData: any[] = []
+
+    if (hubspotIds.length > 0) {
+      // Usa batch search HubSpot con filtro id IN [...]
+      // HubSpot non supporta IN direttamente, usiamo filterGroups multipli (OR logic)
+      // Max 3 filterGroups → usiamo /crm/v3/objects/contacts con idProperty
+      const batchBody = {
+        inputs: hubspotIds.slice(0, 100).map((id: string) => ({ id }))
+      }
+
+      const batchRes = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/batch/read', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...batchBody,
+          properties: [
+            'email',
+            'hs_object_source_detail_1',
+            'hs_analytics_source',
+            'hs_analytics_source_data_1',
+            'hs_analytics_source_data_2',
+            'hs_latest_source',
+            'hs_latest_source_data_1'
+          ]
+        })
+      })
+
+      if (batchRes.ok) {
+        const batchData = await batchRes.json() as any
+        hubspotData = (batchData.results || []).map((c: any) => ({
+          id: c.id,
+          email: c.properties?.email,
+          hs_object_source_detail_1: c.properties?.hs_object_source_detail_1,
+          hs_analytics_source: c.properties?.hs_analytics_source,
+          hs_analytics_source_data_1: c.properties?.hs_analytics_source_data_1,
+          hs_analytics_source_data_2: c.properties?.hs_analytics_source_data_2,
+          hs_latest_source: c.properties?.hs_latest_source,
+          hs_latest_source_data_1: c.properties?.hs_latest_source_data_1
+        }))
+      } else {
+        const errText = await batchRes.text()
+        console.error('❌ [CHANNEL-DEBUG] HubSpot batch error:', errText)
+      }
+    }
+
+    // 4. Aggrega i valori analytics per capire la distribuzione
+    const analyticsSourceCount: Record<string, number> = {}
+    const analyticsSourceData1Count: Record<string, number> = {}
+    hubspotData.forEach((h: any) => {
+      const src = h.hs_analytics_source || '(vuoto/null)'
+      const src1 = h.hs_analytics_source_data_1 || '(vuoto)'
+      analyticsSourceCount[src] = (analyticsSourceCount[src] || 0) + 1
+      analyticsSourceData1Count[`${src} → ${src1}`] = (analyticsSourceData1Count[`${src} → ${src1}`] || 0) + 1
+    })
 
     return c.json({
       success: true,
-      tutti_i_valori: detailRows.results,
-      non_tracciati_count: Number(nonTraccRows?.count) || 0,
-      non_tracciati_spiegazione: 'Questi lead hanno hs_object_source_detail_1 = "Form eCura" (vecchio generico) o NULL. ' +
-        'HubSpot non ha salvato il canale analitico per loro, oppure il sync non e\' ancora stato eseguito.',
-      altro_valori: altroRows.results,
-      altro_spiegazione: 'Questi lead hanno un valore hs_object_source_detail_1 che contiene "Form eCura" ' +
-        'ma non META, GOOGLE o DIRETTO. Derivati da EMAIL_MARKETING, REFERRALS, OTHER_CAMPAIGNS, ecc.'
+      riepilogo_db: detailRows.results,
+      lead_analizzati: targets.length,
+      // Distribuzione aggregata hs_analytics_source per questi lead
+      analytics_source_distribuzione: Object.entries(analyticsSourceCount)
+        .sort((a, b) => b[1] - a[1])
+        .map(([source, count]) => ({ source, count })),
+      analytics_source_dettaglio: Object.entries(analyticsSourceData1Count)
+        .sort((a, b) => b[1] - a[1])
+        .map(([source_data1, count]) => ({ source_data1, count })),
+      // Dettaglio per ogni singolo lead
+      dettaglio_lead: hubspotData
     })
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500)
