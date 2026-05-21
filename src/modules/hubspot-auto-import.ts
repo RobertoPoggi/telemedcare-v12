@@ -181,13 +181,21 @@ export async function executeAutoImport(
     for (const contact of allContacts) {
       try {
         // Verifica se esiste già (by email o external_source_id)
+        // ⚠️ Recupera anche la fonte per proteggere i lead di test
         const existing = await db.prepare(`
-          SELECT id FROM leads 
+          SELECT id, fonte FROM leads 
           WHERE email = ? OR external_source_id = ?
           LIMIT 1
         `).bind(contact.properties.email, contact.id).first()
         
         if (existing) {
+          // 🛡️ Protezione lead di test: se fonte = 'Form eCura x Test' non tocchiamo nulla
+          if ((existing as any).fonte === 'Form eCura x Test') {
+            console.log(`🧪 [AUTO-IMPORT] Lead di test protetto, skip: ${(existing as any).id}`)
+            result.skipped++
+            continue
+          }
+
           // ✅ Lead già esistente: aggiorna i campi canale se HubSpot ha dati più specifici
           const leadData = await mapHubSpotContactToLead(contact)
           const newDetail = leadData.hs_object_source_detail_1 || null
@@ -280,6 +288,12 @@ export async function executeAutoImport(
         `).bind(emailSafe, contact.id).first()
         
         if (existingLead) {
+          // 🛡️ Protezione lead di test: non sovrascrivere mai fonte 'Form eCura x Test'
+          if ((existingLead as any).fonte === 'Form eCura x Test') {
+            console.log(`🧪 [AUTO-IMPORT] Lead di test protetto, skip UPDATE: ${(existingLead as any).id}`)
+            result.skipped++
+            continue
+          }
           console.log(`🔄 [AUTO-IMPORT] Lead già esistente: ${existingLead.id}, eseguo UPDATE campi NULL/vuoti`)
           
           // UPDATE solo campi NULL o vuoti

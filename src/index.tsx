@@ -5549,7 +5549,14 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
-// 🔧 ENDPOINT: Aggiorna fonte per lead di TEST (con 'TEST' nelle note)
+// 🔧 ENDPOINT: Aggiorna fonte per lead di TEST → 'Form eCura x Test'
+// Cattura:
+//   1. Lead con nome o cognome che è esattamente "TEST" (es. "TEST TEST", "Nur TEST")
+//   2. Lead con nome+cognome entrambi "TEST" (es. "test test")
+//   3. Lead specifici noti per nome (Rosaria Ressa, Roberto Poggi, Stefania Rocca)
+//   4. Lead specifici per ID (LEAD-IRBEMA-00107)
+//   5. Email contenente "test@" o "@test." o "@esempio." o "@example."
+// ⚠️  ESCLUSO: lead con "testa/testi/testo" nelle note (es. "mal di testa") → gestiti da restore-real-leads
 app.post('/api/admin/fix-test-leads', async (c) => {
   try {
     if (!c.env?.DB) {
@@ -5557,30 +5564,67 @@ app.post('/api/admin/fix-test-leads', async (c) => {
     }
     
     console.log('🔧 Aggiornamento fonte lead di TEST → Form eCura x Test')
-    
-    // Aggiorna SOLO i 4 lead di test specifici:
-    // 1. Rosaria Ressa (LEAD-IRBEMA-00210)
-    // 2. Roberto Poggi (LEAD-IRBEMA-00209)
-    // 3. Stefania Rocca (LEAD-IRBEMA-00152)
-    // 4. Manu Cels - Simone (LEAD-IRBEMA-00107) - email test@esempio.it
+
+    // Prima: mostra quali lead verranno aggiornati (per log)
+    const preview = await c.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte
+      FROM leads
+      WHERE fonte != 'Form eCura x Test'
+        AND (
+          -- nome o cognome esattamente "TEST" (case-insensitive): "TEST TEST", "Nur TEST", "test test"
+          UPPER(TRIM(nomeRichiedente)) = 'TEST'
+          OR UPPER(TRIM(cognomeRichiedente)) = 'TEST'
+          -- entrambi nome+cognome contengono solo "test"
+          OR (UPPER(TRIM(nomeRichiedente)) = 'TEST' AND UPPER(TRIM(cognomeRichiedente)) = 'TEST')
+          -- lead specifici noti per nome
+          OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
+          OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
+          OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
+          -- lead specifici per ID
+          OR id = 'LEAD-IRBEMA-00107'
+          -- email chiaramente di test
+          OR LOWER(email) LIKE 'test@%'
+          OR LOWER(email) LIKE '%@test.%'
+          OR LOWER(email) LIKE '%@esempio.%'
+          OR LOWER(email) LIKE '%@example.%'
+        )
+    `).all()
+
+    const previewLeads = preview.results || []
+    console.log(`🔍 Lead di test trovati: ${previewLeads.length}`, previewLeads.map((l: any) => `${l.id} ${l.nomeRichiedente} ${l.cognomeRichiedente} (${l.email}) [${l.fonte}]`))
+
+    // Poi: aggiorna
     const result = await c.env.DB.prepare(`
       UPDATE leads 
       SET fonte = 'Form eCura x Test'
-      WHERE (
-        (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
-        OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
-        OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
-        OR id = 'LEAD-IRBEMA-00107'
-      )
-      AND fonte != 'Form eCura x Test'
+      WHERE fonte != 'Form eCura x Test'
+        AND (
+          UPPER(TRIM(nomeRichiedente)) = 'TEST'
+          OR UPPER(TRIM(cognomeRichiedente)) = 'TEST'
+          OR (UPPER(TRIM(nomeRichiedente)) = 'TEST' AND UPPER(TRIM(cognomeRichiedente)) = 'TEST')
+          OR (nomeRichiedente = 'Rosaria' AND cognomeRichiedente = 'Ressa')
+          OR (nomeRichiedente = 'Roberto' AND cognomeRichiedente = 'Poggi')
+          OR (nomeRichiedente = 'Stefania' AND cognomeRichiedente = 'Rocca')
+          OR id = 'LEAD-IRBEMA-00107'
+          OR LOWER(email) LIKE 'test@%'
+          OR LOWER(email) LIKE '%@test.%'
+          OR LOWER(email) LIKE '%@esempio.%'
+          OR LOWER(email) LIKE '%@example.%'
+        )
     `).run()
     
     console.log(`✅ Fonte aggiornata per ${result.meta.changes} lead di test`)
     
     return c.json({
       success: true,
-      message: 'Lead di TEST aggiornati a fonte "Form eCura x Test"',
-      leadsUpdated: result.meta.changes
+      message: `Lead di TEST aggiornati a fonte "Form eCura x Test"`,
+      leadsUpdated: result.meta.changes,
+      leads: previewLeads.map((l: any) => ({
+        id: l.id,
+        nome: `${l.nomeRichiedente} ${l.cognomeRichiedente}`,
+        email: l.email,
+        fonteOld: l.fonte
+      }))
     })
     
   } catch (error) {
