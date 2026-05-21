@@ -3414,23 +3414,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca per cognome..."
                         onkeyup="applyFilters()"
                     />
+                    <!-- Filtro unificato Fonte/Canale: canali eCura + altre fonti, popolato dinamicamente -->
                     <select id="filterFonte" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutte le Fonti</option>
-                        <option value="Sito www.eCura.it">Sito www.eCura.it</option>
-                        <option value="Privati IRBEMA">Privati IRBEMA</option>
-                        <option value="Form eCura">Form eCura (tutti i canali)</option>
-                        <option value="Form eCura_ META">↳ Form eCura — Meta (FB/IG)</option>
-                        <option value="Form eCura_ GOOGLE">↳ Form eCura — Google</option>
-                        <option value="Form eCura_ ALTRO">↳ Form eCura — Altro</option>
-                        <option value="Form eCura x Test">Form eCura x Test</option>
-                        <option value="B2B IRBEMA">B2B IRBEMA</option>
-                        <option value="Sito web Medica GB">Sito web Medica GB</option>
-                        <option value="NETWORKING">NETWORKING</option>
+                        <!-- Popolato dinamicamente da loadLeadsData() -->
                     </select>
-                    <select id="filterSorgente" class="border-2 border-blue-400 bg-blue-50 rounded-lg px-3 py-2 text-sm font-semibold" onchange="applyFilters()">
-                        <option value="">📡 Tutti i Canali</option>
-                        <!-- Popolato dinamicamente da /api/leads/filters con i valori di canale_acquisizione -->
-                    </select>
+                    <!-- filterSorgente nascosto: mantenuto per compatibilità ma non più mostrato -->
+                    <select id="filterSorgente" class="hidden" onchange="applyFilters()"><option value=""></option></select>
                     <select id="filterServizio" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti i Servizi</option>
                         <option value="FAMILY">FAMILY</option>
@@ -3538,30 +3528,43 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
-                // ✅ Carica opzioni filtri dinamiche dall'API
+                // ✅ Popola filtro Fonte unificato: canali eCura + altre fonti dal DB
                 try {
-                    const filtersResponse = await fetch('/api/leads/filters');
-                    const filtersData = await filtersResponse.json();
-                    if (filtersData.success && filtersData.filters.sorgenti) {
-                        const sorgenteSelect = document.getElementById('filterSorgente');
-                        // Icone per i canali acquisizione
-                        const canaleIcons = {
-                            'META':    '📘 Meta (FB/IG)',
-                            'GOOGLE':  '🔍 Google',
-                            'DIRETTO': '🔗 Diretto',
-                            'ALTRO':   '📎 Altro'
-                        };
-                        sorgenteSelect.innerHTML = '<option value="">📡 Tutti i Canali</option>';
-                        filtersData.filters.sorgenti.forEach(sorgente => {
+                    const fonteSelect = document.getElementById('filterFonte');
+                    // Sezione 1: canali eCura (META/GOOGLE/DIRETTO/ALTRO) da canale_acquisizione
+                    const canaleIcons = {
+                        'META':    '📘 eCura — Meta (FB/IG)',
+                        'GOOGLE':  '🔍 eCura — Google',
+                        'DIRETTO': '🔗 eCura — Diretto',
+                        'ALTRO':   '📎 eCura — Altro'
+                    };
+                    const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO'];
+                    fonteSelect.innerHTML = '<option value="">Tutte le Fonti</option>';
+                    // Aggiungi opzione "tutti i lead eCura" come gruppo
+                    fonteSelect.innerHTML += '<option value="__ECURA_ALL__">— Form eCura (tutti i canali) —</option>';
+                    canaliOrdinati.forEach(canale => {
+                        const option = document.createElement('option');
+                        option.value = '__CANALE__' + canale;  // prefisso per distinguere da fonte raw
+                        option.textContent = canaleIcons[canale] || canale;
+                        fonteSelect.appendChild(option);
+                    });
+                    // Sezione 2: altre fonti raw dal DB (non-eCura)
+                    const fontiRaw = [...new Set(allLeads
+                        .map(l => l.fonte || '')
+                        .filter(f => f && f !== 'Form eCura' && !f.startsWith('Form eCura_'))
+                    )].sort();
+                    if (fontiRaw.length > 0) {
+                        fonteSelect.innerHTML += '<option disabled>──────────────</option>';
+                        fontiRaw.forEach(fonte => {
                             const option = document.createElement('option');
-                            option.value = sorgente;
-                            option.textContent = canaleIcons[sorgente] || sorgente;
-                            sorgenteSelect.appendChild(option);
+                            option.value = '__FONTE__' + fonte;  // prefisso per fonte raw
+                            option.textContent = fonte;
+                            fonteSelect.appendChild(option);
                         });
-                        console.log('✅ Filtro Canale popolato con', filtersData.filters.sorgenti.length, 'opzioni');
                     }
+                    console.log('✅ Filtro Fonte unificato popolato:', canaliOrdinati.length, 'canali +', fontiRaw.length, 'fonti');
                 } catch (error) {
-                    console.error('⚠️ Errore caricamento filtri:', error);
+                    console.error('⚠️ Errore popolamento filtro fonte:', error);
                 }
                 
                 // ✅ USA IL TOTALE REALE DAL SERVER (non allLeads.length)
@@ -4100,8 +4103,8 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function applyFilters() {
-            const fonteFilter = document.getElementById('filterFonte').value;
-            const sorgenteFilter = document.getElementById('filterSorgente').value;
+            const fonteFilter = document.getElementById('filterFonte').value; // es. '__CANALE__META' | '__ECURA_ALL__' | '__FONTE__Privati IRBEMA' | ''
+            const sorgenteFilter = ''; // dismesso: non più usato
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
             const cmFilter = document.getElementById('filterCM').value;
@@ -4109,31 +4112,43 @@ export const leads_dashboard = `<!DOCTYPE html>
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
-                // Filtro Fonte: match su lead.fonte (campo testuale) OPPURE
-                // su lead.hs_object_source_detail_1 per i nuovi valori META/GOOGLE/ALTRO
-                // introdotti da HubSpot il 12-13/05/2026.
-                // Caso speciale: "Form eCura" (senza suffisso) matcha TUTTI i lead con
-                // hs_object_source_detail_1 che inizia con "Form eCura".
+                // ═══════════════════════════════════════════════════════════
+                // FILTRO UNIFICATO FONTE/CANALE
+                // Usa canale_acquisizione come fonte di verità per i lead eCura.
+                // Per le altre fonti usa lead.fonte.
+                //
+                // Valori possibili di fonteFilter:
+                //   ''                  → tutti i lead (nessun filtro)
+                //   '__ECURA_ALL__'     → tutti i lead Form eCura (qualunque canale)
+                //   '__CANALE__META'    → lead eCura con canale_acquisizione = 'META'
+                //   '__CANALE__GOOGLE'  → lead eCura con canale_acquisizione = 'GOOGLE'
+                //   '__CANALE__DIRETTO' → lead eCura con canale_acquisizione = 'DIRETTO'
+                //   '__CANALE__ALTRO'   → lead eCura con canale_acquisizione = 'ALTRO'
+                //   '__FONTE__Privati IRBEMA' → lead con fonte = 'Privati IRBEMA'
+                //   '__FONTE__Form eCura x Test' → lead di test
+                // ═══════════════════════════════════════════════════════════
                 const leadFonte = lead.fonte || '';
-                const leadDettaglio = (lead.hs_object_source_detail_1 || lead.dettaglio_fonte || '').toUpperCase();
-                let matchFonte = !fonteFilter;
-                if (fonteFilter) {
-                    if (fonteFilter === 'Form eCura') {
-                        // Seleziona tutti i lead eCura (qualunque canale)
-                        matchFonte = leadFonte === 'Form eCura' ||
-                                     leadDettaglio.startsWith('FORM ECURA');
-                    } else if (fonteFilter.startsWith('Form eCura_ ')) {
-                        // Seleziona solo il canale specifico (META / GOOGLE / ALTRO)
-                        matchFonte = leadDettaglio === fonteFilter.toUpperCase();
-                    } else {
-                        matchFonte = leadFonte === fonteFilter;
-                    }
+                const leadCanale = lead.canale_acquisizione || ''; // META/GOOGLE/DIRETTO/ALTRO
+                const isEcura = leadFonte === 'Form eCura' || leadFonte.startsWith('Form eCura_');
+
+                let matchFonte = true;
+                if (!fonteFilter) {
+                    matchFonte = true; // nessun filtro
+                } else if (fonteFilter === '__ECURA_ALL__') {
+                    // Tutti i lead Form eCura (qualunque canale, esclusi i test)
+                    matchFonte = isEcura;
+                } else if (fonteFilter.startsWith('__CANALE__')) {
+                    // Filtra per canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
+                    // Fonte di verità: canale_acquisizione (un solo campo, sempre coerente)
+                    const canaleTarget = fonteFilter.replace('__CANALE__', '');
+                    matchFonte = leadCanale === canaleTarget;
+                } else if (fonteFilter.startsWith('__FONTE__')) {
+                    // Filtra per fonte raw (IRBEMA, B2B, Test, ecc.)
+                    const fonteTarget = fonteFilter.replace('__FONTE__', '');
+                    matchFonte = leadFonte === fonteTarget;
                 }
-                
-                // Filtro Sorgente: match su canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
-                // canale_acquisizione è il nuovo campo derivato da hs_analytics_source
-                const leadSorgente = lead.canale_acquisizione || lead.hs_object_source || '';
-                const matchSorgente = !sorgenteFilter || leadSorgente === sorgenteFilter;
+
+                const matchSorgente = true; // dismesso, sempre true
                 
                 // Filtro Servizio: cerca nel campo servizio o tipoServizio del DB
                 // Normalizza: "eCura PRO" -> "PRO", "eCura FAMILY" -> "FAMILY"
@@ -4172,7 +4187,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchSorgente && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
             });
 
             renderLeadsTable(filtered);
