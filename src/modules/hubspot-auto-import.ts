@@ -131,31 +131,54 @@ export async function executeAutoImport(
     const client = new HubSpotClient(accessToken, portalId)
     
     // Filtri ricerca ottimizzati
-    const searchFilters: any = {
+    const baseFilters: any = {
       createdAfter: createdAfter.toISOString(),
-      limit: 100 // Max 100 contatti per chiamata
+      limit: 100 // Max 100 per pagina (massimo HubSpot)
     }
     
     if (config.onlyEcura) {
-      searchFilters.hs_object_source_detail_1 = 'Form eCura'
+      baseFilters.hs_object_source_detail_1 = 'Form eCura'
       console.log('🔍 [AUTO-IMPORT] Filtro attivo: solo lead da Form eCura')
     }
     
-    // Ricerca contatti HubSpot
-    const response = await client.searchContacts(searchFilters)
-    result.performance.hubspotContacts = response.results.length
+    // ✅ PAGINAZIONE COMPLETA: loop su tutte le pagine HubSpot
+    // HubSpot restituisce max 100 contatti per chiamata; se ci sono più di 100
+    // il campo response.paging.next.after indica il cursore per la pagina successiva.
+    let allContacts: any[] = []
+    let afterCursor: string | undefined = undefined
+    let pageNum = 0
+    const MAX_PAGES = 20 // Limite sicurezza: 20 pagine × 100 = 2000 contatti max
     
-    console.log(`📊 [AUTO-IMPORT] Trovati ${response.results.length} contatti HubSpot da processare`)
+    do {
+      pageNum++
+      const searchFilters = afterCursor
+        ? { ...baseFilters, after: afterCursor }
+        : { ...baseFilters }
+      
+      const response = await client.searchContacts(searchFilters)
+      const pageContacts = response.results || []
+      allContacts = allContacts.concat(pageContacts)
+      
+      console.log(`📄 [AUTO-IMPORT] Pagina ${pageNum}: ${pageContacts.length} contatti (totale fin qui: ${allContacts.length})`)
+      
+      // Controlla se c'è una pagina successiva
+      afterCursor = response.paging?.next?.after
+      
+      // Stop se pagina vuota o nessun cursore next
+    } while (afterCursor && pageNum < MAX_PAGES)
     
-    if (response.results.length === 0) {
+    result.performance.hubspotContacts = allContacts.length
+    console.log(`📊 [AUTO-IMPORT] Totale contatti HubSpot recuperati: ${allContacts.length} (${pageNum} pagine)`)
+    
+    if (allContacts.length === 0) {
       result.success = true
       result.message = `Nessun nuovo lead da importare (periodo: ${createdAfter.toLocaleTimeString('it-IT')} - ${new Date().toLocaleTimeString('it-IT')})`
       result.performance.processingTimeMs = Date.now() - startTime
       return result
     }
     
-    // Processa ogni contatto
-    for (const contact of response.results) {
+    // Processa ogni contatto (tutte le pagine)
+    for (const contact of allContacts) {
       try {
         // Verifica se esiste già (by email o external_source_id)
         const existing = await db.prepare(`

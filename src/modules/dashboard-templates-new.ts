@@ -2367,15 +2367,16 @@ export const dashboard = `<!DOCTYPE html>
                 const data = await res.json();
                 if (!data.success) return;
 
-                const { totalEcura, meta, google, altro, diretto } = data;
+                const { totalEcura, meta, google, diretto, altro, nonTracciato } = data;
 
-                // 5 box: Totale | Meta | Google | Altro | Senza canale (vecchi lead)
+                // 6 box: Totale | Meta | Google | Diretto | Altro | Non tracciato
                 const boxes = [
-                    { label: 'Totale Form eCura',         value: totalEcura, color: 'bg-blue-100 text-blue-700',     border: 'border-blue-300',   icon: 'fa-file-alt' },
-                    { label: 'Meta (Facebook/IG)',         value: meta,       color: 'bg-indigo-100 text-indigo-700', border: 'border-indigo-300', icon: 'fa-hashtag' },
-                    { label: 'Google Ads',                 value: google,     color: 'bg-red-100 text-red-700',       border: 'border-red-300',    icon: 'fa-search' },
-                    { label: 'Altro',                     value: altro,      color: 'bg-yellow-100 text-yellow-700', border: 'border-yellow-300', icon: 'fa-question-circle' },
-                    { label: 'Canale non tracciato',      value: diretto,    color: 'bg-gray-100 text-gray-500',     border: 'border-gray-300',   icon: 'fa-minus-circle' },
+                    { label: 'Totale Form eCura',    value: totalEcura,    color: 'bg-blue-100 text-blue-700',     border: 'border-blue-300',   icon: 'fa-file-alt' },
+                    { label: 'Meta (FB/IG Ads)',     value: meta,          color: 'bg-indigo-100 text-indigo-700', border: 'border-indigo-300', icon: 'fa-hashtag' },
+                    { label: 'Google',               value: google,        color: 'bg-red-100 text-red-700',       border: 'border-red-300',    icon: 'fa-search' },
+                    { label: 'Diretto',              value: diretto,       color: 'bg-green-100 text-green-700',   border: 'border-green-300',  icon: 'fa-mouse-pointer' },
+                    { label: 'Altro',                value: altro,         color: 'bg-yellow-100 text-yellow-700', border: 'border-yellow-300', icon: 'fa-share-alt' },
+                    { label: 'Non tracciato',        value: nonTracciato,  color: 'bg-gray-100 text-gray-500',     border: 'border-gray-300',   icon: 'fa-minus-circle' },
                 ];
 
                 const html = boxes.map(b => \`
@@ -2386,10 +2387,10 @@ export const dashboard = `<!DOCTYPE html>
                     </div>
                 \`).join('');
 
-                // Aggiorna griglia (5 colonne)
+                // Aggiorna griglia (6 colonne)
                 const grid = document.getElementById('ecuraChannelGrid');
                 if (grid) {
-                    grid.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4';
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4';
                     grid.innerHTML = html;
                 }
 
@@ -3765,15 +3766,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const data = await res.json();
                 if (!data.success) return;
 
-                const { totalEcura, meta, google, altro, diretto } = data;
+                const { totalEcura, meta, google, diretto, altro, nonTracciato } = data;
 
-                // 5 box: Totale | Meta | Google | Altro | Senza canale (vecchi lead)
+                // 6 box: Totale | Meta | Google | Diretto | Altro | Non tracciato
                 const boxes = [
-                    { label: 'Totale Form eCura',    value: totalEcura, colorBg: '#EFF6FF', colorBorder: '#93C5FD', colorText: '#1D4ED8', icon: 'fa-file-alt' },
-                    { label: 'Meta (Facebook/IG)',    value: meta,       colorBg: '#EEF2FF', colorBorder: '#A5B4FC', colorText: '#4338CA', icon: 'fa-hashtag' },
-                    { label: 'Google Ads',            value: google,     colorBg: '#FEF2F2', colorBorder: '#FCA5A5', colorText: '#B91C1C', icon: 'fa-search' },
-                    { label: 'Altro',                value: altro,      colorBg: '#FEFCE8', colorBorder: '#FDE68A', colorText: '#92400E', icon: 'fa-question-circle' },
-                    { label: 'Canale non tracciato', value: diretto,    colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
+                    { label: 'Totale Form eCura',  value: totalEcura,   colorBg: '#EFF6FF', colorBorder: '#93C5FD', colorText: '#1D4ED8', icon: 'fa-file-alt' },
+                    { label: 'Meta (FB/IG Ads)',   value: meta,         colorBg: '#EEF2FF', colorBorder: '#A5B4FC', colorText: '#4338CA', icon: 'fa-hashtag' },
+                    { label: 'Google',             value: google,       colorBg: '#FEF2F2', colorBorder: '#FCA5A5', colorText: '#B91C1C', icon: 'fa-search' },
+                    { label: 'Diretto',            value: diretto,      colorBg: '#F0FDF4', colorBorder: '#86EFAC', colorText: '#15803D', icon: 'fa-mouse-pointer' },
+                    { label: 'Altro',              value: altro,        colorBg: '#FEFCE8', colorBorder: '#FDE68A', colorText: '#92400E', icon: 'fa-share-alt' },
+                    { label: 'Non tracciato',      value: nonTracciato, colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
                 ];
 
                 const html = boxes.map(b => \`
@@ -3787,7 +3789,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
                 const grid = document.getElementById('leadsEcuraChannelGrid');
                 if (grid) {
-                    grid.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4';
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4';
                     grid.innerHTML = html;
                 }
 

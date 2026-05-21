@@ -6494,9 +6494,15 @@ app.get('/api/leads/channel-stats', async (c) => {
     }
 
     // Query 2 — breakdown per canale usando hs_object_source_detail_1
-    // Cattura sia 'Form eCura_ META' (nuovo) sia 'Form eCura_ META' con spazio/underscore varianti
+    // Valori possibili dopo deriveChannelDetail():
+    //   'Form eCura_ META'    → PAID_SOCIAL / SOCIAL_MEDIA (Facebook/IG)
+    //   'Form eCura_ GOOGLE'  → PAID_SEARCH / ORGANIC_SEARCH
+    //   'Form eCura_ DIRETTO' → DIRECT_TRAFFIC
+    //   'Form eCura_ ALTRO'   → EMAIL_MARKETING, REFERRALS, ecc.
+    //   'Form eCura' / NULL   → nessun dato analytics → non tracciato
     let meta = 0
     let google = 0
+    let diretto = 0
     let altro = 0
     let breakdown: any[] = []
     try {
@@ -6519,6 +6525,8 @@ app.get('/api/leads/channel-stats', async (c) => {
           meta += cnt
         } else if (val.includes('GOOGLE')) {
           google += cnt
+        } else if (val.includes('DIRETTO')) {
+          diretto += cnt
         } else if (val.includes('ALTRO')) {
           altro += cnt
         }
@@ -6528,16 +6536,18 @@ app.get('/api/leads/channel-stats', async (c) => {
       console.warn('⚠️ channel-stats: colonna hs_object_source_detail_1 non trovata', err)
     }
 
-    // diretto = lead senza suffisso canale (vecchi lead storici)
-    const diretto = Math.max(0, totalEcura - meta - google - altro)
+    // nonTracciato = lead con 'Form eCura' generico o NULL: nessun dato analytics disponibile
+    const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
     return c.json({
       success: true,
       totalEcura,
       meta,
       google,
-      altro,
       diretto,
+      altro,
+      nonTracciato,
+      // legacy: campo 'diretto' rinominato, teniamo alias per compatibilità frontend vecchio
       breakdown
     })
   } catch (error) {
