@@ -6556,6 +6556,67 @@ app.get('/api/leads/channel-stats', async (c) => {
   }
 })
 
+// GET /api/leads/channel-debug — Mostra i valori ESATTI di hs_object_source_detail_1
+// presenti nel DB per i lead eCura: utile per capire cosa si nasconde in "Altro" e "Non tracciato"
+app.get('/api/leads/channel-debug', async (c) => {
+  try {
+    if (!c.env.DB) return c.json({ error: 'DB non configurato' }, 400)
+
+    const db = c.env.DB as D1Database
+
+    // 1. Tutti i valori distinti di hs_object_source_detail_1 per lead eCura
+    const detailRows = await db.prepare(`
+      SELECT
+        COALESCE(NULLIF(hs_object_source_detail_1,''), '(NULL/vuoto)') as valore,
+        COUNT(*) as count
+      FROM leads
+      WHERE fonte = 'Form eCura'
+         OR hs_object_source_detail_1 LIKE 'Form eCura%'
+      GROUP BY hs_object_source_detail_1
+      ORDER BY count DESC
+    `).all()
+
+    // 2. Per i lead "non tracciati" (Form eCura generico o NULL):
+    //    mostra i valori di hs_analytics_source che hanno nel DB
+    //    (campo salvato? no — non salviamo hs_analytics_source nel DB, è solo da HubSpot)
+    //    Quindi mostriamo semplicemente quanti lead sono nella categoria non-tracciata
+    const nonTraccRows = await db.prepare(`
+      SELECT COUNT(*) as count
+      FROM leads
+      WHERE (fonte = 'Form eCura' OR hs_object_source_detail_1 LIKE 'Form eCura%')
+        AND (hs_object_source_detail_1 IS NULL
+          OR hs_object_source_detail_1 = ''
+          OR hs_object_source_detail_1 = 'Form eCura')
+    `).first() as any
+
+    // 3. Per i lead "ALTRO": mostra i valori esatti
+    const altroRows = await db.prepare(`
+      SELECT hs_object_source_detail_1, COUNT(*) as count
+      FROM leads
+      WHERE hs_object_source_detail_1 LIKE 'Form eCura%'
+        AND hs_object_source_detail_1 NOT IN ('Form eCura')
+        AND hs_object_source_detail_1 NOT LIKE '%META%'
+        AND hs_object_source_detail_1 NOT LIKE '%GOOGLE%'
+        AND hs_object_source_detail_1 NOT LIKE '%DIRETTO%'
+      GROUP BY hs_object_source_detail_1
+      ORDER BY count DESC
+    `).all()
+
+    return c.json({
+      success: true,
+      tutti_i_valori: detailRows.results,
+      non_tracciati_count: Number(nonTraccRows?.count) || 0,
+      non_tracciati_spiegazione: 'Questi lead hanno hs_object_source_detail_1 = "Form eCura" (vecchio generico) o NULL. ' +
+        'HubSpot non ha salvato il canale analitico per loro, oppure il sync non e\' ancora stato eseguito.',
+      altro_valori: altroRows.results,
+      altro_spiegazione: 'Questi lead hanno un valore hs_object_source_detail_1 che contiene "Form eCura" ' +
+        'ma non META, GOOGLE o DIRETTO. Derivati da EMAIL_MARKETING, REFERRALS, OTHER_CAMPAIGNS, ecc.'
+    })
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500)
+  }
+})
+
 // POST /api/leads/sync-ecura-channels — Re-sincronizza hs_object_source_detail_1
 // per i lead degli ultimi N giorni (default 45) tramite auto-import HubSpot.
 // Serve a popolare il campo canale (META/GOOGLE/ALTRO) sui lead già presenti nel DB
