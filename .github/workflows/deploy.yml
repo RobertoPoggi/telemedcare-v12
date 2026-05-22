@@ -1,40 +1,55 @@
-name: Deploy to Cloudflare Pages
+name: "🚀 Deploy → PRODUCTION"
+# Trigger: ogni push sul branch 'main'
+# Target Cloudflare: ambiente production del progetto telemedcare-v12
+# URL: https://telemedcare-v12.pages.dev
+#
+# ⚠️  NON fare push diretti su main durante lo sviluppo.
+# PROCESSO CORRETTO:
+#   1. sviluppo su branch 'test'        → deploy automatico su TEST       (deploy-test.yml)
+#   2. merge test → preview             → deploy automatico su PREVIEW     (deploy-preview.yml)
+#   3. dopo collaudo: merge preview → main → deploy automatico su PRODUCTION (questo file)
 
 on:
   push:
     branches:
       - main
-      - 'copilot/**'
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Build & Deploy
+  deploy-production:
+    name: "Build & Deploy → PRODUCTION"
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    environment: production
     permissions:
       contents: read
       deployments: write
 
     steps:
-      - name: Checkout
+      - name: "📋 Checkout branch main"
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: "⚙️ Setup Node.js 18"
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: "📦 Install dependencies"
         run: npm ci
 
-      - name: Build
+      - name: "🔨 Build"
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: "🚀 Deploy su Cloudflare Pages — PRODUCTION"
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name telemedcare-v12 --commit-dirty=true
+          command: pages deploy dist --project-name telemedcare-v12 --branch main --commit-dirty=true
+
+      - name: "✅ Riepilogo deploy PRODUCTION"
+        run: |
+          echo "🚀 Deploy completato su PRODUCTION"
+          echo "🌐 URL: https://telemedcare-v12.pages.dev"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Autore: ${{ github.actor }}"
