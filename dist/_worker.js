@@ -14133,17 +14133,15 @@ loadDDTs();
         SELECT COUNT(DISTINCT COALESCE(NULLIF(email,''), CAST(id AS TEXT))) as count
         FROM leads
         WHERE fonte = 'Form eCura'
-           OR hs_object_source_detail_1 LIKE 'Form eCura%'
       `).first();o=Number(d==null?void 0:d.count)||0}catch(d){console.warn("⚠️ channel-stats: errore query totalEcura",d)}let e=0,a=0,i=0,r=0,s=[];try{((await t.env.DB.prepare(`
-        SELECT hs_object_source_detail_1, COUNT(*) as count
+        SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
-        WHERE hs_object_source_detail_1 IS NOT NULL
-          AND hs_object_source_detail_1 != ''
-          AND hs_object_source_detail_1 != 'Form eCura'
-          AND hs_object_source_detail_1 LIKE 'Form eCura%'
-        GROUP BY hs_object_source_detail_1
+        WHERE fonte = 'Form eCura'
+          AND canale_acquisizione IS NOT NULL
+          AND canale_acquisizione != ''
+        GROUP BY canale_acquisizione
         ORDER BY count DESC
-      `).all()).results||[]).forEach(u=>{const p=(u.hs_object_source_detail_1||"").toUpperCase(),g=Number(u.count)||0;p.includes("META")?e+=g:p.includes("GOOGLE")?a+=g:p.includes("DIRETTO")?i+=g:p.includes("ALTRO")&&(r+=g),s.push({label:u.hs_object_source_detail_1,count:g})})}catch(d){console.warn("⚠️ channel-stats: colonna hs_object_source_detail_1 non trovata",d)}const l=Math.max(0,o-e-a-i-r);return t.json({success:!0,totalEcura:o,meta:e,google:a,diretto:i,altro:r,nonTracciato:l,breakdown:s})}catch(o){return console.error("❌ Errore channel-stats:",o),t.json({success:!1,error:"Errore recupero statistiche canale"},500)}});I.get("/api/leads/channel-debug",async t=>{try{if(!t.env.DB)return t.json({error:"DB non configurato"},400);if(!t.env.HUBSPOT_ACCESS_TOKEN)return t.json({error:"HUBSPOT_ACCESS_TOKEN mancante"},400);const o=t.env.DB,e=t.env.HUBSPOT_ACCESS_TOKEN,a=await o.prepare(`
+      `).all()).results||[]).forEach(u=>{const p=(u.canale_acquisizione||"").toUpperCase(),g=Number(u.count)||0;p==="META"?e+=g:p==="GOOGLE"?a+=g:p==="DIRETTO"?i+=g:p==="ALTRO"&&(r+=g),s.push({label:u.canale_acquisizione,count:g})})}catch(d){console.warn("⚠️ channel-stats: errore query canale_acquisizione",d)}const l=Math.max(0,o-e-a-i-r);return t.json({success:!0,totalEcura:o,meta:e,google:a,diretto:i,altro:r,nonTracciato:l,breakdown:s})}catch(o){return console.error("❌ Errore channel-stats:",o),t.json({success:!1,error:"Errore recupero statistiche canale"},500)}});I.get("/api/leads/channel-debug",async t=>{try{if(!t.env.DB)return t.json({error:"DB non configurato"},400);if(!t.env.HUBSPOT_ACCESS_TOKEN)return t.json({error:"HUBSPOT_ACCESS_TOKEN mancante"},400);const o=t.env.DB,e=t.env.HUBSPOT_ACCESS_TOKEN,a=await o.prepare(`
       SELECT
         COALESCE(NULLIF(hs_object_source_detail_1,''), '(NULL/vuoto)') as valore,
         COUNT(*) as count

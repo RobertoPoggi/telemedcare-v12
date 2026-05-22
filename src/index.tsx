@@ -6537,31 +6537,28 @@ app.get('/api/leads/channel-stats', async (c) => {
       return c.json({ success: false, error: 'Database D1 non configurato' }, 400)
     }
 
-    // Query 1 — totale lead eCura (DISTINCT per email per evitare doppi conteggi)
-    // Cattura:
-    //   a) fonte = 'Form eCura'  → lead importati correttamente
-    //   b) hs_object_source_detail_1 LIKE 'Form eCura%' → lead con canale specifico
-    //      ma eventualmente con fonte diversa (IRBEMA, NULL, ecc.)
+    // =====================================================================
+    // FONTE DI VERITÀ UNICA: canale_acquisizione
+    // Tutti i contatori (box e filtro tabella) usano lo stesso campo.
+    // canale_acquisizione = 'META' | 'GOOGLE' | 'DIRETTO' | 'ALTRO' | NULL
+    // Lead eCura = fonte = 'Form eCura' (esclude test, IRBEMA, ecc.)
+    // =====================================================================
+
+    // Query 1 — totale lead eCura (fonte = 'Form eCura', esclude test)
     let totalEcura = 0
     try {
       const r = await c.env.DB.prepare(`
         SELECT COUNT(DISTINCT COALESCE(NULLIF(email,''), CAST(id AS TEXT))) as count
         FROM leads
         WHERE fonte = 'Form eCura'
-           OR hs_object_source_detail_1 LIKE 'Form eCura%'
       `).first() as any
       totalEcura = Number(r?.count) || 0
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query totalEcura', err)
     }
 
-    // Query 2 — breakdown per canale usando hs_object_source_detail_1
-    // Valori possibili dopo deriveChannelDetail():
-    //   'Form eCura_ META'    → PAID_SOCIAL / SOCIAL_MEDIA (Facebook/IG)
-    //   'Form eCura_ GOOGLE'  → PAID_SEARCH / ORGANIC_SEARCH
-    //   'Form eCura_ DIRETTO' → DIRECT_TRAFFIC
-    //   'Form eCura_ ALTRO'   → EMAIL_MARKETING, REFERRALS, ecc.
-    //   'Form eCura' / NULL   → nessun dato analytics → non tracciato
+    // Query 2 — breakdown per canale usando canale_acquisizione (fonte di verità unica)
+    // Stessa logica usata dal filtro tabella → numeri sempre coerenti
     let meta = 0
     let google = 0
     let diretto = 0
@@ -6569,36 +6566,30 @@ app.get('/api/leads/channel-stats', async (c) => {
     let breakdown: any[] = []
     try {
       const result = await c.env.DB.prepare(`
-        SELECT hs_object_source_detail_1, COUNT(*) as count
+        SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
-        WHERE hs_object_source_detail_1 IS NOT NULL
-          AND hs_object_source_detail_1 != ''
-          AND hs_object_source_detail_1 != 'Form eCura'
-          AND hs_object_source_detail_1 LIKE 'Form eCura%'
-        GROUP BY hs_object_source_detail_1
+        WHERE fonte = 'Form eCura'
+          AND canale_acquisizione IS NOT NULL
+          AND canale_acquisizione != ''
+        GROUP BY canale_acquisizione
         ORDER BY count DESC
       `).all()
       const rows = result.results || []
 
       rows.forEach((row: any) => {
-        const val: string = (row.hs_object_source_detail_1 || '').toUpperCase()
+        const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
-        if (val.includes('META')) {
-          meta += cnt
-        } else if (val.includes('GOOGLE')) {
-          google += cnt
-        } else if (val.includes('DIRETTO')) {
-          diretto += cnt
-        } else if (val.includes('ALTRO')) {
-          altro += cnt
-        }
-        breakdown.push({ label: row.hs_object_source_detail_1, count: cnt })
+        if (val === 'META')    meta    += cnt
+        else if (val === 'GOOGLE')  google  += cnt
+        else if (val === 'DIRETTO') diretto += cnt
+        else if (val === 'ALTRO')   altro   += cnt
+        breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
-      console.warn('⚠️ channel-stats: colonna hs_object_source_detail_1 non trovata', err)
+      console.warn('⚠️ channel-stats: errore query canale_acquisizione', err)
     }
 
-    // nonTracciato = lead con 'Form eCura' generico o NULL: nessun dato analytics disponibile
+    // nonTracciato = lead eCura senza canale_acquisizione
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
     return c.json({
