@@ -2300,39 +2300,43 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         function updateFontesDistribution(leads) {
-            // Analizza le fonti dei lead.
-            // PRIORITÀ: se hs_object_source_detail_1 inizia con "Form eCura"
-            // usiamo quello (cattura META/GOOGLE/ALTRO); altrimenti usiamo lead.fonte
+            // FONTE DI VERITÀ UNICA: canale_acquisizione per i lead eCura
+            // Stessa logica di box canali e filtro tabella → numeri sempre coerenti
             const fonteCounts = {};
             const fonteColors = {
-                'Sito www.eCura.it':  'bg-cyan-500',
-                'Privati IRBEMA':     'bg-blue-500',
-                'Form eCura':         'bg-green-500',
-                'Form eCura_ META':   'bg-indigo-500',
-                'Form eCura_ GOOGLE': 'bg-red-500',
-                'Form eCura_ ALTRO':  'bg-yellow-500',
-                'Form eCura x Test':  'bg-yellow-300',
-                'B2B IRBEMA':         'bg-purple-500',
-                'Sito web Medica GB': 'bg-pink-500',
-                'NETWORKING':         'bg-teal-500',
-                'Form Contattaci':    'bg-orange-400'
+                'Sito www.eCura.it':    'bg-cyan-500',
+                'Privati IRBEMA':       'bg-blue-500',
+                'eCura — Meta (FB/IG)': 'bg-indigo-500',
+                'eCura — Google':       'bg-red-500',
+                'eCura — Diretto':      'bg-green-500',
+                'eCura — Altro':        'bg-yellow-500',
+                'eCura — Non tracciato':'bg-gray-400',
+                'Form eCura x Test':    'bg-yellow-300',
+                'B2B IRBEMA':           'bg-purple-500',
+                'Sito web Medica GB':   'bg-pink-500',
+                'NETWORKING':           'bg-teal-500',
+                'Form Contattaci':      'bg-orange-400'
+            };
+            const canaleLabel = {
+                'META':    'eCura — Meta (FB/IG)',
+                'GOOGLE':  'eCura — Google',
+                'DIRETTO': 'eCura — Diretto',
+                'ALTRO':   'eCura — Altro'
             };
             
             leads.forEach(lead => {
                 const fonteDB = lead.fonte || '';
-                const dettaglio = lead.hs_object_source_detail_1 || lead.dettaglio_fonte || '';
-                // PRIORITÀ CORRETTA:
-                // lead.fonte è la fonte di verità (es. 'Form eCura x Test', 'IRBEMA', 'B2B IRBEMA')
-                // Il dettaglio (META/GOOGLE/DIRETTO/ALTRO) lo usiamo SOLO quando
-                // fonte = 'Form eCura' generico, per arricchirlo col canale specifico.
-                // Se fonte è qualcosa di diverso da 'Form eCura' puro → fonte vince sempre.
-                let fonte;
-                if (fonteDB === 'Form eCura' && dettaglio.match(/Form eCura[_ ].+/)) {
-                    fonte = dettaglio; // arricchisci: 'Form eCura' → 'Form eCura_ META' ecc.
+                const canale = (lead.canale_acquisizione || '').toUpperCase();
+                // FONTE DI VERITÀ:
+                // - lead eCura (fonte = 'Form eCura') → usa canale_acquisizione per etichetta
+                // - altri lead (IRBEMA, Test, B2B...) → usa fonte raw
+                let etichetta;
+                if (fonteDB === 'Form eCura') {
+                    etichetta = canaleLabel[canale] || 'eCura — Non tracciato';
                 } else {
-                    fonte = fonteDB || 'Non specificata'; // 'Form eCura x Test', 'IRBEMA', ecc.
+                    etichetta = fonteDB || 'Non specificata';
                 }
-                fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
+                fonteCounts[etichetta] = (fonteCounts[etichetta] || 0) + 1;
             });
             
             console.log('📊 Distribuzione Fonti:', fonteCounts);
@@ -3723,46 +3727,44 @@ export const leads_dashboard = `<!DOCTYPE html>
         function updateChannelsBreakdown(leads) {
             console.log('🔍 updateChannelsBreakdown chiamata con leads:', leads.length);
             
+            // FONTE DI VERITÀ UNICA: canale_acquisizione per i lead eCura
+            // Stessa logica di box canali e filtro tabella → numeri sempre coerenti
+            const canaleLabel = {
+                'META':    'eCura — Meta (FB/IG)',
+                'GOOGLE':  'eCura — Google',
+                'DIRETTO': 'eCura — Diretto',
+                'ALTRO':   'eCura — Altro'
+            };
             const sources = {};
             leads.forEach(l => {
-                // PRIORITÀ: se hs_object_source_detail_1 inizia con "Form eCura"
-                // usiamo quello (cattura META/GOOGLE/ALTRO); altrimenti lead.fonte
                 const fonteDB = l.fonte || '';
-                const dettaglio = l.hs_object_source_detail_1 || l.dettaglio_fonte || '';
-                // PRIORITÀ CORRETTA:
-                // lead.fonte è la fonte di verità (es. 'Form eCura x Test', 'IRBEMA', 'B2B IRBEMA')
-                // Il dettaglio (META/GOOGLE/DIRETTO/ALTRO) lo usiamo SOLO quando
-                // fonte = 'Form eCura' generico, per arricchirlo col canale specifico.
-                // Se fonte è qualcosa di diverso da 'Form eCura' puro → fonte vince sempre.
-                let fonte;
-                if (fonteDB === 'Form eCura' && dettaglio.match(/Form eCura[_ ].+/)) {
-                    fonte = dettaglio; // arricchisci: 'Form eCura' → 'Form eCura_ META' ecc.
+                const canale = (l.canale_acquisizione || '').toUpperCase();
+                let etichetta;
+                if (fonteDB === 'Form eCura') {
+                    etichetta = canaleLabel[canale] || 'eCura — Non tracciato';
                 } else {
-                    fonte = fonteDB || 'Non specificato'; // 'Form eCura x Test', 'IRBEMA', ecc.
+                    etichetta = fonteDB || 'Non specificato';
                 }
-                sources[fonte] = (sources[fonte] || 0) + 1;
+                sources[etichetta] = (sources[etichetta] || 0) + 1;
             });
             
-            // Debug: mostra tutte le fonti trovate
             console.log('📊 Fonti rilevate:', sources);
-            console.log('📊 Total leads:', leads.length);
-            console.log('📊 Primo lead esempio:', leads[0]);
             
             const total = leads.length || 1;
             
-            // Colori per le fonti (include i nuovi canali eCura da 12-13/05/2026)
             const fonteColors = {
-                'Sito www.eCura.it':  'bg-cyan-500',
-                'Privati IRBEMA':     'bg-blue-500',
-                'Form eCura':         'bg-green-500',
-                'Form eCura_ META':   'bg-indigo-500',
-                'Form eCura_ GOOGLE': 'bg-red-500',
-                'Form eCura_ ALTRO':  'bg-yellow-500',
-                'Form eCura x Test':  'bg-yellow-300',
-                'B2B IRBEMA':         'bg-purple-500',
-                'Sito web Medica GB': 'bg-pink-500',
-                'NETWORKING':         'bg-teal-500',
-                'Form Contattaci':    'bg-orange-400'
+                'Sito www.eCura.it':    'bg-cyan-500',
+                'Privati IRBEMA':       'bg-blue-500',
+                'eCura — Meta (FB/IG)': 'bg-indigo-500',
+                'eCura — Google':       'bg-red-500',
+                'eCura — Diretto':      'bg-green-500',
+                'eCura — Altro':        'bg-yellow-500',
+                'eCura — Non tracciato':'bg-gray-400',
+                'Form eCura x Test':    'bg-yellow-300',
+                'B2B IRBEMA':           'bg-purple-500',
+                'Sito web Medica GB':   'bg-pink-500',
+                'NETWORKING':           'bg-teal-500',
+                'Form Contattaci':      'bg-orange-400'
             };
             
             // Genera HTML con barre colorate come gli altri box
