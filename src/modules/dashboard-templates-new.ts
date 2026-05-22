@@ -2015,6 +2015,8 @@ export const dashboard = `<!DOCTYPE html>
 
                 // Carica statistiche canale Form eCura (Meta / Google / Altro)
                 loadEcuraChannelStats();
+                // Popola widget barre "Distribuzione per Fonte" (usa API channel-stats per canali eCura)
+                updateFontesDistribution(allLeads);
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
@@ -2299,10 +2301,18 @@ export const dashboard = `<!DOCTYPE html>
             document.getElementById('channelsDistribution').innerHTML = html;
         }
 
+        // ⚠️ DEPRECATA — non usare allLeads per i contatori eCura (possono essere incompleti)
+        // Usa renderFontesDistributionFromApi() che legge direttamente dall'API channel-stats
         function updateFontesDistribution(leads) {
-            // FONTE DI VERITÀ UNICA: canale_acquisizione per i lead eCura
-            // Stessa logica di box canali e filtro tabella → numeri sempre coerenti
-            const fonteCounts = {};
+            // Per le fonti NON-eCura (IRBEMA, B2B, Test, ecc.) usa allLeads
+            // Per i canali eCura (Meta/Google/Diretto/Altro) usa l'API → vedi renderFontesDistributionFromApi
+            renderFontesDistributionFromApi(leads);
+        }
+
+        // Renderizza il widget "Distribuzione per Fonte" usando:
+        // - API channel-stats per i numeri eCura (fonte di verità unica, coerente con i box)
+        // - allLeads per le fonti non-eCura (IRBEMA, B2B, Test, ecc.)
+        async function renderFontesDistributionFromApi(leads) {
             const fonteColors = {
                 'Sito www.eCura.it':    'bg-cyan-500',
                 'Privati IRBEMA':       'bg-blue-500',
@@ -2317,43 +2327,44 @@ export const dashboard = `<!DOCTYPE html>
                 'NETWORKING':           'bg-teal-500',
                 'Form Contattaci':      'bg-orange-400'
             };
-            const canaleLabel = {
-                'META':    'eCura — Meta (FB/IG)',
-                'GOOGLE':  'eCura — Google',
-                'DIRETTO': 'eCura — Diretto',
-                'ALTRO':   'eCura — Altro'
-            };
-            
-            leads.forEach(lead => {
-                const fonteDB = lead.fonte || '';
-                const canale = (lead.canale_acquisizione || '').toUpperCase();
-                // FONTE DI VERITÀ:
-                // - lead eCura (fonte = 'Form eCura') → usa canale_acquisizione per etichetta
-                // - altri lead (IRBEMA, Test, B2B...) → usa fonte raw
-                let etichetta;
-                if (fonteDB === 'Form eCura') {
-                    etichetta = canaleLabel[canale] || 'eCura — Non tracciato';
-                } else {
-                    etichetta = fonteDB || 'Non specificata';
+
+            // Passo 1: leggi canali eCura dall'API (stessa sorgente dei box → numeri identici)
+            let fonteCounts = {};
+            try {
+                const res = await fetch('/api/leads/channel-stats');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.meta    > 0) fonteCounts['eCura — Meta (FB/IG)'] = data.meta;
+                    if (data.google  > 0) fonteCounts['eCura — Google']       = data.google;
+                    if (data.diretto > 0) fonteCounts['eCura — Diretto']      = data.diretto;
+                    if (data.altro   > 0) fonteCounts['eCura — Altro']        = data.altro;
+                    if (data.nonTracciato > 0) fonteCounts['eCura — Non tracciato'] = data.nonTracciato;
                 }
+            } catch (e) {
+                console.warn('⚠️ renderFontesDistributionFromApi: impossibile caricare channel-stats', e);
+            }
+
+            // Passo 2: aggiungi le fonti NON-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
+            // Queste fonti sono contate correttamente da allLeads perché non dipendono da canale_acquisizione
+            (leads || []).forEach(lead => {
+                const fonteDB = lead.fonte || '';
+                if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return; // gestiti dall'API
+                const etichetta = fonteDB || 'Non specificata';
                 fonteCounts[etichetta] = (fonteCounts[etichetta] || 0) + 1;
             });
-            
-            console.log('📊 Distribuzione Fonti:', fonteCounts);
-            
-            const total = leads.length || 1;
+
+            console.log('📊 Distribuzione Fonti (API + allLeads):', fonteCounts);
+
+            const total = Object.values(fonteCounts).reduce((a, b) => a + b, 0) || 1;
+            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
+
             let html = '';
-            
-            // Ordina per count discendente
-            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => b[1] - a[1]);
-            
             if (sortedFontes.length === 0) {
                 html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
             } else {
                 sortedFontes.forEach(([fonte, count]) => {
-                    const percentage = Math.round((count / total) * 100);
+                    const percentage = Math.round(((count as number) / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
-                    
                     html += \`
                         <div>
                             <div class="flex items-center justify-between mb-1">
@@ -2367,8 +2378,9 @@ export const dashboard = `<!DOCTYPE html>
                     \`;
                 });
             }
-            
-            document.getElementById('fontesDistribution').innerHTML = html;
+
+            const el = document.getElementById('fontesDistribution');
+            if (el) el.innerHTML = html;
         }
 
         // ========== eCURA CHANNEL STATS ==========
@@ -3609,10 +3621,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Aggiorna grafici
                 updateServicesBreakdown(allLeads);
                 updatePlansBreakdown(allLeads);
-                updateChannelsBreakdown(allLeads);
 
-                // Carica statistiche canale eCura Form (Meta / Google / Altro)
+                // Carica statistiche canale eCura Form (Meta / Google / Altro) — box numerici
                 loadLeadsEcuraChannelStats();
+                // Aggiorna barre canali (stessa API channel-stats → numeri identici ai box)
+                updateChannelsBreakdown(allLeads);
 
                 // Popola tabella
                 renderLeadsTable(allLeads);
@@ -3724,34 +3737,9 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('plansBreakdown').innerHTML = html;
         }
 
-        function updateChannelsBreakdown(leads) {
-            console.log('🔍 updateChannelsBreakdown chiamata con leads:', leads.length);
-            
-            // FONTE DI VERITÀ UNICA: canale_acquisizione per i lead eCura
-            // Stessa logica di box canali e filtro tabella → numeri sempre coerenti
-            const canaleLabel = {
-                'META':    'eCura — Meta (FB/IG)',
-                'GOOGLE':  'eCura — Google',
-                'DIRETTO': 'eCura — Diretto',
-                'ALTRO':   'eCura — Altro'
-            };
-            const sources = {};
-            leads.forEach(l => {
-                const fonteDB = l.fonte || '';
-                const canale = (l.canale_acquisizione || '').toUpperCase();
-                let etichetta;
-                if (fonteDB === 'Form eCura') {
-                    etichetta = canaleLabel[canale] || 'eCura — Non tracciato';
-                } else {
-                    etichetta = fonteDB || 'Non specificato';
-                }
-                sources[etichetta] = (sources[etichetta] || 0) + 1;
-            });
-            
-            console.log('📊 Fonti rilevate:', sources);
-            
-            const total = leads.length || 1;
-            
+        async function updateChannelsBreakdown(leads) {
+            console.log('🔍 updateChannelsBreakdown — usa API channel-stats per i canali eCura');
+
             const fonteColors = {
                 'Sito www.eCura.it':    'bg-cyan-500',
                 'Privati IRBEMA':       'bg-blue-500',
@@ -3766,12 +3754,39 @@ export const leads_dashboard = `<!DOCTYPE html>
                 'NETWORKING':           'bg-teal-500',
                 'Form Contattaci':      'bg-orange-400'
             };
-            
-            // Genera HTML con barre colorate come gli altri box
+
+            // Passo 1: canali eCura dall'API (stessa sorgente dei box → numeri identici)
+            const sources = {};
+            try {
+                const res = await fetch('/api/leads/channel-stats');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.meta    > 0) sources['eCura — Meta (FB/IG)'] = data.meta;
+                    if (data.google  > 0) sources['eCura — Google']       = data.google;
+                    if (data.diretto > 0) sources['eCura — Diretto']      = data.diretto;
+                    if (data.altro   > 0) sources['eCura — Altro']        = data.altro;
+                    if (data.nonTracciato > 0) sources['eCura — Non tracciato'] = data.nonTracciato;
+                }
+            } catch (e) {
+                console.warn('⚠️ updateChannelsBreakdown: impossibile caricare channel-stats', e);
+            }
+
+            // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
+            (leads || []).forEach(l => {
+                const fonteDB = l.fonte || '';
+                if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
+                const etichetta = fonteDB || 'Non specificato';
+                sources[etichetta] = (sources[etichetta] || 0) + 1;
+            });
+
+            console.log('📊 Canali rilevati (API + allLeads):', sources);
+
+            const total = Object.values(sources).reduce((a, b) => a + b, 0) || 1;
+
             const html = Object.entries(sources)
-                .sort(([,a], [,b]) => b - a) // Ordina per count decrescente
+                .sort(([,a], [,b]) => (b as number) - (a as number))
                 .map(([fonte, count]) => {
-                    const percentage = Math.round((count / total) * 100);
+                    const percentage = Math.round(((count as number) / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
                     return \`
                         <div>
@@ -3785,8 +3800,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </div>
                     \`;
                 }).join('');
-            
-            document.getElementById('channelsBreakdown').innerHTML = html || '<p class="text-gray-400 text-sm">Nessuna fonte disponibile</p>';
+
+            const el = document.getElementById('channelsBreakdown');
+            if (el) el.innerHTML = html || '<p class="text-gray-400 text-sm">Nessuna fonte disponibile</p>';
         }
 
         async function loadLeadsEcuraChannelStats() {
@@ -4141,9 +4157,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     matchFonte = isEcura;
                 } else if (fonteFilter.startsWith('__CANALE__')) {
                     // Filtra per canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
-                    // Fonte di verità: canale_acquisizione (un solo campo, sempre coerente)
+                    // VINCOLO: solo lead Form eCura (fonte = 'Form eCura')
+                    // Senza questo vincolo i lead IRBEMA con canale popolato verrebbero contati
                     const canaleTarget = fonteFilter.replace('__CANALE__', '');
-                    matchFonte = leadCanale === canaleTarget;
+                    matchFonte = isEcura && leadCanale === canaleTarget;
                 } else if (fonteFilter.startsWith('__FONTE__')) {
                     // Filtra per fonte raw (IRBEMA, B2B, Test, ecc.)
                     const fonteTarget = fonteFilter.replace('__FONTE__', '');

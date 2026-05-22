@@ -6391,7 +6391,8 @@ app.get('/api/leads', async (c) => {
     const totalLeads = countResult?.total || 0
     
     // Recupera lead con limit
-    const leads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY timestamp DESC LIMIT ?`).bind(parseInt(limit)).all()
+    // Usa COALESCE(created_at, timestamp) per non escludere lead con timestamp=NULL
+    const leads = await c.env.DB.prepare(`SELECT * FROM leads ORDER BY COALESCE(created_at, timestamp) DESC LIMIT ?`).bind(parseInt(limit)).all()
     
     console.log('📊 Leads recuperati:', leads.results?.length || 0, 'di', totalLeads, 'totali')
     
@@ -6545,10 +6546,11 @@ app.get('/api/leads/channel-stats', async (c) => {
     // =====================================================================
 
     // Query 1 — totale lead eCura (fonte = 'Form eCura', esclude test)
+    // Usa COUNT(*) — stesso criterio del filtro tabella (conta record, non email univoche)
     let totalEcura = 0
     try {
       const r = await c.env.DB.prepare(`
-        SELECT COUNT(DISTINCT COALESCE(NULLIF(email,''), CAST(id AS TEXT))) as count
+        SELECT COUNT(*) as count
         FROM leads
         WHERE fonte = 'Form eCura'
       `).first() as any
