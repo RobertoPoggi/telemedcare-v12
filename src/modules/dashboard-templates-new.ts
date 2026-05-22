@@ -2356,14 +2356,14 @@ export const dashboard = `<!DOCTYPE html>
             console.log('📊 Distribuzione Fonti (API + allLeads):', fonteCounts);
 
             const total = Object.values(fonteCounts).reduce((a, b) => a + b, 0) || 1;
-            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
+            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => b[1] - a[1]);
 
             let html = '';
             if (sortedFontes.length === 0) {
                 html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
             } else {
                 sortedFontes.forEach(([fonte, count]) => {
-                    const percentage = Math.round(((count as number) / total) * 100);
+                    const percentage = Math.round((count / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
                     html += \`
                         <div>
@@ -3784,9 +3784,9 @@ export const leads_dashboard = `<!DOCTYPE html>
             const total = Object.values(sources).reduce((a, b) => a + b, 0) || 1;
 
             const html = Object.entries(sources)
-                .sort(([,a], [,b]) => (b as number) - (a as number))
+                .sort(([,a], [,b]) => b - a)
                 .map(([fonte, count]) => {
-                    const percentage = Math.round(((count as number) / total) * 100);
+                    const percentage = Math.round((count / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
                     return \`
                         <div>
