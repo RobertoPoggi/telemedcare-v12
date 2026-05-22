@@ -18099,17 +18099,16 @@ app.post('/api/import/excel', async (c) => {
 // ============================================================================
 app.post('/api/import/irbema', async (c) => {
   try {
-    console.log('🔄 [HUBSPOT] Inizio import da HubSpot CRM (IRBEMA) - Solo lead eCura (filtro URL: ecura.it)...')
-    
-    // Verifica configurazione
+    console.log('🔄 [IRBEMA] Inizio import da HubSpot CRM — usa executeAutoImport (stessa logica di refresh e CRON)')
+
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
-    
-    // 🔴 CONTROLLO SWITCH: Verifica se import automatico HubSpot è abilitato
+
+    // 🔴 CONTROLLO SWITCH
     const hubspotImportEnabled = await getSetting(c.env.DB, 'hubspot_auto_import_enabled')
     if (!hubspotImportEnabled) {
-      console.log('⏭️ [HUBSPOT] Import automatico HubSpot disabilitato nelle impostazioni sistema')
+      console.log('⏭️ [IRBEMA] Import HubSpot disabilitato nelle impostazioni sistema')
       return c.json({
         success: false,
         error: 'Import automatico HubSpot disabilitato',
@@ -18120,467 +18119,48 @@ app.post('/api/import/irbema', async (c) => {
     }
     
     if (!c.env?.HUBSPOT_ACCESS_TOKEN) {
-      return c.json({ 
-        success: false, 
+      return c.json({
+        success: false,
         error: 'Token HubSpot non configurato',
         hint: 'Aggiungi HUBSPOT_ACCESS_TOKEN nelle variabili di ambiente'
       }, 500)
     }
 
-    const accessToken = c.env.HUBSPOT_ACCESS_TOKEN
+    // 🗓️ Tasto IRBEMA = sync completo dall'inizio campagna (30/01/2026)
+    // Calcola quanti giorni sono passati dall'inizio campagna
+    const campaignStart = new Date('2026-01-30T00:00:00Z')
+    const daysSinceCampaign = Math.ceil((Date.now() - campaignStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const days = Math.min(daysSinceCampaign, 365)
+    console.log(`📅 [IRBEMA] Sync dall'inizio campagna (30/01/2026): days=${days}`)
 
-    // 🗓️ FILTRO DATA: Solo lead dal 30/1/2026 (inizio campagna eCura)
-    const campaignStartDate = new Date('2026-01-30T00:00:00Z')
-    console.log(`📅 [HUBSPOT] Filtro attivo: solo lead da ecura.it dal ${campaignStartDate.toLocaleDateString('it-IT')}`)
+    const { executeAutoImport } = await import('./modules/hubspot-auto-import')
+    const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
 
-    // Statistiche import
-    let totalImported = 0
-    let totalSkipped = 0
-    let totalUpdated = 0  // ✅ AGGIUNTO: counter per note aggiornate
-    let totalContacts = 0
-    let totalFiltered = 0
-    let totalPages = 0
-    const errors: string[] = []
-
-    // Ottieni il prossimo ID lead IRBEMA disponibile
-    let nextLeadNumber = 1
-    try {
-      const maxIdResult = await c.env.DB.prepare(
-        "SELECT id FROM leads WHERE id LIKE 'LEAD-IRBEMA-%' ORDER BY id DESC LIMIT 1"
-      ).first()
-      if (maxIdResult?.id) {
-        const match = (maxIdResult.id as string).match(/LEAD-IRBEMA-(\d+)/)
-        if (match) {
-          nextLeadNumber = parseInt(match[1]) + 1
-        }
-      }
-    } catch (e: any) {
-      console.warn('⚠️ [HUBSPOT] Errore lettura max ID IRBEMA (uso default 1):', e.message)
-    }
-
-    // ✅ USA API SEARCH con filtro data (non API LIST)
-    console.log(`🔍 [HUBSPOT] Uso API /search con filtro data >= ${campaignStartDate.toISOString()}`)
-    
-    // Loop paginazione
-    let after: string | null = null
-    let hasMore = true
-
-    while (hasMore) {
-      totalPages++
-      console.log(`📄 [HUBSPOT] Caricamento pagina ${totalPages}${after ? ` (after: ${after})` : ''}...`)
-
-      // ✅ USA SEARCH API con filtro data invece di GET API
-      const searchBody: any = {
-        filterGroups: [{
-          filters: [{
-            propertyName: 'createdate',
-            operator: 'GTE',
-            value: campaignStartDate.getTime().toString() // Timestamp in millisecondi
-          }]
-        }],
-        properties: [
-          'firstname', 'lastname', 'email', 'mobilephone', 'city', 'state',
-          'servizio_di_interesse', 'piano_desiderato', 'message', 'createdate',
-          'hs_analytics_first_url', 'hs_analytics_last_url'
-        ],
-        limit: 100,
-        sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }]
-      }
-      
-      if (after) {
-        searchBody.after = after
-      }
-
-      const hubspotUrl = `https://api.hubapi.com/crm/v3/objects/contacts/search`
-
-      const response = await fetch(hubspotUrl, {
-        method: 'POST', // ✅ Cambiato da GET a POST per /search
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(searchBody) // ✅ Aggiungi body con filtri
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`❌ [HUBSPOT] Errore API pagina ${totalPages} (${response.status}):`, errorText)
-        
-        // Se errore, interrompi ma ritorna i dati parziali
-        if (totalImported > 0 || totalSkipped > 0) {
-          break
-        }
-        
-        return c.json({ 
-          success: false, 
-          error: `Errore HubSpot API: ${response.status}`,
-          details: errorText
-        }, 500)
-      }
-
-      let data: any
-      try {
-        data = await response.json()
-      } catch (jsonErr: any) {
-        console.error(`❌ [HUBSPOT] Risposta non-JSON dalla pagina ${totalPages}:`, jsonErr.message)
-        if (totalImported > 0 || totalSkipped > 0) {
-          break
-        }
-        return c.json({
-          success: false,
-          error: `Risposta non valida da HubSpot API`,
-          details: jsonErr.message
-        }, 500)
-      }
-      const pageResults = data?.results || []
-      console.log(`✅ [HUBSPOT] Pagina ${totalPages}: ${pageResults.length} contatti`)
-
-      totalContacts += pageResults.length
-
-      // Importa contatti della pagina corrente
-      for (const contact of pageResults) {
-        try {
-          const props = contact.properties
-          
-          // FILTRO URL: Solo lead che provengono da ecura.it
-          const firstUrl = props.hs_analytics_first_url || ''
-          const lastUrl = props.hs_analytics_last_url || ''
-          const isEcuraLead = firstUrl.includes('ecura.it') || lastUrl.includes('ecura.it')
-          
-          if (!isEcuraLead) {
-            console.log(`⏭️ [HUBSPOT] Skip: non proviene da ecura.it - ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'})`)
-            totalFiltered++
-            continue
-          }
-          
-          // ✅ FILTRO DATA già applicato nell'API /search - non serve ricontrollare
-          const createDate = new Date(props.createdate)
-          console.log(`✅ [HUBSPOT] Lead eCura trovato: ${props.firstname || 'N/A'} ${props.lastname || ''} (${props.email || 'no-email'}) - Creato: ${createDate.toLocaleDateString('it-IT')}`)
-
-          // Validazione campi obbligatori
-          if (!props.email && !props.mobilephone) {
-            console.warn(`⚠️ [HUBSPOT] Contatto senza email/telefono, skip: ${props.firstname || 'N/A'} ${props.lastname || ''}`)
-            totalSkipped++
-            continue
-          }
-
-          const email = props.email || ''
-          const telefono = props.mobilephone || ''
-          
-          // Verifica se già esiste (per email)
-          if (email) {
-            const existing = await c.env.DB.prepare(
-              'SELECT id, note FROM leads WHERE email = ? LIMIT 1'
-            ).bind(email).first()
-            
-            if (existing) {
-              console.log(`🔍 [IRBEMA] Lead già esistente (${existing.id}): ${email}, verifico NOTE...`)
-              
-              // 🔄 UPDATE NOTE se sono placeholder
-              const currentNote = (existing.note as string) || ''
-              const isPlaceholder = currentNote === '' || 
-                                   currentNote === null || 
-                                   currentNote.startsWith('Importato da HubSpot') ||
-                                   currentNote.startsWith('HubSpot ID:')
-              
-              // Estrai nota da HubSpot (prima costruiamo la nota come nel caso INSERT)
-              let hubspotNote = `HubSpot ID: ${contact.id}`
-              if (props.city) {
-                hubspotNote += ` | Città: ${props.city}`
-              }
-              if (props.message) {
-                hubspotNote += ` | Messaggio: ${props.message}`
-              }
-              
-              const hasNewNotes = hubspotNote && 
-                                 hubspotNote !== '' && 
-                                 hubspotNote !== null &&
-                                 !hubspotNote.startsWith('Importato da HubSpot')
-              
-              if (isPlaceholder && hasNewNotes) {
-                // UPDATE note
-                await c.env.DB.prepare(`
-                  UPDATE leads 
-                  SET note = ?,
-                      updated_at = ?
-                  WHERE id = ?
-                `).bind(
-                  hubspotNote,
-                  new Date().toISOString(),
-                  existing.id
-                ).run()
-                
-                console.log(`✅ [IRBEMA] Note recuperate per lead ${existing.id}: "${hubspotNote.substring(0, 50)}..."`)
-                totalUpdated++  // ✅ INCREMENTA counter update
-              } else if (!isPlaceholder) {
-                console.log(`🛡️ [IRBEMA] Lead ${existing.id} ha interazioni manuali, SKIP update (protetto)`)
-              } else {
-                console.log(`⏭️ [IRBEMA] Note HubSpot vuote per ${existing.id}, skip`)
-              }
-              
-              totalSkipped++
-              continue
-            }
-          }
-
-          // Mapping servizio_di_interesse → servizio
-          let servizio = 'eCura PRO' // Default
-          console.log(`🔍 [IRBEMA INLINE] PRIMA DEL MAPPING: servizio_di_interesse = ${props.servizio_di_interesse || 'NULL'}`)
-          
-          if (props.servizio_di_interesse) {
-            const serviceLower = props.servizio_di_interesse.toLowerCase()
-            console.log(`🔍 [IRBEMA INLINE] serviceLower = ${serviceLower}`)
-            if (serviceLower.includes('family')) {
-              servizio = 'eCura FAMILY'
-              console.log(`🔍 [IRBEMA INLINE] MATCH: family → servizio = ${servizio}`)
-            } else if (serviceLower.includes('premium') || serviceLower.includes('vital')) {
-              servizio = 'eCura PREMIUM'
-              console.log(`🔍 [IRBEMA INLINE] MATCH: premium/vital → servizio = ${servizio}`)
-            } else if (serviceLower.includes('pro')) {
-              servizio = 'eCura PRO'
-              console.log(`🔍 [IRBEMA INLINE] MATCH: pro → servizio = ${servizio}`)
-            } else {
-              console.log(`🔍 [IRBEMA INLINE] NO MATCH → servizio resta = ${servizio}`)
-            }
-          } else {
-            console.log(`🔍 [IRBEMA INLINE] servizio_di_interesse NULL → servizio default = ${servizio}`)
-          }
-          console.log(`✅ [IRBEMA INLINE] SERVIZIO FINALE = ${servizio}`)
-
-          // Mapping piano_desiderato → piano
-          let piano = 'BASE' // Default
-          if (props.piano_desiderato) {
-            const planLower = props.piano_desiderato.toLowerCase()
-            if (planLower.includes('avanzato') || planLower.includes('advanced')) {
-              piano = 'AVANZATO'
-            }
-          }
-
-          // 💰 CALCOLO PREZZI AUTOMATICO
-          let prezzoAnno = null
-          let prezzoRinnovo = null
-          
-          try {
-            const { calculatePrice } = await import('./modules/pricing-calculator')
-            // Estrai servizio senza "eCura " prefix per il calculator
-            const servizioNorm = servizio.replace('eCura ', '').toUpperCase()
-            const pianoNorm = piano.toUpperCase()
-            
-            const pricing = calculatePrice(servizioNorm, pianoNorm)
-            prezzoAnno = pricing.setupBase      // IVA esclusa
-            prezzoRinnovo = pricing.rinnovoBase // IVA esclusa
-            
-            console.log(`💰 [HUBSPOT] Prezzi calcolati per ${servizio} ${piano}: Anno €${prezzoAnno}, Rinnovo €${prezzoRinnovo}`)
-          } catch (error) {
-            console.error(`❌ [HUBSPOT] Errore calcolo prezzi per ${servizio} ${piano}:`, error)
-            // Prezzi restano NULL - verrà fixato dopo con /api/leads/fix-prices
-          }
-
-          // Costruisci note con città e messaggio
-          let note = `HubSpot ID: ${contact.id}`
-          if (props.city) {
-            note += ` | Città: ${props.city}`
-          }
-          if (props.message) {
-            note += ` | Messaggio: ${props.message}`
-          }
-
-          // Genera ID lead
-          const leadId = `LEAD-IRBEMA-${String(nextLeadNumber).padStart(5, '0')}`
-          nextLeadNumber++
-
-          // Inserisci lead CON PREZZI
-          const now = new Date().toISOString()
-          const emailSafe = props.email || ''
-          const telefonoSafe = props.mobilephone || props.phone || ''
-          
-          await c.env.DB.prepare(`
-            INSERT INTO leads (
-              id, nomeRichiedente, cognomeRichiedente, 
-              email, 
-              telefono, 
-              cittaAssistito, provinciaAssistito,
-              servizio, piano, tipoServizio, prezzo_anno, prezzo_rinnovo,
-              fonte, status, vuoleBrochure, vuoleContratto,
-              note, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            leadId,
-            props.firstname || 'N/A',
-            props.lastname || 'N/A',
-            emailSafe,      // ✅ email
-            telefonoSafe,   // ✅ telefono
-            props.city || null,
-            props.state || null, // ✅ PROVINCIA
-            servizio,
-            piano,
-            'eCura',     // ✅ tipoServizio sempre 'eCura'
-            prezzoAnno,  // 💰 PREZZO ANNO (IVA esclusa)
-            prezzoRinnovo, // 💰 PREZZO RINNOVO (IVA esclusa)
-            'Form eCura',    // Fonte (filtro eCura da HubSpot)
-            'NEW',       // Status
-            1,           // ✅ vuoleBrochure = 1 (SEMPRE SI per eCura)
-            1,           // ✅ vuoleContratto = 1 (SEMPRE SI per eCura)
-            note,
-            now,
-            now
-          ).run()
-
-          console.log(`✅ [HUBSPOT] Importato: ${leadId} - ${props.firstname} ${props.lastname} | ${servizio} ${piano}`)
-          totalImported++
-
-          // Invia notifica email automatica
-          await sendNewLeadNotification(leadId, {
-            nomeRichiedente: props.firstname || 'N/A',
-            cognomeRichiedente: props.lastname || '',
-            email: props.email || undefined,
-            telefono: props.mobilephone || undefined,
-            citta: props.city || undefined,
-            servizio,
-            piano,
-            fonte: 'Form eCura',
-            note,
-            created_at: now
-          }, c.env)
-          
-          // 📧 INVIA EMAIL COMPLETAMENTO AL LEAD (come auto-import)
-          try {
-            if (emailSafe) {
-              console.log(`📧 [IRBEMA] Invio email completamento a ${emailSafe}...`)
-              
-              const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
-              const EmailService = (await import('./modules/email-service')).default
-              const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
-              
-              // Ottieni lead appena inserito
-              const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
-                .bind(leadId).first()
-              
-              if (insertedLead) {
-                // Ottieni configurazione
-                const config = await getSystemConfig(c.env.DB)
-                
-                // Crea token
-                const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
-                
-                // Genera URL completamento
-                const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
-                const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
-                
-                // Prepara dati per email
-                const { missing, available } = getMissingFields(insertedLead)
-                
-                // Carica template
-                const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
-                
-                const availableFieldsList = Object.entries(available).map(([label, value]) => ({
-                  FIELD_LABEL: label,
-                  FIELD_VALUE: value
-                }))
-                
-                const fieldMetadata: Record<string, any> = {
-                  'telefono': { label: 'Telefono', type: 'tel', required: true },
-                  'nomeAssistito': { label: 'Nome Assistito', type: 'text', required: true },
-                  'cognomeAssistito': { label: 'Cognome Assistito', type: 'text', required: true },
-                  'dataNascitaAssistito': { label: 'Data Nascita Assistito', type: 'date', required: true }
-                }
-                
-                const missingFieldsList = missing.map(fieldName => {
-                  const meta = fieldMetadata[fieldName] || { 
-                    label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1), 
-                    type: 'text', 
-                    required: false 
-                  }
-                  return {
-                    FIELD_ID: fieldName,
-                    FIELD_NAME: fieldName,
-                    FIELD_LABEL: meta.label,
-                    INPUT_TYPE: meta.type,
-                    IS_REQUIRED: meta.required,
-                    IS_INPUT: true,
-                    IS_SELECT: false,
-                    IS_TEXTAREA: false,
-                    OPTIONS: []
-                  }
-                })
-                
-                const templateData = {
-                  NOME_CLIENTE: insertedLead.nomeRichiedente,
-                  COGNOME_CLIENTE: insertedLead.cognomeRichiedente,
-                  SERVIZIO: servizio,
-                  PIANO: piano,
-                  LEAD_ID: leadId,
-                  API_ENDPOINT: baseUrl,
-                  COMPLETION_URL: completionUrl,
-                  BROCHURE_URL: `${baseUrl}/assets/brochures/brochure-ecura.pdf`,
-                  EXPIRES_IN_DAYS: config.auto_completion_token_days.toString(),
-                  AVAILABLE_FIELDS: availableFieldsList,
-                  MISSING_FIELDS: missingFieldsList
-                }
-                
-                const emailHtml = renderTemplate(template, templateData)
-                
-                // Invia email
-                const emailService = new EmailService(c.env)
-                await emailService.sendEmail({
-                  to: emailSafe,
-                  from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
-                  subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
-                  html: emailHtml,
-                  text: `Gentile ${props.firstname}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi.`
-                })
-                
-                console.log(`✅ [IRBEMA] Email completamento inviata a ${emailSafe}`)
-              }
-            }
-          } catch (emailCompletionError) {
-            console.error(`⚠️ [IRBEMA] Errore email completamento:`, emailCompletionError)
-            // Non bloccare l'import
-          }
-
-        } catch (error) {
-          const contactName = `${contact.properties?.firstname || 'N/A'} ${contact.properties?.lastname || ''}`
-          console.error(`❌ [HUBSPOT] Errore importazione contatto ${contactName}:`, error)
-          errors.push(`${contactName}: ${error instanceof Error ? error.message : String(error)}`)
-          totalSkipped++
-        }
-      }
-
-      // Verifica se ci sono altre pagine
-      if (data?.paging?.next?.after) {
-        after = data.paging.next.after
-        console.log(`➡️ [HUBSPOT] Trovata pagina successiva: ${after}`)
-      } else {
-        hasMore = false
-        console.log(`🏁 [HUBSPOT] Ultima pagina raggiunta`)
-      }
-    }
-
-    console.log(`🎯 [HUBSPOT] Import COMPLETATO:`)
-    console.log(`   • Importati: ${totalImported}`)
-    console.log(`   • Aggiornati (note): ${totalUpdated}`)  // ✅ AGGIUNTO
-    console.log(`   • Saltati (duplicati): ${totalSkipped}`)
-    console.log(`   • Filtrati (pre-2026): ${totalFiltered}`)
-    console.log(`   • Totale elaborati: ${totalContacts}`)
-    console.log(`   • Pagine: ${totalPages}`)
+    const result = await executeAutoImport(c.env.DB, c.env, baseUrl, {
+      enabled: true,
+      startHour: 0,
+      days,
+      onlyEcura: true,
+      dryRun: false
+    })
 
     return c.json({
-      success: true,
-      message: 'Import HubSpot completato (contatti dal 1/12/2025)',
-      imported: totalImported,
-      updated: totalUpdated,  // ✅ AGGIUNTO al JSON
-      skipped: totalSkipped,
-      filtered: totalFiltered,
-      total: totalContacts,
-      pages: totalPages,
-      errors: errors.length > 0 ? errors : undefined
+      success: result.success,
+      message: result.message,
+      imported: result.imported,
+      updated: result.updated,
+      skipped: result.skipped,
+      total: result.performance.hubspotContacts,
+      pages: Math.ceil((result.performance.hubspotContacts || 0) / 100),
+      days,
+      from: result.timeRange?.from
     })
 
   } catch (error) {
-    console.error('❌ [HUBSPOT] Errore generale import:', error)
+    console.error('❌ [IRBEMA] Errore generale import:', error)
     return c.json({
       success: false,
-      error: 'Errore durante l\'import da HubSpot',
+      error: 'Errore durante import da HubSpot',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
