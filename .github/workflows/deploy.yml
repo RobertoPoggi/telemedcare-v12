@@ -1,17 +1,31 @@
 name: Deploy to Cloudflare Pages
+# =============================================================
+# PIPELINE: TEST → PREVIEW → PRODUCTION
+#
+# Branch  → Cloudflare alias  → URL
+# test    → test-environment  → https://test-environment.telemedcare-v12.pages.dev
+# preview → preview           → https://preview.telemedcare-v12.pages.dev
+# main    → main (production) → https://telemedcare-v12.pages.dev
+#
+# PROCESSO CORRETTO DI SVILUPPO:
+#   1. Lavora su branch 'test'  → verifica su TEST
+#   2. Merge test → preview     → collaudo su PREVIEW
+#   3. Approvazione → merge preview → main → PRODUCTION
+# =============================================================
 
 on:
   push:
     branches:
-      - main
-      - 'copilot/**'
+      - main      # → PRODUCTION
+      - preview   # → PREVIEW
+      - test      # → TEST
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: "Deploy → ${{ github.ref_name == 'main' && 'PRODUCTION' || github.ref_name == 'preview' && 'PREVIEW' || 'TEST' }}"
     runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name == 'preview' && 'preview' || 'test' }}
     permissions:
       contents: read
       deployments: write
@@ -32,9 +46,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: "Deploy su Cloudflare Pages"
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name telemedcare-v12 --commit-dirty=true
+          command: >
+            pages deploy dist
+            --project-name telemedcare-v12
+            --branch ${{ github.ref_name == 'main' && 'main' || github.ref_name == 'preview' && 'preview' || 'test-environment' }}
+            --commit-dirty=true
+
+      - name: Riepilogo deploy
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "🚀 PRODUCTION: https://telemedcare-v12.pages.dev"
+          elif [ "${{ github.ref_name }}" = "preview" ]; then
+            echo "👁️  PREVIEW: https://preview.telemedcare-v12.pages.dev"
+          else
+            echo "🧪 TEST: https://test-environment.telemedcare-v12.pages.dev"
+          fi
+          echo "📦 Commit: ${{ github.sha }}"

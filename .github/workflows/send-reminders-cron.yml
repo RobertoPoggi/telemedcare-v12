@@ -1,0 +1,70 @@
+name: Send Reminder Emails (Cron Giornaliero)
+# 🔔 REMINDER AUTOMATICI GIORNALIERI
+# ⏰ Esecuzione: Ogni giorno alle 08:00 Italia (07:00 UTC)
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'   # Lun-Ven alle 08:00 IT (07:00 UTC)
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente target'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+          - test-environment
+
+permissions:
+  contents: read
+
+jobs:
+  send-reminders:
+    name: Invia Reminder Automatici
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📋 Info esecuzione
+        run: |
+          echo "🔔 Avvio reminder cron"
+          echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌐 Ambiente: ${{ github.event.inputs.environment || 'production' }}"
+
+      - name: 🔔 Trigger Reminder (Production)
+        if: ${{ github.event.inputs.environment == 'production' || github.event.inputs.environment == '' || github.event_name == 'schedule' }}
+        run: |
+          BASE_URL="https://telemedcare-v12.pages.dev"
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "$BASE_URL/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Completato"
+          elif [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "429" ]; then
+            echo "⏭️ Skip (disabilitato o già eseguito)"
+          else
+            echo "❌ Errore HTTP $HTTP_CODE"; exit 1
+          fi
+
+      - name: 🔔 Trigger Reminder (Preview)
+        if: ${{ github.event.inputs.environment == 'preview' }}
+        run: |
+          curl -s -X POST "https://preview.telemedcare-v12.pages.dev/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+      - name: 🔔 Trigger Reminder (Test)
+        if: ${{ github.event.inputs.environment == 'test-environment' }}
+        run: |
+          curl -s -X POST "https://test-environment.telemedcare-v12.pages.dev/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+      - name: 📊 Riepilogo
+        if: always()
+        run: echo "⏰ Completato: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
