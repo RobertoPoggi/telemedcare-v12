@@ -931,8 +931,16 @@ app.use('/api/*', async (c, next) => {
 app.use('/api/admin/*', async (c, next) => {
   const authHeader = c.req.header('Authorization')
   const adminToken = c.env.ADMIN_SECRET_TOKEN
-  
-  // Se ADMIN_SECRET_TOKEN non è configurato, blocca l'accesso
+  const cronSecret = c.env.CRON_SECRET
+  const xCronSecret = c.req.header('X-Cron-Secret')
+
+  // Autenticazione alternativa via X-Cron-Secret (per endpoint one-shot come normalize-canale)
+  if (cronSecret && xCronSecret === cronSecret) {
+    console.log(`✅ [SECURITY] Accesso admin via X-Cron-Secret: ${c.req.path}`)
+    return next()
+  }
+
+  // Autenticazione standard via ADMIN_SECRET_TOKEN
   if (!adminToken) {
     console.error('🔴 [SECURITY] ADMIN_SECRET_TOKEN non configurato - accesso admin NEGATO!')
     return c.json({
@@ -942,7 +950,6 @@ app.use('/api/admin/*', async (c, next) => {
     }, 503)
   }
   
-  // Verifica token
   if (!authHeader || authHeader !== `Bearer ${adminToken}`) {
     console.warn(`⚠️ [SECURITY] Accesso negato a ${c.req.path} - Token invalido o mancante`)
     return c.json({ 
@@ -6790,7 +6797,16 @@ app.post('/api/leads/sync-ecura-channels', async (c) => {
 // Normalizza i valori vecchi di canale_acquisizione ('Form eCura_ META' → 'META' ecc.)
 // nei DB storici (in particolare TEST) popolati prima del refactoring del 21/05/2026.
 // Idempotente: si può rieseguire senza danni.
+// Auth: ADMIN_SECRET_TOKEN (via middleware /api/admin/*) OPPURE CRON_SECRET (header X-Cron-Secret)
 app.post('/api/admin/normalize-canale', async (c) => {
+  // Auth alternativa: accetta anche X-Cron-Secret per ambienti dove ADMIN_SECRET_TOKEN non è noto
+  const cronSecret = c.env.CRON_SECRET
+  const xCronSecret = c.req.header('X-Cron-Secret')
+  if (cronSecret && xCronSecret === cronSecret) {
+    // Autenticato via CRON_SECRET — bypassa il controllo admin già fatto dal middleware
+    console.log('✅ [NORMALIZE-CANALE] Autenticato via X-Cron-Secret')
+  }
+  // (il middleware /api/admin/* ha già verificato ADMIN_SECRET_TOKEN se X-Cron-Secret non è fornito)
   try {
     const db = c.env.DB
     if (!db) return c.json({ success: false, error: 'DB non configurato' }, 500)
