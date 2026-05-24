@@ -59,3 +59,4 @@ for b in d.get('breakdown',[]):
     print(f\"  '{b['label']}' -> {b['count']}\")
 print(f\"nonTracciato = {d.get('nonTracciato', 0)}\")
 "
+# trigger Sun May 24 23:21:19 UTC 2026
