@@ -1,0 +1,71 @@
+name: "[ONE-SHOT] Normalizza canale_acquisizione DB di TEST"
+# Esegue una UPDATE SQL diretta sul DB D1 di TEST per normalizzare
+# i valori vecchi 'Form eCura_ META' → 'META' ecc.
+# Da eseguire UNA SOLA VOLTA manualmente via workflow_dispatch.
+# Idempotente: rieseguirlo non causa danni.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  normalize:
+    name: "Normalizza canale_acquisizione → DB TEST"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installa Wrangler
+        run: npm install -g wrangler@3
+
+      - name: "Lista DB D1 disponibili (verifica credenziali)"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "=== DB D1 disponibili sull'account ==="
+          wrangler d1 list
+
+      - name: "Normalizza canale_acquisizione nel DB di TEST"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          DB_NAME="telemedcare-leads-test"
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          echo "=== Stato PRIMA della normalizzazione ==="
+          wrangler d1 execute "$DB_NAME" --remote \
+            --command "SELECT canale_acquisizione, COUNT(*) as cnt FROM leads WHERE fonte='Form eCura' AND canale_acquisizione IS NOT NULL GROUP BY canale_acquisizione ORDER BY cnt DESC;"
+          
+          echo ""
+          echo "=== Eseguo normalizzazione ==="
+          
+          for PAIR in \
+            "Form eCura_ META|META" \
+            "Form eCura_ GOOGLE|GOOGLE" \
+            "Form eCura_ DIRETTO|DIRETTO" \
+            "Form eCura_ ALTRO|ALTRO" \
+            "Form eCura_META|META" \
+            "Form eCura_GOOGLE|GOOGLE" \
+            "Form eCura_DIRETTO|DIRETTO" \
+            "Form eCura_ALTRO|ALTRO"
+          do
+            FROM="${PAIR%%|*}"
+            TO="${PAIR##*|}"
+            echo "  Aggiorno '$FROM' → '$TO'..."
+            wrangler d1 execute "$DB_NAME" --remote \
+              --command "UPDATE leads SET canale_acquisizione='$TO', updated_at='$NOW' WHERE canale_acquisizione='$FROM';"
+          done
+          
+          echo ""
+          echo "=== Stato DOPO la normalizzazione ==="
+          wrangler d1 execute "$DB_NAME" --remote \
+            --command "SELECT canale_acquisizione, COUNT(*) as cnt FROM leads WHERE fonte='Form eCura' AND canale_acquisizione IS NOT NULL GROUP BY canale_acquisizione ORDER BY cnt DESC;"
+          
+          echo ""
+          echo "=== Verifica nonTracciato (fonte=Form eCura senza canale) ==="
+          wrangler d1 execute "$DB_NAME" --remote \
+            --command "SELECT COUNT(*) as non_tracciato FROM leads WHERE fonte='Form eCura' AND (canale_acquisizione IS NULL OR canale_acquisizione='');"
