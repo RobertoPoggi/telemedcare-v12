@@ -6579,12 +6579,14 @@ app.get('/api/leads/channel-stats', async (c) => {
       const rows = result.results || []
 
       rows.forEach((row: any) => {
+        // Supporta sia il formato normalizzato ('META') sia quello vecchio ('Form eCura_ META')
+        // presenti in DB storici (TEST) popolati con versioni precedenti del codice.
         const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
-        if (val === 'META')    meta    += cnt
-        else if (val === 'GOOGLE')  google  += cnt
-        else if (val === 'DIRETTO') diretto += cnt
-        else if (val === 'ALTRO')   altro   += cnt
+        if (val === 'META'      || val.includes('META'))    meta    += cnt
+        else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  google  += cnt
+        else if (val === 'DIRETTO' || val.includes('DIRETTO')) diretto += cnt
+        else if (val === 'ALTRO'   || val.includes('ALTRO'))   altro   += cnt
         breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
@@ -6780,6 +6782,58 @@ app.post('/api/leads/sync-ecura-channels', async (c) => {
     })
   } catch (error) {
     console.error('❌ sync-ecura-channels error:', error)
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// POST /api/admin/normalize-canale
+// Normalizza i valori vecchi di canale_acquisizione ('Form eCura_ META' → 'META' ecc.)
+// nei DB storici (in particolare TEST) popolati prima del refactoring del 21/05/2026.
+// Idempotente: si può rieseguire senza danni.
+app.post('/api/admin/normalize-canale', async (c) => {
+  try {
+    const db = c.env.DB
+    if (!db) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    const mappings = [
+      { from: 'Form eCura_ META',    to: 'META'    },
+      { from: 'Form eCura_ GOOGLE',  to: 'GOOGLE'  },
+      { from: 'Form eCura_ DIRETTO', to: 'DIRETTO' },
+      { from: 'Form eCura_ ALTRO',   to: 'ALTRO'   },
+      // Varianti con spazio diverso o senza spazio
+      { from: 'Form eCura_META',    to: 'META'    },
+      { from: 'Form eCura_GOOGLE',  to: 'GOOGLE'  },
+      { from: 'Form eCura_DIRETTO', to: 'DIRETTO' },
+      { from: 'Form eCura_ALTRO',   to: 'ALTRO'   },
+    ]
+
+    let totalUpdated = 0
+    const details: string[] = []
+
+    for (const { from, to } of mappings) {
+      const result = await db.prepare(`
+        UPDATE leads
+        SET canale_acquisizione = ?, updated_at = ?
+        WHERE canale_acquisizione = ?
+      `).bind(to, new Date().toISOString(), from).run()
+      const count = (result as any).meta?.changes ?? 0
+      if (count > 0) {
+        details.push(`'${from}' → '${to}': ${count} lead`)
+        totalUpdated += count
+      }
+    }
+
+    console.log(`✅ [NORMALIZE-CANALE] ${totalUpdated} lead normalizzati:`, details.join(', '))
+    return c.json({
+      success: true,
+      totalUpdated,
+      details,
+      message: totalUpdated > 0
+        ? `Normalizzati ${totalUpdated} valori canale_acquisizione`
+        : 'Nessun valore da normalizzare — DB già aggiornato'
+    })
+  } catch (error) {
+    console.error('❌ normalize-canale error:', error)
     return c.json({ success: false, error: (error as Error).message }, 500)
   }
 })
