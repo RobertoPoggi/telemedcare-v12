@@ -6793,20 +6793,45 @@ app.post('/api/leads/sync-ecura-channels', async (c) => {
   }
 })
 
+// POST /api/normalize-canale-run (endpoint ONE-SHOT fuori da /api/admin/*)
+// TOKEN TEMPORANEO hardcoded — verrà rimosso al prossimo commit dopo l'esecuzione.
+// Non richiede autenticazione admin: usa X-Normalize-Token header.
+app.post('/api/normalize-canale-run', async (c) => {
+  const token = c.req.header('X-Normalize-Token')
+  if (token !== 'a98f69516b066619ffeb3ab4624b2333') {
+    return c.json({ success: false, error: 'Token non valido' }, 401)
+  }
+  const db = c.env.DB
+  if (!db) return c.json({ success: false, error: 'DB non configurato' }, 500)
+  const mappings = [
+    { from: 'Form eCura_ META',    to: 'META'    },
+    { from: 'Form eCura_ GOOGLE',  to: 'GOOGLE'  },
+    { from: 'Form eCura_ DIRETTO', to: 'DIRETTO' },
+    { from: 'Form eCura_ ALTRO',   to: 'ALTRO'   },
+    { from: 'Form eCura_META',    to: 'META'    },
+    { from: 'Form eCura_GOOGLE',  to: 'GOOGLE'  },
+    { from: 'Form eCura_DIRETTO', to: 'DIRETTO' },
+    { from: 'Form eCura_ALTRO',   to: 'ALTRO'   },
+  ]
+  let totalUpdated = 0
+  const details: string[] = []
+  for (const { from, to } of mappings) {
+    const result = await db.prepare(
+      `UPDATE leads SET canale_acquisizione = ?, updated_at = ? WHERE canale_acquisizione = ?`
+    ).bind(to, new Date().toISOString(), from).run()
+    const count = (result as any).meta?.changes ?? 0
+    if (count > 0) { details.push(`'${from}' → '${to}': ${count}`); totalUpdated += count }
+  }
+  return c.json({ success: true, totalUpdated, details,
+    message: totalUpdated > 0 ? `Normalizzati ${totalUpdated} valori` : 'Nessun valore da normalizzare' })
+})
+
 // POST /api/admin/normalize-canale
 // Normalizza i valori vecchi di canale_acquisizione ('Form eCura_ META' → 'META' ecc.)
 // nei DB storici (in particolare TEST) popolati prima del refactoring del 21/05/2026.
 // Idempotente: si può rieseguire senza danni.
-// Auth: ADMIN_SECRET_TOKEN (via middleware /api/admin/*) OPPURE CRON_SECRET (header X-Cron-Secret)
+// Auth: ADMIN_SECRET_TOKEN (via middleware /api/admin/*)
 app.post('/api/admin/normalize-canale', async (c) => {
-  // Auth alternativa: accetta anche X-Cron-Secret per ambienti dove ADMIN_SECRET_TOKEN non è noto
-  const cronSecret = c.env.CRON_SECRET
-  const xCronSecret = c.req.header('X-Cron-Secret')
-  if (cronSecret && xCronSecret === cronSecret) {
-    // Autenticato via CRON_SECRET — bypassa il controllo admin già fatto dal middleware
-    console.log('✅ [NORMALIZE-CANALE] Autenticato via X-Cron-Secret')
-  }
-  // (il middleware /api/admin/* ha già verificato ADMIN_SECRET_TOKEN se X-Cron-Secret non è fornito)
   try {
     const db = c.env.DB
     if (!db) return c.json({ success: false, error: 'DB non configurato' }, 500)

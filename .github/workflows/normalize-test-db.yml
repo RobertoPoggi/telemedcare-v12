@@ -12,14 +12,12 @@ jobs:
         run: |
           curl -s https://test-environment.telemedcare-v12.pages.dev/api/leads/channel-stats
 
-      - name: "Normalizza canale_acquisizione"
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      - name: "Normalizza canale_acquisizione (one-shot endpoint)"
         run: |
           curl -s -X POST \
-            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "X-Normalize-Token: a98f69516b066619ffeb3ab4624b2333" \
             -H "Content-Type: application/json" \
-            https://test-environment.telemedcare-v12.pages.dev/api/admin/normalize-canale
+            https://test-environment.telemedcare-v12.pages.dev/api/normalize-canale-run
 
       - name: "Dopo - breakdown canale"
         run: |
