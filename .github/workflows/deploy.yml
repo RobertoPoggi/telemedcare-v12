@@ -11,9 +11,6 @@ name: Deploy to Cloudflare Pages
 #   1. Lavora su branch 'test'  → verifica su TEST
 #   2. Merge test → preview     → collaudo su PREVIEW
 #   3. Approvazione → merge preview → main → PRODUCTION
-#
-# NOTA sui secret: CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID sono
-# secret a livello repository (non environment) → disponibili su tutti i branch.
 # =============================================================
 
 on:
@@ -28,7 +25,6 @@ jobs:
   deploy:
     name: "Deploy → ${{ github.ref_name == 'main' && 'PRODUCTION' || github.ref_name == 'preview' && 'PREVIEW' || 'TEST' }}"
     runs-on: ubuntu-latest
-    # Nessun 'environment:' — usa i secret repository-level disponibili su tutti i branch
     permissions:
       contents: read
       deployments: write
@@ -51,9 +47,10 @@ jobs:
 
       - name: "Deploy su Cloudflare Pages"
         uses: cloudflare/wrangler-action@v3
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >
             pages deploy dist
             --project-name telemedcare-v12
