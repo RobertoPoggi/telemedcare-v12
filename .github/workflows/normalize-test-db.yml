@@ -1,9 +1,4 @@
-name: "[ONE-SHOT] Normalizza canale_acquisizione DB di TEST"
-# Esegue una chiamata HTTP all'endpoint /api/admin/normalize-canale sul DB di TEST.
-# Autenticazione via X-Cron-Secret (non richiede ADMIN_SECRET_TOKEN).
-# Idempotente: rieseguirlo non causa danni.
-# Trigger: push sul branch 'run-normalize' (branch usa-e-getta)
-
+name: "Normalizza DB TEST"
 on:
   push:
     branches:
@@ -11,51 +6,19 @@ on:
 
 jobs:
   normalize:
-    name: "Normalizza canale_acquisizione → DB TEST"
     runs-on: ubuntu-latest
     steps:
-      - name: "Chiama /api/admin/normalize-canale su TEST"
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      - name: "Prima - breakdown canale"
         run: |
-          echo "=== Stato PRIMA della normalizzazione ==="
-          curl -s "https://test-environment.telemedcare-v12.pages.dev/api/leads/channel-stats" | \
-            python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-print('breakdown canale_acquisizione nel DB di TEST:')
-for b in d.get('breakdown',[]):
-    print(f\"  '{b['label']}' -> {b['count']}\")
-print(f\"nonTracciato = {d.get('nonTracciato', 0)}\")
-"
+          curl -s https://test-environment.telemedcare-v12.pages.dev/api/leads/channel-stats
 
-          echo ""
-          echo "=== Eseguo normalizzazione ==="
-          RESULT=$(curl -s -X POST \
-            -H "X-Cron-Secret: $CRON_SECRET" \
+      - name: "Normalizza canale_acquisizione (one-shot endpoint)"
+        run: |
+          curl -s -X POST \
+            -H "X-Normalize-Token: a98f69516b066619ffeb3ab4624b2333" \
             -H "Content-Type: application/json" \
-            "https://test-environment.telemedcare-v12.pages.dev/api/admin/normalize-canale")
-          echo "$RESULT" | python3 -m json.tool
-          
-          # Verifica successo
-          echo "$RESULT" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-if not d.get('success'):
-    print('ERRORE:', d)
-    sys.exit(1)
-print('Risultato:', d.get('message'))
-print('Lead aggiornati:', d.get('totalUpdated', 0))
-"
+            https://test-environment.telemedcare-v12.pages.dev/api/normalize-canale-run
 
-          echo ""
-          echo "=== Stato DOPO la normalizzazione ==="
-          curl -s "https://test-environment.telemedcare-v12.pages.dev/api/leads/channel-stats" | \
-            python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-print('breakdown canale_acquisizione nel DB di TEST:')
-for b in d.get('breakdown',[]):
-    print(f\"  '{b['label']}' -> {b['count']}\")
-print(f\"nonTracciato = {d.get('nonTracciato', 0)}\")
-"
+      - name: "Dopo - breakdown canale"
+        run: |
+          curl -s https://test-environment.telemedcare-v12.pages.dev/api/leads/channel-stats
