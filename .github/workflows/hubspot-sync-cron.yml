@@ -1,8 +1,12 @@
 name: HubSpot Auto Import (Form eCura)
 # 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
 # ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
-# 📅 Periodo: Importa lead creati negli ultimi 2 giorni (48h)
-# 🔍 Filtro: ecura.it (hs_analytics_first_url / hs_analytics_last_url)
+# 📅 Periodo: Importa lead creati negli ultimi 3 giorni (72h) come safety net
+# 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura'
+#
+# ℹ️  NOTA: imported=0 è NORMALE — i lead arrivano già via auto-import dashboard (ogni 5min).
+#    Questo cron serve come safety net per i giorni in cui nessuno apre la dashboard.
+#    Il campo "updated" indica lead già esistenti aggiornati con dati canale (META/GOOGLE/ecc).
 
 on:
   schedule:
@@ -10,9 +14,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Giorni da importare (default: 2)'
+        description: 'Giorni da importare (default: 3)'
         required: false
-        default: '2'
+        default: '3'
         type: string
       dryRun:
         description: 'Dry Run (solo simulazione, non salva)'
@@ -36,12 +40,13 @@ jobs:
       
       - name: 🔄 Trigger HubSpot Auto-Import
         run: |
-          DAYS="${{ github.event.inputs.days || '2' }}"
+          DAYS="${{ github.event.inputs.days || '3' }}"
           DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
           
           echo "🔄 Avvio import HubSpot..."
           echo "📅 Periodo: Ultimi $DAYS giorni"
           echo "🌐 Target: https://telemedcare-v12.pages.dev"
+          echo "ℹ️  imported=0 è NORMALE se la dashboard è stata aperta di recente"
           
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
@@ -62,8 +67,15 @@ jobs:
             SKIPPED=$(echo "$BODY" | jq -r '.skipped // 0' 2>/dev/null)
             UPDATED=$(echo "$BODY" | jq -r '.updated // 0' 2>/dev/null)
             ERRORS_COUNT=$(echo "$BODY" | jq -r 'if (.errors | type) == "array" then (.errors | length) else (.errors // 0) end' 2>/dev/null)
+            HUBSPOT_CONTACTS=$(echo "$BODY" | jq -r '.performance.hubspotContacts // 0' 2>/dev/null)
             echo "✅ Import completato!"
-            echo "📥 Importati: $IMPORTED | 🔄 Aggiornati: $UPDATED | ⏭️ Skipped: $SKIPPED | ❌ Errori: $ERRORS_COUNT"
+            echo "📥 Nuovi: $IMPORTED | 🔄 Aggiornati: $UPDATED | ⏭️ Già presenti: $SKIPPED | ❌ Errori: $ERRORS_COUNT"
+            echo "🔗 Contatti HubSpot trovati nel periodo: $HUBSPOT_CONTACTS"
+            if [ "${IMPORTED}" = "0" ] && [ "${UPDATED}" = "0" ] && [ "${HUBSPOT_CONTACTS}" = "0" ]; then
+              echo "⚠️  Nessun contatto HubSpot trovato nel periodo — verificare HUBSPOT_ACCESS_TOKEN su Cloudflare"
+            elif [ "${IMPORTED}" = "0" ]; then
+              echo "ℹ️  Nessun nuovo lead: tutti i $HUBSPOT_CONTACTS contatti HubSpot erano già nel DB (importati via dashboard)"
+            fi
             if [ "${ERRORS_COUNT:-0}" -gt 10 ] 2>/dev/null; then
               echo "🚨 Troppi errori!"
               exit 1
@@ -81,3 +93,8 @@ jobs:
         run: |
           echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           echo "📅 Prossima esecuzione: Domani ore 08:00 Italia"
+          echo ""
+          echo "📌 Come interpretare i risultati:"
+          echo "   imported=0, updated>0  → ✅ Normale: lead già nel DB, canali aggiornati"
+          echo "   imported>0             → ✅ Nuovo lead importato (non era passato dalla dashboard)"
+          echo "   hubspotContacts=0      → ⚠️  Problema HubSpot API o token scaduto"
