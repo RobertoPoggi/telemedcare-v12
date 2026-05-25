@@ -4273,7 +4273,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert('Numero di telefono non disponibile per questo lead.');
                 return;
             }
-            var numero = telefono.replace(/[\s\-().]/g, '');
+            var numero = telefono.split(' ').join('').split('-').join('').split('(').join('').split(')').join('').split('.').join('');
             if (numero.charAt(0) !== '+') { numero = '39' + numero; }
             else { numero = numero.substring(1); }
             var brochureUrl = 'https://telemedcare-v12.pages.dev/assets/brochures/brochure-ecura.pdf';
