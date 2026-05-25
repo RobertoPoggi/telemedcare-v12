@@ -12628,7 +12628,7 @@ app.post('/api/admin/import-interactions-json', async (c) => {
           tipo,
           notaCompleta,
           prossimo_step || null,
-          operatore || 'Ottavia Belfa',
+          operatore || 'Stefania Rocca',
           new Date().toISOString()
         ).run()
         
@@ -12652,9 +12652,15 @@ app.post('/api/admin/import-interactions-json', async (c) => {
         const updateFields: string[] = []
         const updateBinds: any[] = []
         
-        if (operatore && operatore.includes('Ottavia')) {
+        if (operatore && operatore.includes('Operatore Commerciale')) {
           updateFields.push('cm = ?')
-          updateBinds.push('OB')
+          updateBinds.push('OC')
+        } else if (operatore && operatore.includes('Stefania')) {
+          updateFields.push('cm = ?')
+          updateBinds.push('SR')
+        } else if (operatore && operatore.includes('Roberto')) {
+          updateFields.push('cm = ?')
+          updateBinds.push('RP')
         }
         
         if (stato) {

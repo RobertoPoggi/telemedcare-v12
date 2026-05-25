@@ -1991,7 +1991,7 @@ export const dashboard = `<!DOCTYPE html>
                                     <div class="font-medium">\${escapeHtml(lead.nomeRichiedente)} \${escapeHtml(lead.cognomeRichiedente)}</div>
                                     <div class="text-xs text-gray-500">\${escapeHtml(lead.email)}</div>
                                 </td>
-                                <td class="py-3 px-2 text-sm text-gray-600" whitespace-nowrap>\${telefono}</td>
+                                <td class="py-3 px-2 text-sm text-gray-600" whitespace-nowrap><a href="tel:\${telefono}" class="hover:text-blue-600 hover:underline">\${telefono}</a></td>
                                 <td class="py-3 px-2 text-sm font-medium text-purple-600" whitespace-nowrap>\${servizio}</td>
                                 <td class="py-3 px-2 text-sm" whitespace-nowrap>\${piano}</td>
                                 <td class="py-3 px-2 text-sm text-gray-600" whitespace-nowrap>\${dispositivo}</td>
@@ -3452,7 +3452,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="">Tutti i CM</option>
                         <option value="nessuno">Nessuno</option>
                         <option value="SR">SR - Stefania Rocca</option>
-                        <option value="OB">OB - Ottavia Belfa</option>
+                        <option value="OC">OC - Operatore Commerciale</option>
                         <option value="RP">RP - Roberto Poggi</option>
                     </select>
                     <select id="filterStato" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
@@ -3930,7 +3930,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || '') || '-'}
                             </div>
                             <div class="text-xs text-gray-600 mt-1">
-                                <i class="fas fa-phone text-gray-400 mr-1"></i>\${escapeHtml(lead.telefono || '') || '-'}
+                                <i class="fas fa-phone text-gray-400 mr-1"></i><a href="tel:\${escapeHtml(lead.telefono || '')}" class="hover:text-blue-600 hover:underline">\${escapeHtml(lead.telefono || '') || '-'}</a>
                             </div>
                         </td>
                         <td class="py-2 text-xs">
@@ -3958,8 +3958,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 class="cm-select text-xs px-1 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 \${lead.cm ? 'bg-blue-50 font-medium' : 'bg-white'}"
                                 style="min-width: 80px;">
                                 <option value="" \${!lead.cm ? 'selected' : ''}>nessuno</option>
-                                <option value="OB" \${lead.cm === 'OB' ? 'selected' : ''}>OB</option>
                                 <option value="SR" \${lead.cm === 'SR' ? 'selected' : ''}>SR</option>
+                                <option value="OC" \${lead.cm === 'OC' ? 'selected' : ''}>OC</option>
                                 <option value="RP" \${lead.cm === 'RP' ? 'selected' : ''}>RP</option>
                             </select>
                         </td>
@@ -4005,8 +4005,19 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     data-action="brochure"
                                     data-lead-id="\${lead.id}"
                                     class="px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors action-btn"
-                                    title="Invia Brochure">
+                                    title="Invia Brochure via Email">
                                     <i class="fas fa-book"></i>
+                                </button>
+                                <button 
+                                    data-action="whatsapp"
+                                    data-lead-id="\${lead.id}"
+                                    data-telefono="\${lead.telefono || ''}"
+                                    data-nome="\${(lead.nomeRichiedente || '').replace(/"/g, '')}"
+                                    data-servizio="\${(lead.servizio || 'eCura').replace(/"/g, '')}"
+                                    data-piano="\${(lead.piano || '').replace(/"/g, '')}"
+                                    class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors action-btn"
+                                    title="Invia WhatsApp con Brochure">
+                                    <i class="fab fa-whatsapp"></i>
                                 </button>
                                 <button 
                                     data-action="completion"
@@ -4080,6 +4091,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         if (action === 'interactions') openInteractionsModal(leadId);
                         else if (action === 'contract') sendContract(leadId, piano);
                         else if (action === 'brochure') sendBrochure(leadId);
+                        else if (action === 'whatsapp') sendWhatsApp(this);
                         else if (action === 'completion') requestCompletion(leadId);
                         else if (action === 'manual-sign') manualSign(leadId);
                         else if (action === 'send-proforma') sendProforma(leadId);
@@ -4250,6 +4262,24 @@ export const leads_dashboard = `<!DOCTYPE html>
                 console.error('❌ Errore invio contratto:', error);
                 alert('❌ Errore di comunicazione: ' + error.message);
             }
+        }
+
+        function sendWhatsApp(btn) {
+            var telefono = btn.getAttribute('data-telefono') || '';
+            var nome = btn.getAttribute('data-nome') || 'Cliente';
+            var servizio = btn.getAttribute('data-servizio') || 'eCura';
+            var piano = btn.getAttribute('data-piano') || '';
+            if (!telefono) {
+                alert('Numero di telefono non disponibile per questo lead.');
+                return;
+            }
+            var numero = telefono.replace(/[\s\-().]/g, '');
+            if (numero.charAt(0) !== '+') { numero = '39' + numero; }
+            else { numero = numero.substring(1); }
+            var brochureUrl = 'https://telemedcare-v12.pages.dev/assets/brochures/brochure-ecura.pdf';
+            var pianoStr = piano ? ' - ' + piano : '';
+            var testo = 'Gentile ' + nome + ',\n\nGrazie per il suo interesse in ' + servizio + pianoStr + '.\n\nIn allegato la brochure del dispositivo SiDLY Care:\n' + brochureUrl + '\n\nSiamo a sua disposizione per qualsiasi informazione.\n\nCordiali saluti,\nTeam eCura';
+            window.open('https://wa.me/' + numero + '?text=' + encodeURIComponent(testo), '_blank');
         }
 
         async function sendBrochure(leadId) {
@@ -4852,7 +4882,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             
             // Reset form nuova interazione
             document.getElementById('intModalTipo').value = 'telefono';
-            document.getElementById('intModalOperatore').value = 'Ottavia Belfa';
+            document.getElementById('intModalOperatore').value = 'Stefania Rocca';
             document.getElementById('intModalNota').value = '';
             document.getElementById('intModalAzione').value = '';
             
@@ -5808,7 +5838,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Operatore</label>
                                 <select id="editInteractionOperatore" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
                                     <option value="Stefania Rocca">Stefania Rocca (SR)</option>
-                                    <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
+                                    <option value="Operatore Commerciale">Operatore Commerciale (OC)</option>
                                     <option value="Roberto Poggi">Roberto Poggi (RP)</option>
                                 </select>
                             </div>
@@ -5974,8 +6004,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Operatore</label>
                             <select id="intModalOperatore" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="Stefania Rocca">Stefania Rocca (SR)</option>
-                                <option value="Ottavia Belfa">Ottavia Belfa (OB)</option>
+                                <option value="Stefania Rocca" selected>Stefania Rocca (SR)</option>
+                                <option value="Operatore Commerciale">Operatore Commerciale (OC)</option>
                                 <option value="Roberto Poggi">Roberto Poggi (RP)</option>
                             </select>
                         </div>
