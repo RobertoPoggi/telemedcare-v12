@@ -885,8 +885,8 @@ export const dashboard = `<!DOCTYPE html>
                 <i class="fas fa-download mr-2 text-blue-600"></i>Import Lead da Canali
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <button onclick="importFromExcel()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
-                    <i class="fas fa-file-excel mr-2"></i>Excel
+                <button onclick="importFromExcel()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md" title="Import da Google Sheets eCura (backup HubSpot)">
+                    <i class="fab fa-google mr-2"></i>GSheet eCura
                 </button>
                 <button onclick="importFromIrbema()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md">
                     <i class="fas fa-building mr-2"></i>Irbema
@@ -2930,25 +2930,120 @@ export const dashboard = `<!DOCTYPE html>
             document.getElementById('channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
         }
 
-        // Funzioni Import API
-        function importFromExcel() {
-            alert('📋 IMPORT DA EXCEL\\n\\n' +
-                  '📁 Preparazione file Excel richiesta:\\n\\n' +
-                  '1️⃣ Usa il template Excel già popolato\\n' +
-                  '2️⃣ Compila i campi richiesti:\\n' +
-                  '   • Colonna B: DATA DI ARRIVO RICHIESTA\\n' +
-                  '   • Colonna F: CANALE (info@irbema.com, diretto, ecc.)\\n' +
-                  '   • Colonna G: NOME E COGNOME\\n' +
-                  '   • Colonna I: E-MAIL\\n' +
-                  '   • Colonna J: CONTATTO TELEFONICO\\n\\n' +
-                  '3️⃣ Il sistema assegnerà automaticamente:\\n' +
-                  '   • ID progressivi (LEAD-CANALE-00130, 00131...)\\n' +
-                  '   • Status: NEW o CONVERTED\\n' +
-                  '   • Canale: IRBEMA, WEB, NETWORKING, ecc.\\n\\n' +
-                  '✅ I nuovi lead saranno AGGIUNTI senza cancellare gli esistenti.\\n\\n' +
-                  '🚧 Funzionalità in sviluppo - contatta l\\'amministratore.');
+        // ── IMPORT DA GOOGLE SHEETS (backup eCura) ──────────────────────────
+        async function importFromExcel() {
+            // Inietta modal di progresso
+            var modalHtml = '<div id="gsheet-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;">' +
+                '<div style="background:#fff;border-radius:16px;padding:32px 36px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.18);">' +
+                  '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">' +
+                    '<div style="width:40px;height:40px;background:#16a34a;border-radius:10px;display:flex;align-items:center;justify-content:center;">' +
+                      '<i class="fas fa-file-excel" style="color:#fff;font-size:18px;"></i></div>' +
+                    '<div><h3 style="margin:0;font-size:18px;font-weight:700;color:#111827;">Import Google Sheets</h3>' +
+                    '<p style="margin:0;font-size:13px;color:#6b7280;">Backup eCura — leads form</p></div></div>' +
+                  '<div id="gsheet-status" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px;min-height:80px;">' +
+                    '<p style="margin:0;color:#374151;font-size:14px;">🔄 Connessione al foglio Google Sheets...</p></div>' +
+                  '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+                    '<button id="gsheet-dry-btn" onclick="gsheetRunDry()" style="padding:10px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#374151;">🔍 Test (Dry Run)</button>' +
+                    '<button id="gsheet-import-btn" onclick="gsheetRunImport()" style="padding:10px 18px;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">✅ Importa</button>' +
+                    '<button onclick="document.getElementById(\'gsheet-modal\').remove()" style="padding:10px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:#6b7280;">✕ Chiudi</button>' +
+                  '</div></div></div>';
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Verifica connessione al foglio (dry run silenzioso)
+            try {
+                var checkRes = await fetch('/api/import/gsheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dryRun: true })
+                });
+                var checkData = await checkRes.json();
+                var statusEl = document.getElementById('gsheet-status');
+                if (statusEl) {
+                    if (checkData.success) {
+                        statusEl.innerHTML =
+                            '<p style="margin:0 0 8px;color:#16a34a;font-weight:600;font-size:14px;">✅ Foglio accessibile</p>' +
+                            '<p style="margin:0;font-size:13px;color:#374151;">📊 Righe lette: <strong>' + checkData.rowsRead + '</strong></p>' +
+                            '<p style="margin:4px 0 0;font-size:13px;color:#374151;">🆕 Nuovi lead (anteprima): <strong>' + checkData.imported + '</strong> &nbsp;|&nbsp; 🔄 Da aggiornare: <strong>' + checkData.updated + '</strong></p>' +
+                            (checkData.skipped > 0 ? '<p style="margin:4px 0 0;font-size:12px;color:#6b7280;">⏭️ Già presenti / senza email: ' + checkData.skipped + '</p>' : '') +
+                            '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Clicca <strong>Importa</strong> per salvare nel database, oppure <strong>Test</strong> per un dry run dettagliato.</p>';
+                    } else {
+                        statusEl.innerHTML =
+                            '<p style="margin:0 0 6px;color:#dc2626;font-weight:600;font-size:14px;">❌ Errore accesso foglio</p>' +
+                            '<p style="margin:0;font-size:13px;color:#374151;">' + (checkData.error || 'Errore sconosciuto') + '</p>' +
+                            '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Assicurati che il foglio sia condiviso come "Chiunque con il link può visualizzare".</p>';
+                        document.getElementById('gsheet-import-btn').disabled = true;
+                    }
+                }
+            } catch (e) {
+                var statusEl2 = document.getElementById('gsheet-status');
+                if (statusEl2) statusEl2.innerHTML = '<p style="color:#dc2626;font-size:14px;">❌ Errore di rete: ' + e.message + '</p>';
+            }
         }
-        window.importFromExcel = importFromExcel;  // Esponi globalmente
+        window.importFromExcel = importFromExcel;
+
+        async function gsheetRunDry() {
+            var statusEl = document.getElementById('gsheet-status');
+            if (statusEl) statusEl.innerHTML = '<p style="color:#374151;font-size:14px;">🔍 Esecuzione dry run...</p>';
+            document.getElementById('gsheet-dry-btn').disabled = true;
+            try {
+                var res = await fetch('/api/import/gsheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dryRun: true })
+                });
+                var data = await res.json();
+                if (statusEl) {
+                    statusEl.innerHTML =
+                        '<p style="margin:0 0 8px;font-weight:600;font-size:14px;color:#1d4ed8;">🔍 Dry Run completato</p>' +
+                        '<p style="margin:0;font-size:13px;color:#374151;">📊 Righe lette: <strong>' + data.rowsRead + '</strong></p>' +
+                        '<p style="margin:4px 0;font-size:13px;">🆕 Nuovi: <strong>' + data.imported + '</strong> &nbsp;|&nbsp; 🔄 Aggiornamenti: <strong>' + data.updated + '</strong> &nbsp;|&nbsp; ⏭️ Skip: <strong>' + data.skipped + '</strong></p>' +
+                        (data.errors > 0 ? '<p style="margin:4px 0;font-size:13px;color:#dc2626;">❌ Errori: ' + data.errors + ' — ' + (data.errorDetails || []).slice(0, 3).join('; ') + '</p>' : '') +
+                        '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;font-style:italic;">Nessun dato è stato salvato. Clicca <strong>Importa</strong> per procedere.</p>';
+                }
+            } catch (e) {
+                if (statusEl) statusEl.innerHTML = '<p style="color:#dc2626;font-size:14px;">❌ ' + e.message + '</p>';
+            }
+            document.getElementById('gsheet-dry-btn').disabled = false;
+        }
+        window.gsheetRunDry = gsheetRunDry;
+
+        async function gsheetRunImport() {
+            if (!confirm('Importare i lead dal foglio Google Sheets eCura?\\n\\nI lead già presenti nel DB saranno aggiornati solo nei campi vuoti.\\nNessun lead esistente sarà cancellato.')) return;
+            var statusEl = document.getElementById('gsheet-status');
+            if (statusEl) statusEl.innerHTML = '<p style="color:#374151;font-size:14px;">⏳ Import in corso...</p>';
+            document.getElementById('gsheet-import-btn').disabled = true;
+            document.getElementById('gsheet-dry-btn').disabled = true;
+            try {
+                var res = await fetch('/api/import/gsheet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dryRun: false })
+                });
+                var data = await res.json();
+                if (statusEl) {
+                    if (data.success) {
+                        statusEl.innerHTML =
+                            '<p style="margin:0 0 8px;font-weight:700;font-size:15px;color:#16a34a;">✅ Import completato!</p>' +
+                            '<p style="margin:0;font-size:13px;">🆕 Nuovi lead importati: <strong>' + data.imported + '</strong></p>' +
+                            '<p style="margin:4px 0;font-size:13px;">🔄 Lead aggiornati: <strong>' + data.updated + '</strong></p>' +
+                            '<p style="margin:4px 0;font-size:13px;">⏭️ Già presenti / skip: <strong>' + data.skipped + '</strong></p>' +
+                            (data.errors > 0 ? '<p style="margin:4px 0;font-size:13px;color:#dc2626;">❌ Errori: ' + data.errors + '</p>' : '');
+                        // Ricarica dati dashboard
+                        setTimeout(function() {
+                            if (typeof window.loadLeadsData === 'function') window.loadLeadsData();
+                            else if (typeof window.loadAssistitiData === 'function') window.loadAssistitiData();
+                        }, 800);
+                    } else {
+                        statusEl.innerHTML = '<p style="color:#dc2626;font-weight:600;">❌ Import fallito: ' + (data.error || 'Errore sconosciuto') + '</p>';
+                    }
+                }
+            } catch (e) {
+                if (statusEl) statusEl.innerHTML = '<p style="color:#dc2626;font-size:14px;">❌ ' + e.message + '</p>';
+            }
+            document.getElementById('gsheet-import-btn').disabled = false;
+            document.getElementById('gsheet-dry-btn').disabled = false;
+        }
+        window.gsheetRunImport = gsheetRunImport;
 
         async function importFromIrbema() {
             if (!confirm('Vuoi importare i lead da Irbema (HubSpot)?\\n\\nQuesta operazione:\\n- Scaricherà i nuovi lead da HubSpot\\n- Filtrerà solo i lead da ecura.it\\n- Aggiornerà il database\\n\\nProcedi?')) {

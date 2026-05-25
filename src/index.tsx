@@ -17069,6 +17069,40 @@ app.get('/api/hubspot/auto-import/status', async (c) => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────────────
+// POST /api/import/gsheet - Import lead da Google Sheets (backup eCura)
+// ─────────────────────────────────────────────────────────────────────
+app.post('/api/import/gsheet', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+    const { executeGSheetImport } = await import('./modules/gsheet-import')
+
+    const SPREADSHEET_ID = body.spreadsheetId
+      || c.env?.GOOGLE_SPREADSHEET_ID
+      || '1AZs2t0PpFxZYpxT6byX6uVpAE8VqZFPRuag-CAenKgo'
+
+    const result = await executeGSheetImport(c.env.DB, c.env, {
+      spreadsheetId: SPREADSHEET_ID,
+      sheetGid: body.gid || '0',
+      dryRun: body.dryRun === true,
+      apiKey: c.env?.GOOGLE_SHEETS_API_KEY
+    })
+
+    return c.json(result)
+  } catch (error) {
+    console.error('❌ GSheet import error:', error)
+    return c.json({
+      success: false,
+      error: (error as Error).message,
+      imported: 0, updated: 0, skipped: 0, errors: 1
+    }, 500)
+  }
+})
+
 // GET /api/hubspot/verify-leads - Verifica lead specifici su HubSpot
 app.get('/api/hubspot/verify-leads', async (c) => {
   try {
