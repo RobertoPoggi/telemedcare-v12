@@ -17616,7 +17616,7 @@ startxref
         <\/script>
     </body>
     </html>
-  `));I.get("/api/analytics/conversion-time",async t=>{var o,e;try{if(!((o=t.env)!=null&&o.DB))return t.json({error:"DB non disponibile"},500);const a=await t.env.DB.prepare(`
+  `));I.get("/api/analytics/conversion-time",async t=>{var o,e;try{if(!((o=t.env)!=null&&o.DB))return t.json({error:"DB non disponibile"},500);let a=[];try{a=(await t.env.DB.prepare("PRAGMA table_info(signatures)").all()).results.map(n=>n.name)}catch{}const i=a.includes("signed_at")?"s.signed_at":a.includes("firma_timestamp")?"s.firma_timestamp":"s.created_at",s=await t.env.DB.prepare(`
       SELECT
         l.id                          AS lead_id,
         l.nomeRichiedente             AS nome,
@@ -17630,13 +17630,13 @@ startxref
         c.status                      AS contract_status,
         c.created_at                  AS contract_created_at,
         c.data_invio                  AS contract_sent_at,
-        s.signed_at,
+        ${i}                  AS firma_at,
         s.created_at                  AS signature_created_at
       FROM leads l
       LEFT JOIN contracts c ON c.leadId = l.id
       LEFT JOIN signatures s ON s.contract_id = c.id
       ORDER BY l.created_at ASC
-    `).all();return t.json({success:!0,rows:a.results,count:(e=a.results)==null?void 0:e.length})}catch(a){return t.json({success:!1,error:a.message},500)}});I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
+    `).all();return t.json({success:!0,rows:s.results,count:(e=s.results)==null?void 0:e.length,sigCols:a})}catch(a){return t.json({success:!1,error:a.message},500)}});I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
         SELECT 
           (SELECT COUNT(*) FROM leads) as total_leads,
           (SELECT COUNT(*) FROM assistiti) as total_assistiti,
