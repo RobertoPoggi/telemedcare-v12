@@ -23142,41 +23142,6 @@ app.get('/admin/docs', (c) => {
 
 // API endpoint di status (legacy compatibility)
 
-// GET /api/analytics/assistiti-timing — Analisi tempi lead→contratto per assistiti
-// ⚠️ TEMP — rimuovere dopo uso
-app.get('/api/analytics/assistiti-timing', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
-    // Schema reale assistiti
-    const cols = await c.env.DB.prepare(`PRAGMA table_info(assistiti)`).all()
-    const colNames = (cols.results as any[]).map((r: any) => r.name)
-    // Tabella assistiti con join contratti e lead
-    const assistiti = await c.env.DB.prepare(`
-      SELECT
-        a.id, a.codice, a.nome,
-        a.nome_assistito, a.cognome_assistito,
-        a.nome_caregiver, a.cognome_caregiver,
-        a.email, a.telefono, a.servizio, a.piano,
-        a.status AS assistito_status,
-        a.created_at AS assistito_created_at,
-        a.lead_id,
-        l.created_at  AS lead_created_at,
-        l.fonte, l.canale_acquisizione, l.status AS lead_status,
-        c.codice_contratto, c.status AS contract_status,
-        c.created_at  AS contract_created_at,
-        c.data_invio  AS contract_sent_at,
-        s.created_at  AS signature_created_at
-      FROM assistiti a
-      LEFT JOIN leads l ON l.id = a.lead_id
-      LEFT JOIN contracts c ON c.leadId = a.lead_id
-      LEFT JOIN signatures s ON s.contract_id = c.id
-      ORDER BY a.created_at ASC
-    `).all()
-    return c.json({ success: true, assistiti: assistiti.results, colNames })
-  } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
 
 app.get('/api/status', (c) => {
   return c.json({
