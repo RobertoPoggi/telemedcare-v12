@@ -23141,50 +23141,6 @@ app.get('/admin/docs', (c) => {
 })
 
 // API endpoint di status (legacy compatibility)
-// GET /api/analytics/conversion-time — Tempi lead→contratto per analisi interna
-// ⚠️ Endpoint temporaneo — restituisce dati completi per analisi, rimuovere dopo uso
-app.get('/api/analytics/conversion-time', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
-
-    // Prima leggi schema reale signatures
-    let sigCols: string[] = []
-    try {
-      const pragma = await c.env.DB.prepare(`PRAGMA table_info(signatures)`).all()
-      sigCols = (pragma.results as any[]).map((r: any) => r.name)
-    } catch (_) {}
-
-    // Determina colonna firma (signed_at o created_at della firma)
-    const signedCol = sigCols.includes('signed_at') ? 's.signed_at' :
-                      sigCols.includes('firma_timestamp') ? 's.firma_timestamp' :
-                      's.created_at'
-
-    const rows = await c.env.DB.prepare(`
-      SELECT
-        l.id                          AS lead_id,
-        l.nomeRichiedente             AS nome,
-        l.cognomeRichiedente          AS cognome,
-        l.email,
-        l.created_at                  AS lead_created_at,
-        l.status                      AS lead_status,
-        l.fonte,
-        l.canale_acquisizione         AS canale,
-        c.codice_contratto,
-        c.status                      AS contract_status,
-        c.created_at                  AS contract_created_at,
-        c.data_invio                  AS contract_sent_at,
-        ${signedCol}                  AS firma_at,
-        s.created_at                  AS signature_created_at
-      FROM leads l
-      LEFT JOIN contracts c ON c.leadId = l.id
-      LEFT JOIN signatures s ON s.contract_id = c.id
-      ORDER BY l.created_at ASC
-    `).all()
-    return c.json({ success: true, rows: rows.results, count: rows.results?.length, sigCols })
-  } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
 
 app.get('/api/status', (c) => {
   return c.json({
