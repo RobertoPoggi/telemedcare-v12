@@ -17616,7 +17616,23 @@ startxref
         <\/script>
     </body>
     </html>
-  `));I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
+  `));I.get("/api/analytics/assistiti-timing",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({error:"DB non disponibile"},500);const e=await t.env.DB.prepare(`
+      SELECT
+        a.id, a.nome, a.cognome, a.email, a.telefono,
+        a.servizio, a.piano, a.stato, a.created_at AS assistito_created_at,
+        a.leadId,
+        l.created_at  AS lead_created_at,
+        l.fonte, l.canale_acquisizione, l.status AS lead_status,
+        c.codice_contratto, c.status AS contract_status,
+        c.created_at  AS contract_created_at,
+        c.data_invio  AS contract_sent_at,
+        s.created_at  AS signature_created_at
+      FROM assistiti a
+      LEFT JOIN leads l ON l.id = a.leadId
+      LEFT JOIN contracts c ON c.leadId = a.leadId
+      LEFT JOIN signatures s ON s.contract_id = c.id
+      ORDER BY a.created_at ASC
+    `).all(),a=await t.env.DB.prepare("PRAGMA table_info(assistiti)").all();return t.json({success:!0,assistiti:e.results,cols:a.results})}catch(e){return t.json({success:!1,error:e.message},500)}});I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
         SELECT 
           (SELECT COUNT(*) FROM leads) as total_leads,
           (SELECT COUNT(*) FROM assistiti) as total_assistiti,
