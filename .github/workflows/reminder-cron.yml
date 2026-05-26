@@ -4,7 +4,7 @@ name: Send Reminder Emails (Cron Giornaliero)
 
 on:
   schedule:
-    - cron: '0 7 * * 1-5'   # Lun-Ven alle 08:00 IT (07:00 UTC)
+    - cron: '0 7 * * *'   # Tutti i giorni alle 08:00 IT (07:00 UTC)
   workflow_dispatch:
     inputs:
       environment:
