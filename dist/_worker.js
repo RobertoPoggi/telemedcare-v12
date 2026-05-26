@@ -17616,11 +17616,15 @@ startxref
         <\/script>
     </body>
     </html>
-  `));I.get("/api/analytics/assistiti-timing",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({error:"DB non disponibile"},500);const e=await t.env.DB.prepare(`
+  `));I.get("/api/analytics/assistiti-timing",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({error:"DB non disponibile"},500);const a=(await t.env.DB.prepare("PRAGMA table_info(assistiti)").all()).results.map(s=>s.name),i=await t.env.DB.prepare(`
       SELECT
-        a.id, a.nome, a.cognome, a.email, a.telefono,
-        a.servizio, a.piano, a.stato, a.created_at AS assistito_created_at,
-        a.leadId,
+        a.id, a.codice, a.nome,
+        a.nome_assistito, a.cognome_assistito,
+        a.nome_caregiver, a.cognome_caregiver,
+        a.email, a.telefono, a.servizio, a.piano,
+        a.status AS assistito_status,
+        a.created_at AS assistito_created_at,
+        a.lead_id,
         l.created_at  AS lead_created_at,
         l.fonte, l.canale_acquisizione, l.status AS lead_status,
         c.codice_contratto, c.status AS contract_status,
@@ -17628,11 +17632,11 @@ startxref
         c.data_invio  AS contract_sent_at,
         s.created_at  AS signature_created_at
       FROM assistiti a
-      LEFT JOIN leads l ON l.id = a.leadId
-      LEFT JOIN contracts c ON c.leadId = a.leadId
+      LEFT JOIN leads l ON l.id = a.lead_id
+      LEFT JOIN contracts c ON c.leadId = a.lead_id
       LEFT JOIN signatures s ON s.contract_id = c.id
       ORDER BY a.created_at ASC
-    `).all(),a=await t.env.DB.prepare("PRAGMA table_info(assistiti)").all();return t.json({success:!0,assistiti:e.results,cols:a.results})}catch(e){return t.json({success:!1,error:e.message},500)}});I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
+    `).all();return t.json({success:!0,assistiti:i.results,colNames:a})}catch(e){return t.json({success:!1,error:e.message},500)}});I.get("/api/status",t=>t.json({system:"TeleMedCare V12.0 Modular Enterprise",status:"active",timestamp:new Date().toISOString(),version:"V12.0-Modular-Enterprise",enterprise:!0,modules:["lead-config","lead-core","lead-channels","lead-conversion","lead-scoring","lead-reports","dispositivi","pdf","utils","logging"],compatibility:"V12.0-Cloudflare"}));I.get("/api/system/status",async t=>{try{const{env:o}=t;let e="OFFLINE",a=null;try{await o.DB.prepare("SELECT 1").first(),e="ONLINE"}catch(s){a=s instanceof Error?s.message:"Database connection failed"}let i=null;try{i=await o.DB.prepare(`
         SELECT 
           (SELECT COUNT(*) FROM leads) as total_leads,
           (SELECT COUNT(*) FROM assistiti) as total_assistiti,
