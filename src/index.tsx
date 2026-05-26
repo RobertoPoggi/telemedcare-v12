@@ -17760,9 +17760,15 @@ app.post('/api/cron/send-reminders', async (c) => {
     const authHeader = c.req.header('Authorization')
     const cronSecret = env.CRON_SECRET
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      console.log('⚠️ [CRON] Tentativo non autorizzato')
-      return c.json({ success: false, error: 'Non autorizzato' }, 401)
+    if (!cronSecret) {
+      // CRON_SECRET non configurato su Cloudflare → log warning ma procedi
+      // (non bloccare il cron solo perché il secret non è impostato)
+      console.warn('⚠️ [CRON] CRON_SECRET non configurato su Cloudflare — endpoint non protetto!')
+    } else if (authHeader !== `Bearer ${cronSecret}`) {
+      // CRON_SECRET configurato MA token errato → rifiuta (401)
+      console.log(`⚠️ [CRON] Tentativo non autorizzato — header ricevuto: "${authHeader?.substring(0, 20)}..."`)
+      console.log('⚠️ [CRON] Verifica che CRON_SECRET su GitHub Secrets == CRON_SECRET su Cloudflare env vars')
+      return c.json({ success: false, error: 'Non autorizzato — CRON_SECRET non corrisponde. Verifica Settings → Secrets su GitHub e Cloudflare.' }, 401)
     }
     
     // Previeni esecuzioni multiple entro 1 ora

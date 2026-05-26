@@ -1,0 +1,117 @@
+name: Send Reminder Emails (Cron Giornaliero)
+# 🔔 REMINDER AUTOMATICI GIORNALIERI
+# ⏰ Esecuzione: Ogni giorno alle 08:00 Italia (07:00 UTC)
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'   # Lun-Ven alle 08:00 IT (07:00 UTC)
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente target'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+permissions:
+  contents: read
+
+jobs:
+  send-reminders:
+    name: Invia Reminder Automatici
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📋 Info esecuzione
+        run: |
+          echo "🔔 Avvio reminder cron"
+          echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌐 Ambiente: ${{ github.event.inputs.environment || 'production' }}"
+          # Diagnostica: CRON_SECRET configurato su GitHub?
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "⚠️  ATTENZIONE: CRON_SECRET non configurato in GitHub Secrets!"
+            echo "   → Vai su Settings → Secrets and variables → Actions → New repository secret"
+            echo "   → Aggiungi CRON_SECRET con lo stesso valore di Cloudflare Pages env vars"
+          else
+            echo "✅ CRON_SECRET configurato"
+          fi
+
+      - name: 🔔 Trigger Reminder (Production)
+        if: ${{ github.event.inputs.environment == 'production' || github.event.inputs.environment == '' || github.event_name == 'schedule' }}
+        run: |
+          BASE_URL="https://telemedcare-v12.pages.dev"
+          
+          echo "📡 Chiamata a $BASE_URL/api/cron/send-reminders ..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            --max-time 60 \
+            --connect-timeout 10 \
+            -X POST \
+            "$BASE_URL/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            2>&1)
+          
+          CURL_EXIT=$?
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+          
+          # Diagnostica per ogni codice HTTP
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Reminder completati con successo"
+
+          elif [ "$HTTP_CODE" = "204" ]; then
+            echo "⏭️  Skip: cron disabilitato dalla dashboard (cron_enabled=false)"
+            echo "   → Per abilitare: Dashboard → Impostazioni → Attiva reminder automatici"
+
+          elif [ "$HTTP_CODE" = "429" ]; then
+            echo "⏭️  Skip: esecuzione recente già completata (rate limit 1 ora)"
+
+          elif [ "$HTTP_CODE" = "401" ]; then
+            echo "❌ ERRORE 401 — Non autorizzato"
+            echo "   → CAUSA: CRON_SECRET su GitHub non corrisponde a quello su Cloudflare"
+            echo "   → VERIFICA 1: GitHub → Settings → Secrets → Actions → CRON_SECRET"
+            echo "   → VERIFICA 2: Cloudflare → Pages → telemedcare-v12 → Settings → Env vars → CRON_SECRET"
+            echo "   → I due valori devono essere IDENTICI"
+            exit 1
+
+          elif [ "$HTTP_CODE" = "500" ]; then
+            echo "❌ ERRORE 500 — Errore interno server"
+            echo "   → Possibile causa: tabella system_config o lead_completion_tokens mancante nel DB prod"
+            echo "   → Possibile causa: eccezione in processReminders()"
+            echo "   → Controlla i log su Cloudflare → Pages → telemedcare-v12 → Functions → Logs"
+            exit 1
+
+          elif [ -z "$HTTP_CODE" ] || [ "$CURL_EXIT" != "0" ]; then
+            echo "❌ ERRORE: Timeout o errore di rete (curl exit code: $CURL_EXIT)"
+            echo "   → Il worker Cloudflare potrebbe aver impiegato >60s (timeout)"
+            echo "   → Controlla se ci sono troppi lead_completion_tokens da processare"
+            exit 1
+
+          else
+            echo "❌ Errore HTTP inatteso: $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: 🔔 Trigger Reminder (Preview)
+        if: ${{ github.event.inputs.environment == 'preview' }}
+        run: |
+          echo "📡 Chiamata a preview.telemedcare-v12.pages.dev ..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            --max-time 60 \
+            -X POST "https://preview.telemedcare-v12.pages.dev/api/cron/send-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+
+      - name: 📊 Riepilogo
+        if: always()
+        run: echo "⏰ Completato: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
