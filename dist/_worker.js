@@ -5146,7 +5146,7 @@ ${370+e.length}
                   '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
                     '<button id="gsheet-dry-btn" onclick="gsheetRunDry()" style="padding:10px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#374151;">🔍 Test (Dry Run)</button>' +
                     '<button id="gsheet-import-btn" onclick="gsheetRunImport()" style="padding:10px 18px;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">✅ Importa</button>' +
-                    '<button onclick="document.getElementById('gsheet-modal').remove()" style="padding:10px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:#6b7280;">✕ Chiudi</button>' +
+                    '<button onclick="document.getElementById(&quot;gsheet-modal&quot;).remove()" style="padding:10px 18px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:#6b7280;">✕ Chiudi</button>' +
                   '</div></div></div>';
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
