@@ -1039,6 +1039,11 @@ app.use('/api/*', async (c, next) => {
   if (path === '/api/oneshot-mazzarella-7x9k2p' && method === 'POST') {
     return next()
   }
+
+  // TEMP DEBUG: fonti assistiti (da rimuovere)
+  if (path === '/api/assistiti/fonti-debug' && method === 'GET') {
+    return next()
+  }
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
