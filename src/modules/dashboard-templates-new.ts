@@ -1136,41 +1136,6 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- eCura Form: Statistiche Canale (Meta / Google / Altro) -->
-        <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-bullhorn text-blue-500 mr-2"></i>
-                    Form eCura — Canali di Provenienza
-                </h3>
-                <div class="flex items-center gap-3">
-                    <button id="btnSyncChannels" onclick="syncEcuraChannels()" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1">
-                        <i class="fas fa-sync-alt"></i> Sincronizza canali
-                    </button>
-                    <span class="text-xs text-gray-400" id="ecuraChannelUpdated">Caricamento...</span>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="ecuraChannelGrid">
-                <!-- Popolato da loadEcuraChannelStats() -->
-                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
-                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
-                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
-                </div>
-                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
-                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
-                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
-                </div>
-                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
-                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
-                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
-                </div>
-                <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-4 animate-pulse">
-                    <div class="h-8 w-16 bg-gray-200 rounded mb-2"></div>
-                    <div class="h-3 w-20 bg-gray-200 rounded"></div>
-                </div>
-            </div>
-        </div>
-
         <!-- Ultimi Lead Ricevuti -->
         <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 lg:p-8">
             <div class="flex items-center justify-between mb-6">
@@ -2013,9 +1978,7 @@ export const dashboard = `<!DOCTYPE html>
                 updatePlansChart(allLeads);
                 //                 updateChannelsDistribution(assistiti);  // Analizza solo assistiti attivi
 
-                // Carica statistiche canale Form eCura (Meta / Google / Altro)
-                loadEcuraChannelStats();
-                // Popola widget barre "Distribuzione per Fonte" (usa API channel-stats per canali eCura)
+                // Popola widget barre "Distribuzione per Fonte" (fonte/canale reali degli assistiti)
                 updateFontesDistribution(assistiti);
                 
                 // Renderizza assistiti da API dedicata
@@ -2307,61 +2270,51 @@ export const dashboard = `<!DOCTYPE html>
         }
 
         // Renderizza "Distribuzione per Fonte" basata SOLO sugli assistiti attivi.
-        // Il totale corrisponde al numero di assistiti (non a tutti i lead).
+        // Usa i campi reali fonte/canale_acquisizione dal DB (via API assistiti con JOIN leads).
+        // Totale = numero assistiti (non tutti i lead).
         function renderFontesDistributionFromAssistiti(assistiti) {
             const fonteColors = {
-                'Irbema':     'bg-blue-500',
-                'Networking': 'bg-purple-500',
-                'AON':        'bg-orange-500',
-                'DoubleYou':  'bg-pink-500',
-                'Web':        'bg-cyan-500',
-                'Diretto':    'bg-green-500',
-                'Altro':      'bg-gray-400'
+                'Privati Irbema':       'bg-blue-500',
+                'Networking':           'bg-purple-500',
+                'eCura — Google':       'bg-red-500',
+                'eCura — Meta (FB/IG)': 'bg-indigo-500',
+                'eCura — Diretto':      'bg-green-500',
+                'eCura — Altro':        'bg-yellow-500',
+                'Altro':                'bg-gray-400'
             };
 
-            const fonteCounts = {};
+            var fonteCounts = {};
             (assistiti || []).forEach(function(assistito) {
-                var leadId      = (assistito.lead_id || assistito.id || '').toString().toUpperCase();
-                var nomeCompl   = [
-                    assistito.nome_caregiver  || assistito.nomeRichiedente  || '',
-                    assistito.cognome_caregiver || assistito.cognomeRichiedente || ''
-                ].join(' ').trim().toLowerCase();
-                var canaleField = (assistito.canale || assistito.fonte || assistito.origine || '').toLowerCase();
+                var fonte           = (assistito.fonte || '').trim();
+                var canale          = (assistito.canale_acquisizione || '').trim().toUpperCase();
+                var leadId          = (assistito.lead_id || assistito.id || '').toString().toUpperCase();
+                var etichetta       = 'Altro';
 
-                var fonte = 'Altro';
-
-                if (nomeCompl.includes('laura') && nomeCompl.includes('calvi')) {
-                    fonte = 'Networking';
-                } else if (
-                    nomeCompl.includes('elena')      || nomeCompl.includes('saglia')    ||
-                    nomeCompl.includes('paolo')      || nomeCompl.includes('magri')     ||
-                    nomeCompl.includes('caterina')   || nomeCompl.includes('alterio')   ||
-                    nomeCompl.includes('simona')     || nomeCompl.includes('pizzutto')  ||
-                    nomeCompl.includes('elisabetta') || nomeCompl.includes('cattini')   ||
-                    nomeCompl.includes('giuliana')   || nomeCompl.includes('balzarotti')||
-                    nomeCompl.includes('rita')       || nomeCompl.includes('pennacchio')||
-                    nomeCompl.includes('maria')      || nomeCompl.includes('capone')    ||
-                    nomeCompl.includes('giuseppina') || nomeCompl.includes('cozzi')     ||
-                    nomeCompl.includes('eileen')     || nomeCompl.includes('king')      ||
-                    leadId.includes('IRBEMA')        || canaleField.includes('irbema')
-                ) {
-                    fonte = 'Irbema';
-                } else if (canaleField.includes('aon')) {
-                    fonte = 'AON';
-                } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
-                    fonte = 'DoubleYou';
-                } else if (canaleField.includes('network')) {
-                    fonte = 'Networking';
-                } else if (canaleField.includes('web') || canaleField.includes('ecura') || canaleField.includes('form')) {
-                    fonte = 'Web';
-                } else if (canaleField.includes('diretto')) {
-                    fonte = 'Diretto';
+                // Priorità 1: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — lead da Form eCura
+                if (canale === 'GOOGLE') {
+                    etichetta = 'eCura — Google';
+                } else if (canale === 'META') {
+                    etichetta = 'eCura — Meta (FB/IG)';
+                } else if (canale === 'DIRETTO') {
+                    etichetta = 'eCura — Diretto';
+                } else if (canale === 'ALTRO') {
+                    etichetta = 'eCura — Altro';
+                }
+                // Priorità 2: campo fonte dal lead
+                else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || leadId.includes('IRBEMA')) {
+                    etichetta = 'Privati Irbema';
+                } else if (fonte === 'NETWORKING' || fonte === 'Networking' || fonte.toLowerCase().includes('network')) {
+                    etichetta = 'Networking';
+                } else if (fonte.includes('eCura') || fonte.includes('Form')) {
+                    etichetta = 'eCura — Altro';
+                } else if (fonte !== '') {
+                    etichetta = fonte; // Mostra la fonte così come è nel DB
                 }
 
-                fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
+                fonteCounts[etichetta] = (fonteCounts[etichetta] || 0) + 1;
             });
 
-            console.log('📊 Distribuzione Fonti (assistiti):', fonteCounts);
+            console.log('📊 Distribuzione Fonti (assistiti, campi DB):', fonteCounts);
 
             var total = (assistiti || []).length || 1;
             var sortedFontes = Object.entries(fonteCounts).sort(function(a, b) { return b[1] - a[1]; });

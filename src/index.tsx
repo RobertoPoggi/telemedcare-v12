@@ -19910,9 +19910,12 @@ app.get('/api/assistiti', async (c) => {
         c.codice_contratto,
         c.tipo_contratto as piano_contratto,
         c.servizio as servizio_contratto,
-        c.status as contratto_status
+        c.status as contratto_status,
+        l.fonte as fonte,
+        l.canale_acquisizione as canale_acquisizione
       FROM assistiti a
       LEFT JOIN contracts c ON a.lead_id = c.leadId
+      LEFT JOIN leads l ON a.lead_id = l.id
       ${whereClause}
       ORDER BY a.created_at DESC
     `).bind(...bindings).all()
