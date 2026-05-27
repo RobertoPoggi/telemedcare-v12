@@ -2300,11 +2300,19 @@ export const dashboard = `<!DOCTYPE html>
                 } else if (canale === 'ALTRO') {
                     etichetta = 'eCura — Altro';
                 }
-                // Priorità 2: campo fonte dal lead
-                else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || leadId.includes('IRBEMA')) {
+                // Priorità 2: campo fonte dal lead (o fonte_override da assistiti)
+                else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || fonte === 'Privati Irbema' || leadId.includes('IRBEMA')) {
                     etichetta = 'Privati Irbema';
                 } else if (fonte === 'NETWORKING' || fonte === 'Networking' || fonte.toLowerCase().includes('network')) {
                     etichetta = 'Networking';
+                } else if (fonte === 'Sito www.eCura.it') {
+                    etichetta = 'eCura — Diretto';
+                } else if (fonte === 'eCura — Google') {
+                    etichetta = 'eCura — Google';
+                } else if (fonte === 'eCura — Diretto') {
+                    etichetta = 'eCura — Diretto';
+                } else if (fonte === 'eCura — Meta (FB/IG)') {
+                    etichetta = 'eCura — Meta (FB/IG)';
                 } else if (fonte.includes('eCura') || fonte.includes('Form')) {
                     etichetta = 'eCura — Altro';
                 } else if (fonte !== '') {

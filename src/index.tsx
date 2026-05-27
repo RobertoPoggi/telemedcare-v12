@@ -662,7 +662,37 @@ app.use('*', async (c, next) => {
       } catch (e: any) {
         console.warn('⚠️ Errore aggiornamento Eileen:', e.message)
       }
-      
+
+      // Migrazione: Aggiungi colonna fonte_override ad assistiti (per assistiti senza lead_id)
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN fonte_override TEXT`).run()
+        console.log('✅ Colonna fonte_override aggiunta a assistiti')
+      } catch (e: any) {
+        // Colonna già esistente — normale
+      }
+
+      // Fix Porcella (id:14): eCura — Google (nessun lead associato, fonte da impostare manualmente)
+      try {
+        await c.env.DB.prepare(`
+          UPDATE assistiti
+          SET fonte_override = 'eCura — Google'
+          WHERE cognome_assistito LIKE '%Porcella%' AND fonte_override IS NULL
+        `).run()
+      } catch (e: any) {
+        console.warn('⚠️ Errore fix Porcella fonte_override:', e.message)
+      }
+
+      // Fix Mazzarella (id:15): Privati Irbema (nessun lead associato, fonte da impostare manualmente)
+      try {
+        await c.env.DB.prepare(`
+          UPDATE assistiti
+          SET fonte_override = 'Privati Irbema'
+          WHERE cognome_assistito LIKE '%Mazzarella%' AND fonte_override IS NULL
+        `).run()
+      } catch (e: any) {
+        console.warn('⚠️ Errore fix Mazzarella fonte_override:', e.message)
+      }
+
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
         await c.env.DB.prepare(`
@@ -1040,10 +1070,6 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
-  // TEMP DEBUG: fonti assistiti (da rimuovere)
-  if (path === '/api/assistiti/fonti-debug' && method === 'GET') {
-    return next()
-  }
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
@@ -19874,19 +19900,6 @@ app.post('/api/init-force', async (c) => {
   }
 })
 
-// GET /api/assistiti/fonti-debug - TEMP: mostra fonte+canale_acquisizione grezzi per ogni assistito
-app.get('/api/assistiti/fonti-debug', async (c) => {
-  const rows = await c.env.DB.prepare(`
-    SELECT a.id, a.nome_assistito, a.cognome_assistito, a.lead_id,
-           l.fonte, l.canale_acquisizione
-    FROM assistiti a
-    LEFT JOIN leads l ON a.lead_id = l.id
-    WHERE a.status = 'ATTIVO'
-    ORDER BY a.id
-  `).all()
-  return c.json({ rows: rows.results })
-})
-
 // GET /api/assistiti - Lista assistiti con IMEI (supporta filtro ?id=X)
 app.get('/api/assistiti', async (c) => {
   try {
@@ -19929,7 +19942,7 @@ app.get('/api/assistiti', async (c) => {
         c.tipo_contratto as piano_contratto,
         c.servizio as servizio_contratto,
         c.status as contratto_status,
-        l.fonte as fonte,
+        COALESCE(a.fonte_override, l.fonte) as fonte,
         l.canale_acquisizione as canale_acquisizione
       FROM assistiti a
       LEFT JOIN contracts c ON a.lead_id = c.leadId
