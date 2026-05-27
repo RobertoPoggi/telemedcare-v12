@@ -16687,7 +16687,14 @@ startxref
             prezzo_totale, imei_dispositivo, created_at,
             template_utilizzato, contenuto_html, prezzo_mensile, durata_mesi
           ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, ?, 'BASE', '', ?, 12)
-        `).bind(m,c,d,r.piano,g,r.imei,n,r.piano==="AVANZATO"?69:39).run(),i++,console.log(`✅ Contratto creato: ${d} per ${r.nome} ${r.cognome}`)}}return t.json({success:!0,message:"FORCE INIT completato con UPDATE contratti",stats:{leadsCreated:a,contractsCreated:i,contractsUpdated:s,assistitiTotali:e.length}})}catch(e){return console.error("❌ FORCE ERROR:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.get("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.query("id");let i=(t.req.query("status")||"ATTIVO").toUpperCase()==="ALL"?"WHERE 1=1":"WHERE a.status = 'ATTIVO'";const s=[];e&&(i+=" AND a.id = ?",s.push(parseInt(e)));const r=await t.env.DB.prepare(`
+        `).bind(m,c,d,r.piano,g,r.imei,n,r.piano==="AVANZATO"?69:39).run(),i++,console.log(`✅ Contratto creato: ${d} per ${r.nome} ${r.cognome}`)}}return t.json({success:!0,message:"FORCE INIT completato con UPDATE contratti",stats:{leadsCreated:a,contractsCreated:i,contractsUpdated:s,assistitiTotali:e.length}})}catch(e){return console.error("❌ FORCE ERROR:",e),t.json({success:!1,error:e instanceof Error?e.message:String(e)},500)}});I.get("/api/assistiti/fonti-debug",async t=>{const o=await t.env.DB.prepare(`
+    SELECT a.id, a.nome_assistito, a.cognome_assistito, a.lead_id,
+           l.fonte, l.canale_acquisizione
+    FROM assistiti a
+    LEFT JOIN leads l ON a.lead_id = l.id
+    WHERE a.status = 'ATTIVO'
+    ORDER BY a.id
+  `).all();return t.json({rows:o.results})});I.get("/api/assistiti",async t=>{var o;try{if(!((o=t.env)!=null&&o.DB))return t.json({success:!1,error:"Database non configurato"},500);const e=t.req.query("id");let i=(t.req.query("status")||"ATTIVO").toUpperCase()==="ALL"?"WHERE 1=1":"WHERE a.status = 'ATTIVO'";const s=[];e&&(i+=" AND a.id = ?",s.push(parseInt(e)));const r=await t.env.DB.prepare(`
       SELECT 
         a.id,
         a.codice,

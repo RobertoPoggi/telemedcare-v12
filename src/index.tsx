@@ -19869,6 +19869,19 @@ app.post('/api/init-force', async (c) => {
   }
 })
 
+// GET /api/assistiti/fonti-debug - TEMP: mostra fonte+canale_acquisizione grezzi per ogni assistito
+app.get('/api/assistiti/fonti-debug', async (c) => {
+  const rows = await c.env.DB.prepare(`
+    SELECT a.id, a.nome_assistito, a.cognome_assistito, a.lead_id,
+           l.fonte, l.canale_acquisizione
+    FROM assistiti a
+    LEFT JOIN leads l ON a.lead_id = l.id
+    WHERE a.status = 'ATTIVO'
+    ORDER BY a.id
+  `).all()
+  return c.json({ rows: rows.results })
+})
+
 // GET /api/assistiti - Lista assistiti con IMEI (supporta filtro ?id=X)
 app.get('/api/assistiti', async (c) => {
   try {
