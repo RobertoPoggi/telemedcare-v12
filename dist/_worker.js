@@ -4214,7 +4214,7 @@ ${370+e.length}
                 // Carica statistiche canale Form eCura (Meta / Google / Altro)
                 loadEcuraChannelStats();
                 // Popola widget barre "Distribuzione per Fonte" (usa API channel-stats per canali eCura)
-                updateFontesDistribution(allLeads);
+                updateFontesDistribution(assistiti);
                 
                 // Renderizza assistiti da API dedicata
                 allAssistiti = assistiti;  // Salva per filtri
@@ -4314,35 +4314,33 @@ ${370+e.length}
         }
 
         function updateServicesChart(assistiti) {
-            // FIX: Usa assistiti attivi, non lead
+            // Conta i servizi reali dal campo assistito.servizio
+            const serviceCounts = {};
+            assistiti.forEach(function(assistito) {
+                var svc = assistito.servizio || 'eCura PRO';
+                serviceCounts[svc] = (serviceCounts[svc] || 0) + 1;
+            });
+
             const total = assistiti.length || 1;
-            
-            // Conta servizi basandosi sui piani degli assistiti
-            // eCura PRO BASE e AVANZATO (tutti gli assistiti attuali)
-            const serviceCounts = {
-                'eCura PRO': total  // Tutti gli assistiti attivi sono eCura PRO
-            };
-
             const colors = {
-                'eCura PRO': 'bg-purple-500',
-                'eCura FAMILY': 'bg-blue-500',
-                'eCura PREMIUM': 'bg-green-500'
+                'eCura PRO':     'bg-purple-500',
+                'eCura PREMIUM': 'bg-green-500',
+                'eCura FAMILY':  'bg-blue-500'
             };
 
-            const html = Object.entries(serviceCounts).map(([service, count]) => {
-                const percentage = 100; // Sempre 100% per eCura PRO
+            const sorted = Object.entries(serviceCounts).sort(function(a, b) { return b[1] - a[1]; });
+            const html = sorted.map(function([service, count]) {
+                const percentage = Math.round((count / total) * 100);
                 const color = colors[service] || 'bg-gray-500';
-                return \`
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-sm font-medium text-gray-700">\${service}</span>
-                            <span class="text-sm font-bold text-gray-900">\${count} (\${percentage}%)</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
-                        </div>
-                    </div>
-                \`;
+                return '<div>' +
+                    '<div class="flex items-center justify-between mb-1">' +
+                        '<span class="text-sm font-medium text-gray-700">' + service + '</span>' +
+                        '<span class="text-sm font-bold text-gray-900">' + count + ' (' + percentage + '%)</span>' +
+                    '</div>' +
+                    '<div class="w-full bg-gray-200 rounded-full h-2">' +
+                        '<div class="' + color + ' h-2 rounded-full" style="width: ' + percentage + '%"></div>' +
+                    '</div>' +
+                    '</div>';
             }).join('');
 
             document.getElementById('servicesChart').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun dato disponibile</p>';
@@ -4504,83 +4502,91 @@ ${370+e.length}
 
         // ⚠️ DEPRECATA — non usare allLeads per i contatori eCura (possono essere incompleti)
         // Usa renderFontesDistributionFromApi() che legge direttamente dall'API channel-stats
-        function updateFontesDistribution(leads) {
-            // Per le fonti NON-eCura (IRBEMA, B2B, Test, ecc.) usa allLeads
-            // Per i canali eCura (Meta/Google/Diretto/Altro) usa l'API → vedi renderFontesDistributionFromApi
-            renderFontesDistributionFromApi(leads);
+        function updateFontesDistribution(assistiti) {
+            // Distribuzione per fonte basata SOLO sugli assistiti attivi (totale = n. assistiti)
+            renderFontesDistributionFromAssistiti(assistiti);
         }
 
-        // Renderizza il widget "Distribuzione per Fonte" usando:
-        // - API channel-stats per i numeri eCura (fonte di verità unica, coerente con i box)
-        // - allLeads per le fonti non-eCura (IRBEMA, B2B, Test, ecc.)
-        async function renderFontesDistributionFromApi(leads) {
+        // Renderizza "Distribuzione per Fonte" basata SOLO sugli assistiti attivi.
+        // Il totale corrisponde al numero di assistiti (non a tutti i lead).
+        function renderFontesDistributionFromAssistiti(assistiti) {
             const fonteColors = {
-                'Sito www.eCura.it':    'bg-cyan-500',
-                'Privati IRBEMA':       'bg-blue-500',
-                'eCura — Meta (FB/IG)': 'bg-indigo-500',
-                'eCura — Google':       'bg-red-500',
-                'eCura — Diretto':      'bg-green-500',
-                'eCura — Altro':        'bg-yellow-500',
-                'eCura — Non tracciato':'bg-gray-400',
-                'Form eCura x Test':    'bg-yellow-300',
-                'B2B IRBEMA':           'bg-purple-500',
-                'Sito web Medica GB':   'bg-pink-500',
-                'NETWORKING':           'bg-teal-500',
-                'Form Contattaci':      'bg-orange-400'
+                'Irbema':     'bg-blue-500',
+                'Networking': 'bg-purple-500',
+                'AON':        'bg-orange-500',
+                'DoubleYou':  'bg-pink-500',
+                'Web':        'bg-cyan-500',
+                'Diretto':    'bg-green-500',
+                'Altro':      'bg-gray-400'
             };
 
-            // Passo 1: leggi canali eCura dall'API (stessa sorgente dei box → numeri identici)
-            let fonteCounts = {};
-            try {
-                const res = await fetch('/api/leads/channel-stats');
-                const data = await res.json();
-                if (data.success) {
-                    if (data.meta    > 0) fonteCounts['eCura — Meta (FB/IG)'] = data.meta;
-                    if (data.google  > 0) fonteCounts['eCura — Google']       = data.google;
-                    if (data.diretto > 0) fonteCounts['eCura — Diretto']      = data.diretto;
-                    if (data.altro   > 0) fonteCounts['eCura — Altro']        = data.altro;
-                    if (data.nonTracciato > 0) fonteCounts['eCura — Non tracciato'] = data.nonTracciato;
-                }
-            } catch (e) {
-                console.warn('⚠️ renderFontesDistributionFromApi: impossibile caricare channel-stats', e);
-            }
+            const fonteCounts = {};
+            (assistiti || []).forEach(function(assistito) {
+                var leadId      = (assistito.lead_id || assistito.id || '').toString().toUpperCase();
+                var nomeCompl   = [
+                    assistito.nome_caregiver  || assistito.nomeRichiedente  || '',
+                    assistito.cognome_caregiver || assistito.cognomeRichiedente || ''
+                ].join(' ').trim().toLowerCase();
+                var canaleField = (assistito.canale || assistito.fonte || assistito.origine || '').toLowerCase();
 
-            // Passo 2: aggiungi le fonti NON-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
-            // Queste fonti sono contate correttamente da allLeads perché non dipendono da canale_acquisizione
-            (leads || []).forEach(lead => {
-                const fonteDB = lead.fonte || '';
-                if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return; // gestiti dall'API
-                const etichetta = fonteDB || 'Non specificata';
-                fonteCounts[etichetta] = (fonteCounts[etichetta] || 0) + 1;
+                var fonte = 'Altro';
+
+                if (nomeCompl.includes('laura') && nomeCompl.includes('calvi')) {
+                    fonte = 'Networking';
+                } else if (
+                    nomeCompl.includes('elena')      || nomeCompl.includes('saglia')    ||
+                    nomeCompl.includes('paolo')      || nomeCompl.includes('magri')     ||
+                    nomeCompl.includes('caterina')   || nomeCompl.includes('alterio')   ||
+                    nomeCompl.includes('simona')     || nomeCompl.includes('pizzutto')  ||
+                    nomeCompl.includes('elisabetta') || nomeCompl.includes('cattini')   ||
+                    nomeCompl.includes('giuliana')   || nomeCompl.includes('balzarotti')||
+                    nomeCompl.includes('rita')       || nomeCompl.includes('pennacchio')||
+                    nomeCompl.includes('maria')      || nomeCompl.includes('capone')    ||
+                    nomeCompl.includes('giuseppina') || nomeCompl.includes('cozzi')     ||
+                    nomeCompl.includes('eileen')     || nomeCompl.includes('king')      ||
+                    leadId.includes('IRBEMA')        || canaleField.includes('irbema')
+                ) {
+                    fonte = 'Irbema';
+                } else if (canaleField.includes('aon')) {
+                    fonte = 'AON';
+                } else if (canaleField.includes('doubleyou') || canaleField.includes('double')) {
+                    fonte = 'DoubleYou';
+                } else if (canaleField.includes('network')) {
+                    fonte = 'Networking';
+                } else if (canaleField.includes('web') || canaleField.includes('ecura') || canaleField.includes('form')) {
+                    fonte = 'Web';
+                } else if (canaleField.includes('diretto')) {
+                    fonte = 'Diretto';
+                }
+
+                fonteCounts[fonte] = (fonteCounts[fonte] || 0) + 1;
             });
 
-            console.log('📊 Distribuzione Fonti (API + allLeads):', fonteCounts);
+            console.log('📊 Distribuzione Fonti (assistiti):', fonteCounts);
 
-            const total = Object.values(fonteCounts).reduce((a, b) => a + b, 0) || 1;
-            const sortedFontes = Object.entries(fonteCounts).sort((a, b) => b[1] - a[1]);
+            var total = (assistiti || []).length || 1;
+            var sortedFontes = Object.entries(fonteCounts).sort(function(a, b) { return b[1] - a[1]; });
 
-            let html = '';
+            var html = '';
             if (sortedFontes.length === 0) {
                 html = '<p class="text-gray-400 text-sm text-center py-4">Nessun dato disponibile</p>';
             } else {
-                sortedFontes.forEach(([fonte, count]) => {
-                    const percentage = Math.round((count / total) * 100);
-                    const color = fonteColors[fonte] || 'bg-gray-500';
-                    html += \`
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-medium text-gray-700">\${fonte}</span>
-                                <span class="text-sm font-bold text-gray-900">\${count} (\${percentage}%)</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
-                            </div>
-                        </div>
-                    \`;
+                sortedFontes.forEach(function([fonte, count]) {
+                    var percentage = Math.round((count / total) * 100);
+                    var color = fonteColors[fonte] || 'bg-gray-500';
+                    html += '<div>' +
+                        '<div class="flex items-center justify-between mb-1">' +
+                            '<span class="text-sm font-medium text-gray-700">' + fonte + '</span>' +
+                            '<span class="text-sm font-bold text-gray-900">' + count + ' (' + percentage + '%)</span>' +
+                        '</div>' +
+                        '<div class="w-full bg-gray-200 rounded-full h-2">' +
+                            '<div class="' + color + ' h-2 rounded-full" style="width: ' + percentage + '%"></div>' +
+                        '</div>' +
+                        '</div>';
                 });
             }
 
-            const el = document.getElementById('fontesDistribution');
+            var el = document.getElementById('fontesDistribution');
             if (el) el.innerHTML = html;
         }
 
@@ -10226,10 +10232,10 @@ ${370+e.length}
           )
         `).run(),console.log("✅ Tabella lead_interactions creata")}catch(m){console.warn("⚠️ Errore creazione tabella lead_interactions:",m.message)}try{const m=await t.env.DB.prepare(`
           UPDATE assistiti 
-          SET servizio = 'eCura PRO', piano = 'AVANZATO'
+          SET servizio = 'eCura PREMIUM', piano = 'AVANZATO'
           WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
              OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
-        `).run();m.changes&&m.changes>0&&console.log(`✅ Eileen aggiornata a eCura PRO AVANZATO (${m.changes} record)`)}catch(m){console.warn("⚠️ Errore aggiornamento Eileen:",m.message)}try{await t.env.DB.prepare(`
+        `).run();m.changes&&m.changes>0&&console.log(`✅ Eileen aggiornata a eCura PREMIUM AVANZATO (${m.changes} record)`)}catch(m){console.warn("⚠️ Errore aggiornamento Eileen:",m.message)}try{await t.env.DB.prepare(`
           CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,

@@ -647,17 +647,17 @@ app.use('*', async (c, next) => {
       // Rinomina tipo_contratto in piano nella tabella contracts (se non esiste già)
       // Nota: SQLite non supporta RENAME COLUMN direttamente, quindi usiamo tipo_contratto come piano
       
-      // Fix Eileen automatico
+      // Fix Eileen: eCura PREMIUM AVANZATO (rinnovo contratto con upgrade da PRO a PREMIUM)
       try {
         const eileenFix = await c.env.DB.prepare(`
           UPDATE assistiti 
-          SET servizio = 'eCura PRO', piano = 'AVANZATO'
+          SET servizio = 'eCura PREMIUM', piano = 'AVANZATO'
           WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
              OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
         `).run()
         
         if (eileenFix.changes && eileenFix.changes > 0) {
-          console.log(`✅ Eileen aggiornata a eCura PRO AVANZATO (${eileenFix.changes} record)`)
+          console.log(`✅ Eileen aggiornata a eCura PREMIUM AVANZATO (${eileenFix.changes} record)`)
         }
       } catch (e: any) {
         console.warn('⚠️ Errore aggiornamento Eileen:', e.message)
