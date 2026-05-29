@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto Rinnovo eCura {{SERVIZIO}} {{PIANO}} - Firma Digitale</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+            max-width: 21cm;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .contract-container {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .rinnovo-banner {
+            background: #e8f5e9;
+            border: 2px solid #27ae60;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .rinnovo-banner strong {
+            color: #1b5e20;
+            font-size: 13pt;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            margin: 20px 0;
+            text-transform: uppercase;
+            color: #2c3e50;
+        }
+        h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            text-decoration: underline;
+            color: #34495e;
+        }
+        p {
+            margin: 8px 0;
+            text-align: justify;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        .company-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 5px;
+        }
+        .signature-section {
+            margin-top: 50px;
+            padding: 30px;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            background: #ebf5fb;
+        }
+        .signature-canvas {
+            border: 2px solid #2c3e50;
+            background: white;
+            cursor: crosshair;
+            display: block;
+            margin: 20px auto;
+            touch-action: none;
+        }
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s;
+        }
+        .btn-clear {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-clear:hover {
+            background: #c0392b;
+        }
+        .btn-sign {
+            background: #27ae60;
+            color: white;
+            font-size: 18px;
+            padding: 20px 40px;
+        }
+        .btn-sign:hover {
+            background: #229954;
+        }
+        .btn-sign:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        .price-highlight {
+            background: #e8f5e9;
+            border-left: 4px solid #27ae60;
+            padding: 10px 16px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        @media print {
+            .signature-section button {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="contract-container">
+
+        <div class="rinnovo-banner">
+            <strong>🔄 CONTRATTO DI RINNOVO — Anno {{ANNO_RINNOVO}}</strong><br>
+            <span style="font-size:11pt;color:#2e7d32;">Rinnovo del contratto <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong> (firmato il {{DATA_CONTRATTO_ORIGINALE}})</span>
+        </div>
+
+        <div class="company-header">
+            <h1>RINNOVO CONTRATTO DI SERVIZIO eCura {{SERVIZIO}} {{PIANO}}</h1>
+            <p><strong>Codice Rinnovo:</strong> {{CODICE_CONTRATTO}}</p>
+            <p><strong>Data:</strong> {{DATA_CONTRATTO}}</p>
+        </div>
+
+        <h2>Tra</h2>
+        <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale<br>
+        Sede legale: Corso Giuseppe Garibaldi, 34 - 20121 Milano<br>
+        P.IVA: 12435130963 | REA: MI-2661409<br>
+        PEC: info@pec.medicagb.it | Email: info@medicagb.it</p>
+
+        <p>di seguito denominata "<strong>Medica GB</strong>"</p>
+
+        <h2>E</h2>
+        <p><strong>Il/La Sig./Sig.ra {{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong><br>
+        Email: {{EMAIL_CLIENTE}}<br>
+        Telefono: {{TELEFONO_CLIENTE}}</p>
+
+        <p>di seguito denominato/a "<strong>Cliente</strong>"</p>
+
+        <h2>Premesso che</h2>
+        <p>• Le parti hanno già stipulato il contratto di servizio eCura {{SERVIZIO}} Piano {{PIANO}} con codice <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>, in vigore dal {{DATA_CONTRATTO_ORIGINALE}} al {{DATA_SCADENZA_ORIGINALE}};<br>
+        • Il Cliente ha regolarmente usufruito del servizio nel corso del primo anno;<br>
+        • Le parti intendono rinnovare il contratto alle condizioni di rinnovo annuale, con tariffa agevolata rispetto all'anno di prima attivazione.</p>
+
+        <h2>Si conviene e si stipula quanto segue</h2>
+
+        <h2>Oggetto del Rinnovo</h2>
+        <p>Le parti concordano il rinnovo del servizio di teleassistenza e telemedicina denominato "<strong>eCura {{SERVIZIO}}</strong>" con "<strong>Piano {{PIANO}}</strong>", per ulteriori 12 (dodici) mesi.</p>
+        <p>Il rinnovo include:</p>
+        <ul>
+            <li>Piattaforma web e app di teleassistenza per 12 mesi</li>
+            <li>SIM dati per trasmissione e comunicazione vocale per 12 mesi</li>
+            <li>Assistenza tecnica per 12 mesi</li>
+            <li>Aggiornamenti software e firmware del dispositivo {{DISPOSITIVO}}</li>
+        </ul>
+        <p><em>Nota: il dispositivo {{DISPOSITIVO}} è già di proprietà del Cliente; il rinnovo non include un nuovo dispositivo.</em></p>
+
+        <h2>Durata del Rinnovo</h2>
+        <p>Il presente rinnovo ha durata di <strong>12 (dodici) mesi</strong>, con decorrenza <strong>{{DATA_INIZIO_SERVIZIO}}</strong> e scadenza <strong>{{DATA_SCADENZA}}</strong>.</p>
+        <p>Il contratto è ulteriormente rinnovabile per 12 mesi, salvo disdetta scritta da comunicarsi con almeno 30 giorni di anticipo rispetto alla scadenza.</p>
+
+        <h2>Tariffa di Rinnovo</h2>
+        <p>La tariffa annuale di rinnovo per il servizio eCura {{SERVIZIO}} Piano {{PIANO}} è pari a:</p>
+
+        <div class="price-highlight">
+            <p><strong>Importo rinnovo ({{IVA_LABEL}} esclusa): € {{IMPORTO_RINNOVO_NETTO}}</strong></p>
+            <p><strong>{{IVA_LABEL}}: € {{IVA_IMPORTO}}</strong></p>
+            <p style="font-size:13pt;"><strong>TOTALE RINNOVO ({{IVA_LABEL}} inclusa): € {{PREZZO_RINNOVO}}{{IVA_NOTE}}</strong></p>
+        </div>
+
+        <p>La tariffa di rinnovo è <strong>agevolata rispetto alla prima annualità</strong> (€ {{PREZZO_TOTALE}}) in quanto non comprende il dispositivo e il setup iniziale.</p>
+
+        <h2>Metodo di Pagamento</h2>
+        <p>Medica GB emetterà proforma/fattura anticipata per il rinnovo di 12 mesi.</p>
+        <p>Il Cliente procederà al pagamento tramite bonifico bancario:</p>
+        <p><strong>Intestato a:</strong> Medica GB S.r.l.<br>
+        <strong>Banca:</strong> Banca Popolare di Milano<br>
+        <strong>IBAN:</strong> IT97L0503401727000000003519<br>
+        <strong>Causale:</strong> Rinnovo eCura {{SERVIZIO}} {{PIANO}} Anno {{ANNO_RINNOVO}} - {{CODICE_CONTRATTO}}</p>
+
+        <h2>Condizioni Generali</h2>
+        <p>Tutte le condizioni generali del contratto originale (riservatezza, responsabilità, foro competente) rimangono invariate e si intendono richiamate integralmente nel presente rinnovo.</p>
+
+        <h2>Recesso</h2>
+        <p>Il Cliente ha diritto di recedere dal rinnovo entro 14 giorni dalla firma del presente documento, senza necessità di fornire motivazioni.</p>
+
+        <h2>Foro Competente</h2>
+        <p>Per qualsiasi controversia derivante dal presente rinnovo, le parti eleggono come foro competente il Tribunale di Milano.</p>
+
+        <div class="info-box">
+            <strong>ℹ️ Informazione importante:</strong><br>
+            Firmando digitalmente questo documento, il Cliente conferma di aver letto e accettato le condizioni del rinnovo, inclusa la tariffa annuale di € {{PREZZO_RINNOVO}} ({{IVA_LABEL}} inclusa).
+        </div>
+
+    </div>
+
+    <!-- SEZIONE FIRMA DIGITALE -->
+    <div class="signature-section">
+        <h2 style="text-align:center; text-decoration:none; font-size:18px;">✍️ Firma Digitale del Rinnovo</h2>
+        <p style="text-align:center;">Firmare con il dito (touch) o il mouse nel campo sottostante per accettare il rinnovo.</p>
+
+        <canvas id="signatureCanvas" class="signature-canvas" width="500" height="200"></canvas>
+
+        <div class="button-group">
+            <button class="btn-clear" onclick="clearSignature()">🗑️ Cancella</button>
+            <button class="btn-sign" id="signBtn" onclick="submitSignature()">✅ Firma e Conferma Rinnovo</button>
+        </div>
+
+        <div id="successBox" class="success-box">
+            <h2>🎉 Rinnovo Firmato con Successo!</h2>
+            <p>Il tuo contratto di rinnovo è stato accettato. Riceverai a breve la proforma per il pagamento.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasSignature = false;
+
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            if (e.touches) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener('mousedown', e => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+        canvas.addEventListener('mousemove', e => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; });
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseleave', () => isDrawing = false);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; }, { passive: false });
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+        }
+
+        async function submitSignature() {
+            if (!hasSignature) {
+                alert('⚠️ Per favore firma prima di procedere.');
+                return;
+            }
+            const signBtn = document.getElementById('signBtn');
+            signBtn.disabled = true;
+            signBtn.textContent = '⏳ Invio in corso...';
+
+            const signatureData = canvas.toDataURL('image/png');
+            const contractCode = '{{CODICE_CONTRATTO}}';
+            const contractId = '{{CONTRACT_ID}}';
+
+            try {
+                const response = await fetch('/api/contracts/sign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contractId: contractId,
+                        contractCode: contractCode,
+                        signatureData: signatureData,
+                        isRinnovo: true,
+                        signedAt: new Date().toISOString(),
+                        userAgent: navigator.userAgent,
+                        screenResolution: window.screen.width + 'x' + window.screen.height
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('successBox').style.display = 'block';
+                    canvas.style.display = 'none';
+                    signBtn.style.display = 'none';
+                    document.querySelector('.btn-clear').style.display = 'none';
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                    signBtn.disabled = false;
+                    signBtn.textContent = '✅ Firma e Conferma Rinnovo';
+                }
+            } catch (err) {
+                alert('❌ Errore di connessione. Riprovare.');
+                signBtn.disabled = false;
+                signBtn.textContent = '✅ Firma e Conferma Rinnovo';
+            }
+        }
+    </script>
+</body>
+</html>

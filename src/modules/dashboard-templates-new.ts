@@ -6446,6 +6446,8 @@ export const data_dashboard = `<!DOCTYPE html>
         }
 
         loadDataDashboard();
+        // Alias usato dai pulsanti rinnovo dopo aggiornamento
+        function loadContractsData() { loadDataDashboard(); }
 
         async function loadDataDashboard() {
             try {
@@ -6732,6 +6734,56 @@ export const data_dashboard = `<!DOCTYPE html>
             document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
         }
 
+        // ── Funzioni Rinnovo ────────────────────────────────────────────────────
+
+        async function inviaRinnovo(contractId, codiceContratto, clienteNome) {
+            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContratto}\\n👤 \${clienteNome}\\n\\nViene creato un nuovo contratto di rinnovo (prezzo agevolato) e inviato per firma al cliente.\`)) return;
+            try {
+                const resp = await fetch('/api/contracts/rinnovo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+                    },
+                    body: JSON.stringify({ contractId })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert(\`✅ Contratto di rinnovo creato!\\n\\nCodice: \${result.codiceRinnovo}\\nAnno: \${result.annoRinnovo}\\nTariffa: €\${result.prezzoRinnovo?.toFixed(2)} (\${result.ivaLabel} inclusa)\\n\\n\${result.emailInviata ? '📧 Email di firma inviata al cliente.' : '⚠️ Email non inviata (RESEND non configurato).'}\`);
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                }
+            } catch (err) {
+                alert('❌ Errore di rete: ' + err.message);
+            }
+        }
+
+        async function segnaRinnovoCompletato(contractId, codiceContratto) {
+            if (!confirm(\`✅ Segnare il rinnovo \${codiceContratto} come COMPLETATO?\\n\\nQuesta azione conferma che il contratto di rinnovo è stato firmato e la proforma pagata.\`)) return;
+            try {
+                const resp = await fetch(\`/api/contracts/\${contractId}/rinnovo-completato\`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+                    },
+                    body: JSON.stringify({ completato: true })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                }
+            } catch (err) {
+                alert('❌ Errore di rete: ' + err.message);
+            }
+        }
+
+        // ────────────────────────────────────────────────────────────────────────
+
         function renderContractsTable(contracts) {
             const tbody = document.getElementById('contractsTable');
             const countElement = document.getElementById('contractsCount');
@@ -6755,27 +6807,37 @@ export const data_dashboard = `<!DOCTYPE html>
                                    servizioNormalized ? 'SiDLY CARE PRO' : 'N/A';
                 
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
-                
+                const isRinnovo = contract.is_rinnovo == 1 || contract.is_rinnovo === true;
+                const rinnovoCompletato = contract.rinnovo_completato == 1 || contract.rinnovo_completato === true;
+                const isSigned = contract.status === 'SIGNED';
+
+                // Badge rinnovo
+                const rinnovo_badge = isRinnovo
+                    ? \`<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full ml-1" title="Contratto di rinnovo anno \${contract.anno_rinnovo || 2}">🔄 R\${contract.anno_rinnovo || 2}</span>\`
+                    : '';
+                const completato_badge = rinnovoCompletato
+                    ? \`<span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full ml-1" title="Rinnovo completato">✅</span>\`
+                    : '';
+
+                // Row highlight
+                const rowBg = rinnovoCompletato ? 'bg-emerald-50 hover:bg-emerald-100'
+                            : isRinnovo ? 'bg-green-50 hover:bg-green-100'
+                            : 'hover:bg-gray-50';
+
                 // Data scadenza con evidenziazione
                 let scadenzaHtml = '<span class="text-gray-400 text-xs">N/A</span>';
-                
-                // Debug: log data_scadenza
                 if (contract.codice_contratto) {
                     console.log(\`📅 [RENDER] \${contract.codice_contratto}: data_scadenza = "\${contract.data_scadenza}" (tipo: \${typeof contract.data_scadenza})\`);
                 }
-                
                 if (contract.data_scadenza) {
                     try {
                         const scadenza = new Date(contract.data_scadenza);
-                        
                         if (!isNaN(scadenza.getTime())) {
                             const today = new Date();
                             const diffTime = scadenza - today;
                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            
                             let colorClass = 'text-gray-600';
                             let icon = '';
-                            
                             if (diffDays < 0) {
                                 colorClass = 'text-red-600 font-bold';
                                 icon = '<i class="fas fa-exclamation-triangle mr-1"></i>';
@@ -6786,7 +6848,6 @@ export const data_dashboard = `<!DOCTYPE html>
                                 colorClass = 'text-yellow-600';
                                 icon = '<i class="fas fa-calendar-check mr-1"></i>';
                             }
-                            
                             scadenzaHtml = \`<span class="\${colorClass} text-xs">\${icon}\${scadenza.toLocaleDateString('it-IT')}</span>\`;
                         } else {
                             console.warn(\`⚠️ [RENDER] Data scadenza invalida per \${contract.codice_contratto}: \${contract.data_scadenza}\`);
@@ -6795,11 +6856,69 @@ export const data_dashboard = `<!DOCTYPE html>
                         console.error(\`❌ [RENDER] Errore parsing data per \${contract.codice_contratto}:\`, e);
                     }
                 }
+
+                // Azioni colonna destra
+                const clienteNome = (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '');
+                const idSafe = JSON.stringify(contract.id);
+                const codiceSafe = JSON.stringify(contract.codice_contratto || contract.id);
+                const clienteNomeSafe = JSON.stringify(clienteNome.trim());
+
+                let azioniHtml = '';
+                if (isRinnovo && !rinnovoCompletato && isSigned) {
+                    // Rinnovo firmato ma non ancora marcato completato
+                    azioniHtml = \`
+                        <div class="flex flex-col gap-1 items-center">
+                            <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
+                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
+                                ✍️ Firmato
+                            </a>
+                            <button onclick="segnaRinnovoCompletato(\${idSafe}, \${codiceSafe})"
+                                    class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold">
+                                ✅ Completa Rinnovo
+                            </button>
+                        </div>
+                    \`;
+                } else if (isRinnovo && rinnovoCompletato) {
+                    // Rinnovo completato
+                    azioniHtml = \`
+                        <div class="flex flex-col gap-1 items-center">
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">✅ Rinnovo Completato</span>
+                            \${contract.rinnovo_data_completamento ? \`<span class="text-xs text-gray-400">\${new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT')}</span>\` : ''}
+                        </div>
+                    \`;
+                } else if (!isRinnovo && isSigned) {
+                    // Contratto originale firmato — mostra link + pulsante "Invia Rinnovo"
+                    azioniHtml = \`
+                        <div class="flex flex-col gap-1 items-center">
+                            <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
+                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
+                                ✍️ Firmato
+                            </a>
+                            <button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe})"
+                                    class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
+                                    title="Crea e invia contratto di rinnovo (tariffa agevolata)">
+                                🔄 Invia Rinnovo
+                            </button>
+                        </div>
+                    \`;
+                } else if (isRinnovo && !isSigned) {
+                    // Rinnovo inviato, in attesa firma
+                    azioniHtml = \`
+                        <div class="flex flex-col gap-1 items-center">
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">⏳ Attesa firma</span>
+                            <span class="text-xs text-gray-400">Rinnovo inviato</span>
+                        </div>
+                    \`;
+                } else {
+                    azioniHtml = '<span class="text-gray-400 text-xs">N/A</span>';
+                }
                 
                 return \`
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <tr class="border-b border-gray-100 \${rowBg}">
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded">\${contract.codice_contratto || contract.id}</code>
+                            \${rinnovo_badge}\${completato_badge}
+                            \${isRinnovo && contract.rinnovo_di ? \`<div class="text-xs text-gray-400 mt-1">↳ \${contract.rinnovo_di}</div>\` : ''}
                         </td>
                         <td class="py-3 text-sm font-medium">
                             \${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}
@@ -6815,8 +6934,9 @@ export const data_dashboard = `<!DOCTYPE html>
                             </span>
                         </td>
                         <td class="py-3 text-sm text-gray-600">\${dispositivo}</td>
-                        <td class="py-3 text-sm font-bold text-green-600">
+                        <td class="py-3 text-sm font-bold \${isRinnovo ? 'text-green-700' : 'text-green-600'}">
                             €\${parseFloat(contract.prezzo_totale || 0).toFixed(2)}
+                            \${isRinnovo ? '<div class="text-xs font-normal text-green-600">rinnovo</div>' : ''}
                         </td>
                         <td class="py-3">
                             <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">
@@ -6824,18 +6944,9 @@ export const data_dashboard = `<!DOCTYPE html>
                             </span>
                         </td>
                         <td class="py-3 text-xs text-gray-500">\${date}</td>
-                        <td class="py-3" title="Termine entro cui il contratto doveva essere firmato (30gg dall'invio). Se già firmato, questo dato è storico.">\${scadenzaHtml}</td>
+                        <td class="py-3" title="Scadenza contratto">\${scadenzaHtml}</td>
                         <td class="py-3 text-center">
-                            \${contract.status === 'SIGNED' ? \`
-                                <a href="/api/contratti/\${contract.id}/pdf-print" 
-                                   target="_blank"
-                                   title="Visualizza contratto firmato con firma"
-                                   class="inline-block px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
-                                    ✍️ Firmato
-                                </a>
-                            \` : \`
-                                <span class="text-gray-400 text-xs">N/A</span>
-                            \`}
+                            \${azioniHtml}
                         </td>
                     </tr>
                 \`;

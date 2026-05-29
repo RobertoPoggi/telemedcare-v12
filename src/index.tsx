@@ -723,6 +723,119 @@ app.use('*', async (c, next) => {
         // Colonna già esistente — normale
       }
 
+      // ── RINNOVI CONTRATTUALI ──────────────────────────────────────────────────
+      // Migrazione: colonne rinnovo su contracts
+      const rinnovoContractsCols = [
+        { name: 'is_rinnovo',          def: `INTEGER DEFAULT 0` },        // 1 = questo è un contratto di rinnovo
+        { name: 'rinnovo_di',          def: `TEXT DEFAULT NULL` },         // codice_contratto del contratto originale
+        { name: 'rinnovo_completato',  def: `INTEGER DEFAULT 0` },         // 1 = firmato + proforma pagata
+        { name: 'rinnovo_data_completamento', def: `TEXT DEFAULT NULL` },  // timestamp completamento rinnovo
+        { name: 'anno_rinnovo',        def: `INTEGER DEFAULT NULL` },      // es. 2, 3... (anno del rinnovo)
+      ]
+      for (const col of rinnovoContractsCols) {
+        try {
+          await c.env.DB.prepare(`ALTER TABLE contracts ADD COLUMN ${col.name} ${col.def}`).run()
+        } catch (e: any) { /* already exists */ }
+      }
+
+      // Migrazione: colonna rinnovo_status su proforma
+      try {
+        await c.env.DB.prepare(`ALTER TABLE proforma ADD COLUMN is_rinnovo INTEGER DEFAULT 0`).run()
+      } catch (e: any) { /* already exists */ }
+
+      // ── RINNOVI PIZZUTTO & PENNACCHIO (maggio 2026) ────────────────────────
+      // Crea contratti di rinnovo per i due assistiti che scadono a maggio 2026.
+      // Eseguito idempotentemente: controlla se il contratto rinnovo esiste già.
+      try {
+        const rinnoviDaCreare = [
+          {
+            id:              'RINNOVO-CTR-PIZZUTTO-G-2025-Y2',
+            codiceRinnovo:   'CTR-PIZZUTTO-G-2025-R2',
+            codiceOriginale: 'CTR-PIZZUTTO-G-2025',
+            leadId:          'LEAD-PIZZUTTO-G-001',
+            servizio:        'eCura PRO',
+            piano:           'BASE',
+            rinnovoBase:     240,          // € 240 IVA esclusa
+            ivaRate:         0.22,
+            annoRinnovo:     2,
+            dataInvio:       '2026-05-15T00:00:00.000Z',
+          },
+          {
+            id:              'RINNOVO-CTR-PENNACCHIO-2025-Y2',
+            codiceRinnovo:   'CTR-PENNACCHIO-2025-R2',
+            codiceOriginale: 'CTR-PENNACCHIO-2025',
+            leadId:          'LEAD-PENNACCHIO-001',
+            servizio:        'eCura PRO',
+            piano:           'BASE',
+            rinnovoBase:     240,
+            ivaRate:         0.22,
+            annoRinnovo:     2,
+            dataInvio:       '2026-05-15T00:00:00.000Z',
+          },
+        ]
+
+        for (const r of rinnoviDaCreare) {
+          // Controlla se già esiste
+          const existing = await c.env.DB.prepare(
+            `SELECT id FROM contracts WHERE id = ? OR codice_contratto = ?`
+          ).bind(r.id, r.codiceRinnovo).first()
+
+          if (!existing) {
+            const ivaImporto   = Math.round(r.rinnovoBase * r.ivaRate * 100) / 100
+            const rinnovoTotale = Math.round((r.rinnovoBase + ivaImporto) * 100) / 100
+            const ivaLabel     = r.ivaRate === 0.04 ? 'IVA 4%' : 'IVA 22%'
+            const dataScadenza = new Date('2027-05-15T00:00:00.000Z').toISOString()
+
+            const htmlMinimo = `<!DOCTYPE html><html lang="it"><body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+              <div style="background:#e8f5e9;border:2px solid #27ae60;border-radius:8px;padding:12px 20px;margin-bottom:24px;text-align:center">
+                <strong style="color:#1b5e20;font-size:16px">🔄 CONTRATTO DI RINNOVO — Anno ${r.annoRinnovo}</strong><br>
+                <span style="color:#2e7d32">Rinnovo del contratto <strong>${r.codiceOriginale}</strong></span>
+              </div>
+              <h2>Rinnovo Contratto ${r.servizio} ${r.piano} — ${r.codiceRinnovo}</h2>
+              <p>Tariffa annuale di rinnovo: <strong>€${rinnovoTotale.toFixed(2)}</strong> (${ivaLabel} inclusa)</p>
+              <p>Periodo: dal 15/05/2026 al 15/05/2027</p>
+              <p>La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo.</p>
+            </body></html>`
+
+            await c.env.DB.prepare(`
+              INSERT INTO contracts (
+                id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+                template_utilizzato, contenuto_html,
+                status, prezzo_totale, prezzo_mensile,
+                is_rinnovo, rinnovo_di, anno_rinnovo,
+                data_invio, data_scadenza, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+              r.id,
+              r.leadId,
+              r.codiceRinnovo,
+              r.piano,
+              r.piano,
+              r.servizio,
+              'contratto_rinnovo_b2c',
+              htmlMinimo,
+              'SENT',                               // da firmare
+              r.rinnovoBase,                        // IVA esclusa
+              Math.round(r.rinnovoBase / 12 * 100) / 100,
+              1,                                    // is_rinnovo
+              r.codiceOriginale,                    // rinnovo_di
+              r.annoRinnovo,
+              r.dataInvio,
+              dataScadenza,
+              new Date().toISOString(),
+              new Date().toISOString()
+            ).run()
+
+            console.log(`✅ Contratto rinnovo creato: ${r.codiceRinnovo}`)
+          } else {
+            console.log(`ℹ️ Contratto rinnovo già presente: ${r.codiceRinnovo}`)
+          }
+        }
+      } catch (rinnovoErr: any) {
+        console.warn('⚠️ Errore creazione contratti rinnovo startup:', rinnovoErr?.message)
+      }
+      // ── FINE RINNOVI STARTUP ───────────────────────────────────────────────
+
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
         await c.env.DB.prepare(`
@@ -7598,6 +7711,11 @@ app.get('/api/contratti', async (c) => {
         c.data_scadenza,
         c.prezzo_totale,
         c.created_at,
+        c.is_rinnovo,
+        c.rinnovo_di,
+        c.anno_rinnovo,
+        c.rinnovo_completato,
+        c.rinnovo_data_completamento,
         l.nomeRichiedente,
         l.cognomeRichiedente,
         l.email,
@@ -7605,7 +7723,7 @@ app.get('/api/contratti', async (c) => {
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id 
       LEFT JOIN signatures s ON c.id = s.contract_id
-      ORDER BY c.created_at DESC LIMIT 100
+      ORDER BY c.created_at DESC LIMIT 200
     `).all()
     
     return c.json({
@@ -12561,6 +12679,332 @@ app.patch('/api/leads/:id/iva-agevolata', async (c) => {
   } catch (error) {
     console.error('❌ Errore aggiornamento IVA agevolata:', error)
     return c.json({ success: false, error: 'Errore aggiornamento IVA agevolata' }, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RINNOVI CONTRATTUALI
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Tabella prezzi rinnovo (IVA esclusa) per servizio+piano
+const PREZZI_RINNOVO_BASE: Record<string, Record<string, number>> = {
+  'eCura FAMILY': { BASE: 200, AVANZATO: 500 },
+  'eCura PRO':    { BASE: 240, AVANZATO: 600 },
+  'eCura PREMIUM':{ BASE: 300, AVANZATO: 750 },
+}
+
+/**
+ * POST /api/contracts/rinnovo
+ * Crea un contratto di rinnovo a partire dal contratto originale e lo invia per firma.
+ * Body: { contractId: string }   (ID del contratto originale da rinnovare)
+ */
+app.post('/api/contracts/rinnovo', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { contractId } = body
+
+    if (!contractId) {
+      return c.json({ success: false, error: 'contractId richiesto' }, 400)
+    }
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    // 1. Carica contratto originale
+    const origContract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+
+    if (!origContract) {
+      return c.json({ success: false, error: 'Contratto originale non trovato' }, 404)
+    }
+
+    // 2. Carica lead
+    const lead = await c.env.DB.prepare(
+      `SELECT * FROM leads WHERE id = ?`
+    ).bind(origContract.leadId).first() as any
+
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+
+    // 3. Calcola anno rinnovo
+    const annoRinnovo = (origContract.anno_rinnovo || 1) + 1
+
+    // 4. Calcola prezzo rinnovo
+    const servizio = origContract.servizio || 'eCura PRO'
+    const piano    = origContract.piano || origContract.tipo_contratto || 'BASE'
+    const ivaRate  = lead.iva_agevolata ? 0.04 : 0.22
+    const rinnovoBase  = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
+    const ivaImporto   = Math.round(rinnovoBase * ivaRate * 100) / 100
+    const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
+
+    const ivaLabel = lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
+
+    // 5. Date del rinnovo
+    const oggi = new Date()
+    const dataInizio  = oggi.toLocaleDateString('it-IT')
+    const scadenzaData = new Date(oggi)
+    scadenzaData.setFullYear(scadenzaData.getFullYear() + 1)
+    const dataScadenza = scadenzaData.toLocaleDateString('it-IT')
+
+    // Data contratto originale formattata
+    const dataOrigFormatted = origContract.data_firma
+      ? new Date(origContract.data_firma).toLocaleDateString('it-IT')
+      : (origContract.data_invio ? new Date(origContract.data_invio).toLocaleDateString('it-IT') : 'N/A')
+
+    // Scadenza originale formattata  
+    const scadenzaOrigFormatted = origContract.data_scadenza
+      ? new Date(origContract.data_scadenza).toLocaleDateString('it-IT')
+      : 'N/A'
+
+    // 6. Genera codice contratto rinnovo
+    const codiceRinnovo = `${origContract.codice_contratto}-R${annoRinnovo}`
+    const rinnovoId = `RINNOVO-${origContract.id}-Y${annoRinnovo}-${Date.now()}`
+
+    // 7. Leggi template HTML rinnovo e sostituisci variabili
+    let templateHtml = ''
+    try {
+      const fs = await import('node:fs/promises')
+      const path = await import('node:path')
+      const templatePath = path.resolve('./templates/contracts/contratto_rinnovo_b2c.html')
+      templateHtml = await fs.readFile(templatePath, 'utf-8')
+    } catch (e) {
+      console.warn('⚠️ Template file non trovato, uso template inline minimo')
+      templateHtml = `<h1>Rinnovo Contratto eCura {{SERVIZIO}} {{PIANO}}</h1>
+        <p>Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},<br>
+        Si rinnova il contratto <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>.<br>
+        Tariffa annuale di rinnovo: <strong>€{{PREZZO_RINNOVO}}</strong> ({{IVA_LABEL}} inclusa).</p>`
+    }
+
+    // Sostituisci placeholder
+    const varReplace = (html: string, vars: Record<string, string>) => {
+      return html.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
+    }
+
+    const prezzoTotalePrimoAnno = origContract.prezzo_totale
+      ? (origContract.prezzo_totale * (1 + ivaRate)).toFixed(2)
+      : rinnovoTotale.toFixed(2)
+
+    const htmlCompiled = varReplace(templateHtml, {
+      SERVIZIO:                   servizio.replace('eCura ', ''),
+      PIANO:                      piano,
+      CODICE_CONTRATTO:           codiceRinnovo,
+      CONTRACT_ID:                rinnovoId,
+      DATA_CONTRATTO:             oggi.toLocaleDateString('it-IT'),
+      ANNO_RINNOVO:               String(annoRinnovo),
+      CODICE_CONTRATTO_ORIGINALE: origContract.codice_contratto || contractId,
+      DATA_CONTRATTO_ORIGINALE:   dataOrigFormatted,
+      DATA_SCADENZA_ORIGINALE:    scadenzaOrigFormatted,
+      NOME_CLIENTE:               lead.nomeRichiedente || '',
+      COGNOME_CLIENTE:            lead.cognomeRichiedente || '',
+      EMAIL_CLIENTE:              lead.email || '',
+      TELEFONO_CLIENTE:           lead.telefono || '',
+      DISPOSITIVO:                origContract.servizio?.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE',
+      DATA_INIZIO_SERVIZIO:       dataInizio,
+      DATA_SCADENZA:              dataScadenza,
+      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
+      IVA_IMPORTO:                ivaImporto.toFixed(2),
+      IVA_LABEL:                  ivaLabel,
+      IVA_NOTE:                   ivaNote,
+      PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
+      PREZZO_TOTALE:              `€ ${Number(prezzoTotalePrimoAnno).toFixed(2).replace('.', ',')}`,
+    })
+
+    // 8. Inserisci contratto rinnovo nel DB
+    await c.env.DB.prepare(`
+      INSERT INTO contracts (
+        id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+        template_utilizzato, contenuto_html,
+        status, prezzo_totale, prezzo_mensile,
+        is_rinnovo, rinnovo_di, anno_rinnovo,
+        data_invio, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      rinnovoId,
+      origContract.leadId,
+      codiceRinnovo,
+      piano,
+      piano,
+      servizio,
+      'contratto_rinnovo_b2c',
+      htmlCompiled,
+      'SENT',
+      rinnovoBase,           // prezzo_totale = base IVA esclusa (coerente con DB)
+      Math.round(rinnovoBase / 12 * 100) / 100,  // prezzo_mensile
+      1,                     // is_rinnovo
+      origContract.codice_contratto || contractId, // rinnovo_di
+      annoRinnovo,
+      oggi.toISOString(),
+      oggi.toISOString(),
+      oggi.toISOString()
+    ).run()
+
+    console.log(`✅ Contratto rinnovo creato: ${rinnovoId} (${codiceRinnovo}) per lead ${origContract.leadId}`)
+
+    // 9. Invia email con link firma
+    if (lead.email && c.env.RESEND_API_KEY) {
+      const baseUrl = new URL(c.req.url).origin
+      const firmaUrl = `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`
+
+      const EmailServiceModule = await import('./modules/email-service')
+      const emailService = new EmailServiceModule.EmailService(c.env)
+
+      await emailService.sendEmail({
+        to: lead.email,
+        subject: `🔄 Rinnovo Contratto eCura ${servizio} ${piano} — Anno ${annoRinnovo}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: #e8f5e9; border: 2px solid #27ae60; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
+              <h2 style="color: #1b5e20; margin: 0;">🔄 Rinnovo Contratto eCura</h2>
+              <p style="color: #2e7d32; margin: 8px 0 0 0;">Anno ${annoRinnovo} — ${codiceRinnovo}</p>
+            </div>
+
+            <p>Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
+
+            <p>È giunto il momento del rinnovo del suo servizio <strong>${servizio} — Piano ${piano}</strong>.</p>
+
+            <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+              <p style="margin: 4px 0;"><strong>Contratto originale:</strong> ${origContract.codice_contratto || contractId}</p>
+              <p style="margin: 4px 0;"><strong>Codice rinnovo:</strong> ${codiceRinnovo}</p>
+              <p style="margin: 4px 0;"><strong>Periodo:</strong> ${dataInizio} → ${dataScadenza}</p>
+              <p style="margin: 4px 0;"><strong>Tariffa rinnovo:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)${ivaNote}</p>
+            </div>
+
+            <p>La tariffa di rinnovo è <strong>agevolata</strong> rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${firmaUrl}"
+                 style="display: inline-block; padding: 16px 32px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                ✍️ Firma il Contratto di Rinnovo
+              </a>
+            </div>
+
+            <p style="font-size: 13px; color: #6b7280;">
+              Dopo la firma riceverà la proforma per il pagamento del rinnovo.
+              Per qualsiasi domanda contatti info@medicagb.it o chiami il nostro servizio clienti.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+            <p style="font-size: 11px; color: #9ca3af; text-align: center;">
+              Medica GB S.r.l. — Corso Giuseppe Garibaldi 34, 20121 Milano — P.IVA 12435130963
+            </p>
+          </div>
+        `,
+        text: `Rinnovo contratto eCura ${servizio} ${piano} - Anno ${annoRinnovo}. Firma online: ${firmaUrl}`
+      })
+
+      // Notifica interna a info@telemedcare.it
+      await emailService.sendEmail({
+        to: 'info@telemedcare.it',
+        subject: `🔄 Rinnovo inviato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} — ${codiceRinnovo}`,
+        html: `
+          <p>Contratto di rinnovo inviato per firma.</p>
+          <ul>
+            <li><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente} (${lead.email})</li>
+            <li><strong>Contratto originale:</strong> ${origContract.codice_contratto || contractId}</li>
+            <li><strong>Codice rinnovo:</strong> ${codiceRinnovo}</li>
+            <li><strong>Anno rinnovo:</strong> ${annoRinnovo}</li>
+            <li><strong>Tariffa:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)</li>
+            <li><strong>Link firma:</strong> <a href="${firmaUrl}">${firmaUrl}</a></li>
+          </ul>
+        `,
+        text: `Rinnovo inviato: ${codiceRinnovo} — ${lead.email} — € ${rinnovoTotale.toFixed(2)}`
+      })
+
+      console.log(`📧 Email rinnovo inviata a ${lead.email} e notifica a info@telemedcare.it`)
+    }
+
+    return c.json({
+      success: true,
+      rinnovoId,
+      codiceRinnovo,
+      annoRinnovo,
+      prezzoRinnovo: rinnovoTotale,
+      ivaLabel,
+      emailInviata: !!(lead.email && c.env.RESEND_API_KEY),
+      message: `Contratto di rinnovo ${codiceRinnovo} creato e inviato per firma`
+    })
+
+  } catch (error) {
+    console.error('❌ Errore creazione contratto rinnovo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore creazione contratto rinnovo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
+ * PATCH /api/contracts/:id/rinnovo-completato
+ * Segna un contratto di rinnovo come completato (firmato + proforma pagata).
+ * Body: { completato: boolean }
+ */
+app.patch('/api/contracts/:id/rinnovo-completato', async (c) => {
+  const contractId = c.req.param('id')
+
+  try {
+    const body = await c.req.json()
+    const completato = body.completato !== false  // default true
+
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    const now = new Date().toISOString()
+
+    await c.env.DB.prepare(`
+      UPDATE contracts
+      SET rinnovo_completato = ?,
+          rinnovo_data_completamento = ?,
+          status = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).bind(
+      completato ? 1 : 0,
+      completato ? now : null,
+      completato ? 'SIGNED' : 'SENT',
+      now,
+      contractId
+    ).run()
+
+    // Aggiorna anche il lead (aggiorna data_rinnovo per tracciamento)
+    const contract = await c.env.DB.prepare(
+      `SELECT leadId, anno_rinnovo, codice_contratto FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+
+    if (contract && completato) {
+      // Calcola nuova data scadenza (+1 anno)
+      const nuovaScadenza = new Date()
+      nuovaScadenza.setFullYear(nuovaScadenza.getFullYear() + 1)
+
+      await c.env.DB.prepare(`
+        UPDATE contracts
+        SET data_scadenza = ?
+        WHERE id = ?
+      `).bind(nuovaScadenza.toISOString(), contractId).run()
+    }
+
+    console.log(`✅ Rinnovo ${contractId} segnato come ${completato ? 'COMPLETATO' : 'NON completato'}`)
+
+    return c.json({
+      success: true,
+      contractId,
+      completato,
+      message: completato
+        ? `✅ Rinnovo completato — contratto ${contract?.codice_contratto || contractId} attivo per un altro anno`
+        : `⚠️ Rinnovo ${contractId} ripristinato a stato non completato`
+    })
+
+  } catch (error) {
+    console.error('❌ Errore aggiornamento rinnovo completato:', error)
+    return c.json({
+      success: false,
+      error: 'Errore aggiornamento rinnovo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
   }
 })
 
