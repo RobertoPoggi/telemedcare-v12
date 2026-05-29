@@ -12211,6 +12211,9 @@ app.put('/api/leads/:id', async (c) => {
       // HubSpot integration
       external_source_id: 'external_source_id',
       
+      // IVA agevolata 4% (Legge 104, disabilità 100%)
+      iva_agevolata: 'iva_agevolata',
+      
       // Altri
       condizioniSalute: 'condizioniSalute',
       intestatarioContratto: 'intestatarioContratto',
@@ -12522,6 +12525,42 @@ app.put('/api/leads/:id/cm', async (c) => {
   } catch (error) {
     console.error('❌ Errore aggiornamento CM:', error)
     return c.json({ error: 'Errore aggiornamento Contact Manager' }, 500)
+  }
+})
+
+// PATCH /api/leads/:id/iva-agevolata — Toggle IVA agevolata 4% Legge 104 dalla dashboard
+app.patch('/api/leads/:id/iva-agevolata', async (c) => {
+  const leadId = c.req.param('id')
+  
+  try {
+    const body = await c.req.json()
+    // Accetta { iva_agevolata: 0|1|true|false }
+    const iva_agevolata = body.iva_agevolata ? 1 : 0
+    
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    
+    await c.env.DB.prepare(`
+      UPDATE leads 
+      SET iva_agevolata = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(iva_agevolata, new Date().toISOString(), leadId).run()
+    
+    console.log(`✅ IVA agevolata aggiornata per lead ${leadId}: ${iva_agevolata ? 'ATTIVATA (4%)' : 'DISATTIVATA (22%)'}`)
+    
+    return c.json({
+      success: true,
+      leadId,
+      iva_agevolata,
+      aliquota: iva_agevolata ? '4%' : '22%',
+      message: iva_agevolata
+        ? 'IVA agevolata 4% attivata (Legge 104 — disabilità 100%)'
+        : 'IVA standard 22% ripristinata'
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento IVA agevolata:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento IVA agevolata' }, 500)
   }
 })
 
@@ -19982,7 +20021,8 @@ app.get('/api/assistiti', async (c) => {
         c.servizio as servizio_contratto,
         c.status as contratto_status,
         COALESCE(a.fonte_override, l.fonte) as fonte,
-        l.canale_acquisizione as canale_acquisizione
+        l.canale_acquisizione as canale_acquisizione,
+        l.iva_agevolata as iva_agevolata
       FROM assistiti a
       LEFT JOIN contracts c ON a.lead_id = c.leadId
       LEFT JOIN leads l ON a.lead_id = l.id

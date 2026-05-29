@@ -2677,13 +2677,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Mostra servizio così com'è dal DB (già con "eCura" se presente)
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
+                // Badge IVA agevolata Legge 104
+                const ivaAgevolata = lead.iva_agevolata == 1 || lead.iva_agevolata === true;
+
                 return \`
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <tr class="border-b border-gray-100 hover:bg-gray-50\${ivaAgevolata ? ' bg-blue-50' : ''}">
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 20)}</code>
                         </td>
                         <td class="py-3 text-sm">
                             <div class="font-medium">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || lead.email || 'N/A')}</div>
+                            \${ivaAgevolata ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300 mt-1" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ IVA 4% L.104</span>' : ''}
                         </td>
                         <td class="py-3 text-sm">
                             <div class="text-xs text-gray-600">
@@ -2703,7 +2707,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 \${piano}
                             </span>
                         </td>
-                        <td class="py-3 text-sm font-bold text-green-600">€\${prezzo}</td>
+                        <td class="py-3 text-sm font-bold \${ivaAgevolata ? 'text-blue-700' : 'text-green-600'}">
+                            €\${prezzo}
+                            \${ivaAgevolata ? '<span class="block text-xs font-normal text-blue-500">+ IVA 4%</span>' : ''}
+                        </td>
                         <td class="py-3">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
                         </td>
@@ -2885,6 +2892,37 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         // ============================================
+        // IVA AGEVOLATA TOGGLE
+        // ============================================
+        
+        async function toggleIvaAgevolata(leadId, attiva) {
+            const label = attiva ? 'IVA agevolata 4% (Legge 104)' : 'IVA standard 22%';
+            if (!confirm(attiva
+                ? '⚕️ Attivare IVA agevolata 4% Legge 104 per questo lead?\\n\\nAssicurarsi di avere la dichiarazione del medico curante che certifica la disabilità 100%.'
+                : '⚠️ Ripristinare IVA standard 22% per questo lead?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/iva-agevolata\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') },
+                    body: JSON.stringify({ iva_agevolata: attiva ? 1 : 0 })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    closeModal('viewLeadModal');
+                    loadLeadsData(); // Ricarica lista
+                } else {
+                    alert('❌ Errore: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        // ============================================
         // CRUD FUNCTIONS - VIEW, EDIT, DELETE LEAD
         // ============================================
         
@@ -2910,6 +2948,23 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             
+            // IVA agevolata: mostra stato attuale e toggle
+            const ivaAgevolata = lead.iva_agevolata == 1 || lead.iva_agevolata === true;
+            const ivaEl = document.getElementById('viewIvaAgevolata');
+            const ivaToggleBtn = document.getElementById('toggleIvaBtn');
+            if (ivaEl) {
+                ivaEl.innerHTML = ivaAgevolata
+                    ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>'
+                    : '<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
+            }
+            if (ivaToggleBtn) {
+                ivaToggleBtn.textContent = ivaAgevolata ? '🔄 Ripristina IVA 22%' : '⚕️ Attiva IVA 4% Legge 104';
+                ivaToggleBtn.className = ivaAgevolata
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium';
+                ivaToggleBtn.onclick = () => toggleIvaAgevolata(lead.id, !ivaAgevolata);
+            }
+
             openModal('viewLeadModal');
         }
         
@@ -2961,6 +3016,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newConsensoPrivacy').checked = (lead.gdprConsent === 1);
             document.getElementById('newConsensoMarketing').checked = (lead.consensoMarketing === 'Si');
             document.getElementById('newConsensoTerze').checked = (lead.consensoTerze === 'Si');
+            
+            // IVA agevolata Legge 104
+            const ivaCheckbox = document.getElementById('newIvaAgevolata');
+            if (ivaCheckbox) {
+                ivaCheckbox.checked = (lead.iva_agevolata == 1 || lead.iva_agevolata === true);
+            }
             
             document.getElementById('newNote').value = lead.note || '';
             
@@ -3225,7 +3286,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 consensoTerze: document.getElementById('newConsensoTerze').checked ? 'Si' : 'No',
                 
                 // Note
-                note: document.getElementById('newNote').value
+                note: document.getElementById('newNote').value,
+                
+                // IVA agevolata 4% Legge 104
+                iva_agevolata: document.getElementById('newIvaAgevolata')?.checked ? 1 : 0
             };
             
             // Validation campi obbligatori SOLO in modalità nuovo lead
@@ -3709,6 +3773,23 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </div>
                     </div>
 
+                    <!-- IVA AGEVOLATA 4% — LEGGE 104 -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">⚕️ IVA Agevolata — Legge 104</h4>
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="newIvaAgevolata"
+                                class="mr-3 mt-1 w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500">
+                            <div>
+                                <div class="font-semibold text-gray-800 text-sm">IVA 4% — Disabilità 100% (Legge 104/1992)</div>
+                                <div class="text-xs text-gray-600 mt-1">
+                                    Selezionare se l'assistito ha una disabilità grave al 100% riconosciuta.
+                                    È richiesta la <strong>dichiarazione del medico curante/specialista</strong> prima dell'emissione della fattura.
+                                    Se non selezionato verrà applicata l'IVA ordinaria del 22%.
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
                     <!-- NOTE OPZIONALI -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">💬 Note Aggiuntive (opzionale)</label>
@@ -3782,11 +3863,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <p id="viewPiano" class="text-gray-900 bg-purple-50 p-2 rounded font-semibold">-</p>
                     </div>
                     <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IVA Applicabile</label>
+                        <div id="viewIvaAgevolata" class="p-2 rounded">
+                            <span class="text-sm text-gray-500">—</span>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
                         <p id="viewNote" class="text-gray-900 bg-gray-50 p-3 rounded min-h-[80px]">-</p>
                     </div>
                 </div>
-                <div class="mt-6 flex justify-end">
+                <div class="mt-6 flex justify-between items-center">
+                    <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
+                        ⚕️ Attiva IVA 4% Legge 104
+                    </button>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                         Chiudi
                     </button>

@@ -2770,9 +2770,20 @@ export const dashboard = `<!DOCTYPE html>
                 // Piano badge colors
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
-                return '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+                // IVA agevolata flag (from leads JOIN)
+                const ivaAgevolataAssistito = assistito.iva_agevolata == 1 || assistito.iva_agevolata === true;
+                const rowBg = ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
+                const ivaBadge = ivaAgevolataAssistito
+                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full ml-1" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ IVA 4% L.104</span>'
+                    : '';
+                const prezzoCellClass = ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
+                const ivaSubText = ivaAgevolataAssistito
+                    ? '<div class="text-xs text-blue-500 font-medium">IVA 4% L.104</div>'
+                    : '<div class="text-xs text-gray-500">/anno</div>';
+                
+                return '<tr class="border-b border-gray-100 ' + rowBg + '">' +
                     '<td class="py-3 px-2">' +
-                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + '</div>' +
+                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + ivaBadge + '</div>' +
                         '<div class="text-xs text-gray-500 mt-1">' +
                             '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (' + parentela + ')' +
                         '</div>' +
@@ -2793,8 +2804,8 @@ export const dashboard = `<!DOCTYPE html>
                         '<span class="px-3 py-1 ' + pianoColor + ' text-xs font-medium rounded-full">' + piano + '</span>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
-                        '<div class="font-bold text-green-600 text-base">€' + prezzoAnno + '</div>' +
-                        '<div class="text-xs text-gray-500">/anno</div>' +
+                        '<div class="font-bold ' + prezzoCellClass + ' text-base">€' + prezzoAnno + '</div>' +
+                        ivaSubText +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
                         '<span class="px-3 py-1 ' + statusColor + ' text-xs font-medium rounded-full">' + status + '</span>' +
