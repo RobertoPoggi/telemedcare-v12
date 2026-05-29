@@ -759,6 +759,8 @@ app.use('*', async (c, next) => {
             ivaRate:         0.22,
             annoRinnovo:     2,
             dataInvio:       '2026-05-15T00:00:00.000Z',
+            dataScadenzaRinnovo: '2027-05-15T00:00:00.000Z',
+            periodoTesto:    'dal 15/05/2026 al 15/05/2027',
           },
           {
             id:              'RINNOVO-CTR-PENNACCHIO-2025-Y2',
@@ -771,6 +773,24 @@ app.use('*', async (c, next) => {
             ivaRate:         0.22,
             annoRinnovo:     2,
             dataInvio:       '2026-05-15T00:00:00.000Z',
+            dataScadenzaRinnovo: '2027-05-15T00:00:00.000Z',
+            periodoTesto:    'dal 15/05/2026 al 15/05/2027',
+          },
+          // ── Eileen King / Elena Saglia — upgrade a eCura PREMIUM AVANZATO ──
+          // Contratto originale PRO AVANZATO (€840); rinnovo con upgrade a PREMIUM AVANZATO (€750 IVA esclusa)
+          {
+            id:              'RINNOVO-CTR-KING-2025-Y2',
+            codiceRinnovo:   'CTR-KING-2025-R2',
+            codiceOriginale: 'CTR-KING-2025',
+            leadId:          'LEAD-CONTRATTO-003',
+            servizio:        'eCura PREMIUM',
+            piano:           'AVANZATO',
+            rinnovoBase:     750,          // € 750 IVA esclusa — PREMIUM AVANZATO rinnovo
+            ivaRate:         0.22,
+            annoRinnovo:     2,
+            dataInvio:       '2026-05-08T00:00:00.000Z',  // coincide con scadenza contratto originale
+            dataScadenzaRinnovo: '2027-05-08T00:00:00.000Z',
+            periodoTesto:    'dal 08/05/2026 al 08/05/2027',
           },
         ]
 
@@ -784,7 +804,8 @@ app.use('*', async (c, next) => {
             const ivaImporto   = Math.round(r.rinnovoBase * r.ivaRate * 100) / 100
             const rinnovoTotale = Math.round((r.rinnovoBase + ivaImporto) * 100) / 100
             const ivaLabel     = r.ivaRate === 0.04 ? 'IVA 4%' : 'IVA 22%'
-            const dataScadenza = new Date('2027-05-15T00:00:00.000Z').toISOString()
+            const dataScadenza = new Date(r.dataScadenzaRinnovo).toISOString()
+            const periodo      = r.periodoTesto
 
             const htmlMinimo = `<!DOCTYPE html><html lang="it"><body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
               <div style="background:#e8f5e9;border:2px solid #27ae60;border-radius:8px;padding:12px 20px;margin-bottom:24px;text-align:center">
@@ -793,7 +814,7 @@ app.use('*', async (c, next) => {
               </div>
               <h2>Rinnovo Contratto ${r.servizio} ${r.piano} — ${r.codiceRinnovo}</h2>
               <p>Tariffa annuale di rinnovo: <strong>€${rinnovoTotale.toFixed(2)}</strong> (${ivaLabel} inclusa)</p>
-              <p>Periodo: dal 15/05/2026 al 15/05/2027</p>
+              <p>Periodo: ${periodo}</p>
               <p>La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo.</p>
             </body></html>`
 
