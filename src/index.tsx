@@ -227,6 +227,22 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
   `
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER: Aliquota IVA in base al lead
+// Legge 104 / disabilità 100% → 4% | Standard → 22%
+// ─────────────────────────────────────────────────────────────────────────────
+function getIvaRate(lead: any): number {
+  return lead?.iva_agevolata ? 0.04 : 0.22
+}
+function getIvaLabel(lead: any): string {
+  return lead?.iva_agevolata ? '4%' : '22%'
+}
+function getIvaNote(lead: any): string {
+  return lead?.iva_agevolata
+    ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)'
+    : ' (IVA 22%)'
+}
+
 // Genera proforma da contratto firmato
 async function generaProformaDaContratto(contractId: string, db: any) {
   try {
@@ -344,10 +360,12 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     
     // ✅ FIX: prezzo_totale è IVA ESCLUSA nel DB
     const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
-    const iva = Math.round(prezzoBase * 0.22 * 100) / 100
+    // Usa aliquota IVA dalla proforma (iva_agevolata) o default 22%
+    const ivaRate = proforma.iva_agevolata ? 0.04 : 0.22
+    const ivaLabel = proforma.iva_agevolata ? '4%' : '22%'
+    const iva = Math.round(prezzoBase * ivaRate * 100) / 100
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
-    // ✅ REGOLA UNIVERSALE: DB contiene IVA ESCLUSA, calcoliamo IVA 22%
     const variables = {
       NOME_CLIENTE: proforma.cliente_nome || 'Cliente',
       SERVIZIO: proforma.tipo_servizio || 'eCura Premium',
@@ -358,7 +376,9 @@ async function inviaEmailProforma(proforma: any, env?: any) {
       IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
       IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA
       IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA (alias)
-      PREZZO_SERVIZIO_PIANO: `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA 22% (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,  // Template compatibility
+      PREZZO_SERVIZIO_PIANO: `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA ${ivaLabel} (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,
+      IVA_LABEL: `IVA ${ivaLabel}`,
+      IVA_NOTE: proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -612,6 +632,8 @@ app.use('*', async (c, next) => {
         // Colonne reminder pagamento proforma
         { name: 'reminder_proforma_sent_at', def: `TEXT DEFAULT NULL` },
         { name: 'reminder_proforma_count', def: `INTEGER DEFAULT 0` },
+        // IVA agevolata 4% per assistiti con disabilità 100% (Legge 104)
+        { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -691,6 +713,14 @@ app.use('*', async (c, next) => {
         `).run()
       } catch (e: any) {
         console.warn('⚠️ Errore fix Mazzarella fonte_override:', e.message)
+      }
+
+      // Migrazione: Aggiungi colonna iva_agevolata a proforma (per calcolo IVA 4% Legge 104)
+      try {
+        await c.env.DB.prepare(`ALTER TABLE proforma ADD COLUMN iva_agevolata INTEGER DEFAULT 0`).run()
+        console.log('✅ Colonna iva_agevolata aggiunta a proforma')
+      } catch (e: any) {
+        // Colonna già esistente — normale
       }
 
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
@@ -8855,15 +8885,18 @@ app.get('/api/proforma/:id', async (c) => {
     // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB contiene IVA ESCLUSA
     // Es: DB.prezzo_totale = €990 (IVA ESCLUSA)
     const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
-    const importoIva = Math.round((prezzoBaseIvaEsclusa * 0.22) * 100) / 100
+    // Usa aliquota IVA dalla proforma (Legge 104 → 4%, standard → 22%)
+    const ivaRateProforma = proforma.iva_agevolata ? 0.04 : 0.22
+    const ivaLabelProforma = proforma.iva_agevolata ? '4%' : '22%'
+    const importoIva = Math.round((prezzoBaseIvaEsclusa * ivaRateProforma) * 100) / 100
     const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
     
     const proformaResponse = {
       ...proforma,
-      // ✅ REGOLA UNIVERSALE: prezzi calcolati da DB (prezzo_totale = IVA ESCLUSA)
-      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA (base + IVA 22%)
+      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA
       prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Base IVA ESCLUSA (da DB)
-      importo_iva: importoIva.toFixed(2),  // IVA 22% calcolata
+      importo_iva: importoIva.toFixed(2),  // IVA calcolata
+      iva_label: `IVA ${ivaLabelProforma}`,
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
@@ -10954,7 +10987,8 @@ app.post('/api/leads/:id/complete', async (c) => {
       servizio: 'servizio',
       piano: 'piano',
       note: 'note',
-      gdprConsent: 'gdprConsent'
+      gdprConsent: 'gdprConsent',
+      iva_agevolata: 'iva_agevolata'  // 1 = IVA 4% Legge 104 (disabilità 100%), 0 = IVA 22% standard
     }
     
     for (const [formField, dbField] of Object.entries(fieldMapping)) {
@@ -10962,7 +10996,7 @@ app.post('/api/leads/:id/complete', async (c) => {
         updateFields.push(`${dbField} = ?`)
         
         // Converti checkbox a integer (0/1)
-        if (formField === 'gdprConsent') {
+        if (formField === 'gdprConsent' || formField === 'iva_agevolata') {
           binds.push(data[formField] === '1' || data[formField] === 'true' || data[formField] === true ? 1 : 0)
         } else {
           binds.push(data[formField])
@@ -14061,9 +14095,10 @@ app.post('/api/contracts/sign', async (c) => {
         let prezzoBase = parseFloat(contract.prezzo_totale || 0)
         let prezzoIvaInclusa = 0
         
-        // Calcola IVA inclusa da prezzo base
+        // Calcola IVA inclusa da prezzo base (usa aliquota dal lead: 4% Legge 104 o 22% standard)
+        const ivaRateFirma = lead?.iva_agevolata ? 0.04 : 0.22
         if (prezzoBase > 0) {
-          const iva = Math.round(prezzoBase * 0.22 * 100) / 100
+          const iva = Math.round(prezzoBase * ivaRateFirma * 100) / 100
           prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
         } else {
           // Fallback: usa prezzi corretti da ecura-pricing
@@ -14077,8 +14112,9 @@ app.post('/api/contracts/sign', async (c) => {
           
           if (pricing) {
             prezzoBase = pricing.setupBase  // IVA esclusa
-            prezzoIvaInclusa = pricing.setupTotale  // IVA inclusa
-            console.log(`✅ [FIRMA→PROFORMA] Prezzi da ecura-pricing: ${servizioTipo} ${pianoTipo} = €${prezzoBase} (base) + IVA = €${prezzoIvaInclusa}`)
+            // Ricalcola IVA con aliquota corretta (4% o 22%) invece di setupTotale hardcoded
+            prezzoIvaInclusa = Math.round((prezzoBase * (1 + ivaRateFirma)) * 100) / 100
+            console.log(`✅ [FIRMA→PROFORMA] Prezzi da ecura-pricing: ${servizioTipo} ${pianoTipo} = €${prezzoBase} (base) + IVA ${ivaRateFirma*100}% = €${prezzoIvaInclusa}`)
           } else {
             // Ultimate fallback
             console.error(`❌ [FIRMA→PROFORMA] getPricing restituito null per ${servizioTipo} ${pianoTipo}, uso fallback hardcoded`)
@@ -14180,6 +14216,7 @@ app.post('/api/contracts/sign', async (c) => {
                 prezzo_mensile = ?,
                 durata_mesi = ?,
                 prezzo_totale = ?,
+                iva_agevolata = ?,
                 status = ?,
                 updated_at = ?
               WHERE id = ?
@@ -14200,6 +14237,7 @@ app.post('/api/contracts/sign', async (c) => {
               (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
               12, // durata_mesi
               prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
+              lead.iva_agevolata ? 1 : 0, // iva_agevolata: 1 = 4% Legge 104, 0 = 22% standard
               'SENT',
               new Date().toISOString(), // updated_at
               proformaIdGenerated
@@ -14218,8 +14256,8 @@ app.post('/api/contracts/sign', async (c) => {
                 cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
                 cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
                 tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-                status, email_sent, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                iva_agevolata, status, email_sent, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
               contractId || '', // contract_id
               lead.id,
@@ -14239,6 +14277,7 @@ app.post('/api/contracts/sign', async (c) => {
               (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
               12, // durata_mesi
               prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
+              lead.iva_agevolata ? 1 : 0, // iva_agevolata: 1 = 4% Legge 104, 0 = 22% standard
               'SENT',
               false,
               new Date().toISOString(), // created_at

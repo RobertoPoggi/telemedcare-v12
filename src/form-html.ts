@@ -212,7 +212,28 @@ export const FORM_HTML = `<!DOCTYPE html>
                         <label for="note">Note aggiuntive (facoltativo)</label>
                         <textarea id="note" name="note" rows="3" placeholder="Eventuali richieste o informazioni aggiuntive..."></textarea>
                     </div>
-                    
+
+                    <!-- IVA AGEVOLATA 4% — Legge 104 / Disabilità 100% -->
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 15px; color: #1e40af;">⚕️ IVA Agevolata 4% — Legge 104</h3>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #374151;">
+                            L'assistito ha diritto all'IVA agevolata al 4% (invece del 22%) se è riconosciuto come
+                            <strong>persona con disabilità grave al 100%</strong> ai sensi della Legge 104/1992.
+                            È necessario presentare la <strong>dichiarazione del medico curante/specialista</strong>
+                            che certifica il diritto all'IVA agevolata per i dispositivi di assistenza.
+                        </p>
+                        <div class="checkbox-wrapper" style="background: transparent; padding: 0;">
+                            <input type="checkbox" id="iva_agevolata" name="iva_agevolata" value="1">
+                            <label for="iva_agevolata" style="font-weight: 600; color: #1e40af;">
+                                ✅ L'assistito è titolare di disabilità 100% (Legge 104) e ha diritto all'IVA agevolata 4%
+                            </label>
+                        </div>
+                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
+                            ⚠️ La dichiarazione medica dovrà essere inviata prima dell'emissione della fattura.
+                            Se non spuntato, verrà applicata l'IVA ordinaria del 22%.
+                        </p>
+                    </div>
+
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="gdprConsent" name="gdprConsent" value="1" required>
                         <label for="gdprConsent">

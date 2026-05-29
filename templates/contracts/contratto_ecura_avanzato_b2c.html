@@ -139,8 +139,8 @@
 
     <div class="price-box">
         <h3 style="margin-top: 0; color: #3b82f6;">💎 PIANO eCura {{TIPO_SERVIZIO}} - AVANZATO</h3>
-        <p style="font-size: 18px;"><strong>✅ Primo Anno:</strong> €840,00 + IVA 22% = <strong>€1.024,80</strong></p>
-        <p style="font-size: 18px;"><strong>🔄 Rinnovo Annuale:</strong> €600,00 + IVA 22% = <strong>€732,00</strong></p>
+        <p style="font-size: 18px;"><strong>✅ Primo Anno:</strong> €{{IMPORTO_PRIMO_ANNO}} + {{IVA_LABEL}} = <strong>€{{TOTALE_PRIMO_ANNO}}</strong></p>
+        <p style="font-size: 18px;"><strong>🔄 Rinnovo Annuale:</strong> €{{IMPORTO_ANNI_SUCCESSIVI}} + {{IVA_LABEL}} = <strong>€{{PREZZO_RINNOVO}}</strong></p>
         <p style="margin-top: 15px;"><em>💰 Dispositivo medico certificato incluso (Classe IIa)</em></p>
         <p><em>👨‍⚕️ Centrale Operativa H24/7 con operatori sanitari qualificati</em></p>
     </div>
@@ -197,10 +197,10 @@
             Il contratto ha durata <strong>annuale</strong> (12 mesi) a partire dalla data di attivazione del servizio. Il contratto si rinnova tacitamente di anno in anno salvo disdetta scritta con preavviso di 30 giorni.</p>
             
             <p><strong>3.2 Pagamento Primo Anno:</strong><br>
-            <strong>€1.024,80</strong> (IVA 22% inclusa) da versare alla firma del presente contratto. Include dispositivo medico, attivazione, configurazione personalizzata e 12 mesi di servizio completo.</p>
+            <strong>€{{TOTALE_PRIMO_ANNO}}</strong> ({{IVA_LABEL}} inclusa) da versare alla firma del presente contratto. Include dispositivo medico, attivazione, configurazione personalizzata e 12 mesi di servizio completo.</p>
             
             <p><strong>3.3 Rinnovo Successivo:</strong><br>
-            <strong>€732,00</strong> (IVA 22% inclusa) da versare annualmente per i rinnovi successivi. Servizio continuativo senza interruzioni.</p>
+            <strong>€{{PREZZO_RINNOVO}}</strong> ({{IVA_LABEL}} inclusa) da versare annualmente per i rinnovi successivi. Servizio continuativo senza interruzioni.</p>
             
             <p><strong>3.4 Modalità di Pagamento Accettate:</strong></p>
             <ul>

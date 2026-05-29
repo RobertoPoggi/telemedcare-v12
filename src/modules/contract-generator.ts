@@ -50,6 +50,9 @@ export interface ContractData {
   prezzoMensile: number
   durataContratto: number // mesi
   prezzoTotale: number
+
+  // IVA agevolata 4% (Legge 104 / disabilità 100%)
+  iva_agevolata?: boolean | number
   
   // Generated
   codiceContratto?: string
@@ -172,6 +175,16 @@ export class ContractGenerator {
     const prezzoAnnoPrimo = data.prezzoTotale
     const prezzoAnniSuccessivi = data.prezzoMensile * 12
     
+    // Aliquota IVA: 4% per Legge 104 (disabilità 100%), 22% standard
+    const ivaAgevolata = !!data.iva_agevolata
+    const ivaRate = ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel = ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote = ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : ''
+    const ivaValorePrimoAnno = Math.round(prezzoAnnoPrimo * ivaRate * 100) / 100
+    const totalePrimoAnno = Math.round((prezzoAnnoPrimo + ivaValorePrimoAnno) * 100) / 100
+    const ivaValoreRinnovo = Math.round(prezzoAnniSuccessivi * ivaRate * 100) / 100
+    const totaleRinnovo = Math.round((prezzoAnniSuccessivi + ivaValoreRinnovo) * 100) / 100
+    
     // Calcola date
     const oggi = new Date()
     const dataInizio = new Date(oggi)
@@ -228,7 +241,17 @@ export class ContractGenerator {
       
       // Prezzi (2 placeholder)
       IMPORTO_PRIMO_ANNO: prezzoAnnoPrimo.toFixed(2),
-      IMPORTO_ANNI_SUCCESSIVI: prezzoAnniSuccessivi.toFixed(2)
+      IMPORTO_ANNI_SUCCESSIVI: prezzoAnniSuccessivi.toFixed(2),
+      
+      // IVA
+      IVA_LABEL: ivaLabel,
+      IVA_NOTE: ivaNote,
+      IVA: ivaValorePrimoAnno.toFixed(2),
+      TOTALE_PRIMO_ANNO: totalePrimoAnno.toFixed(2),
+      PREZZO_RINNOVO: totaleRinnovo.toFixed(2),
+
+      // Prezzi IVA inclusa (alias)
+      PREZZO_TOTALE: `€ ${totalePrimoAnno.toFixed(2).replace('.', ',')}`,
     }
     
     return TemplateEngine.render(template, variables)
@@ -375,7 +398,7 @@ export class ContractGenerator {
 <p>Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
 <p>&nbsp;</p>
 <h2>Tariffa del Servizio</h2>
-<p>La tariffa annuale per il primo anno di attivazione del Servizio {{Servizio}} è pari a Euro {{IMPORTO_PRIMO_ANNO}} + IVA 22% e include:</p>
+<p>La tariffa annuale per il primo anno di attivazione del Servizio {{Servizio}} è pari a Euro {{IMPORTO_PRIMO_ANNO}} + {{IVA_LABEL}}{{IVA_NOTE}} e include:</p>
 <p>&nbsp;</p>
 <ul>
 <li>Dispositivo {{Dispositivo}}</li>
@@ -384,7 +407,7 @@ export class ContractGenerator {
 <li>Piano {{Piano}}</li>
 </ul>
 <p>&nbsp;</p>
-<p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio {{Servizio}} sarà pari a Euro {{IMPORTO_ANNI_SUCCESSIVI}} + IVA 22% con inclusi:</p>
+<p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio {{Servizio}} sarà pari a Euro {{IMPORTO_ANNI_SUCCESSIVI}} + {{IVA_LABEL}} con inclusi:</p>
 <p>&nbsp;</p>
 <ul>
 <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
@@ -984,7 +1007,7 @@ ${420 + textContent.length}
 0 -18 Td
 (Totale Contratto \\(${data.durataContratto} mesi\\): EUR ${data.prezzoTotale.toFixed(2)}) Tj
 0 -18 Td
-(IVA Inclusa: 22%) Tj
+({{IVA_LABEL}} Inclusa) Tj
 0 -40 Td
 /F2 14 Tf
 (TERMINI E CONDIZIONI) Tj

@@ -20,6 +20,7 @@ export interface ContractTemplate {
     firstYear: number
     renewal: number
   }
+  iva_agevolata?: boolean  // IVA 4% Legge 104 (disabilità 100%)
 }
 
 export interface ContractPreviewData {
@@ -265,10 +266,14 @@ class ContractPreviewService {
     
     // Calcola prezzi se necessario
     if (template.contractType !== 'PROFORMA') {
+      const ivaRate = template.iva_agevolata ? 0.04 : 0.22
+      const ivaLabel = template.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
       enriched.importoPrimoAnno = template.pricing.firstYear
       enriched.importoRinnovo = template.pricing.renewal
-      enriched.importoPrimoAnnoIva = Math.round(template.pricing.firstYear * 1.22)
-      enriched.importoRinnovoIva = Math.round(template.pricing.renewal * 1.22)
+      enriched.importoPrimoAnnoIva = Math.round(template.pricing.firstYear * (1 + ivaRate))
+      enriched.importoRinnovoIva = Math.round(template.pricing.renewal * (1 + ivaRate))
+      enriched.IVA_LABEL = ivaLabel
+      enriched.IVA_NOTE = template.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : ''
     }
     
     // Genera codici contratto
@@ -379,7 +384,7 @@ class ContractPreviewService {
                 <tr>
                     <th>Descrizione</th>
                     <th>Importo (€)</th>
-                    <th>IVA 22%</th>
+                    <th>${variables.IVA_LABEL || 'IVA 22%'}</th>
                     <th>Totale (€)</th>
                 </tr>
             </thead>
@@ -387,13 +392,13 @@ class ContractPreviewService {
                 <tr>
                     <td>Primo Anno di Servizio</td>
                     <td>${variables.importoPrimoAnno || 0}</td>
-                    <td>${Math.round((variables.importoPrimoAnno || 0) * 0.22)}</td>
+                    <td>${Math.round((variables.importoPrimoAnno || 0) * (variables.IVA_LABEL === 'IVA 4%' ? 0.04 : 0.22))}</td>
                     <td class="total-row">${variables.importoPrimoAnnoIva || Math.round((variables.importoPrimoAnno || 0) * 1.22)}</td>
                 </tr>
                 <tr>
                     <td>Rinnovo Annuale</td>
                     <td>${variables.importoRinnovo || 0}</td>
-                    <td>${Math.round((variables.importoRinnovo || 0) * 0.22)}</td>
+                    <td>${Math.round((variables.importoRinnovo || 0) * (variables.IVA_LABEL === 'IVA 4%' ? 0.04 : 0.22))}</td>
                     <td>${variables.importoRinnovoIva || Math.round((variables.importoRinnovo || 0) * 1.22)}</td>
                 </tr>
             </tbody>
