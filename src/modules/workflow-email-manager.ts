@@ -1163,10 +1163,14 @@ export async function inviaEmailProforma(
     numeroProforma: string
     proformaPdfUrl: string
     tipoServizio: string
-    servizio?: string  // 🔥 AGGIUNTO: campo opzionale per servizio completo
+    servizio?: string
     prezzoBase: number
     prezzoIvaInclusa: number
     dataScadenza: string
+    // Rinnovo opzionali
+    isRinnovo?: boolean
+    annoRinnovo?: number
+    codiceOriginale?: string
   },
   env: any,
   db: D1Database
@@ -1189,26 +1193,47 @@ export async function inviaEmailProforma(
       .trim()
       .toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
     
-    // ✅ FIX: Calcola correttamente imponibile, IVA e totale
-    // proformaData.prezzoBase = imponibile (IVA esclusa)
-    // proformaData.prezzoIvaInclusa = totale (IVA inclusa)
+    // Flags rinnovo
+    const isRinnovo = proformaData.isRinnovo === true
+    const annoRinnovo = proformaData.annoRinnovo || 2
+    const codiceOriginale = proformaData.codiceOriginale || ''
+
+    // IVA: leggi iva_agevolata dal lead (4% L.104 o 22% standard)
+    const ivaAgevolata = !!(leadData as any).iva_agevolata
+    const ivaRate = ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel = ivaAgevolata ? '4%' : '22%'
+
+    // Calcola imponibile, IVA e totale con aliquota corretta
     const imponibile = proformaData.prezzoBase
-    const importoIva = Math.round((imponibile * 0.22) * 100) / 100  // IVA 22%
-    const totaleConIva = Math.round((imponibile * 1.22) * 100) / 100
+    const importoIva = Math.round(imponibile * ivaRate * 100) / 100
+    const totaleConIva = Math.round((imponibile + importoIva) * 100) / 100
+
+    // Titolo e causale differenziati per rinnovi
+    const titoloProforma = isRinnovo
+      ? `🔄 Proforma Rinnovo Anno ${annoRinnovo} — ${formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO')}`
+      : `✅ Pro-forma ${formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO')}`
+    const causale = isRinnovo
+      ? `Rinnovo Anno ${annoRinnovo} ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}${codiceOriginale ? ' (rinnovo ' + codiceOriginale + ')' : ''}`
+      : `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`
+    const notaRinnovo = isRinnovo
+      ? `<div style="background:#e8f5e9;border-left:4px solid #27ae60;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;"><strong style="color:#1b5e20;">🔄 Proforma di Rinnovo — Anno ${annoRinnovo}</strong><br><span style="color:#2e7d32;font-size:13px;">La tariffa di rinnovo è agevolata rispetto al primo anno in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span></div>`
+      : ''
     
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(servizioNormalizzato, proformaData.tipoServizio as 'BASE' | 'AVANZATO'),
+      PIANO_SERVIZIO: titoloProforma,
       NUMERO_PROFORMA: proformaData.numeroProforma,
-      // ✅ FIX: Usa i valori corretti per ogni campo
-      IMPORTO_BASE: `€${imponibile.toFixed(2).replace('.', ',')}`,  // Imponibile (vecchio nome in alcuni template)
-      IMPORTO_IVA: `€${importoIva.toFixed(2).replace('.', ',')}`,    // IVA 22%
-      IMPORTO_CON_IVA: `€${totaleConIva.toFixed(2).replace('.', ',')}`,  // Totale con IVA
-      IMPORTO_TOTALE: `€${totaleConIva.toFixed(2).replace('.', ',')}`,   // Alias per IMPORTO_CON_IVA
+      IMPORTO_BASE: `€${imponibile.toFixed(2).replace('.', ',')}`,
+      IMPORTO_IVA: `€${importoIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA: `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE: `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IVA_LABEL: `IVA ${ivaLabel}`,
+      IVA_NOTE: ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
-      CAUSALE: `Proforma ${proformaData.numeroProforma} - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+      CAUSALE: causale,
+      NOTA_RINNOVO: notaRinnovo,
       LINK_PROFORMA_PDF: `${getBaseUrl(env)}/proforma-view?id=${proformaData.proformaId}`,
       LINK_PAGAMENTO: `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT')
@@ -1340,10 +1365,13 @@ p {margin: 18px 0; line-height: 1.9;}
       : [] // Nessun allegato se PDF non disponibile
 
     // Invia email (con o senza allegato)
+    const emailSubject = isRinnovo
+      ? `🔄 Rinnovo eCura — Proforma ${proformaData.numeroProforma} (Anno ${annoRinnovo})`
+      : `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: 'info@telemedcare.it',
-      subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
+      subject: emailSubject,
       html: emailHtml,
       ...(attachments.length > 0 && { attachments }) // Include attachments solo se presenti
     })

@@ -14561,11 +14561,18 @@ app.post('/api/contracts/sign', async (c) => {
         // Importa funzione invio proforma
         const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
         
-        // Genera numero proforma univoco (l'ID sarà auto-generato da SQLite)
+        // ── Flag rinnovo ──────────────────────────────────────────────────────
+        const isRinnovoContract = contract.is_rinnovo == 1 || contract.is_rinnovo === true
+        const annoRinnovoContract = contract.anno_rinnovo || 2
+        const codiceOriginale = contract.rinnovo_di || ''
+
+        // Genera numero proforma univoco — prefisso RIN per rinnovi
         const year = new Date().getFullYear()
         const month = String(new Date().getMonth() + 1).padStart(2, '0')
         const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-        const numeroProforma = `PRF${year}${month}-${random}`
+        const numeroProforma = isRinnovoContract
+          ? `RIN${year}${month}-${random}`
+          : `PRF${year}${month}-${random}`
         let proformaIdGenerated: number | null = null  // Sarà popolato dopo INSERT
         
         // Determina prezzi e servizio dal contratto (NON hardcoded!)
@@ -14573,43 +14580,47 @@ app.post('/api/contracts/sign', async (c) => {
         // ✅ FIX: Usa servizio reale dal contratto (eCura Premium, eCura Professional, etc)
         const servizio = contract.servizio || contract.service_type || 'eCura Professional'
         
+        // Calcola IVA inclusa da prezzo base (usa aliquota dal lead: 4% Legge 104 o 22% standard)
+        const ivaRateFirma = lead?.iva_agevolata ? 0.04 : 0.22
+
         // ✅ FIX CRITICO: Leggi prezzo BASE (IVA esclusa) dal contratto
         // Il contratto contiene prezzo_totale = IVA ESCLUSA
+        // Per i rinnovi prezzo_totale = rinnovoBase (già corretto, es. €240)
         let prezzoBase = parseFloat(contract.prezzo_totale || 0)
         let prezzoIvaInclusa = 0
         
-        // Calcola IVA inclusa da prezzo base (usa aliquota dal lead: 4% Legge 104 o 22% standard)
-        const ivaRateFirma = lead?.iva_agevolata ? 0.04 : 0.22
         if (prezzoBase > 0) {
           const iva = Math.round(prezzoBase * ivaRateFirma * 100) / 100
           prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
+          console.log(`📊 [FIRMA→PROFORMA] ${isRinnovoContract ? '🔄 RINNOVO' : 'PRIMO ANNO'}: prezzo base €${prezzoBase}, IVA ${ivaRateFirma*100}% = €${prezzoIvaInclusa}`)
         } else {
           // Fallback: usa prezzi corretti da ecura-pricing
           console.warn(`⚠️ [FIRMA→PROFORMA] Prezzi non trovati nel contratto, uso prezzi standard da ecura-pricing per piano ${piano}`)
           
-          // Importa getPricing per prezzi corretti
           const { getPricing } = await import('./modules/ecura-pricing')
           const servizioTipo = servizio.includes('PREMIUM') ? 'PREMIUM' : servizio.includes('PRO') ? 'PRO' : 'FAMILY'
           const pianoTipo = piano === 'AVANZATO' ? 'AVANZATO' : 'BASE'
           const pricing = getPricing(servizioTipo, pianoTipo)
           
           if (pricing) {
-            prezzoBase = pricing.setupBase  // IVA esclusa
-            // Ricalcola IVA con aliquota corretta (4% o 22%) invece di setupTotale hardcoded
+            // Per rinnovi usa rinnovoBase, per primo anno usa setupBase
+            prezzoBase = isRinnovoContract ? pricing.rinnovoBase : pricing.setupBase
             prezzoIvaInclusa = Math.round((prezzoBase * (1 + ivaRateFirma)) * 100) / 100
-            console.log(`✅ [FIRMA→PROFORMA] Prezzi da ecura-pricing: ${servizioTipo} ${pianoTipo} = €${prezzoBase} (base) + IVA ${ivaRateFirma*100}% = €${prezzoIvaInclusa}`)
+            console.log(`✅ [FIRMA→PROFORMA] Prezzi da ecura-pricing (${isRinnovoContract ? 'rinnovo' : 'setup'}): ${servizioTipo} ${pianoTipo} = €${prezzoBase} + IVA ${ivaRateFirma*100}% = €${prezzoIvaInclusa}`)
           } else {
-            // Ultimate fallback
             console.error(`❌ [FIRMA→PROFORMA] getPricing restituito null per ${servizioTipo} ${pianoTipo}, uso fallback hardcoded`)
-            if (piano === 'AVANZATO') {
-              prezzoBase = 990
-              prezzoIvaInclusa = 1207.80
+            if (isRinnovoContract) {
+              prezzoBase = piano === 'AVANZATO' ? 600 : 240
             } else {
-              prezzoBase = 480
-              prezzoIvaInclusa = 585.60
+              prezzoBase = piano === 'AVANZATO' ? 990 : 480
             }
+            prezzoIvaInclusa = Math.round((prezzoBase * (1 + ivaRateFirma)) * 100) / 100
           }
         }
+
+        // Scadenza proforma: 15 giorni per rinnovi, 3 giorni per primo anno
+        const scadenzaGiorni = isRinnovoContract ? 15 : 3
+        const dataScadenzaProforma = new Date(Date.now() + scadenzaGiorni * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         
         console.log(`📊 [FIRMA→PROFORMA] Servizio: ${servizio}, Piano: ${piano}, Prezzo Base: €${prezzoBase}, IVA Inclusa: €${prezzoIvaInclusa}`)
         
@@ -14617,12 +14628,15 @@ app.post('/api/contracts/sign', async (c) => {
         const proformaData = {
           proformaId: '', // Placeholder - sarà aggiornato dopo INSERT con ID auto-generato
           numeroProforma,
-          proformaPdfUrl: '', // PDF generato separatamente (richiede Puppeteer)
+          proformaPdfUrl: '',
           tipoServizio: piano,
           servizio: servizio,
           prezzoBase: prezzoBase,
           prezzoIvaInclusa: prezzoIvaInclusa,
-          dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // ✅ +3 giorni (non 30!)
+          dataScadenza: new Date(Date.now() + scadenzaGiorni * 24 * 60 * 60 * 1000).toISOString(),
+          isRinnovo: isRinnovoContract,
+          annoRinnovo: annoRinnovoContract,
+          codiceOriginale: codiceOriginale
         }
         
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
@@ -14700,13 +14714,14 @@ app.post('/api/contracts/sign', async (c) => {
                 durata_mesi = ?,
                 prezzo_totale = ?,
                 iva_agevolata = ?,
+                is_rinnovo = ?,
                 status = ?,
                 updated_at = ?
               WHERE id = ?
             `).bind(
               lead.id,
-              new Date().toISOString().split('T')[0], // data_emissione aggiornata
-              new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
+              new Date().toISOString().split('T')[0],
+              dataScadenzaProforma,
               nomeCliente,
               cognomeCliente,
               emailCliente,
@@ -14716,13 +14731,14 @@ app.post('/api/contracts/sign', async (c) => {
               capCliente,
               provinciaCliente,
               cfCliente,
-              servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
-              12, // durata_mesi
-              prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
-              lead.iva_agevolata ? 1 : 0, // iva_agevolata: 1 = 4% Legge 104, 0 = 22% standard
+              servizio,
+              (prezzoBase / 12).toFixed(2),
+              12,
+              prezzoBase,
+              lead.iva_agevolata ? 1 : 0,
+              isRinnovoContract ? 1 : 0,
               'SENT',
-              new Date().toISOString(), // updated_at
+              new Date().toISOString(),
               proformaIdGenerated
             ).run()
             
@@ -14739,14 +14755,14 @@ app.post('/api/contracts/sign', async (c) => {
                 cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
                 cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
                 tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-                iva_agevolata, status, email_sent, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                iva_agevolata, is_rinnovo, status, email_sent, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
-              contractId || '', // contract_id
+              contractId || '',
               lead.id,
               numeroProforma,
-              new Date().toISOString().split('T')[0], // data_emissione
-              new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni // data_scadenza
+              new Date().toISOString().split('T')[0],
+              dataScadenzaProforma,
               nomeCliente,
               cognomeCliente,
               emailCliente,
@@ -14756,15 +14772,16 @@ app.post('/api/contracts/sign', async (c) => {
               capCliente,
               provinciaCliente,
               cfCliente,
-              servizio, // ✅ FIX: tipo_servizio = SERVIZIO (eCura Premium), non piano (BASE/AVANZATO)
-              (prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
-              12, // durata_mesi
-              prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (€990 per PREMIUM AVANZATO)
-              lead.iva_agevolata ? 1 : 0, // iva_agevolata: 1 = 4% Legge 104, 0 = 22% standard
+              servizio,
+              (prezzoBase / 12).toFixed(2),
+              12,
+              prezzoBase,
+              lead.iva_agevolata ? 1 : 0,
+              isRinnovoContract ? 1 : 0,
               'SENT',
               false,
-              new Date().toISOString(), // created_at
-              new Date().toISOString()  // updated_at
+              new Date().toISOString(),
+              new Date().toISOString()
             ).run()
             
             console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito`)
