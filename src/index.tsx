@@ -7946,6 +7946,87 @@ app.delete('/api/setup-real-contracts', async (c) => {
   }
 })
 
+// POST /api/setup-test-rinnovo — crea lead+contratti test Poggi/Ressa e ritorna link firma
+// Endpoint pubblico temporaneo per testare il flusso rinnovo senza dipendere dallo startup
+app.post('/api/setup-test-rinnovo', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+    const baseUrl = `https://telemedcare-v12.pages.dev`
+
+    // 1. Lead
+    const existingLead = await db.prepare(`SELECT id FROM leads WHERE id = 'LEAD-POGGI-TEST'`).first()
+    if (!existingLead) {
+      await db.prepare(`
+        INSERT INTO leads (id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano, fonte, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind('LEAD-POGGI-TEST','Roberto','Poggi','rpoggi55@gmail.com','3401234567',
+        'eCura PRO','BASE','Form eCura x Test','CONVERTED',
+        'Lead test — Assistita: Rosaria Ressa',
+        new Date().toISOString(), new Date().toISOString()).run()
+    }
+
+    // 2. Contratto originale SIGNED
+    const existingOrig = await db.prepare(`SELECT id FROM contracts WHERE codice_contratto = 'CTR-POGGI-TEST-2025'`).first()
+    if (!existingOrig) {
+      await db.prepare(`
+        INSERT INTO contracts (id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+          template_utilizzato, contenuto_html, cliente_nome, cliente_cognome, cliente_email,
+          status, prezzo_totale, prezzo_mensile, durata_mesi,
+          data_invio, data_firma, data_scadenza, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind('CTR-POGGI-TEST-2025-ID','LEAD-POGGI-TEST','CTR-POGGI-TEST-2025',
+        'BASE','BASE','eCura PRO','contratto_b2c',
+        '<html><body>Contratto test — Rosaria Ressa / Roberto Poggi</body></html>',
+        'Roberto','Poggi','rpoggi55@gmail.com',
+        'SIGNED', 480, 40, 12,
+        '2025-05-08', '2025-05-10', '2026-05-10',
+        new Date().toISOString(), new Date().toISOString()).run()
+    }
+
+    // 3. Contratto rinnovo SENT
+    const rinnovoBase = 240
+    const existing = await db.prepare(`SELECT id FROM contracts WHERE codice_contratto = 'CTR-POGGI-TEST-2025-R2'`).first()
+    if (!existing) {
+      const htmlRinnovo = `<!DOCTYPE html><html lang="it"><body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+        <div style="background:#e8f5e9;border:2px solid #27ae60;border-radius:8px;padding:12px 20px;margin-bottom:24px;text-align:center">
+          <strong style="color:#1b5e20;font-size:16px">🔄 CONTRATTO DI RINNOVO TEST — Anno 2</strong><br>
+          <span style="color:#2e7d32">Rinnovo del contratto <strong>CTR-POGGI-TEST-2025</strong></span>
+        </div>
+        <h2>Rinnovo eCura PRO BASE — CTR-POGGI-TEST-2025-R2</h2>
+        <p><strong>Assistita:</strong> Rosaria Ressa &nbsp;|&nbsp; <strong>Referente:</strong> Roberto Poggi</p>
+        <p>Tariffa annuale di rinnovo: <strong>€${(rinnovoBase * 1.22).toFixed(2)}</strong> (IVA 22% inclusa)</p>
+        <p>Periodo: dal 10/05/2026 al 10/05/2027</p>
+        <p>⚠️ Contratto di TEST — non inviato ad utenti reali.</p>
+      </body></html>`
+      await db.prepare(`
+        INSERT INTO contracts (id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+          template_utilizzato, contenuto_html, cliente_nome, cliente_cognome, cliente_email,
+          status, prezzo_totale, prezzo_mensile, durata_mesi,
+          is_rinnovo, rinnovo_di, anno_rinnovo,
+          data_invio, data_scadenza, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind('CTR-POGGI-TEST-R2-ID','LEAD-POGGI-TEST','CTR-POGGI-TEST-2025-R2',
+        'BASE','BASE','eCura PRO','contratto_rinnovo_b2c', htmlRinnovo,
+        'Roberto','Poggi','rpoggi55@gmail.com',
+        'SENT', rinnovoBase, Math.round(rinnovoBase/12*100)/100, 12,
+        1,'CTR-POGGI-TEST-2025', 2,
+        new Date().toISOString().split('T')[0], '2027-05-10',
+        new Date().toISOString(), new Date().toISOString()).run()
+    }
+
+    const firmaUrl = `${baseUrl}/firma-contratto?contractId=CTR-POGGI-TEST-R2-ID`
+    return c.json({
+      success: true,
+      message: 'Contratti test Poggi/Ressa pronti',
+      firmaUrl,
+      note: 'Apri firmaUrl nel browser per testare il flusso di firma rinnovo'
+    })
+  } catch(e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // POST /api/setup-real-contracts - CREA DIRETTAMENTE I 10 CONTRATTI NEL DATABASE
 app.post('/api/setup-real-contracts', async (c) => {
   try {
