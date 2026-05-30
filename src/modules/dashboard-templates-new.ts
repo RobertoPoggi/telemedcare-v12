@@ -4535,13 +4535,53 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewNote').textContent = lead.note || '-';
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             document.getElementById('viewCM').textContent = lead.cm || 'Nessuno';
-            
+
+            // ── IVA agevolata: mostra stato e configura toggle ────────────────
+            const ivaAgevolata = lead.iva_agevolata == 1 || lead.iva_agevolata === true;
+            const ivaEl = document.getElementById('viewIvaAgevolata');
+            const ivaBtn = document.getElementById('toggleIvaBtn');
+            if (ivaEl) {
+                ivaEl.innerHTML = ivaAgevolata
+                    ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>'
+                    : '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
+            }
+            if (ivaBtn) {
+                ivaBtn.textContent = ivaAgevolata ? '🔄 Ripristina IVA 22%' : '⚕️ Attiva IVA 4% Legge 104';
+                ivaBtn.className = ivaAgevolata
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium';
+                ivaBtn.onclick = () => toggleIvaAgevolata(lead.id, !ivaAgevolata);
+            }
+
             // Carica lo storico interazioni
             loadInteractions(leadId);
             
             openModal('viewLeadModal');
         }
-        
+
+        async function toggleIvaAgevolata(leadId, attiva) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/iva-agevolata\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ iva_agevolata: attiva ? 1 : 0 })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Aggiorna il lead in memoria
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) lead.iva_agevolata = attiva ? 1 : 0;
+                    // Riapri il modal aggiornato
+                    viewLead(leadId);
+                    showToast(attiva ? '✅ IVA 4% Legge 104 attivata' : '✅ IVA ripristinata al 22%', 'success');
+                } else {
+                    showToast('❌ Errore aggiornamento IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
         async function loadInteractions(leadId) {
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/interactions\`);
@@ -6005,6 +6045,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Piano</label>
                         <p id="viewPiano" class="text-gray-900 bg-purple-50 p-2 rounded font-semibold text-xs">-</p>
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">IVA Applicabile</label>
+                        <div id="viewIvaAgevolata" class="p-2 rounded">
+                            <span class="text-xs text-gray-500">—</span>
+                        </div>
+                    </div>
                     <div class="col-span-3">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
                         <p id="viewNote" class="text-gray-900 bg-gray-50 p-2 rounded min-h-[50px] text-xs">-</p>
@@ -6023,7 +6069,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </p>
                 </div>
 
-                <div class="flex justify-end pt-2 border-t">
+                <div class="flex justify-between items-center pt-2 border-t">
+                    <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
+                        ⚕️ Attiva IVA 4% Legge 104
+                    </button>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
