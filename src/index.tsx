@@ -7963,10 +7963,10 @@ app.post('/api/setup-test-rinnovo', async (c) => {
     const existingLead = await db.prepare(`SELECT id FROM leads WHERE id = 'LEAD-POGGI-TEST'`).first()
     if (!existingLead) {
       await db.prepare(`
-        INSERT INTO leads (id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano, fonte, status, note, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO leads (id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, tipoServizio, piano, fonte, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind('LEAD-POGGI-TEST','Roberto','Poggi','rpoggi55@gmail.com','3401234567',
-        'eCura PRO','BASE','Form eCura x Test','CONVERTED',
+        'eCura PRO','BASE','BASE','Form eCura x Test','CONVERTED',
         'Lead test — Assistita: Rosaria Ressa',
         new Date().toISOString(), new Date().toISOString()).run()
     }
