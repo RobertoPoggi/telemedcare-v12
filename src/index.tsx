@@ -1351,6 +1351,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint test rinnovo: pubblico per setup contratti test
+  if (path === '/api/setup-test-rinnovo' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
