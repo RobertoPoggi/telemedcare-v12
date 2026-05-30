@@ -857,6 +857,123 @@ app.use('*', async (c, next) => {
       }
       // ── FINE RINNOVI STARTUP ───────────────────────────────────────────────
 
+      // ── TEST RINNOVO: Roberto Poggi (lead) / Rosaria Ressa (assistita) ────
+      // Lead di test per verificare il flusso rinnovo prima di inviarlo a utenti reali.
+      // Email: rpoggi55@gmail.com — Roberto riceve la mail e firma come test.
+      try {
+        // 1. Crea lead LEAD-POGGI-TEST se non esiste
+        const existingPoggiLead = await c.env.DB.prepare(
+          `SELECT id FROM leads WHERE id = 'LEAD-POGGI-TEST'`
+        ).first()
+        if (!existingPoggiLead) {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              servizio, piano, fonte, status,
+              note, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            'LEAD-POGGI-TEST',
+            'Roberto', 'Poggi',
+            'rpoggi55@gmail.com',
+            '3401234567',
+            'eCura PRO', 'BASE',
+            'Form eCura x Test',
+            'CONVERTED',
+            'Lead di test — Assistita: Rosaria Ressa — usato per verifica flusso rinnovo',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Lead LEAD-POGGI-TEST creato (Roberto Poggi / Rosaria Ressa)')
+        }
+
+        // 2. Crea contratto originale CTR-POGGI-TEST-2025 (SIGNED) se non esiste
+        const existingPoggiCtr = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-POGGI-TEST-2025'`
+        ).first()
+        if (!existingPoggiCtr) {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              data_invio, data_firma, data_scadenza, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            'CTR-POGGI-TEST-2025-ID',
+            'LEAD-POGGI-TEST',
+            'CTR-POGGI-TEST-2025',
+            'BASE', 'BASE', 'eCura PRO',
+            'contratto_b2c',
+            '<html><body>Contratto test CTR-POGGI-TEST-2025 — Rosaria Ressa / Roberto Poggi</body></html>',
+            'Roberto', 'Poggi', 'rpoggi55@gmail.com',
+            'SIGNED',
+            480,          // prezzo_totale IVA esclusa
+            40,           // prezzo_mensile
+            12,
+            '2025-05-08', '2025-05-10',
+            '2026-05-10', // scadenza originale
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto originale CTR-POGGI-TEST-2025 creato (SIGNED)')
+        }
+
+        // 3. Crea contratto rinnovo CTR-POGGI-TEST-2025-R2 se non esiste
+        const existingPoggiRinnovo = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-POGGI-TEST-2025-R2'`
+        ).first()
+        if (!existingPoggiRinnovo) {
+          const rinnovoBase = 240  // PRO BASE rinnovo, IVA esclusa
+          const ivaImporto = Math.round(rinnovoBase * 0.22 * 100) / 100
+          const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
+          const htmlRinnovo = `<!DOCTYPE html><html lang="it"><body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+            <div style="background:#e8f5e9;border:2px solid #27ae60;border-radius:8px;padding:12px 20px;margin-bottom:24px;text-align:center">
+              <strong style="color:#1b5e20;font-size:16px">🔄 CONTRATTO DI RINNOVO TEST — Anno 2</strong><br>
+              <span style="color:#2e7d32">Rinnovo del contratto <strong>CTR-POGGI-TEST-2025</strong></span>
+            </div>
+            <h2>Rinnovo Contratto eCura PRO BASE — CTR-POGGI-TEST-2025-R2</h2>
+            <p><strong>Assistita:</strong> Rosaria Ressa — <strong>Referente:</strong> Roberto Poggi</p>
+            <p>Tariffa annuale di rinnovo: <strong>€${rinnovoTotale.toFixed(2)}</strong> (IVA 22% inclusa)</p>
+            <p>Periodo: dal 10/05/2026 al 10/05/2027</p>
+            <p>La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo.</p>
+            <p style="background:#fff3cd;padding:10px;border-radius:4px">⚠️ Questo è un contratto di TEST — non verrà inviato ad utenti reali.</p>
+          </body></html>`
+
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              is_rinnovo, rinnovo_di, anno_rinnovo,
+              data_invio, data_scadenza, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            'CTR-POGGI-TEST-R2-ID',
+            'LEAD-POGGI-TEST',
+            'CTR-POGGI-TEST-2025-R2',
+            'BASE', 'BASE', 'eCura PRO',
+            'contratto_rinnovo_b2c',
+            htmlRinnovo,
+            'Roberto', 'Poggi', 'rpoggi55@gmail.com',
+            'DRAFT',        // DRAFT: pronto per essere inviato via "🔄 Invia Rinnovo"
+            rinnovoBase,    // 240 IVA esclusa
+            Math.round(rinnovoBase / 12 * 100) / 100,
+            12,
+            1,                        // is_rinnovo
+            'CTR-POGGI-TEST-2025',    // rinnovo_di
+            2,                        // anno_rinnovo
+            new Date().toISOString().split('T')[0],
+            '2027-05-10',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto rinnovo TEST CTR-POGGI-TEST-2025-R2 creato (DRAFT)')
+        }
+      } catch (poggiTestErr: any) {
+        console.warn('⚠️ Errore setup test Poggi/Ressa:', poggiTestErr?.message)
+      }
+      // ── FINE TEST RINNOVO POGGI/RESSA ──────────────────────────────────────
+
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
         await c.env.DB.prepare(`
