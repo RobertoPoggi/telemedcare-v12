@@ -977,19 +977,25 @@ app.use('*', async (c, next) => {
       // ── FIX DATI LEAD: Correzioni puntuali idempotenti ─────────────────────
       try {
         // FIX LEAD-IRBEMA-00462 (Tommaso Badano Littardi):
-        // Il form ha salvato il CF della caregiver Serena (TUASRN78A52E290Z) invece
-        // del CF corretto di Tommaso (BDNTMS88D21E290D). Correzione idempotente.
+        // Problema 1: Il form ha salvato il CF della caregiver Serena (TUASRN78A52E290Z)
+        //   invece del CF corretto di Tommaso (BDNTMS88D21E290D).
+        // Problema 2: intestatarioContratto era 'richiedente' (default import HubSpot)
+        //   invece di 'assistito' — Tommaso è l'assistito, Serena è la caregiver/richiedente.
+        // Entrambe le correzioni sono idempotenti.
         const badanoFix = await c.env.DB.prepare(`
           UPDATE leads 
-          SET cfAssistito = 'BDNTMS88D21E290D', updated_at = ?
+          SET cfAssistito = 'BDNTMS88D21E290D',
+              intestatarioContratto = 'assistito',
+              updated_at = ?
           WHERE id = 'LEAD-IRBEMA-00462' 
-            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL)
+            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL
+                 OR intestatarioContratto != 'assistito' OR intestatarioContratto IS NULL)
         `).bind(new Date().toISOString()).run()
         if (badanoFix.meta?.changes > 0) {
-          console.log('✅ FIX LEAD-IRBEMA-00462: cfAssistito corretto → BDNTMS88D21E290D (era CF di Serena caregiver)')
+          console.log('✅ FIX LEAD-IRBEMA-00462: cfAssistito=BDNTMS88D21E290D + intestatarioContratto=assistito')
         }
       } catch (fixErr: any) {
-        console.warn('⚠️ Errore fix CF Badano Littardi:', fixErr?.message)
+        console.warn('⚠️ Errore fix Badano Littardi:', fixErr?.message)
       }
       // ── FINE FIX DATI LEAD ─────────────────────────────────────────────────
 

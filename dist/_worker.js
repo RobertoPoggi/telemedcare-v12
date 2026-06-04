@@ -10428,10 +10428,13 @@ ${370+t.length}
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind("CTR-POGGI-TEST-R2-ID","LEAD-POGGI-TEST","CTR-POGGI-TEST-2025-R2","BASE","BASE","eCura PRO","contratto_rinnovo_b2c",y,"Roberto","Poggi","rpoggi55@gmail.com","DRAFT",240,Math.round(240/12*100)/100,12,1,"CTR-POGGI-TEST-2025",2,new Date().toISOString().split("T")[0],"2027-05-10",new Date().toISOString(),new Date().toISOString()).run(),console.log("✅ Contratto rinnovo TEST CTR-POGGI-TEST-2025-R2 creato (DRAFT)")}}catch(h){console.warn("⚠️ Errore setup test Poggi/Ressa:",h==null?void 0:h.message)}try{((p=(await e.env.DB.prepare(`
           UPDATE leads 
-          SET cfAssistito = 'BDNTMS88D21E290D', updated_at = ?
+          SET cfAssistito = 'BDNTMS88D21E290D',
+              intestatarioContratto = 'assistito',
+              updated_at = ?
           WHERE id = 'LEAD-IRBEMA-00462' 
-            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL)
-        `).bind(new Date().toISOString()).run()).meta)==null?void 0:p.changes)>0&&console.log("✅ FIX LEAD-IRBEMA-00462: cfAssistito corretto → BDNTMS88D21E290D (era CF di Serena caregiver)")}catch(h){console.warn("⚠️ Errore fix CF Badano Littardi:",h==null?void 0:h.message)}try{await e.env.DB.prepare(`
+            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL
+                 OR intestatarioContratto != 'assistito' OR intestatarioContratto IS NULL)
+        `).bind(new Date().toISOString()).run()).meta)==null?void 0:p.changes)>0&&console.log("✅ FIX LEAD-IRBEMA-00462: cfAssistito=BDNTMS88D21E290D + intestatarioContratto=assistito")}catch(h){console.warn("⚠️ Errore fix Badano Littardi:",h==null?void 0:h.message)}try{await e.env.DB.prepare(`
           CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
