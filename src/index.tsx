@@ -10992,6 +10992,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const pianoType = piano.toUpperCase()
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, pianoType)
+
+    // ✅ FIX: calcola prezzoIvaInclusa con l'aliquota corretta del lead
+    // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
+    const ivaRateContratto = lead.iva_agevolata ? 0.04 : 0.22
+    const prezzoIvaInclusa = Math.round(pricing.setupBase * (1 + ivaRateContratto) * 100) / 100
+
+    console.log(`💰 [CONTRATTO] Prezzi: base €${pricing.setupBase}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
     
     // Prepara contractData
     const contractData = {
@@ -11001,7 +11008,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       tipoServizio: piano,
       servizio: servizio,
       prezzoBase: pricing.setupBase,
-      prezzoIvaInclusa: pricing.setupTotale
+      prezzoIvaInclusa: prezzoIvaInclusa  // ✅ calcolato con aliquota corretta (4% o 22%)
     }
     
     // Usa workflow per inviare email contratto
@@ -15367,8 +15374,17 @@ app.get('/api/contracts/:id', async (c) => {
     
     // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
     const prezzoBase = parseFloat(contract.prezzo_totale || 0)
-    const iva = prezzoBase * 0.22
-    const totaleIvaInclusa = prezzoBase + iva
+    // ✅ FIX: recupera iva_agevolata dal lead per calcolo corretto
+    let ivaAgevolataContratto = false
+    if (contract.leadId) {
+      try {
+        const leadIva = await c.env.DB.prepare('SELECT iva_agevolata FROM leads WHERE id = ?').bind(contract.leadId).first() as any
+        ivaAgevolataContratto = !!(leadIva?.iva_agevolata)
+      } catch {}
+    }
+    const ivaRateContratto = ivaAgevolataContratto ? 0.04 : 0.22
+    const iva = Math.round(prezzoBase * ivaRateContratto * 100) / 100
+    const totaleIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
     // Mappa schema DB esistente a formato API
     return c.json({
@@ -15383,7 +15399,7 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      prezzo: `€${prezzoBase.toFixed(2)} + IVA 22% (€${totaleIvaInclusa.toFixed(2)}) / anno`,
+      prezzo: `€${prezzoBase.toFixed(2)} + IVA ${ivaAgevolataContratto ? '4%' : '22%'} (€${totaleIvaInclusa.toFixed(2)}) / anno`,
       status: contract.status || 'PENDING'
     })
   } catch (error) {

@@ -922,7 +922,9 @@ export async function inviaEmailContratto(
         
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
         // ✅ REGOLA UNIVERSALE: prezzo_mensile = prezzoBase / 12 (IVA ESCLUSA)
-        const prezzoIvaInclusa = contractData.prezzoIvaInclusa || (contractData.prezzoBase * 1.22)
+        // ✅ FIX: usa prezzoIvaInclusa già calcolato con aliquota corretta (mai fallback 1.22 hardcoded)
+        const ivaRateEmail = (leadData as any).iva_agevolata ? 0.04 : 0.22
+        const prezzoIvaInclusa = contractData.prezzoIvaInclusa || Math.round(contractData.prezzoBase * (1 + ivaRateEmail) * 100) / 100
         const prezzoMensile = Math.round((contractData.prezzoBase / 12) * 100) / 100
         const durataMesi = 12
         
@@ -1058,6 +1060,12 @@ export async function inviaEmailContratto(
     }
     const linkBrochure = `${baseUrl}/documents/${brochureFilename}` // ✅ FIX: /documents/ invece /brochures/
     
+    // ✅ FIX: calcola IVA e totale con aliquota corretta per l'email di riepilogo
+    const ivaRateEmailTemplate = (leadData as any).iva_agevolata ? 0.04 : 0.22
+    const ivaLabelEmailTemplate = (leadData as any).iva_agevolata ? '4%' : '22%'
+    const prezzoTotaleEmail = contractData.prezzoIvaInclusa || Math.round(contractData.prezzoBase * (1 + ivaRateEmailTemplate) * 100) / 100
+    const ivaImportoEmail = Math.round((prezzoTotaleEmail - contractData.prezzoBase) * 100) / 100
+
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
@@ -1067,6 +1075,11 @@ export async function inviaEmailContratto(
       DISPOSITIVO: dispositivo,
       PREZZO_PIANO: `€${contractData.prezzoBase.toFixed(2)}`,
       PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoBase.toFixed(2)}/anno`,
+      PREZZO_BASE: `€${contractData.prezzoBase.toFixed(2)}`,
+      IVA_LABEL: `IVA ${ivaLabelEmailTemplate}`,
+      IVA_IMPORTO: `€${ivaImportoEmail.toFixed(2)}`,
+      PREZZO_TOTALE: `€${prezzoTotaleEmail.toFixed(2)}`,
+      PREZZO_IVA_INCLUSA: `€${prezzoTotaleEmail.toFixed(2)}`,
       CODICE_CLIENTE: leadData.id,
       CODICE_CONTRATTO: contractData.contractCode,
       LINK_FIRMA: `${baseUrl}/firma-contratto.html?v=${Date.now()}&contractId=${contractData.contractId}`,
