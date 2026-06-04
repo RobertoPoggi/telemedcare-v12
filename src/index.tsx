@@ -10925,7 +10925,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // Intestatario = Assistito
       nomeIntestatario = lead.nomeAssistito || lead.nomeRichiedente
       cognomeIntestatario = lead.cognomeAssistito || lead.cognomeRichiedente
-      cfIntestatario = lead.cfIntestatario || lead.cfAssistito || ''
+      // ✅ FIX: quando intestatario='assistito', il CF è quello dell'ASSISTITO (cfAssistito ha priorità)
+      // cfIntestatario è un campo generico che può contenere il CF del richiedente/firmatario — NON dell'assistito
+      cfIntestatario = lead.cfAssistito || lead.cfIntestatario || ''
       indirizzoIntestatario = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
       cittaIntestatario = lead.cittaIntestatario || lead.cittaAssistito || ''
       capIntestatario = lead.capIntestatario || lead.capAssistito || ''

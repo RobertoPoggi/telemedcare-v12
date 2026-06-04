@@ -106,9 +106,13 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const capIntestatario = leadData.capIntestatario || 'N/A'
   const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
   const provinciaIntestatario = leadData.provinciaIntestatario || ''
-  // ✅ FIX: usa cfAssistito come fallback quando cfIntestatario è vuoto
-  // (caso Tommaso Badano Littardi: intestatario = 'richiedente' ma cfIntestatario non era valorizzato)
-  const cfIntestatario = leadData.cfIntestatario || leadData.cfAssistito || 'N/A'
+  // ✅ FIX PRIORITÀ CF: dipende da chi è l'intestatario
+  // - Se intestatario = 'assistito' → cfAssistito ha priorità (è il CF della persona che firma/intestata)
+  // - Se intestatario = 'richiedente' → cfIntestatario ha priorità, fallback su cfAssistito
+  // Motivo: cfIntestatario nel DB può contenere il CF del richiedente/caregiver (campo generico)
+  const cfIntestatario = intestatarioType === 'assistito'
+    ? (leadData.cfAssistito || leadData.cfIntestatario || 'N/A')
+    : (leadData.cfIntestatario || leadData.cfAssistito || 'N/A')
   
   // Care giver (richiedente) per i riferimenti
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
