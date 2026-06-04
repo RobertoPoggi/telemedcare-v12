@@ -974,30 +974,7 @@ app.use('*', async (c, next) => {
       }
       // ── FINE TEST RINNOVO POGGI/RESSA ──────────────────────────────────────
 
-      // ── FIX DATI LEAD: Correzioni puntuali idempotenti ─────────────────────
-      try {
-        // FIX LEAD-IRBEMA-00462 (Tommaso Badano Littardi):
-        // Problema 1: Il form ha salvato il CF della caregiver Serena (TUASRN78A52E290Z)
-        //   invece del CF corretto di Tommaso (BDNTMS88D21E290D).
-        // Problema 2: intestatarioContratto era 'richiedente' (default import HubSpot)
-        //   invece di 'assistito' — Tommaso è l'assistito, Serena è la caregiver/richiedente.
-        // Entrambe le correzioni sono idempotenti.
-        const badanoFix = await c.env.DB.prepare(`
-          UPDATE leads 
-          SET cfAssistito = 'BDNTMS88D21E290D',
-              intestatarioContratto = 'assistito',
-              updated_at = ?
-          WHERE id = 'LEAD-IRBEMA-00462' 
-            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL
-                 OR intestatarioContratto != 'assistito' OR intestatarioContratto IS NULL)
-        `).bind(new Date().toISOString()).run()
-        if (badanoFix.meta?.changes > 0) {
-          console.log('✅ FIX LEAD-IRBEMA-00462: cfAssistito=BDNTMS88D21E290D + intestatarioContratto=assistito')
-        }
-      } catch (fixErr: any) {
-        console.warn('⚠️ Errore fix Badano Littardi:', fixErr?.message)
-      }
-      // ── FINE FIX DATI LEAD ─────────────────────────────────────────────────
+
 
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
@@ -11415,7 +11392,27 @@ app.post('/api/leads/:id/complete', async (c) => {
     // ✅ Aggiungi aggiornamento status a COMPLETED
     updateFields.push('status = ?')
     binds.push('COMPLETED')
-    
+
+    // ✅ FIX ALLA FONTE: imposta intestatarioContratto in base ai dati ricevuti.
+    // Se il form invia nomeAssistito/cognomeAssistito diversi dal richiedente → 'assistito'.
+    // Se identici o assenti → 'richiedente'.
+    // Questo corregge il default 'richiedente' che veniva assegnato ai lead HubSpot.
+    {
+      const currentLead = await c.env.DB.prepare('SELECT nomeRichiedente, cognomeRichiedente, intestatarioContratto FROM leads WHERE id = ?').bind(id).first() as any
+      const nomeAss = (data.nomeAssistito || currentLead?.nomeRichiedente || '').trim().toLowerCase()
+      const cogAss  = (data.cognomeAssistito || currentLead?.cognomeRichiedente || '').trim().toLowerCase()
+      const nomeRic = (currentLead?.nomeRichiedente || '').trim().toLowerCase()
+      const cogRic  = (currentLead?.cognomeRichiedente || '').trim().toLowerCase()
+      const isAssistitoDiverso = nomeAss && cogAss && (nomeAss !== nomeRic || cogAss !== cogRic)
+      const nuovoIntestario = isAssistitoDiverso ? 'assistito' : 'richiedente'
+      // Aggiorna solo se non già impostato correttamente
+      if (!currentLead?.intestatarioContratto || currentLead.intestatarioContratto === 'richiedente' && isAssistitoDiverso) {
+        updateFields.push('intestatarioContratto = ?')
+        binds.push(nuovoIntestario)
+        console.log(`📋 [COMPLETE] intestatarioContratto → '${nuovoIntestario}' (assistito diverso da richiedente: ${isAssistitoDiverso})`)
+      }
+    }
+
     if (updateFields.length === 0) {
       return c.text('❌ Nessun dato da aggiornare', 400)
     }

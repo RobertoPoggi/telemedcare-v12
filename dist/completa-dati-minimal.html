@@ -394,9 +394,11 @@
             }
             
             // SEZIONE 2: Dati Assistito
+            // cfAssistito è SEMPRE richiesto (anche se già presente, per permettere correzioni)
             const needsAssistito = !lead.nomeAssistito || !lead.cognomeAssistito || 
                                   !lead.dataNascitaAssistito || !lead.luogoNascitaAssistito ||
-                                  !lead.cfAssistito || !lead.indirizzoAssistito || 
+                                  true || // cfAssistito sempre mostrato per permettere correzioni
+                                  !lead.indirizzoAssistito || 
                                   !lead.capAssistito || !lead.cittaAssistito || !lead.provinciaAssistito || !lead.condizioniSalute;
             
             if (needsAssistito) {
@@ -471,17 +473,17 @@
                     html += '</div>';
                 }
                 
-                // Codice Fiscale
-                if (!lead.cfAssistito) {
-                    html += `
-                        <div class="form-group">
-                            <label for="cfAssistito">Codice Fiscale <span class="required">*</span></label>
-                            <input type="text" id="cfAssistito" name="cfAssistito" 
-                                   placeholder="Es. RSSMRA80A01F205K" required 
-                                   maxlength="16" style="text-transform: uppercase;">
-                        </div>
-                    `;
-                }
+                // Codice Fiscale — mostrato SEMPRE (pre-compilato se già presente)
+                // Questo permette al caregiver di correggere un CF errato inserito in precedenza
+                html += `
+                    <div class="form-group">
+                        <label for="cfAssistito">Codice Fiscale Assistito <span class="required">*</span></label>
+                        <input type="text" id="cfAssistito" name="cfAssistito" 
+                               placeholder="Es. RSSMRA80A01F205K" required 
+                               maxlength="16" style="text-transform: uppercase;"
+                               value="${lead.cfAssistito || ''}">
+                    </div>
+                `;
                 
                 // Indirizzo, CAP, Città, Provincia sulla stessa riga
                 // ✅ FIX: Mostra SEMPRE tutti i 4 campi se anche solo uno manca
