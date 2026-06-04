@@ -28182,6 +28182,80 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
 })
 
 /**
+ * UTILITY: Sync email template from static file → DB
+ * POST /api/admin/sync-template/:name
+ * Legge il file da public/templates/email/ e aggiorna il record in email_templates nel DB.
+ * Usare quando il file HTML è stato modificato ma il DB ha ancora la versione vecchia.
+ */
+app.post('/api/admin/sync-template/:name', async (c) => {
+  const templateName = c.req.param('name')
+
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { getBaseUrl } = await import('./modules/url-helper')
+    const baseUrl = getBaseUrl(c.env)
+
+    // Leggi il file statico
+    const pathsToTry = [
+      `${baseUrl}/templates/email/${templateName}`,
+      `${baseUrl}/templates/email/${templateName}.html`
+    ]
+
+    let htmlContent: string | null = null
+    let usedPath = ''
+    for (const url of pathsToTry) {
+      try {
+        const res = await fetch(url)
+        if (res.ok) {
+          htmlContent = await res.text()
+          usedPath = url
+          break
+        }
+      } catch {}
+    }
+
+    if (!htmlContent) {
+      return c.json({
+        success: false,
+        error: `File template "${templateName}" non trovato`,
+        pathsTried: pathsToTry
+      }, 404)
+    }
+
+    console.log(`📝 [SYNC-TEMPLATE] "${templateName}" letto da ${usedPath} (${htmlContent.length} chars)`)
+
+    // UPSERT nel DB email_templates
+    const result = await c.env.DB.prepare(`
+      INSERT INTO email_templates (name, subject, content, updated_at)
+      VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(name) DO UPDATE SET
+        content = excluded.content,
+        updated_at = excluded.updated_at
+    `).bind(templateName, templateName, htmlContent).run()
+
+    console.log(`✅ [SYNC-TEMPLATE] "${templateName}" aggiornato nel DB (changes: ${result.meta?.changes})`)
+
+    return c.json({
+      success: true,
+      templateName,
+      fileUrl: usedPath,
+      contentLength: htmlContent.length,
+      changes: result.meta?.changes
+    })
+
+  } catch (error) {
+    console.error('❌ [SYNC-TEMPLATE] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
  * UTILITY: Reset email template to force file usage
  * DELETE /api/email/template/:name/reset
  */
