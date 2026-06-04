@@ -14915,7 +14915,9 @@ app.post('/api/contracts/sign', async (c) => {
           // Intestatario = Assistito
           nomeCliente = lead.nomeAssistito || lead.nomeRichiedente
           cognomeCliente = lead.cognomeAssistito || lead.cognomeRichiedente
-          cfCliente = lead.cfIntestatario || lead.cfAssistito || lead.codiceFiscaleIntestatario || ''
+          // ✅ FIX: cfAssistito ha priorità su cfIntestatario quando intestatario='assistito'
+          // cfIntestatario può contenere il CF del caregiver/richiedente (campo generico)
+          cfCliente = lead.cfAssistito || lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
           indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
           cittaCliente = lead.cittaIntestatario || lead.cittaAssistito || ''
           capCliente = lead.capIntestatario || lead.capAssistito || ''
