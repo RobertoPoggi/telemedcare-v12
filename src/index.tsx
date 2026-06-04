@@ -155,7 +155,7 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
     'Template_Contratto_Base_TeleMedCare'
   
   // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
-  const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+  const intestatario = lead.intestatarioContratto || 'richiedente'
   
   let nomeCompleto: string
   let emailContratto: string
@@ -252,7 +252,7 @@ async function generaProformaDaContratto(contractId: string, db: any) {
       SELECT c.*, 
         l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono,
         l.nomeAssistito, l.cognomeAssistito,
-        l.intestatarioContratto, l.intestazioneContratto,
+        l.intestatarioContratto,
         l.cfIntestatario, l.indirizzoIntestatario
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
@@ -268,7 +268,7 @@ async function generaProformaDaContratto(contractId: string, db: any) {
     const dataScadenza = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // ✅ 3 giorni (non 15!)
     
     // ⭐ CALCOLA dati cliente in base a intestatarioContratto
-    const intestatario = contract.intestatarioContratto || contract.intestazioneContratto || 'richiedente'
+    const intestatario = contract.intestatarioContratto || 'richiedente'
     
     let nomeCliente: string
     let cognomeCliente: string
@@ -2158,11 +2158,11 @@ app.get('/form-lead', (c) => {
                 <label class="block text-gray-700 font-semibold mb-2">A chi deve essere intestato il contratto?</label>
                 <div class="flex space-x-4">
                   <label class="flex items-center">
-                    <input type="radio" name="intestazioneContratto" value="richiedente" onchange="toggleCampiDinamici()" class="mr-2">
+                    <input type="radio" name="intestatarioContratto" value="richiedente" onchange="toggleCampiDinamici()" class="mr-2">
                     <span class="text-gray-700">Richiedente</span>
                   </label>
                   <label class="flex items-center">
-                    <input type="radio" name="intestazioneContratto" value="assistito" onchange="toggleCampiDinamici()" class="mr-2">
+                    <input type="radio" name="intestatarioContratto" value="assistito" onchange="toggleCampiDinamici()" class="mr-2">
                     <span class="text-gray-700">Assistito</span>
                   </label>
                 </div>
@@ -2373,8 +2373,8 @@ app.get('/form-lead', (c) => {
         }
 
         function toggleCampiDinamici() {
-            const richiedenteRadio = document.querySelector('input[name="intestazioneContratto"][value="richiedente"]');
-            const assistitoRadio = document.querySelector('input[name="intestazioneContratto"][value="assistito"]');
+            const richiedenteRadio = document.querySelector('input[name="intestatarioContratto"][value="richiedente"]');
+            const assistitoRadio = document.querySelector('input[name="intestatarioContratto"][value="assistito"]');
             const campiRichiedente = document.getElementById('campi_richiedente');
             const campiAssistito = document.getElementById('campi_assistito');
             
@@ -5103,7 +5103,7 @@ app.post('/api/lead', async (c) => {
 
       // Richieste Aggiuntive
       vuoleContratto: leadData.vuoleContratto === 'on' || leadData.vuoleContratto === 'Si' || leadData.vuoleContratto === true,
-      intestazioneContratto: String(leadData.intestazioneContratto || azienda || '').trim(),
+      intestatarioContratto: String(leadData.intestatarioContratto || leadData.intestazioneContratto || '').trim(),
       cfIntestatario: String(leadData.cfIntestatario || '').trim(),
       indirizzoIntestatario: String(leadData.indirizzoIntestatario || '').trim(),
       cfAssistito: String(leadData.cfAssistito || '').trim(),
@@ -5138,7 +5138,7 @@ app.post('/api/lead', async (c) => {
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
           pacchetto, condizioniSalute, preferenzaContatto,
-          vuoleContratto, intestazioneContratto, cfIntestatario, indirizzoIntestatario,
+          vuoleContratto, intestatarioContratto, cfIntestatario, indirizzoIntestatario,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status,
           prezzo_anno, prezzo_rinnovo,
@@ -5160,7 +5160,7 @@ app.post('/api/lead', async (c) => {
         normalizedLead.condizioniSalute,
         normalizedLead.preferenzaContatto,
         normalizedLead.vuoleContratto ? 1 : 0,
-        normalizedLead.intestazioneContratto,
+        normalizedLead.intestatarioContratto || 'richiedente',
         normalizedLead.cfIntestatario,
         normalizedLead.indirizzoIntestatario,
         normalizedLead.cfAssistito,
@@ -10914,7 +10914,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
     // CRITICAL: i campi nomeIntestatario/cognomeIntestatario NON esistono nel DB!
     // Devono essere calcolati dinamicamente:
-    const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+    const intestatario = lead.intestatarioContratto || 'richiedente'
     
     let nomeIntestatario: string, cognomeIntestatario: string
     let cfIntestatario: string, indirizzoIntestatario: string
@@ -14901,7 +14901,7 @@ app.post('/api/contracts/sign', async (c) => {
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
         
         // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
-        const intestatario = lead.intestatarioContratto || lead.intestazioneContratto || 'richiedente'
+        const intestatario = lead.intestatarioContratto || 'richiedente'
         
         let nomeCliente: string
         let cognomeCliente: string
@@ -16011,7 +16011,7 @@ app.post('/api/leads', async (c) => {
         tipoServizio, servizio, piano,
         vuoleBrochure, vuoleContratto, vuoleManuale,
         gdprConsent,
-        intestazioneContratto,
+        intestatarioContratto,
         note, fonte, status, timestamp, updated_at,
         hs_object_source, hs_object_source_detail_1, dettaglio_fonte
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -21085,6 +21085,23 @@ app.post('/api/migrate-schema', async (c) => {
           migrations.push(`⚠️ Errore colonna ${col.name}: ${e.message}`)
         }
       }
+    }
+
+    // MIGRAZIONE UNIFICAZIONE: sincronizza intestatarioContratto da intestazioneContratto
+    // Per i lead creati prima dell'unificazione: intestazioneContratto='assistito' ma
+    // intestatarioContratto='richiedente' (default). Allineiamo il nuovo campo.
+    try {
+      const syncResult = await c.env.DB.prepare(`
+        UPDATE leads 
+        SET intestatarioContratto = intestazioneContratto
+        WHERE intestazioneContratto IN ('richiedente', 'assistito')
+          AND (intestatarioContratto IS NULL OR intestatarioContratto = 'richiedente')
+          AND intestazioneContratto = 'assistito'
+      `).run()
+      migrations.push(`✅ Sync intestatarioContratto da intestazioneContratto: ${syncResult.meta?.changes ?? 0} lead aggiornati`)
+      console.log(`✅ Sync intestatarioContratto: ${syncResult.meta?.changes ?? 0} record aggiornati`)
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore sync intestatarioContratto: ${e.message}`)
     }
 
     return c.json({
