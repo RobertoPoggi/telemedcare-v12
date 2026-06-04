@@ -974,6 +974,25 @@ app.use('*', async (c, next) => {
       }
       // ── FINE TEST RINNOVO POGGI/RESSA ──────────────────────────────────────
 
+      // ── FIX DATI LEAD: Correzioni puntuali idempotenti ─────────────────────
+      try {
+        // FIX LEAD-IRBEMA-00462 (Tommaso Badano Littardi):
+        // Il form ha salvato il CF della caregiver Serena (TUASRN78A52E290Z) invece
+        // del CF corretto di Tommaso (BDNTMS88D21E290D). Correzione idempotente.
+        const badanoFix = await c.env.DB.prepare(`
+          UPDATE leads 
+          SET cfAssistito = 'BDNTMS88D21E290D', updated_at = ?
+          WHERE id = 'LEAD-IRBEMA-00462' 
+            AND (cfAssistito != 'BDNTMS88D21E290D' OR cfAssistito IS NULL)
+        `).bind(new Date().toISOString()).run()
+        if (badanoFix.meta?.changes > 0) {
+          console.log('✅ FIX LEAD-IRBEMA-00462: cfAssistito corretto → BDNTMS88D21E290D (era CF di Serena caregiver)')
+        }
+      } catch (fixErr: any) {
+        console.warn('⚠️ Errore fix CF Badano Littardi:', fixErr?.message)
+      }
+      // ── FINE FIX DATI LEAD ─────────────────────────────────────────────────
+
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
         await c.env.DB.prepare(`
@@ -10935,7 +10954,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // I campi *Intestatario SONO GIÀ i campi del richiedente
       nomeIntestatario = lead.nomeRichiedente
       cognomeIntestatario = lead.cognomeRichiedente
-      cfIntestatario = lead.cfIntestatario || ''
+      // ✅ FIX: Fallback su cfAssistito quando cfIntestatario è vuoto
+      // Caso Badano Littardi: richiedente = assistito, cfIntestatario vuoto ma cfAssistito valorizzato
+      cfIntestatario = lead.cfIntestatario || lead.cfAssistito || ''
       indirizzoIntestatario = lead.indirizzoIntestatario || ''
       cittaIntestatario = lead.cittaIntestatario || ''
       capIntestatario = lead.capIntestatario || ''
@@ -10978,7 +10999,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       dataNascitaIntestatario,
       vuoleBrochure: true,  // Include brochure con contratto
       vuoleManuale: false,
-      vuoleContratto: true
+      vuoleContratto: true,
+      // ✅ FIX: Passa iva_agevolata al workflow così il contract generator usa l'aliquota corretta
+      iva_agevolata: lead.iva_agevolata ? 1 : 0
     }
     
     // Calcola prezzi corretti

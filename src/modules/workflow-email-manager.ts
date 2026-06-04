@@ -70,6 +70,12 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const pricing = getPricing(servizioTipo, piano)
   const importoAnniSuccessivi = pricing ? pricing.rinnovoBase : 0 // IVA esclusa
   
+  // ✅ FIX: IVA dinamica — legge iva_agevolata dal lead (4% Legge 104 o 22% standard)
+  const ivaAgevolataContratto = !!(leadData as any).iva_agevolata
+  const ivaRateContratto = ivaAgevolataContratto ? 0.04 : 0.22
+  const ivaPercContratto = ivaAgevolataContratto ? '4%' : '22%'
+  const ivaNoteContratto = ivaAgevolataContratto ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
+
   const dataContratto = new Date().toLocaleDateString('it-IT', { 
     day: '2-digit', 
     month: 'long', 
@@ -100,7 +106,9 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const capIntestatario = leadData.capIntestatario || 'N/A'
   const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
   const provinciaIntestatario = leadData.provinciaIntestatario || ''
-  const cfIntestatario = leadData.cfIntestatario || 'N/A'
+  // ✅ FIX: usa cfAssistito come fallback quando cfIntestatario è vuoto
+  // (caso Tommaso Badano Littardi: intestatario = 'richiedente' ma cfIntestatario non era valorizzato)
+  const cfIntestatario = leadData.cfIntestatario || leadData.cfAssistito || 'N/A'
   
   // Care giver (richiedente) per i riferimenti
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
@@ -367,7 +375,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p>Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
     
     <h2>Tariffa del Servizio</h2>
-    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA 22% (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * 1.22)} € inclusa iva</span>) e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100} € inclusa iva</span>) e include:</p>
     
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
@@ -375,7 +383,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA 22% con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} con inclusi:</p>
     
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
