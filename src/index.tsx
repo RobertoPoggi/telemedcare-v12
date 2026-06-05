@@ -10895,15 +10895,23 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       }, 400)
     }
     
-    // Ottieni tipoContratto dal body se presente
+    // Ottieni tipoContratto e flag rinnovo dal body se presenti
     const body = await c.req.json().catch(() => ({}))
     const pianoRichiesto = body.tipoContratto || body.piano
-    
+    // Flag rinnovo opzionali dal body
+    const isRinnovoReq       = !!(body.isRinnovo || body.is_rinnovo)
+    const annoRinnovoReq     = body.annoRinnovo || body.anno_rinnovo || 2
+    const codiceOriginaleReq = body.codiceOriginale || body.rinnovo_di || ''
+
     const timestamp = Date.now()
     const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
     const anno = new Date().getFullYear()
-    const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
-    const contractCode = `CTR-${cognome}-${anno}`
+    const contractId = isRinnovoReq
+      ? `CONTRACT_RIN-${cognome}-${anno}_${timestamp}`
+      : `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
+    const contractCode = isRinnovoReq
+      ? `RIN-${cognome}-${anno}`
+      : `CTR-${cognome}-${anno}`
     
     // Determina servizio e piano (usa quello richiesto se presente, altrimenti quello del lead)
     const servizio = lead.servizio || 'eCura PRO'
@@ -10998,9 +11006,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     // ✅ FIX: calcola prezzoIvaInclusa con l'aliquota corretta del lead
     // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
     const ivaRateContratto = lead.iva_agevolata ? 0.04 : 0.22
-    const prezzoIvaInclusa = Math.round(pricing.setupBase * (1 + ivaRateContratto) * 100) / 100
+    // Per rinnovo usa rinnovoBase; per primo anno usa setupBase
+    const prezzoBaseContratto = isRinnovoReq
+      ? (pricing.rinnovoBase ?? pricing.setupBase)
+      : pricing.setupBase
+    const prezzoIvaInclusa = Math.round(prezzoBaseContratto * (1 + ivaRateContratto) * 100) / 100
 
-    console.log(`💰 [CONTRATTO] Prezzi: base €${pricing.setupBase}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
+    console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: base €${prezzoBaseContratto}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
     
     // Prepara contractData
     const contractData = {
@@ -11009,8 +11021,12 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       contractPdfUrl: '',
       tipoServizio: piano,
       servizio: servizio,
-      prezzoBase: pricing.setupBase,
-      prezzoIvaInclusa: prezzoIvaInclusa  // ✅ calcolato con aliquota corretta (4% o 22%)
+      prezzoBase: prezzoBaseContratto,
+      prezzoIvaInclusa: prezzoIvaInclusa,  // ✅ calcolato con aliquota corretta (4% o 22%)
+      // ✅ Flag rinnovo passati a generateContractHtml per adattare sezione Tariffa
+      isRinnovo: isRinnovoReq,
+      annoRinnovo: annoRinnovoReq,
+      codiceOriginale: codiceOriginaleReq
     }
     
     // Usa workflow per inviare email contratto

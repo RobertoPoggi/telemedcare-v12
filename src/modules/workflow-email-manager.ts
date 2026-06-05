@@ -54,8 +54,15 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const servizioNome = contractData.servizio || 'eCura PRO'
   const pianoNome = contractData.tipoServizio || 'BASE'
   const dispositivo = servizioNome.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
-  
+
+  // ✅ RINNOVO: legge i flag dal contractData
+  const isRinnovo = !!(contractData.isRinnovo || contractData.is_rinnovo)
+  const annoRinnovo = contractData.annoRinnovo || contractData.anno_rinnovo || 2
+  const codiceOriginale = contractData.codiceOriginale || contractData.rinnovo_di || ''
+
   // ✅ FIX: Calcola prezzi da pricing matrix (non hardcoded!)
+  // Per rinnovo: prezzoBase è già rinnovoBase (passato da chi chiama)
+  // Per primo anno: prezzoBase è setupBase
   const importoPrimoAnno = contractData.prezzoBase // IVA esclusa
   
   // Estrai tipo servizio per calcolare rinnovo corretto
@@ -376,30 +383,39 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     <p>L'integrazione di queste funzioni consente l'elaborazione di consigli sanitari personalizzati per le esigenze dell'Assistito da parte del Medico di Medicina Generale.</p>
     
     <h2>Durata del Servizio</h2>
-    <p>Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
+    <p>${isRinnovo ? `Il Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} — Anno ${annoRinnovo} — ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.` : `Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.`}</p>
     
     <h2>Tariffa del Servizio</h2>
+    ${isRinnovo ? `
+    <div style="background:#e8f5e9; border-left:4px solid #2e7d32; padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0;">
+      <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>
+      <span style="color:#2e7d32; font-size:13px;">La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span>
+    </div>
+    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100} € inclusa iva</span>) e include:</p>
+    <ul>
+        <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+    </ul>
+    ` : `
     <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100} € inclusa iva</span>) e include:</p>
-    
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    
     <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} con inclusi:</p>
-    
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
+    `}
     
     <h2>Metodo di pagamento</h2>
     <p>Medica GB emetterà fattura anticipata di 12 mesi all'attivazione del Servizio e il Cliente procederà al pagamento a ricevimento della fattura stessa tramite bonifico bancario</p>
     
     <div class="payment-details">
         <p><strong>Intestato a:</strong> Medica GB Srl</p>
-        <p><strong>Causale:</strong> ${cognomeIntestatario} ${nomeIntestatario} - SERVIZI PER ${dispositivo.toUpperCase()}</p>
+        <p><strong>Causale:</strong> ${cognomeIntestatario} ${nomeIntestatario} - ${isRinnovo ? `SERVIZIO DI CONTINUITA' ANNO ${annoRinnovo} - ${codiceOriginale || contractData.contractCode}` : `SERVIZI PER ${dispositivo.toUpperCase()}`}</p>
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
     
