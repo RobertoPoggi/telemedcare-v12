@@ -7891,6 +7891,7 @@ app.get('/api/contratti', async (c) => {
     const contratti = await c.env.DB.prepare(`
       SELECT 
         c.id,
+        c.leadId,
         c.codice_contratto as codice,
         c.tipo_contratto as tipo,
         c.status,

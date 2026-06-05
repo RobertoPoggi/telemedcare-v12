@@ -6785,24 +6785,29 @@ export const data_dashboard = `<!DOCTYPE html>
 
         // ── Funzioni Rinnovo ────────────────────────────────────────────────────
 
-        async function inviaRinnovo(contractId, codiceContratto, clienteNome, ivaAgevolata) {
+        async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
+            if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
             const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
-            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContratto}\\n👤 \${clienteNome}\\n\\nViene creato un nuovo contratto di rinnovo e inviato per firma al cliente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
+            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nViene generato e inviato per firma al cliente il contratto ufficiale di rinnovo.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
-                const resp = await fetch('/api/contracts/rinnovo', {
+                const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
                     },
-                    body: JSON.stringify({ contractId })
+                    body: JSON.stringify({
+                        isRinnovo: true,
+                        annoRinnovo: annoRinnovo,
+                        codiceOriginale: codiceContrattoOriginale
+                    })
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    alert(\`✅ Contratto di rinnovo creato!\\n\\nCodice: \${result.codiceRinnovo}\\nAnno: \${result.annoRinnovo}\\nTariffa: €\${result.prezzoRinnovo?.toFixed(2)} (\${result.ivaLabel} inclusa)\\n\\n\${result.emailInviata ? '📧 Email di firma inviata al cliente.' : '⚠️ Email non inviata (RESEND non configurato).'}\`);
+                    alert(\`✅ Contratto di rinnovo inviato!\\n\\nCodice: \${result.contractCode}\\n\\n📧 Email con link di firma inviata al cliente.\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                    alert('❌ Errore: ' + (result.error || result.details || 'Riprovare'));
                 }
             } catch (err) {
                 alert('❌ Errore di rete: ' + err.message);
@@ -6915,6 +6920,8 @@ export const data_dashboard = `<!DOCTYPE html>
                 const idSafe = JSON.stringify(contract.id);
                 const codiceSafe = JSON.stringify(contract.codice_contratto || contract.id);
                 const clienteNomeSafe = JSON.stringify(clienteNome.trim());
+                const leadIdSafe = JSON.stringify(contract.leadId || '');
+                const annoRinnovoSafe = (contract.anno_rinnovo || 1) + 1;
 
                 let azioniHtml = '';
                 if (isRinnovo && !rinnovoCompletato && isSigned) {
@@ -6947,7 +6954,7 @@ export const data_dashboard = `<!DOCTYPE html>
                                class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
                                 ✍️ Firmato
                             </a>
-                            <button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe})"
+                            <button onclick="inviaRinnovo(\${leadIdSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe}, \${annoRinnovoSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
                                     title="Crea e invia contratto di rinnovo (\${tooltipIva})">
                                 🔄 Invia Rinnovo
