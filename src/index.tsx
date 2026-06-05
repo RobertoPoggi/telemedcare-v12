@@ -7908,6 +7908,7 @@ app.get('/api/contratti', async (c) => {
         l.nomeRichiedente,
         l.cognomeRichiedente,
         l.email,
+        l.iva_agevolata,
         s.timestamp_firma as data_firma
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id 
@@ -13191,7 +13192,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
               <p style="margin: 4px 0;"><strong>Tariffa rinnovo:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)${ivaNote}</p>
             </div>
 
-            <p>La tariffa di rinnovo è <strong>agevolata</strong> rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
+            <p>La tariffa di rinnovo è ridotta rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
 
             <div style="text-align: center; margin: 30px 0;">
               <a href="${firmaUrl}"

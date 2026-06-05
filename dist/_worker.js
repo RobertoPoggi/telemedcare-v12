@@ -8991,8 +8991,9 @@ ${370+t.length}
 
         // ── Funzioni Rinnovo ────────────────────────────────────────────────────
 
-        async function inviaRinnovo(contractId, codiceContratto, clienteNome) {
-            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContratto}\\n👤 \${clienteNome}\\n\\nViene creato un nuovo contratto di rinnovo (prezzo agevolato) e inviato per firma al cliente.\`)) return;
+        async function inviaRinnovo(contractId, codiceContratto, clienteNome, ivaAgevolata) {
+            const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContratto}\\n👤 \${clienteNome}\\n\\nViene creato un nuovo contratto di rinnovo e inviato per firma al cliente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
                 const resp = await fetch('/api/contracts/rinnovo', {
                     method: 'POST',
@@ -9149,11 +9150,16 @@ ${370+t.length}
                                class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
                                 ✍️ Firmato
                             </a>
-                            <button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe})"
+                            \${(() => {
+                                const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
+                                const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+                                const ivaAgSafe = ivaAg ? 'true' : 'false';
+                                return \`<button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
-                                    title="Crea e invia contratto di rinnovo (tariffa agevolata)">
+                                    title="Crea e invia contratto di rinnovo (\${tooltipIva})">
                                 🔄 Invia Rinnovo
-                            </button>
+                            </button>\`;
+                            })()}
                         </div>
                     \`;
                 } else if (isRinnovo && !isSigned) {
@@ -14614,6 +14620,7 @@ loadDDTs();
         l.nomeRichiedente,
         l.cognomeRichiedente,
         l.email,
+        l.iva_agevolata,
         s.timestamp_firma as data_firma
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id 
@@ -15381,7 +15388,7 @@ startxref
               <p style="margin: 4px 0;"><strong>Tariffa rinnovo:</strong> € ${h.toFixed(2)} (${f} inclusa)${v}</p>
             </div>
 
-            <p>La tariffa di rinnovo è <strong>agevolata</strong> rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
+            <p>La tariffa di rinnovo è ridotta rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
 
             <div style="text-align: center; margin: 30px 0;">
               <a href="${M}"
