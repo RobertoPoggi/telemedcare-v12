@@ -857,6 +857,50 @@ app.use('*', async (c, next) => {
       }
       // ── FINE RINNOVI STARTUP ───────────────────────────────────────────────
 
+      // ── AGGIORNAMENTO STATI CONTRATTI RINNOVO (giugno 2026) ───────────────
+      // King: firmato di persona + bonifico ricevuto → SIGNED + rinnovo_completato
+      // Pizzutto / Pennacchio: inviati manualmente → SENT (in attesa firma + pagamento)
+      try {
+        const oggi = new Date().toISOString()
+        const scadenzaKing = new Date('2027-05-08T00:00:00.000Z').toISOString()
+
+        // King — SIGNED + rinnovo_completato = 1
+        await c.env.DB.prepare(`
+          UPDATE contracts
+          SET status                   = 'SIGNED',
+              rinnovo_completato       = 1,
+              rinnovo_data_completamento = ?,
+              data_firma               = ?,
+              data_scadenza            = ?,
+              updated_at               = ?
+          WHERE codice_contratto = 'CTR-KING-2025-R2'
+            AND (status != 'SIGNED' OR rinnovo_completato != 1)
+        `).bind(oggi, oggi, scadenzaKing, oggi).run()
+
+        // Pizzutto — SENT (inviato manualmente, in attesa firma + pagamento)
+        await c.env.DB.prepare(`
+          UPDATE contracts
+          SET status     = 'SENT',
+              updated_at = ?
+          WHERE codice_contratto = 'CTR-PIZZUTTO-G-2025-R2'
+            AND status NOT IN ('SIGNED', 'SENT')
+        `).bind(oggi).run()
+
+        // Pennacchio — SENT (inviato manualmente, in attesa firma + pagamento)
+        await c.env.DB.prepare(`
+          UPDATE contracts
+          SET status     = 'SENT',
+              updated_at = ?
+          WHERE codice_contratto = 'CTR-PENNACCHIO-2025-R2'
+            AND status NOT IN ('SIGNED', 'SENT')
+        `).bind(oggi).run()
+
+        console.log('✅ Stati contratti rinnovo aggiornati: King=SIGNED, Pizzutto/Pennacchio=SENT')
+      } catch (statiErr: any) {
+        console.warn('⚠️ Errore aggiornamento stati contratti rinnovo:', statiErr?.message)
+      }
+      // ── FINE AGGIORNAMENTO STATI ──────────────────────────────────────────
+
       // ── TEST RINNOVO: Roberto Poggi (lead) / Rosaria Ressa (assistita) ────
       // Lead di test per verificare il flusso rinnovo prima di inviarlo a utenti reali.
       // Email: rpoggi55@gmail.com — Roberto riceve la mail e firma come test.
