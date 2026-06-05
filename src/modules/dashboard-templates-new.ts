@@ -6860,6 +6860,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 const isRinnovo = contract.is_rinnovo == 1 || contract.is_rinnovo === true;
                 const rinnovoCompletato = contract.rinnovo_completato == 1 || contract.rinnovo_completato === true;
                 const isSigned = contract.status === 'SIGNED';
+                const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
+                const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+                const ivaAgSafe = ivaAg ? 'true' : 'false';
 
                 // Badge rinnovo
                 const rinnovo_badge = isRinnovo
@@ -6944,16 +6947,11 @@ export const data_dashboard = `<!DOCTYPE html>
                                class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
                                 ✍️ Firmato
                             </a>
-                            \${(() => {
-                                const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
-                                const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
-                                const ivaAgSafe = ivaAg ? 'true' : 'false';
-                                return \`<button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe})"
+                            <button onclick="inviaRinnovo(\${idSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
                                     title="Crea e invia contratto di rinnovo (\${tooltipIva})">
                                 🔄 Invia Rinnovo
-                            </button>\`;
-                            })()}
+                            </button>
                         </div>
                     \`;
                 } else if (isRinnovo && !isSigned) {
