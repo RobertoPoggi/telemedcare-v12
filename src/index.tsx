@@ -11653,7 +11653,7 @@ app.post('/api/leads/:id/complete', async (c) => {
         .bind(id)
         .first()
       
-      if (updatedLead && c.env.RESEND_API_KEY) {
+      if (updatedLead) {
         const leadData = updatedLead as any
         
         // Prepara email notifica admin
@@ -11702,7 +11702,7 @@ app.post('/api/leads/:id/complete', async (c) => {
               <div class="field"><span class="label">Piano:</span> <span class="value">${leadData.piano || 'N/D'}</span></div>
               
               <div class="footer">
-                <p>🤖 Notifica automatica - TeleMedCare V12</p>
+                <p>🤖 Notifica automatica - eCura V12</p>
                 <p>Dashboard: <a href="https://telemedcare-v12.pages.dev/leads-dashboard">Visualizza Lead</a></p>
               </div>
             </div>
@@ -11710,25 +11710,20 @@ app.post('/api/leads/:id/complete', async (c) => {
           </html>
         `
         
-        // Invia email
-        const notifyResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            from: `eCura <${c.env?.RESEND_FROM || 'info@ecura.it'}>`,
-            to: [c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it'],
-            subject: `📝 Form Completato - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
-            html: emailHtml
-          })
+        // Invia email tramite EmailService (Resend → Brevo → SendGrid con fallback automatico)
+        const { EmailService } = await import('./modules/email-service')
+        const emailService = new EmailService(c.env)
+        const notifyResult = await emailService.sendEmail({
+          to: c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it',
+          from: c.env?.RESEND_FROM || 'info@ecura.it',
+          subject: `📝 Form Completato - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
+          html: emailHtml
         })
         
-        if (notifyResponse.ok) {
-          console.log(`✅ [NOTIFICA] Email admin inviata per lead ${id}`)
+        if (notifyResult.success) {
+          console.log(`✅ [NOTIFICA] Email admin inviata per lead ${id} (${notifyResult.messageId})`)
         } else {
-          console.error(`❌ [NOTIFICA] Errore invio email admin: ${await notifyResponse.text()}`)
+          console.error(`❌ [NOTIFICA] Errore invio email admin:`, notifyResult.error)
         }
       }
     } catch (notifyError) {
@@ -26752,42 +26747,31 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
 </html>
     `
     
-    // Invia email
-    if (!c.env.RESEND_API_KEY) {
-      return c.json({ success: false, error: 'RESEND_API_KEY non configurato' }, 500)
-    }
-    
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: `eCura <${c.env?.RESEND_FROM || 'info@ecura.it'}>`,
-        to: [leadData.email],
-        subject: 'Completa i tuoi dati - eCura',
-        html: html
-      })
+    // Invia email tramite EmailService (Resend → Brevo → SendGrid con fallback automatico)
+    const { EmailService } = await import('./modules/email-service')
+    const emailService = new EmailService(c.env)
+    const emailResponse = await emailService.sendEmail({
+      to: leadData.email,
+      from: c.env?.RESEND_FROM || 'info@ecura.it',
+      subject: 'Completa i tuoi dati - eCura',
+      html: html
     })
     
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text()
-      console.error(`❌ [RESEND-COMPLETION] Errore Resend API:`, errorText)
+    if (!emailResponse.success) {
+      console.error(`❌ [COMPLETION] Errore invio email:`, emailResponse.error)
       return c.json({
         success: false,
         error: 'Errore invio email',
-        details: errorText
+        details: emailResponse.error
       }, 500)
     }
     
-    const result = await emailResponse.json()
-    console.log(`✅ [RESEND-COMPLETION] Email inviata a ${leadData.email}:`, result)
+    console.log(`✅ [COMPLETION] Email inviata a ${leadData.email}:`, emailResponse.messageId)
     
     return c.json({
       success: true,
       message: 'Email completamento reinviata',
-      emailId: result.id,
+      emailId: emailResponse.messageId,
       to: leadData.email
     })
     
