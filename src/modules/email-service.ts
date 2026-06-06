@@ -719,10 +719,11 @@ export class EmailService {
     
     console.log('📧 Brevo: Invio a', emailData.to)
     
+    const fromEmail = emailData.from || env?.RESEND_FROM || 'info@ecura.it'
     const payload = {
       sender: {
         name: 'eCura',
-        email: emailData.from || 'info@ecura.it'
+        email: fromEmail
       },
       to: [{ email: emailData.to }],
       subject: emailData.subject,
