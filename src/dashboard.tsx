@@ -22,6 +22,8 @@ type Bindings = {
   // 🔐 EMAIL SERVICE API KEYS (Security Enhanced)
   SENDGRID_API_KEY?: string
   RESEND_API_KEY?: string
+  BREVO_API_KEY?: string
+  RESEND_FROM?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
   // Enterprise API Keys

@@ -59,6 +59,7 @@ type Bindings = {
   SENDGRID_API_KEY?: string
   RESEND_API_KEY?: string
   RESEND_FROM?: string
+  BREVO_API_KEY?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
   // Environment
@@ -5818,8 +5819,9 @@ app.post('/api/admin/test-email', async (c) => {
         <p>Questa è un'email di test inviata da TeleMedCare il ${new Date().toISOString()}</p>
         <p><strong>API Keys disponibili:</strong></p>
         <ul>
+          <li>RESEND_API_KEY: ${c.env.RESEND_API_KEY ? '✅ Configurata' : '❌ Mancante'}</li>
+          <li>BREVO_API_KEY: ${c.env.BREVO_API_KEY ? '✅ Configurata' : '❌ Mancante'}</li>
           <li>SENDGRID_API_KEY: ${c.env.SENDGRID_API_KEY ? '✅ Configurata' : '❌ Mancante'}</li>
-          <li>RESEND_API_KEY: ${c.env.RESEND_API_KEY ? '✅ Configurata' : '❌ Mancante (usando fallback)'}</li>
         </ul>
       `,
       text: 'Test email'
@@ -5831,8 +5833,9 @@ app.post('/api/admin/test-email', async (c) => {
       timestamp: result.timestamp,
       error: result.error,
       config: {
-        sendgrid: c.env.SENDGRID_API_KEY ? 'configured' : 'missing',
-        resend: c.env.RESEND_API_KEY ? 'configured' : 'fallback'
+        resend: c.env.RESEND_API_KEY ? 'configured' : 'missing',
+        brevo: c.env.BREVO_API_KEY ? 'configured' : 'missing',
+        sendgrid: c.env.SENDGRID_API_KEY ? 'configured' : 'missing'
       }
     });
     
@@ -6285,8 +6288,10 @@ app.get('/api/admin/debug-env', async (c) => {
       environment: c.env.ENVIRONMENT || 'not set',
       hasDB: !!c.env.DB,
       hasResendKey: !!c.env.RESEND_API_KEY,
+      hasBrevoKey: !!c.env.BREVO_API_KEY,
       hasSendgridKey: !!c.env.SENDGRID_API_KEY,
       resendKeyPreview: c.env.RESEND_API_KEY ? `${c.env.RESEND_API_KEY.substring(0, 15)}...` : 'NOT SET',
+      brevoKeyPreview: c.env.BREVO_API_KEY ? `${c.env.BREVO_API_KEY.substring(0, 15)}...` : 'NOT SET',
       sendgridKeyPreview: c.env.SENDGRID_API_KEY ? `${c.env.SENDGRID_API_KEY.substring(0, 15)}...` : 'NOT SET',
       allEnvKeys: Object.keys(c.env || {}).filter(k => !k.includes('SECRET') && !k.includes('KEY'))
     });
@@ -15222,6 +15227,7 @@ app.get('/api/debug/env', async (c) => {
     success: true,
     environment: {
       RESEND_API_KEY: c.env.RESEND_API_KEY ? `${c.env.RESEND_API_KEY.substring(0, 10)}...` : 'NOT SET',
+      BREVO_API_KEY: c.env.BREVO_API_KEY ? `${c.env.BREVO_API_KEY.substring(0, 10)}...` : 'NOT SET',
       SENDGRID_API_KEY: c.env.SENDGRID_API_KEY ? `${c.env.SENDGRID_API_KEY.substring(0, 10)}...` : 'NOT SET',
       EMAIL_FROM: c.env.EMAIL_FROM || 'NOT SET',
       EMAIL_TO_INFO: c.env.EMAIL_TO_INFO || 'NOT SET',
