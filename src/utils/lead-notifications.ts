@@ -60,11 +60,11 @@ export async function sendNewLeadNotification(
       ? new Date(leadData.created_at).toLocaleString('it-IT')
       : new Date().toLocaleString('it-IT')
 
-    console.log(`📧 [NOTIFICATION] Invio email a ${env?.EMAIL_TO_INFO || 'info@ecura.it'}...`)
+    console.log(`📧 [NOTIFICATION] Invio email a ${env?.EMAIL_TO || env?.EMAIL_TO_INFO || 'info@ecura.it'}...`)
     console.log(`📧 [NOTIFICATION] Subject: 🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`)
     
     const emailResult = await emailService.sendEmail({
-      to: env?.EMAIL_TO_INFO || 'info@ecura.it',
+      to: env?.EMAIL_TO || env?.EMAIL_TO_INFO || 'info@ecura.it',
       from: env?.RESEND_FROM || env?.EMAIL_FROM || 'info@ecura.it',
       subject: `🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`,
       html: `

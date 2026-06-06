@@ -62,6 +62,7 @@ type Bindings = {
   BREVO_API_KEY?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
+  EMAIL_TO?: string        // alias di EMAIL_TO_INFO
   // Environment
   ENVIRONMENT?: string
   // HubSpot / IRBEMA Integration
@@ -89,6 +90,7 @@ type Bindings = {
 const CONFIG = {
   EMAIL_FROM: 'info@ecura.it',
   EMAIL_TO_INFO: 'info@ecura.it',
+  EMAIL_TO: 'info@ecura.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
@@ -11717,7 +11719,7 @@ app.post('/api/leads/:id/complete', async (c) => {
           },
           body: JSON.stringify({
             from: `eCura <${c.env?.RESEND_FROM || 'info@ecura.it'}>`,
-            to: [c.env?.EMAIL_TO_INFO || 'info@ecura.it'],
+            to: [c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it'],
             subject: `📝 Form Completato - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
             html: emailHtml
           })
@@ -13224,7 +13226,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
       // Notifica interna a info@ecura.it
       await emailService.sendEmail({
-        to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
+        to: c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it',
         subject: `🔄 Rinnovo inviato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} — ${codiceRinnovo}`,
         html: `
           <p>Contratto di rinnovo inviato per firma.</p>
@@ -14791,7 +14793,7 @@ app.post('/api/contracts/sign', async (c) => {
         const pdfBase64 = pdfBuffer ? Buffer.from(pdfBuffer).toString('base64') : null
         
         await emailService.sendEmail({
-          to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
+          to: c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it',
           subject: `✅ Contratto Firmato - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -15230,6 +15232,7 @@ app.get('/api/debug/env', async (c) => {
       BREVO_API_KEY: c.env.BREVO_API_KEY ? `${c.env.BREVO_API_KEY.substring(0, 10)}...` : 'NOT SET',
       SENDGRID_API_KEY: c.env.SENDGRID_API_KEY ? `${c.env.SENDGRID_API_KEY.substring(0, 10)}...` : 'NOT SET',
       EMAIL_FROM: c.env.EMAIL_FROM || 'NOT SET',
+      EMAIL_TO: c.env.EMAIL_TO || 'NOT SET',
       EMAIL_TO_INFO: c.env.EMAIL_TO_INFO || 'NOT SET',
       JWT_SECRET: c.env.JWT_SECRET ? 'SET (hidden)' : 'NOT SET',
       ENCRYPTION_KEY: c.env.ENCRYPTION_KEY ? 'SET (hidden)' : 'NOT SET',
@@ -18614,7 +18617,7 @@ app.post('/api/leads/complete', async (c) => {
       const emailService = new EmailService(c.env)
       
       await emailService.sendEmail({
-        to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
+        to: c.env?.EMAIL_TO || c.env?.EMAIL_TO_INFO || 'info@ecura.it',
         from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
         subject: `✅ Lead Completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`,
         html: `

@@ -26,6 +26,7 @@ type Bindings = {
   RESEND_FROM?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
+  EMAIL_TO?: string        // alias di EMAIL_TO_INFO
   // Enterprise API Keys
   IRBEMA_API_KEY?: string
   AON_API_KEY?: string
@@ -42,6 +43,7 @@ type Bindings = {
 const CONFIG = {
   EMAIL_FROM: 'noreply@ecura.it',
   EMAIL_TO_INFO: 'info@ecura.it',
+  EMAIL_TO: 'info@ecura.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   

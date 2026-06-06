@@ -244,7 +244,7 @@ export class OperationalWorkflowManager {
 
       // Invia email tramite EmailService (usando RESEND o SENDGRID)
       await this.sendEmail({
-        to: env?.EMAIL_TO_INFO || 'info@ecura.it',
+        to: env?.EMAIL_TO || env?.EMAIL_TO_INFO || 'info@ecura.it',
         subject: `Nuovo Lead: ${config.nomeRichiedente} ${config.cognomeRichiedente} - ${config.tipoServizio}`,
         html: emailTemplate,
         leadId: state.leadId,

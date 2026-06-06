@@ -577,7 +577,7 @@ export async function inviaEmailNotificaInfo(
 
     // Invia email a info@ecura.it
     const sendResult = await emailService.sendEmail({
-      to: env.EMAIL_TO_INFO || 'info@ecura.it',
+      to: env.EMAIL_TO || env.EMAIL_TO_INFO || 'info@ecura.it',
       from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
       html: emailHtml,
@@ -1721,7 +1721,7 @@ export async function inviaEmailConfigurazione(
 
     // Invia email a info@
     const sendResult = await emailService.sendEmail({
-      to: env.EMAIL_TO_INFO || 'info@ecura.it',
+      to: env.EMAIL_TO || env.EMAIL_TO_INFO || 'info@ecura.it',
       from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.id})`,
       html: emailHtml
