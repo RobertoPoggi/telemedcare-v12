@@ -1415,6 +1415,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint fix IMEI King e Pennacchio: pubblico (operazione manuale one-shot)
+  if (path === '/api/oneshot-fix-imei-king-pennacchio-4r7wz' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
@@ -26850,6 +26855,40 @@ app.post('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
       eliminati: { totale: eliminati, ids: idsDaEliminare },
       dopo: { totale: dopo.length, assistiti: dopo }
     })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
+  }
+})
+
+// 🔧 ENDPOINT ONE-SHOT: Aggiorna IMEI corretti per King e Pennacchio
+app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    const oggi = new Date().toISOString()
+    const aggiornamenti: any[] = []
+
+    // King id=1: IMEI corretto da contratto CTR-KING-AVANZATO-2026
+    const kingResult = await c.env.DB.prepare(`
+      UPDATE assistiti SET imei = ?, updated_at = ?
+      WHERE id = 1 AND cognome_assistito = 'King'
+    `).bind('868298061208378', oggi).run()
+    aggiornamenti.push({ assistito: 'Eileen Elisabeth King', id: 1, imei_nuovo: '868298061208378', changes: kingResult.meta?.changes })
+
+    // Pennacchio id=5: IMEI corretto da contratto CTR-PENNACCHIO-BASE-2026
+    const pennResult = await c.env.DB.prepare(`
+      UPDATE assistiti SET imei = ?, updated_at = ?
+      WHERE id = 5 AND cognome_assistito = 'Pennacchio'
+    `).bind('868298061123759', oggi).run()
+    aggiornamenti.push({ assistito: 'Rita Pennacchio', id: 5, imei_nuovo: '868298061123759', changes: pennResult.meta?.changes })
+
+    // Verifica finale
+    const { results: stato } = await c.env.DB.prepare(`
+      SELECT id, nome_assistito, cognome_assistito, imei, updated_at
+      FROM assistiti WHERE id IN (1, 5)
+    `).all()
+
+    return c.json({ success: true, aggiornamenti, stato_finale: stato })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
