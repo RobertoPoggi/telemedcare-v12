@@ -1022,7 +1022,119 @@ app.use('*', async (c, next) => {
       }
       // ── FINE TEST RINNOVO POGGI/RESSA ──────────────────────────────────────
 
+      // ── Igino Cacace — nuovo lead (referral da Eileen King) ──────────────
+      // Consuocero di King. Dispositivo SiDLY CARE PRO consegnato il 28/05/2026.
+      // Già pagato. Contratto da firmare (inviato separatamente).
+      // Inserito direttamente come CONVERTED — NO email di completamento.
+      try {
+        const existingCacace = await c.env.DB.prepare(
+          `SELECT id FROM leads WHERE id = 'LEAD-CACACE-2026'`
+        ).first()
+        if (!existingCacace) {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, cfAssistito,
+              indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+              nomeIntestatario, cognomeIntestatario,
+              indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
+              servizio, tipoServizio, piano,
+              fonte, canale_acquisizione, cm, stato, status,
+              iva_agevolata,
+              note, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?, ?,
+              ?,
+              ?, ?, ?
+            )
+          `).bind(
+            'LEAD-CACACE-2026',
+            'Igino', 'Cacace',
+            'caciginio@libero.it', '+39 3474669963',
+            // assistito = stesso intestatario
+            'Igino', 'Cacace', 'CCCGNI35D03D969T',
+            'Via Emilio De Marchi 8', '20125', 'Milano', 'MI',
+            // intestatario
+            'Igino', 'Cacace',
+            'Via Emilio De Marchi 8', '20125', 'Milano', 'MI',
+            // servizio
+            'eCura PRO', 'eCura PRO', 'BASE',
+            // fonte / canale / cm / stato
+            'Referral', '', 'RP',
+            'convertito', 'CONVERTED',
+            // iva_agevolata: 0 = IVA 22% standard
+            0,
+            // note
+            'Referral da Eileen King (consuocera). Dispositivo SiDLY CARE PRO consegnato il 28/05/2026. Già pagato. Contratto CTR-CACACE-BASE-2026 inviato per firma.',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Lead LEAD-CACACE-2026 creato (Igino Cacace — referral King)')
+        }
 
+        // Contratto CTR-CACACE-BASE-2026 — SENT (inviato per firma, non ancora firmato)
+        const existingCacaceContratto = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-CACACE-BASE-2026'`
+        ).first()
+        if (!existingCacaceContratto) {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+              intestatario_nome, intestatario_cognome,
+              assistito_nome, assistito_cognome, assistito_cf,
+              indirizzo_spedizione, cap_spedizione, citta_spedizione, provincia_spedizione,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              data_invio, data_scadenza,
+              created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?
+            )
+          `).bind(
+            'CTR-CACACE-BASE-2026-ID',
+            'LEAD-CACACE-2026',
+            'CTR-CACACE-BASE-2026',
+            'BASE', 'BASE', 'eCura PRO',
+            'contratto_b2c',
+            '<html><body>Contratto CTR-CACACE-BASE-2026 — Igino Cacace (da firmare)</body></html>',
+            // cliente
+            'Igino', 'Cacace', 'caciginio@libero.it', '+39 3474669963',
+            // intestatario
+            'Igino', 'Cacace',
+            // assistito
+            'Igino', 'Cacace', 'CCCGNI35D03D969T',
+            // indirizzo
+            'Via Emilio De Marchi 8', '20125', 'Milano', 'MI',
+            // stato contratto: SENT = inviato per firma, non ancora firmato
+            'SENT',
+            480,   // prezzo_totale IVA esclusa (€480/anno BASE)
+            40,    // prezzo_mensile
+            12,
+            '2026-05-28',           // data invio / consegna dispositivo
+            '2027-05-28',           // scadenza contratto (1 anno)
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto CTR-CACACE-BASE-2026 creato (SENT — in attesa firma)')
+        }
+
+      } catch (err) {
+        console.error('⚠️ Errore inserimento Cacace:', err)
+      }
+      // ── FINE Igino Cacace ────────────────────────────────────────────────────
 
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
