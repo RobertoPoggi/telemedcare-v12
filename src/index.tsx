@@ -20522,6 +20522,23 @@ app.post('/api/init-assistiti', async (c) => {
         indirizzo: '',
         email: '',
         contratto: false
+      },
+      {
+        nome: 'Iginio',
+        cognome: 'Cacace',
+        imei: '864866058470732',
+        servizio: 'eCura PRO',
+        piano: 'AVANZATO',
+        careGiver: null,
+        parentela: null,
+        dataNascita: '1935-04-03',
+        sesso: 'Uomo',
+        peso: 0,
+        altezza: 0,
+        telefono: '+393474669963',
+        indirizzo: 'Via Emilio De Marchi 8, 20125 Milano (MI)',
+        email: 'caciginio@libero.it',
+        contratto: true
       }
     ]
 
