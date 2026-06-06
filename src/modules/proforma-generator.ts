@@ -417,7 +417,7 @@ export class ProformaGenerator {
     Causale: <strong>Proforma {{NUMERO_PROFORMA}}</strong></p>
     
     <p style="font-size: 12px; color: #666;">
-    ⚠️ In caso di bonifico, inviare ricevuta a info@telemedcare.it per conferma pagamento
+    ⚠️ In caso di bonifico, inviare ricevuta a info@ecura.it per conferma pagamento
     </p>
   </div>
 
@@ -431,7 +431,7 @@ export class ProformaGenerator {
   <div class="footer">
     <p><strong style="color: #3b82f6; font-size: 14px;">Contatti Medica GB S.r.l. - eCura</strong></p>
     <p>
-      📧 Email: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | 
+      📧 Email: <a href="mailto:info@ecura.it">info@ecura.it</a> | 
       📞 Telefono: 02 8715 6826 | 
       📱 Assistenza: 335 730 1206
     </p>

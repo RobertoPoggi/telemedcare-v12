@@ -394,7 +394,7 @@ export class DDTGenerator {
   <div style="margin: 40px 0; text-align: center;">
     <p style="font-size: 14px; color: #666;">
       Per assistenza sulla consegna:<br>
-      📧 <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> | 
+      📧 <a href="mailto:info@ecura.it">info@ecura.it</a> | 
       📞 335 730 1206
     </p>
   </div>

@@ -585,10 +585,10 @@ export async function executeAutoImport(
               const emailService = new EmailService(env)
               await emailService.sendEmail({
                 to: insertedLead.email || insertedLead.email,
-                from: env?.EMAIL_FROM || 'info@telemedcare.it',
+                from: env?.RESEND_FROM || env?.EMAIL_FROM || 'info@ecura.it',
                 subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
                 html: emailHtml,
-                text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
+                text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@ecura.it`
               })
               
               console.log(`✅✅✅ [AUTO-IMPORT] Email completamento inviata a ${leadData.email} ✅✅✅`)

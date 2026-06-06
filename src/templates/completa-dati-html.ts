@@ -104,7 +104,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 
             } catch (error) {
                 console.error('Errore:', error);
-                showError('Impossibile caricare i dati. Contattaci a info@telemedcare.it');
+                showError('Impossibile caricare i dati. Contattaci a info@ecura.it');
             }
         }
         
@@ -153,7 +153,7 @@ export const completaDatiHtml = `<!DOCTYPE html>
                 console.error('Errore:', error);
                 submitBtn.textContent = '✉️ Conferma e Invia';
                 submitBtn.disabled = false;
-                showError('Errore invio dati. Riprova o contattaci a info@telemedcare.it');
+                showError('Errore invio dati. Riprova o contattaci a info@ecura.it');
             }
         });
         

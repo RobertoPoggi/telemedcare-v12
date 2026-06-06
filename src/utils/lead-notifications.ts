@@ -60,12 +60,12 @@ export async function sendNewLeadNotification(
       ? new Date(leadData.created_at).toLocaleString('it-IT')
       : new Date().toLocaleString('it-IT')
 
-    console.log(`📧 [NOTIFICATION] Invio email a ${env?.EMAIL_TO_INFO || 'info@telemedcare.it'}...`)
+    console.log(`📧 [NOTIFICATION] Invio email a ${env?.EMAIL_TO_INFO || 'info@ecura.it'}...`)
     console.log(`📧 [NOTIFICATION] Subject: 🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`)
     
     const emailResult = await emailService.sendEmail({
-      to: env?.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: env?.EMAIL_FROM || 'info@telemedcare.it',
+      to: env?.EMAIL_TO_INFO || 'info@ecura.it',
+      from: env?.RESEND_FROM || env?.EMAIL_FROM || 'info@ecura.it',
       subject: `🆕 Nuovo Lead: ${nome} ${cognome} - ${piano}`,
       html: `
         <!DOCTYPE html>
@@ -137,7 +137,7 @@ export async function sendNewLeadNotification(
           
           <div style="text-align: center; padding: 20px; font-size: 12px; color: #666;">
             <p style="margin: 5px 0;">TeleMedCare - Sistema di Gestione Lead</p>
-            <p style="margin: 5px 0;">info@telemedcare.it</p>
+            <p style="margin: 5px 0;">info@ecura.it</p>
           </div>
         </body>
         </html>

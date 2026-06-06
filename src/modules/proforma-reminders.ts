@@ -140,7 +140,7 @@ export async function sendProformaReminder(
       to: proforma.email,
       subject,
       html: htmlContent,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it'
+      from: env?.RESEND_FROM || env.EMAIL_FROM || 'info@ecura.it'
     })
     
     if (result.success) {

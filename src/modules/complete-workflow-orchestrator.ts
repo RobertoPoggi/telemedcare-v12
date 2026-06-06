@@ -67,7 +67,7 @@ async function getWorkflowSettings(db: D1Database): Promise<DashboardSettings> {
 /**
  * STEP 1: Processa nuovo lead dal form
  * - Salva lead nel DB
- * - Invia notifica a info@telemedcare.it
+ * - Invia notifica a info@ecura.it
  * - Se solo brochure/manuale → invia documenti e FINE
  * - Se contratto → genera e invia contratto + documenti
  */
@@ -253,7 +253,7 @@ export async function processNewLead(
                 <strong>TeleMedCare</strong> - Sistema di Gestione Lead
               </p>
               <p style="color: #999999; font-size: 12px; margin: 0;">
-                Per assistenza: <a href="mailto:info@telemedcare.it" style="color: #667eea; text-decoration: none;">info@telemedcare.it</a>
+                Per assistenza: <a href="mailto:info@ecura.it" style="color: #667eea; text-decoration: none;">info@ecura.it</a>
               </p>
             </td>
           </tr>

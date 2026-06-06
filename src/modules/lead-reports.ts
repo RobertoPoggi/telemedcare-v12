@@ -916,7 +916,7 @@ export class TeleMedCareReports {
       azioni: [
         {
           tipo: 'email',
-          destinatari: ['manager@telemedcare.it', 'operations@telemedcare.it'],
+          destinatari: ['manager@ecura.it', 'operations@ecura.it'],
           template: 'conversion_critical',
           parametri: { escalation: true }
         },
@@ -956,7 +956,7 @@ export class TeleMedCareReports {
         },
         {
           tipo: 'email',
-          destinatari: ['operations@telemedcare.it'],
+          destinatari: ['operations@ecura.it'],
           template: 'volume_spike',
           parametri: { action: 'scale_resources' }
         }
@@ -984,7 +984,7 @@ export class TeleMedCareReports {
       azioni: [
         {
           tipo: 'email',
-          destinatari: ['operations@telemedcare.it', 'team-lead@telemedcare.it'],
+          destinatari: ['operations@ecura.it', 'team-lead@ecura.it'],
           template: 'sla_warning',
           parametri: { sla_target: 60 }
         },

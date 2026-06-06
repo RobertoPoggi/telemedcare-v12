@@ -137,7 +137,7 @@ export async function sendConfigurationReminder(
       to: form.email,
       subject: `Reminder Giornaliero: Completa Configurazione per ${nomeAssistito}`,
       html: htmlContent,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it'
+      from: env?.RESEND_FROM || env.EMAIL_FROM || 'info@ecura.it'
     })
     
     if (result.success) {

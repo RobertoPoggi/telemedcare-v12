@@ -127,7 +127,7 @@ export async function sendContractReminder(
       to: contract.email,
       subject: `Reminder: Firma Contratto ${contract.codice_contratto}`,
       html: htmlContent,
-      from: env.EMAIL_FROM || 'noreply@telemedcare.it'
+      from: env?.RESEND_FROM || env.EMAIL_FROM || 'info@ecura.it'
     })
     
     if (result.success) {

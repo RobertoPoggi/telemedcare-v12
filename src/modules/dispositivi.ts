@@ -895,7 +895,7 @@ export class TeleMedCareDispositivi {
           azioniAutomatiche: [
             {
               tipo: 'notifica',
-              parametri: { destinatari: ['compliance@telemedcare.it'] },
+              parametri: { destinatari: ['compliance@ecura.it'] },
               eseguita: false
             }
           ],
@@ -932,7 +932,7 @@ export class TeleMedCareDispositivi {
               {
                 tipo: 'notifica',
                 parametri: { 
-                  destinatari: ['support@telemedcare.it'],
+                  destinatari: ['support@ecura.it'],
                   tipo: 'garanzia_scadenza',
                   leadId: dispositivo.assegnatoA?.leadId
                 },
@@ -1012,7 +1012,7 @@ export class TeleMedCareDispositivi {
           {
             tipo: 'notifica',
             parametri: { 
-              destinatari: ['support@telemedcare.it'],
+              destinatari: ['support@ecura.it'],
               leadId: dispositivo.assegnatoA?.leadId,
               tipo: 'dispositivo_inattivo'
             },

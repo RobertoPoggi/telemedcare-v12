@@ -3,7 +3,7 @@
  * Gestisce il flusso completo delle email secondo il processo corretto:
  * 
  * FLUSSO CORRETTO:
- * 1. Lead compila form → Email notifica a info@telemedcare.it
+ * 1. Lead compila form → Email notifica a info@ecura.it
  * 2a. Se solo brochure/manuale → Email documenti informativi al lead
  * 2b. Se chiede contratto → Genera e invia contratto + documenti
  * 3. Lead firma contratto → Genera e invia proforma
@@ -492,7 +492,7 @@ export interface WorkflowEmailResult {
 }
 
 /**
- * STEP 1: Invia email notifica nuovo lead a info@telemedcare.it
+ * STEP 1: Invia email notifica nuovo lead a info@ecura.it
  */
 export async function inviaEmailNotificaInfo(
   leadData: LeadData,
@@ -507,7 +507,7 @@ export async function inviaEmailNotificaInfo(
   }
 
   try {
-    console.log(`📧 [WORKFLOW] STEP 1: Invio notifica nuovo lead a info@telemedcare.it`)
+    console.log(`📧 [WORKFLOW] STEP 1: Invio notifica nuovo lead a info@ecura.it`)
     console.log(`Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.email}`)
 
     const emailService = new EmailService(env)
@@ -575,10 +575,10 @@ export async function inviaEmailNotificaInfo(
     // Renderizza template con i dati
     const emailHtml = renderTemplate(template, templateData)
 
-    // Invia email a info@telemedcare.it
+    // Invia email a info@ecura.it
     const sendResult = await emailService.sendEmail({
-      to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: 'info@telemedcare.it',
+      to: env.EMAIL_TO_INFO || 'info@ecura.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `🆕 Nuovo Lead: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente} - ${leadData.pacchetto}`,
       html: emailHtml,
       text: `Nuovo lead ricevuto: ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}\nServizio: ${leadData.pacchetto}\nEmail: ${leadData.email}`
@@ -586,7 +586,7 @@ export async function inviaEmailNotificaInfo(
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push('email_notifica_info -> info@telemedcare.it')
+      result.emailsSent.push('email_notifica_info -> info@ecura.it')
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email notifica inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -847,11 +847,11 @@ export async function inviaEmailDocumentiInformativi(
     console.log(`📄 [WORKFLOW] Brochure URL: ${brochureUrl}`)
     console.log(`📄 [WORKFLOW] Link download inclusi nel template email`)
 
-    // Invia email da info@telemedcare.it (richiesta documentazione informativa)
+    // Invia email da info@ecura.it (richiesta documentazione informativa)
     // NOTA: Ora usiamo link download invece di allegati PDF
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
       html: emailHtml
     })
@@ -1168,7 +1168,7 @@ export async function inviaEmailContratto(
     
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`,
       html: emailHtml,
       attachments: attachments
@@ -1375,7 +1375,7 @@ p {margin: 18px 0; line-height: 1.9;}
 
 <div class="contact-box">
 <h3>📞 Contatti</h3>
-<div class="contact-item">E-MAIL: <a href="mailto:info@medicagb.it">info@medicagb.it</a>; <a href="mailto:info@telemedcare.it">info@telemedcare.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a></div>
+<div class="contact-item">E-MAIL: <a href="mailto:info@medicagb.it">info@medicagb.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a></div>
 <div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
 <div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
 </div>
@@ -1411,7 +1411,7 @@ p {margin: 18px 0; line-height: 1.9;}
       : `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: emailSubject,
       html: emailHtml,
       ...(attachments.length > 0 && { attachments }) // Include attachments solo se presenti
@@ -1507,7 +1507,7 @@ export async function inviaEmailBenvenuto(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `🎉 Benvenuto/a in TeleMedCare, ${clientData.nomeRichiedente}!`,
       html: emailHtml
     })
@@ -1573,7 +1573,7 @@ export async function inviaEmailFormConfigurazione(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `⚙️ Completa la Configurazione del tuo ${templateData.DISPOSITIVO}`,
       html: emailHtml
     })
@@ -1613,7 +1613,7 @@ export async function inviaEmailConfigurazione(
   }
 
   try {
-    console.log(`📧 [WORKFLOW] STEP 5: Invio configurazione cliente a info@telemedcare.it`)
+    console.log(`📧 [WORKFLOW] STEP 5: Invio configurazione cliente a info@ecura.it`)
 
     const emailService = new EmailService(env)
     
@@ -1721,15 +1721,15 @@ export async function inviaEmailConfigurazione(
 
     // Invia email a info@
     const sendResult = await emailService.sendEmail({
-      to: env.EMAIL_TO_INFO || 'info@telemedcare.it',
-      from: 'info@telemedcare.it',
+      to: env.EMAIL_TO_INFO || 'info@ecura.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `📋 Configurazione Dispositivo - ${configData.nome_assistito} ${configData.cognome_assistito} (${clientData.id})`,
       html: emailHtml
     })
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push('email_configurazione_riepilogo -> info@telemedcare.it')
+      result.emailsSent.push('email_configurazione_riepilogo -> info@ecura.it')
       result.messageIds = [sendResult.messageId]
       console.log(`✅ [WORKFLOW] Email configurazione inviata con successo: ${sendResult.messageId}`)
     } else {
@@ -1792,7 +1792,7 @@ export async function inviaEmailConfermaAttivazione(
     // Invia email
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `✅ TeleMedCare - Servizio Attivato!`,
       html: emailHtml
     })
@@ -1926,7 +1926,7 @@ export async function inviaEmailConfigurazionePostPagamento(
     const emailService = new EmailService(env)
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `⚙️ Completa la Configurazione del tuo ${dispositivo}`,
       html: emailHtml
     })

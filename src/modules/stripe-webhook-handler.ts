@@ -208,7 +208,7 @@ export class StripeWebhookHandler {
       // 5. Invia email
       const emailResult = await EmailService.sendEmail({
         to: lead.email,
-        from: 'info@telemedcare.it',
+        from: env?.RESEND_FROM || 'info@ecura.it',
         fromName: 'eCura - Medica GB',
         subject: 'Configura il tuo SiDLY CARE - Benvenuto!',
         html: emailHtml,

@@ -257,7 +257,7 @@ export class DocuSignWebhookHandler {
             const emailService = new EmailService(env)
             const emailResult = await emailService.sendEmail({
               to: proformaData.emailCliente,
-              from: env.EMAIL_FROM || 'info@telemedcare.it',
+              from: env?.RESEND_FROM || env.EMAIL_FROM || 'info@ecura.it',
               subject: `💰 Proforma eCura ${proforma.numeroProforma} - Completa il Pagamento`,
               templateName: 'email_invio_proforma',
               variables: emailVariables,

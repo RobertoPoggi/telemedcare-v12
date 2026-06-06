@@ -307,7 +307,7 @@ export class TemplateLoader {
             Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
             PEC: medicagbsrl@pecimprese.it - Email: info@medicagb.it<br>
             Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409<br>
-            www.medicagb.it - www.telemedcare.it
+            www.medicagb.it - www.ecura.it
         </p>
         <p style="margin-top: 15px;">
             <strong>Data:</strong> {{DATA_RICHIESTA}} - <strong>Documento N°:</strong> {{NUMERO_PROFORMA}}<br>
@@ -412,7 +412,7 @@ export class TemplateLoader {
             TELEMEDCARE S.R.L.<br>
             Via Roma 123, 20100 Milano (MI)<br>
             P.IVA: 12345678901 - C.F.: 12345678901<br>
-            Tel: +39 02 1234 5678 - Email: info@telemedcare.it
+            Tel: +39 02 1234 5678 - Email: info@ecura.it
         </div>
         <div class="contract-title">
             CONTRATTO DI VENDITA<br>
@@ -556,7 +556,7 @@ export class TemplateLoader {
         <p>
             <strong>Data:</strong> {{DATA_CONTRATTO}} - <strong>Luogo:</strong> {{LUOGO_CONTRATTO}}<br>
             Documento generato automaticamente dal sistema TeleMedCare V12.0<br>
-            Per informazioni: info@telemedcare.it - Tel: +39 02 1234 5678
+            Per informazioni: info@ecura.it - Tel: +39 02 1234 5678
         </p>
     </div>
 </body>

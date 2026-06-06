@@ -604,7 +604,7 @@ export class EmailService {
     }
     
     console.log('📧 SendGrid: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
-    console.log('📧 SendGrid: From:', emailData.from || 'info@telemedcare.it')
+    console.log('📧 SendGrid: From:', emailData.from || env?.RESEND_FROM || 'info@ecura.it')
     console.log('📧 SendGrid: To:', emailData.to)
     
     const payload = {
@@ -613,8 +613,8 @@ export class EmailService {
         subject: emailData.subject
       }],
       from: {
-        name: 'TeleMedCare',
-        email: emailData.from || 'info@telemedcare.it'
+        name: 'eCura',
+        email: emailData.from || env?.RESEND_FROM || 'info@ecura.it'
       },
       content: [
         {
@@ -671,9 +671,9 @@ export class EmailService {
     
     console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
-    const fromEmail = emailData.from || 'info@telemedcare.it'
+    const fromEmail = emailData.from || env?.RESEND_FROM || 'info@ecura.it'
     const payload = {
-      from: `TeleMedCare <${fromEmail}>`,
+      from: `eCura <${fromEmail}>`,
       to: [emailData.to],
       subject: emailData.subject,
       html: emailData.html,
@@ -721,7 +721,7 @@ export class EmailService {
     
     const payload = {
       sender: {
-        name: 'TeleMedCare',
+        name: 'eCura',
         email: emailData.from || 'info@medicagb.it'
       },
       to: [{ email: emailData.to }],

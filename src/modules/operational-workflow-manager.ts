@@ -4,7 +4,7 @@
  * 
  * FLUSSO COMPLETO GESTITO:
  * 1. Landing Page → Lead creato
- * 2. Email notifica a info@telemedcare.it  
+ * 2. Email notifica a info@ecura.it  
  * 3. Invio documenti informativi (se richiesti)
  * 4. Generazione e invio contratto pre-compilato
  * 5. Firma elettronica contratto
@@ -216,7 +216,7 @@ export class OperationalWorkflowManager {
   }
 
   /**
-   * FASE 1: Invia notifica a info@telemedcare.it
+   * FASE 1: Invia notifica a info@ecura.it
    */
   private async executeInfoNotification(
     state: WorkflowState,
@@ -244,7 +244,7 @@ export class OperationalWorkflowManager {
 
       // Invia email tramite EmailService (usando RESEND o SENDGRID)
       await this.sendEmail({
-        to: 'info@telemedcare.it',
+        to: env?.EMAIL_TO_INFO || 'info@ecura.it',
         subject: `Nuovo Lead: ${config.nomeRichiedente} ${config.cognomeRichiedente} - ${config.tipoServizio}`,
         html: emailTemplate,
         leadId: state.leadId,
@@ -252,7 +252,7 @@ export class OperationalWorkflowManager {
       })
 
       // Log email inviata
-      await this.logEmail(state.leadId, null, null, 'email_notifica_info', 'info@telemedcare.it', 'SENT')
+      await this.logEmail(state.leadId, null, null, 'email_notifica_info', 'info@ecura.it', 'SENT')
 
       // Aggiorna stato
       state.currentPhase = 'INFO_NOTIFIED'

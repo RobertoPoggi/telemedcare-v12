@@ -58,6 +58,7 @@ type Bindings = {
   // 🔐 EMAIL SERVICE API KEYS (Security Enhanced)
   SENDGRID_API_KEY?: string
   RESEND_API_KEY?: string
+  RESEND_FROM?: string
   EMAIL_FROM?: string
   EMAIL_TO_INFO?: string
   // Environment
@@ -85,8 +86,8 @@ type Bindings = {
 
 // Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
-  EMAIL_FROM: 'noreply@medicagb.it',
-  EMAIL_TO_INFO: 'info@medicagb.it',
+  EMAIL_FROM: 'info@ecura.it',
+  EMAIL_TO_INFO: 'info@ecura.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
@@ -1067,7 +1068,7 @@ app.use('*', async (c, next) => {
         const defaultSettings = [
           ['hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot'],
           ['lead_email_notifications_enabled', 'false', 'Abilita invio email automatiche ai lead'],
-          ['admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it'],
+          ['admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@ecura.it'],
           ['reminder_completion_enabled', 'true', 'Abilita reminder automatici completamento dati lead'],
           ['auto_completion_enabled', 'false', 'Abilita invio automatico email completamento dati'],
           ['auto_payment_workflow_enabled', 'false', 'Abilita workflow automatico pagamenti'],
@@ -1263,7 +1264,7 @@ app.use('/api/lead', async (c, next) => {
 const CORS_ALLOWED_ORIGINS = [  'https://ecura.it',
   'https://www.ecura.it',
   'https://telemedcare.it',
-  'https://www.telemedcare.it',
+  'https://www.ecura.it',
   'https://telemedcare-v12.pages.dev',
   'https://medicagb.it',
   'https://www.medicagb.it',
@@ -5670,7 +5671,7 @@ app.post('/api/admin/run-migrations', async (c) => {
         'Invio Documenti Informativi',
         'email',
         'eCura - Documentazione richiesta',
-        '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Documentazione eCura</title></head><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="color: white; margin: 0; font-size: 28px;">Documentazione eCura</h1></div><div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;"><p style="font-size: 16px; margin-bottom: 20px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p><p style="font-size: 16px; margin-bottom: 20px;">Come da Lei richiesto, alleghiamo la documentazione informativa relativa al servizio <strong>{{PIANO_SERVIZIO}}</strong>.</p><div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #666;"><strong>Documenti allegati:</strong><br>{{DOCUMENTI_ALLEGATI}}</p></div><p style="font-size: 16px; margin-bottom: 20px;">Per qualsiasi domanda o chiarimento, non esiti a contattarci.</p><p style="font-size: 16px; margin-bottom: 10px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p></div><div style="text-align: center; padding: 20px; font-size: 12px; color: #666;"><p style="margin: 5px 0;">eCura by TeleMedCare</p><p style="margin: 5px 0;">info@telemedcare.it</p></div></body></html>',
+        '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Documentazione eCura</title></head><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="color: white; margin: 0; font-size: 28px;">Documentazione eCura</h1></div><div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;"><p style="font-size: 16px; margin-bottom: 20px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p><p style="font-size: 16px; margin-bottom: 20px;">Come da Lei richiesto, alleghiamo la documentazione informativa relativa al servizio <strong>{{PIANO_SERVIZIO}}</strong>.</p><div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #666;"><strong>Documenti allegati:</strong><br>{{DOCUMENTI_ALLEGATI}}</p></div><p style="font-size: 16px; margin-bottom: 20px;">Per qualsiasi domanda o chiarimento, non esiti a contattarci.</p><p style="font-size: 16px; margin-bottom: 10px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p></div><div style="text-align: center; padding: 20px; font-size: 12px; color: #666;"><p style="margin: 5px 0;">eCura by TeleMedCare</p><p style="margin: 5px 0;">info@ecura.it</p></div></body></html>',
         '["NOME_CLIENTE", "COGNOME_CLIENTE", "PIANO_SERVIZIO", "DOCUMENTI_ALLEGATI"]',
         'informative',
         1,
@@ -5810,7 +5811,7 @@ app.post('/api/admin/test-email', async (c) => {
     
     const result = await emailService.sendEmail({
       to,
-      from: 'info@telemedcare.it',
+      from: c.env?.RESEND_FROM || 'info@ecura.it',
       subject: '🧪 Test Email - TeleMedCare',
       html: `
         <h1>Test Email</h1>
@@ -6096,7 +6097,7 @@ app.post('/api/admin/init-settings', async (c) => {
       INSERT OR IGNORE INTO settings (key, value, description, updated_at) VALUES 
         ('hubspot_auto_import_enabled', 'false', 'Abilita import automatico da HubSpot', datetime('now')),
         ('lead_email_notifications_enabled', 'true', 'Abilita invio email automatiche ai lead (ATTIVO PER DEFAULT)', datetime('now')),
-        ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@telemedcare.it', datetime('now'))
+        ('admin_email_notifications_enabled', 'true', 'Abilita notifiche email a info@ecura.it', datetime('now'))
     `).run()
     
     // ✅ FIX: Forza aggiornamento a true se era false (per DB esistenti)
@@ -6314,7 +6315,7 @@ app.get('/api/admin/debug-resend', async (c) => {
     
     // Test diretto API Resend
     const payload = {
-      from: 'TeleMedCare <info@telemedcare.it>',
+      from: 'TeleMedCare <info@ecura.it>',
       to: ['rpoggi55@gmail.com'],
       subject: '🔍 Debug Test - Resend diretto da Cloudflare',
       html: `
@@ -11216,7 +11217,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
     const emailService = new EmailServiceClass(c.env)
     const result = await emailService.sendEmail({
       to: lead.email,
-      from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
+      from: c.env.RESEND_FROM || c.env.EMAIL_FROM || 'info@ecura.it',
       subject: `eCura - Brochure ${servizio}`,
       html: htmlContent,
       attachments
@@ -11639,7 +11640,7 @@ app.post('/api/leads/:id/complete', async (c) => {
       console.error('⚠️ [COMPLETAMENTO] Stack trace:', (triggerError as Error)?.stack)
     }
     
-    // ✅ NOTIFICA: Invia email a info@telemedcare.it quando form completato
+    // ✅ NOTIFICA: Invia email a info@ecura.it quando form completato
     try {
       const updatedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(id)
@@ -11710,8 +11711,8 @@ app.post('/api/leads/:id/complete', async (c) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            from: 'TeleMedCare <noreply@telemedcare.it>',
-            to: ['info@telemedcare.it'],
+            from: `eCura <${c.env?.RESEND_FROM || 'info@ecura.it'}>`,
+            to: [c.env?.EMAIL_TO_INFO || 'info@ecura.it'],
             subject: `📝 Form Completato - ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`,
             html: emailHtml
           })
@@ -12090,7 +12091,7 @@ app.post('/api/configurations/submit', async (c) => {
     console.log(`✅ [CONFIG SUBMIT] Configurazione salvata nel DB per lead ${leadId}`)
     
     // 5️⃣ Invia DUE email:
-    // A) Email a info@telemedcare.it con i dati compilati
+    // A) Email a info@ecura.it con i dati compilati
     // B) Email di benvenuto al cliente
     
     let emailConfigSent = false
@@ -12186,7 +12187,7 @@ app.post('/api/configurations/submit', async (c) => {
       note_aggiuntive: configData.note_aggiuntive
     }
     
-    // A) Invia email configurazione a info@telemedcare.it
+    // A) Invia email configurazione a info@ecura.it
     const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazione(
       leadWithCode,
       configDataForEmail,
@@ -13216,9 +13217,9 @@ app.post('/api/contracts/rinnovo', async (c) => {
         text: `Rinnovo contratto eCura ${servizio} ${piano} - Anno ${annoRinnovo}. Firma online: ${firmaUrl}`
       })
 
-      // Notifica interna a info@telemedcare.it
+      // Notifica interna a info@ecura.it
       await emailService.sendEmail({
-        to: 'info@telemedcare.it',
+        to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
         subject: `🔄 Rinnovo inviato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} — ${codiceRinnovo}`,
         html: `
           <p>Contratto di rinnovo inviato per firma.</p>
@@ -13594,7 +13595,7 @@ app.get('/firma-contratto', async (c) => {
       <body>
         <h1>❌ Errore</h1>
         <p>ID contratto mancante</p>
-        <p>Contatta <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> per assistenza.</p>
+        <p>Contatta <a href="mailto:info@ecura.it">info@ecura.it</a> per assistenza.</p>
       </body>
       </html>
     `, 400)
@@ -13898,7 +13899,7 @@ app.get('/proforma-view', async (c) => {
       <body>
         <h1>❌ Errore</h1>
         <p>ID proforma mancante</p>
-        <p>Contatta <a href="mailto:info@telemedcare.it">info@telemedcare.it</a> per assistenza.</p>
+        <p>Contatta <a href="mailto:info@ecura.it">info@ecura.it</a> per assistenza.</p>
       </body>
       </html>
     `, 400)
@@ -14785,7 +14786,7 @@ app.post('/api/contracts/sign', async (c) => {
         const pdfBase64 = pdfBuffer ? Buffer.from(pdfBuffer).toString('base64') : null
         
         await emailService.sendEmail({
-          to: 'info@telemedcare.it',
+          to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
           subject: `✅ Contratto Firmato - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -14849,9 +14850,9 @@ app.post('/api/contracts/sign', async (c) => {
                       📄 Visualizza contratto firmato
                     </a>
                   </p>
-                  <p>Per qualsiasi necessità contatti il nostro team: <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+                  <p>Per qualsiasi necessità contatti il nostro team: <a href="mailto:info@ecura.it">info@ecura.it</a></p>
                   <p style="color: #6b7280; font-size: 12px; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
-                    TeleMedCare – eCura ${contract.servizio || ''}<br>info@telemedcare.it
+                    eCura ${contract.servizio || ''}<br>info@ecura.it
                   </p>
                 </div>
               `,
@@ -16371,10 +16372,10 @@ app.post('/api/leads', async (c) => {
         const emailService = new EmailService(c.env)
         await emailService.sendEmail({
           to: insertedLead.email || insertedLead.email,
-          from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+          from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml,
-          text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
+          text: `Gentile ${insertedLead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@ecura.it`
         })
         
         console.log(`✅ [LEAD MANUALE] Email completamento inviata a ${insertedLead.email}`)
@@ -17839,7 +17840,7 @@ app.post('/api/hubspot/sync', async (c) => {
               // Invia email
               await EmailService.send({
                 to: emailSafe,
-                from: c.env.EMAIL_FROM || 'notifiche@telemedcare.it',
+                from: c.env.RESEND_FROM || c.env.EMAIL_FROM || 'info@ecura.it',
                 subject: template.subject || 'Completa i tuoi dati - TeleMedCare',
                 html
               }, c.env)
@@ -18376,10 +18377,10 @@ app.post('/api/leads/:leadId/request-completion', async (c) => {
       try {
         await emailService.sendEmail({
           to: lead.email || lead.email,
-          from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+          from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
           subject: '📝 Completa la tua richiesta eCura - Ultimi dettagli necessari',
           html: emailHtml,
-          text: `Gentile ${lead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@telemedcare.it`
+          text: `Gentile ${lead.nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@ecura.it`
         })
         
         console.log(`✅ Email completamento inviata a ${lead.email}`)
@@ -18555,7 +18556,7 @@ app.post('/api/leads/complete', async (c) => {
             
             await emailService.sendEmail({
               to: updatedLead.email || updatedLead.email,
-              from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+              from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
               subject: '📄 Brochure eCura - Documentazione Completa',
               html: brochureHtml,
               text: `Gentile ${updatedLead.nomeRichiedente}, in allegato trova la brochure completa del servizio eCura.`
@@ -18582,7 +18583,7 @@ app.post('/api/leads/complete', async (c) => {
             
             await emailService.sendEmail({
               to: updatedLead.email || updatedLead.email,
-              from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+              from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
               subject: '📝 Contratto eCura - Pronto per la Firma',
               html: contractHtml,
               text: `Gentile ${updatedLead.nomeRichiedente}, il contratto eCura è pronto per la firma.`
@@ -18601,14 +18602,14 @@ app.post('/api/leads/complete', async (c) => {
       console.log(`ℹ️ [WORKFLOW] Workflow automatico disabilitato (auto_contract_workflow_enabled=${autoContractEnabled})`)
     }
     
-    // Invia notifica a info@telemedcare.it
+    // Invia notifica a info@ecura.it
     try {
       const { EmailService } = await import('./modules/email-service')
       const emailService = new EmailService(c.env)
       
       await emailService.sendEmail({
-        to: c.env?.EMAIL_TO_INFO || 'info@telemedcare.it',
-        from: c.env?.EMAIL_FROM || 'info@telemedcare.it',
+        to: c.env?.EMAIL_TO_INFO || 'info@ecura.it',
+        from: c.env.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
         subject: `✅ Lead Completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`,
         html: `
           <h2>✅ Lead Completato con Successo</h2>
@@ -18624,7 +18625,7 @@ app.post('/api/leads/complete', async (c) => {
         text: `Lead ${leadId} completato: ${updatedLead.nomeRichiedente} ${updatedLead.cognomeRichiedente}`
       })
       
-      console.log('✅ Notifica completamento inviata a info@telemedcare.it')
+      console.log('✅ Notifica completamento inviata a info@ecura.it')
     } catch (notifyError) {
       console.error('⚠️ Errore invio notifica completamento:', notifyError)
     }
@@ -20256,7 +20257,7 @@ app.post('/api/import-excel-leads', async (c) => {
         const leadId = `LEAD-EXCEL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         
         // Prepara email (required field): se manca, usa placeholder con telefono
-        const emailValue = lead.email || (lead.telefono ? `noemail+${lead.telefono}@telemedcare.it` : `noemail+${leadId}@telemedcare.it`)
+        const emailValue = lead.email || (lead.telefono ? `noemail+${lead.telefono}@ecura.it` : `noemail+${leadId}@ecura.it`)
         
         await c.env.DB.prepare(`
           INSERT INTO leads (
@@ -23447,7 +23448,7 @@ app.post('/api/email/preview/:templateId', async (c) => {
       preview: {
         renderedSubject: template.subject,
         renderedContent: template.html,
-        recipientEmail: variables.emailCliente || 'test@telemedcare.it',
+        recipientEmail: variables.emailCliente || 'test@ecura.it',
         estimatedSize: '~15KB'
       }
     })
@@ -23544,7 +23545,7 @@ app.post('/api/email/preview', async (c) => {
           
           <p style="font-size: 14px; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
             Grazie per aver scelto TeleMedCare.<br>
-            Per assistenza: support@telemedcare.it | +39 800 123 456
+            Per assistenza: info@ecura.it | +39 800 123 456
           </p>
         </div>
       `,
@@ -24906,7 +24907,7 @@ const EMAIL_TEMPLATES = {
         
         <div class="footer">
             <p><strong>TeleMedCare - Medica GB S.r.l.</strong></p>
-            <p>Per assistenza: info@telemedcare.it | Tel: 800-123-456</p>
+            <p>Per assistenza: info@ecura.it | Tel: 800-123-456</p>
         </div>
     </div>
 </body>
@@ -26731,7 +26732,7 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
     
     <p style="font-size: 14px; color: #666;">Il link sarà valido per 30 giorni.</p>
     
-    <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@telemedcare.it" style="color: #667eea;">info@telemedcare.it</a></p>
+    <p>Per qualsiasi domanda, contattaci a <a href="mailto:info@ecura.it" style="color: #667eea;">info@ecura.it</a></p>
     
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
       <p>Medica GB S.r.l. - TeleMedCare</p>
@@ -26754,7 +26755,7 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'TeleMedCare <noreply@telemedcare.it>',
+        from: `eCura <${c.env?.RESEND_FROM || 'info@ecura.it'}>`,
         to: [leadData.email],
         subject: 'Completa i tuoi dati - eCura',
         html: html

@@ -183,7 +183,7 @@ Medica GB S.r.l.                                             Il Cliente
 
 ## www.medicagb.it
 
-## www.telemedcare.it`,
+## www.ecura.it`,
     variables: [
       'NOME_ASSISTITO', 'COGNOME_ASSISTITO', 'LUOGO_NASCITA', 'DATA_NASCITA',
       'INDIRIZZO_ASSISTITO', 'CAP_ASSISTITO', 'CITTA_ASSISTITO', 'PROVINCIA_ASSISTITO',
@@ -388,7 +388,7 @@ Il presente documento non costituisce fattura che verrà emessa all'atto del pag
 
 ## www.medicagb.it
 
-## www.telemedcare.it`,
+## www.ecura.it`,
     variables: [
       'DATA_RICHIESTA', 'NOME_ASSISTITO', 'COGNOME_ASSISTITO', 'CODICE_FISCALE',
       'INDIRIZZO_COMPLETO', 'CITTA', 'EMAIL_RICHIEDENTE', 'DATA_ATTIVAZIONE',

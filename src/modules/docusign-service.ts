@@ -318,7 +318,7 @@ Grazie per aver scelto eCura!
 
 ---
 eCura by Medica GB S.r.l.
-📧 info@telemedcare.it
+📧 info@ecura.it
 📞 02 8715 6826
     `.trim(),
     documents: [

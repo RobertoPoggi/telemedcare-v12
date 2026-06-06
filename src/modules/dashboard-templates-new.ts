@@ -939,7 +939,7 @@ export const dashboard = `<!DOCTYPE html>
                         <span class="text-2xl mr-2">🔔</span>
                         <h4 class="font-semibold text-gray-800">Notifiche Email Admin</h4>
                     </div>
-                    <p class="text-xs text-gray-600 mb-3">Abilita notifiche email a info@telemedcare.it</p>
+                    <p class="text-xs text-gray-600 mb-3">Abilita notifiche email a info@ecura.it</p>
                     <select id="selectAdminEmails" class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-medium" onchange="updateSetting('admin_email_notifications_enabled', this.value)">
                         <option value="false">❌ OFF - Disattivato</option>
                         <option value="true">✅ ON - Attivo</option>

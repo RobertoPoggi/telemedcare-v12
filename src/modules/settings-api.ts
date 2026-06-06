@@ -16,7 +16,7 @@ export async function getSettings(c: Context) {
     const defaultSettings = [
       { key: 'hubspot_auto_import_enabled', value: 'false', description: 'Abilita import automatico da HubSpot' },
       { key: 'lead_email_notifications_enabled', value: 'false', description: 'Abilita invio email automatiche ai lead' },
-      { key: 'admin_email_notifications_enabled', value: 'true', description: 'Abilita notifiche email a info@telemedcare.it' },
+      { key: 'admin_email_notifications_enabled', value: 'true', description: 'Abilita notifiche email a info@ecura.it' },
       { key: 'reminder_completion_enabled', value: 'false', description: 'Abilita reminder automatici completamento dati lead' },
       { key: 'auto_completion_enabled', value: 'false', description: 'Abilita invio automatico email completamento dati' },
       { key: 'auto_payment_workflow_enabled', value: 'false', description: 'Abilita workflow automatico pagamenti' },

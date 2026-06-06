@@ -88,7 +88,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
       name: 'TeleMedCare S.r.l.',
       address: 'Via Roma 123, 20100 Milano, Italy',
       phone: '+39 02 1234567',
-      email: 'info@telemedcare.it',
+      email: 'info@ecura.it',
       website: 'https://telemedcare.it',
       vatNumber: 'IT12345678901',
       fiscalCode: 'TMC12345678'
@@ -111,7 +111,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
       port: 587,
       secure: false,
       auth: {
-        user: 'noreply@telemedcare.it',
+        user: 'noreply@ecura.it',
         pass: '${SMTP_PASSWORD}' // Da sostituire con variabile ambiente
       }
     },
@@ -125,7 +125,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
   {
     category: 'EMAIL',
     key: 'EMAIL_FROM_DEFAULT',
-    value: 'TeleMedCare <noreply@telemedcare.it>',
+    value: 'TeleMedCare <noreply@ecura.it>',
     description: 'Email mittente di default',
     isActive: true,
     isSecret: false,
@@ -137,7 +137,7 @@ export const DEFAULT_SYSTEM_CONFIGURATIONS: Omit<SystemConfiguration, 'id' | 'la
   {
     category: 'EMAIL',
     key: 'EMAIL_SUPPORT',
-    value: 'supporto@telemedcare.it',
+    value: 'supporto@ecura.it',
     description: 'Email supporto clienti',
     isActive: true,
     isSecret: false,
@@ -783,7 +783,7 @@ export class ConfigurationUtils {
 
     return {
       smtp: smtpResult.success ? smtpResult.data : null,
-      from: fromResult.success ? fromResult.data : 'noreply@telemedcare.it'
+      from: fromResult.success ? fromResult.data : 'noreply@ecura.it'
     }
   }
 }

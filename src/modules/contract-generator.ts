@@ -652,7 +652,7 @@ export class ContractGenerator {
 
   <div class="footer">
     <p>Contratto TeleMedCare Base - Codice: {{CODICE_CONTRATTO}}</p>
-    <p>Medica GB S.r.l. - P.IVA 12345678901 - www.telemedcare.it - info@telemedcare.it</p>
+    <p>Medica GB S.r.l. - P.IVA 12345678901 - www.ecura.it - info@ecura.it</p>
     <p>Documento generato elettronicamente - {{ANNO}}</p>
   </div>
 </body>
@@ -1039,7 +1039,7 @@ ${420 + textContent.length}
 0 -20 Td
 (7. PRIVACY: Trattamento dati secondo GDPR \\(UE 2016/679\\).) Tj
 0 -15 Td
-(   Informativa completa su www.telemedcare.it/privacy) Tj
+(   Informativa completa su www.ecura.it/privacy) Tj
 0 -40 Td
 /F2 12 Tf
 (MODALITA DI FIRMA) Tj
@@ -1052,9 +1052,9 @@ ${420 + textContent.length}
 /F1 9 Tf
 (Documento generato automaticamente da eCura - TeleMedCare V12.0) Tj
 0 -15 Td
-(Per informazioni: info@telemedcare.it | Tel: 800 123 456) Tj
+(Per informazioni: info@ecura.it | Tel: 800 123 456) Tj
 0 -15 Td
-(www.telemedcare.it) Tj
+(www.ecura.it) Tj
 ET`
   }
   

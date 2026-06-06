@@ -13,7 +13,7 @@ export const DATI_AZIENDA = {
   ragioneSociale: 'Medica GB S.r.l.',
   indirizzo: 'Via Example 123, 00100 Roma',
   partitaIva: '12345678901',
-  email: 'info@telemedcare.it',
+  email: 'info@ecura.it',
   sito: 'www.ecura.it',
   sitoPrivacy: 'www.ecura.it/privacy'
 }

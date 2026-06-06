@@ -194,7 +194,7 @@ export async function generateAndSendContract(
 
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
-      from: 'info@telemedcare.it',
+      from: env?.RESEND_FROM || 'info@ecura.it',
       subject: `📄 eCura - Il Tuo Contratto ${formatServiceName(servizio, piano)}`,
       html: emailHtml,
       attachments: attachments
