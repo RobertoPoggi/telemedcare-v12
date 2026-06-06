@@ -5803,6 +5803,42 @@ ${370+t.length}
 
         let allLeads = [];
 
+        // ─── Persistenza filtri via localStorage ─────────────────────────────
+        // Salva i filtri attivi ogni volta che cambiano
+        function saveFilters() {
+            const filters = {
+                fonte:    document.getElementById('filterFonte')?.value || '',
+                servizio: document.getElementById('filterServizio')?.value || '',
+                piano:    document.getElementById('filterPiano')?.value || '',
+                cm:       document.getElementById('filterCM')?.value || '',
+                stato:    document.getElementById('filterStato')?.value || '',
+                cognome:  document.getElementById('searchCognome')?.value || ''
+            };
+            localStorage.setItem('leadsFilters', JSON.stringify(filters));
+        }
+
+        // Ripristina i filtri salvati all'avvio / dopo loadLeadsData
+        function restoreFilters() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('leadsFilters') || '{}');
+                if (saved.fonte    !== undefined) { const el = document.getElementById('filterFonte');    if (el) el.value = saved.fonte; }
+                if (saved.servizio !== undefined) { const el = document.getElementById('filterServizio'); if (el) el.value = saved.servizio; }
+                if (saved.piano    !== undefined) { const el = document.getElementById('filterPiano');    if (el) el.value = saved.piano; }
+                if (saved.cm       !== undefined) { const el = document.getElementById('filterCM');       if (el) el.value = saved.cm; }
+                if (saved.stato    !== undefined) { const el = document.getElementById('filterStato');    if (el) el.value = saved.stato; }
+                if (saved.cognome  !== undefined) { const el = document.getElementById('searchCognome');  if (el) el.value = saved.cognome; }
+            } catch(e) { /* ignora JSON malformato */ }
+        }
+
+        // Aggancia saveFilters a ogni cambiamento dei filtri
+        document.addEventListener('DOMContentLoaded', () => {
+            ['filterFonte','filterServizio','filterPiano','filterCM','filterStato'].forEach(id => {
+                document.getElementById(id)?.addEventListener('change', saveFilters);
+            });
+            document.getElementById('searchCognome')?.addEventListener('input', saveFilters);
+        });
+        // ─────────────────────────────────────────────────────────────────────
+
         // Carica dati
         loadLeadsData();
 
@@ -5908,8 +5944,10 @@ ${370+t.length}
                 // Aggiorna barre canali (stessa API channel-stats → numeri identici ai box)
                 updateChannelsBreakdown(allLeads);
 
-                // Popola tabella
-                renderLeadsTable(allLeads);
+                // Popola tabella — ripristina filtri salvati e riapplica
+                // Fix: dopo ogni azione (email/WhatsApp/cambio stato) i filtri CM/Stato vengono mantenuti
+                restoreFilters();
+                applyFilters();
 
             } catch (error) {
                 console.error('Errore caricamento leads:', error);
@@ -6414,6 +6452,7 @@ ${370+t.length}
         }
 
         function applyFilters() {
+            saveFilters(); // persiste i filtri correnti in localStorage
             const fonteFilter = document.getElementById('filterFonte').value; // es. '__CANALE__META' | '__ECURA_ALL__' | '__FONTE__Privati IRBEMA' | ''
             const sorgenteFilter = ''; // dismesso: non più usato
             const servizioFilter = document.getElementById('filterServizio').value;
