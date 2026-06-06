@@ -10,8 +10,10 @@ build:
 production:
   environment_variables:
     NODE_VERSION: "18"
-    EMAIL_FROM: "info@telemedcare.it"
-    EMAIL_TO_INFO: "info@telemedcare.it"
+    EMAIL_FROM: "info@ecura.it"
+    EMAIL_TO_INFO: "info@ecura.it"
+    EMAIL_TO: "info@ecura.it"
+    RESEND_FROM: "info@ecura.it"
     ENVIRONMENT: "production"
     HUBSPOT_PORTAL_ID: "145726645"
   
@@ -25,6 +27,10 @@ production:
 preview:
   environment_variables:
     NODE_VERSION: "18"
+    EMAIL_FROM: "info@ecura.it"
+    EMAIL_TO_INFO: "info@ecura.it"
+    EMAIL_TO: "info@ecura.it"
+    RESEND_FROM: "info@ecura.it"
     ENVIRONMENT: "preview"
     HUBSPOT_PORTAL_ID: "145726645"
     # ⚠️ Stripe Test Keys - Da configurare su Cloudflare Dashboard

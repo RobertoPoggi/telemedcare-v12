@@ -23,8 +23,10 @@ compatibility_date = "2025-10-06"
 
 # Environment Variables
 [vars]
-EMAIL_FROM = "info@telemedcare.it"
-EMAIL_TO_INFO = "info@telemedcare.it"
+EMAIL_FROM = "info@ecura.it"
+EMAIL_TO_INFO = "info@ecura.it"
+EMAIL_TO = "info@ecura.it"
+RESEND_FROM = "info@ecura.it"
 ENVIRONMENT = "production"
 HUBSPOT_PORTAL_ID = "145726645"
 
@@ -48,11 +50,19 @@ database_id = "e49ad96c-a4c7-4d3e-b2b9-4f3e8a1c5d7f"
 
 [env.production]
 [env.production.vars]
+EMAIL_FROM = "info@ecura.it"
+EMAIL_TO_INFO = "info@ecura.it"
+EMAIL_TO = "info@ecura.it"
+RESEND_FROM = "info@ecura.it"
 ENVIRONMENT = "production"
 HUBSPOT_PORTAL_ID = "145726645"
 
 [env.preview]
 [env.preview.vars]
+EMAIL_FROM = "info@ecura.it"
+EMAIL_TO_INFO = "info@ecura.it"
+EMAIL_TO = "info@ecura.it"
+RESEND_FROM = "info@ecura.it"
 ENVIRONMENT = "preview"
 HUBSPOT_PORTAL_ID = "145726645"
 
