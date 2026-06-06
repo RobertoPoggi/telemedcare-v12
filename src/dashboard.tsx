@@ -38,8 +38,8 @@ type Bindings = {
 
 // Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
-  EMAIL_FROM: 'noreply@medicagb.it',
-  EMAIL_TO_INFO: 'info@medicagb.it',
+  EMAIL_FROM: 'noreply@ecura.it',
+  EMAIL_TO_INFO: 'info@ecura.it',
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V12.0-Modular-Enterprise',
   
@@ -1443,9 +1443,9 @@ app.post('/api/admin/init-database', async (c) => {
       INSERT OR IGNORE INTO automation_tasks (
         id, leadId, automationType, scheduledDate, scheduledTime, priority, status, executionData
       ) VALUES 
-      ('AUTO_001', 'LEAD_TEST_001', 'NOTIFICA_INFO', '2025-10-05', '23:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@medicagb.it","customerName":"Mario Rossi"}'),
+      ('AUTO_001', 'LEAD_TEST_001', 'NOTIFICA_INFO', '2025-10-05', '23:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@ecura.it","customerName":"Mario Rossi"}'),
       ('AUTO_002', 'LEAD_TEST_001', 'INVIO_CONTRATTO', '2025-10-05', '23:05', 'HIGH', 'SCHEDULED', '{"emailTemplate":"email_invio_contratto","customerName":"Mario Rossi"}'),
-      ('AUTO_003', 'LEAD_TEST_002', 'NOTIFICA_INFO', '2025-10-04', '15:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@medicagb.it","customerName":"Anna Bianchi"}'),
+      ('AUTO_003', 'LEAD_TEST_002', 'NOTIFICA_INFO', '2025-10-04', '15:01', 'HIGH', 'COMPLETED', '{"emailTemplate":"email_notifica_info","recipientEmail":"info@ecura.it","customerName":"Anna Bianchi"}'),
       ('AUTO_004', 'LEAD_TEST_002', 'DOCUMENTI_INFORMATIVI', '2025-10-04', '15:05', 'MEDIUM', 'COMPLETED', '{"emailTemplate":"email_documenti_informativi","customerName":"Anna Bianchi"}'),
       ('AUTO_005', 'LEAD_TEST_002', 'PROMEMORIA_3GIORNI', '2025-10-07', '10:00', 'MEDIUM', 'SCHEDULED', '{"emailTemplate":"email_promemoria","customerName":"Anna Bianchi"}')
     `).run();
@@ -3648,7 +3648,7 @@ app.get('/api/email/preview/:templateId', async (c) => {
     
     // Genera dati di test automatici
     const testData = emailService.generateTestData(templateId)
-    const recipientEmail = testData.emailCliente || testData.email || 'test@medicagb.it'
+    const recipientEmail = testData.emailCliente || testData.email || 'test@ecura.it'
     
     const result = await emailService.renderEmailPreview(templateId, testData, recipientEmail)
     
@@ -3718,7 +3718,7 @@ app.get('/api/email/test-data/:templateId', async (c) => {
       success: true,
       template,
       testData,
-      recipientEmail: testData.emailCliente || testData.email || 'test@medicagb.it'
+      recipientEmail: testData.emailCliente || testData.email || 'test@ecura.it'
     })
   } catch (error) {
     console.error('❌ Errore generazione dati test:', error)
@@ -4100,7 +4100,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@ecura.it'
                     });
                     
                     if (response.data.success) {
@@ -4135,7 +4135,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/test-send/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@ecura.it'
                     });
                     
                     const resultsDiv = document.getElementById('testResults');
@@ -4198,7 +4198,7 @@ app.get('/email-test', (c) => {
                 try {
                     const response = await axios.post(\`/api/email/preview/\${currentTemplate.id}\`, {
                         variables: currentTestData,
-                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@medicagb.it'
+                        recipientEmail: currentTestData.emailCliente || currentTestData.email || 'test@ecura.it'
                     });
                     
                     if (response.data.success) {

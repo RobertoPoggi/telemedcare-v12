@@ -469,7 +469,7 @@ cd /home/user/webapp && pm2 status
 ### 🏥 Cliente
 
 **Medica GB S.r.l.**  
-📧 info@telemedcare.it  
+📧 info@ecura.it  
 🌐 TeleMedCare V11.0 - Sistema Enterprise Modulare
 
 ---

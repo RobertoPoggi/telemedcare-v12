@@ -465,7 +465,7 @@ await db.prepare(`
 ## 📞 Supporto
 
 Per domande o problemi:
-- **Email**: info@medicagb.it
+- **Email**: info@ecura.it
 - **Sistema**: TeleMedCare V11.0
 - **Versione**: Modular Enterprise
 

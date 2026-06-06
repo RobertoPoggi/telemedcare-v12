@@ -337,7 +337,7 @@ WorkflowOrchestrator
 - Lead compila form landing page
 - Sistema salva dati in database
 - Stato: `NEW`
-- Email automatica a `info@medicagb.it` con notifica nuovo lead
+- Email automatica a `info@ecura.it` con notifica nuovo lead
 
 **Step 1.2 - Validazione Dati**
 - Operatore verifica completezza dati
@@ -449,7 +449,7 @@ WorkflowOrchestrator
 - Submit via EmailJS
 
 **Step 5.2 - Ricezione Configurazione**
-- Email inviata a `info@medicagb.it`
+- Email inviata a `info@ecura.it`
 - Operatore riceve dati completi
 - Salvataggio manuale in sistema (o auto-parse)
 - Stato: `CONFIGURATION_RECEIVED`
@@ -1275,7 +1275,7 @@ Ripetitore 1-3 volte:
 **Submit:**
 - Pulsante "Invia Configurazione"
 - Loading state durante invio
-- Invio via EmailJS a `info@medicagb.it`
+- Invio via EmailJS a `info@ecura.it`
 - Conferma visiva su successo
 
 #### 8.1.2 Invio Configurazione
@@ -1284,7 +1284,7 @@ Ripetitore 1-3 volte:
 
 **Email Ricevuta da Operatore:**
 ```
-A: info@medicagb.it
+A: info@ecura.it
 Oggetto: 📋 Nuova Configurazione Cliente - {Nome Cognome}
 
 Gentile Staff,
@@ -1579,7 +1579,7 @@ updated_at          TEXT
 #### 10.1.2 Email Inviate dal Sistema
 
 **1. Email Notifica Nuovo Lead**
-- **A:** `info@medicagb.it`
+- **A:** `info@ecura.it`
 - **Oggetto:** `🔔 Nuovo Lead da Landing Page - {Nome Cognome}`
 - **Quando:** Subito dopo compilazione form pubblico
 - **Template:** `email_notifica_interno.html`
@@ -1744,7 +1744,7 @@ created_at      TEXT
     
     <!-- Footer -->
     <div style="background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px;">
-      <p>Medica GB S.r.l. | Via Example 123, Roma | info@medicagb.it</p>
+      <p>Medica GB S.r.l. | Via Example 123, Roma | info@ecura.it</p>
       <p><a href="{{LINK_PRIVACY}}">Privacy Policy</a> | <a href="{{LINK_UNSUB}}">Disiscriviti</a></p>
     </div>
     
@@ -2264,7 +2264,7 @@ const response = await fetch('https://api.resend.com/emails', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    from: 'noreply@medicagb.it',
+    from: 'noreply@ecura.it',
     to: 'cliente@example.com',
     subject: 'Il tuo contratto eCura',
     html: '<html>...</html>',

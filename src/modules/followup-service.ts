@@ -179,7 +179,7 @@ export class FollowUpService {
     {
       operatorId: 'op_001',
       operatorName: 'Sofia Martinelli',
-      email: 'sofia.martinelli@medicagb.it',
+      email: 'sofia.martinelli@ecura.it',
       phone: '+39 02 123 4567',
       workingHours: { start: '09:00', end: '18:00' },
       timezone: 'Europe/Rome',
@@ -190,7 +190,7 @@ export class FollowUpService {
     {
       operatorId: 'op_002', 
       operatorName: 'Marco Rossi',
-      email: 'marco.rossi@medicagb.it',
+      email: 'marco.rossi@ecura.it',
       phone: '+39 02 234 5678',
       workingHours: { start: '10:00', end: '19:00' },
       timezone: 'Europe/Rome',
@@ -201,7 +201,7 @@ export class FollowUpService {
     {
       operatorId: 'op_003',
       operatorName: 'Elena Conti',
-      email: 'elena.conti@medicagb.it', 
+      email: 'elena.conti@ecura.it', 
       phone: '+39 02 345 6789',
       workingHours: { start: '08:00', end: '17:00' },
       timezone: 'Europe/Rome',

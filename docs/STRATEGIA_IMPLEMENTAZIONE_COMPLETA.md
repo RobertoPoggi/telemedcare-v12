@@ -457,7 +457,7 @@ CREATE TABLE documents (
 ### Configurazione Attuale
 **Provider**: Resend  
 **API Keys**: ✅ Già configurate in env  
-**From address**: info@telemedcare.it  
+**From address**: info@ecura.it  
 
 ### Best Practices Resend
 1. **Domain Verification**
@@ -554,9 +554,9 @@ const response = await fetch('https://api.resend.com/emails', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    from: 'TeleMedCare <info@telemedcare.it>',
+    from: 'TeleMedCare <info@ecura.it>',
     to: ['cliente@example.com'],
-    cc: ['info@telemedcare.it'],
+    cc: ['info@ecura.it'],
     subject: 'Oggetto email',
     html: emailHtmlRendered,
     attachments: [

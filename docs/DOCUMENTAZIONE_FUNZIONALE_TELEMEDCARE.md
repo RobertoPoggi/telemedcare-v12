@@ -151,7 +151,7 @@ Il sistema gestisce 6 tipologie di email automatiche lungo il customer journey:
 
 **Provider Email:**
 - Resend API (deliverability > 98%)
-- Dominio verificato: info@telemedcare.it
+- Dominio verificato: info@ecura.it
 - Template HTML responsive ottimizzati mobile
 
 **Metriche:**
@@ -298,7 +298,7 @@ Il sistema gestisce 6 tipologie di email automatiche lungo il customer journey:
 
 **Invio Configurazione:**
 - Validazione campi obbligatori client-side
-- Invio dati via EmailJS a info@medicagb.it
+- Invio dati via EmailJS a info@ecura.it
 - Formato email: JSON strutturato per import automatico
 - Conferma visiva all'utente post-invio
 - Storage locale browser per recupero in caso di errore
@@ -523,7 +523,7 @@ Sezione principale con KPI real-time:
 
 ### 4.1 Sistema Email (Resend)
 **Provider:** Resend API  
-**Dominio Verificato:** info@telemedcare.it  
+**Dominio Verificato:** info@ecura.it  
 **Funzionalità:**
 - Invio email transazionali (contratti, pro-forma, configurazioni)
 - Tracking aperture e click
@@ -997,7 +997,7 @@ Sezione principale con KPI real-time:
 ### 13.3 Contatti
 **Azienda:** Medica GB / TeleMedCare  
 **Referente Progetto:** [Da compilare]  
-**Email:** info@medicagb.it / info@telemedcare.it  
+**Email:** info@ecura.it / info@ecura.it  
 **Sito Web:** www.ecura.it  
 **GitHub:** https://github.com/RobertoPoggi/telemedcare-v12
 

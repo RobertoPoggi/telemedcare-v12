@@ -1,7 +1,7 @@
 # 🔍 Troubleshooting Email Notifiche TeleMedCare
 
 ## ❌ Problema Riportato
-Le email di notifica a `info@telemedcare.it` non arrivano da 24 ore.
+Le email di notifica a `info@ecura.it` non arrivano da 24 ore.
 
 ## ✅ Verifiche Effettuate
 
@@ -26,8 +26,8 @@ Le email di notifica a `info@telemedcare.it` non arrivano da 24 ore.
 - Lead salvati correttamente nel database
 
 ### 5. Variabili Ambiente ✅
-- `EMAIL_TO_INFO`: `info@telemedcare.it` (configurato in wrangler.toml)
-- `EMAIL_FROM`: `info@telemedcare.it`
+- `EMAIL_TO_INFO`: `info@ecura.it` (configurato in wrangler.toml)
+- `EMAIL_FROM`: `info@ecura.it`
 - `RESEND_API_KEY`: Configurata e valida
 
 ## 🎯 DIAGNOSI FINALE
@@ -35,7 +35,7 @@ Le email di notifica a `info@telemedcare.it` non arrivano da 24 ore.
 **Le email VENGONO INVIATE da Resend con successo**, ma:
 
 ### Possibili Cause:
-1. **🗑️ SPAM Filter** - Le email finiscono nella cartella spam di `info@telemedcare.it`
+1. **🗑️ SPAM Filter** - Le email finiscono nella cartella spam di `info@ecura.it`
 2. **🚫 Dominio Non Verificato** - `telemedcare.it` NON è verificato su Resend
 3. **📨 Provider Blocco** - Il provider email di `telemedcare.it` blocca email da Resend
 4. **📊 Rate Limit** - Limite giornaliero Resend raggiunto (100 email/giorno piano free)
@@ -43,7 +43,7 @@ Le email di notifica a `info@telemedcare.it` non arrivano da 24 ore.
 ## 🔧 SOLUZIONI
 
 ### Soluzione Immediata:
-1. **Controlla SPAM** di `info@telemedcare.it`
+1. **Controlla SPAM** di `info@ecura.it`
 2. **Aggiungi Resend a whitelist** del provider email
 3. **Verifica dominio** `telemedcare.it` su Resend Dashboard
 

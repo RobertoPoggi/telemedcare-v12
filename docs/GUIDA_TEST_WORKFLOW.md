@@ -308,7 +308,7 @@ ls -la public/brochures/
 
 Per problemi tecnici:
 - **GitHub Issues**: https://github.com/RobertoPoggi/telemedcare-v11/issues
-- **Email**: roberto.poggi@medicagb.it
+- **Email**: roberto.poggi@ecura.it
 
 ---
 

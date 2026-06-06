@@ -82,7 +82,7 @@ async function testEmail() {
       
       console.log('\n📬 CONTROLLA INBOX:');
       console.log(`   rpoggi55@gmail.com → dovresti ricevere 2 email`);
-      console.log(`   info@medicagb.it → dovrebbe ricevere 1 notifica`);
+      console.log(`   info@ecura.it → dovrebbe ricevere 1 notifica`);
       
     } else {
       console.log(`❌ Errore creazione lead: ${result.error}`);

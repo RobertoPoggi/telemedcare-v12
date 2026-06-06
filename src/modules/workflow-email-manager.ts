@@ -310,7 +310,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
             <h3>Medica GB S.r.l.</h3>
             <p>Corso Garibaldi 34 – 20121 Milano</p>
             <p>PEC: medicagbsrl@pecimprese.it</p>
-            <p>E.mail: info@medicagb.it</p>
+            <p>E.mail: info@ecura.it</p>
             <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
             <p>www.medicagb.it</p>
         </div>
@@ -445,7 +445,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <p><strong>Medica GB S.r.l.</strong></p>
         <p>Corso Garibaldi 34 – 20121 Milano</p>
         <p>PEC: medicagbsrl@pecimprese.it</p>
-        <p>E.mail: info@medicagb.it</p>
+        <p>E.mail: info@ecura.it</p>
         <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
         <p>www.medicagb.it</p>
     </div>
@@ -1375,7 +1375,7 @@ p {margin: 18px 0; line-height: 1.9;}
 
 <div class="contact-box">
 <h3>📞 Contatti</h3>
-<div class="contact-item">E-MAIL: <a href="mailto:info@medicagb.it">info@medicagb.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a></div>
+<div class="contact-item">E-MAIL: <a href="mailto:info@ecura.it">info@ecura.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a>; <a href="mailto:info@ecura.it">info@ecura.it</a></div>
 <div class="contact-item">Telefono commerciale: <a href="tel:+393357301206">+39 335 730 1206</a></div>
 <div class="contact-item">Telefono tecnico: <a href="tel:+393316432390">+39 331 643 2390</a></div>
 </div>
@@ -1388,7 +1388,7 @@ p {margin: 18px 0; line-height: 1.9;}
 <p>📍 Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
 <p>P.IVA: 12435130963 | REA: MI-2661409</p>
 <p>🌐 <a href="https://www.medicagb.it">www.medicagb.it</a> | <a href="https://www.ecura.it">www.ecura.it</a> | <a href="https://www.telemedcare.it">www.telemedcare.it</a></p>
-<p>📧 <a href="mailto:info@medicagb.it">info@medicagb.it</a></p>
+<p>📧 <a href="mailto:info@ecura.it">info@ecura.it</a></p>
 </div>
 </div>
 </body>

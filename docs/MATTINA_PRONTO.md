@@ -17,7 +17,7 @@ Servizi disponibili nel modal:
 **Sistema completo** con 3 email automatiche alla creazione lead:
 
 #### Email 1: Notifica Interno (sempre)
-- **Destinatario**: info@medicagb.it
+- **Destinatario**: info@ecura.it
 - **Oggetto**: 🔔 Nuovo Lead eCura
 - **Template**: NOTIFICA_INFO
 
@@ -182,7 +182,7 @@ Per qualsiasi problema, i log sono disponibili in Cloudflare Dashboard → Worke
 
 ### 📞 Contatti Email Test
 Tutte le email vanno a: **rpoggi55@gmail.com**
-Email notifiche interne: **info@medicagb.it**
+Email notifiche interne: **info@ecura.it**
 
 ---
 

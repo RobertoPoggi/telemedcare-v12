@@ -357,7 +357,7 @@ if (settings.email_promemoria_pagamento) {
 2. Inserire nuovo lead Roberto Poggi (BASE) da eCura.it
 3. Importare via IRBEMA
 4. **Verificare:**
-   - ✅ Email notifica a info@telemedcare.it ricevuta
+   - ✅ Email notifica a info@ecura.it ricevuta
    - ✅ Email completamento dati a rpoggi55@gmail.com ricevuta
    - ✅ Colonna "Prezzo Anno" = €480 nel DB
    - ✅ Link dashboard corretti (`https://telemedcare-v12.pages.dev/admin/leads-dashboard`)

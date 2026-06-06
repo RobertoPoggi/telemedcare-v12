@@ -244,8 +244,8 @@ curl http://localhost:3000/api/data/stats
 ### **Variabili di Configurazione**
 ```typescript
 const CONFIG = {
-  EMAIL_FROM: 'noreply@medicagb.it',
-  EMAIL_TO_INFO: 'info@medicagb.it', 
+  EMAIL_FROM: 'noreply@ecura.it',
+  EMAIL_TO_INFO: 'info@ecura.it', 
   COMPANY_NAME: 'Medica GB S.r.l.',
   SYSTEM_VERSION: 'V11.0-Modular-Enterprise',
   

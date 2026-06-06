@@ -133,7 +133,7 @@ const template = await loadEmailTemplate('email_invio_proforma', db, env)
       <strong>Medica GB S.r.l.</strong><br>
       Corso Garibaldi 34 – 20121 Milano<br>
       P.IVA: 12435130963 | PEC: medicagbsrl@pecimprese.it<br>
-      <a href="mailto:info@medicagb.it">info@medicagb.it</a> | <a href="https://www.medicagb.it">www.medicagb.it</a>
+      <a href="mailto:info@ecura.it">info@ecura.it</a> | <a href="https://www.medicagb.it">www.medicagb.it</a>
     </td></tr>
   </table>
 </body>

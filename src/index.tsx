@@ -2319,7 +2319,7 @@ app.get('/form-lead', (c) => {
             <i class="fas fa-user-tie text-3xl text-blue-400 mb-4"></i>
             <h3 class="text-xl font-bold mb-3">Roberto Poggi</h3>
             <p class="text-gray-300 mb-2">Responsabile Tecnico</p>
-            <p class="text-sm">roberto.poggi@medicagb.it</p>
+            <p class="text-sm">roberto.poggi@ecura.it</p>
             <p class="text-sm text-gray-400">331 643 2390</p>
           </div>
 
@@ -2327,7 +2327,7 @@ app.get('/form-lead', (c) => {
             <i class="fas fa-user-nurse text-3xl text-pink-400 mb-4"></i>
             <h3 class="text-xl font-bold mb-3">Stefania Rocca</h3>
             <p class="text-gray-300 mb-2">Responsabile Commerciale</p>
-            <p class="text-sm">stefania.rocca@medicagb.it</p>
+            <p class="text-sm">stefania.rocca@ecura.it</p>
             <p class="text-sm text-gray-400">335 730 1206</p>
           </div>
 
@@ -2335,7 +2335,7 @@ app.get('/form-lead', (c) => {
           <div class="text-center">
             <i class="fas fa-envelope text-3xl text-green-400 mb-4"></i>
             <h3 class="text-xl font-bold mb-3">Email</h3>
-            <p class="text-sm">info@medicagb.it</p>
+            <p class="text-sm">info@ecura.it</p>
             <p class="text-sm">medicagbsrl@pecimprese.it</p>
             <p class="text-sm text-gray-400 mt-3">www.medicagb.it</p>
           </div>
@@ -13205,7 +13205,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
             <p style="font-size: 13px; color: #6b7280;">
               Dopo la firma riceverà la proforma per il pagamento del rinnovo.
-              Per qualsiasi domanda contatti info@medicagb.it o chiami il nostro servizio clienti.
+              Per qualsiasi domanda contatti info@ecura.it o chiami il nostro servizio clienti.
             </p>
 
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
@@ -13235,7 +13235,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
         text: `Rinnovo inviato: ${codiceRinnovo} — ${lead.email} — € ${rinnovoTotale.toFixed(2)}`
       })
 
-      console.log(`📧 Email rinnovo inviata a ${lead.email} e notifica a info@telemedcare.it`)
+      console.log(`📧 Email rinnovo inviata a ${lead.email} e notifica a info@ecura.it`)
     }
 
     return c.json({
@@ -14826,7 +14826,7 @@ app.post('/api/contracts/sign', async (c) => {
           }] : undefined
         })
         
-        console.log(`✅ [FIRMA] Email notifica inviata a info@telemedcare.it`)
+        console.log(`✅ [FIRMA] Email notifica inviata a info@ecura.it`)
         
         // 6. INVIA COPIA CONTRATTO FIRMATO AL CLIENTE
         if (lead.email) {
@@ -23596,7 +23596,7 @@ app.post('/api/email/preview', async (c) => {
           
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
             <h3 style="margin-top: 0; color: #475569;">📞 Contatti</h3>
-            <p style="margin: 5px 0;"><strong>E-MAIL:</strong> <a href="mailto:info@medicagb.it" style="color: #2563eb;">info@medicagb.it</a></p>
+            <p style="margin: 5px 0;"><strong>E-MAIL:</strong> <a href="mailto:info@ecura.it" style="color: #2563eb;">info@ecura.it</a></p>
             <p style="margin: 5px 0;"><strong>Telefono commerciale:</strong> 335 7301206</p>
             <p style="margin: 5px 0;"><strong>Telefono tecnico:</strong> 331 64 32 390</p>
           </div>
@@ -23608,7 +23608,7 @@ app.post('/api/email/preview', async (c) => {
           <div style="background: #1f2937; color: white; padding: 20px; text-align: center; font-size: 14px; margin-top: 30px; border-radius: 8px;">
             <p style="margin: 5px 0;"><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
             <p style="margin: 5px 0;">Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
-            <p style="margin: 5px 0;">P.IVA: 12435130963 | <a href="mailto:info@medicagb.it" style="color: #60a5fa;">info@medicagb.it</a> | www.medicagb.it</p>
+            <p style="margin: 5px 0;">P.IVA: 12435130963 | <a href="mailto:info@ecura.it" style="color: #60a5fa;">info@ecura.it</a> | www.medicagb.it</p>
           </div>
         </div>
       `,

@@ -11,7 +11,7 @@
 - ✅ **Email ricevute** su Resend Dashboard
 - ✅ **Lead test**: `LEAD-MANUAL-1767734821786`
 - ✅ **Destinatario**: rpoggi55@gmail.com
-- ✅ **Mittente**: info@telemedcare.it
+- ✅ **Mittente**: info@ecura.it
 
 ---
 
@@ -46,7 +46,7 @@
 |----------|-------|------|-------------|
 | `RESEND_API_KEY` | `re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt` | Secret | ✅ Preview |
 | `SENDGRID_API_KEY` | `SG.eRuQRryZRjiir_B6HkDmEg...` | Secret | ✅ Preview |
-| `EMAIL_FROM` | `info@telemedcare.it` | Plain Text | ✅ Preview |
+| `EMAIL_FROM` | `info@ecura.it` | Plain Text | ✅ Preview |
 
 **Link**: https://dash.cloudflare.com/8eee3bb064814aa60b770a979332a914/pages/view/telemedcare-v12/settings/environment-variables
 
@@ -122,7 +122,7 @@ await emailService.sendTemplateEmail(
 {
   "RESEND_API_KEY": "re_Pnq97ox...",      // ✅ CONFIGURATA
   "SENDGRID_API_KEY": "SG.eRuQRry...",   // ✅ CONFIGURATA
-  "EMAIL_FROM": "info@telemedcare.it",    // ✅ CONFIGURATA
+  "EMAIL_FROM": "info@ecura.it",    // ✅ CONFIGURATA
   "EMAIL_TO_INFO": "NOT SET",             // ⚠️ Non critico (fallback nel codice)
   "DB": "CONNECTED"                       // ✅ OK
 }
@@ -174,7 +174,7 @@ curl ".../api/debug/env"
 {
   "RESEND_API_KEY": "re_Pnq97ox...",
   "SENDGRID_API_KEY": "SG.eRuQRry...",
-  "EMAIL_FROM": "info@telemedcare.it"
+  "EMAIL_FROM": "info@ecura.it"
 }
 ```
 
@@ -219,8 +219,8 @@ curl ".../api/debug/env"
 1. **Configurare le stesse variabili** su **Production**:
    - `RESEND_API_KEY` = `re_Pnq97oxZ...`
    - `SENDGRID_API_KEY` = `SG.eRuQRryZ...`
-   - `EMAIL_FROM` = `info@telemedcare.it`
-   - `EMAIL_TO_INFO` = `info@telemedcare.it`
+   - `EMAIL_FROM` = `info@ecura.it`
+   - `EMAIL_TO_INFO` = `info@ecura.it`
 
 2. **Link configurazione Production**:
    - https://dash.cloudflare.com/8eee3bb064814aa60b770a979332a914/pages/view/telemedcare-v12/settings/environment-variables
@@ -275,8 +275,8 @@ curl ".../api/debug/env"
 ```bash
 RESEND_API_KEY=re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt
 SENDGRID_API_KEY=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
-EMAIL_FROM=info@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=info@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 ```
 
 ### **Cloudflare**:

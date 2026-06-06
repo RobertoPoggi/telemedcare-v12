@@ -405,7 +405,7 @@ export class DDTGenerator {
       🏢 Milano: Corso Garibaldi 34, 20121 | 🏢 Genova: Via delle Eriche 53, 16148
     </p>
     <p>
-      📧 info@medicagb.it | 📞 02 8715 6826 | 🌐 www.medicagb.it
+      📧 info@ecura.it | 📞 02 8715 6826 | 🌐 www.medicagb.it
     </p>
     <p style="margin-top: 15px; font-style: italic;">
       Documento generato automaticamente il {{DATA_EMISSIONE}} - Anno {{ANNO}}

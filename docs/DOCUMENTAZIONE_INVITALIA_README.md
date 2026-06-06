@@ -189,7 +189,7 @@ Carica i file HTML su servizi come:
 ## 📞 CONTATTI
 
 **Medica GB S.r.l.**
-📧 Email: info@medicagb.it
+📧 Email: info@ecura.it
 🌐 Web: www.eCura.it
 📱 Tel: [Numero]
 

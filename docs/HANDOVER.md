@@ -308,8 +308,8 @@ DELETE FROM proforma WHERE id IS NULL;  -- Rimuove record corrotti
 **Dashboard:** https://dash.cloudflare.com → telemedcare-v12 → Settings → Environment variables
 
 ### **Variabili configurate:**
-- `EMAIL_FROM` = info@telemedcare.it
-- `EMAIL_TO_INFO` = info@telemedcare.it
+- `EMAIL_FROM` = info@ecura.it
+- `EMAIL_TO_INFO` = info@ecura.it
 - `HUBSPOT_PORTAL_ID` = 145726645
 - `ENVIRONMENT` = production
 
@@ -323,7 +323,7 @@ DELETE FROM proforma WHERE id IS NULL;  -- Rimuove record corrotti
 
 **Repository:** https://github.com/RobertoPoggi/telemedcare-v12  
 **Owner:** RobertoPoggi  
-**Email:** info@telemedcare.it
+**Email:** info@ecura.it
 
 ---
 

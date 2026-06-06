@@ -32,7 +32,7 @@ Controlla che entrambi gli switch siano ON:
 Quando elimini e re-importi un lead (es: Ressa Rosaria), il sistema dovrebbe inviare **DUE EMAIL**:
 
 ### Email 1: Notifica Admin
-- **A**: info@telemedcare.it
+- **A**: info@ecura.it
 - **Template**: NOTIFICA_INFO (blu professionale)
 - **Contenuto**: Dati lead completi
 - **Scopo**: Avvisare operatore
@@ -61,7 +61,7 @@ DELETE FROM leads WHERE id = 'LEAD-IRBEMA-00159';
 - Oppure aspetta qualche minuto
 
 ### Step 3: Controlla Email
-1. **Controlla info@telemedcare.it**:
+1. **Controlla info@ecura.it**:
    - Dovresti ricevere email con template blu (NOTIFICA_INFO)
    
 2. **Controlla email del lead** (es: ressa.rosaria@...):
@@ -83,7 +83,7 @@ DELETE FROM leads WHERE id = 'LEAD-IRBEMA-00159';
 🔔 [NOTIFICATION] Inizio invio notifica per lead LEAD-IRBEMA-00169
 🔔 [NOTIFICATION] Switch value: true
 ✅ [NOTIFICATION] Switch attivo, procedo con invio email
-📧 [NOTIFICATION] Invio email a info@telemedcare.it...
+📧 [NOTIFICATION] Invio email a info@ecura.it...
 ✅ [NOTIFICATION] Email result: { success: true, messageId: "..." }
 ✅ [AUTO-IMPORT] Email notifica admin inviata con successo
 
@@ -98,7 +98,7 @@ DELETE FROM leads WHERE id = 'LEAD-IRBEMA-00159';
 ## ✅ CRITERI SUCCESSO TEST
 
 ### Test PASSATO se:
-1. ✅ Email admin arriva a info@telemedcare.it
+1. ✅ Email admin arriva a info@ecura.it
 2. ✅ Email admin usa template ufficiale (blu)
 3. ✅ Email lead arriva all'indirizzo del lead
 4. ✅ Email lead contiene link completamento dati

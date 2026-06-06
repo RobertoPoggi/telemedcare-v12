@@ -214,7 +214,7 @@ TeleMedCare può validare questa firma se richiesto.
 ## 📞 **CONTATTI**
 
 Per domande tecniche sull'integrazione:
-- **TeleMedCare**: info@telemedcare.it
+- **TeleMedCare**: info@ecura.it
 - **eCura**: info@ecura.it
 
 ---

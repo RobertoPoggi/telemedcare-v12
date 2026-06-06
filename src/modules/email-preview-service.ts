@@ -51,7 +51,7 @@ class EmailPreviewService {
       name: 'Notifica Info Interna',
       fileName: 'email_notifica_info.html',
       subject: '🚨 Nuova Richiesta TeleMedCare - {{nomeRichiedente}} {{cognomeRichiedente}} [{{pianoServizio}}]',
-      description: 'Email di notifica interna a info@medicagb.it per nuove richieste',
+      description: 'Email di notifica interna a info@ecura.it per nuove richieste',
       requiredVariables: ['nomeRichiedente', 'cognomeRichiedente', 'email', 'pianoServizio', 'dataRichiesta', 'oraRichiesta'],
       templateType: 'notifica'
     },
@@ -345,7 +345,7 @@ class EmailPreviewService {
         
         <div class="footer">
             <p>TeleMedCare V12.0 - Sistema di Automazione Email<br>
-            Medica GB S.r.l. | info@medicagb.it</p>
+            Medica GB S.r.l. | info@ecura.it</p>
         </div>
     </div>
 </body>

@@ -71,8 +71,8 @@ API Key: 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
 
 ### **Fix 3: EMAIL_FROM e EMAIL_TO_INFO**
 ```bash
-EMAIL_FROM: info@telemedcare.it
-EMAIL_TO_INFO: info@telemedcare.it
+EMAIL_FROM: info@ecura.it
+EMAIL_TO_INFO: info@ecura.it
 ```
 
 **Modifiche codice**:
@@ -81,12 +81,12 @@ EMAIL_TO_INFO: info@telemedcare.it
 
 **Prima**:
 ```typescript
-email: emailData.from || 'noreply@telemedcare.it'  // ❌ Sbagliato
+email: emailData.from || 'noreply@ecura.it'  // ❌ Sbagliato
 ```
 
 **Dopo**:
 ```typescript
-email: emailData.from || 'info@telemedcare.it'  // ✅ Corretto
+email: emailData.from || 'info@ecura.it'  // ✅ Corretto
 ```
 
 **Risultato**: ✅ EMAIL_FROM fallback corretto
@@ -165,8 +165,8 @@ return { success: true, messageId: `DEMO_...` }  // ⚠️ FAKE SUCCESS
 {
   "RESEND_API_KEY": "re_Pnq97ox...",      // ✅ SET
   "SENDGRID_API_KEY": "SG.eRuQRry...",    // ✅ SET  
-  "EMAIL_FROM": "info@telemedcare.it",     // ⚠️ Da verificare dopo rebuild
-  "EMAIL_TO_INFO": "info@telemedcare.it",  // ⚠️ Da verificare dopo rebuild
+  "EMAIL_FROM": "info@ecura.it",     // ⚠️ Da verificare dopo rebuild
+  "EMAIL_TO_INFO": "info@ecura.it",  // ⚠️ Da verificare dopo rebuild
   "DEBUG_MODE": "true",                     // ✅ SET
   "ENVIRONMENT": "preview",                 // ✅ SET
   "DB": "CONNECTED"                         // ✅ SET
@@ -254,7 +254,7 @@ curl "https://genspark-ai-developer.telemedcare-v12.pages.dev/api/debug/env"
 1. ✅ **Verifica SendGrid Dashboard**:
    - URL: https://app.sendgrid.com/email_activity
    - Cerca email inviate negli ultimi 10 minuti
-   - Destinatari: `rpoggi55@gmail.com`, `info@telemedcare.it`
+   - Destinatari: `rpoggi55@gmail.com`, `info@ecura.it`
 
 2. ✅ **Verifica Resend Dashboard** (se SendGrid fallisce):
    - URL: https://resend.com/emails
@@ -299,8 +299,8 @@ curl "https://genspark-ai-developer.telemedcare-v12.pages.dev/api/debug/env"
 ```bash
 RESEND_API_KEY=re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt
 SENDGRID_API_KEY=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
-EMAIL_FROM=info@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=info@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 ```
 
 ### **Cloudflare Pages**:
@@ -324,7 +324,7 @@ Preview: telemedcare-leads-preview (128fb147-b114-42d9-8c4d-500d70b8cb43)
 **Tutti i fix sono stati applicati**:
 - ✅ RESEND_API_KEY corretta (re_Pnq97oxZ...)
 - ✅ SENDGRID_API_KEY aggiunta (SG.eRuQRryZ...)
-- ✅ EMAIL_FROM fallback corretto (info@telemedcare.it)
+- ✅ EMAIL_FROM fallback corretto (info@ecura.it)
 - ✅ Template brochure corretto (DOCUMENTI_INFORMATIVI)
 - ✅ SendGrid è provider primario
 - ✅ 19 templates email presenti

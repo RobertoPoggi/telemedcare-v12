@@ -27,7 +27,7 @@ Sistema email **pulito, testato e funzionante** creato il 30 Ottobre 2025.
 4. **Workflow Email Aggiornato**
    - Usa template loader pulito
    - Dati placeholder corretti
-   - Email a `info@telemedcare.it`
+   - Email a `info@ecura.it`
    - Supporto SendGrid + Resend
 
 ---
@@ -213,7 +213,7 @@ Verifica:
 1. API Keys in `.dev.vars`:
    - `RESEND_API_KEY`
    - `SENDGRID_API_KEY`
-2. Email destinatario: `info@telemedcare.it`
+2. Email destinatario: `info@ecura.it`
 3. Log server per errori SMTP
 
 ---
@@ -266,17 +266,17 @@ Per problemi o domande:
 
 **Lead ID**: `LEAD_2025-10-30T222823731Z_S6N9WO`  
 **Email inviata**: ✅ `qZmwKTtPTEy1c_bEaH9F4A` (SendGrid)  
-**Destinatario**: info@telemedcare.it  
+**Destinatario**: info@ecura.it  
 **Subject**: 🆕 Nuovo Lead: Roberto Poggi - BASE  
 **Placeholder**: ✅ Tutti sostituiti correttamente  
-**Email corrette**: ✅ info@telemedcare.it, info@medicagb.it
+**Email corrette**: ✅ info@ecura.it, info@ecura.it
 
 ### Fix Applicati
 - ✅ Rimossi "email protected" dal template (linee 345, 354)
-- ✅ Aggiunte email reali: info@telemedcare.it, info@medicagb.it
+- ✅ Aggiunte email reali: info@ecura.it, info@ecura.it
 - ✅ Template aggiornato nel database
 - ✅ Test manuale confermato da utente: email ricevuta correttamente
 
 ### Template Disponibili
-1. **email_notifica_info** - Notifica nuovo lead a info@telemedcare.it ✅
+1. **email_notifica_info** - Notifica nuovo lead a info@ecura.it ✅
 2. **email_documenti_informativi** - Invio brochure/manuale al lead ✅

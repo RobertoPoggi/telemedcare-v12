@@ -19,13 +19,13 @@ Il workflow completo è stato testato end-to-end con tutti i 9 step funzionanti.
 ### ✅ SENDGRID Configurato
 - **API Key:** `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`
 - **Status:** Attivo
-- **From:** noreply@telemedcare.it
-- **To Info:** info@telemedcare.it
+- **From:** noreply@ecura.it
+- **To Info:** info@ecura.it
 
 ### ✅ RESEND Configurato
 - **API Key:** `re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2`
 - **Status:** Attivo (Fallback)
-- **From:** noreply@telemedcare.it
+- **From:** noreply@ecura.it
 
 ### 🔄 Strategia Multi-Provider
 1. **Primary:** SENDGRID
@@ -46,7 +46,7 @@ Il workflow completo è stato testato end-to-end con tutti i 9 step funzionanti.
 **Risultato:**
 - ✅ Lead creato: `LEAD_2025-10-19T165824589Z_HXCWL2`
 - ✅ Salvato nel database D1
-- ✅ Email notifica inviata a `info@telemedcare.it`
+- ✅ Email notifica inviata a `info@ecura.it`
 
 **Dati Inviati:**
 ```json

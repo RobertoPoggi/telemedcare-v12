@@ -342,7 +342,7 @@
 
 **Scenario:** Lead "Mario Rossi" compila form landing page alle 10:00
 
-**10:01** - Email notifica automatica a info@medicagb.it
+**10:01** - Email notifica automatica a info@ecura.it
 **10:15** - Operatore verifica dati, assegna score, invia contratto
 **10:16** - Email contratto inviata a Mario con link firma
 **14:30** - Mario clicca link, legge contratto, firma digitalmente
@@ -364,7 +364,7 @@
 Via [Indirizzo], Roma
 P.IVA: [Partita IVA]
 
-📧 Email: info@medicagb.it
+📧 Email: info@ecura.it
 🌐 Web: www.eCura.it
 📱 Tel: [Numero]
 

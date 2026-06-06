@@ -616,7 +616,7 @@ POST /api/enterprise/channels/webhook/endered
 **Soluzione**:
 - Controllare cartella spam/junk
 - Verificare indirizzo email inserito correttamente
-- Aggiungere noreply@medicagb.it ai contatti
+- Aggiungere noreply@ecura.it ai contatti
 
 #### 3. "Score troppo basso"
 **Causa**: Dati insufficienti o profilo non target
@@ -748,21 +748,21 @@ A: Supporto 24/7 per criticità, onboarding dedicato, training team, documentazi
 ## Contatti e Supporto
 
 ### Supporto Tecnico
-- **Email**: support@medicagb.it
+- **Email**: support@ecura.it
 - **Telefono**: +39 02 1234567 (Lun-Ven 9-18)
 - **Portal**: https://support.telemedcare.medicagb.it
 - **Emergency 24/7**: +39 335 123456 (solo per criticità system-down)
 
 ### Training e Onboarding
-- **Training Manager**: training@medicagb.it  
+- **Training Manager**: training@ecura.it  
 - **Webinar Settimanali**: Ogni martedì ore 15:00
 - **Documentation Hub**: https://docs.telemedcare.medicagb.it
 - **Video Tutorials**: https://learn.telemedcare.medicagb.it
 
 ### Commerciale e Partnership
-- **Business Development**: bd@medicagb.it
-- **Partner Relations**: partners@medicagb.it
-- **Enterprise Sales**: enterprise@medicagb.it
+- **Business Development**: bd@ecura.it
+- **Partner Relations**: partners@ecura.it
+- **Enterprise Sales**: enterprise@ecura.it
 
 ### Feedback e Miglioramenti
 - **Feature Request**: https://feedback.telemedcare.medicagb.it

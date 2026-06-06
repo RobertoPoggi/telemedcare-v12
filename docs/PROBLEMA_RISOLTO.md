@@ -8,7 +8,7 @@
 
 ## 🔍 PROBLEMA IDENTIFICATO
 
-**Sintomo**: Email di notifica a `info@telemedcare.it` NON arrivava dopo import automatico lead da HubSpot
+**Sintomo**: Email di notifica a `info@ecura.it` NON arrivava dopo import automatico lead da HubSpot
 
 **Root Cause**: **BUG CRITICO** nel file `src/modules/hubspot-auto-import.ts`
 
@@ -29,7 +29,7 @@ Nel file `src/modules/hubspot-auto-import.ts`, **riga 306**:
 ```typescript
 // ❌ CODICE ERRATO
 await emailService.send({
-  to: 'info@telemedcare.it',
+  to: 'info@ecura.it',
   subject: `🆕 Nuovo Lead: ...`,
   html: emailHtml,
   text: `...`
@@ -45,7 +45,7 @@ Il metodo corretto è `.sendEmail()`.
 2. ✅ Codice prova a inviare email notifica
 3. ❌ Chiamata `emailService.send()` lancia **TypeError: emailService.send is not a function**
 4. ❌ L'errore viene catturato dal `catch` (riga 317) e loggato ma **non blocca l'import**
-5. ❌ Email **NON viene inviata** a info@telemedcare.it
+5. ❌ Email **NON viene inviata** a info@ecura.it
 6. ⚠️ Utente vede lead nel DB ma **non riceve notifica**
 
 ---
@@ -59,7 +59,7 @@ File: `src/modules/hubspot-auto-import.ts`, riga 306
 ```typescript
 // ✅ CODICE CORRETTO
 await emailService.sendEmail({
-  to: 'info@telemedcare.it',
+  to: 'info@ecura.it',
   subject: `🆕 Nuovo Lead: ...`,
   html: emailHtml,
   text: `...`
@@ -78,7 +78,7 @@ await emailService.sendEmail({
 2. **Importa un lead di test**:
    - Opzione A: Elimina un lead esistente e lascia che auto-import lo re-importi
    - Opzione B: Aspetta il prossimo lead da HubSpot
-3. **Controlla email** a `info@telemedcare.it`
+3. **Controlla email** a `info@ecura.it`
 4. **Verifica log** su Cloudflare Dashboard:
    ```
    ✅ [AUTO-IMPORT] Email notifica inviata con successo per LEAD-IRBEMA-xxxxx
@@ -143,7 +143,7 @@ await emailService.sendEmail({
 2. ⏳ **Attendi 2-3 minuti** per completion
 3. 🧪 **Test in produzione**:
    - Aspetta prossimo import automatico
-   - Verifica arrivo email a info@telemedcare.it
+   - Verifica arrivo email a info@ecura.it
 4. 📧 **Se funziona**: Implementare gli altri automatismi:
    - Email completamento dati al lead
    - Email contratto automatico
@@ -158,7 +158,7 @@ Se dopo il deploy la mail ancora non arriva:
 1. Controlla log Cloudflare per errori diversi
 2. Verifica switch `admin_email_notifications_enabled` = `true`
 3. Verifica API keys Resend configurate
-4. Controlla spam su info@telemedcare.it
+4. Controlla spam su info@ecura.it
 
 ---
 

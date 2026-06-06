@@ -105,7 +105,7 @@
 **Problema:** Switch dashboard ignorati dal workflow  
 **Soluzione:**
 1. **Tutti gli invii email condizionati:**
-   - `email_notifica_info`: Notifica a info@telemedcare.it
+   - `email_notifica_info`: Notifica a info@ecura.it
    - `email_completamento_dati`: Email completamento dati al lead
    - `email_reminder_firma`: Reminder firma contratto (futuro)
    - `email_promemoria_pagamento`: Promemoria pagamento (futuro)
@@ -145,7 +145,7 @@
 3. Importare via IRBEMA
 
 **Risultati attesi:**
-- ✅ Email notifica a info@telemedcare.it ricevuta
+- ✅ Email notifica a info@ecura.it ricevuta
 - ✅ Colonna "Prezzo Anno" = **€480** nel database
 - ✅ Colonna "Prezzo Rinnovo" = **€240** nel database
 - ✅ Link dashboard corretti: `https://telemedcare-v12.pages.dev/admin/leads-dashboard`

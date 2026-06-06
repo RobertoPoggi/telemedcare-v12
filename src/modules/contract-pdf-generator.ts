@@ -309,7 +309,7 @@ const CONTRACT_HTML_TEMPLATE = `
     <p>
       Il Cliente ha diritto di recedere dal contratto entro <strong>14 giorni</strong> dalla sottoscrizione, 
       senza dover fornire alcuna motivazione e senza penalità, mediante comunicazione scritta a 
-      <strong>info@medicagb.it</strong>.
+      <strong>info@ecura.it</strong>.
     </p>
   </div>
   
@@ -333,7 +333,7 @@ const CONTRACT_HTML_TEMPLATE = `
   <div class="footer">
     <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
     <p>Milano: Corso Garibaldi 34, 20121 | Genova: Via delle Eriche 53, 16148</p>
-    <p>P.IVA: 12435130963 | info@medicagb.it | www.medicagb.it</p>
+    <p>P.IVA: 12435130963 | info@ecura.it | www.medicagb.it</p>
   </div>
   
 </body>

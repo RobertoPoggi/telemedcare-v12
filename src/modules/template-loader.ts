@@ -198,7 +198,7 @@ export class TemplateLoader {
             MEDICA GB S.R.L.<br>
             Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
             P.IVA: 12435130963 - REA: MI-2661409<br>
-            Tel: +39 331 643 2390 - Email: info@medicagb.it
+            Tel: +39 331 643 2390 - Email: info@ecura.it
         </div>
         <div class="document-title">
             PRO FORMA<br>
@@ -305,7 +305,7 @@ export class TemplateLoader {
         <p>
             <strong>Medica GB S.r.l.</strong><br>
             Corso Giuseppe Garibaldi, 34 – 20121 Milano<br>
-            PEC: medicagbsrl@pecimprese.it - Email: info@medicagb.it<br>
+            PEC: medicagbsrl@pecimprese.it - Email: info@ecura.it<br>
             Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409<br>
             www.medicagb.it - www.ecura.it
         </p>

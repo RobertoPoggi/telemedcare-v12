@@ -79,7 +79,7 @@ cd /home/user/webapp
 Controlla la tua email: **roberto.poggi@medicagb.com**
 
 **Dovresti ricevere:**
-- 📧 Email di notifica nuovo lead a `info@telemedcare.it`
+- 📧 Email di notifica nuovo lead a `info@ecura.it`
 - ⚠️ Potrebbe finire nello SPAM (DNS non configurati)
 
 ---
@@ -163,7 +163,7 @@ curl -X POST http://localhost:3000/api/lead \
 
 **Aspettativa:**
 - ✅ Lead salvato nel DB
-- ✅ Email notifica inviata a info@telemedcare.it
+- ✅ Email notifica inviata a info@ecura.it
 - ✅ Status code 200
 
 ### **Test 2: Lead con Contratto**
@@ -186,7 +186,7 @@ curl -X POST http://localhost:3000/api/lead \
 
 **Aspettativa:**
 - ✅ Lead salvato nel DB
-- ✅ Email notifica inviata a info@telemedcare.it
+- ✅ Email notifica inviata a info@ecura.it
 - ✅ Contratto generato
 - ✅ Email contratto inviata a mario.rossi@example.com
 - ✅ Status code 200

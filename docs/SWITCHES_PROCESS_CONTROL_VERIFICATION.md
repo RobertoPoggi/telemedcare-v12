@@ -101,8 +101,8 @@ if (setting?.value !== 'true') {
 ```
 
 **Test:**
-1. ❌ Switch OFF → Nuovo lead creato → ❌ Email a info@telemedcare.it NON inviata
-2. ✅ Switch ON → Nuovo lead creato → ✅ Email a info@telemedcare.it inviata
+1. ❌ Switch OFF → Nuovo lead creato → ❌ Email a info@ecura.it NON inviata
+2. ✅ Switch ON → Nuovo lead creato → ✅ Email a info@ecura.it inviata
 
 **Verifica manuale:**
 ```bash
@@ -118,7 +118,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
     "piano": "BASE"
   }'
 
-# Verifica inbox: info@telemedcare.it
+# Verifica inbox: info@ecura.it
 ```
 
 ---
@@ -277,13 +277,13 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
 
 **Risultato atteso:**
 - ✅ Lead salvato nel database
-- ❌ Email a info@telemedcare.it NON inviata
+- ❌ Email a info@ecura.it NON inviata
 - Console: `⏭️ [NOTIFICATION] Notifiche admin disabilitate`
 
 **Post-test:**
 1. Cambia switch su ON
 2. Crea nuovo lead
-3. ✅ Email inviata a info@telemedcare.it
+3. ✅ Email inviata a info@ecura.it
 
 ---
 
@@ -293,7 +293,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
 - [ ] Aprire Dashboard: https://telemedcare-v12.pages.dev/dashboard
 - [ ] Verificare che tutti e 4 gli switch siano visibili
 - [ ] Aprire Console Browser (F12) per vedere log
-- [ ] Avere accesso a inbox info@telemedcare.it
+- [ ] Avere accesso a inbox info@ecura.it
 
 ### Test Switch HubSpot
 - [ ] Impostare switch "Import Auto HubSpot" su OFF
@@ -315,11 +315,11 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
 ### Test Switch Email Admin
 - [ ] Impostare switch "Notifiche Email Admin" su OFF
 - [ ] Creare nuovo lead (API o form)
-- [ ] Verificare che NON arrivi email a info@telemedcare.it
+- [ ] Verificare che NON arrivi email a info@ecura.it
 - [ ] Verificare log: "Notifiche admin disabilitate"
 - [ ] Cambiare switch su ON
 - [ ] Creare nuovo lead
-- [ ] Verificare che arrivi email a info@telemedcare.it
+- [ ] Verificare che arrivi email a info@ecura.it
 
 ### Post-Test
 - [ ] Tutti i test passati ✅

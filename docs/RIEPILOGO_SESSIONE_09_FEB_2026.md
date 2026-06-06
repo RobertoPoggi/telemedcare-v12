@@ -402,7 +402,7 @@ Changelog completo con:
 - **Strategia Multi-Canale:** `/home/user/webapp/STRATEGIA_IMPLEMENTAZIONE_COMPLETA.md`
 
 ### Email
-- **Info generale:** info@telemedcare.it
+- **Info generale:** info@ecura.it
 - **Supporto tecnico:** (da configurare)
 
 ---

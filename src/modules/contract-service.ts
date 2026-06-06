@@ -177,7 +177,7 @@ Medica GB S.r.l.                                             Il Cliente
 
 ## PEC: medicagbsrl@pecimprese.it
 
-## E.mail: info@medicagb.it
+## E.mail: info@ecura.it
 
 ## Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409
 
@@ -303,7 +303,7 @@ Medica GB S.r.l.                                             Il Cliente
 
 ## PEC: medicagbsrl@pecimprese.it
 
-## E.mail: info@medicagb.it
+## E.mail: info@ecura.it
 
 ## Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409
 
@@ -382,7 +382,7 @@ Il presente documento non costituisce fattura che verrà emessa all'atto del pag
 
 ## PEC: medicagbsrl@pecimprese.it
 
-## E.mail: info@medicagb.it
+## E.mail: info@ecura.it
 
 ## Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409
 

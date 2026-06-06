@@ -567,8 +567,8 @@ b26265a - feat: add 4th settings switch for admin email
 - **This Report**: `/home/user/webapp/REPORT_FINALE_COMPLETO.md`
 
 ### Email
-- **Support**: info@telemedcare.it
-- **Technical**: team@telemedcare.it
+- **Support**: info@ecura.it
+- **Technical**: team@ecura.it
 
 ---
 

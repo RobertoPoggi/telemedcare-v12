@@ -185,7 +185,7 @@ export const CONFIG_BASE: ConfigurazioneSistema = {
     timeoutApi: 30000
   },
   notifiche: {
-    emailSistema: 'info@medicagb.it'
+    emailSistema: 'info@ecura.it'
   }
 }
 

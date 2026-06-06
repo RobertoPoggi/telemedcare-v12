@@ -139,7 +139,7 @@ if (setting?.value !== 'true') {
 ```
 
 **Comportamento:**
-- ✅ **ON:** Invia notifica a info@telemedcare.it per ogni nuovo lead
+- ✅ **ON:** Invia notifica a info@ecura.it per ogni nuovo lead
 - ❌ **OFF:** Skip notifica, solo log
 
 ---
@@ -351,7 +351,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
 # ⏭️ [NOTIFICATION] Notifiche admin disabilitate, skip email per lead LEAD-XXX
 ```
 
-**Verifica:** Nessuna email inviata a info@telemedcare.it
+**Verifica:** Nessuna email inviata a info@ecura.it
 
 ---
 
@@ -515,7 +515,7 @@ deff6dd - feat: improve settings switches layout - all 4 switches always visible
 **Commit:** 9237cf5
 
 **Medica GB S.r.l.**  
-📧 info@telemedcare.it  
+📧 info@ecura.it  
 🌐 TeleMedCare V12.0 - Sistema Enterprise Modulare
 
 ---

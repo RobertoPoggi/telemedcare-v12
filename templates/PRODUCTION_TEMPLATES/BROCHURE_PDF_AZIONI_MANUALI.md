@@ -199,7 +199,7 @@ app.post('/api/leads/:id/send-brochure', async (c) => {
   // Invia email con template email_brochure
   await emailService.sendEmail({
     to: lead.email,
-    from: 'notifiche@telemedcare.it',
+    from: 'notifiche@ecura.it',
     subject: `eCura - Brochure ${servizio}`,
     html: htmlContent,
     attachments
@@ -344,7 +344,7 @@ attachments.push({
 
 await emailService.sendEmail({
   to: cliente@email.com,
-  from: 'info@telemedcare.it',
+  from: 'info@ecura.it',
   subject: 'eCura - Contratto e Brochure',
   html: emailHtml,
   attachments: attachments

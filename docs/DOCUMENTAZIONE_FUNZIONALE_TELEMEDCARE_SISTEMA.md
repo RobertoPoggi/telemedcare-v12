@@ -1521,7 +1521,7 @@ Response:
 │ ASSISTENZA                                   │
 │                                              │
 │ Hai domande sul pagamento?                   │
-│ Contattaci: info@telemedcare.it             │
+│ Contattaci: info@ecura.it             │
 │ Tel: 0732 123456                             │
 └──────────────────────────────────────────────┘
 ```
@@ -2115,7 +2115,7 @@ const response = await emailjs.send(
   'service_telemedcare',  // Service ID
   'template_config',       // Template ID
   {
-    to_email: 'info@medicagb.it',
+    to_email: 'info@ecura.it',
     subject: `Configurazione Dispositivo - ${configData.codiceCliente}`,
     config_json: JSON.stringify(configData, null, 2),
     cliente_nome: configData.nomeAssistito,

@@ -388,7 +388,7 @@ INSERT INTO contracts (
 // Linea 1064-1149 in workflow-email-manager.ts
 await emailService.sendEmail({
   to: leadData.email,
-  from: 'info@telemedcare.it',
+  from: 'info@ecura.it',
   subject: `eCura - Contratto ${servizioNome}`,
   html: emailHtml,  // Template email_invio_contratto.html
   attachments: [

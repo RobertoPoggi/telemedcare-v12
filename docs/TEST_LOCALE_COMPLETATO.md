@@ -44,7 +44,7 @@ RESEND_API_KEY: re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2 ✅ Disponibile come backup
 ### 4. Email Service
 - ✅ SendGrid come provider primario
 - ✅ Resend come backup
-- ✅ Email inviata a: **info@telemedcare.it**
+- ✅ Email inviata a: **info@ecura.it**
 - ✅ Message ID ricevuto da SendGrid
 
 ### 5. Workflow Completo
@@ -75,11 +75,11 @@ RESEND_API_KEY: re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2 ✅ Disponibile come backup
 
 🚀 [WORKFLOW] Avvio orchestratore workflow completo
 
-📧 [WORKFLOW] STEP 1: Invio notifica nuovo lead a info@telemedcare.it
+📧 [WORKFLOW] STEP 1: Invio notifica nuovo lead a info@ecura.it
 Lead: Roberto Poggi - rpoggi55@gmail.com
 
 📧 Invio email reale: {
-  to: 'info@telemedcare.it',
+  to: 'info@ecura.it',
   subject: '🆕 Nuovo Lead: Roberto Poggi - BASIC',
   attachments: 0
 }
@@ -93,9 +93,9 @@ Lead: Roberto Poggi - rpoggi55@gmail.com
 
 ---
 
-## 📧 Email Inviata a info@telemedcare.it
+## 📧 Email Inviata a info@ecura.it
 
-**Destinatario:** info@telemedcare.it
+**Destinatario:** info@ecura.it
 **Subject:** 🆕 Nuovo Lead: Roberto Poggi - BASIC  
 **Status:** ✅ Inviata con successo tramite SendGrid
 
@@ -149,7 +149,7 @@ cd /home/user/webapp
 
 **Risultato:**
 - ✅ Lead creato
-- ✅ Email inviata a info@telemedcare.it
+- ✅ Email inviata a info@ecura.it
 - ✅ SendGrid Message ID: 3hiNNfhRRGCp0a2aoExfDA
 - ✅ Tutti i campi presenti nell'email
 
@@ -183,7 +183,7 @@ cd /home/user/webapp
 ```
 
 **Verifica:**
-Controlla la tua email **info@telemedcare.it** - dovresti ricevere l'email con tutti i dati del lead!
+Controlla la tua email **info@ecura.it** - dovresti ricevere l'email con tutti i dati del lead!
 
 ### Opzione 2: Fix Email con Allegati (Richiede Modifica Codice)
 
@@ -205,7 +205,7 @@ Per far funzionare anche l'invio dei contratti con PDF allegato, devo:
 - Database configurato con migrazioni
 - API keys SendGrid/Resend configurate
 - Email service funzionante
-- Invio email notifica a info@telemedcare.it
+- Invio email notifica a info@ecura.it
 - Tutti i campi inclusi (CF, indirizzo, condizioni salute)
 - Workflow orchestration attivo
 

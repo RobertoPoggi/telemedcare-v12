@@ -60,8 +60,8 @@ SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
 RESEND_API_KEY=re_your-resend-api-key-here
 
 # Configurazione email
-EMAIL_FROM=info@telemedcare.it        # ✅ IMPORTANTE: Usare info@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=info@ecura.it        # ✅ IMPORTANTE: Usare info@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 
 # Sicurezza
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -85,8 +85,8 @@ OPENAI_API_KEY=sk-your-openai-api-key
 5. Aggiungi le variabili:
    - `SENDGRID_API_KEY` → La tua API key SendGrid
    - `RESEND_API_KEY` → La tua API key Resend
-   - `EMAIL_FROM` → `info@telemedcare.it`
-   - `EMAIL_TO_INFO` → `info@telemedcare.it`
+   - `EMAIL_FROM` → `info@ecura.it`
+   - `EMAIL_TO_INFO` → `info@ecura.it`
    - `JWT_SECRET` → Genera una stringa random sicura
    - `ENCRYPTION_KEY` → Genera una stringa random sicura
 
@@ -96,8 +96,8 @@ cd /home/user/webapp
 cat > .dev.vars << 'EOF'
 SENDGRID_API_KEY=SG.your-actual-key-here
 RESEND_API_KEY=re_your-actual-key-here
-EMAIL_FROM=info@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=info@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 JWT_SECRET=your-jwt-secret-here
 ENCRYPTION_KEY=your-encryption-key-here
 EOF
@@ -130,7 +130,7 @@ npx wrangler pages secret put EMAIL_TO_INFO --project-name=telemedcare-v12
 5. Copia la chiave: `re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 #### **Verifica Dominio Email**
-Per usare `info@telemedcare.it`:
+Per usare `info@ecura.it`:
 1. **SendGrid**: Settings > Sender Authentication > Verify Domain
 2. **Resend**: Settings > Domains > Add Domain
 3. Aggiungi DNS records per verificare il dominio `telemedcare.it`
@@ -255,7 +255,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/leads/LEAD-EXCEL-001/send-con
 
 ### ⚠️ NON COMPLETATO (richiede azione utente)
 - [ ] **API Keys configurate** su Cloudflare Pages
-- [ ] **Dominio verificato** per `info@telemedcare.it`
+- [ ] **Dominio verificato** per `info@ecura.it`
 - [ ] **Test invio email** dopo configurazione
 
 ---
@@ -273,8 +273,8 @@ npx wrangler pages deploy dist --project-name telemedcare-v12
 - Vai su Cloudflare Pages Dashboard
 - Aggiungi SENDGRID_API_KEY
 - Aggiungi RESEND_API_KEY
-- Aggiungi EMAIL_FROM=info@telemedcare.it
-- Aggiungi EMAIL_TO_INFO=info@telemedcare.it
+- Aggiungi EMAIL_FROM=info@ecura.it
+- Aggiungi EMAIL_TO_INFO=info@ecura.it
 
 ### 3. **Verificare Dominio Email**
 - Verifica `telemedcare.it` su SendGrid
@@ -283,7 +283,7 @@ npx wrangler pages deploy dist --project-name telemedcare-v12
 ### 4. **Test Sistema**
 - Testa dashboard operativa (no loop)
 - Testa pulsanti invio manuale
-- Testa ricezione email su info@telemedcare.it
+- Testa ricezione email su info@ecura.it
 
 ---
 

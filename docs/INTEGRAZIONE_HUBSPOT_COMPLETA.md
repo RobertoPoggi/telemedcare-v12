@@ -27,7 +27,7 @@ L'integrazione HubSpot è **attiva e funzionante** con 3 modalità di sincronizz
 - Filtro: Solo lead da **ecura.it** (tramite URL tracking)
 - Controllo duplicati: Verifica email esistente
 - Genera ID sequenziale: `LEAD-IRBEMA-00001`, `LEAD-IRBEMA-00002`, etc.
-- Invia notifica email automatica a info@telemedcare.it
+- Invia notifica email automatica a info@ecura.it
 
 **Quando usare**:
 - Prima sincronizzazione iniziale
@@ -206,7 +206,7 @@ curl https://telemedcare-v12.pages.dev/api/settings/hubspot_auto_import_enabled
 
 7. **Email Notifica Admin** (`email_notifica_info.html`)
    ```
-   TO: info@telemedcare.it
+   TO: info@ecura.it
    SUBJECT: 🆕 Nuovo Lead: {Nome} {Cognome} - {Piano}
    TEMPLATE: email_notifica_info
    ```
@@ -336,7 +336,7 @@ WHERE email = 'test@example.com';
 curl -X POST https://api.resend.com/emails \
   -H "Authorization: Bearer ${RESEND_API_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"from":"test@telemedcare.it","to":"test@example.com","subject":"Test","text":"Test"}'
+  -d '{"from":"test@ecura.it","to":"test@example.com","subject":"Test","text":"Test"}'
 ```
 
 ---

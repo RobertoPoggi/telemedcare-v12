@@ -242,8 +242,8 @@ npx wrangler pages deploy dist --project-name telemedcare-v11
 ## 📞 Supporto
 
 **Medica GB S.r.l.**  
-📧 info@medicagb.it  
-📧 support@medicagb.it (Supporto Tecnico 24/7)  
+📧 info@ecura.it  
+📧 support@ecura.it (Supporto Tecnico 24/7)  
 📞 +39 348 1234567 (Emergenze)  
 🌐 TeleMedCare V12.0 Modular Enterprise  
 
@@ -252,7 +252,7 @@ npx wrangler pages deploy dist --project-name telemedcare-v11
 
 ### **Developer**
 👨‍💻 Roberto Poggi  
-📧 roberto@medicagb.it  
+📧 roberto@ecura.it  
 💻 GitHub: [@RobertoPoggi](https://github.com/RobertoPoggi)
 
 ---

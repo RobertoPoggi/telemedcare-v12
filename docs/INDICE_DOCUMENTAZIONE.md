@@ -294,12 +294,12 @@ Tutti i file sono in: `/home/user/webapp/`
 ## 📞 CONTATTI
 
 **Medica GB S.r.l.**  
-📧 info@medicagb.it  
+📧 info@ecura.it  
 📞 +39 02 1234567  
 🌐 https://www.medicagb.it
 
 **Supporto Tecnico:**  
-📧 support@medicagb.it  
+📧 support@ecura.it  
 📞 +39 348 1234567 (emergenze 24/7)
 
 ---

@@ -10,8 +10,8 @@ Cloudflare Pages ha 2 tipi di configurazioni:
 
 ### **1. Variabili Normali** (wrangler.toml)
 ✅ Già configurate in `wrangler.toml`:
-- `EMAIL_FROM = "info@telemedcare.it"`
-- `EMAIL_TO_INFO = "info@telemedcare.it"`
+- `EMAIL_FROM = "info@ecura.it"`
+- `EMAIL_TO_INFO = "info@ecura.it"`
 
 ### **2. Secrets (chiavi API)** (via CLI)
 ⚠️ Devono essere configurati via `wrangler pages secret`:
@@ -118,8 +118,8 @@ Apri `wrangler.toml`, dovresti vedere:
 
 ```toml
 [vars]
-EMAIL_FROM = "info@telemedcare.it"
-EMAIL_TO_INFO = "info@telemedcare.it"
+EMAIL_FROM = "info@ecura.it"
+EMAIL_TO_INFO = "info@ecura.it"
 ```
 
 ### **3. Verifica DNS**

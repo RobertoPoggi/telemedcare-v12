@@ -2188,9 +2188,9 @@ export const dashboard = `<!DOCTYPE html>
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
                 // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
-                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
+                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@ecura.it)
                 if (nomeCompleto.includes('laura calvi') || 
-                    email.includes('stefania.rocca@medicagb.it')) {
+                    email.includes('stefania.rocca@ecura.it')) {
                     canale = 'Networking';
                     console.log('✅ Networking:', nomeCompleto);
                 }

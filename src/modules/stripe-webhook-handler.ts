@@ -382,7 +382,7 @@ export class StripeWebhookHandler {
       
       await EmailService.sendEmail({
         to: emailCommercialista,
-        from: 'info@medicagb.it',
+        from: 'info@ecura.it',
         fromName: 'Medica GB S.r.l.',
         subject: `Richiesta Fattura - Proforma ${proformaNumber}`,
         html: emailHtml,

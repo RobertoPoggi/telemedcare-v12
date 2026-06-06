@@ -26,7 +26,7 @@ Tutti i PDF device-specific e le azioni manuali dashboard documentate.
 1. Lead compila form su landing page
    ↓
 2. Sistema invia: email_notifica_info.html
-   → A: info@telemedcare.it
+   → A: info@ecura.it
    → Contenuto: Notifica nuovo lead con dati richiesta
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -71,7 +71,7 @@ Tutti i PDF device-specific e le azioni manuali dashboard documentate.
 9. Cliente compila form configurazione
    ↓
 10. Sistema invia: email_configurazione_riepilogo.html
-    → A: info@telemedcare.it
+    → A: info@ecura.it
     → Contenuto: Riepilogo dati configurazione per operatore
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -121,8 +121,8 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 1. email_notifica_info.html
 **Quando**: Subito dopo compilazione form landing page  
-**Da**: sistema@telemedcare.it  
-**A**: info@telemedcare.it  
+**Da**: sistema@ecura.it  
+**A**: info@ecura.it  
 **Scopo**: Notificare team di nuovo lead  
 **Placeholder**:
 - `{{NOME_RICHIEDENTE}}`, `{{COGNOME_RICHIEDENTE}}`
@@ -138,7 +138,7 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 2. email_documenti_informativi.html
 **Quando**: Se lead richiede solo brochure/manuali (no contratto)  
-**Da**: info@telemedcare.it  
+**Da**: info@ecura.it  
 **A**: lead@email.com  
 **Scopo**: Inviare link a documentazione informativa  
 **Placeholder**:
@@ -152,7 +152,7 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 3. email_invio_contratto.html
 **Quando**: Se lead richiede contratto  
-**Da**: info@telemedcare.it  
+**Da**: info@ecura.it  
 **A**: lead@email.com  
 **Scopo**: Inviare contratto pre-compilato da firmare  
 **Placeholder**:
@@ -172,7 +172,7 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 4. email_invio_proforma.html
 **Quando**: Dopo firma contratto (DocuSign webhook)  
-**Da**: info@telemedcare.it  
+**Da**: info@ecura.it  
 **A**: cliente@email.com  
 **Scopo**: Inviare proforma/fattura per pagamento  
 **Placeholder**:
@@ -192,7 +192,7 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 5. email_configurazione.html ⭐ **NUOVO LAYOUT PROFESSIONALE**
 **Quando**: Dopo pagamento Stripe (payment_intent.succeeded)  
-**Da**: info@telemedcare.it  
+**Da**: info@ecura.it  
 **A**: cliente@email.com  
 **Scopo**: Inviare link form configurazione dispositivo  
 **Subject**: `⚙️ Completa la Configurazione del tuo {{DISPOSITIVO}}`  
@@ -228,8 +228,8 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 7. email_configurazione_riepilogo.html
 **Quando**: Dopo compilazione form configurazione da parte del cliente  
-**Da**: sistema@telemedcare.it  
-**A**: info@telemedcare.it  
+**Da**: sistema@ecura.it  
+**A**: info@ecura.it  
 **Scopo**: Notificare team con dati configurazione per preparare spedizione  
 **Placeholder**:
 - `{{NOME_CLIENTE}}`, `{{COGNOME_CLIENTE}}`
@@ -246,7 +246,7 @@ templates/PRODUCTION_TEMPLATES/
 
 ### 8. email_conferma_attivazione.html
 **Quando**: Dopo associazione dispositivo IMEI da dashboard operativa  
-**Da**: info@telemedcare.it  
+**Da**: info@ecura.it  
 **A**: cliente@email.com  
 **Scopo**: Confermare attivazione dispositivo e fornire istruzioni finali  
 **Placeholder**:

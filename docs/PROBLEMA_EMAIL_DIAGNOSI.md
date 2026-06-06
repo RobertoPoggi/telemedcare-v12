@@ -102,7 +102,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/leads \
 
 **Dovresti ricevere:**
 - ✅ 1 email con brochure a `rpoggi55@gmail.com`
-- ✅ 1 email di notifica a `info@telemedcare.it`
+- ✅ 1 email di notifica a `info@ecura.it`
 
 ---
 

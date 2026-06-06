@@ -272,12 +272,12 @@ if (setting?.value !== 'true') {
 ⏭️ [NOTIFICATION] Notifiche admin disabilitate, skip email per lead LEAD-xxx
 ```
 
-**Email a info@telemedcare.it:** NON inviata
+**Email a info@ecura.it:** NON inviata
 
 **Poi:**
 4. Cambia switch su **ON**
 5. Crea nuovo lead
-6. Verifica ricezione email a info@telemedcare.it
+6. Verifica ricezione email a info@ecura.it
 
 ---
 
@@ -357,7 +357,7 @@ SELECT * FROM settings;
 |-----------------------------------|-------|------------------------------------------------|---------------------|
 | hubspot_auto_import_enabled       | false | Abilita import automatico da HubSpot          | 2026-02-04 12:30:00 |
 | lead_email_notifications_enabled  | false | Abilita invio email automatiche ai lead       | 2026-02-04 12:30:00 |
-| admin_email_notifications_enabled | true  | Abilita notifiche email a info@telemedcare.it | 2026-02-04 12:30:00 |
+| admin_email_notifications_enabled | true  | Abilita notifiche email a info@ecura.it | 2026-02-04 12:30:00 |
 | reminder_completion_enabled       | false | Abilita reminder automatici completamento     | 2026-02-04 12:30:00 |
 ```
 
@@ -407,7 +407,7 @@ updated_at = datetime('now');
     },
     "admin_email_notifications_enabled": {
       "value": "true",
-      "description": "Abilita notifiche email a info@telemedcare.it"
+      "description": "Abilita notifiche email a info@ecura.it"
     },
     "reminder_completion_enabled": {
       "value": "false",
@@ -604,7 +604,7 @@ deff6dd - feat: improve settings switches layout - all 4 switches always visible
 **Console Cloudflare:** https://dash.cloudflare.com
 
 **Medica GB S.r.l.**  
-📧 info@telemedcare.it  
+📧 info@ecura.it  
 🌐 TeleMedCare V12.0 - Sistema Enterprise Modulare
 
 ---

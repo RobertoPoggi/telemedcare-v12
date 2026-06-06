@@ -126,8 +126,8 @@ SENDGRID_API_KEY=SG.eRuQRryZRjiir_B6HkDmEg.oTNMKF2cS6aCsNFcF_GpcWBhWdK8_RWE9D2km
 RESEND_API_KEY=re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2
 
 # Email Configuration
-EMAIL_FROM=info@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=info@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 
 # Security Keys (generate random 32+ character strings)
 JWT_SECRET=TeleMedCare_V12_JWT_Secret_2024_$(openssl rand -hex 16)
@@ -170,13 +170,13 @@ Environment: Production
 
 Variable 3:
 Name: EMAIL_FROM
-Value: info@telemedcare.it
+Value: info@ecura.it
 Environment: Production
 [Save]
 
 Variable 4:
 Name: EMAIL_TO_INFO
-Value: info@telemedcare.it
+Value: info@ecura.it
 Environment: Production
 [Save]
 
@@ -273,7 +273,7 @@ dig resend._domainkey.telemedcare.it TXT
 1. Vai su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
 2. Clicca pulsante BLU (contratto) su un lead
 3. Conferma invio
-4. Verifica email ricevuta su info@telemedcare.it
+4. Verifica email ricevuta su info@ecura.it
 ```
 
 ### **Test 2: API diretta**
@@ -390,7 +390,7 @@ Dopo aver completato tutti gli step sopra:
 ✅ **API Keys**: Configurate su Cloudflare Pages  
 ✅ **DNS Records**: Aggiunti al provider DNS  
 ✅ **Domini**: Verificati su SendGrid e Resend  
-✅ **Sistema**: Pronto per invio email da info@telemedcare.it  
+✅ **Sistema**: Pronto per invio email da info@ecura.it  
 
 **Il sistema TeleMedCare V12.0 sarà 100% operativo!**
 

@@ -139,7 +139,7 @@ if (settings.email_completamento_dati) {
 **Commit:** 82ff242
 
 **Switch implementati:**
-1. ✅ `email_notifica_info` → Notifica a info@telemedcare.it
+1. ✅ `email_notifica_info` → Notifica a info@ecura.it
 2. ✅ `email_completamento_dati` → Email completamento dati al lead
 3. ✅ `email_reminder_firma` → Reminder firma contratto (futuro)
 4. ✅ `email_promemoria_pagamento` → Promemoria pagamento (futuro)

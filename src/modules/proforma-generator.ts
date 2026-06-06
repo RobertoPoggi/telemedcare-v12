@@ -198,7 +198,7 @@ export class ProformaGenerator {
       TOTALE: data.totale.toFixed(2).replace('.', ','),
       
       // Pagamento
-      LINK_PAGAMENTO: data.linkPagamentoStripe || 'mailto:info@medicagb.it',
+      LINK_PAGAMENTO: data.linkPagamentoStripe || 'mailto:info@ecura.it',
       IBAN_AZIENDALE: 'IT00 X000 0000 0000 0000 0000 000', // TODO: IBAN reale
       
       // Metadati

@@ -47,7 +47,7 @@ Questi template sono **embedded nel codice TypeScript** (`src/index.tsx`) e veng
 
 | **Template** | **Codice** | **Dove Definito** | **Quando Usato** | **Ultima Modifica** |
 |-------------|-----------|-------------------|------------------|---------------------|
-| `NOTIFICA_INFO` | `EMAIL_TEMPLATES.NOTIFICA_INFO` | `src/index.tsx:15263` | Lead compila form → Email a info@telemedcare.it | 2026-02-04 |
+| `NOTIFICA_INFO` | `EMAIL_TEMPLATES.NOTIFICA_INFO` | `src/index.tsx:15263` | Lead compila form → Email a info@ecura.it | 2026-02-04 |
 | `BENVENUTO` | `EMAIL_TEMPLATES.BENVENUTO` | `src/index.tsx:15315` | Dopo firma contratto e pagamento | 2026-02-04 |
 | `PROFORMA` | `EMAIL_TEMPLATES.PROFORMA` | `src/index.tsx:15358` | Dopo firma contratto (email proforma) | 2026-02-04 |
 
@@ -667,7 +667,7 @@ git push origin main
 │  Modulo: src/index.tsx:3648                                             │
 │                                                                          │
 │  Output:                                                                 │
-│  ├─ Email 1a: Notifica a info@telemedcare.it                           │
+│  ├─ Email 1a: Notifica a info@ecura.it                           │
 │  │   Template: EMAIL_TEMPLATES.NOTIFICA_INFO (src/index.tsx:15263)     │
 │  │   Funzione: WorkflowOrchestrator.processNewLead()                   │
 │  │                                                                       │
@@ -732,7 +732,7 @@ git push origin main
 │  Modulo: src/modules/client-configuration-manager.ts                    │
 │                                                                          │
 │  Output:                                                                 │
-│  └─ Email 5: Notifica Config a info@telemedcare.it                     │
+│  └─ Email 5: Notifica Config a info@ecura.it                     │
 │      Template: /templates/email_configurazione.html                     │
 │      Contenuto: Dati cliente per associazione dispositivo               │
 └─────────────────────────────────────────────────────────────────────────┘

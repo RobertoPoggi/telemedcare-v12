@@ -186,7 +186,7 @@ if (env.ENVIRONMENT !== 'production' && !isTestMode) {
 ## 🎯 RISULTATO ATTESO FINALE
 
 **Flusso E2E Completo in Preview**:
-1. ✅ Lead form → email notifica info@telemedcare.it
+1. ✅ Lead form → email notifica info@ecura.it
 2. ✅ Invio contratto → email con PDF **2.6 MB** corretto (non 4.9 KB)
 3. ✅ Firma DocuSign → email proforma
 4. ✅ Pagamento Stripe **TEST mode** → carta 4242 accettata

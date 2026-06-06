@@ -359,7 +359,7 @@ Ho completato l'analisi approfondita del sistema TeleMedCare V12 e creato **due 
 ## 📞 CONTATTI
 
 Per domande su questa documentazione:
-- **Email:** info@telemedcare.it
+- **Email:** info@ecura.it
 - **Repository:** https://github.com/RobertoPoggi/telemedcare-v12
 - **Applicazione:** https://telemedcare-v12.pages.dev/
 

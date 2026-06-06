@@ -77,8 +77,8 @@ Aggiungi queste variabili **UNA PER UNA**:
 |---------------|-------|-------------|
 | `SENDGRID_API_KEY` | `SG.la-tua-chiave-vera` | Production |
 | `RESEND_API_KEY` | `re_la-tua-chiave-vera` | Production |
-| `EMAIL_FROM` | `info@telemedcare.it` | Production |
-| `EMAIL_TO_INFO` | `info@telemedcare.it` | Production |
+| `EMAIL_FROM` | `info@ecura.it` | Production |
+| `EMAIL_TO_INFO` | `info@ecura.it` | Production |
 | `JWT_SECRET` | `genera-stringa-random-32-caratteri` | Production |
 | `ENCRYPTION_KEY` | `genera-stringa-random-32-caratteri` | Production |
 
@@ -86,7 +86,7 @@ Aggiungi queste variabili **UNA PER UNA**:
 
 #### **Passo 3: Verificare il Dominio Email**
 
-⚠️ **IMPORTANTE**: Per usare `info@telemedcare.it`, devi verificare il dominio:
+⚠️ **IMPORTANTE**: Per usare `info@ecura.it`, devi verificare il dominio:
 
 ##### **Su SendGrid**
 1. Vai su: **Settings** > **Sender Authentication**
@@ -181,7 +181,7 @@ Verifica:
 1. Vai su Dashboard Leads
 2. Clicca pulsante BLU su un lead
 3. Conferma invio contratto
-4. Verifica email ricevuta su info@telemedcare.it
+4. Verifica email ricevuta su info@ecura.it
 ```
 
 #### **4. Test API CRUD**
@@ -340,7 +340,7 @@ Come verificare:
 **Quando sarà tutto pronto**:
 - Dashboard operative senza loop ✅
 - Pulsanti invio manuale funzionanti ✅
-- Email inviate da info@telemedcare.it ✅
+- Email inviate da info@ecura.it ✅
 - Sistema 100% production ready ✅
 
 ---

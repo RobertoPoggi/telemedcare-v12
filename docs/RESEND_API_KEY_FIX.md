@@ -33,7 +33,7 @@ re_Pnq97oxZ_Mc2X78wVvsaxDHZhpvpA8JGt
 ```
 
 **Test eseguito con successo**:
-- ✅ Email inviata a `info@telemedcare.it`
+- ✅ Email inviata a `info@ecura.it`
 - ✅ Message ID: `b5a095fb-c270-4a82-8e55-842d24feea2c`
 - ✅ Timestamp: 2026-02-16T00:15:00Z
 
@@ -157,20 +157,20 @@ curl -X POST "https://telemedcare-v12.pages.dev/api/leads/test-notification" \
 2. Crea un nuovo lead con dati di test
 3. Salva
 4. Attendi 1-2 minuti
-5. Controlla `info@telemedcare.it` → dovresti ricevere la notifica automatica
+5. Controlla `info@ecura.it` → dovresti ricevere la notifica automatica
 
 ---
 
 ## 📧 VERIFICA RICEZIONE EMAIL
 
 ### Dove controllare:
-- **Casella principale**: `info@telemedcare.it`
+- **Casella principale**: `info@ecura.it`
 - **Oggetto**: "🆕 Nuovo Lead TeleMedCare: [Nome Lead]"
-- **Mittente**: `noreply@telemedcare.it`
+- **Mittente**: `noreply@ecura.it`
 
 ### Se non ricevi l'email:
 1. **Controlla SPAM/Posta indesiderata**
-2. **Controlla filtri email** su info@telemedcare.it
+2. **Controlla filtri email** su info@ecura.it
 3. **Verifica dashboard Resend**: https://resend.com/emails
 4. **Controlla log Cloudflare**: Workers & Pages → telemedcare-v12 → Logs
 
@@ -220,7 +220,7 @@ Prima di considerare il problema risolto, verifica:
 - [ ] API key configurata in Cloudflare Pages
 - [ ] Deployment completato (check Deployments tab)
 - [ ] Test API `/api/leads/test-notification` restituisce success
-- [ ] Email di test ricevuta su `info@telemedcare.it`
+- [ ] Email di test ricevuta su `info@ecura.it`
 - [ ] Nuovo lead creato dalla dashboard
 - [ ] Notifica automatica ricevuta per il nuovo lead
 - [ ] Switch "Notifiche Email Admin" attivo

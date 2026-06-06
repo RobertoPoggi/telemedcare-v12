@@ -117,7 +117,7 @@ https://telemedcare-v11.pages.dev
 - ✅ Subject: "Nuova richiesta TeleMedCare - Roberto Poggi"
 - ✅ Body con tutti i dati
 
-**A info@telemedcare.it:**
+**A info@ecura.it:**
 - ✅ Subject: "Nuova richiesta TeleMedCare - Roberto Poggi"
 - ✅ Body con tutti i dati
 
@@ -148,7 +148,7 @@ Ti contatteremo presto.
 TeleMedCare Team
 ```
 
-**Email a info@telemedcare.it:**
+**Email a info@ecura.it:**
 ```
 📋 NUOVA RICHIESTA TELEMEDCARE
 

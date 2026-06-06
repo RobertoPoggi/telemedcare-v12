@@ -717,7 +717,7 @@
 <li>Lead compila form landing page</li>
 <li>Sistema salva dati in database</li>
 <li>Stato: <code>NEW</code></li>
-<li>Email automatica a <code>info@medicagb.it</code> con notifica nuovo lead</li>
+<li>Email automatica a <code>info@ecura.it</code> con notifica nuovo lead</li>
 </ul>
 <p><strong>Step 1.2 - Validazione Dati</strong></p>
 <ul>
@@ -842,7 +842,7 @@
 </ul>
 <p><strong>Step 5.2 - Ricezione Configurazione</strong></p>
 <ul>
-<li>Email inviata a <code>info@medicagb.it</code></li>
+<li>Email inviata a <code>info@ecura.it</code></li>
 <li>Operatore riceve dati completi</li>
 <li>Salvataggio manuale in sistema (o auto-parse)</li>
 <li>Stato: <code>CONFIGURATION_RECEIVED</code></li>
@@ -1723,13 +1723,13 @@ Ripetitore 1-3 volte:</p>
 <ul>
 <li>Pulsante &quot;Invia Configurazione&quot;</li>
 <li>Loading state durante invio</li>
-<li>Invio via EmailJS a <code>info@medicagb.it</code></li>
+<li>Invio via EmailJS a <code>info@ecura.it</code></li>
 <li>Conferma visiva su successo</li>
 </ul>
 <h4 id="812-invio-configurazione">8.1.2 Invio Configurazione</h4>
 <p><strong>Metodo:</strong> EmailJS (servizio terzo)</p>
 <p><strong>Email Ricevuta da Operatore:</strong></p>
-<pre><code>A: info@medicagb.it
+<pre><code>A: info@ecura.it
 Oggetto: 📋 Nuova Configurazione Cliente - {Nome Cognome}
 
 Gentile Staff,
@@ -2033,7 +2033,7 @@ updated_at          TEXT
 <h4 id="1012-email-inviate-dal-sistema">10.1.2 Email Inviate dal Sistema</h4>
 <p><strong>1. Email Notifica Nuovo Lead</strong></p>
 <ul>
-<li><strong>A:</strong> <code>info@medicagb.it</code></li>
+<li><strong>A:</strong> <code>info@ecura.it</code></li>
 <li><strong>Oggetto:</strong> <code>🔔 Nuovo Lead da Landing Page - {Nome Cognome}</code></li>
 <li><strong>Quando:</strong> Subito dopo compilazione form pubblico</li>
 <li><strong>Template:</strong> <code>email_notifica_interno.html</code></li>
@@ -2206,7 +2206,7 @@ created_at      TEXT
     
     &lt;!-- Footer --&gt;
     &lt;div style=&quot;background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px;&quot;&gt;
-      &lt;p&gt;Medica GB S.r.l. | Via Example 123, Roma | info@medicagb.it&lt;/p&gt;
+      &lt;p&gt;Medica GB S.r.l. | Via Example 123, Roma | info@ecura.it&lt;/p&gt;
       &lt;p&gt;&lt;a href=&quot;{{LINK_PRIVACY}}&quot;&gt;Privacy Policy&lt;/a&gt; | &lt;a href=&quot;{{LINK_UNSUB}}&quot;&gt;Disiscriviti&lt;/a&gt;&lt;/p&gt;
     &lt;/div&gt;
     
@@ -2668,7 +2668,7 @@ CREATE INDEX idx_audit_timestamp ON audit_log(timestamp);
     &#39;Content-Type&#39;: &#39;application/json&#39;
   },
   body: JSON.stringify({
-    from: &#39;noreply@medicagb.it&#39;,
+    from: &#39;noreply@ecura.it&#39;,
     to: &#39;cliente@example.com&#39;,
     subject: &#39;Il tuo contratto eCura&#39;,
     html: &#39;&lt;html&gt;...&lt;/html&gt;&#39;,

@@ -7,7 +7,7 @@
 ### Current Situation:
 
 ❌ **Email to rpoggi55@gmail.com:** NOT arriving
-❌ **Email to info@telemedcare.it:** Arrives but with OLD template (missing CF, indirizzo, condizioni salute)
+❌ **Email to info@ecura.it:** Arrives but with OLD template (missing CF, indirizzo, condizioni salute)
 ❌ **API Response:** Shows `success: true` but emails DON'T actually send (DEMO MODE)
 
 ---
@@ -44,8 +44,8 @@ Add these **4 secrets** for **Production** environment:
 |------|-------|------|
 | `SENDGRID_API_KEY` | `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` | **Encrypted** |
 | `RESEND_API_KEY` | `re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2` | **Encrypted** |
-| `EMAIL_FROM` | `noreply@telemedcare.it` | Plain text |
-| `EMAIL_TO_INFO` | `info@telemedcare.it` | Plain text |
+| `EMAIL_FROM` | `noreply@ecura.it` | Plain text |
+| `EMAIL_TO_INFO` | `info@ecura.it` | Plain text |
 
 **Optional:** Repeat for **Preview** environment (for testing)
 
@@ -75,7 +75,7 @@ Test the complete workflow with rpoggi55@gmail.com:
 
 1. **Submit lead** on landing page
 2. **Check email arrives** at both:
-   - info@telemedcare.it ✅
+   - info@ecura.it ✅
    - rpoggi55@gmail.com ✅
 3. **Verify all fields present** in email:
    - CF richiedente ✅

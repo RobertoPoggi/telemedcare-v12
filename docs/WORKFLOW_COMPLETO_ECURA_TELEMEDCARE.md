@@ -221,7 +221,7 @@ Email notifica + Contratto
 **Output:**
 - ✅ Lead salvato nel database
 - ✅ Lead ID generato
-- 📧 Email 1a: **Notifica a info@telemedcare.it**
+- 📧 Email 1a: **Notifica a info@ecura.it**
 - 📧 Email 1b (opzionale): **Documenti informativi al Lead**
 
 **Template Email:**
@@ -433,7 +433,7 @@ WHERE contractId = ?;
 
 **Output:**
 - ✅ Contratto firmato salvato
-- 📧 Email notifica firma a info@telemedcare.it
+- 📧 Email notifica firma a info@ecura.it
 - 🔄 Trigger automatico: generazione proforma
 
 ---
@@ -636,7 +636,7 @@ INSERT INTO configurations (
 
 **Output:**
 - ✅ Configurazione salvata
-- 📧 Email notifica configurazione a info@telemedcare.it
+- 📧 Email notifica configurazione a info@ecura.it
 - 🔄 Trigger: preparazione DDT
 
 ---
@@ -759,7 +759,7 @@ INSERT INTO assistiti (
 1. Aggiorna stato assistito: `stato = 'attivo'`
 2. Registra data attivazione: `dataAttivazione = datetime('now')`
 3. Invia email conferma attivazione a cliente
-4. Invia email notifica attivazione a info@telemedcare.it
+4. Invia email notifica attivazione a info@ecura.it
 5. Avvia servizio TeleAssistenza H24
 
 **Email Template:**
@@ -817,7 +817,7 @@ WHERE assistitoId = ?;
 6. Cliente riceve fattura elettronica
 
 **Email Destinatario:**
-- `commercialista@medicagb.it` (o email configurata)
+- `commercialista@ecura.it` (o email configurata)
 
 **Email Template:**
 - `templates/email_richiesta_fattura_commercialista.html` (da creare)
@@ -871,7 +871,7 @@ Sistema TeleMedCare
 INSERT INTO invoice_requests (
   requestId, contractId, leadId, proformaId, importoTotale,
   emailInviataA, dataRichiesta, statoRichiesta, note
-) VALUES (?, ?, ?, ?, ?, 'commercialista@medicagb.it', datetime('now'), 'richiesta_inviata', NULL);
+) VALUES (?, ?, ?, ?, ?, 'commercialista@ecura.it', datetime('now'), 'richiesta_inviata', NULL);
 ```
 
 **Processo Fatturazione:**
@@ -1031,7 +1031,7 @@ INSERT INTO proformas (
 |-----------|---------|-------------|---------------------|
 | **Switch 1** | `hubspot_auto_import_enabled` | Abilita import automatico lead da HubSpot (IRBEMA) | Se ON: import automatico ogni X ore<br>Se OFF: import manuale solo |
 | **Switch 2** | `lead_email_notifications_enabled` | Abilita invio email documenti informativi al lead | Se ON: email automatica con brochure/manuali<br>Se OFF: no email al lead |
-| **Switch 3** | `admin_email_notifications_enabled` | Abilita notifiche email a info@telemedcare.it | Se ON: email notifica ogni nuovo lead<br>Se OFF: no notifiche admin |
+| **Switch 3** | `admin_email_notifications_enabled` | Abilita notifiche email a info@ecura.it | Se ON: email notifica ogni nuovo lead<br>Se OFF: no notifiche admin |
 | **Switch 4** | `reminder_completion_enabled` | Abilita reminder automatici completamento dati | Se ON: reminder a 3, 7 giorni<br>Se OFF: no reminder automatici |
 
 **Dashboard:** `https://telemedcare-v12.pages.dev/dashboard` → Sezione "Impostazioni Sistema"
@@ -1414,7 +1414,7 @@ CREATE TABLE invoice_requests (
   descrizione TEXT,
   
   -- Email
-  emailInviataA TEXT DEFAULT 'commercialista@medicagb.it',
+  emailInviataA TEXT DEFAULT 'commercialista@ecura.it',
   dataRichiesta DATETIME DEFAULT CURRENT_TIMESTAMP,
   
   -- Stato

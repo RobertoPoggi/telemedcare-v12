@@ -439,7 +439,7 @@ export class ContractGenerator {
 <p>Medica GB S.r.l.</p>
 <p>Corso Giuseppe Garibaldi, 34 – 20121 Milano</p>
 <p>PEC: medicagbsrl@pecimprese.it</p>
-<p>E.mail: info@medicagb.it</p>
+<p>E.mail: info@ecura.it</p>
 <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
 <p>www.medicagb.it www.ecura.it</p>
 

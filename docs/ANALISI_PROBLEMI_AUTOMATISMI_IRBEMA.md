@@ -18,7 +18,7 @@
    ↓
 4. Lead salvato nel database con fonte='IRBEMA'
    ↓
-5. ✅ Invia notifica a info@telemedcare.it (se switch ON)
+5. ✅ Invia notifica a info@ecura.it (se switch ON)
    ↓
 6. ❌ STOP - Nessun'altra email automatica
 ```
@@ -33,7 +33,7 @@
 
 **Cosa Succede**:
 - Dopo l'import, viene chiamato solo `sendNewLeadNotification()`
-- Questa funzione invia SOLO la notifica a info@telemedcare.it
+- Questa funzione invia SOLO la notifica a info@ecura.it
 - **NON viene inviata email al lead** per completare i dati
 
 **Cosa Dovrebbe Succedere**:
@@ -93,7 +93,7 @@
 - Filtro URL: solo lead con `ecura.it` in `hs_analytics_first_url` o `hs_analytics_last_url`
 - Switch: `hubspot_auto_import_enabled` controlla se import è abilitato ✅
 
-### ✅ Email Notifica a info@telemedcare.it
+### ✅ Email Notifica a info@ecura.it
 - Funzione: `sendNewLeadNotification()`
 - Switch: `admin_email_notifications_enabled` controlla invio ✅
 - Template: Email HTML inline in `lead-notifications.ts`

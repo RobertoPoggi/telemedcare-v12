@@ -596,7 +596,7 @@ Per utilizzo enterprise, considera:
 
 ### Contatti Tecnici
 Per supporto TeleMedCare V11.0 Modular:
-- **Email**: tech-support@medicagb.it
+- **Email**: tech-support@ecura.it
 - **Documentazione**: `/docs/` in repository
 - **Issues**: GitHub repository issues
 

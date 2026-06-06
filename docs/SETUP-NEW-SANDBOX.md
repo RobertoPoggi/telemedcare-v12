@@ -31,8 +31,8 @@ nano .dev.vars
 ```bash
 SENDGRID_API_KEY=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
 RESEND_API_KEY=re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2
-EMAIL_FROM=noreply@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=noreply@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 ```
 
 ### **3. 🏗️ Build e Test**

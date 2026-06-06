@@ -37,7 +37,7 @@ Ho sostituito il caricamento del template dal DB con un **template HTML inline**
    - Inserisce lead nel DB
    - Chiama `WorkflowOrchestrator.processNewLead()`
 
-2. ✅ **Email Notifica Admin** (info@telemedcare.it)
+2. ✅ **Email Notifica Admin** (info@ecura.it)
    - Switch: `admin_email_notifications_enabled` = ON
    - Template: `NOTIFICA_INFO` (blu professionale)
    - Funzione: `sendNewLeadNotification()`
@@ -101,7 +101,7 @@ Changes:
 
 Al prossimo import automatico HubSpot:
 
-1. ✅ Email a **info@telemedcare.it**: template NOTIFICA_INFO (blu)
+1. ✅ Email a **info@ecura.it**: template NOTIFICA_INFO (blu)
 2. ✅ Email al **lead**: template "📝 Completa la tua richiesta eCura" (viola)
 3. ✅ Link completamento dati sicuro con token
 4. ✅ Scadenza visualizzata correttamente
@@ -119,7 +119,7 @@ Al prossimo import automatico HubSpot:
 
 ```
 🔍 [ORCHESTRATOR] Admin switch check: workflow=true, dashboard=true
-📧 [ORCHESTRATOR] Invio notifica a info@telemedcare.it
+📧 [ORCHESTRATOR] Invio notifica a info@ecura.it
 ✅ [ORCHESTRATOR] Email notifica inviata
 
 🔍 [ORCHESTRATOR] Switch check: workflow=true, dashboard=true

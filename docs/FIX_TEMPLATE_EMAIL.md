@@ -122,7 +122,7 @@ Quando arriverà il prossimo lead automatico, l'email avrà:
 ## 🧪 PROSSIMI TEST
 
 Quando arriverà il prossimo lead automatico:
-1. Controlla email a `info@telemedcare.it`
+1. Controlla email a `info@ecura.it`
 2. Verifica che usi il template ufficiale (blu, sezioni complete)
 3. Confronta con email di Jonathan per conferma
 

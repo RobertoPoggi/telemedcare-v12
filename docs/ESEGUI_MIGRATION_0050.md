@@ -112,7 +112,7 @@ SET
     </div>
     <div class="footer">
       <p>TeleMedCare V12.0 - Sistema di Telemedicina Avanzato</p>
-      <p>📧 info@telemedcare.it | 📞 +39 080 123 4567</p>
+      <p>📧 info@ecura.it | 📞 +39 080 123 4567</p>
       <p>Data invio: {{DATA_INVIO}}</p>
     </div>
   </div>

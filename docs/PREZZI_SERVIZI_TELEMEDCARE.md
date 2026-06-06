@@ -134,14 +134,14 @@ Prezzi dedicati per:
 
 ### **Pagamento Rateale (su richiesta)**
 - ⚠️ Disponibile solo per casi particolari
-- 📧 Contattare info@medicagb.it
+- 📧 Contattare info@ecura.it
 
 ---
 
 ## 📞 CONTATTI COMMERCIALI
 
 **Per informazioni e preventivi:**
-- 📧 Email: info@medicagb.it
+- 📧 Email: info@ecura.it
 - 📱 Telefono commerciale: 335 7301206
 - 🔧 Supporto tecnico: 331 64 32 390
 

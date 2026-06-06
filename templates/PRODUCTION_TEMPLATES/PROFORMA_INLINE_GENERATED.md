@@ -201,7 +201,7 @@ export class ProformaGenerator {
   Causale: <strong>Proforma PF-202603-ABC123</strong></p>
   
   <p style="font-size: 12px; color: #666;">
-  ⚠️ In caso di bonifico, inviare ricevuta a info@telemedcare.it
+  ⚠️ In caso di bonifico, inviare ricevuta a info@ecura.it
   </p>
 </div>
 ```
@@ -225,7 +225,7 @@ export class ProformaGenerator {
   <p><strong style="color: #3b82f6; font-size: 14px;">
   Contatti Medica GB S.r.l. - eCura</strong></p>
   <p>
-    📧 Email: info@telemedcare.it | 
+    📧 Email: info@ecura.it | 
     📞 Telefono: 02 8715 6826 | 
     📱 Assistenza: 335 730 1206
   </p>
@@ -419,7 +419,7 @@ INSERT INTO proformas (
 // Chiamata a inviaEmailProforma() in workflow-email-manager.ts:1178
 await emailService.sendEmail({
   to: clienteEmail,
-  from: 'info@telemedcare.it',
+  from: 'info@ecura.it',
   subject: `eCura - Proforma ${numeroProforma}`,
   html: emailHtml,  // Template email_invio_proforma.html
   attachments: [
@@ -511,7 +511,7 @@ await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(...)
 - **Banca**: Banca Popolare di Milano
 - **Causale**: "Proforma [NUMERO_PROFORMA]"
 - **Tempi**: 1-3 giorni lavorativi
-- **Note**: Inviare ricevuta a info@telemedcare.it
+- **Note**: Inviare ricevuta a info@ecura.it
 
 ---
 
@@ -519,7 +519,7 @@ await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(...)
 
 ### 1. Conferma Pagamento (automatica)
 - Email conferma pagamento a cliente
-- Notifica a info@telemedcare.it
+- Notifica a info@ecura.it
 - Aggiornamento status proforma → "PAID"
 
 ### 2. Generazione Fattura Definitiva

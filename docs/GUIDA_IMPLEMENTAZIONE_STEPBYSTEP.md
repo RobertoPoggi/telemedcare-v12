@@ -725,7 +725,7 @@ curl -X POST https://tuo-url.pages.dev/api/lead \
 
 ### 🆘 Emergency Support
 Per problemi critici system-down:
-- **Email**: emergency@medicagb.it
+- **Email**: emergency@ecura.it
 - **Telefono**: +39 335 123456 (24/7)
 - **Telegram**: @TeleMedCareSupport
 

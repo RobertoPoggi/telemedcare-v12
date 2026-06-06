@@ -19,7 +19,7 @@
 │                                                               │
 │ 📧 Email Automatiche                                          │
 │ ├─ ☑️ Abilita invio automatico email (ON)                    │
-│ └─ ☐ Invia copia a info@telemedcare.it (ON)                  │
+│ └─ ☐ Invia copia a info@ecura.it (ON)                  │
 │                                                               │
 │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
 │                                                               │

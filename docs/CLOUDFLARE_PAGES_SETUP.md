@@ -41,8 +41,8 @@ RESEND_API_KEY = re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2
 
 #### Email Configuration
 ```
-EMAIL_FROM = info@telemedcare.it
-EMAIL_TO_INFO = info@telemedcare.it
+EMAIL_FROM = info@ecura.it
+EMAIL_TO_INFO = info@ecura.it
 ```
 
 #### Security

@@ -111,8 +111,8 @@ Il file `lead-notifications.ts` si trova in `src/utils/` ma viene cercato in `sr
 
 **Note**:
 - Dovrebbero essere configurate per produzione
-- `EMAIL_FROM` probabilmente default a `noreply@telemedcare.it`
-- `EMAIL_TO_INFO` probabilmente default a `info@telemedcare.it`
+- `EMAIL_FROM` probabilmente default a `noreply@ecura.it`
+- `EMAIL_TO_INFO` probabilmente default a `info@ecura.it`
 
 **Priorità**: 🟢 INFORMATIVA
 

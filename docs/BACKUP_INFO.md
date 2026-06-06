@@ -99,7 +99,7 @@ cp /mnt/aidrive/telemedcare_local_db_2025-10-18.sqlite \
 3. **Email Service**
    - ✅ SendGrid configurato e FUNZIONANTE
    - ✅ Resend configurato come backup
-   - ✅ Email notifica a info@telemedcare.it TESTATA CON SUCCESSO
+   - ✅ Email notifica a info@ecura.it TESTATA CON SUCCESSO
    - ✅ Message ID verificato: 3hiNNfhRRGCp0a2aoExfDA
    - ✅ Tutti i campi inclusi nelle email
 
@@ -130,8 +130,8 @@ Le seguenti API keys sono configurate in `.dev.vars` (incluso nel backup):
 ```env
 SENDGRID_API_KEY=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
 RESEND_API_KEY=re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2
-EMAIL_FROM=noreply@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=noreply@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 JWT_SECRET=(auto-generato)
 ```
 

@@ -14,7 +14,7 @@ Implementare il **flusso corretto** di gestione lead, documenti ed email secondo
 
 ### Flusso Corretto Richiesto:
 
-1. **Lead compila form** → Email notifica a `info@telemedcare.it`
+1. **Lead compila form** → Email notifica a `info@ecura.it`
 2. **Se richiede solo brochure/manuale** → Email documenti informativi al lead (FINE)
 3. **Se richiede contratto** → Genera e invia contratto pre-compilato + documenti
 4. **Lead firma contratto elettronicamente** → Genera e invia proforma

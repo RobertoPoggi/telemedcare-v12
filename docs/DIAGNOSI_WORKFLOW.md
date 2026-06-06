@@ -253,7 +253,7 @@ WHERE c.status = 'SIGNED' AND cfg.id IS NULL;
 ### Email Service
 - Provider primario: Resend (API key in env)
 - Provider fallback: SendGrid (API key in env)
-- From address: info@telemedcare.it
+- From address: info@ecura.it
 
 ### Template Email Esistenti
 - ✅ `email_notifica_info` - Notifica nuovo lead

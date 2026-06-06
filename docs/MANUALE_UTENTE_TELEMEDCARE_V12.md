@@ -5,7 +5,7 @@
 **Versione applicazione:** V12.0  
 **Data manuale:** 9 Febbraio 2026  
 **URL applicazione:** https://telemedcare-v12.pages.dev/  
-**Supporto:** info@telemedcare.it
+**Supporto:** info@ecura.it
 
 ---
 
@@ -342,7 +342,7 @@ Se ricevi una **richiesta per telefono o di persona**:
 3. **Clicca "Salva Lead"**
 4. **Il sistema:**
    - Genera automaticamente un Lead ID
-   - Invia email notifica a info@telemedcare.it
+   - Invia email notifica a info@ecura.it
    - Aggiunge il lead alla lista
    - Avvia il workflow automatico (se configurato)
 
@@ -546,7 +546,7 @@ I **workflow** sono sequenze di azioni che il sistema esegue **automaticamente**
 **Azioni automatiche:**
 1. ✅ Salva lead nel database
 2. ✅ Genera Lead ID univoco
-3. ✅ Invia email notifica a **info@telemedcare.it**
+3. ✅ Invia email notifica a **info@ecura.it**
 4. ✅ (Se richiesto) Invia brochure al lead
 5. ✅ (Se dati incompleti) Invia email "Completa i tuoi dati"
 
@@ -757,8 +757,8 @@ Alcuni workflow possono essere **attivati/disattivati** dalle Impostazioni:
 #### Email Sender (Da chi partono le email)
 
 - **Nome:** TeleMedCare - Medica GB
-- **Email:** noreply@telemedcare.it
-- **Reply-To:** info@telemedcare.it
+- **Email:** noreply@ecura.it
+- **Reply-To:** info@ecura.it
 
 #### Template Email
 
@@ -1018,7 +1018,7 @@ Tutti i lead importati da HubSpot hanno ID formato:
 
 **Dopo ogni import**, il sistema invia automaticamente:
 
-1. **📩 Email Notifica Admin** (a `info@telemedcare.it`)
+1. **📩 Email Notifica Admin** (a `info@ecura.it`)
    - Template: `NOTIFICA_INFO`
    - Contenuto: Nuovo lead ricevuto, nome, email, servizio
 
@@ -1309,7 +1309,7 @@ Il CSV contiene tutte le colonne:
 ### ❓ Lead e Richieste
 
 #### **Q: Come faccio a sapere se arriva un nuovo lead?**
-**A:** Il sistema invia automaticamente una email a info@telemedcare.it per ogni nuovo lead.
+**A:** Il sistema invia automaticamente una email a info@ecura.it per ogni nuovo lead.
 
 #### **Q: Posso modificare i dati di un lead?**
 **A:** Sì, apri i Dettagli Lead e clicca "Modifica". Puoi aggiornare qualsiasi campo.
@@ -1424,7 +1424,7 @@ Il CSV contiene tutte le colonne:
 **Soluzioni:**
 1. ✅ **Controlla spam/posta indesiderata**
    - Email automatiche spesso finiscono in spam
-   - Aggiungi noreply@telemedcare.it ai contatti sicuri
+   - Aggiungi noreply@ecura.it ai contatti sicuri
 2. ✅ **Verifica indirizzo email**
    - Controlla che sia scritto correttamente
    - No spazi prima/dopo
@@ -1493,7 +1493,7 @@ Il CSV contiene tutte le colonne:
 
 ### 📞 Quando Contattare Supporto
 
-Contatta **info@telemedcare.it** se:
+Contatta **info@ecura.it** se:
 - ❌ Problema persiste dopo tutte le soluzioni
 - ❌ Errore critico che blocca il lavoro
 - ❌ Dati persi o danneggiati
@@ -1567,7 +1567,7 @@ Il sistema traccia automaticamente:
 ### 🆘 Supporto Prioritario
 
 Per problemi urgenti:
-- 📧 Email: info@telemedcare.it
+- 📧 Email: info@ecura.it
 - 📞 Telefono: +39 XX XXXX XXXX (orari ufficio)
 - 💬 Chat: In Dashboard (prossimamente)
 
@@ -1647,8 +1647,8 @@ Copia questa checklist per uso quotidiano:
 **Fine Manuale Utente TeleMedCare V12**
 
 *Documento versione 1.1 - 9 Febbraio 2026 (Aggiornato)*
-*Per supporto: info@telemedcare.it*
+*Per supporto: info@ecura.it*
 *Sito: https://telemedcare-v12.pages.dev/*
 *GitHub: https://github.com/RobertoPoggi/telemedcare-v12*
-*Per supporto: info@telemedcare.it*
+*Per supporto: info@ecura.it*
 *Sito: https://telemedcare-v12.pages.dev/*

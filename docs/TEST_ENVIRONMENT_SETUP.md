@@ -144,7 +144,7 @@ git push origin test-environment
 | `STRIPE_PUBLIC_KEY` | `pk_test_51...` | **Preview** |
 | `STRIPE_SECRET_KEY` | `sk_test_51...` | **Preview** |
 | `RESEND_API_KEY` | (chiave esistente o Mailtrap) | **Preview** |
-| `EMAIL_FROM` | `test@medicagb.it` | **Preview** |
+| `EMAIL_FROM` | `test@ecura.it` | **Preview** |
 
 5. Click **"Save"** per ogni variabile
 
@@ -372,7 +372,7 @@ DELETE FROM leads;
 
 **A**: ❌ **NO** (se usi Mailtrap). Tutte le email vanno a Mailtrap inbox, non a destinatari reali.
 
-**Se usi Resend**: configura un indirizzo email di test (es. `test@medicagb.it`) solo per Preview.
+**Se usi Resend**: configura un indirizzo email di test (es. `test@ecura.it`) solo per Preview.
 
 ### Q: Cosa succede se faccio errori in test?
 

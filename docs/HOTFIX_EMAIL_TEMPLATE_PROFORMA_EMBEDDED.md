@@ -143,7 +143,7 @@ async function loadProformaTemplate(): Promise<string> {
 </div>
 
 <p>Per qualsiasi domanda:</p>
-<p>📧 <a href="mailto:info@telemedcare.it">info@telemedcare.it</a></p>
+<p>📧 <a href="mailto:info@ecura.it">info@ecura.it</a></p>
 <p>📞 +39 02 1234567</p>
 </div>
 
@@ -209,7 +209,7 @@ export async function inviaEmailProforma(
   // Invia email
   const sendResult = await emailService.sendEmail({
     to: leadData.email,
-    from: 'info@telemedcare.it',
+    from: 'info@ecura.it',
     subject: `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`,
     html: emailHtml
   })
@@ -269,7 +269,7 @@ export async function inviaEmailProforma(
 4. Programmazione attivazione
 
 ✅ **Contatti Assistenza**:
-- Email: info@telemedcare.it
+- Email: info@ecura.it
 - Telefono: +39 02 1234567
 
 ✅ **Footer Completo**:
@@ -362,7 +362,7 @@ https://telemedcare-v12.pages.dev/admin/leads-dashboard
 ✅ IBAN: IT97L0503401727000000003519
 ✅ Causale: "Proforma PRF202602-XXXX - Roberto Poggi"
 ✅ Sezione "Cosa succede dopo il pagamento?"
-✅ Contatti: info@telemedcare.it, +39 02 1234567
+✅ Contatti: info@ecura.it, +39 02 1234567
 ✅ Footer completo con indirizzi e P.IVA
 ```
 

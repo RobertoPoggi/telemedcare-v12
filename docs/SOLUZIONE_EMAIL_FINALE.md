@@ -110,7 +110,7 @@ curl -X POST https://telemedcare-v12.pages.dev/api/leads \
 ```
 
 **Email attese:**
-1. ✉️ **Notifica interna** → `info@telemedcare.it`
+1. ✉️ **Notifica interna** → `info@ecura.it`
    - Subject: "Nuovo Lead Ricevuto: Roberto Poggi"
 2. ✉️ **Brochure cliente** → `rpoggi55@gmail.com`
    - Subject: "eCura - Documentazione richiesta"

@@ -177,7 +177,7 @@ ORDER BY c.signed_at DESC;
 
 ### Destinatari
 - **TO**: Cliente (lead.emailRichiedente)
-- **CC**: info@telemedcare.it (copia conoscenza)
+- **CC**: info@ecura.it (copia conoscenza)
 
 ---
 

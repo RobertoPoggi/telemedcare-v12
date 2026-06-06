@@ -82,7 +82,7 @@ INSERT INTO leads (
 
 #### 4. Email Inviate (2)
 1. **Email Notifica Admin**
-   - To: `admin@telemedcare.it`
+   - To: `admin@ecura.it`
    - Subject: `🔔 Nuovo Lead: Mario Rossi - eCura FAMILY`
    - ✅ INVIATA
 
@@ -396,7 +396,7 @@ Data Firma: 2026-02-11T14:30:00Z
 
 | # | Tipo | Destinatario | Subject | Trigger | Status |
 |---|------|--------------|---------|---------|--------|
-| 1 | Notifica Admin | admin@telemedcare.it | 🔔 Nuovo Lead: Mario Rossi | Import HubSpot | ✅ |
+| 1 | Notifica Admin | admin@ecura.it | 🔔 Nuovo Lead: Mario Rossi | Import HubSpot | ✅ |
 | 2 | Completamento Dati | mario.rossi@example.com | 📝 Completa la tua richiesta eCura | Import HubSpot | ✅ |
 | 3 | Contratto + Brochure | mario.rossi@example.com | 📝 Contratto eCura - Pronto per la Firma | Dati completati (AUTOMATICO) | ✅ |
 | 4 | Conferma Firma | mario.rossi@example.com | ✅ Contratto eCura Firmato | Firma contratto | ✅ |

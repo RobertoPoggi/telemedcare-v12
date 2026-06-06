@@ -557,7 +557,7 @@ Failover Logic:
     <!-- Footer con contatti -->
     <footer>
       <p>Medica GB S.r.l.</p>
-      <p>Email: info@medicagb.it</p>
+      <p>Email: info@ecura.it</p>
       <p>Tel: +39 02 1234567</p>
     </footer>
   </div>
@@ -1042,7 +1042,7 @@ POST /emails
 
 Payload:
 {
-  "from": "noreply@medicagb.it",
+  "from": "noreply@ecura.it",
   "to": ["cliente@example.com"],
   "subject": "Oggetto email",
   "html": "<html>...</html>",
@@ -1073,7 +1073,7 @@ Payload:
       "to": [{"email": "cliente@example.com"}]
     }
   ],
-  "from": {"email": "noreply@medicagb.it"},
+  "from": {"email": "noreply@ecura.it"},
   "subject": "Oggetto email",
   "content": [
     {
@@ -1879,15 +1879,15 @@ Files:
 
 ### Team TeleMedCare
 **Medica GB S.r.l.**  
-📧 Email: info@medicagb.it  
-📧 Supporto Tecnico: support@medicagb.it  
+📧 Email: info@ecura.it  
+📧 Supporto Tecnico: support@ecura.it  
 📞 Telefono: +39 02 1234567  
 🌐 Website: https://www.medicagb.it  
 📍 Indirizzo: Via Example 123, 20100 Milano (MI), Italia
 
 ### Developer
 **Roberto Poggi**  
-📧 Email: roberto@medicagb.it  
+📧 Email: roberto@ecura.it  
 💻 GitHub: https://github.com/RobertoPoggi  
 🔗 LinkedIn: (da inserire)
 

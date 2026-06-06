@@ -173,7 +173,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
                                 <h5 class="font-semibold text-sm text-gray-800 mb-1">🔔 Notifiche Email Admin</h5>
-                                <p class="text-xs text-gray-600">Notifiche automatiche a info@telemedcare.it per nuovi lead</p>
+                                <p class="text-xs text-gray-600">Notifiche automatiche a info@ecura.it per nuovi lead</p>
                                 <p class="text-xs text-gray-500 mt-1">Alert in tempo reale su nuove acquisizioni</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer ml-4">
@@ -697,9 +697,9 @@
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
                 // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
-                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@medicagb.it)
+                // PRIORITÀ 1: Laura Calvi = Networking (unico caso da stefania.rocca@ecura.it)
                 if (nomeCompleto.includes('laura calvi') || 
-                    emailRichiedente.includes('stefania.rocca@medicagb.it')) {
+                    emailRichiedente.includes('stefania.rocca@ecura.it')) {
                     canale = 'Networking';
                     console.log('✅ Networking:', nomeCompleto);
                 }
@@ -1373,8 +1373,8 @@
                 
                 if (response.ok) {
                     alert(enabled 
-                        ? '✅ Notifiche Admin ATTIVATE\n\nIl sistema invierà notifiche a info@telemedcare.it per ogni nuovo lead acquisito.'
-                        : '⛔ Notifiche Admin DISATTIVATE\n\nNessuna notifica verrà inviata a info@telemedcare.it.');
+                        ? '✅ Notifiche Admin ATTIVATE\n\nIl sistema invierà notifiche a info@ecura.it per ogni nuovo lead acquisito.'
+                        : '⛔ Notifiche Admin DISATTIVATE\n\nNessuna notifica verrà inviata a info@ecura.it.');
                     console.log('✅ Notifiche admin:', enabled ? 'ATTIVE' : 'DISATTIVE');
                 } else {
                     throw new Error('Errore aggiornamento configurazione');

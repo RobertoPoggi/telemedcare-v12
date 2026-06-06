@@ -122,4 +122,4 @@ SELECT COUNT(*) FROM configurations;
 
 ## Contatti
 
-In caso di dubbi: info@telemedcare.it
+In caso di dubbi: info@ecura.it

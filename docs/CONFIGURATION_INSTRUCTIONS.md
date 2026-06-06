@@ -29,12 +29,12 @@ Both "preview" and "production" now use the same D1 database:
 
 3. **EMAIL_FROM** (environment variable)
    ```
-   noreply@telemedcare.it
+   noreply@ecura.it
    ```
 
 4. **EMAIL_TO_INFO** (environment variable)
    ```
-   info@telemedcare.it
+   info@ecura.it
    ```
 
 ---
@@ -56,11 +56,11 @@ Both "preview" and "production" now use the same D1 database:
    - Type: **Encrypted** (secret)
    
    - Name: `EMAIL_FROM`
-   - Value: `noreply@telemedcare.it`
+   - Value: `noreply@ecura.it`
    - Type: **Plain text**
    
    - Name: `EMAIL_TO_INFO`
-   - Value: `info@telemedcare.it`
+   - Value: `info@ecura.it`
    - Type: **Plain text**
 
 5. **Repeat for Preview environment** (optional, for testing)
@@ -101,7 +101,7 @@ Currently, the email service is running in **DEMO MODE** because API keys are no
 - API returns `success: true` ✅
 - But emails are **NOT actually sent** ❌
 - User rpoggi55@gmail.com receives **NO emails**
-- info@telemedcare.it receives email but with **OLD template data** (missing CF, indirizzo, condizioni salute)
+- info@ecura.it receives email but with **OLD template data** (missing CF, indirizzo, condizioni salute)
 
 **Root Cause:**
 ```typescript
@@ -156,8 +156,8 @@ For local development, API keys are already in `.dev.vars`:
 ```bash
 SENDGRID_API_KEY=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
 RESEND_API_KEY=re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2
-EMAIL_FROM=noreply@telemedcare.it
-EMAIL_TO_INFO=info@telemedcare.it
+EMAIL_FROM=noreply@ecura.it
+EMAIL_TO_INFO=info@ecura.it
 ```
 
 Local testing works with: `npm run dev`

@@ -19,7 +19,7 @@
 - ✅ Generare PDF contratto con Puppeteer
 - ✅ Allegare brochure PDF corretta per servizio
 - ✅ Inviare 3 email automatiche:
-  1. Notifica nuovo lead a `info@medicagb.it`
+  1. Notifica nuovo lead a `info@ecura.it`
   2. Email brochure con PDF al cliente
   3. Email contratto con PDF contratto + brochure al cliente
 

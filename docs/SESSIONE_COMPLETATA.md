@@ -216,7 +216,7 @@ npx wrangler pages deployment tail | grep "FIRMA→PROFORMA"
 
 ### Email Service
 - Provider: Resend (primary), SendGrid (fallback)
-- From: info@telemedcare.it
+- From: info@ecura.it
 - API Key: `RESEND_API_KEY` in env
 
 ### Database Schema
@@ -260,7 +260,7 @@ Tabella `proformas`:
 - **Repository**: https://github.com/RobertoPoggi/telemedcare-v12
 - **Applicazione**: https://telemedcare-v12.pages.dev/
 - **Dashboard**: https://telemedcare-v12.pages.dev/dashboard
-- **Support**: info@telemedcare.it
+- **Support**: info@ecura.it
 
 ---
 

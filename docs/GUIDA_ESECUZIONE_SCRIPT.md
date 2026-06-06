@@ -144,9 +144,9 @@ echo "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" | n
 
 echo "re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2" | npx wrangler pages secret put RESEND_API_KEY --project-name=telemedcare-v12
 
-echo "info@telemedcare.it" | npx wrangler pages secret put EMAIL_FROM --project-name=telemedcare-v12
+echo "info@ecura.it" | npx wrangler pages secret put EMAIL_FROM --project-name=telemedcare-v12
 
-echo "info@telemedcare.it" | npx wrangler pages secret put EMAIL_TO_INFO --project-name=telemedcare-v12
+echo "info@ecura.it" | npx wrangler pages secret put EMAIL_TO_INFO --project-name=telemedcare-v12
 
 echo "f8adfd1d3ab5f1bcacdb0c09e9eca0904146790112eb3f375516380e75adc534" | npx wrangler pages secret put JWT_SECRET --project-name=telemedcare-v12
 
@@ -353,7 +353,7 @@ Dopo che lo script completa:
    - Vai su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
    - Clicca pulsante **BLU** (contratto) su un lead
    - Conferma invio
-   - Controlla email su **info@telemedcare.it**
+   - Controlla email su **info@ecura.it**
 
 ---
 
@@ -374,7 +374,7 @@ Se hai problemi:
 - ✅ 6 Environment Variables configurate
 - ✅ 8 DNS Records aggiunti
 - ✅ Sistema pronto (dopo 2 ore)
-- ✅ Email inviate da info@telemedcare.it
+- ✅ Email inviate da info@ecura.it
 
 **Tempo totale**: 5 minuti di esecuzione + 2 ore di attesa DNS
 

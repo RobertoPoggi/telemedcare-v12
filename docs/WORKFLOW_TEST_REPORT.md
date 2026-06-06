@@ -12,7 +12,7 @@
    - ✅ Lead salvato nel database
 
 2. **Email Notifica Info**
-   - ✅ Email ARRIVATA a info@telemedcare.it
+   - ✅ Email ARRIVATA a info@ecura.it
    - ⚠️ **INCOMPLETA** - Mancano alcuni dati
 
 ### ❌ PROBLEMI RISCONTRATI
@@ -51,7 +51,7 @@ wrangler secret put RESEND_API_KEY
 - Resend: Creare account su resend.com e generare API key
 
 #### 2. EMAIL NOTIFICA INFO INCOMPLETA
-**Problema:** Email a info@telemedcare.it mancano campi:
+**Problema:** Email a info@ecura.it mancano campi:
 - Codice Fiscale richiedente
 - Indirizzo richiedente  
 - Codice Fiscale assistito

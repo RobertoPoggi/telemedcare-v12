@@ -114,7 +114,7 @@ Nella Dashboard dovresti vedere:
 1. Vai su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
 2. Clicca il pulsante **BLU** (contratto) su un lead
 3. Conferma l'invio
-4. Controlla l'email su **info@telemedcare.it**
+4. Controlla l'email su **info@ecura.it**
 
 Se l'email arriva → **✅ TUTTO FUNZIONA!**
 
@@ -132,7 +132,7 @@ Se l'email arriva → **✅ TUTTO FUNZIONA!**
 - [ ] Salvato (Cloudflare auto-deploy)
 - [ ] Atteso 1-2 minuti
 - [ ] Testato invio email
-- [ ] Email ricevuta su info@telemedcare.it
+- [ ] Email ricevuta su info@ecura.it
 - [ ] ✅ SISTEMA 100% OPERATIVO
 
 ---
@@ -154,7 +154,7 @@ Dopo aver configurato i secrets, il sistema TeleMedCare V12.0 sarà **completame
 - Gestione 126 lead eCura PRO
 - CRUD completo Lead/Contratti/Proforma
 - Invio manuale contratti e brochure
-- Email da info@telemedcare.it
+- Email da info@ecura.it
 - Prezzi BASE €480 e AVANZATO €840
 - Grafici e KPI in tempo reale
 

@@ -107,7 +107,7 @@ TeleMedCare V12 è un sistema completo di gestione workflow per servizi di telem
 
 **Problema originale:**
 - Email "Completa i tuoi dati" non veniva inviata al lead
-- Processo si fermava dopo notifica a info@telemedcare.it
+- Processo si fermava dopo notifica a info@ecura.it
 
 **Soluzione implementata:**
 ```typescript
@@ -257,7 +257,7 @@ async function getWorkflowSettings(db: D1Database) {
 
 // Uso nel workflow
 if (settings.email_notifica_info) {
-  console.log('📧 Invio email notifica a info@telemedcare.it')
+  console.log('📧 Invio email notifica a info@ecura.it')
   await inviaEmailNotificaInfo(...)
 } else {
   console.log('⏭️ Email notifica disabilitata (switch OFF)')
@@ -287,7 +287,7 @@ if (settings.email_notifica_info) {
    └─ Referral
 
 2. NOTIFICA LEAD → INFO@
-   ├─ Email automatica a info@telemedcare.it
+   ├─ Email automatica a info@ecura.it
    ├─ Template: EMAIL_TEMPLATES.NOTIFICA_INFO
    └─ Dati lead + fonte + timestamp
 
@@ -567,7 +567,7 @@ CREATE TABLE workflow_settings (
 # Email Services
 RESEND_API_KEY=re_xxxxx
 SENDGRID_API_KEY=SG.xxxxx
-EMAIL_FROM=noreply@telemedcare.it
+EMAIL_FROM=noreply@ecura.it
 
 # URLs
 PUBLIC_URL=https://telemedcare-v12.pages.dev

@@ -722,7 +722,7 @@ export class EmailService {
     const payload = {
       sender: {
         name: 'eCura',
-        email: emailData.from || 'info@medicagb.it'
+        email: emailData.from || 'info@ecura.it'
       },
       to: [{ email: emailData.to }],
       subject: emailData.subject,

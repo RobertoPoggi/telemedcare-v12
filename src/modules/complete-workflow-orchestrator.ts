@@ -99,7 +99,7 @@ export async function processNewLead(
     
     // Usa SOLO il dashboard switch
     if (adminEmailEnabled) {
-      console.log(`📧 [ORCHESTRATOR] Invio notifica a info@telemedcare.it`)
+      console.log(`📧 [ORCHESTRATOR] Invio notifica a info@ecura.it`)
       const notificaResult = await WorkflowEmailManager.inviaEmailNotificaInfo(
         ctx.leadData,
         ctx.env,

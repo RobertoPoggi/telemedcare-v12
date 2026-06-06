@@ -189,11 +189,11 @@ curl -X POST https://telemedcare-v12.pages.dev/api/lead \
 
 **Supporto Tecnico 24/7:**  
 📞 +39 348 1234567  
-📧 support@medicagb.it
+📧 support@ecura.it
 
 **Developer:**  
 👨‍💻 Roberto Poggi  
-📧 roberto@medicagb.it
+📧 roberto@ecura.it
 
 ---
 

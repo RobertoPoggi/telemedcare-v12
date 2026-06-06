@@ -117,7 +117,7 @@ Nella Dashboard Cloudflare, dovresti vedere 4 secrets:
 1. Vai su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
 2. Clicca il pulsante **BLU** (contratto) su un lead
 3. Conferma l'invio
-4. Controlla l'email su **info@telemedcare.it**
+4. Controlla l'email su **info@ecura.it**
 
 ### **TEST 3: Verifica logs**
 Se l'email non arriva, controlla i logs:
@@ -135,7 +135,7 @@ Se l'email non arriva, controlla i logs:
 - [ ] ENCRYPTION_KEY aggiunto
 - [ ] Deploy automatico completato
 - [ ] Test invio email riuscito
-- [ ] Email ricevuta su info@telemedcare.it
+- [ ] Email ricevuta su info@ecura.it
 
 ---
 

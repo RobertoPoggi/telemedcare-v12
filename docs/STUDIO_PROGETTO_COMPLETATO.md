@@ -519,7 +519,7 @@ Sistema ha **eccellente potenziale** e con fix prioritari diventa **best-in-clas
 ---
 
 **📞 Per domande o chiarimenti:**
-- Email: info@telemedcare.it
+- Email: info@ecura.it
 - Repository: https://github.com/RobertoPoggi/telemedcare-v12
 - Applicazione: https://telemedcare-v12.pages.dev/
 

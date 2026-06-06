@@ -35,14 +35,14 @@ Environment: Production
 ### Variable 3/6: EMAIL_FROM
 ```
 Name: EMAIL_FROM
-Value: info@telemedcare.it
+Value: info@ecura.it
 Environment: Production
 ```
 
 ### Variable 4/6: EMAIL_TO_INFO
 ```
 Name: EMAIL_TO_INFO
-Value: info@telemedcare.it
+Value: info@ecura.it
 Environment: Production
 ```
 
@@ -184,7 +184,7 @@ Oppure:
 1. Vai su: https://telemedcare-v12.pages.dev/admin/leads-dashboard
 2. Clicca pulsante BLU su un lead
 3. Conferma invio contratto
-4. Controlla email su info@telemedcare.it
+4. Controlla email su info@ecura.it
 
 ---
 

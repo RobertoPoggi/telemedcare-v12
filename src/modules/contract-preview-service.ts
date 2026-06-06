@@ -334,7 +334,7 @@ class ContractPreviewService {
             Medica GB S.r.l.<br>
             Sede Legale: Via della Salute, 123 - 20100 Milano (MI)<br>
             P.IVA: 12345678901<br>
-            Email: info@medicagb.it
+            Email: info@ecura.it
         </div>
 
         <div class="party-info">
@@ -454,7 +454,7 @@ class ContractPreviewService {
         <p><strong>Codice Contratto:</strong> ${variables.codiceContratto}</p>
         <p>Generato il ${variables.dataGenerazione} alle ore ${variables.oraGenerazione}</p>
         <p>TeleMedCare ${variables.versioneSistema} - Sistema Automatizzato di Generazione Contratti</p>
-        <p>Medica GB S.r.l. - P.IVA: 12345678901 | info@medicagb.it | www.medicagb.it</p>
+        <p>Medica GB S.r.l. - P.IVA: 12345678901 | info@ecura.it | www.medicagb.it</p>
     </div>
 </body>
 </html>`;

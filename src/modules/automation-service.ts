@@ -88,7 +88,7 @@ class AutomationService {
       const now = new Date()
       const tasks: AutomationTask[] = []
 
-      // 1. NOTIFICA IMMEDIATA: Invia email_notifica_info a info@medicagb.it
+      // 1. NOTIFICA IMMEDIATA: Invia email_notifica_info a info@ecura.it
       tasks.push({
         id: `automation_${this.taskIdCounter++}`,
         leadId: schedule.leadId,
@@ -100,7 +100,7 @@ class AutomationService {
         attemptNumber: 1,
         executionData: {
           emailTemplate: 'email_notifica_info',
-          recipientEmail: 'info@medicagb.it',
+          recipientEmail: 'info@ecura.it',
           personalizedContent: {
             nomeRichiedente: schedule.customerName.split(' ')[0] || '',
             cognomeRichiedente: schedule.customerName.split(' ')[1] || '',
@@ -161,7 +161,7 @@ class AutomationService {
           attemptNumber: 1,
           executionData: {
             emailTemplate: 'email_documenti_informativi',
-            recipientEmail: 'info@medicagb.it',
+            recipientEmail: 'info@ecura.it',
             personalizedContent: {
               nomeCliente: schedule.customerName,
               emailCliente: schedule.customerEmail
@@ -610,7 +610,7 @@ class AutomationService {
         attemptNumber: 1,
         executionData: {
           emailTemplate: 'email_notifica_info',
-          recipientEmail: 'info@medicagb.it'
+          recipientEmail: 'info@ecura.it'
         },
         createdAt: new Date(now.getTime() - 3600000).toISOString(),
         updatedAt: new Date(now.getTime() - 3000000).toISOString(),

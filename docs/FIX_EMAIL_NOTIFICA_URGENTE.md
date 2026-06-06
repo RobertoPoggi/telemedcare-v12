@@ -2,7 +2,7 @@
 
 **Data**: 2026-02-08
 **Ambiente**: Produzione (telemedcare-v12.pages.dev)
-**Problema**: Email notifica a info@telemedcare.it NON arriva dopo import lead da HubSpot
+**Problema**: Email notifica a info@ecura.it NON arriva dopo import lead da HubSpot
 
 ---
 
@@ -66,8 +66,8 @@ Workers & Pages → telemedcare-v12 → Settings → Environment Variables
 |---------------|-------|------|-------------|
 | `SENDGRID_API_KEY` | `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` | Encrypted | Production |
 | `RESEND_API_KEY` | `re_QeeK2km4_94B4bM3sGq2KhDBf2gi624d2` | Encrypted | Production |
-| `EMAIL_FROM` | `info@telemedcare.it` | Plain text | Production |
-| `EMAIL_TO_INFO` | `info@telemedcare.it` | Plain text | Production |
+| `EMAIL_FROM` | `info@ecura.it` | Plain text | Production |
+| `EMAIL_TO_INFO` | `info@ecura.it` | Plain text | Production |
 
 **Note**:
 - Le chiavi sopra sono **PLACEHOLDER** - usa le tue chiavi reali
@@ -112,7 +112,7 @@ Workers & Pages → telemedcare-v12 → Settings → Environment Variables
 
 ## 📧 VERIFICA DOMINI EMAIL
 
-**IMPORTANTE**: Per usare `info@telemedcare.it`, devi verificare il dominio:
+**IMPORTANTE**: Per usare `info@ecura.it`, devi verificare il dominio:
 
 ### Su SendGrid
 1. **Settings** → **Sender Authentication**
@@ -161,7 +161,7 @@ messageId: SG.abc123...
 3. Verifica che:
    - Import completa con successo ✅
    - Log mostra "Email inviata con successo" ✅
-   - **Email arriva a info@telemedcare.it** ✅
+   - **Email arriva a info@ecura.it** ✅
 
 ### Test #3: Verifica Switch Database
 
@@ -242,7 +242,7 @@ Se le API keys richiedono approvazione o tempo, puoi temporaneamente:
    curl -X POST https://api.sendgrid.com/v3/mail/send \
      -H "Authorization: Bearer YOUR_SENDGRID_KEY" \
      -H "Content-Type: application/json" \
-     -d '{"personalizations":[{"to":[{"email":"info@telemedcare.it"}]}],"from":{"email":"test@yourdomain.com"},"subject":"Test","content":[{"type":"text/plain","value":"Test"}]}'
+     -d '{"personalizations":[{"to":[{"email":"info@ecura.it"}]}],"from":{"email":"test@yourdomain.com"},"subject":"Test","content":[{"type":"text/plain","value":"Test"}]}'
    ```
 
 ---

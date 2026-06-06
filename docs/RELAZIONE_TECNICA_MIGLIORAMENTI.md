@@ -1744,11 +1744,11 @@ Il sistema TeleMedCare V12 ha **fondamenta solide** ma richiede interventi urgen
 ### C. Contatti Team
 
 **Per domande tecniche:**
-- Email: dev@telemedcare.it
+- Email: dev@ecura.it
 - Repository: https://github.com/RobertoPoggi/telemedcare-v12
 
 **Per decisioni business:**
-- Email: info@telemedcare.it
+- Email: info@ecura.it
 
 ---
 

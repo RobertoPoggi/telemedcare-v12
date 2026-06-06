@@ -54,7 +54,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  RESULT:                                                     │
 │  ❌ rpoggi55@gmail.com: NO EMAIL RECEIVED                   │
-│  ⚠️  info@telemedcare.it: Email from OLD remote template    │
+│  ⚠️  info@ecura.it: Email from OLD remote template    │
 │      (missing CF, indirizzo, condizioni salute)             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -98,7 +98,7 @@
 │  Headers:                                                    │
 │    Authorization: Bearer SG.eRuQRryZ...                     │
 │  Body:                                                       │
-│    from: noreply@telemedcare.it                             │
+│    from: noreply@ecura.it                             │
 │    to: rpoggi55@gmail.com                                   │
 │    subject: "Nuova richiesta TeleMedCare..."                │
 │    html: <rendered template with ALL data>                  │
@@ -125,7 +125,7 @@
 │     - Subject: "Nuova richiesta TeleMedCare"                │
 │     - Contains: CF, indirizzo, condizioni salute            │
 │                                                              │
-│  ✅ info@telemedcare.it: EMAIL RECEIVED                     │
+│  ✅ info@ecura.it: EMAIL RECEIVED                     │
 │     - Same template, same data                              │
 │     - All fields populated correctly                        │
 └─────────────────────────────────────────────────────────────┘
@@ -208,12 +208,12 @@ Cloudflare Dashboard
                       │
                       ├─ ➕ Add Variable
                       │   Name: EMAIL_FROM
-                      │   Value: noreply@telemedcare.it
+                      │   Value: noreply@ecura.it
                       │   Type: ☐ Plain text
                       │
                       └─ ➕ Add Variable
                           Name: EMAIL_TO_INFO
-                          Value: info@telemedcare.it
+                          Value: info@ecura.it
                           Type: ☐ Plain text
 ```
 
@@ -235,7 +235,7 @@ Cloudflare Dashboard
 | **API Response** | `success: true` | `success: true` |
 | **Email Actually Sent** | ❌ NO | ✅ YES |
 | **rpoggi55@gmail.com** | ❌ Nothing received | ✅ Email received |
-| **info@telemedcare.it** | ⚠️ Old template | ✅ New template with all fields |
+| **info@ecura.it** | ⚠️ Old template | ✅ New template with all fields |
 | **CF richiedente** | ❌ Missing | ✅ Present |
 | **Indirizzo richiedente** | ❌ Missing | ✅ Present |
 | **Condizioni salute** | ❌ Missing | ✅ Present |
@@ -273,7 +273,7 @@ chmod +x test-complete-workflow.sh
 ✅ **Round 2:** email_invio_contratto arrives with Template_Contratto_Base/Avanzato
 ✅ **Round 3:** email_invio_proforma arrives with template_proforma_unificato
 ✅ **Round 4:** email_benvenuto arrives with form_configurazione link
-✅ **Round 5:** Automatic notification to info@telemedcare.it
+✅ **Round 5:** Automatic notification to info@ecura.it
 ✅ **Round 6:** email_conferma arrives confirming device association
 
 All emails contain complete data including CF, indirizzo, condizioni salute.

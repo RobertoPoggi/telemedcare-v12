@@ -101,7 +101,7 @@ SELECT * FROM settings;
 ### 3. 🔔 Notifiche Email Admin (Viola)
 - **Key:** `admin_email_notifications_enabled`
 - **Default:** `true` (ON)
-- **Funzione:** Abilita notifiche email a info@telemedcare.it
+- **Funzione:** Abilita notifiche email a info@ecura.it
 - **Colore:** Purple (#8B5CF6)
 
 ### 4. ⏰ Reminder Completamento (Arancione)
@@ -142,7 +142,7 @@ Recupera tutte le configurazioni dal database.
     },
     "admin_email_notifications_enabled": {
       "value": "true",
-      "description": "Abilita notifiche email a info@telemedcare.it"
+      "description": "Abilita notifiche email a info@ecura.it"
     },
     "reminder_completion_enabled": {
       "value": "false",
@@ -309,7 +309,7 @@ curl -X PUT https://telemedcare-v12.pages.dev/api/settings/lead_email_notificati
 **Database:** Cloudflare D1 (telemedcare-leads)  
 
 **Medica GB S.r.l.**  
-📧 info@telemedcare.it  
+📧 info@ecura.it  
 🌐 TeleMedCare V12.0 - Sistema Enterprise Modulare
 
 ---

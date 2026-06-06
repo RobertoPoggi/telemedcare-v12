@@ -153,7 +153,7 @@ export async function initializeDefaultUsers(db: D1Database, env?: {
         stefaniaHash,
         'ADMIN',
         'Stefania Rocca',
-        'info@medicagb.it',
+        'info@ecura.it',
         now,
         now
       ),
