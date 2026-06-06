@@ -1024,8 +1024,11 @@ app.use('*', async (c, next) => {
 
       // ── Igino Cacace — nuovo lead (referral da Eileen King) ──────────────
       // Consuocero di King. Dispositivo SiDLY CARE PRO consegnato il 28/05/2026.
-      // Già pagato. Contratto da firmare (inviato separatamente).
+      // Già pagato. Contratto AVANZATO da firmare (inviato separatamente).
       // Inserito direttamente come CONVERTED — NO email di completamento.
+      // Dati da contratto CTR-CACACE-BASE-2026.pdf:
+      //   CF: CCCGNI35D03D969T, piano AVANZATO, €840/anno (€70/mese) + IVA 22% = €1024.80
+      //   Inizio: 28/5/2026, Scadenza: 27/5/2027
       try {
         const existingCacace = await c.env.DB.prepare(
           `SELECT id FROM leads WHERE id = 'LEAD-CACACE-2026'`
@@ -1063,21 +1066,22 @@ app.use('*', async (c, next) => {
             // intestatario
             'Igino', 'Cacace',
             'Via Emilio De Marchi 8', '20125', 'Milano', 'MI',
-            // servizio
-            'eCura PRO', 'eCura PRO', 'BASE',
+            // servizio: AVANZATO con SiDLY CARE PRO
+            'eCura PRO', 'eCura PRO', 'AVANZATO',
             // fonte / canale / cm / stato
             'Referral', '', 'RP',
             'convertito', 'CONVERTED',
             // iva_agevolata: 0 = IVA 22% standard
             0,
             // note
-            'Referral da Eileen King (consuocera). Dispositivo SiDLY CARE PRO consegnato il 28/05/2026. Già pagato. Contratto CTR-CACACE-BASE-2026 inviato per firma.',
+            'Referral da Eileen King (consuocera). Dispositivo SiDLY CARE PRO consegnato il 28/05/2026. Già pagato. Contratto CTR-CACACE-BASE-2026 inviato per firma. Piano AVANZATO: €840/anno + IVA 22% = €1024.80.',
             new Date().toISOString(), new Date().toISOString()
           ).run()
-          console.log('✅ Lead LEAD-CACACE-2026 creato (Igino Cacace — referral King)')
+          console.log('✅ Lead LEAD-CACACE-2026 creato (Igino Cacace — referral King — piano AVANZATO)')
         }
 
         // Contratto CTR-CACACE-BASE-2026 — SENT (inviato per firma, non ancora firmato)
+        // Piano AVANZATO: €840/anno (€70/mese) + IVA 22%
         const existingCacaceContratto = await c.env.DB.prepare(
           `SELECT id FROM contracts WHERE codice_contratto = 'CTR-CACACE-BASE-2026'`
         ).first()
@@ -1108,9 +1112,9 @@ app.use('*', async (c, next) => {
             'CTR-CACACE-BASE-2026-ID',
             'LEAD-CACACE-2026',
             'CTR-CACACE-BASE-2026',
-            'BASE', 'BASE', 'eCura PRO',
+            'AVANZATO', 'AVANZATO', 'eCura PRO',
             'contratto_b2c',
-            '<html><body>Contratto CTR-CACACE-BASE-2026 — Igino Cacace (da firmare)</body></html>',
+            '<html><body>Contratto CTR-CACACE-BASE-2026 — Igino Cacace — Piano AVANZATO SiDLY CARE PRO (da firmare)</body></html>',
             // cliente
             'Igino', 'Cacace', 'caciginio@libero.it', '+39 3474669963',
             // intestatario
@@ -1121,20 +1125,383 @@ app.use('*', async (c, next) => {
             'Via Emilio De Marchi 8', '20125', 'Milano', 'MI',
             // stato contratto: SENT = inviato per firma, non ancora firmato
             'SENT',
-            480,   // prezzo_totale IVA esclusa (€480/anno BASE)
-            40,    // prezzo_mensile
+            840,   // prezzo_totale IVA esclusa (€840/anno AVANZATO)
+            70,    // prezzo_mensile
             12,
             '2026-05-28',           // data invio / consegna dispositivo
-            '2027-05-28',           // scadenza contratto (1 anno)
+            '2027-05-27',           // scadenza contratto (1 anno)
             new Date().toISOString(), new Date().toISOString()
           ).run()
-          console.log('✅ Contratto CTR-CACACE-BASE-2026 creato (SENT — in attesa firma)')
+          console.log('✅ Contratto CTR-CACACE-BASE-2026 creato (SENT — AVANZATO €840 — in attesa firma)')
         }
 
       } catch (err) {
         console.error('⚠️ Errore inserimento Cacace:', err)
       }
       // ── FINE Igino Cacace ────────────────────────────────────────────────────
+
+      // ── Eileen Elisabeth King — lead 2026 (contratto AVANZATO firmato) ───────
+      // Referente che ha portato Cacace. Contratto AVANZATO SiDLY VITAL CARE.
+      // Già firmato (29/04/2026) e pagato. Dispositivo consegnato 29/04/2026.
+      // Dati da contratto CTR-KING-AVANZATO-2026.pdf:
+      //   CF: KNGLLZ33E582700A, Via Diaz 34, 20063 Cernusco sul Naviglio (MI)
+      //   Piano AVANZATO: €860/anno (€72/mese) + IVA 22% = €1049.20
+      //   Inizio: 6/5/2026, Scadenza: 5/5/2027, Firmato: 29/4/2026
+      try {
+        const existingKing2026 = await c.env.DB.prepare(
+          `SELECT id FROM leads WHERE id = 'LEAD-KING-2026'`
+        ).first()
+        if (!existingKing2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, cfAssistito,
+              indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+              nomeIntestatario, cognomeIntestatario,
+              indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
+              servizio, tipoServizio, piano,
+              fonte, canale_acquisizione, cm, stato, status,
+              iva_agevolata,
+              note, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?, ?,
+              ?,
+              ?, ?, ?
+            )
+          `).bind(
+            'LEAD-KING-2026',
+            'Eileen', 'King',
+            'eileenking33@hotmail.com', '3475961175',
+            // assistito = stessa intestataria
+            'Eileen', 'King', 'KNGLLZ33E582700A',
+            'Via Diaz 34', '20063', 'Cernusco sul Naviglio', 'MI',
+            // intestatario
+            'Eileen', 'King',
+            'Via Diaz 34', '20063', 'Cernusco sul Naviglio', 'MI',
+            // servizio: AVANZATO con SiDLY VITAL CARE
+            'eCura PRO', 'eCura PRO', 'AVANZATO',
+            // fonte / canale / cm / stato
+            'Referral', '', 'RP',
+            'convertito', 'CONVERTED',
+            // iva_agevolata: 0 = IVA 22% standard
+            0,
+            // note
+            'Contratto AVANZATO CTR-KING-AVANZATO-2026 firmato il 29/04/2026. Dispositivo SiDLY VITAL CARE consegnato. Già pagato. €860/anno + IVA 22% = €1049.20. Referral: ha presentato Igino Cacace (consuocero).',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Lead LEAD-KING-2026 creato (Eileen King — AVANZATO — CONVERTED)')
+        }
+
+        // Contratto CTR-KING-AVANZATO-2026 — SIGNED (firmato 29/04/2026, già pagato)
+        const existingKingContratto2026 = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-KING-AVANZATO-2026'`
+        ).first()
+        if (!existingKingContratto2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+              intestatario_nome, intestatario_cognome,
+              assistito_nome, assistito_cognome, assistito_cf,
+              indirizzo_spedizione, cap_spedizione, citta_spedizione, provincia_spedizione,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              data_invio, data_firma, data_scadenza,
+              created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?
+            )
+          `).bind(
+            'CTR-KING-AVANZATO-2026-ID',
+            'LEAD-KING-2026',
+            'CTR-KING-AVANZATO-2026',
+            'AVANZATO', 'AVANZATO', 'eCura PRO',
+            'contratto_b2c',
+            '<html><body>Contratto CTR-KING-AVANZATO-2026 — Eileen Elisabeth King — Piano AVANZATO SiDLY VITAL CARE</body></html>',
+            // cliente
+            'Eileen', 'King', 'eileenking33@hotmail.com', '3475961175',
+            // intestatario
+            'Eileen', 'King',
+            // assistito
+            'Eileen', 'King', 'KNGLLZ33E582700A',
+            // indirizzo spedizione
+            'Via Diaz 34', '20063', 'Cernusco sul Naviglio', 'MI',
+            // stato: SIGNED = firmato e pagato
+            'SIGNED',
+            860,   // prezzo_totale IVA esclusa (€860/anno AVANZATO primo anno)
+            72,    // prezzo_mensile (~72/mese)
+            12,
+            '2026-04-29',   // data invio contratto
+            '2026-04-29',   // data firma
+            '2027-05-05',   // scadenza servizio (6/5/2026 + 12 mesi - 1 giorno)
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto CTR-KING-AVANZATO-2026 creato (SIGNED — €860 — firmato 29/04/2026)')
+        }
+
+      } catch (err) {
+        console.error('⚠️ Errore inserimento King 2026:', err)
+      }
+      // ── FINE Eileen King 2026 ─────────────────────────────────────────────────
+
+      // ── Rita Pennacchio — lead 2026 rinnovo (contratto BASE firmato) ──────────
+      // Rinnovo anno 2. Contratto BASE SiDLY PRO CARE.
+      // Già firmato (29/05/2026) e pagato. Dispositivo già in possesso.
+      // Dati da contratto CTR-PENNACCHIO-BASE-2026.pdf:
+      //   CF: PNNRTI34R68F839L, Via A. Fogazzaro 28, Giugiano (NA)
+      //   Piano BASE rinnovo: €240/anno (€20/mese) + IVA 22% = €292.80
+      //   Inizio: 12/5/2026, Scadenza: 11/5/2027, Firmato: 29/5/2026
+      try {
+        const existingPennacchio2026 = await c.env.DB.prepare(
+          `SELECT id FROM leads WHERE id = 'LEAD-PENNACCHIO-2026'`
+        ).first()
+        if (!existingPennacchio2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, cfAssistito,
+              indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+              nomeIntestatario, cognomeIntestatario,
+              indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
+              servizio, tipoServizio, piano,
+              fonte, canale_acquisizione, cm, stato, status,
+              iva_agevolata,
+              note, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?, ?,
+              ?,
+              ?, ?, ?
+            )
+          `).bind(
+            'LEAD-PENNACCHIO-2026',
+            'Rita', 'Pennacchio',
+            'caterinadalterio108@gmail.com', '3898006744',
+            // assistito = stessa intestataria
+            'Rita', 'Pennacchio', 'PNNRTI34R68F839L',
+            'Via A. Fogazzaro 28', '80014', 'Giugiano', 'NA',
+            // intestatario
+            'Rita', 'Pennacchio',
+            'Via A. Fogazzaro 28', '80014', 'Giugiano', 'NA',
+            // servizio: BASE rinnovo con SiDLY PRO CARE
+            'eCura PRO', 'eCura PRO', 'BASE',
+            // fonte / canale / cm / stato
+            'Rinnovo', '', 'RP',
+            'convertito', 'CONVERTED',
+            // iva_agevolata: 0 = IVA 22% standard
+            0,
+            // note
+            'Rinnovo anno 2 contratto CTR-PENNACCHIO-BASE-2026. Firmato il 29/05/2026. Già pagato. Piano BASE SiDLY PRO CARE: €240/anno + IVA 22% = €292.80. Cfr. contratto originale LEAD-PENNACCHIO-001.',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Lead LEAD-PENNACCHIO-2026 creato (Rita Pennacchio — rinnovo BASE — CONVERTED)')
+        }
+
+        // Contratto CTR-PENNACCHIO-BASE-2026 — SIGNED (firmato 29/05/2026, già pagato)
+        const existingPennacchioContratto2026 = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-PENNACCHIO-BASE-2026'`
+        ).first()
+        if (!existingPennacchioContratto2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+              intestatario_nome, intestatario_cognome,
+              assistito_nome, assistito_cognome, assistito_cf,
+              indirizzo_spedizione, cap_spedizione, citta_spedizione, provincia_spedizione,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              is_rinnovo, rinnovo_di, anno_rinnovo,
+              data_invio, data_firma, data_scadenza,
+              created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?,
+              ?, ?
+            )
+          `).bind(
+            'CTR-PENNACCHIO-BASE-2026-ID',
+            'LEAD-PENNACCHIO-2026',
+            'CTR-PENNACCHIO-BASE-2026',
+            'BASE', 'BASE', 'eCura PRO',
+            'contratto_rinnovo_b2c',
+            '<html><body>Contratto CTR-PENNACCHIO-BASE-2026 — Rita Pennacchio — Piano BASE SiDLY PRO CARE — Anno 2</body></html>',
+            // cliente
+            'Rita', 'Pennacchio', 'caterinadalterio108@gmail.com', '3898006744',
+            // intestatario
+            'Rita', 'Pennacchio',
+            // assistito
+            'Rita', 'Pennacchio', 'PNNRTI34R68F839L',
+            // indirizzo spedizione
+            'Via A. Fogazzaro 28', '80014', 'Giugiano', 'NA',
+            // stato: SIGNED = firmato e pagato
+            'SIGNED',
+            240,   // prezzo_totale IVA esclusa (€240/anno BASE rinnovo anno 2)
+            20,    // prezzo_mensile
+            12,
+            1,                       // is_rinnovo = true
+            'CTR-PENNACCHIO-2025',   // rinnovo_di: contratto originale anno 1
+            2,                       // anno_rinnovo = 2
+            '2026-05-12',   // data invio contratto (inizio servizio)
+            '2026-05-29',   // data firma
+            '2027-05-11',   // scadenza servizio
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto CTR-PENNACCHIO-BASE-2026 creato (SIGNED — €240 rinnovo — firmato 29/05/2026)')
+        }
+
+      } catch (err) {
+        console.error('⚠️ Errore inserimento Pennacchio 2026:', err)
+      }
+      // ── FINE Rita Pennacchio 2026 ─────────────────────────────────────────────
+
+      // ── Gianni Paolo Pizzutto — lead 2026 rinnovo (in attesa firma) ───────────
+      // Rinnovo anno 2. Contratto BASE SiDLY PRO CARE.
+      // Contratto emesso il 29/05/2026 — in attesa di firma e pagamento.
+      // Dati da contratto CTR-PIZZUTTO-BASE-2026.pdf:
+      //   CF: PZZGNP39H26C580K, Via Costituzione 5, San Mauro Torinese (TO)
+      //   Piano BASE rinnovo: €240/anno (€20/mese) + IVA 22% = €292.80
+      //   Inizio: 12/5/2026, Scadenza: 11/5/2027, Data documento: 29/5/2026
+      try {
+        const existingPizzutto2026 = await c.env.DB.prepare(
+          `SELECT id FROM leads WHERE id = 'LEAD-PIZZUTTO-2026'`
+        ).first()
+        if (!existingPizzutto2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO leads (
+              id, nomeRichiedente, cognomeRichiedente, email, telefono,
+              nomeAssistito, cognomeAssistito, cfAssistito,
+              indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+              nomeIntestatario, cognomeIntestatario,
+              indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
+              servizio, tipoServizio, piano,
+              fonte, canale_acquisizione, cm, stato, status,
+              iva_agevolata,
+              note, created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?, ?,
+              ?,
+              ?, ?, ?
+            )
+          `).bind(
+            'LEAD-PIZZUTTO-2026',
+            'Gianni Paolo', 'Pizzutto',
+            'simonapizzutto.sp@gmail.com', '3450016665',
+            // assistito = stesso intestatario
+            'Gianni Paolo', 'Pizzutto', 'PZZGNP39H26C580K',
+            'Via Costituzione 5', '10099', 'San Mauro Torinese', 'TO',
+            // intestatario
+            'Gianni Paolo', 'Pizzutto',
+            'Via Costituzione 5', '10099', 'San Mauro Torinese', 'TO',
+            // servizio: BASE rinnovo con SiDLY PRO CARE
+            'eCura PRO', 'eCura PRO', 'BASE',
+            // fonte / canale / cm / stato
+            'Rinnovo', '', 'RP',
+            'interessato', 'PENDING',
+            // iva_agevolata: 0 = IVA 22% standard
+            0,
+            // note
+            'Rinnovo anno 2 contratto CTR-PIZZUTTO-BASE-2026. Contratto emesso il 29/05/2026. In attesa di firma e pagamento. Piano BASE SiDLY PRO CARE: €240/anno + IVA 22% = €292.80. Cfr. contratto originale LEAD-PIZZUTTO-G-001.',
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Lead LEAD-PIZZUTTO-2026 creato (Gianni Paolo Pizzutto — rinnovo BASE — PENDING)')
+        }
+
+        // Contratto CTR-PIZZUTTO-BASE-2026 — SENT (emesso, in attesa firma e pagamento)
+        const existingPizzuttoContratto2026 = await c.env.DB.prepare(
+          `SELECT id FROM contracts WHERE codice_contratto = 'CTR-PIZZUTTO-BASE-2026'`
+        ).first()
+        if (!existingPizzuttoContratto2026) {
+          await c.env.DB.prepare(`
+            INSERT INTO contracts (
+              id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+              template_utilizzato, contenuto_html,
+              cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+              intestatario_nome, intestatario_cognome,
+              assistito_nome, assistito_cognome, assistito_cf,
+              indirizzo_spedizione, cap_spedizione, citta_spedizione, provincia_spedizione,
+              status, prezzo_totale, prezzo_mensile, durata_mesi,
+              is_rinnovo, rinnovo_di, anno_rinnovo,
+              data_invio, data_scadenza,
+              created_at, updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?, ?,
+              ?, ?,
+              ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?,
+              ?, ?,
+              ?, ?
+            )
+          `).bind(
+            'CTR-PIZZUTTO-BASE-2026-ID',
+            'LEAD-PIZZUTTO-2026',
+            'CTR-PIZZUTTO-BASE-2026',
+            'BASE', 'BASE', 'eCura PRO',
+            'contratto_rinnovo_b2c',
+            '<html><body>Contratto CTR-PIZZUTTO-BASE-2026 — Gianni Paolo Pizzutto — Piano BASE SiDLY PRO CARE — Anno 2</body></html>',
+            // cliente
+            'Gianni Paolo', 'Pizzutto', 'simonapizzutto.sp@gmail.com', '3450016665',
+            // intestatario
+            'Gianni Paolo', 'Pizzutto',
+            // assistito
+            'Gianni Paolo', 'Pizzutto', 'PZZGNP39H26C580K',
+            // indirizzo spedizione
+            'Via Costituzione 5', '10099', 'San Mauro Torinese', 'TO',
+            // stato: SENT = inviato, in attesa firma e pagamento
+            'SENT',
+            240,   // prezzo_totale IVA esclusa (€240/anno BASE rinnovo anno 2)
+            20,    // prezzo_mensile
+            12,
+            1,                      // is_rinnovo = true
+            'CTR-PIZZUTTO-G-2025',  // rinnovo_di: contratto originale anno 1
+            2,                      // anno_rinnovo = 2
+            '2026-05-29',   // data emissione contratto
+            '2027-05-11',   // scadenza servizio
+            new Date().toISOString(), new Date().toISOString()
+          ).run()
+          console.log('✅ Contratto CTR-PIZZUTTO-BASE-2026 creato (SENT — €240 rinnovo — in attesa firma)')
+        }
+
+      } catch (err) {
+        console.error('⚠️ Errore inserimento Pizzutto 2026:', err)
+      }
+      // ── FINE Gianni Paolo Pizzutto 2026 ──────────────────────────────────────
 
       // Crea tabella users se non esiste (necessario per login su DB freschi/preview)
       try {
