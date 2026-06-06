@@ -1405,6 +1405,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint popolamento assistiti: pubblico (operazione manuale one-shot)
+  if (path === '/api/init-assistiti' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
