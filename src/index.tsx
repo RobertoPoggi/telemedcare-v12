@@ -1410,6 +1410,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint deduplicazione assistiti: pubblico (operazione manuale one-shot)
+  if (path === '/api/oneshot-dedup-assistiti-9k3mq' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
@@ -26803,6 +26808,50 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
       error: error instanceof Error ? error.message : String(error),
       stack: (error as Error)?.stack
     }, 500)
+  }
+})
+
+// 🔧 ENDPOINT ONE-SHOT: Deduplicazione tabella assistiti
+app.post('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    // 1. Leggi tutti gli assistiti prima della pulizia
+    const { results: prima } = await c.env.DB.prepare(
+      `SELECT id, codice, nome_assistito, cognome_assistito, imei, created_at FROM assistiti ORDER BY cognome_assistito, id`
+    ).all()
+
+    // 2. Trova duplicati: stessa combinazione (nome_assistito + cognome_assistito) o stesso imei
+    //    Tieni il record con id minore (il più vecchio), elimina gli altri
+    const { results: duplicati } = await c.env.DB.prepare(`
+      SELECT id FROM assistiti
+      WHERE id NOT IN (
+        SELECT MIN(id) FROM assistiti
+        GROUP BY LOWER(TRIM(cognome_assistito)), LOWER(TRIM(nome_assistito))
+      )
+    `).all()
+
+    const idsDaEliminare = duplicati.map((r: any) => r.id)
+    let eliminati = 0
+
+    for (const id of idsDaEliminare) {
+      await c.env.DB.prepare(`DELETE FROM assistiti WHERE id = ?`).bind(id).run()
+      eliminati++
+    }
+
+    // 3. Leggi tutti gli assistiti dopo la pulizia
+    const { results: dopo } = await c.env.DB.prepare(
+      `SELECT id, codice, nome_assistito, cognome_assistito, imei, created_at FROM assistiti ORDER BY cognome_assistito, id`
+    ).all()
+
+    return c.json({
+      success: true,
+      prima: { totale: prima.length, assistiti: prima },
+      eliminati: { totale: eliminati, ids: idsDaEliminare },
+      dopo: { totale: dopo.length, assistiti: dopo }
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
   }
 })
 
