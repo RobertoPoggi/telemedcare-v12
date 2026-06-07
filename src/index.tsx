@@ -26887,13 +26887,59 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
     `).bind('868298061123759', oggi).run()
     aggiornamenti.push({ assistito: 'Rita Pennacchio', id: 5, imei_nuovo: '868298061123759', changes: pennResult.meta?.changes })
 
-    // Verifica finale
-    const { results: stato } = await c.env.DB.prepare(`
+    // Verifica finale IMEI
+    const { results: statoImei } = await c.env.DB.prepare(`
       SELECT id, nome_assistito, cognome_assistito, imei, updated_at
       FROM assistiti WHERE id IN (1, 5)
     `).all()
 
-    return c.json({ success: true, aggiornamenti, stato_finale: stato })
+    // ── Fix cognomi cliente nei contratti CTR-*-2026 ──────────────────────────
+    // Rileva colonne reali della tabella contracts tramite PRAGMA
+    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const colNames = (cols as any[]).map((r: any) => r.name)
+
+    // Nome/cognome cliente: prova entrambi i naming convention
+    const colNomeCli  = colNames.includes('cliente_nome')    ? 'cliente_nome'    : colNames.includes('nome_cliente')    ? 'nome_cliente'    : null
+    const colCognCli  = colNames.includes('cliente_cognome') ? 'cliente_cognome' : colNames.includes('cognome_cliente') ? 'cognome_cliente' : null
+    const colCodice   = colNames.includes('codice_contratto') ? 'codice_contratto' : 'contract_code'
+    const colUpdAt    = colNames.includes('updated_at') ? 'updated_at' : null
+
+    // Colonne opzionali
+    const colNomeInt  = colNames.includes('intestatario_nome')    ? 'intestatario_nome'    : colNames.includes('nome_intestatario')    ? 'nome_intestatario'    : null
+    const colCognInt  = colNames.includes('intestatario_cognome') ? 'intestatario_cognome' : colNames.includes('cognome_intestatario') ? 'cognome_intestatario' : null
+    const colNomeAss  = colNames.includes('assistito_nome')    ? 'assistito_nome'    : colNames.includes('nome_assistito_c')    ? 'nome_assistito_c'    : null
+    const colCognAss  = colNames.includes('assistito_cognome') ? 'assistito_cognome' : colNames.includes('cognome_assistito_c') ? 'cognome_assistito_c' : null
+
+    const fixCognomi: any[] = []
+
+    if (colNomeCli && colCognCli) {
+      const map = [
+        { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
+        { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
+        { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
+        { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
+      ]
+      for (const f of map) {
+        const setParts: string[] = [`${colNomeCli} = ?`, `${colCognCli} = ?`]
+        const binds: any[] = [f.nome, f.cognome]
+        if (colNomeInt) { setParts.push(`${colNomeInt} = ?`); binds.push(f.nome) }
+        if (colCognInt) { setParts.push(`${colCognInt} = ?`); binds.push(f.cognome) }
+        if (colNomeAss) { setParts.push(`${colNomeAss} = ?`); binds.push(f.nome) }
+        if (colCognAss) { setParts.push(`${colCognAss} = ?`); binds.push(f.cognome) }
+        if (colUpdAt)   { setParts.push(`${colUpdAt} = ?`);   binds.push(oggi) }
+        binds.push(f.codice)
+        const r = await c.env.DB.prepare(
+          `UPDATE contracts SET ${setParts.join(', ')} WHERE ${colCodice} = ?`
+        ).bind(...binds).run()
+        fixCognomi.push({ codice: f.codice, nome: f.nome, cognome: f.cognome, changes: r.meta?.changes })
+      }
+    }
+
+    return c.json({
+      success: true,
+      imei: { aggiornamenti, stato_finale: statoImei },
+      cognomi: { colonne: { colNomeCli, colCognCli, colCodice }, fix: fixCognomi }
+    })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
