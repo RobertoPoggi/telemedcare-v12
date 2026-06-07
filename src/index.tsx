@@ -1420,6 +1420,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint diagnostica contratti CTR-*-2026: pubblico (one-shot)
+  if (path === '/api/oneshot-diagnosi-contratti-2026-5nw8v' && method === 'POST') {
+    return next()
+  }
+
 
   
   // Endpoint sensibili: richiedono autenticazione
@@ -26939,6 +26944,39 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
 })
 
 
+
+// 🔧 ENDPOINT ONE-SHOT: Diagnostica contratti CTR-*-2026 — mostra lead agganciati
+// Nessun hardcoding: legge tutto dal DB e mostra la situazione reale
+app.post('/api/oneshot-diagnosi-contratti-2026-5nw8v', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    // Legge tutti i contratti CTR-*-2026 con il lead agganciato
+    // così vediamo esattamente quali cognomi errati provengono da quale lead
+    const { results } = await c.env.DB.prepare(`
+      SELECT
+        c.codice_contratto,
+        c.leadId,
+        c.imei_dispositivo,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.nomeAssistito,
+        l.cognomeAssistito,
+        a.nome_assistito  AS ass_nome,
+        a.cognome_assistito AS ass_cognome
+      FROM contracts c
+      LEFT JOIN leads l ON c.leadId = l.id
+      LEFT JOIN assistiti a ON c.imei_dispositivo = a.imei
+      WHERE c.codice_contratto LIKE 'CTR-%-2026'
+        AND (c.is_rinnovo IS NULL OR c.is_rinnovo = 0)
+      ORDER BY c.codice_contratto
+    `).all()
+
+    return c.json({ success: true, contratti: results })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
+  }
+})
 
 // 🔧 ENDPOINT ONE-SHOT: Diagnostica e inserimento Maria Carmela Mazzarella
 app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
