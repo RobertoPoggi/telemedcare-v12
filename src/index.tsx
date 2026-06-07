@@ -26873,6 +26873,38 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
     const oggi = new Date().toISOString()
     const aggiornamenti: any[] = []
 
+    // ── Fix cognomi cliente nei lead collegati ai contratti CTR-*-2026 ──────
+    // La dashboard mostra nomeRichiedente/cognomeRichiedente dalla tabella leads.
+    // init-assistiti ha messo il cognome del caregiver invece dell'assistito.
+    // Fix: aggiorna i lead il cui leadId è usato in quei contratti.
+    const fixLeads = [
+      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
+      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
+      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
+      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
+    ]
+    const fixLeadsResult: any[] = []
+    for (const f of fixLeads) {
+      // Trova il leadId dal contratto
+      const ctr = await c.env.DB.prepare(
+        `SELECT leadId FROM contracts WHERE codice_contratto = ?`
+      ).bind(f.codice).first() as any
+      if (ctr?.leadId) {
+        const r = await c.env.DB.prepare(`
+          UPDATE leads
+          SET nomeRichiedente    = ?,
+              cognomeRichiedente = ?,
+              nomeAssistito      = ?,
+              cognomeAssistito   = ?,
+              updated_at         = ?
+          WHERE id = ?
+        `).bind(f.nome, f.cognome, f.nome, f.cognome, oggi, ctr.leadId).run()
+        fixLeadsResult.push({ codice: f.codice, leadId: ctr.leadId, nome: f.nome, cognome: f.cognome, changes: r.meta?.changes })
+      } else {
+        fixLeadsResult.push({ codice: f.codice, leadId: null, errore: 'contratto non trovato' })
+      }
+    }
+
     // King id=1: IMEI corretto da contratto CTR-KING-AVANZATO-2026
     const kingResult = await c.env.DB.prepare(`
       UPDATE assistiti SET imei = ?, updated_at = ?
@@ -26937,6 +26969,7 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
 
     return c.json({
       success: true,
+      fix_leads: fixLeadsResult,
       imei: { aggiornamenti, stato_finale: statoImei },
       cognomi: { colonne: { colNomeCli, colCognCli, colCodice }, fix: fixCognomi }
     })
