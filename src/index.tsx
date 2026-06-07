@@ -1411,27 +1411,27 @@ app.use('/api/*', async (c, next) => {
   }
 
   // Endpoint deduplicazione assistiti: pubblico (operazione manuale one-shot)
-  if (path === '/api/oneshot-dedup-assistiti-9k3mq' && method === 'POST') {
+  if (path === '/api/oneshot-dedup-assistiti-9k3mq' && (method === 'POST' || method === 'GET')) {
     return next()
   }
 
   // Endpoint fix IMEI King e Pennacchio: pubblico (operazione manuale one-shot)
-  if (path === '/api/oneshot-fix-imei-king-pennacchio-4r7wz' && method === 'POST') {
+  if (path === '/api/oneshot-fix-imei-king-pennacchio-4r7wz' && (method === 'POST' || method === 'GET')) {
     return next()
   }
 
   // Endpoint diagnostica contratti CTR-*-2026: pubblico (one-shot)
-  if (path === '/api/oneshot-diagnosi-contratti-2026-5nw8v' && method === 'POST') {
+  if (path === '/api/oneshot-diagnosi-contratti-2026-5nw8v' && (method === 'POST' || method === 'GET')) {
     return next()
   }
 
   // Endpoint inserimento contratti King 2026 e Cacace 2026: pubblico (one-shot)
-  if (path === '/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k' && method === 'POST') {
+  if (path === '/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k' && (method === 'POST' || method === 'GET')) {
     return next()
   }
 
   // Endpoint sync tabella dispositivi da assistiti: pubblico (one-shot)
-  if (path === '/api/oneshot-sync-dispositivi-da-assistiti-7vk2p' && method === 'POST') {
+  if (path === '/api/oneshot-sync-dispositivi-da-assistiti-7vk2p' && (method === 'POST' || method === 'GET')) {
     return next()
   }
 
@@ -26846,7 +26846,7 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
 })
 
 // 🔧 ENDPOINT ONE-SHOT: Deduplicazione tabella assistiti
-app.post('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
+app.get('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
@@ -26890,7 +26890,7 @@ app.post('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
 })
 
 // 🔧 ENDPOINT ONE-SHOT: Aggiorna IMEI corretti per King e Pennacchio
-app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
+app.get('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
@@ -27080,7 +27080,7 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
 
 // 🔧 ENDPOINT ONE-SHOT: Diagnostica contratti CTR-*-2026 — mostra lead agganciati
 // Nessun hardcoding: legge tutto dal DB e mostra la situazione reale
-app.post('/api/oneshot-diagnosi-contratti-2026-5nw8v', async (c) => {
+app.get('/api/oneshot-diagnosi-contratti-2026-5nw8v', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
@@ -27114,7 +27114,7 @@ app.post('/api/oneshot-diagnosi-contratti-2026-5nw8v', async (c) => {
 // 🔧 ENDPOINT ONE-SHOT: Inserisce contratti mancanti King 2026 e Cacace 2026
 // Dati personali: letti dal DB (leads + assistiti) tramite IMEI — zero hardcoding.
 // Dati contrattuali (codice, date, importi, dispositivo): da contratti PDF firmati.
-app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) => {
+app.get('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
@@ -27161,7 +27161,7 @@ app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) =>
         imei:          '868298061208378',   // IMEI King già nel DB assistiti
         leadCognome:   'Saglia',            // lead intestato a Elena Saglia (figlia/caregiver)
         piano:         'AVANZATO',
-        servizio:      'eCura PRO',
+        servizio:      'eCura PREMIUM',
         dispositivo:   'SiDLY VITAL CARE',
         prezzo_totale: 860,
         prezzo_mensile: 72,
@@ -27175,7 +27175,7 @@ app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) =>
         imei:          '864866058470732',   // IMEI Cacace già nel DB assistiti
         leadCognome:   'Cacace',            // lead intestato a Iginio Cacace stesso
         piano:         'AVANZATO',
-        servizio:      'eCura PRO',
+        servizio:      'eCura PRO',         // Cacace ha eCura PRO AVANZATO (SiDLY CARE PRO)
         dispositivo:   'SiDLY CARE PRO',
         prezzo_totale: 840,
         prezzo_mensile: 70,
@@ -27278,8 +27278,10 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
 
-    const body = await c.req.json().catch(() => ({})) as Record<string, unknown>
-    const action = (body.action as string) || 'diagnose'
+    // Supporta sia GET (query params) che POST (body JSON) per comodità
+    const body = c.req.method === 'GET' ? {} : await c.req.json().catch(() => ({}))
+    const qp = new URL(c.req.url).searchParams
+    const action = (qp.get('action') || (body as any).action || 'diagnose') as string
     const results: Record<string, unknown> = { action }
 
     // STEP 1: Trova lead Alfredo Vassalluzzo
@@ -27332,9 +27334,9 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
     }
 
     if (action === 'insert') {
-      const leadId = body.lead_id as string
+      const leadId = (qp.get('lead_id') || (body as any).lead_id) as string
       if (!leadId) {
-        return c.json({ success: false, error: 'lead_id richiesto per action=insert' }, 400)
+        return c.json({ success: false, error: 'lead_id richiesto — usa ?action=insert&lead_id=LEAD-IRBEMA-00019' }, 400)
       }
 
       // Libera IMEI da Laura Calvi (se assegnato)
@@ -28841,7 +28843,7 @@ app.delete('/api/email/template/:name/reset', async (c) => {
 // Per ogni assistito con IMEI: verifica che esista un record in dispositivi con quel serial_number.
 // Se manca → INSERT. Se esiste → UPDATE modello se necessario.
 // Nessun dato personale hardcodato: tutto letto dal DB.
-app.post('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
+app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
   try {
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
