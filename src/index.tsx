@@ -1420,10 +1420,6 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
-  // Endpoint fix cognomi contratti CTR-*-2026: pubblico (operazione manuale one-shot)
-  if (path === '/api/oneshot-fix-cognomi-contratti-2026-8p2vx' && method === 'POST') {
-    return next()
-  }
 
   
   // Endpoint sensibili: richiedono autenticazione
@@ -26873,179 +26869,76 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
     const oggi = new Date().toISOString()
     const aggiornamenti: any[] = []
 
-    // ── Fix cognomi cliente nei lead collegati ai contratti CTR-*-2026 ──────
-    // La dashboard mostra nomeRichiedente/cognomeRichiedente dalla tabella leads.
-    // init-assistiti ha messo il cognome del caregiver invece dell'assistito.
-    // Fix: aggiorna i lead il cui leadId è usato in quei contratti.
-    const fixLeads = [
-      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
-      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
-      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
-      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
-    ]
+    // ── Fix cognomi nei lead collegati ai contratti CTR-*-2026 ───────────────
+    // La dashboard mostra nomeRichiedente/cognomeRichiedente dalla tabella leads
+    // via JOIN. init-assistiti aveva messo il cognome del caregiver invece
+    // dell'assistito. Fix: per ogni contratto CTR-*-2026, legge il nome corretto
+    // dalla tabella assistiti (per IMEI) e aggiorna il lead collegato.
+    // Zero hardcoding: tutti i dati vengono dal DB.
     const fixLeadsResult: any[] = []
-    for (const f of fixLeads) {
-      // Trova il leadId dal contratto
-      const ctr = await c.env.DB.prepare(
-        `SELECT leadId FROM contracts WHERE codice_contratto = ?`
-      ).bind(f.codice).first() as any
-      if (ctr?.leadId) {
-        const r = await c.env.DB.prepare(`
-          UPDATE leads
-          SET nomeRichiedente    = ?,
-              cognomeRichiedente = ?,
-              nomeAssistito      = ?,
-              cognomeAssistito   = ?,
-              updated_at         = ?
-          WHERE id = ?
-        `).bind(f.nome, f.cognome, f.nome, f.cognome, oggi, ctr.leadId).run()
-        fixLeadsResult.push({ codice: f.codice, leadId: ctr.leadId, nome: f.nome, cognome: f.cognome, changes: r.meta?.changes })
-      } else {
-        fixLeadsResult.push({ codice: f.codice, leadId: null, errore: 'contratto non trovato' })
-      }
+
+    // Recupera tutti i contratti CTR-*-2026 con il loro leadId e l'IMEI dispositivo
+    const { results: contratti2026 } = await c.env.DB.prepare(`
+      SELECT codice_contratto, leadId, imei_dispositivo
+      FROM contracts
+      WHERE codice_contratto LIKE 'CTR-%-2026'
+        AND is_rinnovo IS NULL OR is_rinnovo = 0
+    `).all() as { results: any[] }
+
+    for (const ctr of contratti2026) {
+      if (!ctr.leadId || !ctr.imei_dispositivo) continue
+
+      // Trova l'assistito corrispondente per IMEI — è la fonte di verità
+      const ass = await c.env.DB.prepare(`
+        SELECT nome_assistito, cognome_assistito
+        FROM assistiti
+        WHERE imei = ?
+      `).bind(ctr.imei_dispositivo).first() as any
+
+      if (!ass?.cognome_assistito) continue
+
+      // Aggiorna il lead con i dati corretti dell'assistito
+      const r = await c.env.DB.prepare(`
+        UPDATE leads
+        SET nomeRichiedente    = ?,
+            cognomeRichiedente = ?,
+            nomeAssistito      = ?,
+            cognomeAssistito   = ?,
+            updated_at         = ?
+        WHERE id = ?
+      `).bind(
+        ass.nome_assistito, ass.cognome_assistito,
+        ass.nome_assistito, ass.cognome_assistito,
+        oggi, ctr.leadId
+      ).run()
+
+      fixLeadsResult.push({
+        codice: ctr.codice_contratto,
+        leadId: ctr.leadId,
+        imei: ctr.imei_dispositivo,
+        nome: ass.nome_assistito,
+        cognome: ass.cognome_assistito,
+        changes: r.meta?.changes
+      })
     }
 
-    // King id=1: IMEI corretto da contratto CTR-KING-AVANZATO-2026
-    const kingResult = await c.env.DB.prepare(`
-      UPDATE assistiti SET imei = ?, updated_at = ?
-      WHERE id = 1 AND cognome_assistito = 'King'
-    `).bind('868298061208378', oggi).run()
-    aggiornamenti.push({ assistito: 'Eileen Elisabeth King', id: 1, imei_nuovo: '868298061208378', changes: kingResult.meta?.changes })
-
-    // Pennacchio id=5: IMEI corretto da contratto CTR-PENNACCHIO-BASE-2026
-    const pennResult = await c.env.DB.prepare(`
-      UPDATE assistiti SET imei = ?, updated_at = ?
-      WHERE id = 5 AND cognome_assistito = 'Pennacchio'
-    `).bind('868298061123759', oggi).run()
-    aggiornamenti.push({ assistito: 'Rita Pennacchio', id: 5, imei_nuovo: '868298061123759', changes: pennResult.meta?.changes })
-
-    // Verifica finale IMEI
+    // Verifica finale
     const { results: statoImei } = await c.env.DB.prepare(`
       SELECT id, nome_assistito, cognome_assistito, imei, updated_at
-      FROM assistiti WHERE id IN (1, 5)
+      FROM assistiti
     `).all()
-
-    // ── Fix cognomi cliente nei contratti CTR-*-2026 ──────────────────────────
-    // Rileva colonne reali della tabella contracts tramite PRAGMA
-    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
-    const colNames = (cols as any[]).map((r: any) => r.name)
-
-    // Nome/cognome cliente: prova entrambi i naming convention
-    const colNomeCli  = colNames.includes('cliente_nome')    ? 'cliente_nome'    : colNames.includes('nome_cliente')    ? 'nome_cliente'    : null
-    const colCognCli  = colNames.includes('cliente_cognome') ? 'cliente_cognome' : colNames.includes('cognome_cliente') ? 'cognome_cliente' : null
-    const colCodice   = colNames.includes('codice_contratto') ? 'codice_contratto' : 'contract_code'
-    const colUpdAt    = colNames.includes('updated_at') ? 'updated_at' : null
-
-    // Colonne opzionali
-    const colNomeInt  = colNames.includes('intestatario_nome')    ? 'intestatario_nome'    : colNames.includes('nome_intestatario')    ? 'nome_intestatario'    : null
-    const colCognInt  = colNames.includes('intestatario_cognome') ? 'intestatario_cognome' : colNames.includes('cognome_intestatario') ? 'cognome_intestatario' : null
-    const colNomeAss  = colNames.includes('assistito_nome')    ? 'assistito_nome'    : colNames.includes('nome_assistito_c')    ? 'nome_assistito_c'    : null
-    const colCognAss  = colNames.includes('assistito_cognome') ? 'assistito_cognome' : colNames.includes('cognome_assistito_c') ? 'cognome_assistito_c' : null
-
-    const fixCognomi: any[] = []
-
-    if (colNomeCli && colCognCli) {
-      const map = [
-        { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
-        { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
-        { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
-        { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
-      ]
-      for (const f of map) {
-        const setParts: string[] = [`${colNomeCli} = ?`, `${colCognCli} = ?`]
-        const binds: any[] = [f.nome, f.cognome]
-        if (colNomeInt) { setParts.push(`${colNomeInt} = ?`); binds.push(f.nome) }
-        if (colCognInt) { setParts.push(`${colCognInt} = ?`); binds.push(f.cognome) }
-        if (colNomeAss) { setParts.push(`${colNomeAss} = ?`); binds.push(f.nome) }
-        if (colCognAss) { setParts.push(`${colCognAss} = ?`); binds.push(f.cognome) }
-        if (colUpdAt)   { setParts.push(`${colUpdAt} = ?`);   binds.push(oggi) }
-        binds.push(f.codice)
-        const r = await c.env.DB.prepare(
-          `UPDATE contracts SET ${setParts.join(', ')} WHERE ${colCodice} = ?`
-        ).bind(...binds).run()
-        fixCognomi.push({ codice: f.codice, nome: f.nome, cognome: f.cognome, changes: r.meta?.changes })
-      }
-    }
 
     return c.json({
       success: true,
       fix_leads: fixLeadsResult,
-      imei: { aggiornamenti, stato_finale: statoImei },
-      cognomi: { colonne: { colNomeCli, colCognCli, colCodice }, fix: fixCognomi }
+      assistiti: statoImei
     })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
 })
 
-// 🔧 ENDPOINT ONE-SHOT: Diagnostica + fix cognomi cliente nei contratti CTR-*-2026
-app.post('/api/oneshot-fix-cognomi-contratti-2026-8p2vx', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
-    // Step 0: rileva colonne effettive della tabella contracts
-    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
-    const colNames = (cols as any[]).map((r: any) => r.name)
-
-    // Determina i nomi delle colonne in base a quanto esiste nel DB reale
-    const colNomeCli   = colNames.includes('cliente_nome')    ? 'cliente_nome'    : 'nome_cliente'
-    const colCognCli   = colNames.includes('cliente_cognome') ? 'cliente_cognome' : 'cognome_cliente'
-    const colNomeInt   = colNames.includes('intestatario_nome')    ? 'intestatario_nome'    : (colNames.includes('nome_intestatario')    ? 'nome_intestatario'    : null)
-    const colCognInt   = colNames.includes('intestatario_cognome') ? 'intestatario_cognome' : (colNames.includes('cognome_intestatario') ? 'cognome_intestatario' : null)
-    const colNomeAss   = colNames.includes('assistito_nome')    ? 'assistito_nome'    : (colNames.includes('nome_assistito')    ? 'nome_assistito'    : null)
-    const colCognAss   = colNames.includes('assistito_cognome') ? 'assistito_cognome' : (colNames.includes('cognome_assistito') ? 'cognome_assistito' : null)
-    const colUpdated   = colNames.includes('updated_at') ? 'updated_at' : null
-    const colCodice    = colNames.includes('codice_contratto') ? 'codice_contratto' : 'contract_code'
-
-    // Step 1: leggi stato attuale
-    const { results: prima } = await c.env.DB.prepare(`
-      SELECT id, ${colCodice} as codice, ${colNomeCli} as nome_cli, ${colCognCli} as cogn_cli
-      FROM contracts
-      WHERE ${colCodice} IN ('CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026')
-    `).all()
-
-    const oggi = new Date().toISOString()
-    const fix = [
-      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
-      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
-      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
-      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
-    ]
-
-    const aggiornamenti: any[] = []
-    for (const f of fix) {
-      // Costruisci SET dinamicamente in base alle colonne presenti
-      const setParts: string[] = [
-        `${colNomeCli} = ?`,
-        `${colCognCli} = ?`,
-      ]
-      const binds: any[] = [f.nome, f.cognome]
-
-      if (colNomeInt) { setParts.push(`${colNomeInt} = ?`); binds.push(f.nome) }
-      if (colCognInt) { setParts.push(`${colCognInt} = ?`); binds.push(f.cognome) }
-      if (colNomeAss) { setParts.push(`${colNomeAss} = ?`); binds.push(f.nome) }
-      if (colCognAss) { setParts.push(`${colCognAss} = ?`); binds.push(f.cognome) }
-      if (colUpdated) { setParts.push(`${colUpdated} = ?`); binds.push(oggi) }
-      binds.push(f.codice)
-
-      const result = await c.env.DB.prepare(
-        `UPDATE contracts SET ${setParts.join(', ')} WHERE ${colCodice} = ?`
-      ).bind(...binds).run()
-      aggiornamenti.push({ codice: f.codice, nome: f.nome, cognome: f.cognome, changes: result.meta?.changes })
-    }
-
-    // Step 2: verifica finale
-    const { results: dopo } = await c.env.DB.prepare(`
-      SELECT id, ${colCodice} as codice, ${colNomeCli} as nome_cli, ${colCognCli} as cogn_cli
-      FROM contracts
-      WHERE ${colCodice} IN ('CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026')
-    `).all()
-
-    return c.json({ success: true, colonne_rilevate: { colNomeCli, colCognCli, colNomeInt, colCognInt, colNomeAss, colCognAss }, prima, aggiornamenti, dopo })
-  } catch (err: any) {
-    return c.json({ success: false, error: err.message }, 500)
-  }
-})
 
 // 🔧 ENDPOINT ONE-SHOT: Diagnostica e inserimento Maria Carmela Mazzarella
 app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
