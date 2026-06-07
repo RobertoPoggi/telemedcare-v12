@@ -20719,7 +20719,7 @@ app.post('/api/init-force', async (c) => {
     console.log('🚀🚀🚀 FORCE INIT - Creazione lead + contratti + FIX existing...')
     
     const assistitiReali = [
-      { nome: 'Eileen Elisabeth', cognome: 'King', imei: '868298061208378', piano: 'AVANZATO', careGiver: 'Elena Saglia', parentela: 'figlia', telefono: '+393475951175', email: '', servizio: 'eCura PRO' },
+      { nome: 'Eileen Elisabeth', cognome: 'King', imei: '868298061208378', piano: 'AVANZATO', careGiver: 'Elena Saglia', parentela: 'figlia', telefono: '+393475951175', email: '', servizio: 'eCura PREMIUM' },
       { nome: 'Giuseppina', cognome: 'Cozzi', imei: '868298061207735', piano: 'BASE', careGiver: 'Elisabetta Cattini', parentela: 'operatore', telefono: '+393313809634', email: '', servizio: 'eCura PRO' },
       { nome: 'Maria', cognome: 'Capone', imei: '868298061173234', piano: 'BASE', careGiver: 'Giorgio Riela', parentela: 'figlio', telefono: '+393478740585', email: 'marycap34@gmail.com', servizio: 'eCura PRO' },
       { nome: 'Gianni Paolo', cognome: 'Pizzutto', imei: '868298060601011', piano: 'BASE', careGiver: 'Simona Pizzutto', parentela: 'figlia', telefono: '+393398444530', email: '', servizio: 'eCura PRO' },
@@ -21158,7 +21158,7 @@ app.post('/api/migrate-schema', async (c) => {
     try {
       const eileenUpdate = await c.env.DB.prepare(`
         UPDATE assistiti 
-        SET piano = 'AVANZATO', servizio = 'eCura PRO'
+        SET piano = 'AVANZATO', servizio = 'eCura PREMIUM'
         WHERE (nome_assistito LIKE '%Eileen%' AND cognome_assistito LIKE '%King%')
            OR (nome_caregiver LIKE '%Elena%' AND cognome_caregiver LIKE '%Saglia%')
       `).run()
@@ -22701,7 +22701,7 @@ app.post('/api/assistiti/force-fix-eileen', async (c) => {
     // Step 5: Aggiorna Eileen
     const updateResult = await c.env.DB.prepare(`
       UPDATE assistiti 
-      SET servizio = 'eCura PRO', piano = 'AVANZATO'
+      SET servizio = 'eCura PREMIUM', piano = 'AVANZATO'
       WHERE id = ?
     `).bind(eileen.id).run()
 
@@ -22726,7 +22726,7 @@ app.post('/api/assistiti/force-fix-eileen', async (c) => {
         servizio: eileenAfter?.servizio,
         piano: eileenAfter?.piano
       },
-      success: eileenAfter?.servizio === 'eCura PRO' && eileenAfter?.piano === 'AVANZATO'
+      success: eileenAfter?.servizio === 'eCura PREMIUM' && eileenAfter?.piano === 'AVANZATO'
     })
 
     return c.json({
