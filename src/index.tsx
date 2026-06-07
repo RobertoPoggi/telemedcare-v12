@@ -20864,7 +20864,13 @@ app.get('/api/assistiti', async (c) => {
         l.canale_acquisizione as canale_acquisizione,
         l.iva_agevolata as iva_agevolata
       FROM assistiti a
-      LEFT JOIN contracts c ON a.lead_id = c.leadId
+      LEFT JOIN contracts c ON c.id = (
+        SELECT id FROM contracts
+        WHERE leadId = a.lead_id
+          AND (is_rinnovo IS NULL OR is_rinnovo = 0)
+        ORDER BY created_at DESC
+        LIMIT 1
+      )
       LEFT JOIN leads l ON a.lead_id = l.id
       ${whereClause}
       ORDER BY a.created_at DESC
@@ -26932,6 +26938,115 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
       })
     }
 
+    // ── Inserisce contratti mancanti King 2026 e Cacace 2026 ─────────────────
+    // leadId noto: LEAD-IRBEMA-00019 (Elena Saglia — caregiver di King e referral Cacace)
+    // IMEI noti (già nel DB assistiti): King=868298061208378, Cacace=864866058470732
+    // Dati contrattuali dai PDF firmati (codici, date, importi — non dati personali)
+    const contrattiFirm = [
+      {
+        codice:    'CTR-KING-AVANZATO-2026',
+        imei:      '868298061208378',
+        leadId:    'LEAD-IRBEMA-00019',
+        piano:     'AVANZATO',
+        servizio:  'eCura PRO',
+        prezzo:    860,
+        mensile:   72,
+        dataInizio:'2026-05-06',
+        dataScad:  '2027-05-05',
+        status:    'SIGNED',
+      },
+      {
+        codice:    'CTR-CACACE-BASE-2026',
+        imei:      '864866058470732',
+        leadId:    'LEAD-IRBEMA-00019',
+        piano:     'AVANZATO',
+        servizio:  'eCura PRO',
+        prezzo:    840,
+        mensile:   70,
+        dataInizio:'2026-05-28',
+        dataScad:  '2027-05-27',
+        status:    'SIGNED',
+      },
+    ]
+
+    // Rileva colonne reali di contracts tramite PRAGMA
+    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const colNames = (cols as any[]).map((r: any) => r.name)
+
+    const insertRisultati: any[] = []
+    for (const ctr of contrattiFirm) {
+      // Contratto già presente? Skip idempotente
+      const existing = await c.env.DB.prepare(
+        `SELECT id FROM contracts WHERE codice_contratto = ?`
+      ).bind(ctr.codice).first()
+      if (existing) { insertRisultati.push({ codice: ctr.codice, esito: 'già presente' }); continue }
+
+      // Legge dati assistito dal DB tramite IMEI
+      const ass = await c.env.DB.prepare(
+        `SELECT nome_assistito, cognome_assistito FROM assistiti WHERE imei = ?`
+      ).bind(ctr.imei).first() as any
+
+      // Legge dati lead dal DB tramite leadId
+      const lead = await c.env.DB.prepare(
+        `SELECT nomeRichiedente, cognomeRichiedente, email, telefono FROM leads WHERE id = ?`
+      ).bind(ctr.leadId).first() as any
+
+      if (!ass || !lead) {
+        insertRisultati.push({ codice: ctr.codice, esito: 'assistito o lead non trovato', ass, lead })
+        continue
+      }
+
+      // Costruisce INSERT dinamicamente sulle colonne reali del DB
+      const has = (col: string) => colNames.includes(col)
+      const insertCols: string[] = ['id']
+      const insertVals: any[]    = [`${ctr.codice}-ID`]
+      const add = (col: string, val: any) => { if (has(col)) { insertCols.push(col); insertVals.push(val) } }
+
+      add('leadId',              ctr.leadId)
+      add('lead_id',             ctr.leadId)
+      add('codice_contratto',    ctr.codice)
+      add('contract_code',       ctr.codice)
+      add('tipo_contratto',      ctr.piano)
+      add('contract_type',       ctr.piano)
+      add('piano',               ctr.piano)
+      add('servizio',            ctr.servizio)
+      add('template_utilizzato', 'contratto_b2c')
+      add('contenuto_html',      '')
+      add('contract_html',       '')
+      add('cliente_nome',        lead.nomeRichiedente)
+      add('nome_cliente',        lead.nomeRichiedente)
+      add('cliente_cognome',     lead.cognomeRichiedente)
+      add('cognome_cliente',     lead.cognomeRichiedente)
+      add('cliente_email',       lead.email || '')
+      add('email_cliente',       lead.email || '')
+      add('cliente_telefono',    lead.telefono || '')
+      add('assistito_nome',      ass.nome_assistito)
+      add('assistito_cognome',   ass.cognome_assistito)
+      add('imei_dispositivo',    ctr.imei)
+      add('status',              ctr.status)
+      add('prezzo_totale',       ctr.prezzo)
+      add('prezzo_base',         ctr.prezzo)
+      add('prezzo_mensile',      ctr.mensile)
+      add('durata_mesi',         12)
+      add('data_invio',          ctr.dataInizio)
+      add('data_scadenza',       ctr.dataScad)
+      add('created_at',          oggi)
+      add('updated_at',          oggi)
+
+      const ph = insertCols.map(() => '?').join(', ')
+      await c.env.DB.prepare(
+        `INSERT INTO contracts (${insertCols.join(', ')}) VALUES (${ph})`
+      ).bind(...insertVals).run()
+
+      insertRisultati.push({
+        codice: ctr.codice,
+        esito: 'inserito',
+        leadId: ctr.leadId,
+        assistito: `${ass.nome_assistito} ${ass.cognome_assistito}`,
+        lead: `${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+      })
+    }
+
     // Verifica finale
     const { results: statoImei } = await c.env.DB.prepare(`
       SELECT id, nome_assistito, cognome_assistito, imei, updated_at
@@ -26941,6 +27056,7 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
     return c.json({
       success: true,
       fix_leads: fixLeadsResult,
+      contratti_inseriti: insertRisultati,
       assistiti: statoImei
     })
   } catch (err: any) {
