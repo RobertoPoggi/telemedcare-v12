@@ -26993,6 +26993,38 @@ app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) =>
     const oggi = new Date().toISOString()
     const risultati: any[] = []
 
+    // Rileva colonne reali della tabella contracts nel DB di produzione
+    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const colNames = (cols as any[]).map((r: any) => r.name)
+    risultati.push({ info: 'colonne contracts', colNames })
+
+    // Nomi colonne adattivi
+    const C = {
+      id:             'id',
+      leadId:         colNames.includes('leadId')             ? 'leadId'             : 'lead_id',
+      codice:         colNames.includes('codice_contratto')   ? 'codice_contratto'   : 'contract_code',
+      tipo:           colNames.includes('tipo_contratto')     ? 'tipo_contratto'     : 'contract_type',
+      piano:          colNames.includes('piano')              ? 'piano'              : null,
+      servizio:       colNames.includes('servizio')           ? 'servizio'           : null,
+      template:       colNames.includes('template_utilizzato')? 'template_utilizzato': null,
+      html:           colNames.includes('contenuto_html')     ? 'contenuto_html'     : colNames.includes('contract_html') ? 'contract_html' : null,
+      cliNome:        colNames.includes('cliente_nome')       ? 'cliente_nome'       : colNames.includes('nome_cliente')       ? 'nome_cliente'       : null,
+      cliCogn:        colNames.includes('cliente_cognome')    ? 'cliente_cognome'    : colNames.includes('cognome_cliente')    ? 'cognome_cliente'    : null,
+      cliEmail:       colNames.includes('cliente_email')      ? 'cliente_email'      : colNames.includes('email_cliente')      ? 'email_cliente'      : null,
+      cliTel:         colNames.includes('cliente_telefono')   ? 'cliente_telefono'   : null,
+      assNome:        colNames.includes('assistito_nome')     ? 'assistito_nome'     : null,
+      assCogn:        colNames.includes('assistito_cognome')  ? 'assistito_cognome'  : null,
+      imei:           colNames.includes('imei_dispositivo')   ? 'imei_dispositivo'   : null,
+      status:         colNames.includes('status')             ? 'status'             : null,
+      prezzo:         colNames.includes('prezzo_totale')      ? 'prezzo_totale'      : colNames.includes('prezzo_base') ? 'prezzo_base' : null,
+      mensile:        colNames.includes('prezzo_mensile')     ? 'prezzo_mensile'     : null,
+      durata:         colNames.includes('durata_mesi')        ? 'durata_mesi'        : null,
+      dataInvio:      colNames.includes('data_invio')         ? 'data_invio'         : null,
+      dataScad:       colNames.includes('data_scadenza')      ? 'data_scadenza'      : null,
+      createdAt:      colNames.includes('created_at')         ? 'created_at'         : null,
+      updatedAt:      colNames.includes('updated_at')         ? 'updated_at'         : null,
+    }
+
     // Dati contrattuali dai PDF firmati (non sono dati personali):
     const contrattiFirm = [
       {
@@ -27061,36 +27093,36 @@ app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) =>
 
       const contractId = `${ctr.codice}-ID`
 
-      await c.env.DB.prepare(`
-        INSERT INTO contracts (
-          id, leadId, codice_contratto, tipo_contratto, piano, servizio,
-          template_utilizzato, contenuto_html,
-          cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-          assistito_nome, assistito_cognome,
-          imei_dispositivo,
-          status, prezzo_totale, prezzo_mensile, durata_mesi,
-          data_invio, data_scadenza,
-          created_at, updated_at
-        ) VALUES (
-          ?, ?, ?, ?, ?, ?,
-          ?, ?,
-          ?, ?, ?, ?,
-          ?, ?,
-          ?,
-          ?, ?, ?, ?,
-          ?, ?,
-          ?, ?
-        )
-      `).bind(
-        contractId, lead.id, ctr.codice, ctr.piano, ctr.piano, ctr.servizio,
-        'contratto_b2c', '',
-        lead.nomeRichiedente, lead.cognomeRichiedente, lead.email || '', lead.telefono || '',
-        ass.nome_assistito, ass.cognome_assistito,
-        ctr.imei,
-        ctr.status, ctr.prezzo_totale, ctr.prezzo_mensile, 12,
-        ctr.data_inizio, ctr.data_scadenza,
-        oggi, oggi
-      ).run()
+      // Costruisce INSERT dinamicamente sulle colonne reali del DB
+      const insertCols: string[] = ['id', C.leadId, C.codice]
+      const insertVals: any[]    = [contractId, lead.id, ctr.codice]
+
+      const add = (col: string | null, val: any) => { if (col) { insertCols.push(col); insertVals.push(val) } }
+      add(C.tipo,     ctr.piano)
+      add(C.piano,    ctr.piano)
+      add(C.servizio, ctr.servizio)
+      add(C.template, 'contratto_b2c')
+      add(C.html,     '')
+      add(C.cliNome,  lead.nomeRichiedente)
+      add(C.cliCogn,  lead.cognomeRichiedente)
+      add(C.cliEmail, lead.email || '')
+      add(C.cliTel,   lead.telefono || '')
+      add(C.assNome,  ass.nome_assistito)
+      add(C.assCogn,  ass.cognome_assistito)
+      add(C.imei,     ctr.imei)
+      add(C.status,   ctr.status)
+      add(C.prezzo,   ctr.prezzo_totale)
+      add(C.mensile,  ctr.prezzo_mensile)
+      add(C.durata,   12)
+      add(C.dataInvio,ctr.data_inizio)
+      add(C.dataScad, ctr.data_scadenza)
+      add(C.createdAt,oggi)
+      add(C.updatedAt,oggi)
+
+      const placeholders = insertCols.map(() => '?').join(', ')
+      await c.env.DB.prepare(
+        `INSERT INTO contracts (${insertCols.join(', ')}) VALUES (${placeholders})`
+      ).bind(...insertVals).run()
 
       risultati.push({
         codice: ctr.codice,
