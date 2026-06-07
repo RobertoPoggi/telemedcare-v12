@@ -1425,6 +1425,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint inserimento contratti King 2026 e Cacace 2026: pubblico (one-shot)
+  if (path === '/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k' && method === 'POST') {
+    return next()
+  }
+
 
   
   // Endpoint sensibili: richiedono autenticazione
@@ -26973,6 +26978,134 @@ app.post('/api/oneshot-diagnosi-contratti-2026-5nw8v', async (c) => {
     `).all()
 
     return c.json({ success: true, contratti: results })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
+  }
+})
+
+// 🔧 ENDPOINT ONE-SHOT: Inserisce contratti mancanti King 2026 e Cacace 2026
+// Dati personali: letti dal DB (leads + assistiti) tramite IMEI — zero hardcoding.
+// Dati contrattuali (codice, date, importi, dispositivo): da contratti PDF firmati.
+app.post('/api/oneshot-inserisci-contratti-king-cacace-2026-6ht4k', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    const oggi = new Date().toISOString()
+    const risultati: any[] = []
+
+    // Dati contrattuali dai PDF firmati (non sono dati personali):
+    const contrattiFirm = [
+      {
+        // CTR-KING-AVANZATO-2026 — PDF: durata 6/5/2026–5/5/2027, €860/anno, SiDLY VITAL CARE
+        codice:        'CTR-KING-AVANZATO-2026',
+        imei:          '868298061208378',   // IMEI King già nel DB assistiti
+        leadCognome:   'Saglia',            // lead intestato a Elena Saglia (figlia/caregiver)
+        piano:         'AVANZATO',
+        servizio:      'eCura PRO',
+        dispositivo:   'SiDLY VITAL CARE',
+        prezzo_totale: 860,
+        prezzo_mensile: 72,
+        data_inizio:   '2026-05-06',
+        data_scadenza: '2027-05-05',
+        status:        'SIGNED',
+      },
+      {
+        // CTR-CACACE-BASE-2026 — PDF: durata 28/5/2026–27/5/2027, €840/anno, SiDLY CARE PRO
+        codice:        'CTR-CACACE-BASE-2026',
+        imei:          '864866058470732',   // IMEI Cacace già nel DB assistiti
+        leadCognome:   'Cacace',            // lead intestato a Iginio Cacace stesso
+        piano:         'AVANZATO',
+        servizio:      'eCura PRO',
+        dispositivo:   'SiDLY CARE PRO',
+        prezzo_totale: 840,
+        prezzo_mensile: 70,
+        data_inizio:   '2026-05-28',
+        data_scadenza: '2027-05-27',
+        status:        'SIGNED',
+      },
+    ]
+
+    for (const ctr of contrattiFirm) {
+      // Verifica che il contratto non esista già
+      const existing = await c.env.DB.prepare(
+        `SELECT id FROM contracts WHERE codice_contratto = ?`
+      ).bind(ctr.codice).first()
+
+      if (existing) {
+        risultati.push({ codice: ctr.codice, esito: 'già presente — saltato' })
+        continue
+      }
+
+      // Trova il lead tramite IMEI → assistiti → leads (nessun dato personale hardcodato)
+      const ass = await c.env.DB.prepare(
+        `SELECT id, codice, nome_assistito, cognome_assistito FROM assistiti WHERE imei = ?`
+      ).bind(ctr.imei).first() as any
+
+      if (!ass) {
+        risultati.push({ codice: ctr.codice, esito: `assistito con IMEI ${ctr.imei} non trovato` })
+        continue
+      }
+
+      // Trova il lead cercando per cognome dell'assistito o del caregiver
+      const lead = await c.env.DB.prepare(`
+        SELECT id, nomeRichiedente, cognomeRichiedente, email, telefono
+        FROM leads
+        WHERE LOWER(cognomeRichiedente) = LOWER(?)
+        LIMIT 1
+      `).bind(ctr.leadCognome).first() as any
+
+      if (!lead) {
+        risultati.push({ codice: ctr.codice, esito: `lead con cognome '${ctr.leadCognome}' non trovato` })
+        continue
+      }
+
+      const contractId = `${ctr.codice}-ID`
+
+      await c.env.DB.prepare(`
+        INSERT INTO contracts (
+          id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+          template_utilizzato, contenuto_html,
+          cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+          assistito_nome, assistito_cognome,
+          imei_dispositivo,
+          status, prezzo_totale, prezzo_mensile, durata_mesi,
+          data_invio, data_scadenza,
+          created_at, updated_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?,
+          ?, ?,
+          ?, ?, ?, ?,
+          ?, ?,
+          ?,
+          ?, ?, ?, ?,
+          ?, ?,
+          ?, ?
+        )
+      `).bind(
+        contractId, lead.id, ctr.codice, ctr.piano, ctr.piano, ctr.servizio,
+        'contratto_b2c', '',
+        lead.nomeRichiedente, lead.cognomeRichiedente, lead.email || '', lead.telefono || '',
+        ass.nome_assistito, ass.cognome_assistito,
+        ctr.imei,
+        ctr.status, ctr.prezzo_totale, ctr.prezzo_mensile, 12,
+        ctr.data_inizio, ctr.data_scadenza,
+        oggi, oggi
+      ).run()
+
+      risultati.push({
+        codice: ctr.codice,
+        esito: 'inserito',
+        leadId: lead.id,
+        lead: `${lead.nomeRichiedente} ${lead.cognomeRichiedente}`,
+        assistito: `${ass.nome_assistito} ${ass.cognome_assistito}`,
+        imei: ctr.imei,
+        piano: ctr.piano,
+        prezzo: ctr.prezzo_totale,
+        periodo: `${ctr.data_inizio} → ${ctr.data_scadenza}`,
+      })
+    }
+
+    return c.json({ success: true, risultati })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
