@@ -26904,55 +26904,65 @@ app.post('/api/oneshot-fix-cognomi-contratti-2026-8p2vx', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
-    // Leggi i contratti CTR-*-2026 creati da init-assistiti con cognomi sbagliati
+    // Step 0: rileva colonne effettive della tabella contracts
+    const { results: cols } = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const colNames = (cols as any[]).map((r: any) => r.name)
+
+    // Determina i nomi delle colonne in base a quanto esiste nel DB reale
+    const colNomeCli   = colNames.includes('cliente_nome')    ? 'cliente_nome'    : 'nome_cliente'
+    const colCognCli   = colNames.includes('cliente_cognome') ? 'cliente_cognome' : 'cognome_cliente'
+    const colNomeInt   = colNames.includes('intestatario_nome')    ? 'intestatario_nome'    : (colNames.includes('nome_intestatario')    ? 'nome_intestatario'    : null)
+    const colCognInt   = colNames.includes('intestatario_cognome') ? 'intestatario_cognome' : (colNames.includes('cognome_intestatario') ? 'cognome_intestatario' : null)
+    const colNomeAss   = colNames.includes('assistito_nome')    ? 'assistito_nome'    : (colNames.includes('nome_assistito')    ? 'nome_assistito'    : null)
+    const colCognAss   = colNames.includes('assistito_cognome') ? 'assistito_cognome' : (colNames.includes('cognome_assistito') ? 'cognome_assistito' : null)
+    const colUpdated   = colNames.includes('updated_at') ? 'updated_at' : null
+    const colCodice    = colNames.includes('codice_contratto') ? 'codice_contratto' : 'contract_code'
+
+    // Step 1: leggi stato attuale
     const { results: prima } = await c.env.DB.prepare(`
-      SELECT id, codice_contratto, cliente_nome, cliente_cognome,
-             intestatario_nome, intestatario_cognome,
-             assistito_nome, assistito_cognome
+      SELECT id, ${colCodice} as codice, ${colNomeCli} as nome_cli, ${colCognCli} as cogn_cli
       FROM contracts
-      WHERE codice_contratto IN (
-        'CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026'
-      )
+      WHERE ${colCodice} IN ('CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026')
     `).all()
 
     const oggi = new Date().toISOString()
-
-    // Mappa: codice_contratto → dati corretti dell'assistito (da tabella assistiti)
     const fix = [
-      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',    cognome: 'Balzarotti' },
-      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',        cognome: 'Pennacchio' },
-      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',       cognome: 'Capone'     },
-      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina',  cognome: 'Cozzi'      },
+      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',   cognome: 'Balzarotti' },
+      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',       cognome: 'Pennacchio' },
+      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',      cognome: 'Capone'     },
+      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina', cognome: 'Cozzi'      },
     ]
 
     const aggiornamenti: any[] = []
     for (const f of fix) {
-      const result = await c.env.DB.prepare(`
-        UPDATE contracts
-        SET cliente_nome        = ?,
-            cliente_cognome     = ?,
-            intestatario_nome   = ?,
-            intestatario_cognome= ?,
-            assistito_nome      = ?,
-            assistito_cognome   = ?,
-            updated_at          = ?
-        WHERE codice_contratto  = ?
-      `).bind(f.nome, f.cognome, f.nome, f.cognome, f.nome, f.cognome, oggi, f.codice).run()
+      // Costruisci SET dinamicamente in base alle colonne presenti
+      const setParts: string[] = [
+        `${colNomeCli} = ?`,
+        `${colCognCli} = ?`,
+      ]
+      const binds: any[] = [f.nome, f.cognome]
+
+      if (colNomeInt) { setParts.push(`${colNomeInt} = ?`); binds.push(f.nome) }
+      if (colCognInt) { setParts.push(`${colCognInt} = ?`); binds.push(f.cognome) }
+      if (colNomeAss) { setParts.push(`${colNomeAss} = ?`); binds.push(f.nome) }
+      if (colCognAss) { setParts.push(`${colCognAss} = ?`); binds.push(f.cognome) }
+      if (colUpdated) { setParts.push(`${colUpdated} = ?`); binds.push(oggi) }
+      binds.push(f.codice)
+
+      const result = await c.env.DB.prepare(
+        `UPDATE contracts SET ${setParts.join(', ')} WHERE ${colCodice} = ?`
+      ).bind(...binds).run()
       aggiornamenti.push({ codice: f.codice, nome: f.nome, cognome: f.cognome, changes: result.meta?.changes })
     }
 
-    // Verifica finale
+    // Step 2: verifica finale
     const { results: dopo } = await c.env.DB.prepare(`
-      SELECT codice_contratto, cliente_nome, cliente_cognome,
-             intestatario_nome, intestatario_cognome,
-             assistito_nome, assistito_cognome
+      SELECT id, ${colCodice} as codice, ${colNomeCli} as nome_cli, ${colCognCli} as cogn_cli
       FROM contracts
-      WHERE codice_contratto IN (
-        'CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026'
-      )
+      WHERE ${colCodice} IN ('CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026')
     `).all()
 
-    return c.json({ success: true, prima: prima, aggiornamenti, dopo })
+    return c.json({ success: true, colonne_rilevate: { colNomeCli, colCognCli, colNomeInt, colCognInt, colNomeAss, colCognAss }, prima, aggiornamenti, dopo })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
