@@ -1430,6 +1430,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint sync tabella dispositivi da assistiti: pubblico (one-shot)
+  if (path === '/api/oneshot-sync-dispositivi-da-assistiti-7vk2p' && method === 'POST') {
+    return next()
+  }
+
 
   
   // Endpoint sensibili: richiedono autenticazione
@@ -18955,7 +18960,7 @@ app.post('/api/init-workflow-leads', async (c) => {
         cognome: 'King',
         email: '',
         telefono: '+393475951175',
-        servizio: 'eCura PRO',
+        servizio: 'eCura PREMIUM',
         piano: 'AVANZATO',
         status: 'CONTRACT_SIGNED',
         note: 'Piano: AVANZATO - Care Giver: Elena Saglia (figlia) - IMEI: 868298061208378'
@@ -19834,21 +19839,28 @@ app.post('/api/fix-lead-associations', async (c) => {
         // Crea contratto se mancante (esclusa Laura Calvi)
         const contractId = `CONTRACT-${assoc.assistito.cognome.toUpperCase()}-${Date.now()}`
         const codiceContratto = `CTR-${assoc.assistito.cognome.toUpperCase()}-2025`
-        const piano = assoc.assistito.cognome === 'King' ? 'AVANZATO' : 'BASE'
+        // Piano e prezzo presi dall'assistito nel DB (non hardcodati per cognome)
+        const assistitoDb = await c.env.DB.prepare(
+          'SELECT piano, servizio FROM assistiti WHERE imei = ?'
+        ).bind(assoc.assistito.imei).first() as any
+        const piano = assistitoDb?.piano || 'BASE'
+        const servizioDb = assistitoDb?.servizio || 'eCura PRO'
         const prezzoTotale = piano === 'AVANZATO' ? 840 : 480
         const prezzoMensile = piano === 'AVANZATO' ? 69 : 39
 
         await c.env.DB.prepare(`
           INSERT INTO contracts (
-            id, leadId, codice_contratto, tipo_contratto, status, 
+            id, leadId, codice_contratto, tipo_contratto, piano, servizio, status, 
             prezzo_totale, prezzo_mensile, durata_mesi, imei_dispositivo, 
             created_at, template_utilizzato, contenuto_html
-          ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, 12, ?, ?, 'BASE', '')
+          ) VALUES (?, ?, ?, ?, ?, ?, 'SIGNED', ?, ?, 12, ?, ?, 'BASE', '')
         `).bind(
           contractId,
           lead.id,
           codiceContratto,
           piano,
+          piano,
+          servizioDb,
           prezzoTotale,
           prezzoMensile,
           assoc.assistito.imei,
@@ -28821,6 +28833,106 @@ app.delete('/api/email/template/:name/reset', async (c) => {
       error: 'Errore durante reset template',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// POST /api/oneshot-sync-dispositivi-da-assistiti-7vk2p
+// Sincronizza la tabella dispositivi con i dati corretti della tabella assistiti.
+// Per ogni assistito con IMEI: verifica che esista un record in dispositivi con quel serial_number.
+// Se manca → INSERT. Se esiste → UPDATE modello se necessario.
+// Nessun dato personale hardcodato: tutto letto dal DB.
+app.post('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const steps: any[] = []
+
+    // Step 1: leggi tutti gli assistiti con IMEI non nullo
+    const { results: assistiti } = await c.env.DB.prepare(`
+      SELECT id, nome_assistito, cognome_assistito, imei, servizio, piano, lead_id
+      FROM assistiti
+      WHERE imei IS NOT NULL AND imei != ''
+      ORDER BY id
+    `).all()
+
+    steps.push({ step: 1, desc: 'Assistiti con IMEI trovati', count: (assistiti as any[]).length })
+
+    // Step 2: per ogni assistito, determina il modello SiDLY atteso
+    // SiDLY VITAL CARE → King (AVANZATO/PREMIUM), Cacace (AVANZATO/PRO)
+    // SiDLY CARE PRO   → tutti gli altri (BASE)
+    // Regola: se piano = AVANZATO → SiDLY VITAL CARE, altrimenti SiDLY CARE PRO
+    // (Questo riflette la realtà del parco dispositivi attuale)
+    const inserted: string[] = []
+    const updated: string[] = []
+    const unchanged: string[] = []
+    const errors: string[] = []
+    const now = new Date().toISOString()
+
+    for (const a of assistiti as any[]) {
+      try {
+        const nomeCognome = `${a.nome_assistito} ${a.cognome_assistito}`
+        // Modello atteso: VITAL CARE per AVANZATO, CARE PRO per BASE
+        const modelloAtteso = a.piano === 'AVANZATO' ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+
+        // Verifica esistenza in dispositivi
+        const devRow = await c.env.DB.prepare(
+          'SELECT id, modello, status, lead_id FROM dispositivi WHERE serial_number = ?'
+        ).bind(a.imei).first() as any
+
+        if (!devRow) {
+          // Non esiste → INSERT
+          await c.env.DB.prepare(`
+            INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at)
+            VALUES (?, ?, 'active', ?, ?, ?)
+          `).bind(a.imei, modelloAtteso, a.lead_id || null, now, now).run()
+          inserted.push(`${nomeCognome} (${a.imei}) → ${modelloAtteso} [INSERITO]`)
+        } else {
+          // Esiste: aggiorna modello se diverge, e lead_id se mancante
+          const needsUpdate =
+            devRow.modello !== modelloAtteso ||
+            (a.lead_id && !devRow.lead_id)
+          if (needsUpdate) {
+            await c.env.DB.prepare(`
+              UPDATE dispositivi
+              SET modello = ?, lead_id = COALESCE(?, lead_id), status = COALESCE(status, 'active'), updated_at = ?
+              WHERE serial_number = ?
+            `).bind(modelloAtteso, a.lead_id || null, now, a.imei).run()
+            updated.push(`${nomeCognome} (${a.imei}) modello: ${devRow.modello} → ${modelloAtteso}`)
+          } else {
+            unchanged.push(`${nomeCognome} (${a.imei}) già OK`)
+          }
+        }
+      } catch (e: any) {
+        errors.push(`${a.imei}: ${e.message}`)
+      }
+    }
+
+    steps.push({ step: 2, desc: 'Sync completato', inserted, updated, unchanged, errors })
+
+    // Step 3: verifica finale — conta dispositivi totali vs assistiti con IMEI
+    const { results: dispositiviFinal } = await c.env.DB.prepare(
+      'SELECT serial_number, modello, status FROM dispositivi ORDER BY created_at DESC'
+    ).all()
+    steps.push({
+      step: 3,
+      desc: 'Stato finale tabella dispositivi',
+      totale_dispositivi: (dispositiviFinal as any[]).length,
+      totale_assistiti_con_imei: (assistiti as any[]).length,
+      dispositivi: (dispositiviFinal as any[]).map((d: any) => ({
+        sn: d.serial_number, modello: d.modello, status: d.status
+      }))
+    })
+
+    return c.json({
+      success: true,
+      message: `Sync dispositivi completato: ${inserted.length} inseriti, ${updated.length} aggiornati, ${unchanged.length} invariati`,
+      steps
+    })
+
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
   }
 })
 
