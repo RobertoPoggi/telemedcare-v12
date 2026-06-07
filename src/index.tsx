@@ -28875,8 +28875,12 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
     for (const a of assistiti as any[]) {
       try {
         const nomeCognome = `${a.nome_assistito} ${a.cognome_assistito}`
-        // Modello atteso: VITAL CARE per AVANZATO, CARE PRO per BASE
-        const modelloAtteso = a.piano === 'AVANZATO' ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+        // Modello atteso basato sul SERVIZIO (non sul piano):
+        // eCura PREMIUM → SiDLY VITAL CARE
+        // eCura PRO / altro → SiDLY CARE PRO
+        const modelloAtteso = (a.servizio || '').includes('PREMIUM')
+          ? 'SiDLY VITAL CARE'
+          : 'SiDLY CARE PRO'
 
         // Verifica esistenza in dispositivi
         const devRow = await c.env.DB.prepare(
@@ -28884,7 +28888,7 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
         ).bind(a.imei).first() as any
 
         if (!devRow) {
-          // Non esiste → INSERT
+          // Non esiste → INSERT (no updated_at: colonna non presente nella tabella)
           await c.env.DB.prepare(`
             INSERT INTO dispositivi (serial_number, modello, status, lead_id, assigned_at, created_at)
             VALUES (?, ?, 'active', ?, ?, ?)
@@ -28896,11 +28900,12 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
             devRow.modello !== modelloAtteso ||
             (a.lead_id && !devRow.lead_id)
           if (needsUpdate) {
+            // No updated_at: colonna non presente nella tabella dispositivi
             await c.env.DB.prepare(`
               UPDATE dispositivi
-              SET modello = ?, lead_id = COALESCE(?, lead_id), status = COALESCE(status, 'active'), updated_at = ?
+              SET modello = ?, lead_id = COALESCE(?, lead_id), status = COALESCE(status, 'active')
               WHERE serial_number = ?
-            `).bind(modelloAtteso, a.lead_id || null, now, a.imei).run()
+            `).bind(modelloAtteso, a.lead_id || null, a.imei).run()
             updated.push(`${nomeCognome} (${a.imei}) modello: ${devRow.modello} → ${modelloAtteso}`)
           } else {
             unchanged.push(`${nomeCognome} (${a.imei}) già OK`)
