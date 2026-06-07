@@ -1420,6 +1420,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint fix cognomi contratti CTR-*-2026: pubblico (operazione manuale one-shot)
+  if (path === '/api/oneshot-fix-cognomi-contratti-2026-8p2vx' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
@@ -26889,6 +26894,65 @@ app.post('/api/oneshot-fix-imei-king-pennacchio-4r7wz', async (c) => {
     `).all()
 
     return c.json({ success: true, aggiornamenti, stato_finale: stato })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
+  }
+})
+
+// 🔧 ENDPOINT ONE-SHOT: Diagnostica + fix cognomi cliente nei contratti CTR-*-2026
+app.post('/api/oneshot-fix-cognomi-contratti-2026-8p2vx', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    // Leggi i contratti CTR-*-2026 creati da init-assistiti con cognomi sbagliati
+    const { results: prima } = await c.env.DB.prepare(`
+      SELECT id, codice_contratto, cliente_nome, cliente_cognome,
+             intestatario_nome, intestatario_cognome,
+             assistito_nome, assistito_cognome
+      FROM contracts
+      WHERE codice_contratto IN (
+        'CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026'
+      )
+    `).all()
+
+    const oggi = new Date().toISOString()
+
+    // Mappa: codice_contratto → dati corretti dell'assistito (da tabella assistiti)
+    const fix = [
+      { codice: 'CTR-BALZAROTTI-2026', nome: 'Giuliana',    cognome: 'Balzarotti' },
+      { codice: 'CTR-PENNACCHIO-2026', nome: 'Rita',        cognome: 'Pennacchio' },
+      { codice: 'CTR-CAPONE-2026',     nome: 'Maria',       cognome: 'Capone'     },
+      { codice: 'CTR-COZZI-2026',      nome: 'Giuseppina',  cognome: 'Cozzi'      },
+    ]
+
+    const aggiornamenti: any[] = []
+    for (const f of fix) {
+      const result = await c.env.DB.prepare(`
+        UPDATE contracts
+        SET cliente_nome        = ?,
+            cliente_cognome     = ?,
+            intestatario_nome   = ?,
+            intestatario_cognome= ?,
+            assistito_nome      = ?,
+            assistito_cognome   = ?,
+            updated_at          = ?
+        WHERE codice_contratto  = ?
+      `).bind(f.nome, f.cognome, f.nome, f.cognome, f.nome, f.cognome, oggi, f.codice).run()
+      aggiornamenti.push({ codice: f.codice, nome: f.nome, cognome: f.cognome, changes: result.meta?.changes })
+    }
+
+    // Verifica finale
+    const { results: dopo } = await c.env.DB.prepare(`
+      SELECT codice_contratto, cliente_nome, cliente_cognome,
+             intestatario_nome, intestatario_cognome,
+             assistito_nome, assistito_cognome
+      FROM contracts
+      WHERE codice_contratto IN (
+        'CTR-BALZAROTTI-2026','CTR-PENNACCHIO-2026','CTR-CAPONE-2026','CTR-COZZI-2026'
+      )
+    `).all()
+
+    return c.json({ success: true, prima: prima, aggiornamenti, dopo })
   } catch (err: any) {
     return c.json({ success: false, error: err.message }, 500)
   }
