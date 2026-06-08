@@ -209,6 +209,15 @@ function normalizeCanale(raw: string): string | null {
   return raw || null
 }
 
+/** Normalizza numero di telefono: rimuove spazi, trattini, parentesi.
+ *  Gestisce prefisso italiano: 0039 → +39, 39XXXXXXXX → +39XXXXXXXX */
+function normalizePhone(raw: string): string {
+  let p = raw.replace(/[\s\-().]/g, '')
+  if (p.startsWith('0039')) p = '+39' + p.slice(4)
+  else if (p.startsWith('39') && p.length >= 11 && !p.startsWith('+')) p = '+' + p
+  return p
+}
+
 function normalizeConsent(raw: string): boolean {
   const v = raw.toLowerCase().trim()
   return v === 'true' || v === '1' || v === 'si' || v === 'sì' || v === 'yes' || v === 'ok' || v === 'accetto'
@@ -442,15 +451,53 @@ export async function executeGSheetImport(
     // hs_object_source_detail_1 derivato dal canale
     const hsDetail = canale ? `Form eCura_ ${canale}` : 'Form eCura'
 
-    try {
-      // ── UPSERT: cerca per email o hubspot_id ──────────
-      const existingQuery = hubspotId
-        ? `SELECT id, fonte FROM leads WHERE email = ? OR external_source_id = ? LIMIT 1`
-        : `SELECT id, fonte FROM leads WHERE email = ? LIMIT 1`
+    // Telefono normalizzato (per fallback deduplicazione)
+    const telefonoNorm = normalizePhone(telefono)
 
-      const existing = hubspotId
-        ? await db.prepare(existingQuery).bind(emailEffettiva, hubspotId).first()
-        : await db.prepare(existingQuery).bind(emailEffettiva).first()
+    try {
+      // ── UPSERT 3 livelli ──────────────────────────────
+      //
+      // Livello 1: email esatta (o hubspotId)
+      // Livello 2: telefono normalizzato + cognome (case-insensitive)
+      // Livello 3: nome + cognome esatti (case-insensitive)
+      // → nessun match: INSERT nuovo lead
+
+      let existing: Record<string, unknown> | null = null
+      let matchReason = ''
+
+      // — Livello 1: email / hubspotId —
+      if (!existing) {
+        const q = hubspotId
+          ? `SELECT id, fonte FROM leads WHERE email = ? OR external_source_id = ? LIMIT 1`
+          : `SELECT id, fonte FROM leads WHERE email = ? LIMIT 1`
+        existing = hubspotId
+          ? await db.prepare(q).bind(emailEffettiva, hubspotId).first() as any
+          : await db.prepare(q).bind(emailEffettiva).first() as any
+        if (existing) matchReason = 'email'
+      }
+
+      // — Livello 2: telefono normalizzato + cognome —
+      if (!existing && telefonoNorm && cognome) {
+        // Cerca normalizzando il telefono nel DB: rimuove spazi/trattini a runtime
+        existing = await db.prepare(`
+          SELECT id, fonte FROM leads
+          WHERE REPLACE(REPLACE(REPLACE(REPLACE(telefono,' ',''),'-',''),'(',''),')','') = ?
+            AND LOWER(TRIM(cognomeRichiedente)) = LOWER(TRIM(?))
+          LIMIT 1
+        `).bind(telefonoNorm, cognome).first() as any
+        if (existing) matchReason = 'telefono+cognome'
+      }
+
+      // — Livello 3: nome + cognome (entrambi presenti e non generici) —
+      if (!existing && nome && cognome && nome !== 'N/A') {
+        existing = await db.prepare(`
+          SELECT id, fonte FROM leads
+          WHERE LOWER(TRIM(nomeRichiedente))  = LOWER(TRIM(?))
+            AND LOWER(TRIM(cognomeRichiedente)) = LOWER(TRIM(?))
+          LIMIT 1
+        `).bind(nome, cognome).first() as any
+        if (existing) matchReason = 'nome+cognome'
+      }
 
       if (existing) {
         // Protezione lead di test
@@ -460,7 +507,7 @@ export async function executeGSheetImport(
         }
 
         if (!dryRun) {
-          // Aggiorna solo campi NULL o vuoti
+          // Aggiorna solo campi NULL o vuoti (non sovrascrive mai il DB)
           await db.prepare(`
             UPDATE leads SET
               nomeRichiedente  = CASE WHEN nomeRichiedente  IS NULL OR nomeRichiedente  = '' THEN ? ELSE nomeRichiedente  END,
@@ -492,7 +539,7 @@ export async function executeGSheetImport(
         }
 
         result.updated++
-        console.log(`🔄 [GSHEET-IMPORT] Updated: ${(existing as any).id} (${emailEffettiva})`)
+        console.log(`🔄 [GSHEET-IMPORT] Updated [${matchReason}]: ${(existing as any).id} (${emailEffettiva})`)
         continue
       }
 
