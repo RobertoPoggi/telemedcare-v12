@@ -187,8 +187,8 @@ function normalizeServizio(raw: string): string {
   const v = raw.toUpperCase().trim()
   if (v.includes('PRO') && v.includes('FAMILY')) return 'eCura Family PRO'
   if (v.includes('FAMILY')) return 'eCura Family'
+  if (v.includes('PREMIUM')) return 'eCura PREMIUM'  // PREMIUM prima di PRO
   if (v.includes('PRO')) return 'eCura PRO'
-  if (v.includes('PREMIUM')) return 'eCura PRO'
   if (v.includes('CARE')) return 'eCura'
   return raw || 'eCura'
 }
@@ -362,24 +362,33 @@ export async function executeGSheetImport(
   const get = (row: string[], key: string): string =>
     colIndex[key] !== undefined ? (row[colIndex[key]] || '').trim() : ''
 
+  // Fill-down per la colonna DATA/timestamp:
+  // se una riga ha la data vuota, usa l'ultima data valorizzata
+  // (es. 23/5/2026 vale per tutti i record successivi fino al cambio data)
+  let lastValidDate: string = ''
+
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i]
 
-    // Skip righe vuote
+    // Skip righe completamente vuote
     if (row.every(c => !c.trim())) continue
 
     const email = get(row, 'email').toLowerCase().replace(/\s+/g, '')
     const nome  = get(row, 'nome')
     const cognome = get(row, 'cognome')
 
-    // Email obbligatoria (come per HubSpot)
-    if (!email || !email.includes('@')) {
+    // Email o telefono: il foglio eCura può avere lead solo telefonici
+    const telefono = get(row, 'telefono')
+    if ((!email || !email.includes('@')) && !telefono) {
       result.skipped++
-      console.log(`⏭️  [GSHEET-IMPORT] Riga ${i + 2}: email mancante o invalida ("${email}") — skip`)
+      console.log(`⏭️  [GSHEET-IMPORT] Riga ${i + 2}: email e telefono mancanti — skip`)
       continue
     }
+    // Genera email placeholder per lead senza email (necessaria per deduplicazione DB)
+    const emailEffettiva = (email && email.includes('@'))
+      ? email
+      : `noemail-${telefono.replace(/\D/g, '')}-gsheet@placeholder.ecura.it`
 
-    const telefono    = get(row, 'telefono')
     const nomeAss     = get(row, 'nomeAssistito')
     const cognomeAss  = get(row, 'cognomeAssistito')
     const etaRaw      = get(row, 'etaAssistito')
@@ -403,17 +412,31 @@ export async function executeGSheetImport(
     const consensoMkt = marketingRaw? normalizeConsent(marketingRaw) : false
     const consensoTerze= terzeRaw   ? normalizeConsent(terzeRaw)     : false
 
-    // Timestamp creazione: usa il campo del foglio se presente, altrimenti ora attuale
+    // Timestamp creazione con fill-down:
+    // se la data è valorizzata → aggiorna lastValidDate e usala
+    // se è vuota → usa lastValidDate (ultima data valorizzata sopra)
+    // se non c'è mai stata una data → usa ora attuale
     let createdAt: string
     if (tsRaw) {
-      try {
-        createdAt = new Date(tsRaw).toISOString()
-        if (createdAt === 'Invalid Date') throw new Error()
-      } catch {
-        createdAt = new Date().toISOString()
+      // Supporta formati italiani: DD/MM/YYYY e DD/MM/YY
+      let parsedDate: Date | null = null
+      const itMatch = tsRaw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/)
+      if (itMatch) {
+        const [, d, m, y] = itMatch
+        const year = y.length === 2 ? 2000 + parseInt(y) : parseInt(y)
+        parsedDate = new Date(year, parseInt(m) - 1, parseInt(d))
+      } else {
+        parsedDate = new Date(tsRaw)
+      }
+      if (parsedDate && !isNaN(parsedDate.getTime())) {
+        createdAt = parsedDate.toISOString()
+        lastValidDate = createdAt  // aggiorna fill-down
+      } else {
+        createdAt = lastValidDate || new Date().toISOString()
       }
     } else {
-      createdAt = new Date().toISOString()
+      // Data vuota: fill-down dall'ultima data valorizzata
+      createdAt = lastValidDate || new Date().toISOString()
     }
 
     // hs_object_source_detail_1 derivato dal canale
@@ -426,8 +449,8 @@ export async function executeGSheetImport(
         : `SELECT id, fonte FROM leads WHERE email = ? LIMIT 1`
 
       const existing = hubspotId
-        ? await db.prepare(existingQuery).bind(email, hubspotId).first()
-        : await db.prepare(existingQuery).bind(email).first()
+        ? await db.prepare(existingQuery).bind(emailEffettiva, hubspotId).first()
+        : await db.prepare(existingQuery).bind(emailEffettiva).first()
 
       if (existing) {
         // Protezione lead di test
@@ -469,14 +492,14 @@ export async function executeGSheetImport(
         }
 
         result.updated++
-        console.log(`🔄 [GSHEET-IMPORT] Updated: ${(existing as any).id} (${email})`)
+        console.log(`🔄 [GSHEET-IMPORT] Updated: ${(existing as any).id} (${emailEffettiva})`)
         continue
       }
 
       // ── INSERT nuovo lead ─────────────────────────────
       if (dryRun) {
         result.imported++
-        console.log(`🔍 [GSHEET-IMPORT DRY-RUN] Riga ${i + 2}: nuovo lead ${email}`)
+        console.log(`🔍 [GSHEET-IMPORT DRY-RUN] Riga ${i + 2}: nuovo lead ${emailEffettiva}`)
         continue
       }
 
@@ -498,7 +521,7 @@ export async function executeGSheetImport(
         leadId,
         nome || 'N/A',
         cognome || '',
-        email,
+        emailEffettiva,
         telefono || '',
         nomeAss || null,
         cognomeAss || null,
@@ -525,11 +548,11 @@ export async function executeGSheetImport(
       ).run()
 
       result.imported++
-      console.log(`✅ [GSHEET-IMPORT] INSERT: ${leadId} (${email})`)
+      console.log(`✅ [GSHEET-IMPORT] INSERT: ${leadId} (${emailEffettiva})`)
 
     } catch (err: any) {
       result.errors++
-      const msg = `Riga ${i + 2} (${email}): ${err.message}`
+      const msg = `Riga ${i + 2} (${emailEffettiva}): ${err.message}`
       result.errorDetails.push(msg)
       console.error(`❌ [GSHEET-IMPORT] ${msg}`)
     }
