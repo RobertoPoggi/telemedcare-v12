@@ -2870,7 +2870,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/request-completion?sendEmail=true\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -2895,6 +2895,13 @@ export const leads_dashboard = `<!DOCTYPE html>
         // IVA AGEVOLATA TOGGLE
         // ============================================
         
+        // showToast fallback per dashboard-templates.ts (usa alert se non disponibile)
+        function showToast(msg, typeOrIsError) {
+            // Compatibilità: typeOrIsError può essere stringa ('success','error') o booleano
+            const isErr = typeOrIsError === true || typeOrIsError === 'error';
+            alert((isErr ? '❌ ' : '✅ ') + msg);
+        }
+
         async function toggleIvaAgevolata(leadId, attiva) {
             const label = attiva ? 'IVA agevolata 4% (Legge 104)' : 'IVA standard 22%';
             if (!confirm(attiva

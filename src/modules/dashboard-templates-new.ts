@@ -4427,7 +4427,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/request-completion?sendEmail=true\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -4460,7 +4460,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-sign\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();

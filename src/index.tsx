@@ -49,6 +49,7 @@ import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, adm
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
+import { calculatePrice } from './modules/pricing-calculator'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -28236,9 +28237,11 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     const servizio = lead.servizio || 'eCura PRO'
     const piano = lead.piano || 'BASE'
     
-    // Calcola prezzi
-    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
-    const { calculatePrice } = await import('./modules/pricing-calculator')
+    // Calcola prezzi — normalizza servizioType: 'eCura FAMILY PRO' → 'FAMILY', 'eCura PREMIUM' → 'PREMIUM', ecc.
+    const rawType = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
+    const servizioType = rawType.includes('PREMIUM') ? 'PREMIUM'
+      : rawType.includes('FAMILY') ? 'FAMILY'
+      : 'PRO'
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
     // Genera HTML contratto (semplificato)
@@ -28251,16 +28254,16 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       <p><em>Firma manuale apposta dallo staff TeleMedCare</em></p>
     `
     
-    // Salva contratto nel DB
+    // Salva contratto nel DB — colonne reali della tabella contracts
     await c.env.DB.prepare(`
       INSERT INTO contracts (
-        id, leadId, codice_contratto, 
-        servizio, piano, 
-        prezzo_base, prezzo_totale,
-        contenuto_html,
+        id, lead_id, contract_code,
+        servizio, piano,
+        prezzo_base, prezzo_iva_inclusa,
+        contract_html,
         status, signature_data, signature_method, signature_timestamp, signed_at,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       contractId,
       leadId,
@@ -28273,7 +28276,6 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       'SIGNED',
       'Firma Manuale Staff TeleMedCare',
       'manual',
-      new Date().toISOString(),
       new Date().toISOString(),
       new Date().toISOString(),
       new Date().toISOString()
@@ -28311,45 +28313,35 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }
       
-      // Salva proforma nel DB (schema corretto)
+      // Salva proforma nel DB — colonne reali della tabella proforma
       await c.env.DB.prepare(`
         INSERT INTO proforma (
           id, contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status, email_sent, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         proformaId,
         contractId || '',
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
-        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         lead.nomeRichiedente || '',
         lead.cognomeRichiedente || '',
         lead.email || '',
         lead.telefono || '',
-        lead.indirizzoRichiedente || '',
-        lead.cittaRichiedente || '',
-        lead.capRichiedente || '',
-        lead.provinciaRichiedente || '',
-        lead.cfRichiedente || '',
         piano,
         (pricing.setupTotale / 12).toFixed(2),
         12,
         pricing.setupTotale,
-        'SENT',
-        false,
-        new Date().toISOString(),
-        new Date().toISOString()
+        'SENT'
       ).run()
       
       // Invia email proforma
-      const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
-      await inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
+      await WorkflowEmailManager.inviaEmailProforma(lead, proformaData, c.env, c.env.DB)
       
       console.log(`✅ [MANUAL-SIGN→PROFORMA] Proforma ${numeroProforma} inviata`)
     } catch (proformaError) {
