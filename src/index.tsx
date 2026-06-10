@@ -28499,34 +28499,25 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
           id, contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status, email_sent, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         proformaId,
         'MANUAL', // contract_id placeholder
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
-        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         lead.nomeRichiedente || '',
         lead.cognomeRichiedente || '',
         lead.email || '',
         lead.telefono || '',
-        lead.indirizzoRichiedente || '',
-        lead.cittaRichiedente || '',
-        lead.capRichiedente || '',
-        lead.provinciaRichiedente || '',
-        lead.cfRichiedente || '',
-        servizio, // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM") - NON il piano!
-        (pricing.setupBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
-        12, // durata_mesi
-        pricing.setupBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA
-        'DRAFT',
-        false,
-        new Date().toISOString(),
-        new Date().toISOString()
+        servizio,
+        (pricing.setupBase / 12).toFixed(2),
+        12,
+        pricing.setupBase,
+        'DRAFT'
       ).run()
       
       proformaIdGenerated = proformaId
@@ -28610,8 +28601,8 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
     ).bind(leadId).first() as any
     
     if (proforma) {
-      await c.env.DB.prepare('UPDATE proforma SET status = ?, updated_at = ? WHERE id = ?')
-        .bind('PAID', new Date().toISOString(), proforma.id).run()
+      await c.env.DB.prepare('UPDATE proforma SET status = ? WHERE id = ?')
+        .bind('PAID', proforma.id).run()
       console.log(`✅ [MANUAL-PAYMENT] Proforma ${proforma.numero_proforma} marcata come pagata`)
     }
     

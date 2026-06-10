@@ -4484,7 +4484,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-proforma\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -4508,7 +4508,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -4532,7 +4532,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-configuration\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();

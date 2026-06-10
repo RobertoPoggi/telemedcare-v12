@@ -6692,7 +6692,7 @@ ${370+t.length}
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-proforma\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -6716,7 +6716,7 @@ ${370+t.length}
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -6740,7 +6740,7 @@ ${370+t.length}
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-configuration\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
                 });
                 
                 const result = await response.json();
@@ -19145,11 +19145,10 @@ startxref
           id, contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status, email_sent, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(b,"MANUAL",o,m,new Date().toISOString().split("T")[0],new Date(Date.now()+4320*60*1e3).toISOString().split("T")[0],a.nomeRichiedente||"",a.cognomeRichiedente||"",a.email||"",a.telefono||"",a.indirizzoRichiedente||"",a.cittaRichiedente||"",a.capRichiedente||"",a.provinciaRichiedente||"",a.cfRichiedente||"",s,(c.setupBase/12).toFixed(2),12,c.setupBase,"DRAFT",!1,new Date().toISOString(),new Date().toISOString()).run();v=b,h.proformaId=b,console.log(`✅ [SEND-PROFORMA] Proforma ${m} creata con ID ${b}`)}const{inviaEmailProforma:T}=await Promise.resolve().then(()=>yo);let x=!1,I="";try{const b=await T(a,h,e.env,e.env.DB);b.success?(x=!0,await e.env.DB.prepare("UPDATE leads SET status = ? WHERE id = ?").bind("PROFORMA_SENT",o).run(),console.log(`✅ [SEND-PROFORMA] Proforma ${m} inviata`)):(I=b.errors.join(", "),console.warn(`⚠️ [SEND-PROFORMA] Email fallita: ${I}`))}catch(b){I=b instanceof Error?b.message:String(b),console.error("❌ [SEND-PROFORMA] Errore invio email:",b)}return e.json({success:!0,message:x?`Proforma ${m} inviata con successo`:`Proforma ${m} creata, ma email non inviata: ${I}`,proformaId:v,numeroProforma:m,importo:c.setupTotale.toFixed(2),servizio:s,piano:r,emailSent:x,emailError:x?void 0:I})}catch(a){return console.error("❌ [SEND-PROFORMA] Errore:",a),e.json({success:!1,error:"Errore durante invio proforma",details:a instanceof Error?a.message:String(a)},500)}});A.post("/api/leads/:id/manual-payment",async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non configurato"},500);const a=await e.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(o).first();if(!a)return e.json({success:!1,error:"Lead non trovato"},404);console.log(`✅ [MANUAL-PAYMENT] Conferma pagamento manuale per lead ${o}`);const i=await e.env.DB.prepare("SELECT * FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1").bind(o).first();i&&(await e.env.DB.prepare("UPDATE proforma SET status = ?, updated_at = ? WHERE id = ?").bind("PAID",new Date().toISOString(),i.id).run(),console.log(`✅ [MANUAL-PAYMENT] Proforma ${i.numero_proforma} marcata come pagata`));const s=`CLI-${Date.now()}`;await e.env.DB.prepare(`
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(b,"MANUAL",o,m,new Date().toISOString().split("T")[0],new Date(Date.now()+4320*60*1e3).toISOString().split("T")[0],a.nomeRichiedente||"",a.cognomeRichiedente||"",a.email||"",a.telefono||"",s,(c.setupBase/12).toFixed(2),12,c.setupBase,"DRAFT").run();v=b,h.proformaId=b,console.log(`✅ [SEND-PROFORMA] Proforma ${m} creata con ID ${b}`)}const{inviaEmailProforma:T}=await Promise.resolve().then(()=>yo);let x=!1,I="";try{const b=await T(a,h,e.env,e.env.DB);b.success?(x=!0,await e.env.DB.prepare("UPDATE leads SET status = ? WHERE id = ?").bind("PROFORMA_SENT",o).run(),console.log(`✅ [SEND-PROFORMA] Proforma ${m} inviata`)):(I=b.errors.join(", "),console.warn(`⚠️ [SEND-PROFORMA] Email fallita: ${I}`))}catch(b){I=b instanceof Error?b.message:String(b),console.error("❌ [SEND-PROFORMA] Errore invio email:",b)}return e.json({success:!0,message:x?`Proforma ${m} inviata con successo`:`Proforma ${m} creata, ma email non inviata: ${I}`,proformaId:v,numeroProforma:m,importo:c.setupTotale.toFixed(2),servizio:s,piano:r,emailSent:x,emailError:x?void 0:I})}catch(a){return console.error("❌ [SEND-PROFORMA] Errore:",a),e.json({success:!1,error:"Errore durante invio proforma",details:a instanceof Error?a.message:String(a)},500)}});A.post("/api/leads/:id/manual-payment",async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non configurato"},500);const a=await e.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(o).first();if(!a)return e.json({success:!1,error:"Lead non trovato"},404);console.log(`✅ [MANUAL-PAYMENT] Conferma pagamento manuale per lead ${o}`);const i=await e.env.DB.prepare("SELECT * FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1").bind(o).first();i&&(await e.env.DB.prepare("UPDATE proforma SET status = ? WHERE id = ?").bind("PAID",i.id).run(),console.log(`✅ [MANUAL-PAYMENT] Proforma ${i.numero_proforma} marcata come pagata`));const s=`CLI-${Date.now()}`;await e.env.DB.prepare(`
       UPDATE leads SET 
         status = 'PAYMENT_RECEIVED',
         updated_at = ?
