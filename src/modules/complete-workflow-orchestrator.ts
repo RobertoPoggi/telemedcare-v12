@@ -1,5 +1,5 @@
 /**
- * TeleMedCare V12.0 - Complete Workflow Orchestrator
+ * eCura V12.0 - Complete Workflow Orchestrator
  * Orchestrazione completa del flusso corretto:
  * 
  * 1. Lead compila form → Notifica a info@ + (brochure O contratto)
@@ -171,7 +171,7 @@ export async function processNewLead(
           // Prepara dati per email
           const { missing, available } = getMissingFields(ctx.leadData)
         
-        // Template HTML inline (ufficiale TeleMedCare)
+        // Template HTML inline (ufficiale eCura)
         const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -250,7 +250,7 @@ export async function processNewLead(
           <tr>
             <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
               <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0;">
-                <strong>TeleMedCare</strong> - Sistema di Gestione Lead
+                <strong>eCura</strong> - Sistema di Gestione Lead
               </p>
               <p style="color: #999999; font-size: 12px; margin: 0;">
                 Per assistenza: <a href="mailto:info@ecura.it" style="color: #667eea; text-decoration: none;">info@ecura.it</a>
@@ -794,8 +794,8 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   // NOTE: Database persistence is attempted but not fatal if it fails
   try {
     const templateName = tipoServizio === 'AVANZATO' 
-      ? 'Template_Contratto_Avanzato_TeleMedCare' 
-      : 'Template_Contratto_Base_TeleMedCare'
+      ? 'Template_Contratto_Avanzato_eCura' 
+      : 'Template_Contratto_Base_eCura'
     
     await ctx.db.prepare(`
       INSERT INTO contracts (

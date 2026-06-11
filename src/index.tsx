@@ -28348,14 +28348,13 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     try {
       console.log(`📊 [MANUAL-SIGN→PROFORMA] Avvio workflow proforma`)
       
-      const proformaId = `PRF-${Date.now()}`
       const year = new Date().getFullYear()
       const month = String(new Date().getMonth() + 1).padStart(2, '0')
       const random = Math.random().toString(36).substring(2, 6).toUpperCase()
       const numeroProforma = `PRF${year}${month}-${random}`
       
       const proformaData = {
-        proformaId,
+        proformaId: numeroProforma,  // usa numero_proforma come ID nel link (cercato dal GET /api/proforma/:id)
         numeroProforma,
         proformaPdfUrl: '',
         tipoServizio: piano,

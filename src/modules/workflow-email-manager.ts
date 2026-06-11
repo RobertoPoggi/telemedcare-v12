@@ -530,7 +530,7 @@ export async function inviaEmailNotificaInfo(
     } else if (vuoleBrochure || vuoleManuale) {
       azioneSuggerita = 'Il cliente ha richiesto solo DOCUMENTAZIONE INFORMATIVA. È stata inviata automaticamente email con documenti.'
     } else {
-      azioneSuggerita = 'Contattare il cliente entro 24 ore per verificare le sue esigenze e procedere con l\'attivazione del servizio TeleMedCare.'
+      azioneSuggerita = 'Contattare il cliente entro 24 ore per verificare le sue esigenze e procedere con l\'attivazione del servizio eCura.'
     }
     
     const templateData = {
@@ -556,7 +556,7 @@ export async function inviaEmailNotificaInfo(
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      VERSIONE_SISTEMA: 'TeleMedCare V12.0',
+      VERSIONE_SISTEMA: 'eCura V12.0',
       
       // Placeholder per richieste del lead (semplici + formattati)
       VUOLE_CONTRATTO: vuoleContratto ? 'SÌ' : 'NO',
@@ -852,7 +852,7 @@ export async function inviaEmailDocumentiInformativi(
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: env?.RESEND_FROM || 'info@ecura.it',
-      subject: '📚 TeleMedCare - Documenti Informativi Richiesti',
+      subject: '📚 eCura - Documenti Informativi Richiesti',
       html: emailHtml
     })
 
@@ -1162,14 +1162,14 @@ export async function inviaEmailContratto(
 
     // Invia email con allegati
     console.log(`📧 [CONTRATTO] Invio email a: ${leadData.email}`)
-    console.log(`📧 [CONTRATTO] Subject: 📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`)
+    console.log(`📧 [CONTRATTO] Subject: 📄 eCura - Il Tuo Contratto ${contractData.tipoServizio}`)
     console.log(`📧 [CONTRATTO] Allegati: ${attachments.length}`)
     console.log(`📧 [CONTRATTO] HTML length: ${emailHtml.length}`)
     
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: env?.RESEND_FROM || 'info@ecura.it',
-      subject: `📄 TeleMedCare - Il Tuo Contratto ${contractData.tipoServizio}`,
+      subject: `📄 eCura - Il Tuo Contratto ${contractData.tipoServizio}`,
       html: emailHtml,
       attachments: attachments
     })
@@ -1408,7 +1408,7 @@ p {margin: 18px 0; line-height: 1.9;}
     // Invia email (con o senza allegato)
     const emailSubject = isRinnovo
       ? `🔄 Rinnovo eCura — Proforma ${proformaData.numeroProforma} (Anno ${annoRinnovo})`
-      : `💰 TeleMedCare - Fattura Proforma ${proformaData.numeroProforma}`
+      : `💰 eCura - Fattura Proforma ${proformaData.numeroProforma}`
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
       from: env?.RESEND_FROM || 'info@ecura.it',
@@ -1508,7 +1508,7 @@ export async function inviaEmailBenvenuto(
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
       from: env?.RESEND_FROM || 'info@ecura.it',
-      subject: `🎉 Benvenuto/a in TeleMedCare, ${clientData.nomeRichiedente}!`,
+      subject: `🎉 Benvenuto/a in eCura, ${clientData.nomeRichiedente}!`,
       html: emailHtml
     })
 
@@ -1793,7 +1793,7 @@ export async function inviaEmailConfermaAttivazione(
     const sendResult = await emailService.sendEmail({
       to: clientData.email,
       from: env?.RESEND_FROM || 'info@ecura.it',
-      subject: `✅ TeleMedCare - Servizio Attivato!`,
+      subject: `✅ eCura - Servizio Attivato!`,
       html: emailHtml
     })
 

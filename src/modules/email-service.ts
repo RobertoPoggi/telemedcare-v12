@@ -1,6 +1,6 @@
 /**
  * EMAIL_SERVICE.TS - Servizio Email con Template Engine
- * TeleMedCare V11.0-Cloudflare - Sistema Modulare
+ * eCura V11.0-Cloudflare - Sistema Modulare
  * 
  * Gestisce:
  * - Template engine con sostituzioni variabili {{VARIABLE}}
@@ -47,7 +47,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   INVIO_CONTRATTO: {
     id: 'invio_contratto',
     name: 'Invio Contratto',
-    subject: '📋 TeleMedCare - Il tuo contratto è pronto!',
+    subject: '📋 eCura - Il tuo contratto è pronto!',
     htmlPath: '/templates/email/email_invio_contratto.html',
     variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'PREZZO_PIANO', 'CODICE_CLIENTE'],
     category: 'workflow'
@@ -55,7 +55,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   INVIO_PROFORMA: {
     id: 'invio_proforma',
     name: 'Invio Proforma',
-    subject: '💰 TeleMedCare - Fattura Proforma per {{PIANO_SERVIZIO}}',
+    subject: '💰 eCura - Fattura Proforma per {{PIANO_SERVIZIO}}',
     htmlPath: '/templates/email/email_invio_proforma.html',
     variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'IMPORTO_TOTALE', 'SCADENZA_PAGAMENTO', 'CODICE_CLIENTE'],
     category: 'workflow'
@@ -63,7 +63,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   BENVENUTO: {
     id: 'benvenuto',
     name: 'Benvenuto Cliente',
-    subject: '🎉 Benvenuto/a in TeleMedCare, {{NOME_CLIENTE}}!',
+    subject: '🎉 Benvenuto/a in eCura, {{NOME_CLIENTE}}!',
     htmlPath: '/templates/email/email_benvenuto.html',
     variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'COSTO_SERVIZIO', 'DATA_ATTIVAZIONE', 'CODICE_CLIENTE', 'SERVIZI_INCLUSI'],
     category: 'workflow'
@@ -71,7 +71,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   CONFIGURAZIONE: {
     id: 'configurazione',
     name: 'Configurazione Dispositivo',
-    subject: '⚙️ TeleMedCare - Configurazione del tuo dispositivo',
+    subject: '⚙️ eCura - Configurazione del tuo dispositivo',
     htmlPath: '/templates/email/email_conferma_attivazione.html',
     variables: ['NOME_CLIENTE', 'DISPOSITIVO', 'SERIAL_NUMBER', 'ISTRUZIONI_CONFIG'],
     category: 'workflow'
@@ -79,7 +79,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   CONFERMA: {
     id: 'conferma',
     name: 'Conferma Attivazione',
-    subject: '✅ TeleMedCare - Servizio attivato con successo!',
+    subject: '✅ eCura - Servizio attivato con successo!',
     htmlPath: '/templates/email/email_conferma_attivazione.html',
     variables: ['NOME_CLIENTE', 'PIANO_SERVIZIO', 'DATA_ATTIVAZIONE', 'CODICE_CLIENTE'],
     category: 'workflow'
@@ -87,7 +87,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   FOLLOWUP_CALL: {
     id: 'followup_call',
     name: 'Follow-up Call',
-    subject: '📞 TeleMedCare - Chiamata di follow-up programmata',
+    subject: '📞 eCura - Chiamata di follow-up programmata',
     htmlPath: '/templates/email/email_followup_call.html',
     variables: ['NOME_CLIENTE', 'DATA_CHIAMATA', 'ORA_CHIAMATA', 'MOTIVO_CHIAMATA'],
     category: 'workflow'
@@ -95,7 +95,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   NOTIFICA_INFO: {
     id: 'notifica_info',
     name: 'Notifica Nuovo Lead',
-    subject: '🚨 TeleMedCare - Nuovo Lead ricevuto: {{NOME_CLIENTE}}',
+    subject: '🚨 eCura - Nuovo Lead ricevuto: {{NOME_CLIENTE}}',
     htmlPath: '/templates/email/email_notifica_info.html',
     variables: ['NOME_CLIENTE', 'EMAIL_CLIENTE', 'TELEFONO_CLIENTE', 'SERVIZIO_RICHIESTO', 'TIMESTAMP_LEAD', 'LEAD_ID'],
     category: 'notification'
@@ -103,7 +103,7 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   DOCUMENTI_INFORMATIVI: {
     id: 'documenti_informativi',
     name: 'Invio Documenti Informativi',
-    subject: '📋 TeleMedCare - Documentazione richiesta per {{NOME_CLIENTE}}',
+    subject: '📋 eCura - Documentazione richiesta per {{NOME_CLIENTE}}',
     htmlPath: '/templates/email/email_documenti_informativi.html',
     variables: ['NOME_CLIENTE', 'EMAIL_CLIENTE', 'DOCUMENTI_RICHIESTI', 'SERVIZIO_INTERESSE', 'TIMESTAMP_RICHIESTA'],
     category: 'workflow'
@@ -277,10 +277,10 @@ export class EmailService {
     switch (templateName) {
       case 'email_invio_contratto':
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>TeleMedCare - Contratto</title></head>
+<html><head><meta charset="utf-8"><title>eCura - Contratto</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#0b63a5;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📋 TeleMedCare</h1></div>
+<div style="background:#0b63a5;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📋 eCura</h1></div>
 <div style="padding:24px;">
 <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
 <p>Siamo lieti di accompagnarLa in questo importante passo verso una maggiore sicurezza e tranquillità. Come promesso, in allegato trova la brochure del dispositivo prescelto con tutti i dettagli delle sue caratteristiche innovative nonché il contratto per il servizio {{PIANO_SERVIZIO}} che ha selezionato tra le sue preferenze.</p>
@@ -319,15 +319,15 @@ export class EmailService {
 
 <p style="margin-top:16px;padding:12px;background:#fafafa;border-radius:6px;"><strong>📦 Consegna:</strong> In ogni caso riceverà il dispositivo entro 10 giorni lavorativi dall'arrivo del pagamento.</p>
 
-<p style="margin-top:20px;"><strong>Grazie per la fiducia!</strong><br>Il Team TeleMedCare</p>
+<p style="margin-top:20px;"><strong>Grazie per la fiducia!</strong><br>Il Team eCura</p>
 </div></div></body></html>`
 
       case 'email_invio_proforma':
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>TeleMedCare - Proforma</title></head>
+<html><head><meta charset="utf-8"><title>eCura - Proforma</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#10b981;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">💰 TeleMedCare</h1></div>
+<div style="background:#10b981;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">💰 eCura</h1></div>
 <div style="padding:24px;">
 <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
 <p>In allegato trova la <strong>fattura proforma</strong> per il servizio {{PIANO_SERVIZIO}}.</p>
@@ -346,19 +346,19 @@ export class EmailService {
 <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
 </div>
 <p>Può procedere con il pagamento tramite bonifico bancario utilizzando i dati allegati.</p>
-<p style="margin-top:20px;"><strong>Grazie!</strong><br>Il Team TeleMedCare</p>
+<p style="margin-top:20px;"><strong>Grazie!</strong><br>Il Team eCura</p>
 </div></div></body></html>`
 
       case 'email_benvenuto':
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Benvenuto in TeleMedCare</title></head>
+<html><head><meta charset="utf-8"><title>Benvenuto in eCura</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#0b6cf6;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">🎉 TeleMedCare</h1></div>
+<div style="background:#0b6cf6;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">🎉 eCura</h1></div>
 <div style="padding:24px;">
 <h1>Benvenuto/a {{NOME_CLIENTE}}!</h1>
 <p style="font-size:18px;">🎉 Congratulazioni per la Sua scelta!</p>
-<p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
+<p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia eCura.</p>
 <div style="background:#f7f9fc;border:1px solid #eef2f7;padding:16px;border-radius:6px;margin:16px 0;">
 <h3 style="margin:0 0 8px;color:#0b6cf6;">📋 Il Suo Servizio</h3>
 <strong>Piano:</strong> {{PIANO_SERVIZIO}}<br>
@@ -373,7 +373,7 @@ export class EmailService {
 <li><strong>Training:</strong> Tutorial gratuito</li>
 <li><strong>Attivazione:</strong> Test completo con la Centrale</li>
 </ol>
-<p style="margin-top:20px;"><strong>Benvenuto/a nella famiglia TeleMedCare!</strong><br>Il Team TeleMedCare</p>
+<p style="margin-top:20px;"><strong>Benvenuto/a nella famiglia eCura!</strong><br>Il Team eCura</p>
 </div></div></body></html>`
 
       case 'email_conferma_attivazione':
@@ -381,7 +381,7 @@ export class EmailService {
 <html><head><meta charset="utf-8"><title>Servizio Attivato</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#10b981;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">✅ TeleMedCare</h1></div>
+<div style="background:#10b981;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">✅ eCura</h1></div>
 <div style="padding:24px;">
 <h1>Servizio Attivato!</h1>
 <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
@@ -394,7 +394,7 @@ export class EmailService {
 <strong>Codice Cliente:</strong> {{CODICE_CLIENTE}}
 </div>
 <p>Il Suo dispositivo è ora operativo e monitorato H24.</p>
-<p style="margin-top:20px;"><strong>La Sua sicurezza è la nostra priorità!</strong><br>Il Team TeleMedCare</p>
+<p style="margin-top:20px;"><strong>La Sua sicurezza è la nostra priorità!</strong><br>Il Team eCura</p>
 </div></div></body></html>`
 
       case 'email_followup_call':
@@ -402,7 +402,7 @@ export class EmailService {
 <html><head><meta charset="utf-8"><title>Follow-up Call</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#f59e0b;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📞 TeleMedCare</h1></div>
+<div style="background:#f59e0b;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📞 eCura</h1></div>
 <div style="padding:24px;">
 <h1>Chiamata di Follow-up</h1>
 <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
@@ -414,15 +414,15 @@ export class EmailService {
 <strong>Motivo:</strong> {{MOTIVO_CHIAMATA}}
 </div>
 <p>Se non dovesse essere disponibile, La ricontatteremo.</p>
-<p style="margin-top:20px;"><strong>Grazie!</strong><br>Il Team TeleMedCare</p>
+<p style="margin-top:20px;"><strong>Grazie!</strong><br>Il Team eCura</p>
 </div></div></body></html>`
 
       case 'email_notifica_info':
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Nuovo Lead TeleMedCare</title></head>
+<html><head><meta charset="utf-8"><title>Nuovo Lead eCura</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#dc2626;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">🚨 TeleMedCare - NUOVO LEAD</h1></div>
+<div style="background:#dc2626;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">🚨 eCura - NUOVO LEAD</h1></div>
 <div style="padding:24px;">
 <h1 style="color:#dc2626;">Nuovo Lead Ricevuto!</h1>
 <p><strong>Un nuovo potenziale cliente ha manifestato interesse per i nostri servizi.</strong></p>
@@ -442,18 +442,18 @@ export class EmailService {
 <li><strong>Inviare documentazione</strong> personalizzata</li>
 <li><strong>Programmare demo</strong> se richiesta</li>
 </ol>
-<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema TeleMedCare V11.0</p>
+<p style="margin-top:20px;"><strong>Priorità ALTA - Gestire immediatamente!</strong><br>Sistema eCura V11.0</p>
 </div></div></body></html>`
 
       case 'email_documenti_informativi':
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Documenti Informativi TeleMedCare</title></head>
+<html><head><meta charset="utf-8"><title>Documenti Informativi eCura</title></head>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f6f8;">
 <div style="max-width:600px;margin:0 auto;background:white;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-<div style="background:#0ea5e9;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📋 TeleMedCare</h1></div>
+<div style="background:#0ea5e9;color:white;padding:20px;"><h1 style="margin:0;font-size:20px;">📋 eCura</h1></div>
 <div style="padding:24px;">
 <h1>Invio Documenti Informativi</h1>
-<p>Team TeleMedCare,</p>
+<p>Team eCura,</p>
 <p><strong>{{NOME_CLIENTE}}</strong> ha richiesto documentazione informativa sui nostri servizi.</p>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:16px;border-radius:6px;margin:16px 0;">
 <h3 style="margin:0 0 8px;color:#0ea5e9;">📋 Dettagli Richiesta</h3>
@@ -470,14 +470,14 @@ export class EmailService {
 <li><strong>Includere case studies</strong> pertinenti</li>
 <li><strong>Programmare follow-up</strong> a 3-5 giorni</li>
 </ol>
-<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema TeleMedCare V11.0</p>
+<p style="margin-top:20px;"><strong>Da gestire entro 4 ore lavorative</strong><br>Sistema eCura V11.0</p>
 </div></div></body></html>`
 
       default:
         return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>TeleMedCare</title></head>
+<html><head><meta charset="utf-8"><title>eCura</title></head>
 <body style="font-family:Arial,sans-serif;padding:20px;text-align:center;">
-<h1 style="color:#0b63a5;">📧 TeleMedCare</h1>
+<h1 style="color:#0b63a5;">📧 eCura</h1>
 <p>Template email non disponibile.</p>
 <p>Contatti il supporto per assistenza.</p>
 </body></html>`
