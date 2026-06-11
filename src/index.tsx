@@ -26593,7 +26593,7 @@ app.get('/api/diag-auth', async (c) => {
 // Critical: Prevent rollback to V11 - 3x incidents in 24h
 app.get('/api/health', async (c) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = 'a553ecb'
+  const GIT_COMMIT = 'e8f4b21'
   const BUILD_DATE = '2026-02-12T17:03:00Z'
   
   try {
@@ -28258,7 +28258,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
 // Version Guard Middleware - Logs all requests with version info
 app.use('*', async (c, next) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = 'a553ecb'
+  const GIT_COMMIT = 'e8f4b21'
   
   // Add version headers to ALL responses
   c.header('X-System-Version', SYSTEM_VERSION)
@@ -28348,13 +28348,13 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       'MANUALE',
       'manual-sign',
       contractHtml,
-      (pricing.setupTotale / 12).toFixed(2),
+      (pricing.setupBase / 12).toFixed(2),  // prezzo_mensile = IVA ESCLUSA / 12
       12,
-      pricing.setupTotale,
+      pricing.setupBase,  // ✅ prezzo_totale = IVA ESCLUSA (setupBase, non setupTotale)
       servizio,
       piano,
       'SIGNED',
-      'Firma Manuale Staff TeleMedCare',
+      'Firma Manuale Staff eCura',
       'manual',
       new Date().toISOString(),
       new Date().toISOString(),
@@ -28381,26 +28381,32 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       const random = Math.random().toString(36).substring(2, 6).toUpperCase()
       const numeroProforma = `PRF${year}${month}-${random}`
       
+      // ✅ IVA: calcola con aliquota corretta (4% Legge 104 o 22% standard)
+      const ivaRateManual = lead.iva_agevolata ? 0.04 : 0.22
+      const prezzoBaseManual = pricing.setupBase  // IVA ESCLUSA
+      const prezzoIvaInclusa = Math.round(prezzoBaseManual * (1 + ivaRateManual) * 100) / 100
+
       const proformaData = {
         proformaId: numeroProforma,  // usa numero_proforma come ID nel link (cercato dal GET /api/proforma/:id)
         numeroProforma,
         proformaPdfUrl: '',
         tipoServizio: piano,
         servizio: servizio,
-        prezzoBase: pricing.setupBase,
-        prezzoIvaInclusa: pricing.setupTotale,
+        prezzoBase: prezzoBaseManual,        // IVA ESCLUSA (es. €390)
+        prezzoIvaInclusa: prezzoIvaInclusa,  // IVA INCLUSA con aliquota corretta (es. €405,60 al 4%)
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }
       
       // Salva proforma nel DB — schema reale verificato con PRAGMA
+      // ✅ REGOLA: prezzo_totale = IVA ESCLUSA (setupBase), prezzo_mensile = setupBase/12
       await c.env.DB.prepare(`
         INSERT INTO proforma (
           contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          iva_agevolata, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         contractId || '',
         leadId,
@@ -28412,9 +28418,10 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         lead.email || '',
         lead.telefono || '',
         servizio,
-        (pricing.setupTotale / 12).toFixed(2),
+        (prezzoBaseManual / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
         12,
-        pricing.setupTotale,
+        prezzoBaseManual,  // ✅ IVA ESCLUSA
+        lead.iva_agevolata ? 1 : 0,  // ✅ salva iva_agevolata
         'SENT',
         new Date().toISOString(),
         new Date().toISOString()
@@ -28594,9 +28601,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         lead.email || '',
         lead.telefono || '',
         servizio,
-        (pricing.setupTotale / 12).toFixed(2),
+        (pricing.setupBase / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
         12,
-        pricing.setupTotale,
+        pricing.setupBase,  // ✅ IVA ESCLUSA (non setupTotale!)
         'DRAFT',
         new Date().toISOString(),
         new Date().toISOString()
