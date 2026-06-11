@@ -26531,11 +26531,36 @@ app.post('/api/admin/sync-form-ecura', async (c) => {
   }
 })
 
+// ========== DIAGNOSTICA AUTH ENDPOINT (temporaneo) ==========
+// Endpoint pubblico per diagnosticare problemi di autenticazione sulle fetch dashboard
+app.get('/api/diag-auth', async (c) => {
+  const cookie = c.req.header('Cookie') || ''
+  const auth = c.req.header('Authorization') || ''
+  const hasSession = cookie.includes('session=')
+  let sessionInfo: any = null
+  if (hasSession) {
+    try {
+      const m = cookie.match(/session=([^;]+)/)
+      if (m) sessionInfo = JSON.parse(decodeURIComponent(m[1]))
+    } catch(e) { sessionInfo = 'parse error' }
+  }
+  return c.json({
+    commit: 'a553ecb',
+    hasCookie: hasSession,
+    hasAuthHeader: !!auth,
+    authHeaderValue: auth ? auth.substring(0, 20) + '...' : null,
+    sessionUsername: sessionInfo?.username || null,
+    sessionRole: sessionInfo?.role || null,
+    sessionExpires: sessionInfo?.expiresAt || null,
+    sessionValid: sessionInfo?.expiresAt ? new Date(sessionInfo.expiresAt).getTime() > Date.now() : false,
+  })
+})
+
 // ========== SYSTEM HEALTH & VERSION MONITORING ==========
 // Critical: Prevent rollback to V11 - 3x incidents in 24h
 app.get('/api/health', async (c) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = '033b5c7'
+  const GIT_COMMIT = 'a553ecb'
   const BUILD_DATE = '2026-02-12T17:03:00Z'
   
   try {
@@ -28186,7 +28211,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
 // Version Guard Middleware - Logs all requests with version info
 app.use('*', async (c, next) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = '033b5c7'
+  const GIT_COMMIT = 'a553ecb'
   
   // Add version headers to ALL responses
   c.header('X-System-Version', SYSTEM_VERSION)
