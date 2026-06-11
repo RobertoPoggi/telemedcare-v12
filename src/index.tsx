@@ -1436,6 +1436,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
+  if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
+    return next()
+  }
+
 
   
   // Endpoint sensibili: richiedono autenticazione
@@ -26871,6 +26876,20 @@ app.post('/api/admin/resend-completion/:leadId', async (c) => {
   }
 })
 
+// 🔧 ENDPOINT ONE-SHOT: Schema tabella contracts e proforma (diagnostica)
+app.get('/api/oneshot-schema-contracts-proforma-8wq3x', async (c) => {
+  try {
+    const contractsCols = await c.env.DB.prepare('PRAGMA table_info(contracts)').all()
+    const proformaCols = await c.env.DB.prepare('PRAGMA table_info(proforma)').all()
+    return c.json({
+      contracts: contractsCols.results?.map((r: any) => ({ name: r.name, type: r.type, notnull: r.notnull, dflt: r.dflt_value })),
+      proforma: proformaCols.results?.map((r: any) => ({ name: r.name, type: r.type, notnull: r.notnull, dflt: r.dflt_value })),
+    })
+  } catch (error) {
+    return c.json({ success: false, error: String(error) }, 500)
+  }
+})
+
 // 🔧 ENDPOINT ONE-SHOT: Deduplicazione tabella assistiti
 app.get('/api/oneshot-dedup-assistiti-9k3mq', async (c) => {
   try {
@@ -28280,32 +28299,33 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     `
     
     // Salva contratto nel DB — colonne reali della tabella contracts
+    // Usa codice univoco con timestamp per evitare UNIQUE constraint violation
+    const contractCodeUnique = `${contractCode}-M${timestamp}`
+
     await c.env.DB.prepare(`
       INSERT INTO contracts (
-        id, lead_id, contract_code,
+        id, leadId, codice_contratto,
         servizio, piano,
-        prezzo_base, prezzo_iva_inclusa,
-        contract_html,
-        status, signature_data, signature_method, signature_timestamp, signed_at,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        prezzo_totale,
+        contenuto_html,
+        status, firma_digitale, data_firma,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       contractId,
       leadId,
-      contractCode,
+      contractCodeUnique,
       servizio,
       piano,
-      pricing.setupBase,
       pricing.setupTotale,
       contractHtml,
       'SIGNED',
       'Firma Manuale Staff TeleMedCare',
-      'manual',
       new Date().toISOString(),
       new Date().toISOString(),
       new Date().toISOString()
     ).run()
-    
+
     // Aggiorna lead
     await c.env.DB.prepare(`
       UPDATE leads SET 
