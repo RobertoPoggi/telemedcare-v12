@@ -15030,6 +15030,9 @@ app.post('/api/contracts/sign', async (c) => {
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
         
         // ⭐ CALCOLA dati intestatario in base a intestatarioContratto
+        // ✅ REGOLA INTESTATARIO: il form ha scelto chi intestare contratto e proforma.
+        // intestatarioContratto='assistito' → tutti i campi dall'assistito
+        // intestatarioContratto='richiedente' (o default) → tutti i campi dal richiedente
         const intestatario = lead.intestatarioContratto || 'richiedente'
         
         let nomeCliente: string
@@ -15041,27 +15044,23 @@ app.post('/api/contracts/sign', async (c) => {
         let provinciaCliente: string
         
         if (intestatario === 'assistito') {
-          // Intestatario = Assistito
-          nomeCliente = lead.nomeAssistito || lead.nomeRichiedente
-          cognomeCliente = lead.cognomeAssistito || lead.cognomeRichiedente
-          // ✅ FIX: cfAssistito ha priorità su cfIntestatario quando intestatario='assistito'
-          // cfIntestatario può contenere il CF del caregiver/richiedente (campo generico)
-          cfCliente = lead.cfAssistito || lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
-          indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-          cittaCliente = lead.cittaIntestatario || lead.cittaAssistito || ''
-          capCliente = lead.capIntestatario || lead.capAssistito || ''
-          provinciaCliente = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+          nomeCliente    = lead.nomeAssistito    || ''
+          cognomeCliente = lead.cognomeAssistito || ''
+          cfCliente      = lead.cfAssistito      || ''
+          indirizzoCliente = lead.indirizzoAssistito || ''
+          cittaCliente     = lead.cittaAssistito     || ''
+          capCliente       = lead.capAssistito       || ''
+          provinciaCliente = lead.provinciaAssistito || ''
         } else {
-          // Intestatario = Richiedente (default)
-          // I campi *Intestatario SONO GIÀ i campi del richiedente
-          nomeCliente = lead.nomeRichiedente
-          cognomeCliente = lead.cognomeRichiedente
-          cfCliente = lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
+          nomeCliente    = lead.nomeRichiedente    || ''
+          cognomeCliente = lead.cognomeRichiedente || ''
+          cfCliente      = lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
           indirizzoCliente = lead.indirizzoIntestatario || ''
-          cittaCliente = lead.cittaIntestatario || ''
-          capCliente = lead.capIntestatario || ''
+          cittaCliente     = lead.cittaIntestatario     || ''
+          capCliente       = lead.capIntestatario       || ''
           provinciaCliente = lead.provinciaIntestatario || ''
         }
+        console.log(`👤 [FIRMA→PROFORMA] intestatario=${intestatario}: ${nomeCliente} ${cognomeCliente}, CF=${cfCliente}`)
         
         const emailCliente = lead.email || ''
         const telefonoCliente = lead.telefono || ''
@@ -28397,6 +28396,31 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }
       
+      // ✅ REGOLA INTESTATARIO: rispetta la scelta del form
+      const intestatarioManual = lead.intestatarioContratto || 'richiedente'
+      let nomeProformaManual: string, cognomeProformaManual: string
+      let cfProformaManual: string, indirizzoProformaManual: string
+      let cittaProformaManual: string, capProformaManual: string, provinciaProformaManual: string
+
+      if (intestatarioManual === 'assistito') {
+        nomeProformaManual      = lead.nomeAssistito        || ''
+        cognomeProformaManual   = lead.cognomeAssistito     || ''
+        cfProformaManual        = lead.cfAssistito          || ''
+        indirizzoProformaManual = lead.indirizzoAssistito   || ''
+        cittaProformaManual     = lead.cittaAssistito       || ''
+        capProformaManual       = lead.capAssistito         || ''
+        provinciaProformaManual = lead.provinciaAssistito   || ''
+      } else {
+        nomeProformaManual      = lead.nomeRichiedente       || ''
+        cognomeProformaManual   = lead.cognomeRichiedente    || ''
+        cfProformaManual        = lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
+        indirizzoProformaManual = lead.indirizzoIntestatario || ''
+        cittaProformaManual     = lead.cittaIntestatario     || ''
+        capProformaManual       = lead.capIntestatario       || ''
+        provinciaProformaManual = lead.provinciaIntestatario || ''
+      }
+      console.log(`👤 [MANUAL-SIGN→PROFORMA] intestatario=${intestatarioManual}: ${nomeProformaManual} ${cognomeProformaManual}, CF=${cfProformaManual}`)
+
       // Salva proforma nel DB — schema reale verificato con PRAGMA
       // ✅ REGOLA: prezzo_totale = IVA ESCLUSA (setupBase), prezzo_mensile = setupBase/12
       await c.env.DB.prepare(`
@@ -28404,9 +28428,10 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
           contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+          cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
           iva_agevolata, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         contractId || '',
         leadId,
@@ -28417,6 +28442,11 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         lead.cognomeRichiedente || '',
         lead.email || '',
         lead.telefono || '',
+        indirizzoProformaManual,
+        cittaProformaManual,
+        capProformaManual,
+        provinciaProformaManual,
+        cfProformaManual,  // ✅ CF ASSISTITO prioritario
         servizio,
         (prezzoBaseManual / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
         12,
@@ -28532,6 +28562,31 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // ✅ 3 giorni massimo
     }
     
+    // ✅ LOGICA INTESTATARIO: se 'assistito' tutti i campi dall'assistito, altrimenti dal richiedente
+    const intestatarioSendProforma = lead.intestatarioContratto || 'richiedente'
+    let nomeSendProforma: string, cognomeSendProforma: string
+    let cfSendProforma: string, indirizzoSendProforma: string
+    let cittaSendProforma: string, capSendProforma: string, provinciaSendProforma: string
+
+    if (intestatarioSendProforma === 'assistito') {
+      nomeSendProforma      = lead.nomeAssistito        || ''
+      cognomeSendProforma   = lead.cognomeAssistito     || ''
+      cfSendProforma        = lead.cfAssistito          || ''
+      indirizzoSendProforma = lead.indirizzoAssistito   || ''
+      cittaSendProforma     = lead.cittaAssistito       || ''
+      capSendProforma       = lead.capAssistito         || ''
+      provinciaSendProforma = lead.provinciaAssistito   || ''
+    } else {
+      nomeSendProforma      = lead.nomeRichiedente       || ''
+      cognomeSendProforma   = lead.cognomeRichiedente    || ''
+      cfSendProforma        = lead.cfIntestatario || lead.codiceFiscaleIntestatario || ''
+      indirizzoSendProforma = lead.indirizzoIntestatario || ''
+      cittaSendProforma     = lead.cittaIntestatario     || ''
+      capSendProforma       = lead.capIntestatario       || ''
+      provinciaSendProforma = lead.provinciaIntestatario || ''
+    }
+    console.log(`👤 [SEND-PROFORMA] Intestatario: ${intestatarioSendProforma} → ${nomeSendProforma} ${cognomeSendProforma} CF:${cfSendProforma}`)
+
     // ✅ VERIFICA SE ESISTE GIÀ UNA PROFORMA PER QUESTO LEAD
     // Lo schema in produzione usa: id, contract_id, leadId, numero_proforma, data_emissione, data_scadenza
     const existingProforma = await c.env.DB.prepare(
@@ -28541,7 +28596,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     let proformaIdGenerated: string | null = null
     
     if (existingProforma) {
-      // ✅ ESISTE GIÀ: fai UPDATE
+      // 🔄 ESISTE GIÀ: fai UPDATE
       // Se id è NULL, genera uno nuovo
       const proformaId = existingProforma.id || `PRF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
       
@@ -28557,7 +28612,14 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
             data_scadenza = ?,
             tipo_servizio = ?,
             prezzo_mensile = ?,
-            prezzo_totale = ?
+            prezzo_totale = ?,
+            cliente_nome = ?,
+            cliente_cognome = ?,
+            cliente_codice_fiscale = ?,
+            cliente_indirizzo = ?,
+            cliente_citta = ?,
+            cliente_cap = ?,
+            cliente_provincia = ?
         WHERE leadId = ? AND numero_proforma = ?
       `).bind(
         proformaId,
@@ -28567,6 +28629,13 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         servizio,    // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM")
         (pricing.setupBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
         pricing.setupBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA
+        nomeSendProforma,
+        cognomeSendProforma,
+        cfSendProforma,
+        indirizzoSendProforma,
+        cittaSendProforma,
+        capSendProforma,
+        provinciaSendProforma,
         leadId,
         existingProforma.numero_proforma
       ).run()
@@ -28587,23 +28656,30 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
           contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+          cliente_codice_fiscale, cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          iva_agevolata, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         'MANUAL',
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        lead.nomeRichiedente || '',
-        lead.cognomeRichiedente || '',
+        nomeSendProforma,
+        cognomeSendProforma,
         lead.email || '',
         lead.telefono || '',
+        cfSendProforma,
+        indirizzoSendProforma,
+        cittaSendProforma,
+        capSendProforma,
+        provinciaSendProforma,
         servizio,
         (pricing.setupBase / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
         12,
         pricing.setupBase,  // ✅ IVA ESCLUSA (non setupTotale!)
+        lead.iva_agevolata ? 1 : 0,
         'DRAFT',
         new Date().toISOString(),
         new Date().toISOString()
