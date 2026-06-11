@@ -28302,25 +28302,32 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     // Usa codice univoco con timestamp per evitare UNIQUE constraint violation
     const contractCodeUnique = `${contractCode}-M${timestamp}`
 
+    // INSERT con tutte le colonne NOT NULL obbligatorie della tabella contracts reale
     await c.env.DB.prepare(`
       INSERT INTO contracts (
         id, leadId, codice_contratto,
-        servizio, piano,
-        prezzo_totale,
+        tipo_contratto, template_utilizzato,
         contenuto_html,
-        status, firma_digitale, data_firma,
+        prezzo_mensile, durata_mesi, prezzo_totale,
+        servizio, piano,
+        status, signature_data, signature_method, signed_at,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       contractId,
       leadId,
       contractCodeUnique,
+      'MANUALE',
+      'manual-sign',
+      contractHtml,
+      (pricing.setupTotale / 12).toFixed(2),
+      12,
+      pricing.setupTotale,
       servizio,
       piano,
-      pricing.setupTotale,
-      contractHtml,
       'SIGNED',
       'Firma Manuale Staff TeleMedCare',
+      'manual',
       new Date().toISOString(),
       new Date().toISOString(),
       new Date().toISOString()
@@ -28358,17 +28365,16 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       }
       
-      // Salva proforma nel DB — colonne reali della tabella proforma
+      // Salva proforma nel DB — schema reale verificato con PRAGMA
       await c.env.DB.prepare(`
         INSERT INTO proforma (
-          id, contract_id, leadId, numero_proforma,
+          contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        proformaId,
         contractId || '',
         leadId,
         numeroProforma,
@@ -28378,11 +28384,13 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         lead.cognomeRichiedente || '',
         lead.email || '',
         lead.telefono || '',
-        piano,
+        servizio,
         (pricing.setupTotale / 12).toFixed(2),
         12,
         pricing.setupTotale,
-        'SENT'
+        'SENT',
+        new Date().toISOString(),
+        new Date().toISOString()
       ).run()
       
       // Invia email proforma
@@ -28539,17 +28547,17 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       
       const proformaId = `PRF-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
       
+      // id è INTEGER AUTOINCREMENT in produzione — non va specificato
       const insertResult = await c.env.DB.prepare(`
         INSERT INTO proforma (
-          id, contract_id, leadId, numero_proforma,
+          contract_id, leadId, numero_proforma,
           data_emissione, data_scadenza,
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        proformaId,
-        'MANUAL', // contract_id placeholder
+        'MANUAL',
         leadId,
         numeroProforma,
         new Date().toISOString().split('T')[0],
@@ -28559,15 +28567,17 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         lead.email || '',
         lead.telefono || '',
         servizio,
-        (pricing.setupBase / 12).toFixed(2),
+        (pricing.setupTotale / 12).toFixed(2),
         12,
-        pricing.setupBase,
-        'DRAFT'
+        pricing.setupTotale,
+        'DRAFT',
+        new Date().toISOString(),
+        new Date().toISOString()
       ).run()
       
-      proformaIdGenerated = proformaId
-      proformaData.proformaId = proformaId
-      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata con ID ${proformaId}`)
+      proformaIdGenerated = numeroProforma  // id INTEGER autoincrement, usiamo numero_proforma
+      proformaData.proformaId = numeroProforma
+      console.log(`✅ [SEND-PROFORMA] Proforma ${numeroProforma} creata`)
     }
     
     // Invia email (con gestione errore graceful)
