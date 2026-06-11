@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fattura Proforma - TeleMedCare</title>
+<title>Fattura Proforma - eCura</title>
 <style>
 body { 
   font-family: Arial, Helvetica, sans-serif; 
@@ -201,7 +201,7 @@ th {
     <span>€ <span id="imponibile"></span></span>
   </div>
   <div class="total-row">
-    <span>IVA (22%):</span>
+    <span id="label-iva">IVA (22%):</span>
     <span>€ <span id="importo-iva"></span></span>
   </div>
   <div class="total-row grand-total">
@@ -219,7 +219,7 @@ th {
     <p style="margin: 5px 0;"><strong>Beneficiario:</strong> Medica GB S.r.l.</p>
     <p style="margin: 5px 0;"><strong>IBAN:</strong> IT97L0503401727000000003519</p>
     <p style="margin: 5px 0;"><strong>Banca:</strong> Banca Popolare di Milano</p>
-    <p style="margin: 5px 0;"><strong>Causale:</strong> Proforma <span id="causale-numero"></span> - TeleMedCare <span id="causale-servizio"></span></p>
+    <p style="margin: 5px 0;"><strong>Causale:</strong> Proforma <span id="causale-numero"></span> - eCura <span id="causale-servizio"></span></p>
   </div>
 
   <div class="bank-details">
@@ -247,10 +247,10 @@ th {
 
 <div class="footer">
   <p><strong>Medica GB S.r.l.</strong> - Startup Innovativa a Vocazione Sociale</p>
-  <p>www.medicagb.it | www.telemedcare.it</p>
-  <p>Tel: +39 02 1234567 | Email: info@ecura.it</p>
+  <p>www.ecura.it | www.medicagb.it</p>
+  <p>Tel: +39 335 730 1206 | Email: info@ecura.it</p>
   <p style="margin-top: 15px; font-size: 11px;">
-    Documento generato automaticamente dal sistema TeleMedCare V11.0<br/>
+    Documento generato automaticamente dal sistema eCura<br/>
     Per informazioni o assistenza: info@ecura.it
   </p>
 </div>
@@ -326,16 +326,25 @@ if (!proformaId) {
       document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
       
       // ✅ REGOLA UNIVERSALE: L'API già calcola tutto correttamente
-      // prezzo_base = IVA ESCLUSA (990€), importo_iva = IVA 22% (217.80€), importo_totale = IVA INCLUSA (1207.80€)
+      // prezzo_base = IVA ESCLUSA, importo_iva = IVA calcolata (4% o 22%), importo_totale = IVA INCLUSA
       const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_base || proforma.prezzo_totale) || 0;
-      const iva = parseFloat(proforma.importo_iva) || (prezzoBaseIvaEsclusa * 0.22);
+      // ✅ FIX IVA: usa sempre il valore pre-calcolato dall'API (4% o 22%)
+      // NON fare fallback hardcoded a 0.22 — l'API già gestisce iva_agevolata
+      const iva = parseFloat(proforma.importo_iva) || 0;
       const prezzoTotaleIvaInclusa = parseFloat(proforma.importo_totale) || (prezzoBaseIvaEsclusa + iva);
+      
+      // ✅ FIX: aggiorna label IVA dinamicamente (4% o 22%)
+      const ivaLabel = proforma.iva_label || (proforma.iva_agevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%');
+      document.getElementById('label-iva').textContent = ivaLabel + ':';
       
       document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBaseIvaEsclusa);
       document.getElementById('prezzo-base-2').textContent = formatCurrency(prezzoBaseIvaEsclusa);
       document.getElementById('imponibile').textContent = formatCurrency(prezzoBaseIvaEsclusa);
       document.getElementById('importo-iva').textContent = formatCurrency(iva);
       document.getElementById('prezzo-totale').textContent = formatCurrency(prezzoTotaleIvaInclusa);
+      
+      // ✅ FIX: aggiorna title pagina con numero proforma (nome file PDF)
+      document.title = `Fattura Proforma ${proforma.numero_proforma || ''} - eCura`;
       
       // Link pagamento
       const linkPagamento = `/pagamento.html?proformaId=${proformaId}`;

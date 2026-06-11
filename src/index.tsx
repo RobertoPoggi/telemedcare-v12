@@ -331,7 +331,7 @@ async function inviaEmailContrattoOLD_DEPRECATED(contract: any, env?: any) {
     // Variabili per template
     const variables = {
       NOME_CLIENTE: contract.nomeRichiedente || contract.cognomeRichiedente || 'Cliente',
-      PIANO_SERVIZIO: contract.contractType === 'AVANZATO' ? 'TeleMedCare Avanzato' : 'TeleMedCare Basic',
+      PIANO_SERVIZIO: contract.contractType === 'AVANZATO' ? 'eCura Avanzato' : 'eCura Base',
       PREZZO_PIANO: contract.contractType === 'AVANZATO' ? '€890/anno' : '€490/anno',
       CODICE_CLIENTE: contract.codice_contratto || contract.id || 'N/A'
     }
@@ -376,7 +376,7 @@ async function inviaEmailProforma(proforma: any, env?: any) {
       SERVIZIO: proforma.tipo_servizio || 'eCura Premium',
       PIANO: proforma.piano || 'AVANZATO',
       NUMERO_PROFORMA: proforma.numero_proforma || proforma.id || 'N/A',
-      PIANO_SERVIZIO: proforma.servizio || 'TeleMedCare',
+      PIANO_SERVIZIO: proforma.servizio || 'eCura PRO',
       IMPORTO_BASE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,  // IVA ESCLUSA
       IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
       IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA
@@ -421,7 +421,7 @@ async function inviaEmailBenvenutoEFormConfigurazione(leadId: string, db: any, e
     // Variabili per template
     const variables = {
       NOME_CLIENTE: lead.nomeRichiedente || 'Cliente',
-      PIANO_SERVIZIO: lead.pacchetto === 'AVANZATO' ? 'TeleMedCare Avanzato' : 'TeleMedCare Basic',
+      PIANO_SERVIZIO: lead.pacchetto === 'AVANZATO' ? 'eCura Avanzato' : 'eCura Base',
       COSTO_SERVIZIO: lead.pacchetto === 'AVANZATO' ? '€890/anno' : '€490/anno',
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       CODICE_CLIENTE: lead.id || 'N/A',
@@ -2323,7 +2323,7 @@ app.get('/form-lead', (c) => {
                 <i class="fas fa-check-circle text-2xl mr-3"></i>
                 <strong class="text-lg">✅ Successo!</strong>
               </div>
-              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema TeleMedCare V12.0. Riceverai conferma via email con i documenti richiesti!</span>
+              <span class="block mt-1">La tua richiesta è stata elaborata dal sistema eCura. Riceverai conferma via email con i documenti richiesti!</span>
             </div>
             <div id="error_message" class="hidden bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-md animate-fade-in">
               <div class="flex items-center">
@@ -5710,7 +5710,7 @@ app.post('/api/admin/run-migrations', async (c) => {
         'Invio Documenti Informativi',
         'email',
         'eCura - Documentazione richiesta',
-        '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Documentazione eCura</title></head><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="color: white; margin: 0; font-size: 28px;">Documentazione eCura</h1></div><div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;"><p style="font-size: 16px; margin-bottom: 20px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p><p style="font-size: 16px; margin-bottom: 20px;">Come da Lei richiesto, alleghiamo la documentazione informativa relativa al servizio <strong>{{PIANO_SERVIZIO}}</strong>.</p><div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #666;"><strong>Documenti allegati:</strong><br>{{DOCUMENTI_ALLEGATI}}</p></div><p style="font-size: 16px; margin-bottom: 20px;">Per qualsiasi domanda o chiarimento, non esiti a contattarci.</p><p style="font-size: 16px; margin-bottom: 10px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p></div><div style="text-align: center; padding: 20px; font-size: 12px; color: #666;"><p style="margin: 5px 0;">eCura by TeleMedCare</p><p style="margin: 5px 0;">info@ecura.it</p></div></body></html>',
+        '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Documentazione eCura</title></head><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;"><h1 style="color: white; margin: 0; font-size: 28px;">Documentazione eCura</h1></div><div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;"><p style="font-size: 16px; margin-bottom: 20px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p><p style="font-size: 16px; margin-bottom: 20px;">Come da Lei richiesto, alleghiamo la documentazione informativa relativa al servizio <strong>{{PIANO_SERVIZIO}}</strong>.</p><div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;"><p style="margin: 0; font-size: 14px; color: #666;"><strong>Documenti allegati:</strong><br>{{DOCUMENTI_ALLEGATI}}</p></div><p style="font-size: 16px; margin-bottom: 20px;">Per qualsiasi domanda o chiarimento, non esiti a contattarci.</p><p style="font-size: 16px; margin-bottom: 10px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p></div><div style="text-align: center; padding: 20px; font-size: 12px; color: #666;"><p style="margin: 5px 0;">eCura by Medica GB S.r.l.</p><p style="margin: 5px 0;">info@ecura.it</p></div></body></html>',
         '["NOME_CLIENTE", "COGNOME_CLIENTE", "PIANO_SERVIZIO", "DOCUMENTI_ALLEGATI"]',
         'informative',
         1,
@@ -5851,10 +5851,10 @@ app.post('/api/admin/test-email', async (c) => {
     const result = await emailService.sendEmail({
       to,
       from: c.env?.RESEND_FROM || 'info@ecura.it',
-      subject: '🧪 Test Email - TeleMedCare',
+      subject: '🧪 Test Email - eCura',
       html: `
         <h1>Test Email</h1>
-        <p>Questa è un'email di test inviata da TeleMedCare il ${new Date().toISOString()}</p>
+        <p>Questa è un'email di test inviata da eCura il ${new Date().toISOString()}</p>
         <p><strong>API Keys disponibili:</strong></p>
         <ul>
           <li>RESEND_API_KEY: ${c.env.RESEND_API_KEY ? '✅ Configurata' : '❌ Mancante'}</li>
@@ -9069,7 +9069,7 @@ app.post('/api/create-payment-intent', async (c) => {
     const result = await createStripePaymentIntent(
       c.env,
       amountInCents,
-      `Pagamento Proforma ${proforma.numero_proforma} - TeleMedCare ${proforma.servizio || proforma.tipo_servizio || ''}`,
+      `Pagamento Proforma ${proforma.numero_proforma} - eCura ${proforma.servizio || proforma.tipo_servizio || ''}`,
       {
         proformaId: proforma.id,
         proforma_number: proforma.numero_proforma,
@@ -9282,7 +9282,18 @@ app.get('/api/proforma/:id', async (c) => {
           l.nomeRichiedente,
           l.cognomeRichiedente,
           l.email as lead_email,
-          l.telefono as lead_telefono
+          l.telefono as lead_telefono,
+          l.cfIntestatario as lead_cf_intestatario,
+          l.indirizzoIntestatario as lead_indirizzo,
+          l.capIntestatario as lead_cap,
+          l.cittaIntestatario as lead_citta,
+          l.provinciaIntestatario as lead_provincia,
+          l.indirizzoAssistito as lead_indirizzo_assistito,
+          l.capAssistito as lead_cap_assistito,
+          l.cittaAssistito as lead_citta_assistito,
+          l.provinciaAssistito as lead_provincia_assistito,
+          l.cfAssistito as lead_cf_assistito,
+          l.iva_agevolata as lead_iva_agevolata
         FROM proforma p
         LEFT JOIN leads l ON p.leadId = l.id
         WHERE p.id = ? OR UPPER(p.numero_proforma) = ?
@@ -9295,7 +9306,18 @@ app.get('/api/proforma/:id', async (c) => {
           l.nomeRichiedente,
           l.cognomeRichiedente,
           l.email as lead_email,
-          l.telefono as lead_telefono
+          l.telefono as lead_telefono,
+          l.cfIntestatario as lead_cf_intestatario,
+          l.indirizzoIntestatario as lead_indirizzo,
+          l.capIntestatario as lead_cap,
+          l.cittaIntestatario as lead_citta,
+          l.provinciaIntestatario as lead_provincia,
+          l.indirizzoAssistito as lead_indirizzo_assistito,
+          l.capAssistito as lead_cap_assistito,
+          l.cittaAssistito as lead_citta_assistito,
+          l.provinciaAssistito as lead_provincia_assistito,
+          l.cfAssistito as lead_cf_assistito,
+          l.iva_agevolata as lead_iva_agevolata
         FROM proforma p
         LEFT JOIN leads l ON p.leadId = l.id
         WHERE UPPER(p.numero_proforma) = ?
@@ -9319,33 +9341,39 @@ app.get('/api/proforma/:id', async (c) => {
     // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB contiene IVA ESCLUSA
     // Es: DB.prezzo_totale = €990 (IVA ESCLUSA)
     const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
-    // Usa aliquota IVA dalla proforma (Legge 104 → 4%, standard → 22%)
-    const ivaRateProforma = proforma.iva_agevolata ? 0.04 : 0.22
-    const ivaLabelProforma = proforma.iva_agevolata ? '4%' : '22%'
+    // ✅ FIX IVA: usa iva_agevolata dalla proforma, con fallback al lead
+    const ivaAgevolataEffettiva = proforma.iva_agevolata || proforma.lead_iva_agevolata || 0
+    const ivaRateProforma = ivaAgevolataEffettiva ? 0.04 : 0.22
+    const ivaLabelProforma = ivaAgevolataEffettiva ? '4% (Legge 104)' : '22%'
     const importoIva = Math.round((prezzoBaseIvaEsclusa * ivaRateProforma) * 100) / 100
     const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
+    console.log(`📊 [API/proforma] IVA: agevolata=${ivaAgevolataEffettiva}, rate=${ivaRateProforma*100}%, base=€${prezzoBaseIvaEsclusa}, iva=€${importoIva}, totale=€${importoTotaleIvaInclusa}`)
     
     const proformaResponse = {
       ...proforma,
       importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA
       prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Base IVA ESCLUSA (da DB)
       importo_iva: importoIva.toFixed(2),  // IVA calcolata
-      iva_label: `IVA ${ivaLabelProforma}`,
+      iva_label: `IVA ${ivaLabelProforma}`,  // es. "IVA 4% (Legge 104)" o "IVA 22%"
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
       piano: piano,
       
-      // Cliente - usa i dati dalla tabella proforma (già popolati all'inserimento)
+      // Cliente - usa i dati dalla tabella proforma; fallback ai dati leads se mancanti
       cliente_nome: proforma.cliente_nome || proforma.nomeRichiedente || '',
       cliente_cognome: proforma.cliente_cognome || proforma.cognomeRichiedente || '',
       cliente_email: proforma.cliente_email || proforma.lead_email || '',
       cliente_telefono: proforma.cliente_telefono || proforma.lead_telefono || '',
-      cliente_indirizzo: proforma.cliente_indirizzo || 'N/D',
-      cliente_citta: proforma.cliente_citta || '',
-      cliente_cap: proforma.cliente_cap || '',
-      cliente_provincia: proforma.cliente_provincia || '',
-      cliente_codice_fiscale: proforma.cliente_codice_fiscale || 'N/D'
+      // ✅ FIX: fallback a leads se indirizzo vuoto in proforma
+      cliente_indirizzo: proforma.cliente_indirizzo || proforma.lead_indirizzo || proforma.lead_indirizzo_assistito || '',
+      cliente_citta: proforma.cliente_citta || proforma.lead_citta || proforma.lead_citta_assistito || '',
+      cliente_cap: proforma.cliente_cap || proforma.lead_cap || proforma.lead_cap_assistito || '',
+      cliente_provincia: proforma.cliente_provincia || proforma.lead_provincia || proforma.lead_provincia_assistito || '',
+      // ✅ FIX: fallback a leads per codice fiscale
+      cliente_codice_fiscale: proforma.cliente_codice_fiscale || proforma.lead_cf_intestatario || proforma.lead_cf_assistito || '',
+      // ✅ FIX: iva_agevolata con fallback a leads
+      iva_agevolata: proforma.iva_agevolata || proforma.lead_iva_agevolata || 0
     }
     
     return c.json({ success: true, proforma: proformaResponse })
@@ -13850,7 +13878,7 @@ app.get('/firma-contratto', async (c) => {
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Contratto firmato con successo!\\n\\nRiceverai una email con la proforma per il pagamento.\\n\\nGrazie per la tua fiducia in TeleMedCare!');
+                        alert('✅ Contratto firmato con successo!\\n\\nRiceverai una email con la proforma per il pagamento.\\n\\nGrazie per la tua fiducia in eCura!');
                         // Chiudi la finestra dopo conferma (sicuro: no URL esposto)
                         window.close();
                     } else {
@@ -17881,7 +17909,7 @@ app.post('/api/hubspot/sync', async (c) => {
               await EmailService.send({
                 to: emailSafe,
                 from: c.env.RESEND_FROM || c.env.EMAIL_FROM || 'info@ecura.it',
-                subject: template.subject || 'Completa i tuoi dati - TeleMedCare',
+                subject: template.subject || 'Completa i tuoi dati - eCura',
                 html
               }, c.env)
               
@@ -23453,7 +23481,7 @@ function generateValidIMEI() {
   return imei + ((10 - (sum % 10)) % 10)
 }
 
-// API per template email reali TeleMedCare
+// API per template email reali eCura
 app.post('/api/email/preview/:templateId', async (c) => {
   try {
     const templateId = c.req.param('templateId')
@@ -23462,11 +23490,11 @@ app.post('/api/email/preview/:templateId', async (c) => {
     // Template reali TeleMedCare
     const templates = {
       'invio_contratto': {
-        subject: '📋 TeleMedCare - Il tuo contratto è pronto!',
+        subject: '📋 eCura - Il tuo contratto è pronto!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #3B82F6; color: white; padding: 20px; text-align: center;">
-              <h1>TeleMedCare</h1>
+              <h1>eCura</h1>
               <h2>Il tuo contratto è pronto!</h2>
             </div>
             <div style="padding: 20px;">
@@ -23475,32 +23503,32 @@ app.post('/api/email/preview/:templateId', async (c) => {
               <div style="background: #F3F4F6; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>Piano:</strong> ${variables.PIANO_SERVIZIO || 'SiDLY Care Pro'}</p>
                 <p><strong>Prezzo:</strong> ${variables.PREZZO_PIANO || '€299,00'}</p>
-                <p><strong>Codice Cliente:</strong> ${variables.CODICE_CLIENTE || 'TMC-2024-001'}</p>
+                <p><strong>Codice Cliente:</strong> ${variables.CODICE_CLIENTE || 'EC-2026-001'}</p>
               </div>
               <p>Troverai il contratto in allegato. Per qualsiasi domanda, contattaci.</p>
-              <p>Cordiali saluti,<br><strong>Team TeleMedCare</strong></p>
+              <p>Cordiali saluti,<br><strong>Il Team eCura</strong></p>
             </div>
           </div>
         `
       },
       'invio_proforma': {
-        subject: `💰 TeleMedCare - Fattura Proforma per ${variables.PIANO_SERVIZIO || 'SiDLY Care Pro'}`,
+        subject: `💰 eCura - Fattura Proforma per ${variables.PIANO_SERVIZIO || 'SiDLY Care Pro'}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #F59E0B; color: white; padding: 20px; text-align: center;">
-              <h1>TeleMedCare</h1>
+              <h1>eCura</h1>
               <h2>Fattura Proforma</h2>
             </div>
             <div style="padding: 20px;">
               <p>Gentile <strong>${variables.NOME_CLIENTE || 'Cliente'}</strong>,</p>
-              <p>Abbiamo preparato la fattura proforma per il tuo piano TeleMedCare.</p>
+              <p>Abbiamo preparato la fattura proforma per il tuo piano eCura.</p>
               <div style="background: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>Importo:</strong> ${variables.IMPORTO_TOTALE || '€299,00'}</p>
-                <p><strong>Scadenza Pagamento:</strong> ${variables.SCADENZA_PAGAMENTO || '2024-11-15'}</p>
-                <p><strong>Codice Cliente:</strong> ${variables.CODICE_CLIENTE || 'TMC-2024-001'}</p>
+                <p><strong>Scadenza Pagamento:</strong> ${variables.SCADENZA_PAGAMENTO || ''}</p>
+                <p><strong>Codice Cliente:</strong> ${variables.CODICE_CLIENTE || ''}</p>
               </div>
               <p>Procedi con il pagamento per attivare il servizio.</p>
-              <p>Cordiali saluti,<br><strong>Team TeleMedCare</strong></p>
+              <p>Cordiali saluti,<br><strong>Il Team eCura</strong></p>
             </div>
           </div>
         `
@@ -23726,7 +23754,7 @@ app.post('/api/email/preview', async (c) => {
           
           <p>Caro <strong>${variables.NOME_CLIENTE || '{{NOME_CLIENTE}}'}</strong>,</p>
           
-          <p>Benvenuto nella famiglia TeleMedCare! Siamo entusiasti di averti come nuovo cliente e di poterti offrire i nostri servizi di telemedicina avanzata.</p>
+          <p>Benvenuto nella famiglia eCura! Siamo entusiasti di averti come nuovo cliente e di poterti offrire i nostri servizi di telemedicina avanzata.</p>
           
           <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
             <h3 style="margin-top: 0; color: #047857;">Il tuo piano attivo:</h3>
@@ -24856,7 +24884,7 @@ const EMAIL_TEMPLATES = {
             <div class="field"><span class="label">Preferenza Contatto:</span><span class="value">{{PREFERENZA_CONTATTO}}</span></div>
         </div>
         <div class="urgent">
-            ⚡ Azione Richiesta: Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio TeleMedCare.
+            ⚡ Azione Richiesta: Contattare il cliente entro 24 ore per procedere con l'attivazione del servizio eCura.
         </div>
     </div>
 </body>
@@ -24867,7 +24895,7 @@ const EMAIL_TEMPLATES = {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benvenuto in TeleMedCare</title>
+    <title>Benvenuto in eCura</title>
     <style>
         body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -24888,7 +24916,7 @@ const EMAIL_TEMPLATES = {
             <div class="welcome-title">Benvenuto/a {{NOME_CLIENTE}}!</div>
             <div style="font-size: 18px;">🎉 Congratulazioni per la Sua scelta!</div>
         </div>
-        <p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia TeleMedCare.</p>
+        <p>Ha scelto il nostro servizio <strong>{{PIANO_SERVIZIO}}</strong> e ora fa parte della famiglia eCura.</p>
         <div class="highlight">La Sua sicurezza è la nostra priorità!</div>
         <div class="section">
             <h3 style="margin-top: 0; color: #1e40af;">📋 Riepilogo del Suo servizio:</h3>
@@ -24898,8 +24926,8 @@ const EMAIL_TEMPLATES = {
             <div class="summary-item"><span class="label">Codice Cliente:</span><span class="value">{{CODICE_CLIENTE}}</span></div>
         </div>
         <div class="footer">
-            <p style="margin: 0; font-size: 18px; font-weight: 600;">Benvenuto/a nella famiglia TeleMedCare!</p>
-            <p style="margin: 5px 0 0 0;">Il Team TeleMedCare - Medica GB S.r.l.</p>
+            <p style="margin: 0; font-size: 18px; font-weight: 600;">Benvenuto/a nella famiglia eCura!</p>
+            <p style="margin: 5px 0 0 0;">Il Team eCura - Medica GB S.r.l.</p>
         </div>
     </div>
 </body>
@@ -24910,7 +24938,7 @@ const EMAIL_TEMPLATES = {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proforma TeleMedCare</title>
+    <title>Proforma eCura</title>
     <style>
         body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -24937,12 +24965,12 @@ const EMAIL_TEMPLATES = {
 <body>
     <div class="container">
         <div class="header">
-            <div class="title">📋 Proforma TeleMedCare</div>
+            <div class="title">📋 Proforma eCura</div>
             <div style="font-size: 18px;">Numero: {{NUMERO_PROFORMA}}</div>
         </div>
         
         <p>Gentile <strong>{{NOME_CLIENTE}}</strong>,</p>
-        <p>Grazie per aver scelto TeleMedCare! Di seguito troverà la proforma per il servizio richiesto.</p>
+        <p>Grazie per aver scelto eCura! Di seguito troverà la proforma per il servizio richiesto.</p>
         
         <div class="section">
             <h3 style="margin-top: 0; color: #2563eb;">🏥 Servizio Richiesto:</h3>
@@ -24976,7 +25004,7 @@ const EMAIL_TEMPLATES = {
         </div>
         
         <div class="footer">
-            <p><strong>TeleMedCare - Medica GB S.r.l.</strong></p>
+            <p><strong>eCura - Medica GB S.r.l.</strong></p>
             <p>Per assistenza: info@ecura.it | Tel: 800-123-456</p>
         </div>
     </div>
