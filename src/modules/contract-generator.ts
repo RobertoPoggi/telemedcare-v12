@@ -953,11 +953,9 @@ ${420 + textContent.length}
    * Genera contenuto PDF completo dal template (senza HTML rendering)
    */
   private static generatePDFTextContent(data: ContractData): string {
-    const dispositivo = data.servizio === 'FAMILY' 
-      ? 'Senium' 
-      : data.servizio === 'PREMIUM' 
-        ? 'SiDLY Vital Care' 
-        : 'SiDLY Care PRO'
+    const dispositivo = data.servizio === 'PREMIUM' 
+      ? 'SiDLY Vital Care' 
+      : 'SiDLY Care PRO'  // FAMILY e PRO usano entrambi SiDLY Care PRO
     
     // Genera contenuto PDF più ricco usando il template HTML
     return `BT

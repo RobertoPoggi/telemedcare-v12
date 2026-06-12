@@ -3,7 +3,7 @@
  * Matrice prezzi completa per tutti i servizi e piani
  * 
  * SERVIZI:
- * - FAMILY: Senium (protezione base famiglia)
+ * - FAMILY: SiDLY Care PRO (protezione base famiglia)
  * - PRO: SiDLY Care PRO (assistenza professionale)
  * - PREMIUM: SiDLY Vital Care (monitoraggio avanzato)
  * 
@@ -47,8 +47,8 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
     'BASE': {
       servizio: 'FAMILY',
       piano: 'BASE',
-      dispositivo: 'Senium',
-      descrizioneDispositivo: 'Dispositivo base per monitoraggio familiare',
+      dispositivo: 'SiDLY Care PRO',
+      descrizioneDispositivo: 'Dispositivo medicale SiDLY Care PRO per monitoraggio familiare',
       
       // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
       setupBase: 390.00,        // Prezzo base sito (IVA esclusa)
@@ -64,7 +64,7 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       detrazioneFiscale19: 90.40, // 19% di 475.80
       
       serviziInclusi: [
-        'Dispositivo medicale Senium',
+        'Dispositivo medicale SiDLY Care PRO (Classe IIa)',
         'Monitoraggio parametri vitali base',
         'Supporto tecnico (orario lavorativo)',
         'Report mensili',
@@ -74,8 +74,8 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
     'AVANZATO': {
       servizio: 'FAMILY',
       piano: 'AVANZATO',
-      dispositivo: 'Senium',
-      descrizioneDispositivo: 'Dispositivo base con centrale operativa H24',
+      dispositivo: 'SiDLY Care PRO',
+      descrizioneDispositivo: 'Dispositivo medicale SiDLY Care PRO con centrale operativa H24',
       
       // Primo anno (da sito www.ecura.it - IVA ESCLUSA)
       setupBase: 690.00,        // Prezzo base sito (IVA esclusa)
@@ -91,7 +91,7 @@ export const ECURA_PRICING: Record<string, Record<string, PricingDetails>> = {
       detrazioneFiscale19: 159.94, // 19% di 841.80
       
       serviziInclusi: [
-        'Dispositivo medicale Senium',
+        'Dispositivo medicale SiDLY Care PRO (Classe IIa)',
         'Centrale Operativa H24/7',
         'Monitoraggio parametri vitali avanzato',
         'Supporto professionale continuo',

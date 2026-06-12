@@ -432,7 +432,7 @@ export async function createDDTFromOrder(
   
   // Determina dispositivo in base al servizio
   const dispositivoMap: Record<string, string> = {
-    'FAMILY': 'Senium - Braccialetto Salvavita',
+    'FAMILY': 'SiDLY Care PRO - Dispositivo Medico Certificato',
     'PRO': 'SiDLY Care PRO V12.0 - Dispositivo Medico Certificato',
     'PREMIUM': 'SiDLY Vital Care - Monitoraggio Avanzato'
   }

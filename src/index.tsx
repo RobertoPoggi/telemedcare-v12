@@ -12387,11 +12387,9 @@ app.post('/api/configurations/submit', async (c) => {
         const destinatarioCitta = lead.cittaIntestatario || lead.cittaAssistito || ''
         const destinatarioProvincia = lead.provinciaIntestatario || lead.provinciaAssistito || ''
         const servizioLabel = contractRow?.servizio || lead.servizio || 'eCura PRO'
-        const dispositivoLabel = servizioLabel.includes('VITAL') || servizioLabel.includes('FAMILY') 
-          ? 'SiDLY VITAL CARE' 
-          : servizioLabel.includes('PREMIUM') 
-            ? 'SiDLY VITAL CARE' 
-            : 'SiDLY Care PRO'
+        const dispositivoLabel = servizioLabel.includes('PREMIUM') || servizioLabel.includes('VITAL')
+          ? 'SiDLY Vital Care'
+          : 'SiDLY Care PRO'  // FAMILY e PRO → SiDLY Care PRO
         
         await db.prepare(`
           INSERT INTO ddts (
