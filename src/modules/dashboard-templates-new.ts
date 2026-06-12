@@ -3566,8 +3566,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 2%;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 14%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 16%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 12%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Contatti</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
@@ -3577,7 +3577,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 11%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 18%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 23%;">Azioni</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
                         </tr>
                     </thead>
@@ -4051,11 +4051,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <td class="py-2 text-xs truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || '')}">
                             <div class="font-medium truncate">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
-                        <td class="py-2 text-xs">
+                        <td class="py-2 text-xs overflow-hidden">
                             <div class="text-xs text-gray-600 truncate" title="\${escapeHtml(lead.email || '')}">
                                 <i class="fas fa-envelope text-gray-400 mr-1"></i>\${escapeHtml(lead.email || '') || '-'}
                             </div>
-                            <div class="text-xs text-gray-600 mt-1">
+                            <div class="text-xs text-gray-600 mt-1 truncate">
                                 <i class="fas fa-phone text-gray-400 mr-1"></i><a href="tel:\${escapeHtml(lead.telefono || '')}" class="hover:text-blue-600 hover:underline">\${escapeHtml(lead.telefono || '') || '-'}</a>
                             </div>
                         </td>
