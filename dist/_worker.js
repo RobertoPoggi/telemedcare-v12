@@ -6788,9 +6788,9 @@ ${370+t.length}
         }
 
         async function sendBenvenuto(leadId) {
-            if (!confirm('🎉 Inviare email di BENVENUTO al cliente?
+            if (!confirm('Inviare email di BENVENUTO al cliente?
 
-Verrà inviata con importo IVA corretto e dispositivo aggiornato.')) return;
+Verra inviata con importo IVA corretto e dispositivo aggiornato.')) return;
             try {
                 const response = await fetch('/api/leads/' + leadId + '/send-benvenuto', {
                     method: 'POST',
@@ -6798,18 +6798,18 @@ Verrà inviata con importo IVA corretto e dispositivo aggiornato.')) return;
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('✅ Email benvenuto inviata!');
+                    alert('OK - Email benvenuto inviata!');
                     loadLeadsData();
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert('ERRORE di comunicazione: ' + error.message);
             }
         }
 
         async function generaDDT(leadId) {
-            const imei = prompt('📦 GENERA DDT
+            const imei = prompt('GENERA DDT
 
 Inserisci IMEI del dispositivo:');
             if (!imei || !imei.trim()) return;
@@ -6817,11 +6817,11 @@ Inserisci IMEI del dispositivo:');
             const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
             const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
             const note = prompt('Note aggiuntive (opzionale):') || '';
-            if (!confirm('📦 Confermi generazione DDT?' + '
+            if (!confirm('Confermi generazione DDT?' + '
 
 IMEI: ' + imei.trim() + '
-Tel SIM: ' + (telefonoSim||'—') + '
-N° DDT: ' + (numeroDdt||'auto') + '
+Tel SIM: ' + (telefonoSim||'-') + '
+N. DDT: ' + (numeroDdt||'auto') + '
 Data: ' + (dataConsegna||'oggi') + '
 
 Verranno creati:
@@ -6838,18 +6838,18 @@ Email riepilogo a info@ecura.it')) return;
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('✅ ' + result.message + '
+                    alert('OK - ' + result.message + '
 
-DDT N°: ' + (result.ddt&&result.ddt.numero) + '
+DDT N.: ' + (result.ddt&&result.ddt.numero) + '
 Dispositivo: ' + (result.ddt&&result.ddt.dispositivo) + '
 IMEI: ' + (result.ddt&&result.ddt.imei) + '
 Assistito: ' + (result.assistito&&result.assistito.nome));
                     loadLeadsData();
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
-                alert('❌ Errore di comunicazione: ' + error.message);
+                alert('ERRORE di comunicazione: ' + error.message);
             }
         }
 

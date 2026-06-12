@@ -4580,7 +4580,7 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         async function sendBenvenuto(leadId) {
-            if (!confirm('\uD83C\uDF89 Inviare email di BENVENUTO al cliente?\n\nVerr\u00e0 inviata con importo IVA corretto e dispositivo aggiornato.')) return;
+            if (!confirm('Inviare email di BENVENUTO al cliente?\n\nVerra inviata con importo IVA corretto e dispositivo aggiornato.')) return;
             try {
                 const response = await fetch('/api/leads/' + leadId + '/send-benvenuto', {
                     method: 'POST',
@@ -4588,24 +4588,24 @@ export const leads_dashboard = `<!DOCTYPE html>
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('\u2705 Email benvenuto inviata!');
+                    alert('OK - Email benvenuto inviata!');
                     loadLeadsData();
                 } else {
-                    alert('\u274C Errore: ' + (result.error || 'Errore sconosciuto'));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
-                alert('\u274C Errore di comunicazione: ' + error.message);
+                alert('ERRORE di comunicazione: ' + error.message);
             }
         }
 
         async function generaDDT(leadId) {
-            const imei = prompt('\uD83D\uDCE6 GENERA DDT\n\nInserisci IMEI del dispositivo:');
+            const imei = prompt('GENERA DDT\n\nInserisci IMEI del dispositivo:');
             if (!imei || !imei.trim()) return;
             const telefonoSim = prompt('Numero di telefono della SIM (premi OK per saltare):') || '';
             const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
             const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
             const note = prompt('Note aggiuntive (opzionale):') || '';
-            if (!confirm('\uD83D\uDCE6 Confermi generazione DDT?' + '\n\nIMEI: ' + imei.trim() + '\nTel SIM: ' + (telefonoSim||'\u2014') + '\nN\u00b0 DDT: ' + (numeroDdt||'auto') + '\nData: ' + (dataConsegna||'oggi') + '\n\nVerranno creati:\n- Record DDT\n- Dispositivo nel DB\n- Assistito nel DB\n\nEmail riepilogo a info@ecura.it')) return;
+            if (!confirm('Confermi generazione DDT?' + '\n\nIMEI: ' + imei.trim() + '\nTel SIM: ' + (telefonoSim||'-') + '\nN. DDT: ' + (numeroDdt||'auto') + '\nData: ' + (dataConsegna||'oggi') + '\n\nVerranno creati:\n- Record DDT\n- Dispositivo nel DB\n- Assistito nel DB\n\nEmail riepilogo a info@ecura.it')) return;
             try {
                 const response = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                     method: 'POST',
@@ -4614,13 +4614,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('\u2705 ' + result.message + '\n\nDDT N\u00b0: ' + (result.ddt&&result.ddt.numero) + '\nDispositivo: ' + (result.ddt&&result.ddt.dispositivo) + '\nIMEI: ' + (result.ddt&&result.ddt.imei) + '\nAssistito: ' + (result.assistito&&result.assistito.nome));
+                    alert('OK - ' + result.message + '\n\nDDT N.: ' + (result.ddt&&result.ddt.numero) + '\nDispositivo: ' + (result.ddt&&result.ddt.dispositivo) + '\nIMEI: ' + (result.ddt&&result.ddt.imei) + '\nAssistito: ' + (result.assistito&&result.assistito.nome));
                     loadLeadsData();
                 } else {
-                    alert('\u274C Errore: ' + (result.error || 'Errore sconosciuto'));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
                 }
             } catch (error) {
-                alert('\u274C Errore di comunicazione: ' + error.message);
+                alert('ERRORE di comunicazione: ' + error.message);
             }
         }
 
