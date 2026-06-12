@@ -28822,13 +28822,24 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       : lead.provinciaIntestatario || ''
 
     // --- 4. Numero DDT: usa quello passato oppure auto-incrementa ---
-    let numDdt = numeroDdt
+    let numDdt = numeroDdt ? String(numeroDdt).trim() : ''
     if (!numDdt) {
-      const lastDdt = await c.env.DB.prepare(
-        `SELECT numero_ddt FROM ddts ORDER BY created_at DESC LIMIT 1`
-      ).first() as any
-      const lastNum = lastDdt?.numero_ddt ? parseInt(String(lastDdt.numero_ddt).replace(/\D/g,'')) : 0
-      numDdt = String((isNaN(lastNum) ? 0 : lastNum) + 1)
+      // Prende il MAX numerico da tutti i numero_ddt esistenti
+      const allDdts = await c.env.DB.prepare(
+        `SELECT numero_ddt FROM ddts`
+      ).all() as any
+      const nums = (allDdts?.results || [])
+        .map((r: any) => parseInt(String(r.numero_ddt).replace(/\D/g,'')) || 0)
+        .filter((n: number) => !isNaN(n) && n > 0)
+      const maxNum = nums.length > 0 ? Math.max(...nums) : 0
+      numDdt = String(maxNum + 1)
+    }
+    // Verifica che il numero DDT non esista già — se sì, aggiunge suffisso timestamp
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM ddts WHERE numero_ddt = ? LIMIT 1`
+    ).bind(numDdt).first() as any
+    if (existing) {
+      numDdt = `${numDdt}-${Date.now().toString().slice(-4)}`
     }
 
     const dataDoc = dataConsegna || new Date().toISOString().split('T')[0]
