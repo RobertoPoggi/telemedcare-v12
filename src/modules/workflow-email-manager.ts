@@ -1472,9 +1472,14 @@ export async function inviaEmailBenvenuto(
     const pianoType: 'BASE' | 'AVANZATO' = (clientData.piano || clientData.pacchetto || 'BASE').toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE'
     const pricing = getPricing(servizioType, pianoType)
     
-    const costoServizio = pricing 
-      ? `€${pricing.setupTotale.toFixed(2).replace('.', ',')}/anno (IVA inclusa)`
-      : '€585,60/anno (IVA inclusa)'
+    // ✅ IVA dinamica: 4% se iva_agevolata, 22% standard
+    const ivaAgevolataBenvenuto = !!(clientData as any).iva_agevolata
+    const ivaRateBenvenuto = ivaAgevolataBenvenuto ? 0.04 : 0.22
+    const ivaPercBenvenuto = ivaAgevolataBenvenuto ? '4%' : '22%'
+    const prezzoIvaInclusaBenvenuto = pricing
+      ? Math.round(pricing.setupBase * (1 + ivaRateBenvenuto) * 100) / 100
+      : 585.60
+    const costoServizio = `€${prezzoIvaInclusaBenvenuto.toFixed(2).replace('.', ',')}/anno (IVA ${ivaPercBenvenuto} inclusa)`
     
     const prezzoBase = pricing
       ? `€${pricing.setupBase.toFixed(2).replace('.', ',')}/anno`
@@ -1497,7 +1502,7 @@ export async function inviaEmailBenvenuto(
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
       SERVIZI_INCLUSI: pianoType === 'AVANZATO'
         ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li></ul>`
-        : '<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo SiDLY Care</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>',
+        : `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>`,
       PREZZO_PIANO: prezzoBase
     }
 
