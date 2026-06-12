@@ -19287,11 +19287,11 @@ startxref
         status, note,
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(z,A,k,L,L,I,y,O,D,N,c.email||"",c.telefono||"",T,i,1,"CONSEGNATO",C).run(),console.log(`✅ [GENERA-DDT] DDT ${A} inserito (ID: ${z})`);const _=await e.env.DB.prepare("SELECT id FROM devices WHERE imei = ? LIMIT 1").bind(i).first(),B=s?`SIM: ${s}`:null;_?(await e.env.DB.prepare(`
-        UPDATE devices SET leadId=?, status='ASSIGNED', note=?,
+    `).bind(z,A,k,L,L,I,y,O,D,N,c.email||"",c.telefono||"",T,i,1,"CONSEGNATO",C).run(),console.log(`✅ [GENERA-DDT] DDT ${A} inserito (ID: ${z})`);const _=await e.env.DB.prepare("SELECT id FROM dispositivi WHERE imei = ? LIMIT 1").bind(i).first(),B=s?`SIM: ${s}`:null;_?(await e.env.DB.prepare(`
+        UPDATE dispositivi SET leadId=?, status='ASSIGNED', note=?,
           data_assegnazione=datetime('now'), updated_at=datetime('now') WHERE imei=?
       `).bind(o,B,i).run(),console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${i} aggiornato`)):(await e.env.DB.prepare(`
-        INSERT INTO devices (imei, modello, leadId, status, note, data_assegnazione, created_at, updated_at)
+        INSERT INTO dispositivi (imei, modello, leadId, status, note, data_assegnazione, created_at, updated_at)
         VALUES (?, ?, ?, 'ASSIGNED', ?, datetime('now'), datetime('now'), datetime('now'))
       `).bind(i,T,o,B).run(),console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${i} creato`));const P=c.nomeAssistito||c.nomeRichiedente||"",V=c.cognomeAssistito||c.cognomeRichiedente||"",G=`${P} ${V}`.trim(),H=`ASS-${o}`;await e.env.DB.prepare("SELECT id FROM assistiti WHERE lead_id=? LIMIT 1").bind(o).first()?(await e.env.DB.prepare("UPDATE assistiti SET imei=?, updated_at=datetime('now') WHERE lead_id=?").bind(i,o).run(),console.log("✅ [GENERA-DDT] Assistito esistente: IMEI aggiornato")):(await e.env.DB.prepare(`
         INSERT INTO assistiti (

@@ -28860,23 +28860,22 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     ).run()
     console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId})`)
 
-    // --- 6. Crea/aggiorna record dispositivo ---
-    // Tabella devices usa: leadId (camelCase), status ASSIGNED, note per SIM
+    // --- 6. Crea/aggiorna record dispositivo nella tabella 'dispositivi' ---
     const existingDevice = await c.env.DB.prepare(
-      `SELECT id FROM devices WHERE imei = ? LIMIT 1`
+      `SELECT id FROM dispositivi WHERE imei = ? LIMIT 1`
     ).bind(imei).first() as any
 
     const deviceNote = telefonoSim ? `SIM: ${telefonoSim}` : null
 
     if (existingDevice) {
       await c.env.DB.prepare(`
-        UPDATE devices SET leadId=?, status='ASSIGNED', note=?,
+        UPDATE dispositivi SET leadId=?, status='ASSIGNED', note=?,
           data_assegnazione=datetime('now'), updated_at=datetime('now') WHERE imei=?
       `).bind(leadId, deviceNote, imei).run()
       console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} aggiornato`)
     } else {
       await c.env.DB.prepare(`
-        INSERT INTO devices (imei, modello, leadId, status, note, data_assegnazione, created_at, updated_at)
+        INSERT INTO dispositivi (imei, modello, leadId, status, note, data_assegnazione, created_at, updated_at)
         VALUES (?, ?, ?, 'ASSIGNED', ?, datetime('now'), datetime('now'), datetime('now'))
       `).bind(imei, dispositivo, leadId, deviceNote).run()
       console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} creato`)
