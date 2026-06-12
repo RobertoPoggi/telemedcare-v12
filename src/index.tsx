@@ -9668,6 +9668,30 @@ app.put('/api/ddts/:id', async (c) => {
   }
 })
 
+// POST /api/ddts/fix-status - Aggiorna status e pdf_url dei DDT senza (admin utility)
+app.post('/api/ddts/fix-status', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const baseUrl = new URL(c.req.url).origin
+    // Recupera tutti i DDT con status null, vuoto o 'preparazione'
+    const ddts = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, status, pdf_url FROM ddts WHERE status IS NULL OR status = '' OR status = 'preparazione'`
+    ).all() as any
+    const rows = ddts?.results || []
+    let updated = 0
+    for (const row of rows) {
+      const pdfUrl = row.pdf_url || `${baseUrl}/api/ddts/${row.id}/pdf-print`
+      await c.env.DB.prepare(
+        `UPDATE ddts SET status='CONSEGNATO', pdf_url=?, pdf_generated=1, updated_at=datetime('now') WHERE id=?`
+      ).bind(pdfUrl, row.id).run()
+      updated++
+    }
+    return c.json({ success: true, updated, message: `${updated} DDT aggiornati a CONSEGNATO` })
+  } catch (error) {
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 // DELETE /api/ddts/:id - Elimina DDT
 app.delete('/api/ddts/:id', async (c) => {
   try {
@@ -9684,7 +9708,7 @@ app.delete('/api/ddts/:id', async (c) => {
   }
 })
 
-// GET /api/ddts/:id/pdf-print - Genera pagina HTML stampabile DDT
+// GET /api/ddts/:id/pdf-print - Genera pagina HTML stampabile DDT (layout fedele al template Medica GB)
 app.get('/api/ddts/:id/pdf-print', async (c) => {
   const id = c.req.param('id')
   try {
@@ -9694,161 +9718,241 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Formatta data italiana
+    // Formatta data italiana gg/mm/aa
     const formatDataIt = (d: string) => {
       if (!d) return '—'
       const dt = new Date(d)
       if (isNaN(dt.getTime())) return d
-      return dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
+      const dd = String(dt.getDate()).padStart(2, '0')
+      const mm = String(dt.getMonth() + 1).padStart(2, '0')
+      const yy = String(dt.getFullYear()).slice(-2)
+      return `${dd}/${mm}/${yy}`
+    }
+    // Formatta data trasporto gg-m-aaaa
+    const formatDataTrasporto = (d: string) => {
+      if (!d) return '—'
+      const dt = new Date(d)
+      if (isNaN(dt.getTime())) return d
+      return `${dt.getDate()}-${dt.getMonth() + 1}-${dt.getFullYear()}`
     }
 
-    const numDdtDisplay = ddt.numero_ddt || id
+    // Numero progressivo DDT (es. DDT-008-2026 → "8")
+    const numDdtRaw = ddt.numero_ddt || id
+    const numMatch = numDdtRaw.match(/DDT-0*(\d+)-(\d{4})/i)
+    const numProgressivo = numMatch ? numMatch[1] : numDdtRaw
     const dataDoc = formatDataIt(ddt.data_consegna || ddt.data_spedizione || new Date().toISOString())
+    const dataTrasporto = formatDataTrasporto(ddt.data_consegna || ddt.data_spedizione || new Date().toISOString())
+
     const destinatario = ddt.destinatario_nome || '—'
-    const indirizzo = [ddt.destinatario_indirizzo, ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
+    const indirizzoRiga1 = ddt.destinatario_indirizzo || ''
+    const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
     const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
     const contratto = ddt.contract_code || '—'
-    const note = ddt.note || ''
+    const noteRaw = ddt.note || ''
+    const noteClean = noteRaw.replace(/LeadID:[^\s|]+(\s*\|\s*)?/, '').trim()
 
-    // Descrizione dispositivo in base al modello
-    const descrizioneDispositivo = dispositivo.toLowerCase().includes('pro')
-      ? 'Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell\'alimentazione. Dispositivo Medico certificato in classe IIA con codice CND V0399.'
-      : 'Sistema di allarme per la casa con funzioni di monitoraggio attività, rilevamento cadute, SOS vocale. Dispositivo Medico certificato per l\'assistenza domiciliare.'
+    // Determina nome SIM in base al dispositivo
+    const simNome = `SIM SiDLY per ${dispositivo}`
+    const simDescrizione = `SIM SiDLY per ${dispositivo} (numero SIM ${serialNumber}), per comunicazione e trasmissione dati.`
+
+    // Descrizione completa dispositivo (da template reale)
+    let descrizioneDispositivo: string
+    const dispLower = dispositivo.toLowerCase()
+    if (dispLower.includes('vital')) {
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali e SN ${serialNumber} e, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+    } else {
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali e SN ${serialNumber}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+    }
+
+    // Contratto riferimento formattato
+    const contrattoRif = ddt.data_consegna
+      ? `Contratto firmato del ${formatDataTrasporto(ddt.data_consegna)}`
+      : contratto
+
+    // SVG logo ECG (eCura - ispirato al template Medica GB)
+    const logoSvg = `<svg width="220" height="50" viewBox="0 0 220 50" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0ea5e9">e</text>
+      <text x="20" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0f172a">Cura</text>
+      <polyline points="85,25 95,25 100,10 107,40 113,15 119,35 125,25 220,25" stroke="#0ea5e9" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`
 
     const html = `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DDT N° ${numDdtDisplay}</title>
+  <title>DDT N° ${numProgressivo}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #fff; padding: 20px; }
-    .no-print { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
-    @media print { .no-print { display: none !important; } @page { size: A4; margin: 1.5cm; } }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
+    .btn-print { display: block; margin: 10px auto 0; background: #6d28d9; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+    @media print { .btn-print { display: none !important; } @page { size: A4; margin: 10mm 15mm; } }
 
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e40af; padding-bottom: 12px; margin-bottom: 16px; }
-    .company-info h1 { font-size: 18px; font-weight: bold; color: #1e40af; }
-    .company-info p { font-size: 10px; color: #555; margin-top: 2px; }
-    .doc-title { text-align: right; }
-    .doc-title h2 { font-size: 20px; font-weight: bold; color: #1e40af; }
-    .doc-title p { font-size: 10px; color: #555; }
+    /* ── HEADER ── */
+    .header { display: table; width: 100%; border-bottom: none; margin-bottom: 0; }
+    .header-left { display: table-cell; vertical-align: middle; width: 50%; }
+    .header-right { display: table-cell; vertical-align: top; width: 50%; }
 
-    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    .meta-table td { border: 1px solid #ccc; padding: 6px 10px; }
-    .meta-table .label { background: #f0f4ff; font-weight: bold; font-size: 10px; color: #1e40af; width: 120px; }
+    /* ── BLOCCO META DATI (Num/Data/Pag/Rif + Destinatario) ── */
+    .meta-dest { display: table; width: 100%; border: 1.5px solid #6b21a8; border-collapse: collapse; margin-top: 6mm; }
+    .meta-dest-left { display: table-cell; width: 50%; vertical-align: top; border-right: 1.5px solid #6b21a8; padding: 0; }
+    .meta-dest-right { display: table-cell; width: 50%; vertical-align: top; padding: 4px 8px; }
 
-    .destinatario-box { border: 2px solid #1e40af; border-radius: 4px; padding: 12px; margin-bottom: 16px; }
-    .destinatario-box h3 { color: #1e40af; font-size: 11px; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; }
-    .destinatario-box .nome { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
-    .destinatario-box .indirizzo { font-size: 11px; color: #333; }
+    /* griglia Num/Data/Pag/Rif */
+    .meta-grid { width: 100%; border-collapse: collapse; }
+    .meta-grid td { border: 1px solid #6b21a8; padding: 3px 6px; font-size: 8.5pt; }
+    .meta-grid .lbl { background: #f3e8ff; font-weight: bold; color: #6b21a8; width: 35%; }
+    .meta-grid .val { font-weight: bold; }
 
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    .items-table th { background: #1e40af; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
-    .items-table td { border: 1px solid #ddd; padding: 8px 10px; vertical-align: top; }
-    .items-table tr:nth-child(even) td { background: #f9fafb; }
-    .desc-title { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
-    .desc-text { font-size: 10px; color: #444; line-height: 1.5; }
-    .serial-box { font-size: 10px; margin-top: 6px; padding: 4px 8px; background: #f0f4ff; border: 1px solid #93c5fd; border-radius: 3px; }
+    /* destinatario */
+    .dest-label { font-size: 7.5pt; font-weight: bold; color: #6b21a8; margin-bottom: 3px; }
+    .dest-nome { font-size: 10pt; font-weight: bold; margin-bottom: 2px; }
+    .dest-addr { font-size: 8.5pt; line-height: 1.5; }
 
-    .footer { margin-top: 30px; border-top: 2px solid #1e40af; padding-top: 16px; }
-    .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .sign-box { border: 1px solid #ccc; padding: 12px; min-height: 80px; border-radius: 4px; }
-    .sign-box h4 { font-size: 10px; color: #666; margin-bottom: 30px; }
-    .sign-box .sign-line { border-bottom: 1px solid #999; margin-top: 20px; }
-    .contratto-ref { font-size: 10px; color: #555; margin-top: 10px; }
-    .contratto-ref strong { color: #1e40af; }
+    /* ── TABELLA TRASPORTO ── */
+    .trasporto { width: 100%; border-collapse: collapse; margin-top: 5mm; border: 1.5px solid #6b21a8; }
+    .trasporto th { background: #f3e8ff; border: 1px solid #6b21a8; padding: 3px 5px; font-size: 7.5pt; font-weight: bold; color: #6b21a8; text-align: center; }
+    .trasporto td { border: 1px solid #6b21a8; padding: 4px 5px; font-size: 8.5pt; text-align: center; }
 
-    .watermark-status { text-align: center; margin: 10px 0; }
-    .watermark-status span { display: inline-block; padding: 4px 12px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 20px; font-size: 10px; font-weight: bold; }
+    /* ── TABELLA ARTICOLI ── */
+    .articoli { width: 100%; border-collapse: collapse; margin-top: 5mm; }
+    .articoli th { background: #6b21a8; color: white; border: 1px solid #6b21a8; padding: 4px 6px; font-size: 8pt; font-weight: bold; text-align: left; }
+    .articoli td { border: 1px solid #6b21a8; padding: 5px 6px; font-size: 8pt; vertical-align: top; }
+    .articoli td.cod { font-weight: bold; font-size: 8pt; text-align: center; vertical-align: middle; }
+    .articoli td.um { text-align: center; vertical-align: middle; font-size: 8pt; }
+    .articoli td.qty { text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; }
+    .articoli tr:nth-child(even) td { background: #faf5ff; }
+    .sn-inline { font-size: 7.5pt; margin-top: 4px; color: #333; }
+
+    /* ── FOOTER ── */
+    .footer-azienda { font-size: 7pt; color: #555; text-align: center; margin-top: 8mm; border-top: 1px solid #ccc; padding-top: 3px; }
+    .firma-row { display: table; width: 100%; margin-top: 8mm; border-top: 1.5px solid #6b21a8; }
+    .firma-cell { display: table-cell; width: 50%; padding: 4px 8px; border-right: 1px solid #ccc; }
+    .firma-cell:last-child { border-right: none; }
+    .firma-label { font-size: 7.5pt; font-weight: bold; color: #6b21a8; margin-bottom: 20px; }
+    .firma-line { border-bottom: 1px solid #999; margin-top: 18px; }
   </style>
 </head>
 <body>
-  <button class="no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+<button class="btn-print" onclick="window.print()">Stampa / Salva PDF</button>
+<div class="page">
 
+  <!-- ══ HEADER ══ -->
   <div class="header">
-    <div class="company-info">
-      <h1>eCura</h1>
-      <p>Teleassistenza Medicale Avanzata</p>
-      <p>info@ecura.it</p>
+    <div class="header-left">
+      ${logoSvg}
+      <div style="font-size:7.5pt; color:#555; margin-top:3px;">
+        eCura by Medica GB S.r.l. &nbsp;|&nbsp; Corso Garibaldi, 34 – 20121 Milano (MI)<br>
+        PEC: medicagbsrl@pecimprese.it &nbsp;|&nbsp; P.IVA: 12435130963 &nbsp;|&nbsp; info@ecura.it
+      </div>
     </div>
-    <div class="doc-title">
-      <h2>DOCUMENTO DI TRASPORTO</h2>
-      <p style="font-size:13px; font-weight:bold; color:#1e40af;">DDT N° ${numDdtDisplay}</p>
+    <div class="header-right" style="text-align:right; padding-top:4px;">
+      <div style="font-size:16pt; font-weight:bold; color:#6b21a8; letter-spacing:1px;">DDT</div>
+      <div style="font-size:9pt; color:#333;">Documento di Trasporto</div>
     </div>
   </div>
 
-  <table class="meta-table">
+  <!-- ══ META + DESTINATARIO ══ -->
+  <div class="meta-dest">
+    <div class="meta-dest-left">
+      <table class="meta-grid">
+        <tr><td class="lbl">Num.</td><td class="val">${numProgressivo}</td></tr>
+        <tr><td class="lbl">Data Doc.</td><td class="val">${dataDoc}</td></tr>
+        <tr><td class="lbl">Pag.</td><td class="val">1</td></tr>
+        <tr><td class="lbl">Riferimento</td><td>${contrattoRif}</td></tr>
+      </table>
+    </div>
+    <div class="meta-dest-right">
+      <div class="dest-label">Spettabile:</div>
+      <div class="dest-nome">${destinatario}</div>
+      <div class="dest-addr">
+        ${indirizzoRiga1}<br>
+        ${indirizzoRiga2}
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TABELLA TRASPORTO ══ -->
+  <table class="trasporto">
     <tr>
-      <td class="label">N° DDT</td>
-      <td><strong>${numDdtDisplay}</strong></td>
-      <td class="label">Data Doc.</td>
-      <td><strong>${dataDoc}</strong></td>
-      <td class="label">Pagina</td>
-      <td>1</td>
+      <th>Causale</th>
+      <th>Porto</th>
+      <th>Trasporto a cura</th>
+      <th>Colli</th>
+      <th>Peso Lordo</th>
+      <th>Aspetto Esteriore</th>
+      <th>Data e ora Trasporto</th>
     </tr>
     <tr>
-      <td class="label">Riferimento</td>
-      <td colspan="5">${contratto}</td>
+      <td>DDT</td>
+      <td>Franco</td>
+      <td>eCura</td>
+      <td>1</td>
+      <td>1 kg</td>
+      <td>Scatola</td>
+      <td>${dataTrasporto}</td>
     </tr>
   </table>
 
-  <div class="destinatario-box">
-    <h3>Spettabile:</h3>
-    <div class="nome">${destinatario}</div>
-    <div class="indirizzo">${indirizzo}</div>
-  </div>
-
-  <table class="items-table">
+  <!-- ══ TABELLA ARTICOLI ══ -->
+  <table class="articoli">
     <thead>
       <tr>
-        <th style="width:25%">COD. ARTICOLO</th>
-        <th style="width:55%">DESCRIZIONE</th>
-        <th style="width:10%">U.M.</th>
-        <th style="width:10%">Q.tà</th>
+        <th style="width:22%">COD. ARTICOLO</th>
+        <th style="width:62%">DESCRIZIONE</th>
+        <th style="width:8%">U.M.</th>
+        <th style="width:8%">Q.tà</th>
       </tr>
     </thead>
     <tbody>
+      <!-- Riga 1: Dispositivo principale -->
       <tr>
+        <td class="cod">${dispositivo}</td>
         <td>
-          <div class="desc-title">${dispositivo}</div>
+          ${descrizioneDispositivo}
+          <div class="sn-inline"><strong>SN ${serialNumber}</strong></div>
         </td>
-        <td>
-          <div class="desc-text">${descrizioneDispositivo}</div>
-          <div class="serial-box">
-            <strong>IMEI / S/N:</strong> ${serialNumber}
-          </div>
-        </td>
-        <td style="text-align:center">Nr.</td>
-        <td style="text-align:center"><strong>1</strong></td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
+      </tr>
+      <!-- Riga 2: SIM -->
+      <tr>
+        <td class="cod">${simNome}</td>
+        <td>${simDescrizione}</td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
+      </tr>
+      <!-- Riga 3: APP e Piattaforma -->
+      <tr>
+        <td class="cod">APP e Piattaforma SiDLYCARE</td>
+        <td>APP e Piattaforma SiDLYCARE (Dispositivo medicale in classe I)</td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
       </tr>
     </tbody>
   </table>
 
-  ${note ? `<p style="font-size:10px; color:#555; margin-bottom:16px;"><strong>Note:</strong> ${note.replace(/LeadID:[^\s|]+ \| ?/,'').trim() || note}</p>` : ''}
+  ${noteClean ? `<p style="font-size:8pt; color:#555; margin-top:4mm;"><strong>Note:</strong> ${noteClean}</p>` : ''}
 
-  <div class="watermark-status">
-    <span>✅ Consegnato</span>
-  </div>
-
-  <div class="footer">
-    <div class="footer-grid">
-      <div class="sign-box">
-        <h4>FIRMA DEL MITTENTE</h4>
-        <div class="sign-line"></div>
-        <p style="font-size:9px; color:#999; margin-top:4px; text-align:center">eCura</p>
-      </div>
-      <div class="sign-box">
-        <h4>FIRMA DEL DESTINATARIO per ricevuta</h4>
-        <div class="sign-line"></div>
-        <p style="font-size:9px; color:#999; margin-top:4px; text-align:center">${destinatario}</p>
-      </div>
+  <!-- ══ FIRME ══ -->
+  <div class="firma-row">
+    <div class="firma-cell">
+      <div class="firma-label">Medica GB S.r.l.</div>
+      <div class="firma-line"></div>
     </div>
-    <div class="contratto-ref" style="margin-top:12px; text-align:center;">
-      Contratto di riferimento: <strong>${contratto}</strong>
+    <div class="firma-cell">
+      <div class="firma-label">Destinatario</div>
+      <div class="firma-line"></div>
     </div>
   </div>
+
+  <!-- ══ FOOTER AZIENDALE ══ -->
+  <div class="footer-azienda">
+    Medica GB S.r.l. – Corso Garibaldi, 34 – 20121 Milano (MI) – P.IVA 12435130963 – REA: MI-2661409 – PEC: medicagbsrl@pecimprese.it
+  </div>
+
+</div>
 </body>
 </html>`
 
@@ -29201,6 +29305,88 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 
   } catch (error) {
     console.error('❌ [GENERA-DDT]', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// POST /api/leads/:id/fix-assistito
+// Crea o aggiorna l'assistito di un lead basandosi sui dati lead + DDT esistente
+// Utile per lead con DDT già creato prima del fix del genera-ddt
+app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const contract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
+
+    const ddt = await c.env.DB.prepare(
+      `SELECT * FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(`LeadID:${leadId}%`).first() as any
+
+    // Determina servizio/piano
+    const servizio = contract?.servizio || lead.servizio || 'eCura PRO'
+    const piano = contract?.piano || lead.piano || 'BASE'
+    const imei = ddt?.serial_number || ''
+
+    // Nomi
+    const nomeAssistitoField = lead.nomeAssistito || lead.nomeRichiedente || ''
+    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognomeRichiedente || ''
+    const nomeCaregiverField = lead.nomeRichiedente || ''
+    const cognomeCaregiverField = lead.cognomeRichiedente || ''
+    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
+    const codiceAssistito = `ASS-${leadId}`
+
+    // Assicura colonne extra
+    const colsToAdd = ['imei TEXT', 'nome_assistito TEXT', 'cognome_assistito TEXT',
+      'nome_caregiver TEXT', 'cognome_caregiver TEXT', 'parentela_caregiver TEXT',
+      'servizio TEXT', 'piano TEXT']
+    for (const colDef of colsToAdd) {
+      try { await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN ${colDef}`).run() } catch (_) {}
+    }
+
+    const existingAssistito = await c.env.DB.prepare(
+      `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
+    ).bind(leadId).first() as any
+
+    if (!existingAssistito) {
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (
+          codice, nome, nome_assistito, cognome_assistito,
+          nome_caregiver, cognome_caregiver, parentela_caregiver,
+          email, telefono, imei, servizio, piano, lead_id,
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+      `).bind(
+        codiceAssistito, nomeCompleto,
+        nomeAssistitoField, cognomeAssistitoField,
+        nomeCaregiverField, cognomeCaregiverField,
+        lead.parentelaConCaregiver || 'Caregiver',
+        lead.email || '', lead.telefono || '',
+        imei, servizio, piano, leadId
+      ).run()
+      return c.json({ success: true, action: 'created', nome: nomeCompleto, servizio, piano, imei })
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE assistiti SET
+          nome=?, nome_assistito=?, cognome_assistito=?,
+          nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
+          servizio=?, piano=?, imei=?, updated_at=datetime('now')
+        WHERE lead_id=?
+      `).bind(
+        nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
+        nomeCaregiverField, cognomeCaregiverField,
+        lead.parentelaConCaregiver || 'Caregiver',
+        servizio, piano, imei, leadId
+      ).run()
+      return c.json({ success: true, action: 'updated', nome: nomeCompleto, servizio, piano, imei })
+    }
+  } catch (error) {
+    console.error('❌ [FIX-ASSISTITO]', error)
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
   }
 })

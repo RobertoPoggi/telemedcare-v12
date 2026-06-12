@@ -1210,6 +1210,9 @@ export const dashboard = `<!DOCTYPE html>
                     <a href="/admin/ddt" class="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                         <i class="fas fa-external-link-alt mr-1"></i>Vista completa
                     </a>
+                    <button onclick="fixDDTStatus()" class="flex items-center px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors border border-orange-300" title="Aggiorna DDT vecchi a status CONSEGNATO e genera pdf_url">
+                        <i class="fas fa-wrench mr-1"></i>Fix Status DDT
+                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -4195,6 +4198,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Genera DDT + Dispositivo + Assistito">
                                     📦
                                 </button>
+                                <button 
+                                    data-action="fix-assistito"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors action-btn"
+                                    title="Crea/Aggiorna Assistito da dati lead">
+                                    🩺
+                                </button>
                             </div>
                         </td>
                         <td class="py-3">
@@ -4240,6 +4250,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-configuration') sendConfiguration(leadId);
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
+                        else if (action === 'fix-assistito') fixAssistito(leadId);
                     });
                 });
                 
@@ -4617,6 +4628,45 @@ export const leads_dashboard = `<!DOCTYPE html>
                 if (result.success) {
                     alert('OK - ' + result.message + ' | DDT N.: ' + (result.ddt&&result.ddt.numero) + ' | Dispositivo: ' + (result.ddt&&result.ddt.dispositivo) + ' | IMEI: ' + (result.ddt&&result.ddt.imei) + ' | Assistito: ' + (result.assistito&&result.assistito.nome));
                     loadLeadsData();
+                } else {
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('ERRORE di comunicazione: ' + error.message);
+            }
+        }
+
+        // Aggiorna tutti i DDT senza status corretto a CONSEGNATO + genera pdf_url
+        async function fixDDTStatus() {
+            if (!confirm('Aggiornare tutti i DDT con status mancante/preparazione a CONSEGNATO e generare il link PDF?')) return;
+            try {
+                const response = await fetch('/api/ddts/fix-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('OK - ' + result.message);
+                    loadDDTTable();
+                } else {
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('ERRORE di comunicazione: ' + error.message);
+            }
+        }
+
+        // Crea/aggiorna assistito per un lead specifico
+        async function fixAssistito(leadId) {
+            if (!confirm('Creare/aggiornare il record Assistito per questo lead?')) return;
+            try {
+                const response = await fetch('/api/leads/' + leadId + '/fix-assistito', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('OK - Assistito ' + result.action + ': ' + result.nome + ' | Servizio: ' + result.servizio + ' | IMEI: ' + (result.imei||'N/A'));
                 } else {
                     alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
                 }
