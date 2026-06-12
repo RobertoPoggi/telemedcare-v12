@@ -28836,48 +28836,54 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const ddtId = `DDT-${leadId}-${Date.now()}`
 
     // --- 5. Inserisce record DDT ---
+    // La tabella ddts non ha lead_id — lo inseriamo nel campo note come riferimento
+    const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
     await c.env.DB.prepare(`
       INSERT INTO ddts (
-        id, numero_ddt, contract_code, lead_id,
-        data_documento, data_spedizione,
+        id, numero_ddt, contract_code,
+        data_spedizione, data_consegna,
         destinatario_nome, destinatario_indirizzo, destinatario_cap,
         destinatario_citta, destinatario_provincia,
         destinatario_email, destinatario_telefono,
         dispositivo, serial_number, quantita,
         status, note,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).bind(
-      ddtId, numDdt, codiceContratto, leadId,
+      ddtId, numDdt, codiceContratto,
       dataDoc, dataDoc,
       nomeDestinatario, indirizzoDestinatario, capDestinatario,
       cittaDestinatario, provinciaDestinatario,
       lead.email || '', lead.telefono || '',
       dispositivo, imei, 1,
-      'CONSEGNATO', note || ''
+      'CONSEGNATO', noteConLeadId
     ).run()
     console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId})`)
 
     // --- 6. Crea/aggiorna record dispositivo ---
+    // Tabella devices usa: leadId (camelCase), status ASSIGNED, note per SIM
     const existingDevice = await c.env.DB.prepare(
       `SELECT id FROM devices WHERE imei = ? LIMIT 1`
     ).bind(imei).first() as any
 
+    const deviceNote = telefonoSim ? `SIM: ${telefonoSim}` : null
+
     if (existingDevice) {
       await c.env.DB.prepare(`
-        UPDATE devices SET lead_id=?, status='ASSEGNATO', telefono_sim=?,
-          updated_at=datetime('now') WHERE imei=?
-      `).bind(leadId, telefonoSim||'', imei).run()
+        UPDATE devices SET leadId=?, status='ASSIGNED', note=?,
+          data_assegnazione=datetime('now'), updated_at=datetime('now') WHERE imei=?
+      `).bind(leadId, deviceNote, imei).run()
       console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} aggiornato`)
     } else {
       await c.env.DB.prepare(`
-        INSERT INTO devices (imei, modello, lead_id, status, telefono_sim, created_at, updated_at)
-        VALUES (?, ?, ?, 'ASSEGNATO', ?, datetime('now'), datetime('now'))
-      `).bind(imei, dispositivo, leadId, telefonoSim||'').run()
+        INSERT INTO devices (imei, modello, leadId, status, note, data_assegnazione, created_at, updated_at)
+        VALUES (?, ?, ?, 'ASSIGNED', ?, datetime('now'), datetime('now'), datetime('now'))
+      `).bind(imei, dispositivo, leadId, deviceNote).run()
       console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} creato`)
     }
 
     // --- 7. Crea record assistito (se non esiste già) ---
+    // Tabella assistiti ha: codice, nome, email, telefono, imei, status, lead_id
     const nomeAssistito   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
     const cognomeAssistito = lead.cognomeAssistito || lead.cognomeRichiedente || ''
     const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
@@ -28888,21 +28894,15 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     ).bind(leadId).first() as any
 
     if (!existingAssistito) {
-      const now = new Date().toISOString()
       await c.env.DB.prepare(`
         INSERT INTO assistiti (
-          codice, nome, nome_assistito, cognome_assistito,
-          nome_caregiver, cognome_caregiver, parentela_caregiver,
-          email, telefono, imei,
-          servizio, piano, lead_id,
+          codice, nome, email, telefono, imei, lead_id,
           status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
       `).bind(
-        codiceAssistito, nomeCompleto, nomeAssistito, cognomeAssistito,
-        lead.nomeRichiedente || '', lead.cognomeRichiedente || '',
-        lead.parentelaConCaregiver || 'caregiver',
+        codiceAssistito, nomeCompleto,
         lead.email || '', lead.telefono || '',
-        imei, servizio, piano, leadId, now, now
+        imei, leadId
       ).run()
       console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato`)
     } else {
