@@ -28913,11 +28913,16 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     }
 
     // --- 7. Crea record assistito (se non esiste già) ---
-    // Tabella assistiti ha: codice, nome, email, telefono, imei, status, lead_id
     const nomeAssistito   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
     const cognomeAssistito = lead.cognomeAssistito || lead.cognomeRichiedente || ''
     const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
     const codiceAssistito = `ASS-${leadId}`
+
+    // Assicura che la colonna imei esista (potrebbe non essere presente in DB più vecchi)
+    try {
+      await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN imei TEXT`).run()
+      console.log(`✅ [GENERA-DDT] Colonna imei aggiunta ad assistiti`)
+    } catch (_) { /* già esiste — ok */ }
 
     const existingAssistito = await c.env.DB.prepare(
       `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
@@ -28936,7 +28941,6 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       ).run()
       console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato`)
     } else {
-      // Aggiorna IMEI sull'assistito esistente
       await c.env.DB.prepare(
         `UPDATE assistiti SET imei=?, updated_at=datetime('now') WHERE lead_id=?`
       ).bind(imei, leadId).run()
