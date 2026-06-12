@@ -28852,12 +28852,13 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       numDdt = formatNumeroDdt(maxNum + 1, annoCorrente)
     }
 
-    // Verifica unicità: se esiste già aggiunge suffisso
+    // Verifica unicità: se esiste già incrementa il progressivo
     const existing = await c.env.DB.prepare(
       `SELECT id FROM ddts WHERE numero_ddt = ? LIMIT 1`
     ).bind(numDdt).first() as any
     if (existing) {
-      const n = parseInt(numDdt.replace(/\D/g, '').slice(0, -4)) + 1
+      const m = numDdt.match(/DDT-(\d+)-\d{4}/i)
+      const n = m ? parseInt(m[1]) + 1 : 1
       numDdt = formatNumeroDdt(n, annoCorrente)
     }
 
