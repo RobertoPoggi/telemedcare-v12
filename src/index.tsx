@@ -3646,7 +3646,8 @@ function statusBadge(s) {
     preparazione: ['badge-preparazione', 'fa-box-open',      'In preparazione'],
     annullato:    ['badge-annullato',    'fa-times-circle',  'Annullato']
   };
-  var entry = map[s] || ['badge-default', 'fa-question-circle', s || 'N/D'];
+  var key = s ? s.toLowerCase() : '';
+  var entry = map[key] || ['badge-default', 'fa-question-circle', s || 'N/D'];
   return '<span class="badge ' + entry[0] + '"><i class="fas ' + entry[1] + ' mr-1"></i>' + entry[2] + '</span>';
 }
 
@@ -9680,6 +9681,181 @@ app.delete('/api/ddts/:id', async (c) => {
   } catch (error) {
     console.error('❌ Errore eliminazione DDT:', error)
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// GET /api/ddts/:id/pdf-print - Genera pagina HTML stampabile DDT
+app.get('/api/ddts/:id/pdf-print', async (c) => {
+  const id = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.html('<h1>Database non configurato</h1>', 500)
+    const ddt = await c.env.DB.prepare(
+      `SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
+    ).bind(id, id).first() as any
+    if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
+
+    // Formatta data italiana
+    const formatDataIt = (d: string) => {
+      if (!d) return '—'
+      const dt = new Date(d)
+      if (isNaN(dt.getTime())) return d
+      return dt.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    }
+
+    const numDdtDisplay = ddt.numero_ddt || id
+    const dataDoc = formatDataIt(ddt.data_consegna || ddt.data_spedizione || new Date().toISOString())
+    const destinatario = ddt.destinatario_nome || '—'
+    const indirizzo = [ddt.destinatario_indirizzo, ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
+    const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
+    const serialNumber = ddt.serial_number || '—'
+    const contratto = ddt.contract_code || '—'
+    const note = ddt.note || ''
+
+    // Descrizione dispositivo in base al modello
+    const descrizioneDispositivo = dispositivo.toLowerCase().includes('pro')
+      ? 'Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell\'alimentazione. Dispositivo Medico certificato in classe IIA con codice CND V0399.'
+      : 'Sistema di allarme per la casa con funzioni di monitoraggio attività, rilevamento cadute, SOS vocale. Dispositivo Medico certificato per l\'assistenza domiciliare.'
+
+    const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDT N° ${numDdtDisplay}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #fff; padding: 20px; }
+    .no-print { background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+    @media print { .no-print { display: none !important; } @page { size: A4; margin: 1.5cm; } }
+
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e40af; padding-bottom: 12px; margin-bottom: 16px; }
+    .company-info h1 { font-size: 18px; font-weight: bold; color: #1e40af; }
+    .company-info p { font-size: 10px; color: #555; margin-top: 2px; }
+    .doc-title { text-align: right; }
+    .doc-title h2 { font-size: 20px; font-weight: bold; color: #1e40af; }
+    .doc-title p { font-size: 10px; color: #555; }
+
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .meta-table td { border: 1px solid #ccc; padding: 6px 10px; }
+    .meta-table .label { background: #f0f4ff; font-weight: bold; font-size: 10px; color: #1e40af; width: 120px; }
+
+    .destinatario-box { border: 2px solid #1e40af; border-radius: 4px; padding: 12px; margin-bottom: 16px; }
+    .destinatario-box h3 { color: #1e40af; font-size: 11px; font-weight: bold; margin-bottom: 6px; text-transform: uppercase; }
+    .destinatario-box .nome { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .destinatario-box .indirizzo { font-size: 11px; color: #333; }
+
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .items-table th { background: #1e40af; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
+    .items-table td { border: 1px solid #ddd; padding: 8px 10px; vertical-align: top; }
+    .items-table tr:nth-child(even) td { background: #f9fafb; }
+    .desc-title { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
+    .desc-text { font-size: 10px; color: #444; line-height: 1.5; }
+    .serial-box { font-size: 10px; margin-top: 6px; padding: 4px 8px; background: #f0f4ff; border: 1px solid #93c5fd; border-radius: 3px; }
+
+    .footer { margin-top: 30px; border-top: 2px solid #1e40af; padding-top: 16px; }
+    .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .sign-box { border: 1px solid #ccc; padding: 12px; min-height: 80px; border-radius: 4px; }
+    .sign-box h4 { font-size: 10px; color: #666; margin-bottom: 30px; }
+    .sign-box .sign-line { border-bottom: 1px solid #999; margin-top: 20px; }
+    .contratto-ref { font-size: 10px; color: #555; margin-top: 10px; }
+    .contratto-ref strong { color: #1e40af; }
+
+    .watermark-status { text-align: center; margin: 10px 0; }
+    .watermark-status span { display: inline-block; padding: 4px 12px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; border-radius: 20px; font-size: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <button class="no-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+
+  <div class="header">
+    <div class="company-info">
+      <h1>eCura</h1>
+      <p>Teleassistenza Medicale Avanzata</p>
+      <p>info@ecura.it</p>
+    </div>
+    <div class="doc-title">
+      <h2>DOCUMENTO DI TRASPORTO</h2>
+      <p style="font-size:13px; font-weight:bold; color:#1e40af;">DDT N° ${numDdtDisplay}</p>
+    </div>
+  </div>
+
+  <table class="meta-table">
+    <tr>
+      <td class="label">N° DDT</td>
+      <td><strong>${numDdtDisplay}</strong></td>
+      <td class="label">Data Doc.</td>
+      <td><strong>${dataDoc}</strong></td>
+      <td class="label">Pagina</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td class="label">Riferimento</td>
+      <td colspan="5">${contratto}</td>
+    </tr>
+  </table>
+
+  <div class="destinatario-box">
+    <h3>Spettabile:</h3>
+    <div class="nome">${destinatario}</div>
+    <div class="indirizzo">${indirizzo}</div>
+  </div>
+
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width:25%">COD. ARTICOLO</th>
+        <th style="width:55%">DESCRIZIONE</th>
+        <th style="width:10%">U.M.</th>
+        <th style="width:10%">Q.tà</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="desc-title">${dispositivo}</div>
+        </td>
+        <td>
+          <div class="desc-text">${descrizioneDispositivo}</div>
+          <div class="serial-box">
+            <strong>IMEI / S/N:</strong> ${serialNumber}
+          </div>
+        </td>
+        <td style="text-align:center">Nr.</td>
+        <td style="text-align:center"><strong>1</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  ${note ? `<p style="font-size:10px; color:#555; margin-bottom:16px;"><strong>Note:</strong> ${note.replace(/LeadID:[^\s|]+ \| ?/,'').trim() || note}</p>` : ''}
+
+  <div class="watermark-status">
+    <span>✅ Consegnato</span>
+  </div>
+
+  <div class="footer">
+    <div class="footer-grid">
+      <div class="sign-box">
+        <h4>FIRMA DEL MITTENTE</h4>
+        <div class="sign-line"></div>
+        <p style="font-size:9px; color:#999; margin-top:4px; text-align:center">eCura</p>
+      </div>
+      <div class="sign-box">
+        <h4>FIRMA DEL DESTINATARIO per ricevuta</h4>
+        <div class="sign-line"></div>
+        <p style="font-size:9px; color:#999; margin-top:4px; text-align:center">${destinatario}</p>
+      </div>
+    </div>
+    <div class="contratto-ref" style="margin-top:12px; text-align:center;">
+      Contratto di riferimento: <strong>${contratto}</strong>
+    </div>
+  </div>
+</body>
+</html>`
+
+    return c.html(html)
+  } catch (error) {
+    console.error('❌ [DDT-PDF-PRINT]', error)
+    return c.html(`<h1>Errore generazione DDT</h1><pre>${String(error)}</pre>`, 500)
   }
 })
 
@@ -28866,7 +29042,11 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
     const ddtId = `DDT-${leadId}-${Date.now()}`
 
-    // --- 5. Inserisce record DDT ---
+    // --- 5. Costruisce pdf_url (endpoint HTML stampabile) ---
+    const baseUrl = new URL(c.req.url).origin
+    const pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
+
+    // --- 5b. Inserisce record DDT con pdf_url e status CONSEGNATO ---
     // La tabella ddts non ha lead_id — lo inseriamo nel campo note come riferimento
     const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
     await c.env.DB.prepare(`
@@ -28877,9 +29057,9 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
         destinatario_citta, destinatario_provincia,
         destinatario_email, destinatario_telefono,
         dispositivo, serial_number, quantita,
-        status, note,
+        status, pdf_url, pdf_generated, note,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).bind(
       ddtId, numDdt, codiceContratto,
       dataDoc, dataDoc,
@@ -28887,9 +29067,9 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       cittaDestinatario, provinciaDestinatario,
       lead.email || '', lead.telefono || '',
       dispositivo, imei, 1,
-      'CONSEGNATO', noteConLeadId
+      'CONSEGNATO', pdfUrl, 1, noteConLeadId
     ).run()
-    console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId})`)
+    console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId}, PDF: ${pdfUrl})`)
 
     // --- 6. Crea/aggiorna record dispositivo nella tabella 'dispositivi' ---
     // Colonne reali: serial_number (= IMEI), modello, lead_id, status, assigned_at
@@ -28914,16 +29094,23 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     }
 
     // --- 7. Crea record assistito (se non esiste già) ---
-    const nomeAssistito   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
-    const cognomeAssistito = lead.cognomeAssistito || lead.cognomeRichiedente || ''
-    const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
+    // Nome assistito: usa dati specifici assistito, fallback su richiedente
+    const nomeAssistitoField   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
+    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognomeRichiedente || ''
+    const nomeCaregiverField   = lead.nomeRichiedente   || ''
+    const cognomeCaregiverField = lead.cognomeRichiedente || ''
+    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
     const codiceAssistito = `ASS-${leadId}`
 
-    // Assicura che la colonna imei esista (potrebbe non essere presente in DB più vecchi)
-    try {
-      await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN imei TEXT`).run()
-      console.log(`✅ [GENERA-DDT] Colonna imei aggiunta ad assistiti`)
-    } catch (_) { /* già esiste — ok */ }
+    // Assicura che le colonne extra esistano (potrebbero non essere presenti in DB più vecchi)
+    const colsToAdd = ['imei TEXT', 'nome_assistito TEXT', 'cognome_assistito TEXT',
+      'nome_caregiver TEXT', 'cognome_caregiver TEXT', 'parentela_caregiver TEXT',
+      'servizio TEXT', 'piano TEXT']
+    for (const colDef of colsToAdd) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN ${colDef}`).run()
+      } catch (_) { /* già esiste — ok */ }
+    }
 
     const existingAssistito = await c.env.DB.prepare(
       `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
@@ -28932,52 +29119,83 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     if (!existingAssistito) {
       await c.env.DB.prepare(`
         INSERT INTO assistiti (
-          codice, nome, email, telefono, imei, lead_id,
+          codice, nome, nome_assistito, cognome_assistito,
+          nome_caregiver, cognome_caregiver, parentela_caregiver,
+          email, telefono, imei, servizio, piano, lead_id,
           status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
       `).bind(
         codiceAssistito, nomeCompleto,
+        nomeAssistitoField, cognomeAssistitoField,
+        nomeCaregiverField, cognomeCaregiverField,
+        lead.parentelaConCaregiver || 'Caregiver',
         lead.email || '', lead.telefono || '',
-        imei, leadId
+        imei, servizio, piano, leadId
       ).run()
-      console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato`)
+      console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato (servizio: ${servizio}, piano: ${piano})`)
     } else {
-      await c.env.DB.prepare(
-        `UPDATE assistiti SET imei=?, updated_at=datetime('now') WHERE lead_id=?`
-      ).bind(imei, leadId).run()
-      console.log(`✅ [GENERA-DDT] Assistito esistente: IMEI aggiornato`)
+      await c.env.DB.prepare(`
+        UPDATE assistiti SET
+          imei=?, nome_assistito=?, cognome_assistito=?,
+          nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
+          servizio=?, piano=?, updated_at=datetime('now')
+        WHERE lead_id=?
+      `).bind(
+        imei, nomeAssistitoField, cognomeAssistitoField,
+        nomeCaregiverField, cognomeCaregiverField,
+        lead.parentelaConCaregiver || 'Caregiver',
+        servizio, piano, leadId
+      ).run()
+      console.log(`✅ [GENERA-DDT] Assistito esistente aggiornato (IMEI, servizio: ${servizio}, piano: ${piano})`)
     }
 
-    // --- 8. Invia email riepilogo DDT a info@ecura.it ---
+    // --- 8. Invia email riepilogo DDT a info@ecura.it (con link PDF) ---
     const { EmailService } = await import('./modules/email-service')
     const emailSvc = EmailService.getInstance()
     const emailBody = `
-      <h2>📦 Nuovo DDT Generato — N° ${numDdt}</h2>
-      <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif">
-        <tr><td style="padding:6px;font-weight:bold">Lead ID</td><td style="padding:6px">${leadId}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Contratto</td><td style="padding:6px">${codiceContratto}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Destinatario</td><td style="padding:6px">${nomeDestinatario}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Indirizzo</td><td style="padding:6px">${indirizzoDestinatario}, ${capDestinatario} ${cittaDestinatario} (${provinciaDestinatario})</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Dispositivo</td><td style="padding:6px">${dispositivo}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">IMEI</td><td style="padding:6px"><strong>${imei}</strong></td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Tel. SIM</td><td style="padding:6px">${telefonoSim || '—'}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Data Consegna</td><td style="padding:6px">${dataDoc}</td></tr>
-        <tr><td style="padding:6px;font-weight:bold">Note</td><td style="padding:6px">${note || '—'}</td></tr>
-      </table>
-      <p style="margin-top:16px;color:#666">Assistito creato/aggiornato nel DB. Dispositivo registrato.</p>
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+        <h2 style="color:#1e40af;border-bottom:2px solid #1e40af;padding-bottom:8px">
+          DDT N° ${numDdt} — Nuovo Documento di Trasporto
+        </h2>
+        <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
+          <tr style="background:#f0f4ff"><td style="padding:8px 12px;font-weight:bold;width:40%">N° DDT</td><td style="padding:8px 12px"><strong>${numDdt}</strong></td></tr>
+          <tr><td style="padding:8px 12px;font-weight:bold">Contratto</td><td style="padding:8px 12px">${codiceContratto}</td></tr>
+          <tr style="background:#f0f4ff"><td style="padding:8px 12px;font-weight:bold">Destinatario</td><td style="padding:8px 12px">${nomeDestinatario}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:bold">Indirizzo</td><td style="padding:8px 12px">${indirizzoDestinatario}, ${capDestinatario} ${cittaDestinatario}${provinciaDestinatario ? ' (' + provinciaDestinatario + ')' : ''}</td></tr>
+          <tr style="background:#f0f4ff"><td style="padding:8px 12px;font-weight:bold">Dispositivo</td><td style="padding:8px 12px">${dispositivo}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:bold">IMEI / S/N</td><td style="padding:8px 12px"><strong style="font-family:monospace">${imei}</strong></td></tr>
+          <tr style="background:#f0f4ff"><td style="padding:8px 12px;font-weight:bold">Tel. SIM</td><td style="padding:8px 12px">${telefonoSim || '—'}</td></tr>
+          <tr><td style="padding:8px 12px;font-weight:bold">Data Consegna</td><td style="padding:8px 12px">${dataDoc}</td></tr>
+          ${note ? '<tr style="background:#f0f4ff"><td style="padding:8px 12px;font-weight:bold">Note</td><td style="padding:8px 12px">' + note + '</td></tr>' : ''}
+        </table>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${pdfUrl}" target="_blank"
+             style="display:inline-block;padding:12px 28px;background:#1e40af;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px">
+            Visualizza DDT (PDF)
+          </a>
+        </div>
+        <p style="color:#666;font-size:11px;margin-top:16px;border-top:1px solid #eee;padding-top:12px">
+          Assistito: ${nomeCompleto} | Servizio: ${servizio} ${piano}<br>
+          Record registrati: Dispositivo ${imei} (ASSIGNED), Assistito ${codiceAssistito}
+        </p>
+      </div>
     `
-    await emailSvc.sendEmail({
-      to: 'info@ecura.it',
-      from: 'info@ecura.it',
-      subject: `📦 DDT N° ${numDdt} — ${dispositivo} → ${nomeDestinatario}`,
-      html: emailBody
-    }, c.env)
-    console.log(`✅ [GENERA-DDT] Email riepilogo inviata a info@ecura.it`)
+    try {
+      await emailSvc.sendEmail({
+        to: 'info@ecura.it',
+        from: 'info@ecura.it',
+        subject: `DDT N° ${numDdt} — ${dispositivo} per ${nomeDestinatario}`,
+        html: emailBody
+      }, c.env)
+      console.log(`✅ [GENERA-DDT] Email con link PDF inviata a info@ecura.it`)
+    } catch (emailErr) {
+      console.warn(`⚠️ [GENERA-DDT] Email non inviata (non bloccante): ${emailErr}`)
+    }
 
     return c.json({
       success: true,
       message: `DDT N° ${numDdt} generato, dispositivo e assistito registrati`,
-      ddt: { id: ddtId, numero: numDdt, dispositivo, imei },
+      ddt: { id: ddtId, numero: numDdt, dispositivo, imei, pdfUrl, status: 'CONSEGNATO' },
       assistito: { codice: codiceAssistito, nome: nomeCompleto },
     })
 

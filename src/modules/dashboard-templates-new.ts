@@ -1093,13 +1093,14 @@ export const dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Servizio</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Piano</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Prezzo</th>
+                            <th class="pb-3 text-sm font-semibold text-gray-600">IVA</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Status</th>
                             <th class="pb-3 text-sm font-semibold text-gray-600">Azioni</th>
                         </tr>
                     </thead>
                     <tbody id="assistitiTable">
                         <tr>
-                            <td colspan="9" class="py-8 text-center text-gray-400">
+                            <td colspan="10" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento assistiti...</p>
                             </td>
@@ -2733,7 +2734,7 @@ export const dashboard = `<!DOCTYPE html>
             
             if (assistiti.length === 0) {
                 tbody.innerHTML = '<tr>' +
-                    '<td colspan="9" class="py-8 text-center text-gray-400">' +
+                    '<td colspan="10" class="py-8 text-center text-gray-400">' +
                         '<i class="fas fa-users text-3xl mb-2"></i><br>' +
                         'Nessun assistito attivo trovato' +
                     '</td>' +
@@ -2783,17 +2784,14 @@ export const dashboard = `<!DOCTYPE html>
                 // IVA agevolata flag (from leads JOIN)
                 const ivaAgevolataAssistito = assistito.iva_agevolata == 1 || assistito.iva_agevolata === true;
                 const rowBg = ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
-                const ivaBadge = ivaAgevolataAssistito
-                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full ml-1" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ IVA 4% L.104</span>'
-                    : '';
+                const ivaBadgeCell = ivaAgevolataAssistito
+                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ 4%</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">22%</span>';
                 const prezzoCellClass = ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
-                const ivaSubText = ivaAgevolataAssistito
-                    ? '<div class="text-xs text-blue-500 font-medium">IVA 4% L.104</div>'
-                    : '<div class="text-xs text-gray-500">/anno</div>';
                 
                 return '<tr class="border-b border-gray-100 ' + rowBg + '">' +
                     '<td class="py-3 px-2">' +
-                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + ivaBadge + '</div>' +
+                        '<div class="font-semibold text-sm text-gray-800">' + nomeCompleto + '</div>' +
                         '<div class="text-xs text-gray-500 mt-1">' +
                             '<i class="fas fa-user-friends mr-1"></i>' + caregiver + ' (' + parentela + ')' +
                         '</div>' +
@@ -2815,7 +2813,10 @@ export const dashboard = `<!DOCTYPE html>
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
                         '<div class="font-bold ' + prezzoCellClass + ' text-base">€' + prezzoAnno + '</div>' +
-                        ivaSubText +
+                        '<div class="text-xs text-gray-500">/anno</div>' +
+                    '</td>' +
+                    '<td class="py-3 px-2 text-center">' +
+                        ivaBadgeCell +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
                         '<span class="px-3 py-1 ' + statusColor + ' text-xs font-medium rounded-full">' + status + '</span>' +
