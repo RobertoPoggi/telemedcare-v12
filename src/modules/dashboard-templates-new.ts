@@ -4180,6 +4180,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Form Configurazione">
                                     ⚙️
                                 </button>
+                                <button 
+                                    data-action="send-benvenuto"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 transition-colors action-btn"
+                                    title="Invia Email Benvenuto">
+                                    🎉
+                                </button>
+                                <button 
+                                    data-action="genera-ddt"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-800 transition-colors action-btn"
+                                    title="Genera DDT + Dispositivo + Assistito">
+                                    📦
+                                </button>
                             </div>
                         </td>
                         <td class="py-3">
@@ -4223,6 +4237,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-proforma') sendProforma(leadId);
                         else if (action === 'manual-payment') manualPayment(leadId);
                         else if (action === 'send-configuration') sendConfiguration(leadId);
+                        else if (action === 'send-benvenuto') sendBenvenuto(leadId);
+                        else if (action === 'genera-ddt') generaDDT(leadId);
                     });
                 });
                 
@@ -4560,6 +4576,51 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function sendBenvenuto(leadId) {
+            if (!confirm('\uD83C\uDF89 Inviare email di BENVENUTO al cliente?\n\nVerr\u00e0 inviata con importo IVA corretto e dispositivo aggiornato.')) return;
+            try {
+                const response = await fetch('/api/leads/' + leadId + '/send-benvenuto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('\u2705 Email benvenuto inviata!');
+                    loadLeadsData();
+                } else {
+                    alert('\u274C Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('\u274C Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        async function generaDDT(leadId) {
+            const imei = prompt('\uD83D\uDCE6 GENERA DDT\n\nInserisci IMEI del dispositivo:');
+            if (!imei || !imei.trim()) return;
+            const telefonoSim = prompt('Numero di telefono della SIM (premi OK per saltare):') || '';
+            const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
+            const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
+            const note = prompt('Note aggiuntive (opzionale):') || '';
+            if (!confirm('\uD83D\uDCE6 Confermi generazione DDT?' + '\n\nIMEI: ' + imei.trim() + '\nTel SIM: ' + (telefonoSim||'\u2014') + '\nN\u00b0 DDT: ' + (numeroDdt||'auto') + '\nData: ' + (dataConsegna||'oggi') + '\n\nVerranno creati:\n- Record DDT\n- Dispositivo nel DB\n- Assistito nel DB\n\nEmail riepilogo a info@ecura.it')) return;
+            try {
+                const response = await fetch('/api/leads/' + leadId + '/genera-ddt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') },
+                    body: JSON.stringify({ imei: imei.trim(), telefonoSim, numeroDdt, dataConsegna, note })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('\u2705 ' + result.message + '\n\nDDT N\u00b0: ' + (result.ddt&&result.ddt.numero) + '\nDispositivo: ' + (result.ddt&&result.ddt.dispositivo) + '\nIMEI: ' + (result.ddt&&result.ddt.imei) + '\nAssistito: ' + (result.assistito&&result.assistito.nome));
+                    loadLeadsData();
+                } else {
+                    alert('\u274C Errore: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('\u274C Errore di comunicazione: ' + error.message);
             }
         }
 

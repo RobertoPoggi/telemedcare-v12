@@ -28743,6 +28743,215 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
   }
 })
 
+// ============================================================
+// POST /api/leads/:id/send-benvenuto
+// Invia manualmente email di benvenuto al lead (con IVA agevolata e dispositivo corretti)
+// ============================================================
+app.post('/api/leads/:id/send-benvenuto', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailBenvenuto(lead as any, c.env)
+
+    if (result.success) {
+      console.log(`✅ [SEND-BENVENUTO] Email inviata a ${lead.email}`)
+      return c.json({ success: true, message: `Email benvenuto inviata a ${lead.email}` })
+    } else {
+      return c.json({ success: false, error: result.errors?.join(', ') || 'Errore invio' }, 500)
+    }
+  } catch (error) {
+    console.error('❌ [SEND-BENVENUTO]', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// ============================================================
+// POST /api/leads/:id/genera-ddt
+// Genera DDT, crea record dispositivo, crea record assistito, invia email a info@ecura.it
+// Body: { imei, telefonoSim, numeroDdt?, dataConsegna?, note? }
+// ============================================================
+app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const body = await c.req.json() as any
+    const { imei, telefonoSim, numeroDdt, dataConsegna, note } = body
+
+    if (!imei) return c.json({ success: false, error: 'IMEI obbligatorio' }, 400)
+
+    // --- 1. Carica lead + contratto ---
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const contract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
+
+    // --- 2. Determina servizio/piano e dispositivo ---
+    const servizio = contract?.servizio || lead.servizio || 'eCura PRO'
+    const piano    = contract?.piano    || lead.piano    || 'BASE'
+    const servizioUpper = servizio.replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
+    const pianoUpper    = (piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE') as 'BASE'|'AVANZATO'
+
+    const { getPricing } = await import('./modules/ecura-pricing')
+    const pricing = getPricing(servizioUpper, pianoUpper)
+    const dispositivo = pricing?.dispositivo || 'SiDLY Care PRO'
+
+    // --- 3. Determina intestatario (assistito o richiedente) ---
+    const intestatario = lead.intestatarioContratto || 'richiedente'
+    const nomeDestinatario = intestatario === 'assistito'
+      ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim()
+      : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+    const indirizzoDestinatario = intestatario === 'assistito'
+      ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+      : lead.indirizzoIntestatario || ''
+    const capDestinatario = intestatario === 'assistito'
+      ? lead.capAssistito || lead.capIntestatario || ''
+      : lead.capIntestatario || ''
+    const cittaDestinatario = intestatario === 'assistito'
+      ? lead.cittaAssistito || lead.cittaIntestatario || ''
+      : lead.cittaIntestatario || ''
+    const provinciaDestinatario = intestatario === 'assistito'
+      ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
+      : lead.provinciaIntestatario || ''
+
+    // --- 4. Numero DDT: usa quello passato oppure auto-incrementa ---
+    let numDdt = numeroDdt
+    if (!numDdt) {
+      const lastDdt = await c.env.DB.prepare(
+        `SELECT numero_ddt FROM ddts ORDER BY created_at DESC LIMIT 1`
+      ).first() as any
+      const lastNum = lastDdt?.numero_ddt ? parseInt(String(lastDdt.numero_ddt).replace(/\D/g,'')) : 0
+      numDdt = String((isNaN(lastNum) ? 0 : lastNum) + 1)
+    }
+
+    const dataDoc = dataConsegna || new Date().toISOString().split('T')[0]
+    const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
+    const ddtId = `DDT-${leadId}-${Date.now()}`
+
+    // --- 5. Inserisce record DDT ---
+    await c.env.DB.prepare(`
+      INSERT INTO ddts (
+        id, numero_ddt, contract_code, lead_id,
+        data_documento, data_spedizione,
+        destinatario_nome, destinatario_indirizzo, destinatario_cap,
+        destinatario_citta, destinatario_provincia,
+        destinatario_email, destinatario_telefono,
+        dispositivo, serial_number, quantita,
+        status, note,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(
+      ddtId, numDdt, codiceContratto, leadId,
+      dataDoc, dataDoc,
+      nomeDestinatario, indirizzoDestinatario, capDestinatario,
+      cittaDestinatario, provinciaDestinatario,
+      lead.email || '', lead.telefono || '',
+      dispositivo, imei, 1,
+      'CONSEGNATO', note || ''
+    ).run()
+    console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId})`)
+
+    // --- 6. Crea/aggiorna record dispositivo ---
+    const existingDevice = await c.env.DB.prepare(
+      `SELECT id FROM devices WHERE imei = ? LIMIT 1`
+    ).bind(imei).first() as any
+
+    if (existingDevice) {
+      await c.env.DB.prepare(`
+        UPDATE devices SET lead_id=?, status='ASSEGNATO', telefono_sim=?,
+          updated_at=datetime('now') WHERE imei=?
+      `).bind(leadId, telefonoSim||'', imei).run()
+      console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} aggiornato`)
+    } else {
+      await c.env.DB.prepare(`
+        INSERT INTO devices (imei, modello, lead_id, status, telefono_sim, created_at, updated_at)
+        VALUES (?, ?, ?, 'ASSEGNATO', ?, datetime('now'), datetime('now'))
+      `).bind(imei, dispositivo, leadId, telefonoSim||'').run()
+      console.log(`✅ [GENERA-DDT] Dispositivo IMEI ${imei} creato`)
+    }
+
+    // --- 7. Crea record assistito (se non esiste già) ---
+    const nomeAssistito   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
+    const cognomeAssistito = lead.cognomeAssistito || lead.cognomeRichiedente || ''
+    const nomeCompleto = `${nomeAssistito} ${cognomeAssistito}`.trim()
+    const codiceAssistito = `ASS-${leadId}`
+
+    const existingAssistito = await c.env.DB.prepare(
+      `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
+    ).bind(leadId).first() as any
+
+    if (!existingAssistito) {
+      const now = new Date().toISOString()
+      await c.env.DB.prepare(`
+        INSERT INTO assistiti (
+          codice, nome, nome_assistito, cognome_assistito,
+          nome_caregiver, cognome_caregiver, parentela_caregiver,
+          email, telefono, imei,
+          servizio, piano, lead_id,
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', ?, ?)
+      `).bind(
+        codiceAssistito, nomeCompleto, nomeAssistito, cognomeAssistito,
+        lead.nomeRichiedente || '', lead.cognomeRichiedente || '',
+        lead.parentelaConCaregiver || 'caregiver',
+        lead.email || '', lead.telefono || '',
+        imei, servizio, piano, leadId, now, now
+      ).run()
+      console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato`)
+    } else {
+      // Aggiorna IMEI sull'assistito esistente
+      await c.env.DB.prepare(
+        `UPDATE assistiti SET imei=?, updated_at=datetime('now') WHERE lead_id=?`
+      ).bind(imei, leadId).run()
+      console.log(`✅ [GENERA-DDT] Assistito esistente: IMEI aggiornato`)
+    }
+
+    // --- 8. Invia email riepilogo DDT a info@ecura.it ---
+    const { EmailService } = await import('./modules/email-service')
+    const emailSvc = EmailService.getInstance()
+    const emailBody = `
+      <h2>📦 Nuovo DDT Generato — N° ${numDdt}</h2>
+      <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif">
+        <tr><td style="padding:6px;font-weight:bold">Lead ID</td><td style="padding:6px">${leadId}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Contratto</td><td style="padding:6px">${codiceContratto}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Destinatario</td><td style="padding:6px">${nomeDestinatario}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Indirizzo</td><td style="padding:6px">${indirizzoDestinatario}, ${capDestinatario} ${cittaDestinatario} (${provinciaDestinatario})</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Dispositivo</td><td style="padding:6px">${dispositivo}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">IMEI</td><td style="padding:6px"><strong>${imei}</strong></td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Tel. SIM</td><td style="padding:6px">${telefonoSim || '—'}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Data Consegna</td><td style="padding:6px">${dataDoc}</td></tr>
+        <tr><td style="padding:6px;font-weight:bold">Note</td><td style="padding:6px">${note || '—'}</td></tr>
+      </table>
+      <p style="margin-top:16px;color:#666">Assistito creato/aggiornato nel DB. Dispositivo registrato.</p>
+    `
+    await emailSvc.sendEmail({
+      to: 'info@ecura.it',
+      from: 'info@ecura.it',
+      subject: `📦 DDT N° ${numDdt} — ${dispositivo} → ${nomeDestinatario}`,
+      html: emailBody
+    }, c.env)
+    console.log(`✅ [GENERA-DDT] Email riepilogo inviata a info@ecura.it`)
+
+    return c.json({
+      success: true,
+      message: `DDT N° ${numDdt} generato, dispositivo e assistito registrati`,
+      ddt: { id: ddtId, numero: numDdt, dispositivo, imei },
+      assistito: { codice: codiceAssistito, nome: nomeCompleto },
+    })
+
+  } catch (error) {
+    console.error('❌ [GENERA-DDT]', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 /**
  * 3. PAGAMENTO MANUALE
  * Conferma pagamento ricevuto + TRIGGER EMAIL FORM CONFIGURAZIONE
