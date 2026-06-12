@@ -5315,7 +5315,7 @@ ${370+t.length}
                 sel.options[1].text = 'AVANZATO - €' + prezzi.AVANZATO + '/anno';
             }
             const box = document.getElementById('newAssistitoPrezzoLabel');
-            if (box) box.textContent = '💶 ' + servizio + ' – ' + piano + ': €' + prezzo + '/anno (rinnovo €' + rinnovo + ')';
+            if (box) box.textContent = servizio + ' - ' + piano + ': EUR ' + prezzo + '/anno (rinnovo EUR ' + rinnovo + ')';
         }
         window.updateNewPrezzi = updateNewPrezzi;
 

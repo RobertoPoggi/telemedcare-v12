@@ -3105,7 +3105,7 @@ export const dashboard = `<!DOCTYPE html>
                 sel.options[1].text = 'AVANZATO - \u20ac' + prezzi.AVANZATO + '/anno';
             }
             const box = document.getElementById('newAssistitoPrezzoLabel');
-            if (box) box.textContent = '\ud83d\udcb6 ' + servizio + ' \u2013 ' + piano + ': \u20ac' + prezzo + '/anno (rinnovo \u20ac' + rinnovo + ')';
+            if (box) box.textContent = servizio + ' - ' + piano + ': EUR ' + prezzo + '/anno (rinnovo EUR ' + rinnovo + ')';
         }
         window.updateNewPrezzi = updateNewPrezzi;
 
