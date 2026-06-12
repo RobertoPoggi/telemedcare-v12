@@ -28821,25 +28821,44 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
       : lead.provinciaIntestatario || ''
 
-    // --- 4. Numero DDT: usa quello passato oppure auto-incrementa ---
-    let numDdt = numeroDdt ? String(numeroDdt).trim() : ''
-    if (!numDdt) {
-      // Prende il MAX numerico da tutti i numero_ddt esistenti
-      const allDdts = await c.env.DB.prepare(
-        `SELECT numero_ddt FROM ddts`
-      ).all() as any
+    // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
+    const annoCorrente = new Date().getFullYear()
+
+    // Helper: normalizza qualsiasi input nel formato DDT-NNN-AAAA
+    const formatNumeroDdt = (n: number, anno: number) =>
+      `DDT-${String(n).padStart(3, '0')}-${anno}`
+
+    let numDdt: string
+    if (numeroDdt && String(numeroDdt).trim()) {
+      const raw = String(numeroDdt).trim()
+      // Se già nel formato DDT-NNN-AAAA, usalo as-is
+      if (/^DDT-\d+-\d{4}$/i.test(raw)) {
+        numDdt = raw.toUpperCase()
+      } else {
+        // Altrimenti estrai il numero progressivo e formatta
+        const n = parseInt(raw.replace(/\D/g, '')) || 1
+        numDdt = formatNumeroDdt(n, annoCorrente)
+      }
+    } else {
+      // Auto-incremento: MAX progressivo tra tutti i DDT dell'anno corrente
+      const allDdts = await c.env.DB.prepare(`SELECT numero_ddt FROM ddts`).all() as any
       const nums = (allDdts?.results || [])
-        .map((r: any) => parseInt(String(r.numero_ddt).replace(/\D/g,'')) || 0)
-        .filter((n: number) => !isNaN(n) && n > 0)
+        .map((r: any) => {
+          const m = String(r.numero_ddt).match(/DDT-(\d+)-(\d{4})/i)
+          return m ? parseInt(m[1]) : 0
+        })
+        .filter((n: number) => n > 0)
       const maxNum = nums.length > 0 ? Math.max(...nums) : 0
-      numDdt = String(maxNum + 1)
+      numDdt = formatNumeroDdt(maxNum + 1, annoCorrente)
     }
-    // Verifica che il numero DDT non esista già — se sì, aggiunge suffisso timestamp
+
+    // Verifica unicità: se esiste già aggiunge suffisso
     const existing = await c.env.DB.prepare(
       `SELECT id FROM ddts WHERE numero_ddt = ? LIMIT 1`
     ).bind(numDdt).first() as any
     if (existing) {
-      numDdt = `${numDdt}-${Date.now().toString().slice(-4)}`
+      const n = parseInt(numDdt.replace(/\D/g, '').slice(0, -4)) + 1
+      numDdt = formatNumeroDdt(n, annoCorrente)
     }
 
     const dataDoc = dataConsegna || new Date().toISOString().split('T')[0]
