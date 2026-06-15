@@ -1076,10 +1076,6 @@ export const dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca assistito..."
                         onkeyup="filterAssistiti()"
                     />
-                    <button onclick="loadDashboardData()" class="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" title="Ricarica lista assistiti dal DB">
-                        <i class="fas fa-sync-alt mr-2"></i>
-                        Ricarica
-                    </button>
                     <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
                         <i class="fas fa-user-plus mr-2"></i>
                         Nuovo Assistito
