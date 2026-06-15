@@ -1355,6 +1355,27 @@ export const dashboard = `<!DOCTYPE html>
             }
         }
 
+        // Aggiorna tutti i DDT senza status corretto a CONSEGNATO + genera pdf_url
+        async function fixDDTStatus() {
+            if (!confirm('Aggiornare tutti i DDT senza pdf_url o con status vuoto/preparazione a CONSEGNATO?')) return;
+            try {
+                const response = await fetch('/api/ddts/fix-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('COMPLETATO: ' + result.message + (result.updated === 0 ? ' (tutti i DDT avevano gia status corretto)' : ''));
+                    loadDDTTable();
+                } else {
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
+                }
+            } catch (error) {
+                alert('ERRORE di comunicazione: ' + error.message);
+            }
+        }
+
         function filterDDTTable() {
             const q = (document.getElementById('searchDDT')?.value || '').toLowerCase();
             const st = (document.getElementById('filterDDTStatus')?.value || '').toLowerCase();
@@ -4659,29 +4680,34 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         // Crea/aggiorna assistito per un lead specifico
         async function fixAssistito(leadId) {
-            if (!confirm('Creare/aggiornare il record Assistito per questo lead con tutti i campi?')) return;
+            console.log('[fixAssistito] chiamato per leadId:', leadId);
+            if (!confirm('Crea/aggiorna Assistito per lead #' + leadId + '?')) return;
             try {
+                console.log('[fixAssistito] fetch POST /api/leads/' + leadId + '/fix-assistito');
                 const response = await fetch('/api/leads/' + leadId + '/fix-assistito', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
                 });
+                console.log('[fixAssistito] response status:', response.status);
                 const text = await response.text();
+                console.log('[fixAssistito] raw response:', text.substring(0, 300));
                 let result;
-                try { result = JSON.parse(text); } catch(e) { alert('Risposta non JSON: ' + text.substring(0,200)); return; }
+                try { result = JSON.parse(text); } catch(e) { alert('Risposta non JSON (' + response.status + '): ' + text.substring(0,300)); return; }
                 if (result.success) {
                     const dbg = result.debug ? (' | DB keys: ' + (result.debug.leadKeys||[]).join(',')) : '';
                     alert('COMPLETATO (' + result.action + ') | Nome: ' + result.nome + ' | Servizio: ' + result.servizio + ' ' + (result.piano||'') + ' | IMEI: ' + (result.imei||'N/A') + ' | Verificato in DB: ' + result.verified + dbg);
-                    // Ricarica i dati (assistiti sono parte di loadLeadsData)
-                    if (typeof window.loadLeadsData === 'function') window.loadLeadsData();
-                    else if (typeof loadLeadsData === 'function') loadLeadsData();
+                    // Ricarica i dati
+                    if (typeof loadLeadsData === 'function') loadLeadsData();
                 } else {
-                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto') + ' | LeadId: ' + (result.leadId||leadId));
+                    alert('ERRORE (' + response.status + '): ' + (result.error || 'Errore sconosciuto') + ' | LeadId: ' + (result.leadId||leadId));
                 }
             } catch (error) {
+                console.error('[fixAssistito] exception:', error);
                 alert('ERRORE di comunicazione: ' + error.message);
             }
         }
+        window.fixAssistito = fixAssistito;
 
         // ============================================
         // CRUD FUNCTIONS - VIEW, EDIT, DELETE LEAD
