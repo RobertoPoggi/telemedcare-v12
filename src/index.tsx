@@ -29072,9 +29072,9 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
 
     const body = await c.req.json() as any
-    const { imei, telefonoSim, numeroDdt, dataConsegna, note } = body
+    const { imei: imeiInput, telefonoSim, numeroDdt, dataConsegna, note } = body
 
-    if (!imei) return c.json({ success: false, error: 'IMEI obbligatorio' }, 400)
+    if (!imeiInput) return c.json({ success: false, error: 'IMEI obbligatorio' }, 400)
 
     // --- 1. Carica lead + contratto ---
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
@@ -29165,15 +29165,18 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     let ddtId: string
     let pdfUrl: string
     let ddtCreated = false
+    // IMEI effettivo: se DDT esiste già, usa il suo serial_number (fonte di verità)
+    // ignorando quello inserito dall'utente che potrebbe essere di un altro dispositivo
+    const imei = existingDDT?.serial_number || imeiInput
 
     if (existingDDT) {
-      // DDT già esiste: usa quello esistente, non creare duplicato
+      // DDT già esiste: riusa, non duplicare
       ddtId = existingDDT.id
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       numDdt = existingDDT.numero_ddt
-      console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (ID: ${ddtId}), skip INSERT`)
+      console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (IMEI: ${imei}), skip INSERT`)
     } else {
-      // DDT non esiste: crea nuovo
+      // DDT non esiste: crea nuovo con l'IMEI fornito dall'utente
       ddtId = `DDT-${leadId}-${Date.now()}`
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
@@ -29198,28 +29201,24 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
         'CONSEGNATO', pdfUrl, 1, noteConLeadId
       ).run()
       ddtCreated = true
-      console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId}, PDF: ${pdfUrl})`)
+      console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (IMEI: ${imei}, PDF: ${pdfUrl})`)
     }
 
-    // --- 6. Crea/aggiorna record dispositivo nella tabella 'dispositivi' ---
-    // Colonne reali: serial_number (= IMEI), modello, lead_id, status, assigned_at
+    // --- 6. Dispositivo: aggiorna solo se l'IMEI corrisponde a quello del DDT ---
+    const now = new Date().toISOString()
     const existingDevice = await c.env.DB.prepare(
       `SELECT id FROM dispositivi WHERE serial_number = ? LIMIT 1`
     ).bind(imei).first() as any
 
-    const now = new Date().toISOString()
-    const deviceNote = telefonoSim ? `SIM: ${telefonoSim}` : null
-
     if (existingDevice) {
-      await c.env.DB.prepare(`
-        UPDATE dispositivi SET lead_id=?, status='ASSIGNED', assigned_at=? WHERE serial_number=?
-      `).bind(leadId, now, imei).run()
+      await c.env.DB.prepare(
+        `UPDATE dispositivi SET lead_id=?, status='ASSIGNED', assigned_at=? WHERE serial_number=?`
+      ).bind(leadId, now, imei).run()
       console.log(`✅ [GENERA-DDT] Dispositivo S/N ${imei} aggiornato`)
     } else {
-      await c.env.DB.prepare(`
-        INSERT INTO dispositivi (serial_number, modello, lead_id, status, assigned_at, created_at)
-        VALUES (?, ?, ?, 'ASSIGNED', ?, ?)
-      `).bind(imei, dispositivo, leadId, now, now).run()
+      await c.env.DB.prepare(
+        `INSERT INTO dispositivi (serial_number, modello, lead_id, status, assigned_at, created_at) VALUES (?, ?, ?, 'ASSIGNED', ?, ?)`
+      ).bind(imei, dispositivo, leadId, now, now).run()
       console.log(`✅ [GENERA-DDT] Dispositivo S/N ${imei} creato`)
     }
 
