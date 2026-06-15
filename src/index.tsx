@@ -29237,14 +29237,23 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     // Caregiver  = chi ha compilato   → config.contatto1_nome  / lead.nomeRichiedente
     // Parentela  = rapporto assistito→caregiver → lead.parentelaAssistito
 
+    // Dati assistito — configurations è la fonte di verità, leads è il fallback
     const nomeAssistitoField    = config?.nome_assistito    || lead.nomeAssistito    || lead.nomeRichiedente    || ''
     const cognomeAssistitoField = config?.cognome_assistito || lead.cognomeAssistito || lead.cognomeRichiedente || ''
-    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente    || ''
+    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente  || ''
     const cognomeCaregiverField = config?.contatto1_cognome || lead.cognomeRichiedente || ''
     const parentelaField        = lead.parentelaAssistito   || 'Caregiver'
-    const emailAssistito        = config?.email  || lead.email  || ''
-    const telefonoAssistito     = config?.telefono || lead.telefono || ''
+    const emailAssistito        = config?.email             || lead.email            || ''
+    const telefonoAssistito     = config?.telefono          || lead.telefono         || ''
     const nomeCompleto          = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
+    // Campi aggiuntivi da configurations (già presenti nel DB assistiti)
+    const dataNascita           = config?.data_nascita      || lead.dataNascitaAssistito || null
+    const indirizzoField        = config?.indirizzo         || lead.indirizzoAssistito   || null
+    const comuneField           = lead.cittaAssistito       || null
+    const codiceFiscale         = lead.cfAssistito          || null
+    const pesoField             = config?.peso              || null
+    const altezzaField          = config?.altezza           || null
+    const caregiverTelefono     = config?.contatto1_telefono || null
 
     // Codice standard: ASS-COGNOME-timestamp  (es. ASS-BADANOLITTARDI-1749876543210)
     const codiceAssistito = `ASS-${(cognomeAssistitoField || nomeAssistitoField || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')}-${Date.now()}`
@@ -29269,34 +29278,42 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
           codice, nome, nome_assistito, cognome_assistito,
           nome_caregiver, cognome_caregiver, parentela_caregiver,
           email, telefono, imei, servizio, piano, lead_id,
+          data_nascita, indirizzo, comune, codice_fiscale,
+          peso, altezza, caregiver_nome, caregiver_telefono,
           status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
       `).bind(
         codiceAssistito, nomeCompleto,
         nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
         parentelaField,
         emailAssistito, telefonoAssistito,
-        imei, servizio, piano, leadId
+        imei, servizio, piano, leadId,
+        dataNascita, indirizzoField, comuneField, codiceFiscale,
+        pesoField, altezzaField,
+        nomeCaregiverField, caregiverTelefono
       ).run()
-      console.log(`✅ [GENERA-DDT] Assistito creato: ${codiceAssistito} — ${nomeCompleto} (caregiver: ${nomeCaregiverField} ${cognomeCaregiverField}, parentela: ${parentelaField}, config: ${!!config})`)
+      console.log(`✅ [GENERA-DDT] Assistito creato: ${codiceAssistito} — ${nomeCompleto} (config: ${!!config})`)
     } else {
-      // UPDATE: aggiorna TUTTI i campi compreso status (potrebbe essere ELIMINATO per errore)
-      // e nome/codice se i dati sono migliorati grazie a configurations
+      // UPDATE completo — include tutti i campi esistenti + status='ATTIVO'
       await c.env.DB.prepare(`
         UPDATE assistiti SET
           nome=?, nome_assistito=?, cognome_assistito=?,
           nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
-          email=?, telefono=?,
-          imei=?, servizio=?, piano=?,
+          email=?, telefono=?, imei=?, servizio=?, piano=?,
+          data_nascita=?, indirizzo=?, comune=?, codice_fiscale=?,
+          peso=?, altezza=?, caregiver_nome=?, caregiver_telefono=?,
           status='ATTIVO', updated_at=datetime('now')
         WHERE lead_id=?
       `).bind(
         nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
         parentelaField,
-        emailAssistito, telefonoAssistito,
-        imei, servizio, piano, leadId
+        emailAssistito, telefonoAssistito, imei, servizio, piano,
+        dataNascita, indirizzoField, comuneField, codiceFiscale,
+        pesoField, altezzaField,
+        nomeCaregiverField, caregiverTelefono,
+        leadId
       ).run()
       console.log(`✅ [GENERA-DDT] Assistito aggiornato (id=${existingAssistito.id}): ${nomeCompleto} → ATTIVO (config: ${!!config})`)
     }
@@ -29397,18 +29414,26 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
     // Dati assistito: configurations > leads
     const nomeAssistitoField    = config?.nome_assistito    || lead.nomeAssistito    || lead.nomeRichiedente    || ''
     const cognomeAssistitoField = config?.cognome_assistito || lead.cognomeAssistito || lead.cognomeRichiedente || ''
-    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente    || ''
+    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente  || ''
     const cognomeCaregiverField = config?.contatto1_cognome || lead.cognomeRichiedente || ''
     const parentelaField        = lead.parentelaAssistito   || 'Caregiver'
     const emailAssistito        = config?.email    || lead.email    || ''
     const telefonoAssistito     = config?.telefono || lead.telefono || ''
     const nomeCompleto          = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
+    // Campi aggiuntivi da configurations / leads (colonne già presenti nel DB assistiti)
+    const dataNascita           = config?.data_nascita || lead.dataNascitaAssistito || null
+    const indirizzoField        = config?.indirizzo    || lead.indirizzoAssistito   || null
+    const comuneField           = lead.cittaAssistito  || null
+    const codiceFiscale         = lead.cfAssistito     || null
+    const pesoField             = config?.peso         || null
+    const altezzaField          = config?.altezza      || null
+    const caregiverTelefono     = config?.contatto1_telefono || null
 
     const debugInfo = {
       leadId, configFound: !!config, ddtFound: !!ddt,
       nomeCompleto, servizio, piano, imei,
       caregiver: `${nomeCaregiverField} ${cognomeCaregiverField}`,
-      parentela: parentelaField
+      parentela: parentelaField, dataNascita, indirizzo: indirizzoField
     }
     console.log('[FIX-ASSISTITO] debug:', JSON.stringify(debugInfo))
 
@@ -29433,15 +29458,20 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
             codice, nome, nome_assistito, cognome_assistito,
             nome_caregiver, cognome_caregiver, parentela_caregiver,
             email, telefono, imei, servizio, piano, lead_id,
+            data_nascita, indirizzo, comune, codice_fiscale,
+            peso, altezza, caregiver_nome, caregiver_telefono,
             status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
         `).bind(
           codiceAssistito, nomeCompleto,
           nomeAssistitoField, cognomeAssistitoField,
           nomeCaregiverField, cognomeCaregiverField,
           parentelaField,
           emailAssistito, telefonoAssistito,
-          imei, servizio, piano, leadId
+          imei, servizio, piano, leadId,
+          dataNascita, indirizzoField, comuneField, codiceFiscale,
+          pesoField, altezzaField,
+          nomeCaregiverField, caregiverTelefono
         ).run()
       } catch (insertErr: any) {
         // IMEI duplicato → ritenta senza imei
@@ -29451,37 +29481,46 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
             codice, nome, nome_assistito, cognome_assistito,
             nome_caregiver, cognome_caregiver, parentela_caregiver,
             email, telefono, servizio, piano, lead_id,
+            data_nascita, indirizzo, comune, codice_fiscale,
+            peso, altezza, caregiver_nome, caregiver_telefono,
             status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
         `).bind(
           codiceAssistito, nomeCompleto,
           nomeAssistitoField, cognomeAssistitoField,
           nomeCaregiverField, cognomeCaregiverField,
           parentelaField,
           emailAssistito, telefonoAssistito,
-          servizio, piano, leadId
+          servizio, piano, leadId,
+          dataNascita, indirizzoField, comuneField, codiceFiscale,
+          pesoField, altezzaField,
+          nomeCaregiverField, caregiverTelefono
         ).run()
       }
       const verify = await c.env.DB.prepare(`SELECT id FROM assistiti WHERE lead_id=?`).bind(leadId).first()
       return c.json({ success: true, action: 'created', nome: nomeCompleto, servizio, piano, imei, debug: debugInfo, verified: !!verify })
     } else {
-      // UPDATE completo: corregge status, nomi, caregiver, parentela, imei, email, telefono
+      // UPDATE completo — tutti i campi + status='ATTIVO', imei separato per UNIQUE
       await c.env.DB.prepare(`
         UPDATE assistiti SET
           nome=?, nome_assistito=?, cognome_assistito=?,
           nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
-          email=?, telefono=?,
-          servizio=?, piano=?,
+          email=?, telefono=?, servizio=?, piano=?,
+          data_nascita=?, indirizzo=?, comune=?, codice_fiscale=?,
+          peso=?, altezza=?, caregiver_nome=?, caregiver_telefono=?,
           status='ATTIVO', updated_at=datetime('now')
         WHERE id=?
       `).bind(
         nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
         parentelaField,
-        emailAssistito, telefonoAssistito,
-        servizio, piano, existingAssistito.id
+        emailAssistito, telefonoAssistito, servizio, piano,
+        dataNascita, indirizzoField, comuneField, codiceFiscale,
+        pesoField, altezzaField,
+        nomeCaregiverField, caregiverTelefono,
+        existingAssistito.id
       ).run()
-      // Aggiorna imei separatamente (potrebbe fallire per UNIQUE — non bloccante)
+      // imei separato: UNIQUE constraint → non bloccante se duplicato
       if (imei) {
         try {
           await c.env.DB.prepare(`UPDATE assistiti SET imei=? WHERE id=?`).bind(imei, existingAssistito.id).run()
