@@ -4670,13 +4670,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 let result;
                 try { result = JSON.parse(text); } catch(e) { alert('Risposta non JSON: ' + text.substring(0,200)); return; }
                 if (result.success) {
-                    const dbg = result.debug ? ('\nDB keys: ' + (result.debug.leadKeys||[]).join(',')) : '';
-                    alert('COMPLETATO (' + result.action + ')\nNome: ' + result.nome + '\nServizio: ' + result.servizio + ' ' + (result.piano||'') + '\nIMEI: ' + (result.imei||'N/A') + '\nVerificato in DB: ' + result.verified + dbg);
+                    const dbg = result.debug ? (' | DB keys: ' + (result.debug.leadKeys||[]).join(',')) : '';
+                    alert('COMPLETATO (' + result.action + ') | Nome: ' + result.nome + ' | Servizio: ' + result.servizio + ' ' + (result.piano||'') + ' | IMEI: ' + (result.imei||'N/A') + ' | Verificato in DB: ' + result.verified + dbg);
                     // Ricarica i dati (assistiti sono parte di loadLeadsData)
                     if (typeof window.loadLeadsData === 'function') window.loadLeadsData();
                     else if (typeof loadLeadsData === 'function') loadLeadsData();
                 } else {
-                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto') + '\nLeadId: ' + (result.leadId||leadId));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto') + ' | LeadId: ' + (result.leadId||leadId));
                 }
             } catch (error) {
                 alert('ERRORE di comunicazione: ' + error.message);
