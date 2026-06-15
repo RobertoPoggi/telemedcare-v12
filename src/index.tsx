@@ -29073,8 +29073,7 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 
     const body = await c.req.json() as any
     const { imei: imeiInput, telefonoSim, numeroDdt, dataConsegna, note } = body
-
-    if (!imeiInput) return c.json({ success: false, error: 'IMEI obbligatorio' }, 400)
+    // IMEI è opzionale: se il DDT esiste già lo prendiamo da lì
 
     // --- 1. Carica lead + contratto ---
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
@@ -29170,13 +29169,16 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const imei = existingDDT?.serial_number || imeiInput
 
     if (existingDDT) {
-      // DDT già esiste: riusa, non duplicare
+      // DDT già esiste: riusa, non duplicare — IMEI dal DDT, non dall'utente
       ddtId = existingDDT.id
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       numDdt = existingDDT.numero_ddt
       console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (IMEI: ${imei}), skip INSERT`)
     } else {
-      // DDT non esiste: crea nuovo con l'IMEI fornito dall'utente
+      // DDT non esiste: serve IMEI — se non fornito, chiedi al frontend
+      if (!imei) {
+        return c.json({ success: false, needsImei: true, error: 'IMEI richiesto per creare nuovo DDT' })
+      }
       ddtId = `DDT-${leadId}-${Date.now()}`
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`

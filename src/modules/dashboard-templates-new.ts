@@ -4628,27 +4628,62 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         async function generaDDT(leadId) {
-            const imei = prompt('GENERA DDT - Inserisci IMEI del dispositivo:');
-            if (!imei || !imei.trim()) return;
-            const telefonoSim = prompt('Numero di telefono della SIM (premi OK per saltare):') || '';
-            const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
-            const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
-            const note = prompt('Note aggiuntive (opzionale):') || '';
-            if (!confirm('Confermi DDT? IMEI: ' + imei.trim() + ' | SIM: ' + (telefonoSim||'-') + ' | N.DDT: ' + (numeroDdt||'auto') + ' | Data: ' + (dataConsegna||'oggi') + ' | Creazione: DDT + Dispositivo + Assistito + Email a info@ecura.it')) return;
+            // Prima prova senza IMEI: se DDT esiste già il backend lo prende dal DB
+            // e crea solo l'assistito mancante senza chiedere nulla
             try {
-                const response = await fetch('/api/leads/' + leadId + '/genera-ddt', {
+                const r1 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ imei: imei.trim(), telefonoSim, numeroDdt, dataConsegna, note })
+                    body: JSON.stringify({})
                 });
-                const result = await response.json();
-                if (result.success) {
-                    alert('OK - ' + result.message + ' | DDT N.: ' + (result.ddt&&result.ddt.numero) + ' | Dispositivo: ' + (result.ddt&&result.ddt.dispositivo) + ' | IMEI: ' + (result.ddt&&result.ddt.imei) + ' | Assistito: ' + (result.assistito&&result.assistito.nome));
+                const res1 = await r1.json();
+
+                // Caso normale: DDT esistente, assistito creato senza domande
+                if (res1.success) {
+                    alert('OK - ' + res1.message +
+                        ' | DDT: ' + (res1.ddt&&res1.ddt.numero) +
+                        ' | IMEI: ' + (res1.ddt&&res1.ddt.imei) +
+                        ' | Assistito: ' + (res1.assistito&&res1.assistito.nome));
                     loadLeadsData();
-                } else {
-                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
+                    return;
                 }
+
+                // DDT non esiste ancora: serve IMEI per crearlo
+                if (res1.needsImei) {
+                    const imei = prompt('Nessun DDT trovato per questo lead.\\nInserisci IMEI del dispositivo:');
+                    if (!imei || !imei.trim()) return;
+                    const telefonoSim = prompt('Numero SIM (Invio per saltare):') || '';
+                    const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
+                    const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
+                    const note = prompt('Note (opzionale):') || '';
+                    if (!confirm('Confermi creazione DDT + Dispositivo + Assistito?' +
+                        '\\nIMEI: ' + imei.trim() +
+                        '\\nSIM: ' + (telefonoSim||'-') +
+                        '\\nN.DDT: ' + (numeroDdt||'auto') +
+                        '\\nData: ' + (dataConsegna||'oggi'))) return;
+
+                    const r2 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ imei: imei.trim(), telefonoSim, numeroDdt, dataConsegna, note })
+                    });
+                    const res2 = await r2.json();
+                    if (res2.success) {
+                        alert('OK - ' + res2.message +
+                            ' | DDT: ' + (res2.ddt&&res2.ddt.numero) +
+                            ' | IMEI: ' + (res2.ddt&&res2.ddt.imei) +
+                            ' | Assistito: ' + (res2.assistito&&res2.assistito.nome));
+                        loadLeadsData();
+                    } else {
+                        alert('ERRORE: ' + (res2.error || 'Errore sconosciuto'));
+                    }
+                    return;
+                }
+
+                // Altro errore
+                alert('ERRORE: ' + (res1.error || 'Errore sconosciuto'));
             } catch (error) {
                 alert('ERRORE di comunicazione: ' + error.message);
             }
