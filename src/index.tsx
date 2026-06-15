@@ -29075,9 +29075,14 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const { imei: imeiInput, telefonoSim, numeroDdt, dataConsegna, note } = body
     // IMEI è opzionale: se il DDT esiste già lo prendiamo da lì
 
-    // --- 1. Carica lead + contratto ---
+    // --- 1. Carica lead + contratto + configurazione ---
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    // Configurazione compilata dal cliente (fonte di verità per dati assistito)
+    const config = await c.env.DB.prepare(
+      `SELECT * FROM configurations WHERE leadId = ? ORDER BY updated_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
 
     const contract = await c.env.DB.prepare(
       `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
@@ -29224,16 +29229,27 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       console.log(`✅ [GENERA-DDT] Dispositivo S/N ${imei} creato`)
     }
 
-    // --- 7. Crea record assistito (se non esiste già) ---
-    // Nome assistito: usa dati specifici assistito, fallback su richiedente
-    const nomeAssistitoField   = lead.nomeAssistito   || lead.nomeRichiedente   || ''
-    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognomeRichiedente || ''
-    const nomeCaregiverField   = lead.nomeRichiedente   || ''
-    const cognomeCaregiverField = lead.cognomeRichiedente || ''
-    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
-    const codiceAssistito = `ASS-${leadId}`
+    // --- 7. Crea / aggiorna record assistito ---
+    // FONTE DI VERITÀ (priorità decrescente):
+    //   1. configurations (compilato dal cliente nel form di configurazione)
+    //   2. leads (dati raccolti al momento della lead)
+    // Assistito  = il paziente        → config.nome_assistito / lead.nomeAssistito
+    // Caregiver  = chi ha compilato   → config.contatto1_nome  / lead.nomeRichiedente
+    // Parentela  = rapporto assistito→caregiver → lead.parentelaAssistito
 
-    // Assicura che le colonne extra esistano (potrebbero non essere presenti in DB più vecchi)
+    const nomeAssistitoField    = config?.nome_assistito    || lead.nomeAssistito    || lead.nomeRichiedente    || ''
+    const cognomeAssistitoField = config?.cognome_assistito || lead.cognomeAssistito || lead.cognomeRichiedente || ''
+    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente    || ''
+    const cognomeCaregiverField = config?.contatto1_cognome || lead.cognomeRichiedente || ''
+    const parentelaField        = lead.parentelaAssistito   || 'Caregiver'
+    const emailAssistito        = config?.email  || lead.email  || ''
+    const telefonoAssistito     = config?.telefono || lead.telefono || ''
+    const nomeCompleto          = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
+
+    // Codice standard: ASS-COGNOME-timestamp  (es. ASS-BADANOLITTARDI-1749876543210)
+    const codiceAssistito = `ASS-${(cognomeAssistitoField || nomeAssistitoField || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')}-${Date.now()}`
+
+    // Assicura che le colonne extra esistano (ALTER TABLE idempotente)
     const colsToAdd = ['imei TEXT', 'nome_assistito TEXT', 'cognome_assistito TEXT',
       'nome_caregiver TEXT', 'cognome_caregiver TEXT', 'parentela_caregiver TEXT',
       'servizio TEXT', 'piano TEXT']
@@ -29244,7 +29260,7 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     }
 
     const existingAssistito = await c.env.DB.prepare(
-      `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
+      `SELECT id, codice FROM assistiti WHERE lead_id=? LIMIT 1`
     ).bind(leadId).first() as any
 
     if (!existingAssistito) {
@@ -29259,25 +29275,30 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
         codiceAssistito, nomeCompleto,
         nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
-        lead.parentelaConCaregiver || 'Caregiver',
-        lead.email || '', lead.telefono || '',
+        parentelaField,
+        emailAssistito, telefonoAssistito,
         imei, servizio, piano, leadId
       ).run()
-      console.log(`✅ [GENERA-DDT] Assistito ${nomeCompleto} creato (servizio: ${servizio}, piano: ${piano})`)
+      console.log(`✅ [GENERA-DDT] Assistito creato: ${codiceAssistito} — ${nomeCompleto} (caregiver: ${nomeCaregiverField} ${cognomeCaregiverField}, parentela: ${parentelaField}, config: ${!!config})`)
     } else {
+      // UPDATE: aggiorna TUTTI i campi compreso status (potrebbe essere ELIMINATO per errore)
+      // e nome/codice se i dati sono migliorati grazie a configurations
       await c.env.DB.prepare(`
         UPDATE assistiti SET
-          imei=?, nome_assistito=?, cognome_assistito=?,
+          nome=?, nome_assistito=?, cognome_assistito=?,
           nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
-          servizio=?, piano=?, updated_at=datetime('now')
+          email=?, telefono=?,
+          imei=?, servizio=?, piano=?,
+          status='ATTIVO', updated_at=datetime('now')
         WHERE lead_id=?
       `).bind(
-        imei, nomeAssistitoField, cognomeAssistitoField,
+        nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
-        lead.parentelaConCaregiver || 'Caregiver',
-        servizio, piano, leadId
+        parentelaField,
+        emailAssistito, telefonoAssistito,
+        imei, servizio, piano, leadId
       ).run()
-      console.log(`✅ [GENERA-DDT] Assistito esistente aggiornato (IMEI, servizio: ${servizio}, piano: ${piano})`)
+      console.log(`✅ [GENERA-DDT] Assistito aggiornato (id=${existingAssistito.id}): ${nomeCompleto} → ATTIVO (config: ${!!config})`)
     }
 
     // --- 8. Invia email riepilogo DDT a info@ecura.it (con link PDF) ---
@@ -29339,50 +29360,55 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 })
 
 // POST /api/leads/:id/fix-assistito
-// Crea o aggiorna l'assistito di un lead basandosi sui dati lead + DDT esistente
-// Utile per lead con DDT già creato prima del fix del genera-ddt
+// Crea o aggiorna l'assistito di un lead leggendo configurations + lead + DDT
+// Corregge status, nomi, caregiver, parentela su record esistenti errati
 app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
   const leadId = c.req.param('id')
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
 
-    // Dump campi lead per debug
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    // FONTE DI VERITÀ: configurations ha i dati compilati dal cliente
+    const config = await c.env.DB.prepare(
+      `SELECT * FROM configurations WHERE leadId = ? ORDER BY updated_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
 
     const contract = await c.env.DB.prepare(
       `SELECT * FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 1`
     ).bind(leadId).first() as any
 
-    // Cerca DDT per questo lead: sia per note che per destinatario_nome
+    // DDT: cerca per note (LeadID:X) poi per destinatario
     const ddtByNote = await c.env.DB.prepare(
       `SELECT * FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
     ).bind(`LeadID:${leadId}%`).first() as any
-    // Fallback: cerca per destinatario nome corrispondente al lead
-    const nomeRich = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-    const ddtByNome = ddtByNote || await c.env.DB.prepare(
-      `SELECT * FROM ddts WHERE destinatario_nome LIKE ? ORDER BY created_at DESC LIMIT 1`
-    ).bind(`%${lead.cognomeRichiedente || lead.cognomeAssistito || ''}%`).first() as any
-    const ddt = ddtByNote || ddtByNome
+    const ddtFallback = !ddtByNote
+      ? await c.env.DB.prepare(
+          `SELECT * FROM ddts WHERE destinatario_nome LIKE ? ORDER BY created_at DESC LIMIT 1`
+        ).bind(`%${lead.cognomeRichiedente || lead.cognomeAssistito || ''}%`).first() as any
+      : null
+    const ddt = ddtByNote || ddtFallback
 
-    // Determina servizio/piano — cerca anche nei campi alternativi del DB live
     const servizio = contract?.servizio || lead.servizio || lead.tipoServizio || 'eCura PRO'
-    const piano = contract?.piano || lead.piano || 'BASE'
-    const imei = ddt?.serial_number || ''
+    const piano    = contract?.piano    || lead.piano    || 'BASE'
+    const imei     = ddt?.serial_number || ''
 
-    // Nomi — il DB live potrebbe usare nomi di campo diversi
-    const nomeAssistitoField = lead.nomeAssistito || lead.nome_assistito || lead.nomeRichiedente || ''
-    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognome_assistito || lead.cognomeRichiedente || ''
-    const nomeCaregiverField = lead.nomeRichiedente || lead.nome_richiedente || ''
-    const cognomeCaregiverField = lead.cognomeRichiedente || lead.cognome_richiedente || ''
-    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim() || nomeRich
-    const codiceAssistito = `ASS-${leadId}`
+    // Dati assistito: configurations > leads
+    const nomeAssistitoField    = config?.nome_assistito    || lead.nomeAssistito    || lead.nomeRichiedente    || ''
+    const cognomeAssistitoField = config?.cognome_assistito || lead.cognomeAssistito || lead.cognomeRichiedente || ''
+    const nomeCaregiverField    = config?.contatto1_nome    || lead.nomeRichiedente    || ''
+    const cognomeCaregiverField = config?.contatto1_cognome || lead.cognomeRichiedente || ''
+    const parentelaField        = lead.parentelaAssistito   || 'Caregiver'
+    const emailAssistito        = config?.email    || lead.email    || ''
+    const telefonoAssistito     = config?.telefono || lead.telefono || ''
+    const nomeCompleto          = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
 
     const debugInfo = {
-      leadId, leadKeys: Object.keys(lead),
+      leadId, configFound: !!config, ddtFound: !!ddt,
       nomeCompleto, servizio, piano, imei,
-      codiceAssistito,
-      ddt: ddt ? { id: ddt.id, sn: ddt.serial_number } : null
+      caregiver: `${nomeCaregiverField} ${cognomeCaregiverField}`,
+      parentela: parentelaField
     }
     console.log('[FIX-ASSISTITO] debug:', JSON.stringify(debugInfo))
 
@@ -29394,13 +29420,13 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
       try { await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN ${colDef}`).run() } catch (_) {}
     }
 
-    // Cerca assistito esistente per lead_id O per codice (evita UNIQUE violation)
     const existingAssistito = await c.env.DB.prepare(
-      `SELECT id, codice FROM assistiti WHERE lead_id=? OR codice=? LIMIT 1`
-    ).bind(leadId, codiceAssistito).first() as any
+      `SELECT id, codice FROM assistiti WHERE lead_id=? LIMIT 1`
+    ).bind(leadId).first() as any
 
     if (!existingAssistito) {
-      // INSERT — gestisce UNIQUE su imei: se IMEI già usato, inserisce senza imei
+      // Codice standard: ASS-COGNOME-timestamp
+      const codiceAssistito = `ASS-${(cognomeAssistitoField || nomeAssistitoField || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')}-${Date.now()}`
       try {
         await c.env.DB.prepare(`
           INSERT INTO assistiti (
@@ -29413,14 +29439,13 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
           codiceAssistito, nomeCompleto,
           nomeAssistitoField, cognomeAssistitoField,
           nomeCaregiverField, cognomeCaregiverField,
-          lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
-          lead.email || '', lead.telefono || '',
+          parentelaField,
+          emailAssistito, telefonoAssistito,
           imei, servizio, piano, leadId
         ).run()
       } catch (insertErr: any) {
-        // Se fallisce per UNIQUE su imei, ritenta senza imei
-        const errMsg = String(insertErr?.message || insertErr)
-        console.warn('[FIX-ASSISTITO] INSERT fallito:', errMsg, '— ritento senza imei')
+        // IMEI duplicato → ritenta senza imei
+        console.warn('[FIX-ASSISTITO] INSERT fallito (IMEI dup?):', String(insertErr?.message || insertErr))
         await c.env.DB.prepare(`
           INSERT INTO assistiti (
             codice, nome, nome_assistito, cognome_assistito,
@@ -29432,26 +29457,28 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
           codiceAssistito, nomeCompleto,
           nomeAssistitoField, cognomeAssistitoField,
           nomeCaregiverField, cognomeCaregiverField,
-          lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
-          lead.email || '', lead.telefono || '',
+          parentelaField,
+          emailAssistito, telefonoAssistito,
           servizio, piano, leadId
         ).run()
       }
-      // Verifica che sia stato inserito
-      const verify = await c.env.DB.prepare(`SELECT id FROM assistiti WHERE codice=?`).bind(codiceAssistito).first()
+      const verify = await c.env.DB.prepare(`SELECT id FROM assistiti WHERE lead_id=?`).bind(leadId).first()
       return c.json({ success: true, action: 'created', nome: nomeCompleto, servizio, piano, imei, debug: debugInfo, verified: !!verify })
     } else {
-      // UPDATE dell'esistente — non tocca codice/imei UNIQUE
+      // UPDATE completo: corregge status, nomi, caregiver, parentela, imei, email, telefono
       await c.env.DB.prepare(`
         UPDATE assistiti SET
           nome=?, nome_assistito=?, cognome_assistito=?,
           nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
-          servizio=?, piano=?, updated_at=datetime('now')
+          email=?, telefono=?,
+          servizio=?, piano=?,
+          status='ATTIVO', updated_at=datetime('now')
         WHERE id=?
       `).bind(
         nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
-        lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
+        parentelaField,
+        emailAssistito, telefonoAssistito,
         servizio, piano, existingAssistito.id
       ).run()
       // Aggiorna imei separatamente (potrebbe fallire per UNIQUE — non bloccante)
@@ -29467,7 +29494,6 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error), leadId }, 500)
   }
 })
-
 /**
  * 3. PAGAMENTO MANUALE
  * Conferma pagamento ricevuto + TRIGGER EMAIL FORM CONFIGURAZIONE
