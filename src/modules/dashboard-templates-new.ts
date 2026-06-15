@@ -1076,6 +1076,10 @@ export const dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca assistito..."
                         onkeyup="filterAssistiti()"
                     />
+                    <button onclick="loadDashboardData()" class="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors" title="Ricarica lista assistiti dal DB">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Ricarica
+                    </button>
                     <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
                         <i class="fas fa-user-plus mr-2"></i>
                         Nuovo Assistito
@@ -1877,7 +1881,7 @@ export const dashboard = `<!DOCTYPE html>
                 const contracts = contractsData.contracts || contractsData.contratti || contractsData.data || [];
                 
                 // Carica ASSISTITI reali con IMEI
-                const assistitiResponse = await fetch('/api/assistiti');
+                const assistitiResponse = await fetch('/api/assistiti', { credentials: 'include' });
                 const assistitiData = await assistitiResponse.json();
                 const assistiti = assistitiData.assistiti || [];
                 
@@ -2142,7 +2146,7 @@ export const dashboard = `<!DOCTYPE html>
 
         function updatePlansChart(leads) {
             // USA SOLO ASSISTITI per conteggio piani (non tutti i lead)
-            const assistitiResponse = fetch('/api/assistiti').then(r => r.json()).then(data => {
+            const assistitiResponse = fetch('/api/assistiti', { credentials: 'include' }).then(r => r.json()).then(data => {
                 const assistiti = data.assistiti || [];
                 const planCounts = { 'BASE': 0, 'AVANZATO': 0 };
                 
@@ -4644,7 +4648,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('OK - ' + res1.message +
                         ' | DDT: ' + (res1.ddt&&res1.ddt.numero) +
                         ' | IMEI: ' + (res1.ddt&&res1.ddt.imei) +
-                        ' | Assistito: ' + (res1.assistito&&res1.assistito.nome));
+                        ' | Assistito: ' + (res1.assistito&&res1.assistito.nome) +
+                        ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
                     loadLeadsData();
                     return;
                 }
@@ -4674,7 +4679,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         alert('OK - ' + res2.message +
                             ' | DDT: ' + (res2.ddt&&res2.ddt.numero) +
                             ' | IMEI: ' + (res2.ddt&&res2.ddt.imei) +
-                            ' | Assistito: ' + (res2.assistito&&res2.assistito.nome));
+                            ' | Assistito: ' + (res2.assistito&&res2.assistito.nome) +
+                            ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
                         loadLeadsData();
                     } else {
                         alert('ERRORE: ' + (res2.error || 'Errore sconosciuto'));
