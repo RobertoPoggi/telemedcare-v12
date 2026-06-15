@@ -4638,15 +4638,16 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         // Aggiorna tutti i DDT senza status corretto a CONSEGNATO + genera pdf_url
         async function fixDDTStatus() {
-            if (!confirm('Aggiornare tutti i DDT con status mancante/preparazione a CONSEGNATO e generare il link PDF?')) return;
+            if (!confirm('Aggiornare tutti i DDT senza pdf_url o con status vuoto/preparazione a CONSEGNATO?')) return;
             try {
                 const response = await fetch('/api/ddts/fix-status', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('OK - ' + result.message);
+                    alert('COMPLETATO: ' + result.message + (result.updated === 0 ? ' (tutti i DDT avevano gia status corretto)' : ''));
                     loadDDTTable();
                 } else {
                     alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
@@ -4658,17 +4659,24 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         // Crea/aggiorna assistito per un lead specifico
         async function fixAssistito(leadId) {
-            if (!confirm('Creare/aggiornare il record Assistito per questo lead?')) return;
+            if (!confirm('Creare/aggiornare il record Assistito per questo lead con tutti i campi?')) return;
             try {
                 const response = await fetch('/api/leads/' + leadId + '/fix-assistito', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
-                const result = await response.json();
+                const text = await response.text();
+                let result;
+                try { result = JSON.parse(text); } catch(e) { alert('Risposta non JSON: ' + text.substring(0,200)); return; }
                 if (result.success) {
-                    alert('OK - Assistito ' + result.action + ': ' + result.nome + ' | Servizio: ' + result.servizio + ' | IMEI: ' + (result.imei||'N/A'));
+                    const dbg = result.debug ? ('\nDB keys: ' + (result.debug.leadKeys||[]).join(',')) : '';
+                    alert('COMPLETATO (' + result.action + ')\nNome: ' + result.nome + '\nServizio: ' + result.servizio + ' ' + (result.piano||'') + '\nIMEI: ' + (result.imei||'N/A') + '\nVerificato in DB: ' + result.verified + dbg);
+                    // Ricarica i dati (assistiti sono parte di loadLeadsData)
+                    if (typeof window.loadLeadsData === 'function') window.loadLeadsData();
+                    else if (typeof loadLeadsData === 'function') loadLeadsData();
                 } else {
-                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
+                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto') + '\nLeadId: ' + (result.leadId||leadId));
                 }
             } catch (error) {
                 alert('ERRORE di comunicazione: ' + error.message);

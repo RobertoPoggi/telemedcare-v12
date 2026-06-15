@@ -9668,25 +9668,36 @@ app.put('/api/ddts/:id', async (c) => {
   }
 })
 
-// POST /api/ddts/fix-status - Aggiorna status e pdf_url dei DDT senza (admin utility)
-app.post('/api/ddts/fix-status', requireAuth, async (c) => {
+// POST /api/ddts/fix-status - Aggiorna status e pdf_url di TUTTI i DDT (admin utility)
+app.post('/api/ddts/fix-status', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
     const baseUrl = new URL(c.req.url).origin
-    // Recupera tutti i DDT con status null, vuoto o 'preparazione'
-    const ddts = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, status, pdf_url FROM ddts WHERE status IS NULL OR status = '' OR status = 'preparazione'`
-    ).all() as any
+    // Recupera TUTTI i DDT per aggiornare sia status che pdf_url mancante
+    const ddts = await c.env.DB.prepare(`SELECT id, numero_ddt, status, pdf_url FROM ddts`).all() as any
     const rows = ddts?.results || []
-    let updated = 0
+    let updatedStatus = 0
+    let updatedPdf = 0
     for (const row of rows) {
-      const pdfUrl = row.pdf_url || `${baseUrl}/api/ddts/${row.id}/pdf-print`
-      await c.env.DB.prepare(
-        `UPDATE ddts SET status='CONSEGNATO', pdf_url=?, pdf_generated=1, updated_at=datetime('now') WHERE id=?`
-      ).bind(pdfUrl, row.id).run()
-      updated++
+      const needsStatus = !row.status || row.status === '' || row.status.toLowerCase() === 'preparazione'
+      const needsPdf = !row.pdf_url
+      if (needsStatus || needsPdf) {
+        const pdfUrl = row.pdf_url || `${baseUrl}/api/ddts/${row.id}/pdf-print`
+        const newStatus = needsStatus ? 'CONSEGNATO' : row.status
+        await c.env.DB.prepare(
+          `UPDATE ddts SET status=?, pdf_url=?, pdf_generated=1, updated_at=datetime('now') WHERE id=?`
+        ).bind(newStatus, pdfUrl, row.id).run()
+        if (needsStatus) updatedStatus++
+        if (needsPdf) updatedPdf++
+      }
     }
-    return c.json({ success: true, updated, message: `${updated} DDT aggiornati a CONSEGNATO` })
+    return c.json({
+      success: true,
+      updated: updatedStatus + updatedPdf,
+      updatedStatus, updatedPdf,
+      total: rows.length,
+      message: `${rows.length} DDT totali: ${updatedStatus} status aggiornati, ${updatedPdf} pdf_url aggiunti`
+    })
   } catch (error) {
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
   }
@@ -29317,6 +29328,7 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
 
+    // Dump campi lead per debug
     const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
 
@@ -29324,24 +29336,39 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
       `SELECT * FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 1`
     ).bind(leadId).first() as any
 
-    const ddt = await c.env.DB.prepare(
+    // Cerca DDT per questo lead: sia per note che per destinatario_nome
+    const ddtByNote = await c.env.DB.prepare(
       `SELECT * FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
     ).bind(`LeadID:${leadId}%`).first() as any
+    // Fallback: cerca per destinatario nome corrispondente al lead
+    const nomeRich = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+    const ddtByNome = ddtByNote || await c.env.DB.prepare(
+      `SELECT * FROM ddts WHERE destinatario_nome LIKE ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(`%${lead.cognomeRichiedente || lead.cognomeAssistito || ''}%`).first() as any
+    const ddt = ddtByNote || ddtByNome
 
-    // Determina servizio/piano
-    const servizio = contract?.servizio || lead.servizio || 'eCura PRO'
+    // Determina servizio/piano — cerca anche nei campi alternativi del DB live
+    const servizio = contract?.servizio || lead.servizio || lead.tipoServizio || 'eCura PRO'
     const piano = contract?.piano || lead.piano || 'BASE'
     const imei = ddt?.serial_number || ''
 
-    // Nomi
-    const nomeAssistitoField = lead.nomeAssistito || lead.nomeRichiedente || ''
-    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognomeRichiedente || ''
-    const nomeCaregiverField = lead.nomeRichiedente || ''
-    const cognomeCaregiverField = lead.cognomeRichiedente || ''
-    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim()
+    // Nomi — il DB live potrebbe usare nomi di campo diversi
+    const nomeAssistitoField = lead.nomeAssistito || lead.nome_assistito || lead.nomeRichiedente || ''
+    const cognomeAssistitoField = lead.cognomeAssistito || lead.cognome_assistito || lead.cognomeRichiedente || ''
+    const nomeCaregiverField = lead.nomeRichiedente || lead.nome_richiedente || ''
+    const cognomeCaregiverField = lead.cognomeRichiedente || lead.cognome_richiedente || ''
+    const nomeCompleto = `${nomeAssistitoField} ${cognomeAssistitoField}`.trim() || nomeRich
     const codiceAssistito = `ASS-${leadId}`
 
-    // Assicura colonne extra
+    const debugInfo = {
+      leadId, leadKeys: Object.keys(lead),
+      nomeCompleto, servizio, piano, imei,
+      codiceAssistito,
+      ddt: ddt ? { id: ddt.id, sn: ddt.serial_number } : null
+    }
+    console.log('[FIX-ASSISTITO] debug:', JSON.stringify(debugInfo))
+
+    // Assicura colonne extra (ALTER TABLE idempotente)
     const colsToAdd = ['imei TEXT', 'nome_assistito TEXT', 'cognome_assistito TEXT',
       'nome_caregiver TEXT', 'cognome_caregiver TEXT', 'parentela_caregiver TEXT',
       'servizio TEXT', 'piano TEXT']
@@ -29349,45 +29376,77 @@ app.post('/api/leads/:id/fix-assistito', requireAuth, async (c) => {
       try { await c.env.DB.prepare(`ALTER TABLE assistiti ADD COLUMN ${colDef}`).run() } catch (_) {}
     }
 
+    // Cerca assistito esistente per lead_id O per codice (evita UNIQUE violation)
     const existingAssistito = await c.env.DB.prepare(
-      `SELECT id FROM assistiti WHERE lead_id=? LIMIT 1`
-    ).bind(leadId).first() as any
+      `SELECT id, codice FROM assistiti WHERE lead_id=? OR codice=? LIMIT 1`
+    ).bind(leadId, codiceAssistito).first() as any
 
     if (!existingAssistito) {
-      await c.env.DB.prepare(`
-        INSERT INTO assistiti (
-          codice, nome, nome_assistito, cognome_assistito,
-          nome_caregiver, cognome_caregiver, parentela_caregiver,
-          email, telefono, imei, servizio, piano, lead_id,
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
-      `).bind(
-        codiceAssistito, nomeCompleto,
-        nomeAssistitoField, cognomeAssistitoField,
-        nomeCaregiverField, cognomeCaregiverField,
-        lead.parentelaConCaregiver || 'Caregiver',
-        lead.email || '', lead.telefono || '',
-        imei, servizio, piano, leadId
-      ).run()
-      return c.json({ success: true, action: 'created', nome: nomeCompleto, servizio, piano, imei })
+      // INSERT — gestisce UNIQUE su imei: se IMEI già usato, inserisce senza imei
+      try {
+        await c.env.DB.prepare(`
+          INSERT INTO assistiti (
+            codice, nome, nome_assistito, cognome_assistito,
+            nome_caregiver, cognome_caregiver, parentela_caregiver,
+            email, telefono, imei, servizio, piano, lead_id,
+            status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+        `).bind(
+          codiceAssistito, nomeCompleto,
+          nomeAssistitoField, cognomeAssistitoField,
+          nomeCaregiverField, cognomeCaregiverField,
+          lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
+          lead.email || '', lead.telefono || '',
+          imei, servizio, piano, leadId
+        ).run()
+      } catch (insertErr: any) {
+        // Se fallisce per UNIQUE su imei, ritenta senza imei
+        const errMsg = String(insertErr?.message || insertErr)
+        console.warn('[FIX-ASSISTITO] INSERT fallito:', errMsg, '— ritento senza imei')
+        await c.env.DB.prepare(`
+          INSERT INTO assistiti (
+            codice, nome, nome_assistito, cognome_assistito,
+            nome_caregiver, cognome_caregiver, parentela_caregiver,
+            email, telefono, servizio, piano, lead_id,
+            status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ATTIVO', datetime('now'), datetime('now'))
+        `).bind(
+          codiceAssistito, nomeCompleto,
+          nomeAssistitoField, cognomeAssistitoField,
+          nomeCaregiverField, cognomeCaregiverField,
+          lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
+          lead.email || '', lead.telefono || '',
+          servizio, piano, leadId
+        ).run()
+      }
+      // Verifica che sia stato inserito
+      const verify = await c.env.DB.prepare(`SELECT id FROM assistiti WHERE codice=?`).bind(codiceAssistito).first()
+      return c.json({ success: true, action: 'created', nome: nomeCompleto, servizio, piano, imei, debug: debugInfo, verified: !!verify })
     } else {
+      // UPDATE dell'esistente — non tocca codice/imei UNIQUE
       await c.env.DB.prepare(`
         UPDATE assistiti SET
           nome=?, nome_assistito=?, cognome_assistito=?,
           nome_caregiver=?, cognome_caregiver=?, parentela_caregiver=?,
-          servizio=?, piano=?, imei=?, updated_at=datetime('now')
-        WHERE lead_id=?
+          servizio=?, piano=?, updated_at=datetime('now')
+        WHERE id=?
       `).bind(
         nomeCompleto, nomeAssistitoField, cognomeAssistitoField,
         nomeCaregiverField, cognomeCaregiverField,
-        lead.parentelaConCaregiver || 'Caregiver',
-        servizio, piano, imei, leadId
+        lead.parentelaConCaregiver || lead.parentela_con_caregiver || 'Caregiver',
+        servizio, piano, existingAssistito.id
       ).run()
-      return c.json({ success: true, action: 'updated', nome: nomeCompleto, servizio, piano, imei })
+      // Aggiorna imei separatamente (potrebbe fallire per UNIQUE — non bloccante)
+      if (imei) {
+        try {
+          await c.env.DB.prepare(`UPDATE assistiti SET imei=? WHERE id=?`).bind(imei, existingAssistito.id).run()
+        } catch (_) {}
+      }
+      return c.json({ success: true, action: 'updated', nome: nomeCompleto, servizio, piano, imei, debug: debugInfo })
     }
   } catch (error) {
     console.error('❌ [FIX-ASSISTITO]', error)
-    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error), leadId }, 500)
   }
 })
 
