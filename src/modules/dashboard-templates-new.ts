@@ -4449,7 +4449,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             var brochureUrl = 'https://telemedcare-v12.pages.dev/assets/brochures/brochure-ecura.pdf';
             var pianoStr = piano ? ' - ' + piano : '';
             var nl = String.fromCharCode(10);
-            var testo = 'Gentile ' + nome + ',' + nl + nl + 'Grazie per il suo interesse in ' + servizio + pianoStr + '.' + nl + nl + 'In allegato la brochure del dispositivo SiDLY Care:' + nl + brochureUrl + nl + nl + 'Siamo a sua disposizione.' + nl + nl + 'Cordiali saluti,' + nl + 'Team eCura';
+            var testo = 'Gentile ' + nome + ',' + nl + nl + 'Grazie per il suo interesse in ' + servizio + pianoStr + '.' + nl + nl + 'In allegato la brochure eCura:' + nl + brochureUrl + nl + nl + 'Siamo a sua disposizione per una consulenza gratuita, ci mandi le sue disponibilità' + nl + nl + 'Cordiali saluti,' + nl + 'Team eCura';
             window.open('https://wa.me/' + numero + '?text=' + encodeURIComponent(testo), '_blank');
         }
 
