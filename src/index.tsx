@@ -29155,36 +29155,51 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 
     const dataDoc = dataConsegna || new Date().toISOString().split('T')[0]
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
-    const ddtId = `DDT-${leadId}-${Date.now()}`
-
-    // --- 5. Costruisce pdf_url (endpoint HTML stampabile) ---
     const baseUrl = new URL(c.req.url).origin
-    const pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
 
-    // --- 5b. Inserisce record DDT con pdf_url e status CONSEGNATO ---
-    // La tabella ddts non ha lead_id — lo inseriamo nel campo note come riferimento
-    const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
-    await c.env.DB.prepare(`
-      INSERT INTO ddts (
-        id, numero_ddt, contract_code,
-        data_spedizione, data_consegna,
-        destinatario_nome, destinatario_indirizzo, destinatario_cap,
-        destinatario_citta, destinatario_provincia,
-        destinatario_email, destinatario_telefono,
-        dispositivo, serial_number, quantita,
-        status, pdf_url, pdf_generated, note,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(
-      ddtId, numDdt, codiceContratto,
-      dataDoc, dataDoc,
-      nomeDestinatario, indirizzoDestinatario, capDestinatario,
-      cittaDestinatario, provinciaDestinatario,
-      lead.email || '', lead.telefono || '',
-      dispositivo, imei, 1,
-      'CONSEGNATO', pdfUrl, 1, noteConLeadId
-    ).run()
-    console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId}, PDF: ${pdfUrl})`)
+    // --- 5. Controlla se esiste già un DDT per questo lead (note LIKE 'LeadID:X%') ---
+    const existingDDT = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, serial_number FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(`LeadID:${leadId}%`).first() as any
+
+    let ddtId: string
+    let pdfUrl: string
+    let ddtCreated = false
+
+    if (existingDDT) {
+      // DDT già esiste: usa quello esistente, non creare duplicato
+      ddtId = existingDDT.id
+      pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
+      numDdt = existingDDT.numero_ddt
+      console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (ID: ${ddtId}), skip INSERT`)
+    } else {
+      // DDT non esiste: crea nuovo
+      ddtId = `DDT-${leadId}-${Date.now()}`
+      pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
+      const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
+      await c.env.DB.prepare(`
+        INSERT INTO ddts (
+          id, numero_ddt, contract_code,
+          data_spedizione, data_consegna,
+          destinatario_nome, destinatario_indirizzo, destinatario_cap,
+          destinatario_citta, destinatario_provincia,
+          destinatario_email, destinatario_telefono,
+          dispositivo, serial_number, quantita,
+          status, pdf_url, pdf_generated, note,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `).bind(
+        ddtId, numDdt, codiceContratto,
+        dataDoc, dataDoc,
+        nomeDestinatario, indirizzoDestinatario, capDestinatario,
+        cittaDestinatario, provinciaDestinatario,
+        lead.email || '', lead.telefono || '',
+        dispositivo, imei, 1,
+        'CONSEGNATO', pdfUrl, 1, noteConLeadId
+      ).run()
+      ddtCreated = true
+      console.log(`✅ [GENERA-DDT] DDT ${numDdt} inserito (ID: ${ddtId}, PDF: ${pdfUrl})`)
+    }
 
     // --- 6. Crea/aggiorna record dispositivo nella tabella 'dispositivi' ---
     // Colonne reali: serial_number (= IMEI), modello, lead_id, status, assigned_at
@@ -29309,8 +29324,10 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 
     return c.json({
       success: true,
-      message: `DDT N° ${numDdt} generato, dispositivo e assistito registrati`,
-      ddt: { id: ddtId, numero: numDdt, dispositivo, imei, pdfUrl, status: 'CONSEGNATO' },
+      message: ddtCreated
+        ? `DDT N° ${numDdt} creato, dispositivo e assistito registrati`
+        : `DDT N° ${numDdt} già esistente — solo assistito creato/aggiornato`,
+      ddt: { id: ddtId, numero: numDdt, dispositivo, imei, pdfUrl, status: 'CONSEGNATO', existing: !ddtCreated },
       assistito: { codice: codiceAssistito, nome: nomeCompleto },
     })
 
