@@ -1210,9 +1210,6 @@ export const dashboard = `<!DOCTYPE html>
                     <a href="/admin/ddt" class="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                         <i class="fas fa-external-link-alt mr-1"></i>Vista completa
                     </a>
-                    <button onclick="fixDDTStatus()" class="flex items-center px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors border border-orange-300" title="Aggiorna DDT vecchi a status CONSEGNATO e genera pdf_url">
-                        <i class="fas fa-wrench mr-1"></i>Fix Status DDT
-                    </button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -1401,7 +1398,7 @@ export const dashboard = `<!DOCTYPE html>
                 annullato:  ['bg-red-100 text-red-700','fa-times-circle','Annullato']
             };
             tb.innerHTML = list.map((d, idx) => {
-                const s = statusMap[d.status] || ['bg-gray-100 text-gray-600','fa-question','—'];
+                const s = statusMap[(d.status||'').toLowerCase()] || ['bg-gray-100 text-gray-600','fa-question','—'];
                 const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
                 const pdfBtn = d.pdf_url
                     ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-500 hover:text-red-700" title="Apri PDF"><i class="fas fa-file-pdf"></i></a>'
@@ -4219,13 +4216,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Genera DDT + Dispositivo + Assistito">
                                     📦
                                 </button>
-                                <button 
-                                    data-action="fix-assistito"
-                                    data-lead-id="\${lead.id}"
-                                    class="px-2 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors action-btn"
-                                    title="Crea/Aggiorna Assistito da dati lead">
-                                    🩺
-                                </button>
+
                             </div>
                         </td>
                         <td class="py-3">
@@ -4271,7 +4262,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-configuration') sendConfiguration(leadId);
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
-                        else if (action === 'fix-assistito') fixAssistito(leadId);
                     });
                 });
                 
@@ -4491,7 +4481,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/request-completion?sendEmail=true\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -4524,7 +4515,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-sign\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -4548,7 +4540,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-proforma\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -4572,7 +4565,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -4596,7 +4590,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/send-configuration\`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 
                 const result = await response.json();
@@ -4617,7 +4612,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch('/api/leads/' + leadId + '/send-benvenuto', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 const result = await response.json();
                 if (result.success) {
@@ -4642,7 +4638,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             try {
                 const response = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '') },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ imei: imei.trim(), telefonoSim, numeroDdt, dataConsegna, note })
                 });
                 const result = await response.json();
@@ -4656,58 +4653,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert('ERRORE di comunicazione: ' + error.message);
             }
         }
-
-        // Aggiorna tutti i DDT senza status corretto a CONSEGNATO + genera pdf_url
-        async function fixDDTStatus() {
-            if (!confirm('Aggiornare tutti i DDT senza pdf_url o con status vuoto/preparazione a CONSEGNATO?')) return;
-            try {
-                const response = await fetch('/api/ddts/fix-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert('COMPLETATO: ' + result.message + (result.updated === 0 ? ' (tutti i DDT avevano gia status corretto)' : ''));
-                    loadDDTTable();
-                } else {
-                    alert('ERRORE: ' + (result.error || 'Errore sconosciuto'));
-                }
-            } catch (error) {
-                alert('ERRORE di comunicazione: ' + error.message);
-            }
-        }
-
-        // Crea/aggiorna assistito per un lead specifico
-        async function fixAssistito(leadId) {
-            console.log('[fixAssistito] chiamato per leadId:', leadId);
-            if (!confirm('Crea/aggiorna Assistito per lead #' + leadId + '?')) return;
-            try {
-                console.log('[fixAssistito] fetch POST /api/leads/' + leadId + '/fix-assistito');
-                const response = await fetch('/api/leads/' + leadId + '/fix-assistito', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
-                });
-                console.log('[fixAssistito] response status:', response.status);
-                const text = await response.text();
-                console.log('[fixAssistito] raw response:', text.substring(0, 300));
-                let result;
-                try { result = JSON.parse(text); } catch(e) { alert('Risposta non JSON (' + response.status + '): ' + text.substring(0,300)); return; }
-                if (result.success) {
-                    const dbg = result.debug ? (' | DB keys: ' + (result.debug.leadKeys||[]).join(',')) : '';
-                    alert('COMPLETATO (' + result.action + ') | Nome: ' + result.nome + ' | Servizio: ' + result.servizio + ' ' + (result.piano||'') + ' | IMEI: ' + (result.imei||'N/A') + ' | Verificato in DB: ' + result.verified + dbg);
-                    // Ricarica i dati
-                    if (typeof loadLeadsData === 'function') loadLeadsData();
-                } else {
-                    alert('ERRORE (' + response.status + '): ' + (result.error || 'Errore sconosciuto') + ' | LeadId: ' + (result.leadId||leadId));
-                }
-            } catch (error) {
-                console.error('[fixAssistito] exception:', error);
-                alert('ERRORE di comunicazione: ' + error.message);
-            }
-        }
-        window.fixAssistito = fixAssistito;
 
         // ============================================
         // CRUD FUNCTIONS - VIEW, EDIT, DELETE LEAD
@@ -6997,10 +6942,8 @@ export const data_dashboard = `<!DOCTYPE html>
             try {
                 const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         isRinnovo: true,
                         annoRinnovo: annoRinnovo,
@@ -7024,10 +6967,8 @@ export const data_dashboard = `<!DOCTYPE html>
             try {
                 const resp = await fetch(\`/api/contracts/\${contractId}/rinnovo-completato\`, {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ completato: true })
                 });
                 const result = await resp.json();
