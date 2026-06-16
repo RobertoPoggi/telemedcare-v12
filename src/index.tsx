@@ -21555,6 +21555,138 @@ app.post('/api/migrate-schema', async (c) => {
       migrations.push(`⚠️ Errore sync intestatarioContratto: ${e.message}`)
     }
 
+    // ─── MIGRAZIONE SCONTI: colonne leads ───────────────────────────────────
+    const leadsDiscount = [
+      { name: 'codice_sconto',       def: `TEXT DEFAULT NULL` },
+      { name: 'sconto_percentuale',  def: `REAL DEFAULT 0` },
+      { name: 'sconto_fisso',        def: `REAL DEFAULT 0` },
+      { name: 'prezzo_scontato',     def: `REAL DEFAULT NULL` },
+      { name: 'sconto_sorgente',     def: `TEXT DEFAULT NULL` },
+    ]
+    for (const col of leadsDiscount) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+        migrations.push(`✅ leads.${col.name} aggiunto`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ leads.${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore leads.${col.name}: ${e.message}`)
+        }
+      }
+    }
+
+    // ─── MIGRAZIONE SCONTI: colonne contracts ───────────────────────────────
+    const contractsDiscount = [
+      { name: 'codice_sconto',     def: `TEXT DEFAULT NULL` },
+      { name: 'sconto_applicato',  def: `REAL DEFAULT 0` },
+      { name: 'prezzo_scontato',   def: `REAL DEFAULT NULL` },
+    ]
+    for (const col of contractsDiscount) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE contracts ADD COLUMN ${col.name} ${col.def}`).run()
+        migrations.push(`✅ contracts.${col.name} aggiunto`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ contracts.${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore contracts.${col.name}: ${e.message}`)
+        }
+      }
+    }
+
+    // ─── MIGRAZIONE SCONTI: tabella discount_codes ─────────────────────────
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS discount_codes (
+          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+          codice          TEXT NOT NULL UNIQUE,
+          descrizione     TEXT,
+          tipo            TEXT NOT NULL DEFAULT 'PERCENTUALE',  -- PERCENTUALE | FISSO
+          valore          REAL NOT NULL DEFAULT 0,
+          sorgente        TEXT NOT NULL DEFAULT 'MANUALE',      -- CANALE | MANUALE | PROMOZIONE | FORM
+          canale_associato TEXT DEFAULT NULL,                   -- AON | DOUBLEYOU | ... (solo per sorgente CANALE)
+          condizione      TEXT DEFAULT NULL,                    -- eventuale regola JSON futura
+          cumulabile      INTEGER NOT NULL DEFAULT 1,           -- 1=cumulabile con altri sconti
+          cap_percentuale REAL NOT NULL DEFAULT 20,            -- cap massimo cumulo sconti (%)
+          data_scadenza   TEXT DEFAULT NULL,
+          utilizzi_max    INTEGER DEFAULT NULL,                 -- NULL = illimitato
+          utilizzi_count  INTEGER NOT NULL DEFAULT 0,
+          attivo          INTEGER NOT NULL DEFAULT 1,
+          created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `).run()
+      migrations.push('✅ Tabella discount_codes creata (o già esiste)')
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore creazione discount_codes: ${e.message}`)
+    }
+
+    // ─── SEED discount_codes: AON 10% e DOUBLEYOU 10% ──────────────────────
+    const seedCodes = [
+      {
+        codice: 'AON2026',
+        descrizione: 'Sconto canale AON 10%',
+        tipo: 'PERCENTUALE',
+        valore: 10,
+        sorgente: 'CANALE',
+        canale_associato: 'AON',
+        cumulabile: 1,
+        cap_percentuale: 20,
+        attivo: 1
+      },
+      {
+        codice: 'DOUBLEYOU2026',
+        descrizione: 'Sconto canale DoubleYou 10%',
+        tipo: 'PERCENTUALE',
+        valore: 10,
+        sorgente: 'CANALE',
+        canale_associato: 'DOUBLEYOU',
+        cumulabile: 1,
+        cap_percentuale: 20,
+        attivo: 1
+      }
+    ]
+    for (const seed of seedCodes) {
+      try {
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO discount_codes
+            (codice, descrizione, tipo, valore, sorgente, canale_associato, cumulabile, cap_percentuale, attivo)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          seed.codice, seed.descrizione, seed.tipo, seed.valore,
+          seed.sorgente, seed.canale_associato, seed.cumulabile,
+          seed.cap_percentuale, seed.attivo
+        ).run()
+        migrations.push(`✅ Seed discount_code: ${seed.codice}`)
+      } catch (e: any) {
+        migrations.push(`⚠️ Seed ${seed.codice}: ${e.message}`)
+      }
+    }
+
+    // ─── MIGRAZIONE SCONTI: tabella lead_discounts (storico applicazioni) ──
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS lead_discounts (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          lead_id          TEXT NOT NULL,
+          discount_code_id INTEGER NOT NULL,
+          codice           TEXT NOT NULL,
+          tipo             TEXT NOT NULL,
+          valore           REAL NOT NULL,
+          sconto_effettivo REAL NOT NULL,  -- importo effettivo scontato (€)
+          prezzo_originale REAL NOT NULL,
+          prezzo_finale    REAL NOT NULL,
+          sorgente         TEXT NOT NULL,
+          applicato_da     TEXT DEFAULT NULL,  -- operatore / sistema
+          created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `).run()
+      migrations.push('✅ Tabella lead_discounts creata (o già esiste)')
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore creazione lead_discounts: ${e.message}`)
+    }
+
     return c.json({
       success: true,
       message: 'Migrazione schema completata',
@@ -21567,6 +21699,371 @@ app.post('/api/migrate-schema', async (c) => {
       error: 'Errore migrazione schema',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SISTEMA SCONTI — helper + CRUD endpoints
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * applyDiscountToLead — applica uno sconto a un lead e persiste i dati.
+ *
+ * Logica:
+ *  1. Recupera il codice da discount_codes (deve essere attivo, non scaduto, con utilizzi disponibili)
+ *  2. Calcola lo sconto effettivo rispettando il CAP (default 20%) sul prezzo_anno del lead
+ *  3. Aggiorna leads.codice_sconto / sconto_percentuale / sconto_fisso / prezzo_scontato / sconto_sorgente
+ *  4. Inserisce riga in lead_discounts (storico)
+ *  5. Incrementa discount_codes.utilizzi_count
+ *
+ * @param db          D1 database binding
+ * @param leadId      ID del lead
+ * @param codiceSc    Codice sconto da applicare
+ * @param sorgente    'CANALE' | 'MANUALE' | 'PROMOZIONE' | 'FORM'
+ * @param applicatoDa Nome operatore / sistema (opzionale)
+ * @returns { success, prezzo_finale, sconto_effettivo, message }
+ */
+async function applyDiscountToLead(
+  db: any,
+  leadId: string,
+  codiceSc: string,
+  sorgente: string,
+  applicatoDa?: string
+): Promise<{ success: boolean; prezzo_finale?: number; sconto_effettivo?: number; message: string }> {
+  try {
+    // 1. Recupera il codice sconto
+    const dc = await db.prepare(`
+      SELECT * FROM discount_codes
+      WHERE codice = ? AND attivo = 1
+        AND (data_scadenza IS NULL OR date(data_scadenza) >= date('now'))
+        AND (utilizzi_max IS NULL OR utilizzi_count < utilizzi_max)
+    `).bind(codiceSc).first() as any
+
+    if (!dc) {
+      return { success: false, message: `Codice sconto "${codiceSc}" non valido, scaduto o esaurito` }
+    }
+
+    // 2. Recupera prezzo originale lead
+    const lead = await db.prepare('SELECT prezzo_anno, codice_sconto FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) {
+      return { success: false, message: `Lead ${leadId} non trovato` }
+    }
+
+    const prezzoOriginale = Number(lead.prezzo_anno) || 0
+    if (prezzoOriginale <= 0) {
+      return { success: false, message: `Lead ${leadId} non ha un prezzo_anno valido` }
+    }
+
+    // 3. Calcola sconto effettivo rispettando CAP
+    const capPerc = Number(dc.cap_percentuale) || 20
+    let percentualeEffettiva = 0
+    let importoFisso = 0
+
+    if (dc.tipo === 'PERCENTUALE') {
+      // Applica CAP percentuale
+      percentualeEffettiva = Math.min(Number(dc.valore), capPerc)
+      importoFisso = 0
+    } else {
+      // Sconto fisso — converti in % per verificare il CAP
+      const percEquivalente = (Number(dc.valore) / prezzoOriginale) * 100
+      if (percEquivalente > capPerc) {
+        // Riduci importo fisso al CAP
+        importoFisso = (prezzoOriginale * capPerc) / 100
+        percentualeEffettiva = capPerc
+      } else {
+        importoFisso = Number(dc.valore)
+        percentualeEffettiva = percEquivalente
+      }
+    }
+
+    const scontoEffettivo = dc.tipo === 'PERCENTUALE'
+      ? Math.round((prezzoOriginale * percentualeEffettiva / 100) * 100) / 100
+      : Math.round(importoFisso * 100) / 100
+
+    const prezzoFinale = Math.round((prezzoOriginale - scontoEffettivo) * 100) / 100
+
+    // 4. Aggiorna leads
+    await db.prepare(`
+      UPDATE leads SET
+        codice_sconto      = ?,
+        sconto_percentuale = ?,
+        sconto_fisso       = ?,
+        prezzo_scontato    = ?,
+        sconto_sorgente    = ?,
+        updated_at         = datetime('now')
+      WHERE id = ?
+    `).bind(
+      dc.codice,
+      dc.tipo === 'PERCENTUALE' ? percentualeEffettiva : 0,
+      dc.tipo === 'FISSO'       ? importoFisso         : 0,
+      prezzoFinale,
+      sorgente,
+      leadId
+    ).run()
+
+    // 5. Storico
+    await db.prepare(`
+      INSERT INTO lead_discounts
+        (lead_id, discount_code_id, codice, tipo, valore, sconto_effettivo,
+         prezzo_originale, prezzo_finale, sorgente, applicato_da)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      leadId, dc.id, dc.codice, dc.tipo, dc.valore,
+      scontoEffettivo, prezzoOriginale, prezzoFinale,
+      sorgente, applicatoDa || 'sistema'
+    ).run()
+
+    // 6. Incrementa utilizzi
+    await db.prepare(`
+      UPDATE discount_codes SET utilizzi_count = utilizzi_count + 1, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(dc.id).run()
+
+    return {
+      success: true,
+      prezzo_finale: prezzoFinale,
+      sconto_effettivo: scontoEffettivo,
+      message: `Sconto ${dc.codice} applicato: -${scontoEffettivo}€ → prezzo finale €${prezzoFinale}`
+    }
+  } catch (err: any) {
+    console.error('❌ applyDiscountToLead error:', err)
+    return { success: false, message: err?.message || 'Errore interno sconti' }
+  }
+}
+
+// ─── GET /api/discount-codes — lista tutti i codici ────────────────────────
+app.get('/api/discount-codes', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const rows = await c.env.DB.prepare(
+      'SELECT * FROM discount_codes ORDER BY sorgente, codice'
+    ).all()
+    return c.json({ success: true, codes: rows.results || [] })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── POST /api/discount-codes — crea nuovo codice ─────────────────────────
+app.post('/api/discount-codes', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const body = await c.req.json() as any
+    const {
+      codice, descrizione, tipo = 'PERCENTUALE', valore,
+      sorgente = 'MANUALE', canale_associato, condizione,
+      cumulabile = 1, cap_percentuale = 20,
+      data_scadenza, utilizzi_max, attivo = 1
+    } = body
+
+    if (!codice || valore === undefined) {
+      return c.json({ success: false, error: 'codice e valore sono obbligatori' }, 400)
+    }
+
+    const r = await c.env.DB.prepare(`
+      INSERT INTO discount_codes
+        (codice, descrizione, tipo, valore, sorgente, canale_associato,
+         condizione, cumulabile, cap_percentuale, data_scadenza, utilizzi_max, attivo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      codice.toUpperCase(), descrizione || null, tipo, Number(valore),
+      sorgente, canale_associato || null, condizione || null,
+      cumulabile ? 1 : 0, Number(cap_percentuale),
+      data_scadenza || null, utilizzi_max ? Number(utilizzi_max) : null,
+      attivo ? 1 : 0
+    ).run()
+
+    return c.json({ success: true, id: r.meta?.last_row_id, codice: codice.toUpperCase() })
+  } catch (error: any) {
+    const dupMsg = error?.message?.includes('UNIQUE') ? `Codice già esistente` : error?.message
+    return c.json({ success: false, error: dupMsg }, 500)
+  }
+})
+
+// ─── PUT /api/discount-codes/:codice — aggiorna codice ────────────────────
+app.put('/api/discount-codes/:codice', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const codice = c.req.param('codice').toUpperCase()
+    const body = await c.req.json() as any
+
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM discount_codes WHERE codice = ?'
+    ).bind(codice).first() as any
+    if (!existing) return c.json({ success: false, error: 'Codice non trovato' }, 404)
+
+    const {
+      descrizione, tipo, valore, sorgente, canale_associato,
+      condizione, cumulabile, cap_percentuale, data_scadenza,
+      utilizzi_max, attivo
+    } = body
+
+    await c.env.DB.prepare(`
+      UPDATE discount_codes SET
+        descrizione      = COALESCE(?, descrizione),
+        tipo             = COALESCE(?, tipo),
+        valore           = COALESCE(?, valore),
+        sorgente         = COALESCE(?, sorgente),
+        canale_associato = COALESCE(?, canale_associato),
+        condizione       = COALESCE(?, condizione),
+        cumulabile       = COALESCE(?, cumulabile),
+        cap_percentuale  = COALESCE(?, cap_percentuale),
+        data_scadenza    = COALESCE(?, data_scadenza),
+        utilizzi_max     = COALESCE(?, utilizzi_max),
+        attivo           = COALESCE(?, attivo),
+        updated_at       = datetime('now')
+      WHERE codice = ?
+    `).bind(
+      descrizione ?? null, tipo ?? null,
+      valore !== undefined ? Number(valore) : null,
+      sorgente ?? null, canale_associato ?? null, condizione ?? null,
+      cumulabile !== undefined ? (cumulabile ? 1 : 0) : null,
+      cap_percentuale !== undefined ? Number(cap_percentuale) : null,
+      data_scadenza ?? null,
+      utilizzi_max !== undefined ? Number(utilizzi_max) : null,
+      attivo !== undefined ? (attivo ? 1 : 0) : null,
+      codice
+    ).run()
+
+    return c.json({ success: true, codice })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── DELETE /api/discount-codes/:codice — disattiva (soft-delete) ─────────
+app.delete('/api/discount-codes/:codice', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const codice = c.req.param('codice').toUpperCase()
+    await c.env.DB.prepare(
+      `UPDATE discount_codes SET attivo = 0, updated_at = datetime('now') WHERE codice = ?`
+    ).bind(codice).run()
+    return c.json({ success: true, message: `Codice ${codice} disattivato` })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── POST /api/leads/:id/apply-discount — applica sconto MANUALE ──────────
+app.post('/api/leads/:id/apply-discount', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const body = await c.req.json() as any
+    const { codice, applicato_da } = body
+    if (!codice) return c.json({ success: false, error: 'Campo "codice" obbligatorio' }, 400)
+
+    const result = await applyDiscountToLead(
+      c.env.DB, leadId, codice.toUpperCase(), 'MANUALE', applicato_da || 'operatore'
+    )
+    if (!result.success) return c.json({ success: false, error: result.message }, 400)
+    return c.json({ success: true, ...result })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── DELETE /api/leads/:id/apply-discount — rimuove sconto da un lead ─────
+app.delete('/api/leads/:id/apply-discount', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        codice_sconto = NULL, sconto_percentuale = 0,
+        sconto_fisso = 0, prezzo_scontato = NULL, sconto_sorgente = NULL,
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(leadId).run()
+    return c.json({ success: true, message: 'Sconto rimosso dal lead' })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── GET /api/leads/:id/discounts — storico sconti di un lead ─────────────
+app.get('/api/leads/:id/discounts', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const rows = await c.env.DB.prepare(
+      'SELECT * FROM lead_discounts WHERE lead_id = ? ORDER BY created_at DESC'
+    ).bind(leadId).all()
+    return c.json({ success: true, discounts: rows.results || [] })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── POST /api/leads/apply-canale-discounts ────────────────────────────────
+// Scansiona i lead AON/DOUBLEYOU senza sconto e applica automaticamente
+// il codice canale corrispondente (sorgente CANALE).
+// Può essere chiamato:
+//   - dopo ogni import batch
+//   - da cron / manuale per recuperare lead pregressi
+app.post('/api/leads/apply-canale-discounts', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    // Mappa canale → codice_sconto
+    const CANALE_MAP: Record<string, string> = {
+      'AON':        'AON2026',
+      'DOUBLEYOU':  'DOUBLEYOU2026',
+      'DOUBLE YOU': 'DOUBLEYOU2026',
+    }
+
+    let applied = 0
+    let skipped = 0
+    const errors: string[] = []
+
+    for (const [canaleKey, codiceSconto] of Object.entries(CANALE_MAP)) {
+      // Recupera lead di questo canale senza sconto già applicato
+      const candidati = await c.env.DB.prepare(`
+        SELECT id, prezzo_anno, fonte, canale
+        FROM leads
+        WHERE (
+            UPPER(fonte)   LIKE ?
+          OR UPPER(canale) LIKE ?
+          OR id            LIKE ?
+        )
+        AND (codice_sconto IS NULL OR codice_sconto = '')
+        AND prezzo_anno IS NOT NULL AND prezzo_anno > 0
+        ORDER BY created_at DESC
+      `).bind(
+        `%${canaleKey}%`,
+        `%${canaleKey}%`,
+        `%${canaleKey.replace(' ', '')}%`
+      ).all()
+
+      const leads = (candidati.results || []) as any[]
+      console.log(`🏷️ [CANALE-DISCOUNT] ${canaleKey}: ${leads.length} lead candidati`)
+
+      for (const lead of leads) {
+        const result = await applyDiscountToLead(
+          c.env.DB, lead.id, codiceSconto, 'CANALE', 'sistema-canale'
+        )
+        if (result.success) {
+          applied++
+          console.log(`✅ [CANALE-DISCOUNT] ${lead.id} → ${codiceSconto}: ${result.message}`)
+        } else {
+          skipped++
+          errors.push(`${lead.id}: ${result.message}`)
+          console.warn(`⚠️ [CANALE-DISCOUNT] skip ${lead.id}: ${result.message}`)
+        }
+      }
+    }
+
+    return c.json({
+      success: true,
+      applied,
+      skipped,
+      errors,
+      message: `Sconti canale applicati: ${applied} lead aggiornati, ${skipped} saltati`
+    })
+  } catch (error: any) {
+    console.error('❌ [CANALE-DISCOUNT] Errore:', error)
+    return c.json({ success: false, error: error?.message }, 500)
   }
 })
 
@@ -29552,6 +30049,29 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
     }
     
     console.log(`✅ [MANUAL-PAYMENT] Conferma pagamento manuale per lead ${leadId}`)
+
+    // ─── TRIGGER PROMOZIONE: se viene passato un codice_promo nel body, applicalo ───
+    let scontoApplicato: any = null
+    try {
+      const bodyRaw = await c.req.raw.clone().text()
+      let bodyParsed: any = {}
+      try { bodyParsed = JSON.parse(bodyRaw) } catch (_) { /* body vuoto o non-JSON, ok */ }
+      const codicePromo = bodyParsed?.codice_promo
+      if (codicePromo && (!lead.codice_sconto)) {
+        // Applica sconto promozionale solo se il lead non ha già uno sconto
+        const promoResult = await applyDiscountToLead(
+          c.env.DB, leadId, codicePromo.toUpperCase(), 'PROMOZIONE', 'manual-payment'
+        )
+        if (promoResult.success) {
+          scontoApplicato = promoResult
+          console.log(`🏷️ [MANUAL-PAYMENT] Sconto promozionale applicato: ${promoResult.message}`)
+        } else {
+          console.warn(`⚠️ [MANUAL-PAYMENT] Sconto promo non applicato: ${promoResult.message}`)
+        }
+      }
+    } catch (scontoErr) {
+      console.warn('⚠️ [MANUAL-PAYMENT] Errore lettura codice_promo:', scontoErr)
+    }
     
     // Aggiorna proforma (se esiste)
     const proforma = await c.env.DB.prepare(
@@ -29595,7 +30115,12 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
       return c.json({
         success: true,
         message: `Pagamento confermato ed email configurazione inviata a ${lead.email}`,
-        codiceCliente
+        codiceCliente,
+        ...(scontoApplicato ? {
+          sconto_applicato: true,
+          sconto_info: scontoApplicato.message,
+          prezzo_finale: scontoApplicato.prezzo_finale
+        } : {})
       })
     } else {
       throw new Error(result.errors.join(', '))

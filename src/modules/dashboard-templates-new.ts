@@ -4066,6 +4066,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 // Mostra servizio così com'è dal DB (già con "eCura" se presente)
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
+
+                // ─── SCONTO ────────────────────────────────────────────────
+                const hasSconto = lead.codice_sconto && (lead.sconto_percentuale > 0 || lead.sconto_fisso > 0);
+                const prezzoScontato = lead.prezzo_scontato;
+                const scontoPerc = lead.sconto_percentuale || 0;
+                const scontoFisso = lead.sconto_fisso || 0;
+                const scontoLabel = scontoPerc > 0
+                    ? \`-\${scontoPerc}%\`
+                    : (scontoFisso > 0 ? \`-€\${scontoFisso}\` : '');
+                const prezzoCellHtml = hasSconto
+                    ? \`<div class="line-through text-gray-400 text-xs">€\${prezzo}</div>
+                       <div class="font-bold text-orange-600">€\${prezzoScontato}</div>
+                       <span class="px-1 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-semibold">\${scontoLabel} \${escapeHtml(lead.codice_sconto || '')}</span>\`
+                    : \`<span class="font-bold text-green-600">€\${prezzo}</span>\`;
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
@@ -4091,7 +4105,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 \${piano}
                             </span>
                         </td>
-                        <td class="py-2 text-xs font-bold text-green-600">€\${prezzo}</td>
+                        <td class="py-2 text-xs">\${prezzoCellHtml}</td>
                         <!-- Nascoste: celle Contratto e Brochure -->
                         <!-- <td class="py-2 text-center text-xs">
                             <i class="fas fa-\${hasContract ? 'check-circle text-green-500' : 'times-circle text-gray-300'}"></i>
@@ -4216,6 +4230,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="Genera DDT + Dispositivo + Assistito">
                                     📦
                                 </button>
+                                <button 
+                                    data-action="apply-discount"
+                                    data-lead-id="\${lead.id}"
+                                    data-codice-sconto="\${escapeHtml(lead.codice_sconto || '')}"
+                                    class="px-2 py-1 \${hasSconto ? 'bg-orange-500 hover:bg-orange-600' : 'bg-yellow-400 hover:bg-yellow-500'} text-white text-xs rounded transition-colors action-btn"
+                                    title="\${hasSconto ? 'Sconto: ' + escapeHtml(lead.codice_sconto || '') + ' — clicca per rimuovere o cambiare' : 'Applica Sconto'}">
+                                    🏷️
+                                </button>
 
                             </div>
                         </td>
@@ -4262,6 +4284,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-configuration') sendConfiguration(leadId);
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
+                        else if (action === 'apply-discount') applyDiscount(leadId, this.getAttribute('data-codice-sconto'));
                     });
                 });
                 
@@ -4688,6 +4711,76 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert('ERRORE: ' + (res1.error || 'Errore sconosciuto'));
             } catch (error) {
                 alert('ERRORE di comunicazione: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // DISCOUNT FUNCTIONS
+        // ============================================
+
+        async function applyDiscount(leadId, currentCodice) {
+            // Se ha già uno sconto, chiedi se rimuovere o cambiare
+            if (currentCodice && currentCodice.trim() !== '') {
+                const choice = prompt(
+                    '🏷️ Sconto attivo: ' + currentCodice + '\\n\\n' +
+                    'Opzioni:\\n' +
+                    '• Premi OK con campo vuoto per RIMUOVERE lo sconto\\n' +
+                    '• Inserisci un nuovo codice per SOSTITUIRE lo sconto\\n' +
+                    '• Annulla per non fare nulla',
+                    currentCodice
+                );
+                if (choice === null) return; // Annullato
+                if (choice.trim() === '') {
+                    // Rimuovi sconto
+                    if (!confirm('Confermi rimozione sconto ' + currentCodice + ' dal lead ' + leadId + '?')) return;
+                    try {
+                        const r = await fetch('/api/leads/' + leadId + '/apply-discount', {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        const res = await r.json();
+                        if (res.success) {
+                            alert('✅ Sconto rimosso.');
+                            loadLeadsData();
+                        } else {
+                            alert('❌ Errore: ' + (res.error || 'Errore sconosciuto'));
+                        }
+                    } catch (err) {
+                        alert('❌ Errore di comunicazione: ' + err.message);
+                    }
+                    return;
+                }
+                // Applica nuovo codice (sostituisce il vecchio)
+                await _doApplyDiscount(leadId, choice.trim().toUpperCase());
+            } else {
+                // Nessuno sconto attivo: chiedi codice
+                const codice = prompt(
+                    '🏷️ Inserisci codice sconto da applicare al lead:\\n' + leadId + '\\n\\n' +
+                    'Esempi: AON2026, DOUBLEYOU2026\\n' +
+                    '(oppure qualsiasi codice attivo nel sistema)'
+                );
+                if (!codice || !codice.trim()) return;
+                await _doApplyDiscount(leadId, codice.trim().toUpperCase());
+            }
+        }
+
+        async function _doApplyDiscount(leadId, codice) {
+            try {
+                const r = await fetch('/api/leads/' + leadId + '/apply-discount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ codice, applicato_da: 'operatore' })
+                });
+                const res = await r.json();
+                if (res.success) {
+                    alert('✅ ' + res.message);
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore sconto: ' + (res.error || res.message || 'Codice non valido o non trovato'));
+                }
+            } catch (err) {
+                alert('❌ Errore di comunicazione: ' + err.message);
             }
         }
 
