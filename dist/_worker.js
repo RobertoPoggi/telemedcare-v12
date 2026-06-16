@@ -20428,7 +20428,9 @@ startxref
                             <label for="cfIntestatario">Codice Fiscale <span class="required">*</span></label>
                             <input type="text" id="cfIntestatario" name="cfIntestatario" 
                                    placeholder="Es. RSSMRA80A01F205K" required 
-                                   maxlength="16" style="text-transform: uppercase;">
+                                   maxlength="16" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   autocorrect="off" autocapitalize="characters" spellcheck="false">
                         </div>
                     \`;
                 }
@@ -20572,7 +20574,9 @@ startxref
                             <label for="cfAssistito">Codice Fiscale <span class="required">*</span></label>
                             <input type="text" id="cfAssistito" name="cfAssistito" 
                                    placeholder="Es. RSSMRA80A01F205K" required 
-                                   maxlength="16" style="text-transform: uppercase;">
+                                   maxlength="16" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   autocorrect="off" autocapitalize="characters" spellcheck="false">
                         </div>
                     \`;
                 }
