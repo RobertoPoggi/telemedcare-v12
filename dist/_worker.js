@@ -20479,7 +20479,9 @@ startxref
                             <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
                             <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
                                    placeholder="Es. MI" required maxlength="2" 
-                                   pattern="[A-Z]{2}" style="text-transform: uppercase;">
+                                   pattern="[A-Za-z]{2}" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   autocomplete="address-level1" autocorrect="off" autocapitalize="characters">
                         </div>
                     \`;
                 }
@@ -20618,7 +20620,9 @@ startxref
                             <input type="text" id="provinciaAssistito" name="provinciaAssistito" 
                                    value="\${lead.provinciaAssistito || ''}"
                                    placeholder="Es. RM" required maxlength="2" 
-                                   pattern="[A-Z]{2}" style="text-transform: uppercase;">
+                                   pattern="[A-Za-z]{2}" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   autocomplete="address-level1" autocorrect="off" autocapitalize="characters">
                         </div>
                     \`;
                     
