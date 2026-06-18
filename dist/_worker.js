@@ -3285,13 +3285,15 @@ ${370+t.length}
 
                     <div id="dcErrorMsg" class="text-red-600 text-sm hidden"></div>
                 </div>
-                <div class="flex gap-3 p-5 border-t justify-end">
+                <div style="display:flex;gap:12px;padding:20px;border-top:1px solid #e5e7eb;justify-content:flex-end;">
                     <button onclick="chiudiDiscountModal()" 
-                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                            style="padding:8px 16px;background:#f3f4f6;color:#374151;font-size:14px;font-weight:500;border-radius:8px;border:1px solid #d1d5db;cursor:pointer;"
+                            onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
                         Annulla
                     </button>
                     <button onclick="salvaDiscountCode()" 
-                            class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition">
+                            style="padding:8px 16px;background:#f97316;color:#ffffff;font-size:14px;font-weight:600;border-radius:8px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);"
+                            onmouseover="this.style.background='#ea6c0a'" onmouseout="this.style.background='#f97316'">
                         Salva
                     </button>
                 </div>
