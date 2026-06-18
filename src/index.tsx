@@ -1443,6 +1443,11 @@ app.use('/api/*', async (c, next) => {
 
 
   
+  // Endpoint email-templates: accessibili con session cookie (gestiti dai propri handler)
+  if (path.startsWith('/api/email-templates/') || path.startsWith('/api/discount-codes')) {
+    return next()
+  }
+
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
     path.startsWith('/api/leads') ||
@@ -15591,8 +15596,8 @@ app.get('/api/debug/env', async (c) => {
 })
 
 // DEBUG: List all email templates in database
-// PATCH /api/admin/email-templates/:name — aggiorna subject e/o content di un template email per nome
-app.patch('/api/admin/email-templates/:name', async (c) => {
+// PATCH /api/email-templates/:name — aggiorna subject e/o content di un template email per nome
+app.patch('/api/email-templates/:name', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const name = c.req.param('name')
@@ -15620,8 +15625,8 @@ app.patch('/api/admin/email-templates/:name', async (c) => {
   }
 })
 
-// GET /api/admin/email-templates/:name — legge un template email per nome
-app.get('/api/admin/email-templates/:name', async (c) => {
+// GET /api/email-templates/:name — legge un template email per nome
+app.get('/api/email-templates/:name', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const name = c.req.param('name')
