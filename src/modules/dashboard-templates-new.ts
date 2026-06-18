@@ -971,6 +971,310 @@ export const dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════════
+             GESTIONE CODICI SCONTO
+        ═══════════════════════════════════════════════════════════════ -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-tag mr-2 text-orange-500"></i>Codici Sconto
+                </h3>
+                <button onclick="apriFormNuovoCodice()" 
+                        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
+                    + Nuovo Codice
+                </button>
+            </div>
+
+            <!-- Tabella codici -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase">
+                            <th class="px-3 py-2 text-left">Codice</th>
+                            <th class="px-3 py-2 text-left">Descrizione</th>
+                            <th class="px-3 py-2 text-left">Tipo</th>
+                            <th class="px-3 py-2 text-left">Valore</th>
+                            <th class="px-3 py-2 text-left">Sorgente</th>
+                            <th class="px-3 py-2 text-left">Scadenza</th>
+                            <th class="px-3 py-2 text-left">Utilizzi</th>
+                            <th class="px-3 py-2 text-left">Stato</th>
+                            <th class="px-3 py-2 text-left">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discountCodesTableBody">
+                        <tr>
+                            <td colspan="9" class="px-3 py-6 text-center text-gray-400">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Caricamento...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal nuovo/modifica codice sconto -->
+        <div id="discountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+                <div class="flex items-center justify-between p-5 border-b">
+                    <h3 class="text-lg font-bold text-gray-800" id="discountModalTitle">Nuovo Codice Sconto</h3>
+                    <button onclick="chiudiDiscountModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="p-5 space-y-4">
+                    <input type="hidden" id="discountModalMode" value="create">
+                    <input type="hidden" id="discountModalCodiceOriginal" value="">
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Codice *</label>
+                            <input id="dcCodice" type="text" placeholder="es. ESTATE2026"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 uppercase"
+                                   oninput="this.value=this.value.toUpperCase()" autocorrect="off" spellcheck="false">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo *</label>
+                            <select id="dcTipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                                <option value="PERCENTUALE">% Percentuale</option>
+                                <option value="FISSO">€ Fisso</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Valore *</label>
+                            <input id="dcValore" type="number" min="0" step="0.01" placeholder="es. 10"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Sorgente</label>
+                            <select id="dcSorgente" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                                <option value="MANUALE">MANUALE</option>
+                                <option value="PROMOZIONE">PROMOZIONE</option>
+                                <option value="CANALE">CANALE</option>
+                                <option value="FORM">FORM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Descrizione</label>
+                        <input id="dcDescrizione" type="text" placeholder="es. Promo estate 2026"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Scadenza (opzionale)</label>
+                            <input id="dcScadenza" type="date"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Max utilizzi (vuoto = ∞)</label>
+                            <input id="dcUtilizziMax" type="number" min="1" placeholder="illimitato"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400">
+                        </div>
+                    </div>
+
+                    <div id="dcErrorMsg" class="text-red-600 text-sm hidden"></div>
+                </div>
+                <div class="flex gap-3 p-5 border-t justify-end">
+                    <button onclick="chiudiDiscountModal()" 
+                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition">
+                        Annulla
+                    </button>
+                    <button onclick="salvaDiscountCode()" 
+                            class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition">
+                        Salva
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Script Gestione Sconti -->
+        <script>
+            // ─── Carica tabella codici sconto ─────────────────────────────
+            async function loadDiscountCodes() {
+                try {
+                    const r = await fetch('/api/discount-codes');
+                    const d = await r.json();
+                    const tbody = document.getElementById('discountCodesTableBody');
+                    if (!d.success || !d.codes || d.codes.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="px-3 py-6 text-center text-gray-400">Nessun codice sconto</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = d.codes.map(c => {
+                        const attivo = c.attivo == 1;
+                        const scaduto = c.data_scadenza && new Date(c.data_scadenza) < new Date();
+                        const esaurito = c.utilizzi_max && c.utilizzi_count >= c.utilizzi_max;
+                        let stato = attivo && !scaduto && !esaurito
+                            ? '<span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-semibold">✅ Attivo</span>'
+                            : scaduto
+                                ? '<span class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">⏰ Scaduto</span>'
+                                : esaurito
+                                    ? '<span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">🚫 Esaurito</span>'
+                                    : '<span class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">⛔ Disattivo</span>';
+                        const valore = c.tipo === 'PERCENTUALE' ? c.valore + '%' : '€' + c.valore;
+                        const scadenza = c.data_scadenza ? c.data_scadenza : '∞';
+                        const utilizzi = c.utilizzi_max ? c.utilizzi_count + ' / ' + c.utilizzi_max : c.utilizzi_count + ' / ∞';
+                        const sorgenteColor = {
+                            CANALE: 'bg-blue-100 text-blue-700',
+                            PROMOZIONE: 'bg-purple-100 text-purple-700',
+                            MANUALE: 'bg-yellow-100 text-yellow-700',
+                            FORM: 'bg-teal-100 text-teal-700'
+                        }[c.sorgente] || 'bg-gray-100 text-gray-700';
+                        return \`<tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-3 py-2 font-mono font-bold text-gray-800">\${c.codice}</td>
+                            <td class="px-3 py-2 text-gray-600 max-w-xs truncate">\${c.descrizione || '-'}</td>
+                            <td class="px-3 py-2 text-gray-600">\${c.tipo}</td>
+                            <td class="px-3 py-2 font-bold text-orange-600">\${valore}</td>
+                            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded-full font-medium \${sorgenteColor}">\${c.sorgente}</span></td>
+                            <td class="px-3 py-2 text-gray-500 text-xs">\${scadenza}</td>
+                            <td class="px-3 py-2 text-gray-500 text-xs">\${utilizzi}</td>
+                            <td class="px-3 py-2">\${stato}</td>
+                            <td class="px-3 py-2">
+                                <div class="flex gap-1">
+                                    <button onclick="modificaCodice('\${c.codice}')" 
+                                            class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs rounded transition" title="Modifica">✏️</button>
+                                    <button onclick="toggleCodice('\${c.codice}', \${attivo ? 0 : 1})"
+                                            class="px-2 py-1 \${attivo ? 'bg-red-100 hover:bg-red-200 text-red-700' : 'bg-green-100 hover:bg-green-200 text-green-700'} text-xs rounded transition"
+                                            title="\${attivo ? 'Disattiva' : 'Attiva'}">\${attivo ? '⛔' : '✅'}</button>
+                                </div>
+                            </td>
+                        </tr>\`;
+                    }).join('');
+                } catch(e) {
+                    document.getElementById('discountCodesTableBody').innerHTML =
+                        '<tr><td colspan="9" class="px-3 py-4 text-center text-red-500">Errore caricamento: ' + e.message + '</td></tr>';
+                }
+            }
+
+            // ─── Apri modal nuovo codice ──────────────────────────────────
+            function apriFormNuovoCodice() {
+                document.getElementById('discountModalTitle').textContent = 'Nuovo Codice Sconto';
+                document.getElementById('discountModalMode').value = 'create';
+                document.getElementById('discountModalCodiceOriginal').value = '';
+                document.getElementById('dcCodice').value = '';
+                document.getElementById('dcCodice').disabled = false;
+                document.getElementById('dcTipo').value = 'PERCENTUALE';
+                document.getElementById('dcValore').value = '';
+                document.getElementById('dcSorgente').value = 'MANUALE';
+                document.getElementById('dcDescrizione').value = '';
+                document.getElementById('dcScadenza').value = '';
+                document.getElementById('dcUtilizziMax').value = '';
+                document.getElementById('dcErrorMsg').classList.add('hidden');
+                document.getElementById('discountModal').classList.remove('hidden');
+            }
+
+            // ─── Apri modal modifica codice ───────────────────────────────
+            function modificaCodice(codice) {
+                // Trova il codice nei dati già caricati
+                fetch('/api/discount-codes')
+                    .then(r => r.json())
+                    .then(d => {
+                        const c = d.codes.find(x => x.codice === codice);
+                        if (!c) return alert('Codice non trovato');
+                        document.getElementById('discountModalTitle').textContent = 'Modifica: ' + c.codice;
+                        document.getElementById('discountModalMode').value = 'edit';
+                        document.getElementById('discountModalCodiceOriginal').value = c.codice;
+                        document.getElementById('dcCodice').value = c.codice;
+                        document.getElementById('dcCodice').disabled = true;
+                        document.getElementById('dcTipo').value = c.tipo;
+                        document.getElementById('dcValore').value = c.valore;
+                        document.getElementById('dcSorgente').value = c.sorgente;
+                        document.getElementById('dcDescrizione').value = c.descrizione || '';
+                        document.getElementById('dcScadenza').value = c.data_scadenza || '';
+                        document.getElementById('dcUtilizziMax').value = c.utilizzi_max || '';
+                        document.getElementById('dcErrorMsg').classList.add('hidden');
+                        document.getElementById('discountModal').classList.remove('hidden');
+                    });
+            }
+
+            // ─── Salva (crea o modifica) ──────────────────────────────────
+            async function salvaDiscountCode() {
+                const mode   = document.getElementById('discountModalMode').value;
+                const codice = document.getElementById('dcCodice').value.trim().toUpperCase();
+                const tipo   = document.getElementById('dcTipo').value;
+                const valore = parseFloat(document.getElementById('dcValore').value);
+                const sorgente  = document.getElementById('dcSorgente').value;
+                const descrizione  = document.getElementById('dcDescrizione').value.trim();
+                const scadenza     = document.getElementById('dcScadenza').value;
+                const utilizziMax  = document.getElementById('dcUtilizziMax').value;
+                const errEl = document.getElementById('dcErrorMsg');
+
+                if (!codice) { errEl.textContent = 'Il codice è obbligatorio'; errEl.classList.remove('hidden'); return; }
+                if (isNaN(valore) || valore <= 0) { errEl.textContent = 'Inserisci un valore valido maggiore di 0'; errEl.classList.remove('hidden'); return; }
+                errEl.classList.add('hidden');
+
+                const payload = {
+                    codice, tipo, valore, sorgente,
+                    descrizione: descrizione || null,
+                    data_scadenza: scadenza || null,
+                    utilizzi_max: utilizziMax ? parseInt(utilizziMax) : null
+                };
+
+                try {
+                    let r;
+                    if (mode === 'create') {
+                        r = await fetch('/api/discount-codes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    } else {
+                        const codiceOrig = document.getElementById('discountModalCodiceOriginal').value;
+                        r = await fetch('/api/discount-codes/' + codiceOrig, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    }
+                    const res = await r.json();
+                    if (res.success) {
+                        chiudiDiscountModal();
+                        loadDiscountCodes();
+                    } else {
+                        errEl.textContent = res.error || 'Errore salvataggio';
+                        errEl.classList.remove('hidden');
+                    }
+                } catch(e) {
+                    errEl.textContent = 'Errore di rete: ' + e.message;
+                    errEl.classList.remove('hidden');
+                }
+            }
+
+            // ─── Attiva / Disattiva codice ────────────────────────────────
+            async function toggleCodice(codice, nuovoAttivo) {
+                const azione = nuovoAttivo ? 'attivare' : 'disattivare';
+                if (!confirm('Vuoi ' + azione + ' il codice ' + codice + '?')) return;
+                try {
+                    const r = await fetch('/api/discount-codes/' + codice, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ attivo: nuovoAttivo })
+                    });
+                    const res = await r.json();
+                    if (res.success) loadDiscountCodes();
+                    else alert('Errore: ' + res.error);
+                } catch(e) {
+                    alert('Errore di rete: ' + e.message);
+                }
+            }
+
+            // ─── Chiudi modal ─────────────────────────────────────────────
+            function chiudiDiscountModal() {
+                document.getElementById('discountModal').classList.add('hidden');
+            }
+
+            // Chiudi modal cliccando fuori
+            document.getElementById('discountModal').addEventListener('click', function(e) {
+                if (e.target === this) chiudiDiscountModal();
+            });
+
+            // Carica all'avvio
+            document.addEventListener('DOMContentLoaded', loadDiscountCodes);
+            if (document.readyState !== 'loading') loadDiscountCodes();
+        </script>
+
         <!-- Script Settings: Definito QUI per essere disponibile agli handler inline -->
         <script>
             // ⚙️ FUNZIONE UPDATE SETTING - Definita prima degli handler
