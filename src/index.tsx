@@ -15591,6 +15591,50 @@ app.get('/api/debug/env', async (c) => {
 })
 
 // DEBUG: List all email templates in database
+// PATCH /api/admin/email-templates/:name — aggiorna subject e/o content di un template email per nome
+app.patch('/api/admin/email-templates/:name', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const name = c.req.param('name')
+    const body = await c.req.json() as any
+    const { subject, content } = body
+    if (!subject && !content) {
+      return c.json({ success: false, error: 'Almeno uno tra subject e content è obbligatorio' }, 400)
+    }
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM email_templates WHERE name = ?'
+    ).bind(name).first() as any
+    if (!existing) return c.json({ success: false, error: `Template "${name}" non trovato nel DB` }, 404)
+    const setParts: string[] = []
+    const binds: any[] = []
+    if (subject) { setParts.push('subject = ?'); binds.push(subject) }
+    if (content) { setParts.push('content = ?'); binds.push(content) }
+    setParts.push("updated_at = datetime('now')")
+    binds.push(name)
+    await c.env.DB.prepare(
+      `UPDATE email_templates SET ${setParts.join(', ')} WHERE name = ?`
+    ).bind(...binds).run()
+    return c.json({ success: true, name, updated: { subject: !!subject, content: !!content } })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// GET /api/admin/email-templates/:name — legge un template email per nome
+app.get('/api/admin/email-templates/:name', requireAuth, async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const name = c.req.param('name')
+    const tmpl = await c.env.DB.prepare(
+      'SELECT id, name, subject, content, created_at, updated_at FROM email_templates WHERE name = ?'
+    ).bind(name).first() as any
+    if (!tmpl) return c.json({ success: false, error: `Template "${name}" non trovato` }, 404)
+    return c.json({ success: true, template: tmpl })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
 app.get('/api/debug/email-templates', async (c) => {
   try {
     if (!c.env?.DB) {

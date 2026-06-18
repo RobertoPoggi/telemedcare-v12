@@ -539,7 +539,7 @@ export async function sendReminderFirma(
     </p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
     <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-      TeleMedCare S.r.l. | <a href="https://telemedcare.it" style="color: #9ca3af;">telemedcare.it</a>
+      eCura | <a href="https://www.ecura.it" style="color: #9ca3af;">www.ecura.it</a>
     </p>
   </div>
 </body>
@@ -628,7 +628,7 @@ export async function sendReminderProforma(
     </p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
     <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-      TeleMedCare S.r.l. | <a href="https://telemedcare.it" style="color: #9ca3af;">telemedcare.it</a>
+      eCura | <a href="https://www.ecura.it" style="color: #9ca3af;">www.ecura.it</a>
     </p>
   </div>
 </body>
