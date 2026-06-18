@@ -15592,7 +15592,7 @@ app.get('/api/debug/env', async (c) => {
 
 // DEBUG: List all email templates in database
 // PATCH /api/admin/email-templates/:name — aggiorna subject e/o content di un template email per nome
-app.patch('/api/admin/email-templates/:name', requireAuth, async (c) => {
+app.patch('/api/admin/email-templates/:name', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const name = c.req.param('name')
@@ -15621,7 +15621,7 @@ app.patch('/api/admin/email-templates/:name', requireAuth, async (c) => {
 })
 
 // GET /api/admin/email-templates/:name — legge un template email per nome
-app.get('/api/admin/email-templates/:name', requireAuth, async (c) => {
+app.get('/api/admin/email-templates/:name', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const name = c.req.param('name')
