@@ -4060,17 +4060,6 @@ ${370+t.length}
             
             isLoading = true;
             try {
-                // MIGRAZIONE AUTOMATICA SCHEMA (eseguita una sola volta)
-                try {
-                    const migrateResponse = await fetch('/api/migrate-schema', { method: 'POST' });
-                    const migrateData = await migrateResponse.json();
-                    if (migrateData.success) {
-                        console.log('✅ Migrazione schema:', migrateData.migrations);
-                    }
-                } catch (migrateError) {
-                    console.warn('⚠️ Migrazione schema saltata:', migrateError);
-                }
-                
                 // Carica TUTTI i lead (limite massimo 999999)
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
