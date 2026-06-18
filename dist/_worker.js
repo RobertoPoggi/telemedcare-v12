@@ -3187,7 +3187,8 @@ ${370+t.length}
                     <i class="fas fa-tag mr-2 text-orange-500"></i>Codici Sconto
                 </h3>
                 <button onclick="apriFormNuovoCodice()" 
-                        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm">
+                        style="background:#f97316;color:#ffffff;padding:8px 16px;font-size:14px;font-weight:600;border-radius:8px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);"
+                        onmouseover="this.style.background='#ea6c0a'" onmouseout="this.style.background='#f97316'">
                     + Nuovo Codice
                 </button>
             </div>
