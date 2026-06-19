@@ -7016,6 +7016,69 @@ app.get('/api/leads/channel-stats', async (c) => {
     // nonTracciato = lead eCura senza canale_acquisizione
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
+    // ─── Query 3: statistiche sconto per canale ────────────────────────────
+    // Per ogni canale_acquisizione: conteggio lead con sconto, valore totale scontato, % media
+    let discountByCanale: Record<string, { count: number; leads: number; risparmio: number; pct_media: number }> = {}
+    let discountGlobal = { leads: 0, risparmio: 0, pct_media: 0 }
+    let discountByCode: any[] = []
+    try {
+      // Per canale
+      const dcByCanale = await c.env.DB.prepare(`
+        SELECT
+          COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__') AS canale,
+          COUNT(l.id)                                            AS leads_totali,
+          SUM(CASE WHEN l.codice_sconto IS NOT NULL AND l.codice_sconto != '' THEN 1 ELSE 0 END) AS leads_scontati,
+          ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio_totale,
+          ROUND(AVG(CASE WHEN l.codice_sconto IS NOT NULL AND l.codice_sconto != '' THEN l.sconto_percentuale ELSE NULL END), 1) AS pct_media
+        FROM leads l
+        WHERE l.fonte = 'Form eCura'
+        GROUP BY COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__')
+      `).all()
+
+      for (const row of (dcByCanale.results || []) as any[]) {
+        discountByCanale[row.canale] = {
+          count:      Number(row.leads_scontati)  || 0,
+          leads:      Number(row.leads_totali)     || 0,
+          risparmio:  Number(row.risparmio_totale) || 0,
+          pct_media:  Number(row.pct_media)        || 0
+        }
+      }
+
+      // Globale (tutti i lead, non solo eCura Form)
+      const dcGlobal = await c.env.DB.prepare(`
+        SELECT
+          SUM(CASE WHEN codice_sconto IS NOT NULL AND codice_sconto != '' THEN 1 ELSE 0 END) AS leads_scontati,
+          ROUND(SUM(COALESCE(prezzo_anno, 0) - COALESCE(prezzo_scontato, COALESCE(prezzo_anno, 0))), 2) AS risparmio_totale,
+          ROUND(AVG(CASE WHEN codice_sconto IS NOT NULL AND codice_sconto != '' THEN sconto_percentuale ELSE NULL END), 1) AS pct_media
+        FROM leads
+      `).first() as any
+      discountGlobal = {
+        leads:     Number(dcGlobal?.leads_scontati)  || 0,
+        risparmio: Number(dcGlobal?.risparmio_totale) || 0,
+        pct_media: Number(dcGlobal?.pct_media)        || 0
+      }
+
+      // Per codice sconto (top usage)
+      const dcByCod = await c.env.DB.prepare(`
+        SELECT
+          l.codice_sconto                                   AS codice,
+          l.sconto_sorgente                                 AS sorgente,
+          COUNT(l.id)                                       AS leads,
+          ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio,
+          ROUND(AVG(l.sconto_percentuale), 1)               AS pct_media,
+          dc.tipo                                           AS tipo,
+          dc.valore                                         AS valore_nominale
+        FROM leads l
+        LEFT JOIN discount_codes dc ON dc.codice = l.codice_sconto
+        WHERE l.codice_sconto IS NOT NULL AND l.codice_sconto != ''
+        GROUP BY l.codice_sconto, l.sconto_sorgente
+        ORDER BY leads DESC
+      `).all()
+      discountByCode = (dcByCod.results || []) as any[]
+    } catch (dcErr) {
+      console.warn('⚠️ channel-stats: errore query discount stats', dcErr)
+    }
+
     return c.json({
       success: true,
       totalEcura,
@@ -7024,8 +7087,11 @@ app.get('/api/leads/channel-stats', async (c) => {
       diretto,
       altro,
       nonTracciato,
-      // legacy: campo 'diretto' rinominato, teniamo alias per compatibilità frontend vecchio
-      breakdown
+      breakdown,
+      // Statistiche sconto
+      discountByCanale,
+      discountGlobal,
+      discountByCode
     })
   } catch (error) {
     console.error('❌ Errore channel-stats:', error)

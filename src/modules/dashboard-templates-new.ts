@@ -3821,6 +3821,41 @@ export const leads_dashboard = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════════
+             STATISTICHE CODICI SCONTO PER CANALE / FONTE
+        ═══════════════════════════════════════════════════════════════ -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-tag text-orange-500 mr-2"></i>
+                    Sconti Applicati — Riepilogo per Canale
+                </h3>
+                <span class="text-xs text-gray-400" id="discountStatsUpdated">Caricamento...</span>
+            </div>
+
+            <!-- KPI globali -->
+            <div class="grid grid-cols-3 gap-4 mb-6" id="discountKpiGrid">
+                <div class="text-center text-gray-400 text-sm col-span-3 py-2">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Caricamento...
+                </div>
+            </div>
+
+            <!-- Ripartizione per canale -->
+            <div id="discountByCanaleTable" class="overflow-x-auto">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Ripartizione per codice -->
+            <div class="mt-5">
+                <h4 class="text-sm font-semibold text-gray-600 mb-3 flex items-center">
+                    <i class="fas fa-barcode mr-2 text-orange-400"></i>Dettaglio per Codice Sconto
+                </h4>
+                <div id="discountByCodeTable" class="overflow-x-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
         <!-- Tabella Lead Dettagliata -->
         <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="flex items-center justify-between mb-6">
@@ -4201,6 +4236,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             // Passo 1: canali eCura dall'API (stessa sorgente dei box → numeri identici)
             const sources = {};
+            let discountByCanale = {};
             try {
                 const res = await fetch('/api/leads/channel-stats');
                 const data = await res.json();
@@ -4210,17 +4246,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                     if (data.diretto > 0) sources['eCura — Diretto']      = data.diretto;
                     if (data.altro   > 0) sources['eCura — Altro']        = data.altro;
                     if (data.nonTracciato > 0) sources['eCura — Non tracciato'] = data.nonTracciato;
+                    discountByCanale = data.discountByCanale || {};
                 }
             } catch (e) {
                 console.warn('⚠️ updateChannelsBreakdown: impossibile caricare channel-stats', e);
             }
 
+            // Mappa etichetta → chiave canale_acquisizione (per lookup sconto)
+            const labelToKey = {
+                'eCura — Meta (FB/IG)':  'META',
+                'eCura — Google':        'GOOGLE',
+                'eCura — Diretto':       'DIRETTO',
+                'eCura — Altro':         'ALTRO',
+                'eCura — Non tracciato': '__NON_TRACCIATO__',
+            };
+
             // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
+            // con conteggio sconto da allLeads direttamente
+            const discountByFonte = {};
             (leads || []).forEach(l => {
                 const fonteDB = l.fonte || '';
                 if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
                 const etichetta = fonteDB || 'Non specificato';
                 sources[etichetta] = (sources[etichetta] || 0) + 1;
+                if (l.codice_sconto) {
+                    discountByFonte[etichetta] = (discountByFonte[etichetta] || 0) + 1;
+                }
             });
 
             console.log('📊 Canali rilevati (API + allLeads):', sources);
@@ -4232,10 +4283,18 @@ export const leads_dashboard = `<!DOCTYPE html>
                 .map(([fonte, count]) => {
                     const percentage = Math.round((count / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
+                    // Badge sconto: prova prima la mappa canale eCura, poi la mappa fonti non-eCura
+                    const canaleKey = labelToKey[fonte];
+                    const dc = canaleKey ? (discountByCanale[canaleKey] || {}) : {};
+                    const nSc = (dc.count || dc.leads_scontati || 0) || (discountByFonte[fonte] || 0);
+                    const risp = (dc.risparmio || 0).toFixed(0);
+                    const scontoBadge = nSc > 0
+                        ? \`<span style="font-size:10px;background:#fff7ed;color:#c2410c;padding:1px 6px;border-radius:9999px;font-weight:600;margin-left:6px;">🏷️ \${nSc} scontati\${risp > 0 ? ' · €'+risp : ''}</span>\`
+                        : '';
                     return \`
                         <div>
                             <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-medium">\${fonte}</span>
+                                <span class="text-sm font-medium flex items-center">\${fonte}\${scontoBadge}</span>
                                 <span class="text-sm font-bold">\${count} (\${percentage}%)</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -4255,26 +4314,38 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const data = await res.json();
                 if (!data.success) return;
 
-                const { totalEcura, meta, google, diretto, altro, nonTracciato } = data;
+                const { totalEcura, meta, google, diretto, altro, nonTracciato,
+                        discountByCanale = {}, discountGlobal = {}, discountByCode = [] } = data;
 
-                // 6 box: Totale | Meta | Google | Diretto | Altro | Non tracciato
-                const boxes = [
-                    { label: 'Totale Form eCura',  value: totalEcura,   colorBg: '#EFF6FF', colorBorder: '#93C5FD', colorText: '#1D4ED8', icon: 'fa-file-alt' },
-                    { label: 'Meta (FB/IG Ads)',   value: meta,         colorBg: '#EEF2FF', colorBorder: '#A5B4FC', colorText: '#4338CA', icon: 'fa-hashtag' },
-                    { label: 'Google',             value: google,       colorBg: '#FEF2F2', colorBorder: '#FCA5A5', colorText: '#B91C1C', icon: 'fa-search' },
-                    { label: 'Diretto',            value: diretto,      colorBg: '#F0FDF4', colorBorder: '#86EFAC', colorText: '#15803D', icon: 'fa-mouse-pointer' },
-                    { label: 'Altro',              value: altro,        colorBg: '#FEFCE8', colorBorder: '#FDE68A', colorText: '#92400E', icon: 'fa-share-alt' },
-                    { label: 'Non tracciato',      value: nonTracciato, colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
+                // ── 6 box canale con badge sconto ──────────────────────────
+                const canaleMap = [
+                    { label: 'Totale Form eCura',  value: totalEcura,   key: null,               colorBg: '#EFF6FF', colorBorder: '#93C5FD', colorText: '#1D4ED8', icon: 'fa-file-alt' },
+                    { label: 'Meta (FB/IG Ads)',   value: meta,         key: 'META',             colorBg: '#EEF2FF', colorBorder: '#A5B4FC', colorText: '#4338CA', icon: 'fa-hashtag' },
+                    { label: 'Google',             value: google,       key: 'GOOGLE',           colorBg: '#FEF2F2', colorBorder: '#FCA5A5', colorText: '#B91C1C', icon: 'fa-search' },
+                    { label: 'Diretto',            value: diretto,      key: 'DIRETTO',          colorBg: '#F0FDF4', colorBorder: '#86EFAC', colorText: '#15803D', icon: 'fa-mouse-pointer' },
+                    { label: 'Altro',              value: altro,        key: 'ALTRO',            colorBg: '#FEFCE8', colorBorder: '#FDE68A', colorText: '#92400E', icon: 'fa-share-alt' },
+                    { label: 'Non tracciato',      value: nonTracciato, key: '__NON_TRACCIATO__', colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
                 ];
 
-                const html = boxes.map(b => \`
-                    <div style="background:\${b.colorBg};border:2px solid \${b.colorBorder};color:\${b.colorText}"
-                         class="flex flex-col items-center justify-center rounded-lg p-4">
-                        <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
-                        <span class="text-3xl font-extrabold">\${b.value}</span>
-                        <span class="text-xs font-semibold mt-1 text-center">\${b.label}</span>
-                    </div>
-                \`).join('');
+                const html = canaleMap.map(b => {
+                    const dc = b.key ? (discountByCanale[b.key] || {}) : discountGlobal;
+                    const nScontati = dc.leads || dc.count || 0;
+                    const risparmio = dc.risparmio || 0;
+                    const badge = nScontati > 0
+                        ? \`<div style="margin-top:6px;font-size:10px;background:rgba(249,115,22,0.12);color:#c2410c;border-radius:6px;padding:2px 6px;font-weight:600;">
+                               🏷️ \${nScontati} scontati · €\${risparmio.toFixed(0)} risparmiati
+                           </div>\`
+                        : '';
+                    return \`
+                        <div style="background:\${b.colorBg};border:2px solid \${b.colorBorder};color:\${b.colorText}"
+                             class="flex flex-col items-center justify-center rounded-lg p-4 text-center">
+                            <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
+                            <span class="text-3xl font-extrabold">\${b.value}</span>
+                            <span class="text-xs font-semibold mt-1">\${b.label}</span>
+                            \${badge}
+                        </div>
+                    \`;
+                }).join('');
 
                 const grid = document.getElementById('leadsEcuraChannelGrid');
                 if (grid) {
@@ -4282,8 +4353,112 @@ export const leads_dashboard = `<!DOCTYPE html>
                     grid.innerHTML = html;
                 }
 
+                // ── KPI globali sconto ─────────────────────────────────────
+                const kpiGrid = document.getElementById('discountKpiGrid');
+                if (kpiGrid) {
+                    const totScontati = discountGlobal.leads || 0;
+                    const totRisp     = (discountGlobal.risparmio || 0).toFixed(2);
+                    const pctMedia    = (discountGlobal.pct_media || 0).toFixed(1);
+                    kpiGrid.className = 'grid grid-cols-3 gap-4 mb-6';
+                    kpiGrid.innerHTML = \`
+                        <div style="background:#FFF7ED;border:2px solid #FED7AA;border-radius:12px;padding:16px;text-align:center;">
+                            <div style="font-size:28px;font-weight:800;color:#c2410c;">\${totScontati}</div>
+                            <div style="font-size:12px;font-weight:600;color:#9a3412;margin-top:4px;">Lead con sconto applicato</div>
+                        </div>
+                        <div style="background:#ECFDF5;border:2px solid #6EE7B7;border-radius:12px;padding:16px;text-align:center;">
+                            <div style="font-size:28px;font-weight:800;color:#065f46;">€\${totRisp}</div>
+                            <div style="font-size:12px;font-weight:600;color:#064e3b;margin-top:4px;">Totale risparmio concesso</div>
+                        </div>
+                        <div style="background:#EFF6FF;border:2px solid #93C5FD;border-radius:12px;padding:16px;text-align:center;">
+                            <div style="font-size:28px;font-weight:800;color:#1d4ed8;">\${pctMedia}%</div>
+                            <div style="font-size:12px;font-weight:600;color:#1e40af;margin-top:4px;">Sconto % medio applicato</div>
+                        </div>
+                    \`;
+                }
+
+                // ── Tabella per canale ─────────────────────────────────────
+                const canaleRows = [
+                    { canale: 'META',             label: 'Meta (FB/IG)' },
+                    { canale: 'GOOGLE',           label: 'Google' },
+                    { canale: 'DIRETTO',          label: 'Diretto' },
+                    { canale: 'ALTRO',            label: 'Altro' },
+                    { canale: '__NON_TRACCIATO__', label: 'Non tracciato' },
+                ];
+                const canaleTableEl = document.getElementById('discountByCanaleTable');
+                if (canaleTableEl) {
+                    const righe = canaleRows.map(r => {
+                        const dc = discountByCanale[r.canale] || { count: 0, leads: 0, risparmio: 0, pct_media: 0 };
+                        const pct = dc.leads > 0 ? ((dc.count / dc.leads) * 100).toFixed(0) : '0';
+                        return \`<tr class="border-b border-gray-100 hover:bg-orange-50 transition-colors">
+                            <td class="py-2 px-3 text-sm font-medium text-gray-700">\${r.label}</td>
+                            <td class="py-2 px-3 text-sm text-center text-gray-500">\${dc.leads}</td>
+                            <td class="py-2 px-3 text-sm text-center font-semibold text-orange-600">\${dc.count}</td>
+                            <td class="py-2 px-3 text-sm text-center text-gray-500">\${pct}%</td>
+                            <td class="py-2 px-3 text-sm text-center text-green-700 font-semibold">€\${(dc.risparmio||0).toFixed(2)}</td>
+                            <td class="py-2 px-3 text-sm text-center text-blue-600">\${dc.count > 0 ? (dc.pct_media||0).toFixed(1)+'%' : '—'}</td>
+                        </tr>\`;
+                    }).join('');
+                    canaleTableEl.innerHTML = \`
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+                                    <th class="py-2 px-3 text-left">Canale</th>
+                                    <th class="py-2 px-3 text-center">Lead totali</th>
+                                    <th class="py-2 px-3 text-center">Con sconto</th>
+                                    <th class="py-2 px-3 text-center">% scontati</th>
+                                    <th class="py-2 px-3 text-center">Risparmio €</th>
+                                    <th class="py-2 px-3 text-center">Sconto % medio</th>
+                                </tr>
+                            </thead>
+                            <tbody>\${righe || '<tr><td colspan="6" class="py-4 text-center text-gray-400">Nessun dato</td></tr>'}</tbody>
+                        </table>
+                    \`;
+                }
+
+                // ── Tabella per codice ─────────────────────────────────────
+                const codeTableEl = document.getElementById('discountByCodeTable');
+                if (codeTableEl) {
+                    if (!discountByCode.length) {
+                        codeTableEl.innerHTML = '<p class="text-sm text-gray-400 py-2">Nessun codice sconto applicato</p>';
+                    } else {
+                        const righe = discountByCode.map(dc => {
+                            const sorgBadge = {
+                                'FORM':      '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">FORM</span>',
+                                'CANALE':    '<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">CANALE</span>',
+                                'MANUALE':   '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">MANUALE</span>',
+                                'PROMOZIONE':'<span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">PROMO</span>',
+                            }[dc.sorgente] || \`<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:9999px;font-size:11px;">\${dc.sorgente||'?'}</span>\`;
+                            return \`<tr class="border-b border-gray-100 hover:bg-orange-50 transition-colors">
+                                <td class="py-2 px-3 font-bold text-orange-700">\${dc.codice}</td>
+                                <td class="py-2 px-3 text-center">\${sorgBadge}</td>
+                                <td class="py-2 px-3 text-center text-gray-700 font-semibold">\${dc.leads}</td>
+                                <td class="py-2 px-3 text-center text-green-700 font-semibold">€\${(dc.risparmio||0).toFixed(2)}</td>
+                                <td class="py-2 px-3 text-center text-blue-600">\${(dc.pct_media||0).toFixed(1)}%</td>
+                                <td class="py-2 px-3 text-center text-gray-500 text-xs">\${dc.tipo||'—'} · \${dc.valore_nominale||'—'}</td>
+                            </tr>\`;
+                        }).join('');
+                        codeTableEl.innerHTML = \`
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+                                        <th class="py-2 px-3 text-left">Codice</th>
+                                        <th class="py-2 px-3 text-center">Sorgente</th>
+                                        <th class="py-2 px-3 text-center">Lead</th>
+                                        <th class="py-2 px-3 text-center">Risparmio €</th>
+                                        <th class="py-2 px-3 text-center">% media</th>
+                                        <th class="py-2 px-3 text-center">Tipo · Valore</th>
+                                    </tr>
+                                </thead>
+                                <tbody>\${righe}</tbody>
+                            </table>
+                        \`;
+                    }
+                }
+
                 const upd = document.getElementById('leadsEcuraChannelUpdated');
                 if (upd) upd.textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
+                const updDisc = document.getElementById('discountStatsUpdated');
+                if (updDisc) updDisc.textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
             } catch (err) {
                 console.warn('⚠️ loadLeadsEcuraChannelStats error:', err);
             }
