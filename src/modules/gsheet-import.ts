@@ -15,6 +15,7 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types'
+import { applyDiscountFromNotes } from './discount-from-notes'
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -540,6 +541,14 @@ export async function executeGSheetImport(
 
         result.updated++
         console.log(`🔄 [GSHEET-IMPORT] Updated [${matchReason}]: ${(existing as any).id} (${emailEffettiva})`)
+
+        // 🏷️ Cerca codice sconto nelle note
+        if (!dryRun && noteRaw) {
+          const discountRes = await applyDiscountFromNotes(db, (existing as any).id, noteRaw)
+          if (discountRes.applied) {
+            console.log(`🏷️  [GSHEET-IMPORT] UPDATE sconto applicato: ${discountRes.message}`)
+          }
+        }
         continue
       }
 
@@ -596,6 +605,14 @@ export async function executeGSheetImport(
 
       result.imported++
       console.log(`✅ [GSHEET-IMPORT] INSERT: ${leadId} (${emailEffettiva})`)
+
+      // 🏷️ Cerca codice sconto nelle note
+      if (noteRaw) {
+        const discountRes = await applyDiscountFromNotes(db, leadId, noteRaw)
+        if (discountRes.applied) {
+          console.log(`🏷️  [GSHEET-IMPORT] INSERT sconto applicato: ${discountRes.message}`)
+        }
+      }
 
     } catch (err: any) {
       result.errors++

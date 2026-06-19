@@ -7327,6 +7327,19 @@ app.post('/api/leads/import-bulk', async (c) => {
           ).run()
 
           importedCount++
+
+          // 🏷️ Cerca codice sconto nelle note
+          if (note) {
+            try {
+              const { applyDiscountFromNotes } = await import('./modules/discount-from-notes')
+              const discountRes = await applyDiscountFromNotes(c.env.DB, id, note)
+              if (discountRes.applied) {
+                console.log(`🏷️  [IMPORT-BULK] Sconto applicato: ${discountRes.message}`)
+              }
+            } catch (discountErr) {
+              console.warn(`⚠️  [IMPORT-BULK] Errore applicazione sconto per ${id}:`, discountErr)
+            }
+          }
         } catch (err: any) {
           errorCount++
           errors.push({

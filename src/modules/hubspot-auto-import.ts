@@ -16,6 +16,7 @@
 
 import type { D1Database } from '@cloudflare/workers-types'
 import { getBaseUrl } from './url-helper'
+import { applyDiscountFromNotes } from './discount-from-notes'
 
 // =====================================================================
 // TYPES
@@ -362,6 +363,14 @@ export async function executeAutoImport(
           
           console.log(`✅ [AUTO-IMPORT] Lead aggiornato (UPDATE): ${existingLead.id} from HubSpot ${contact.id} canale=${leadData.canale_acquisizione || 'n/a'}`)
           result.updated = (result.updated || 0) + 1
+
+          // 🏷️ Cerca codice sconto nelle note (solo se non ha già uno sconto)
+          if (leadData.note) {
+            const discountRes = await applyDiscountFromNotes(db, (existingLead as any).id, leadData.note)
+            if (discountRes.applied) {
+              console.log(`🏷️  [AUTO-IMPORT] UPDATE sconto applicato: ${discountRes.message}`)
+            }
+          }
         } else {
           // Lead non esiste, INSERT nuovo
           await db.prepare(`
@@ -411,6 +420,14 @@ export async function executeAutoImport(
           
           console.log(`✅ [AUTO-IMPORT] Lead creato (INSERT): ${leadId} from HubSpot ${contact.id}`)
           result.imported++
+
+          // 🏷️ Cerca codice sconto nelle note
+          if (leadData.note) {
+            const discountRes = await applyDiscountFromNotes(db, leadId, leadData.note)
+            if (discountRes.applied) {
+              console.log(`🏷️  [AUTO-IMPORT] INSERT sconto applicato: ${discountRes.message}`)
+            }
+          }
         }
         
         console.log(`🔔 [AUTO-IMPORT] >>> INIZIO BLOCCO EMAIL <<<`)
