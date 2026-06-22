@@ -21870,16 +21870,17 @@ app.post('/api/migrate-schema', async (c) => {
           id                INTEGER PRIMARY KEY AUTOINCREMENT,
           lead_id           TEXT NOT NULL,
           contract_id       TEXT DEFAULT NULL,
-          numero_rata       INTEGER NOT NULL,          -- 1, 2, 3, ...
-          importo           REAL NOT NULL,             -- importo lordo (IVA inclusa se applicabile)
-          importo_iva       REAL DEFAULT 0,            -- quota IVA
-          data_scadenza     TEXT NOT NULL,             -- data entro cui pagare
-          status            TEXT NOT NULL DEFAULT 'ATTESA',  -- ATTESA | PAGATA | SCADUTA | ANNULLATA
-          data_pagamento    TEXT DEFAULT NULL,          -- data effettivo pagamento
-          metodo_pagamento  TEXT DEFAULT NULL,          -- BONIFICO | STRIPE | CONTANTI | ...
-          riferimento       TEXT DEFAULT NULL,          -- es. numero CRO/bonifico
+          numero_rata       INTEGER NOT NULL,
+          importo           REAL NOT NULL,
+          importo_iva       REAL DEFAULT 0,
+          aliquota_iva      REAL DEFAULT 0,
+          data_scadenza     TEXT NOT NULL,
+          status            TEXT NOT NULL DEFAULT 'ATTESA',
+          data_pagamento    TEXT DEFAULT NULL,
+          metodo_pagamento  TEXT DEFAULT NULL,
+          riferimento       TEXT DEFAULT NULL,
           note              TEXT DEFAULT NULL,
-          creato_da         TEXT DEFAULT NULL,          -- operatore che ha impostato
+          creato_da         TEXT DEFAULT NULL,
           created_at        TEXT NOT NULL DEFAULT (datetime('now')),
           updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
         )
@@ -21887,6 +21888,14 @@ app.post('/api/migrate-schema', async (c) => {
       migrations.push('✅ Tabella rate_pagamento creata (o già esiste)')
     } catch (e: any) {
       migrations.push(`⚠️ Errore creazione rate_pagamento: ${e.message}`)
+    }
+    // ─── MIGRAZIONE: aggiungi aliquota_iva se mancante (tabelle pre-esistenti) ─
+    try {
+      await c.env.DB.prepare(`ALTER TABLE rate_pagamento ADD COLUMN aliquota_iva REAL DEFAULT 0`).run()
+      migrations.push('✅ Colonna aliquota_iva aggiunta a rate_pagamento')
+    } catch (e: any) {
+      // Colonna già presente — normale
+      migrations.push(`ℹ️ aliquota_iva già presente (${e.message})`)
     }
 
     // ─── MIGRAZIONE RATEIZZAZIONE: colonne proforma ─────────────────────────
@@ -22311,7 +22320,7 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const db = c.env.DB
     const now = new Date().toISOString()
 
-    // 0. Assicura che la tabella esista (la migration potrebbe non essere stata eseguita)
+    // 0. Assicura che la tabella esista e abbia tutte le colonne necessarie
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS rate_pagamento (
         id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22332,6 +22341,9 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
         updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `).run()
+    // Aggiungi colonne mancanti per tabelle pre-esistenti (ignora errori se già presenti)
+    try { await db.prepare(`ALTER TABLE rate_pagamento ADD COLUMN importo_iva REAL DEFAULT 0`).run() } catch {}
+    try { await db.prepare(`ALTER TABLE rate_pagamento ADD COLUMN aliquota_iva REAL DEFAULT 0`).run() } catch {}
 
     // 1. Cancella eventuali rate precedenti in stato ATTESA (non quelle già pagate)
     await db.prepare(`
