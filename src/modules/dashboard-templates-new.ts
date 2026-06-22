@@ -4690,21 +4690,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="\${hasSconto ? 'Sconto: ' + escapeHtml(lead.codice_sconto || '') + ' — clicca per rimuovere o cambiare' : 'Applica Sconto'}">
                                     🏷️
                                 </button>
-                                <button
-                                    data-action="rateizzazione"
-                                    data-lead-id="\${lead.id}"
-                                    data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
-                                    data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
-                                    data-rateizzato="\${isRateizzato ? '1' : '0'}"
-                                    class="px-2 py-1 \${isRateizzato ? (isSaldato ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700') : 'bg-indigo-500 hover:bg-indigo-600'} text-white text-xs rounded transition-colors action-btn"
-                                    title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}">
-                                    📅
-                                </button>
 
                             </div>
                         </td>
                         <td class="py-3">
-                            <div class="flex space-x-1">
+                            <div class="flex items-center space-x-1">
                                 <button data-action="view" data-lead-id="\${lead.id}" 
                                         class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
                                         title="Visualizza">
@@ -4719,6 +4709,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                                         class="text-red-600 hover:text-red-800 px-1 crud-btn" 
                                         title="Elimina">
                                     <i class="fas fa-trash"></i>
+                                </button>
+                                <button
+                                    data-action="rateizzazione"
+                                    data-lead-id="\${lead.id}"
+                                    data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
+                                    data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
+                                    data-rateizzato="\${isRateizzato ? '1' : '0'}"
+                                    class="px-1 \${isRateizzato ? (isSaldato ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800') : 'text-indigo-500 hover:text-indigo-700'} action-btn"
+                                    title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}"
+                                    style="font-size:14px;background:none;border:none;cursor:pointer;line-height:1;">
+                                    📅
                                 </button>
                             </div>
                         </td>
@@ -5268,7 +5269,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
                 <!-- Sezione configurazione nuove rate -->
                 <div id="rateizzazioneForm">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
                     <div>
                       <label style="font-size:12px;font-weight:600;color:#374151;">Numero di rate *</label>
                       <input type="number" id="rateNum" min="2" max="12" value="2"
@@ -5281,6 +5282,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                              oninput="generaRigheRate()"
                              style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
                     </div>
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#374151;">IVA applicabile</label>
+                      <select id="rateIva" onchange="generaRigheRate()"
+                              style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;">
+                        <option value="0">Esente / 0%</option>
+                        <option value="4">4% (agevolata)</option>
+                        <option value="10">10% (ridotta)</option>
+                        <option value="22">22% (ordinaria)</option>
+                      </select>
+                    </div>
                   </div>
 
                   <!-- Tabella rate generata dinamicamente -->
@@ -5289,7 +5300,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                       <thead>
                         <tr style="background:#f9fafb;color:#6b7280;font-size:11px;text-transform:uppercase;">
                           <th style="padding:8px 10px;text-align:left;">Rata</th>
-                          <th style="padding:8px 10px;text-align:left;">Importo (€)</th>
+                          <th style="padding:8px 10px;text-align:left;">Imponibile (€)</th>
+                          <th style="padding:8px 10px;text-align:left;" id="rateIvaColTh" style="display:none;">IVA (€)</th>
+                          <th style="padding:8px 10px;text-align:left;">Totale (€)</th>
                           <th style="padding:8px 10px;text-align:left;">Scadenza</th>
                           <th style="padding:8px 10px;text-align:left;">Note</th>
                         </tr>
@@ -5421,24 +5434,39 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         function generaRigheRate() {
-            const n         = parseInt(document.getElementById('rateNum').value) || 2;
+            const n          = parseInt(document.getElementById('rateNum').value) || 2;
             const intervallo = parseInt(document.getElementById('rateIntervallo').value) || 1;
-            const totale    = _rateizzazionePrezzo || 0;
-            const base      = totale > 0 ? Math.floor((totale / n) * 100) / 100 : 0;
-            const resto     = totale > 0 ? Math.round((totale - base * n) * 100) / 100 : 0;
-            const oggi      = new Date();
-            const tbody     = document.getElementById('rateTableBody');
+            const aliqIva    = parseFloat(document.getElementById('rateIva')?.value || '0') || 0;
+            const totale     = _rateizzazionePrezzo || 0;
+            // Il prezzo in DB è sempre imponibile (IVA esclusa); se IVA > 0 calcoliamo lordo
+            const totLordo   = aliqIva > 0 ? Math.round(totale * (1 + aliqIva / 100) * 100) / 100 : totale;
+            const base       = totLordo > 0 ? Math.floor((totLordo / n) * 100) / 100 : 0;
+            const resto      = totLordo > 0 ? Math.round((totLordo - base * n) * 100) / 100 : 0;
+            const oggi       = new Date();
+            const tbody      = document.getElementById('rateTableBody');
+            // Mostra/nascondi colonna IVA
+            const ivaTh = document.getElementById('rateIvaColTh');
+            if (ivaTh) ivaTh.style.display = aliqIva > 0 ? '' : 'none';
             let html = '';
             for (let i = 1; i <= n; i++) {
-                const importo   = i === n ? (base + resto).toFixed(2) : base.toFixed(2);
+                const totRata   = i === n ? parseFloat((base + resto).toFixed(2)) : base;
+                const ivaRata   = aliqIva > 0 ? Math.round(totRata * aliqIva / (100 + aliqIva) * 100) / 100 : 0;
+                const impon     = aliqIva > 0 ? Math.round((totRata - ivaRata) * 100) / 100 : totRata;
                 const scad      = new Date(oggi);
                 scad.setMonth(scad.getMonth() + (i - 1) * intervallo);
                 const scadStr   = scad.toISOString().substring(0, 10);
+                const ivaCol    = aliqIva > 0
+                    ? \`<td style="padding:6px 8px;color:#6b7280;font-size:12px;">€\${ivaRata.toFixed(2)}</td>\`
+                    : '';
                 html += \`<tr style="border-bottom:1px solid #f3f4f6;">
                     <td style="padding:6px 8px;font-weight:600;color:#4338ca;">Rata \${i}</td>
+                    <td style="padding:6px 8px;font-size:12px;color:#374151;">\${aliqIva > 0 ? '€' + impon.toFixed(2) : ''}</td>
+                    \${ivaCol}
                     <td style="padding:6px 8px;">
-                        <input type="number" step="0.01" min="0" id="rataImporto_\${i}" value="\${importo}"
+                        <input type="number" step="0.01" min="0" id="rataImporto_\${i}" value="\${totRata.toFixed(2)}"
+                               oninput="aggiornaIvaRiga(\${i})"
                                style="width:90px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                        <input type="hidden" id="rataAliqIva_\${i}" value="\${aliqIva}">
                     </td>
                     <td style="padding:6px 8px;">
                         <input type="date" id="rataScadenza_\${i}" value="\${scadStr}"
@@ -5446,14 +5474,20 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </td>
                     <td style="padding:6px 8px;">
                         <input type="text" id="rataNote_\${i}" placeholder="facoltativo"
-                               style="width:120px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+                               style="width:100px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
                     </td>
                 </tr>\`;
             }
             tbody.innerHTML = html;
-            const somma = totale > 0 ? \`— totale: €\${totale}\` : '';
+            const ivaLabel = aliqIva > 0 ? \` (IVA \${aliqIva}% inclusa — lordo: €\${totLordo.toFixed(2)})\` : '';
+            const somma    = totLordo > 0 ? \`— totale lordo: €\${totLordo.toFixed(2)}\` : '';
             document.getElementById('rateTotaleInfo').textContent =
-                \`\${n} rate da €\${base} (ultima €\${(base+resto).toFixed(2)}) \${somma}\`;
+                \`\${n} rate da €\${base.toFixed(2)} (ultima €\${(base+resto).toFixed(2)})\${ivaLabel}\`;
+        }
+
+        function aggiornaIvaRiga(i) {
+            // Ricalcola IVA display per la singola riga quando l'utente modifica l'importo
+            // (semplice aggiornamento senza ri-generare tutto)
         }
 
         async function aggiornaStato(rataId, leadId, newStatus) {
@@ -5479,27 +5513,29 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         async function salvaRateizzazione() {
-            const n = parseInt(document.getElementById('rateNum').value) || 2;
+            const n       = parseInt(document.getElementById('rateNum').value) || 2;
+            const aliqIva = parseFloat(document.getElementById('rateIva')?.value || '0') || 0;
             const rate = [];
             for (let i = 1; i <= n; i++) {
                 const importo = parseFloat(document.getElementById('rataImporto_' + i)?.value);
                 const scad    = document.getElementById('rataScadenza_' + i)?.value;
                 const note    = document.getElementById('rataNote_' + i)?.value || '';
                 if (!importo || !scad) { alert('Compila importo e scadenza per tutte le rate.'); return; }
-                rate.push({ numero_rata: i, importo, data_scadenza: scad, note });
+                rate.push({ numero_rata: i, importo, aliquota_iva: aliqIva, data_scadenza: scad, note });
             }
             const riserva = document.getElementById('riservaCheckbox').checked;
             const noteRat = document.getElementById('rateizzazioneNoteInput').value;
+            const ivaLabel = aliqIva > 0 ? \` · IVA \${aliqIva}%\` : '';
             try {
                 const res = await fetch('/api/leads/' + _rateizzazioneLeadId + '/rateizzazione', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ rate, riserva_dominio: riserva, note_rateizzazione: noteRat })
+                    body: JSON.stringify({ rate, riserva_dominio: riserva, note_rateizzazione: noteRat, aliquota_iva: aliqIva })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ ' + data.message + (riserva ? '\\n🔒 Clausola Riserva di Dominio attiva' : ''));
+                    alert('✅ ' + data.message + (riserva ? '\n🔒 Clausola Riserva di Dominio attiva' : '') + (aliqIva > 0 ? '\n🧾 IVA ' + aliqIva + '% inclusa nelle rate' : ''));
                     closeRateizzazioneModal();
                     loadLeadsData();
                 } else {

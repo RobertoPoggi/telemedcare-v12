@@ -22298,9 +22298,10 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const body = await c.req.json() as {
-      rate: Array<{ numero_rata: number; importo: number; data_scadenza: string; note?: string }>
+      rate: Array<{ numero_rata: number; importo: number; importo_iva?: number; aliquota_iva?: number; data_scadenza: string; note?: string }>
       riserva_dominio: boolean
       note_rateizzazione?: string
+      aliquota_iva?: number
     }
 
     if (!body.rate || !Array.isArray(body.rate) || body.rate.length === 0) {
@@ -22310,20 +22311,44 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const db = c.env.DB
     const now = new Date().toISOString()
 
+    // 0. Assicura che la tabella esista (la migration potrebbe non essere stata eseguita)
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS rate_pagamento (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id           TEXT NOT NULL,
+        contract_id       TEXT DEFAULT NULL,
+        numero_rata       INTEGER NOT NULL,
+        importo           REAL NOT NULL,
+        importo_iva       REAL DEFAULT 0,
+        aliquota_iva      REAL DEFAULT 0,
+        data_scadenza     TEXT NOT NULL,
+        status            TEXT NOT NULL DEFAULT 'ATTESA',
+        data_pagamento    TEXT DEFAULT NULL,
+        metodo_pagamento  TEXT DEFAULT NULL,
+        riferimento       TEXT DEFAULT NULL,
+        note              TEXT DEFAULT NULL,
+        creato_da         TEXT DEFAULT NULL,
+        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `).run()
+
     // 1. Cancella eventuali rate precedenti in stato ATTESA (non quelle già pagate)
     await db.prepare(`
       DELETE FROM rate_pagamento
       WHERE lead_id = ? AND status IN ('ATTESA', 'SCADUTA')
     `).bind(leadId).run()
 
-    // 2. Inserisce le nuove rate
+    // 2. Inserisce le nuove rate (con IVA se presente)
     for (const r of body.rate) {
       if (!r.importo || !r.data_scadenza) continue
+      const aliqIva   = r.aliquota_iva ?? body.aliquota_iva ?? 0
+      const importoIva = aliqIva > 0 ? Math.round(r.importo * aliqIva / (100 + aliqIva) * 100) / 100 : 0
       await db.prepare(`
         INSERT INTO rate_pagamento
-          (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
-      `).bind(leadId, r.numero_rata, r.importo, r.data_scadenza, r.note || null, now, now).run()
+          (lead_id, numero_rata, importo, importo_iva, aliquota_iva, data_scadenza, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'ATTESA', ?, ?, ?)
+      `).bind(leadId, r.numero_rata, r.importo, importoIva, aliqIva, r.data_scadenza, r.note || null, now, now).run()
     }
 
     // 3. Aggiorna flags sul lead
