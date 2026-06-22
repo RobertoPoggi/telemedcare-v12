@@ -5354,7 +5354,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             // Info lead
             document.getElementById('rateizzazioneLeadInfo').innerHTML =
-                \`<strong>Lead:</strong> \\${escapeHtml(nome || leadId)} &nbsp;|&nbsp; <strong>Importo totale:</strong> <span style="color:#6366f1;font-weight:700;">€\\${_rateizzazionePrezzo}</span>\`;
+                \`<strong>Lead:</strong> \${escapeHtml(nome || leadId)} &nbsp;|&nbsp; <strong>Importo totale:</strong> <span style="color:#6366f1;font-weight:700;">€\${_rateizzazionePrezzo}</span>\`;
 
             const modal = document.getElementById('rateizzazioneModal');
             modal.style.display = 'flex';
@@ -5377,26 +5377,26 @@ export const leads_dashboard = `<!DOCTYPE html>
                         const righe = data.rate.map(r => {
                             const sc  = statusColors[r.status] || '#6b7280';
                             const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
-                                \`<option value="\\${s}" \\${r.status===s?'selected':''}> \\${s}</option>\`).join('');
+                                \`<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>\`).join('');
                             return \`<tr style="border-bottom:1px solid #f3f4f6;">
-                                <td style="padding:6px 10px;font-weight:600;">Rata \\${r.numero_rata}</td>
-                                <td style="padding:6px 10px;">€\\${Number(r.importo).toFixed(2)}</td>
-                                <td style="padding:6px 10px;">\\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
+                                <td style="padding:6px 10px;font-weight:600;">Rata \${r.numero_rata}</td>
+                                <td style="padding:6px 10px;">€\${Number(r.importo).toFixed(2)}</td>
+                                <td style="padding:6px 10px;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
                                 <td style="padding:6px 10px;">
-                                    <select onchange="aggiornaStato(\\${r.id},'\\${leadId}',this.value)"
-                                            style="font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\\${sc};font-weight:600;">
-                                        \\${sel}
+                                    <select onchange="aggiornaStato(\${r.id},'\${leadId}',this.value)"
+                                            style="font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\${sc};font-weight:600;">
+                                        \${sel}
                                     </select>
                                 </td>
-                                <td style="padding:6px 10px;font-size:11px;color:#6b7280;">\\${r.riferimento||r.note||''}</td>
+                                <td style="padding:6px 10px;font-size:11px;color:#6b7280;">\${r.riferimento||r.note||''}</td>
                             </tr>\`;
                         }).join('');
                         existingEl.innerHTML = \`
                             <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;margin-bottom:12px;">
                               <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;">
-                                📋 Piano attuale &nbsp;·&nbsp; Pagate: \\${data.rate_pagate}/\\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\\${data.totale_pagato.toFixed(2)}/€\\${data.totale_rate.toFixed(2)}
-                                \\${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
-                                \\${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
+                                📋 Piano attuale &nbsp;·&nbsp; Pagate: \${data.rate_pagate}/\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\${data.totale_pagato.toFixed(2)}/€\${data.totale_rate.toFixed(2)}
+                                \${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
+                                \${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
                               </div>
                               <table style="width:100%;font-size:12px;border-collapse:collapse;">
                                 <thead><tr style="background:#e0e7ff;font-size:10px;text-transform:uppercase;color:#4338ca;">
@@ -5406,7 +5406,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                   <th style="padding:5px 10px;text-align:left;">Stato</th>
                                   <th style="padding:5px 10px;text-align:left;">Rif.</th>
                                 </tr></thead>
-                                <tbody>\\${righe}</tbody>
+                                <tbody>\${righe}</tbody>
                               </table>
                             </div>
                             <p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Modifica il piano qui sotto per sostituirlo:</p>\`;
@@ -5436,25 +5436,25 @@ export const leads_dashboard = `<!DOCTYPE html>
                 scad.setMonth(scad.getMonth() + (i - 1) * intervallo);
                 const scadStr   = scad.toISOString().substring(0, 10);
                 html += \`<tr style="border-bottom:1px solid #f3f4f6;">
-                    <td style="padding:6px 8px;font-weight:600;color:#4338ca;">Rata \\${i}</td>
+                    <td style="padding:6px 8px;font-weight:600;color:#4338ca;">Rata \${i}</td>
                     <td style="padding:6px 8px;">
-                        <input type="number" step="0.01" min="0" id="rataImporto_\\${i}" value="\\${importo}"
+                        <input type="number" step="0.01" min="0" id="rataImporto_\${i}" value="\${importo}"
                                style="width:90px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
                     </td>
                     <td style="padding:6px 8px;">
-                        <input type="date" id="rataScadenza_\\${i}" value="\\${scadStr}"
+                        <input type="date" id="rataScadenza_\${i}" value="\${scadStr}"
                                style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
                     </td>
                     <td style="padding:6px 8px;">
-                        <input type="text" id="rataNote_\\${i}" placeholder="facoltativo"
+                        <input type="text" id="rataNote_\${i}" placeholder="facoltativo"
                                style="width:120px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
                     </td>
                 </tr>\`;
             }
             tbody.innerHTML = html;
-            const somma = totale > 0 ? \`— totale: €\\${totale}\` : '';
+            const somma = totale > 0 ? \`— totale: €\${totale}\` : '';
             document.getElementById('rateTotaleInfo').textContent =
-                \`\\${n} rate da €\\${base} (ultima €\\${(base+resto).toFixed(2)}) \\${somma}\`;
+                \`\${n} rate da €\${base} (ultima €\${(base+resto).toFixed(2)}) \${somma}\`;
         }
 
         async function aggiornaStato(rataId, leadId, newStatus) {
