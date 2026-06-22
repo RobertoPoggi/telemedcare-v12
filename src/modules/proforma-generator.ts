@@ -49,6 +49,14 @@ export interface ProformaData {
 
   // Rateizzazione
   riserva_dominio?: boolean
+  rateizzazione_attiva?: boolean
+  rateizzazione_note?: string
+  rate?: Array<{
+    numero_rata: number
+    importo: number
+    data_scadenza: string
+    status?: string
+  }>
 }
 
 export interface ProformaGenerated {
@@ -208,6 +216,18 @@ export class ProformaGenerator {
       CODICE_CONTRATTO: data.codiceContratto,
       ANNO: new Date().getFullYear().toString(),
 
+      // Piano rateizzazione (solo se attivo con rate)
+      PIANO_RATEIZZAZIONE: data.rateizzazione_attiva && data.rate && data.rate.length > 0
+        ? `<div style="border:2px solid #6366f1;border-radius:6px;padding:20px 24px;margin:28px 0;background:#f5f3ff;">
+  <h3 style="color:#4338ca;margin-top:0;">📅 Piano di Pagamento Rateizzato</h3>
+  <p style="margin-bottom:16px;color:#374151;">Il corrispettivo di <strong>€${data.importoBase ? data.importoBase.toFixed(2).replace('.', ',') : '—'}</strong> è suddiviso in <strong>${data.rate.length} rate</strong>:${data.rateizzazione_note ? '<br><em style="color:#6b7280;">Note: ' + data.rateizzazione_note + '</em>' : ''}</p>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead><tr style="background:#e0e7ff;"><th style="padding:10px 12px;text-align:left;color:#3730a3;">Rata</th><th style="padding:10px 12px;text-align:right;color:#3730a3;">Importo (€)</th><th style="padding:10px 12px;text-align:left;color:#3730a3;">Scadenza</th></tr></thead>
+    <tbody>${data.rate.map((r, idx) => `<tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f5f3ff'}"><td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;font-weight:600;">Rata ${r.numero_rata}</td><td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;text-align:right;font-weight:700;">€ ${typeof r.importo === 'number' ? r.importo.toFixed(2).replace('.', ',') : r.importo}</td><td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;">${r.data_scadenza ? new Date(r.data_scadenza).toLocaleDateString('it-IT') : '—'}</td></tr>`).join('')}</tbody>
+    <tfoot><tr style="background:#e0e7ff;"><td style="padding:10px 12px;font-weight:700;color:#3730a3;">TOTALE</td><td style="padding:10px 12px;font-weight:700;color:#3730a3;text-align:right;">€ ${data.rate.reduce((s, r) => s + (Number(r.importo) || 0), 0).toFixed(2).replace('.', ',')}</td><td></td></tr></tfoot>
+  </table>
+</div>`
+        : '',
       // Clausola Riserva di Dominio (solo per rateizzati)
       CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
         ? `<div style="border:2px solid #c2410c;border-radius:4px;padding:16px 20px;margin:24px 0;background:#fff7ed;">
@@ -420,6 +440,8 @@ export class ProformaGenerator {
       </tr>
     </table>
   </div>
+
+  {{PIANO_RATEIZZAZIONE}}
 
   {{CLAUSOLA_RISERVA_DOMINIO}}
 

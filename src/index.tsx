@@ -11511,6 +11511,20 @@ app.post('/api/leads/:id/send-contract', async (c) => {
 
     console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: base €${prezzoBaseContratto}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
     
+    // Fetch rate di pagamento (se rateizzazione attiva)
+    let rateContratto: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
+    if (lead.rateizzazione_attiva) {
+      try {
+        const rateRows = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(leadId).all()
+        rateContratto = (rateRows?.results || []) as any[]
+        console.log(`📅 [CONTRATTO] Rate trovate: ${rateContratto.length}`)
+      } catch (e) {
+        console.warn(`⚠️ [CONTRATTO] Errore fetch rate:`, e)
+      }
+    }
+
     // Prepara contractData
     const contractData = {
       contractId: contractId,
@@ -11525,7 +11539,11 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       annoRinnovo: annoRinnovoReq,
       codiceOriginale: codiceOriginaleReq,
       // 🔒 Riserva di Dominio (solo per lead rateizzati con flag attivo)
-      riserva_dominio: Boolean(lead.riserva_dominio)
+      riserva_dominio: Boolean(lead.riserva_dominio),
+      // 📅 Rateizzazione
+      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+      rateizzazione_note: lead.rateizzazione_note || '',
+      rate: rateContratto
     }
     
     // Usa workflow per inviare email contratto
@@ -15391,6 +15409,20 @@ app.post('/api/contracts/sign', async (c) => {
         
         console.log(`📊 [FIRMA→PROFORMA] Servizio: ${servizio}, Piano: ${piano}, Prezzo Base: €${prezzoBase}, IVA Inclusa: €${prezzoIvaInclusa}`)
         
+        // Fetch rate di pagamento (se rateizzazione attiva)
+        let rateFirmaProforma: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
+        if (lead.rateizzazione_attiva) {
+          try {
+            const rateRowsFirma = await c.env.DB.prepare(
+              `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+            ).bind(leadId).all()
+            rateFirmaProforma = (rateRowsFirma?.results || []) as any[]
+            console.log(`📅 [FIRMA→PROFORMA] Rate trovate: ${rateFirmaProforma.length}`)
+          } catch (e) {
+            console.warn(`⚠️ [FIRMA→PROFORMA] Errore fetch rate:`, e)
+          }
+        }
+
         // Prepara dati proforma (proformaId verrà aggiornato dopo INSERT)
         const proformaData = {
           proformaId: '', // Placeholder - sarà aggiornato dopo INSERT con ID auto-generato
@@ -15404,7 +15436,10 @@ app.post('/api/contracts/sign', async (c) => {
           isRinnovo: isRinnovoContract,
           annoRinnovo: annoRinnovoContract,
           codiceOriginale: codiceOriginale,
-          riserva_dominio: Boolean(lead.riserva_dominio)  // Clausola Riserva di Dominio (art. 1523 c.c.)
+          riserva_dominio: Boolean(lead.riserva_dominio),  // Clausola Riserva di Dominio (art. 1523 c.c.)
+          rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+          rateizzazione_note: lead.rateizzazione_note || '',
+          rate: rateFirmaProforma
         }
         
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
@@ -29620,6 +29655,20 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       const prezzoBaseManual = pricing.setupBase  // IVA ESCLUSA
       const prezzoIvaInclusa = Math.round(prezzoBaseManual * (1 + ivaRateManual) * 100) / 100
 
+      // Fetch rate di pagamento (se rateizzazione attiva)
+      let rateManualProforma: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
+      if (lead.rateizzazione_attiva) {
+        try {
+          const rateRowsManual = await c.env.DB.prepare(
+            `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+          ).bind(leadId).all()
+          rateManualProforma = (rateRowsManual?.results || []) as any[]
+          console.log(`📅 [MANUAL-SIGN→PROFORMA] Rate trovate: ${rateManualProforma.length}`)
+        } catch (e) {
+          console.warn(`⚠️ [MANUAL-SIGN→PROFORMA] Errore fetch rate:`, e)
+        }
+      }
+
       const proformaData = {
         proformaId: numeroProforma,  // usa numero_proforma come ID nel link (cercato dal GET /api/proforma/:id)
         numeroProforma,
@@ -29628,7 +29677,11 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         servizio: servizio,
         prezzoBase: prezzoBaseManual,        // IVA ESCLUSA (es. €390)
         prezzoIvaInclusa: prezzoIvaInclusa,  // IVA INCLUSA con aliquota corretta (es. €405,60 al 4%)
-        dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        riserva_dominio: Boolean(lead.riserva_dominio),
+        rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+        rateizzazione_note: lead.rateizzazione_note || '',
+        rate: rateManualProforma
       }
       
       // ✅ REGOLA INTESTATARIO: rispetta la scelta del form
@@ -29785,7 +29838,21 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     const month = String(new Date().getMonth() + 1).padStart(2, '0')
     const random = Math.random().toString(36).substring(2, 6).toUpperCase()
     const numeroProforma = `PRF${year}${month}-${random}`
-    
+
+    // Fetch rate di pagamento (se rateizzazione attiva)
+    let rateSendProforma: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
+    if (lead.rateizzazione_attiva) {
+      try {
+        const rateRowsSend = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(leadId).all()
+        rateSendProforma = (rateRowsSend?.results || []) as any[]
+        console.log(`📅 [SEND-PROFORMA] Rate trovate: ${rateSendProforma.length}`)
+      } catch (e) {
+        console.warn(`⚠️ [SEND-PROFORMA] Errore fetch rate:`, e)
+      }
+    }
+
     const proformaData = {
       proformaId: '', // Sarà popolato dopo INSERT/UPDATE
       numeroProforma,
@@ -29794,7 +29861,11 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       servizio: servizio,
       prezzoBase: pricing.setupBase,
       prezzoIvaInclusa: pricing.setupTotale,
-      dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // ✅ 3 giorni massimo
+      dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // ✅ 3 giorni massimo
+      riserva_dominio: Boolean(lead.riserva_dominio),
+      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+      rateizzazione_note: lead.rateizzazione_note || '',
+      rate: rateSendProforma
     }
     
     // ✅ LOGICA INTESTATARIO: se 'assistito' tutti i campi dall'assistito, altrimenti dal richiedente
