@@ -4696,8 +4696,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
                                     data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
                                     data-rateizzato="\${isRateizzato ? '1' : '0'}"
-                                    style="padding:2px 6px;background:\${isRateizzato ? (isSaldato ? '#16a34a' : '#d97706') : '#6366f1'};color:#fff;font-size:11px;border-radius:6px;border:none;cursor:pointer;"
-                                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+                                    class="px-2 py-1 \${isRateizzato ? (isSaldato ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700') : 'bg-indigo-500 hover:bg-indigo-600'} text-white text-xs rounded transition-colors action-btn"
                                     title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}">
                                     📅
                                 </button>
