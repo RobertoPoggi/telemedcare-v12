@@ -22319,78 +22319,74 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const db = c.env.DB
     const now = new Date().toISOString()
 
-    // 0. Assicura che la tabella esista e abbia tutte le colonne necessarie
+    // 0. Assicura che la tabella esista (colonne minime) + aggiungi colonne leads se mancanti
+    const step0a = 'CREATE TABLE rate_pagamento'
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS rate_pagamento (
-        id                INTEGER PRIMARY KEY AUTOINCREMENT,
-        lead_id           TEXT NOT NULL,
-        contract_id       TEXT DEFAULT NULL,
-        numero_rata       INTEGER NOT NULL,
-        importo           REAL NOT NULL,
-        importo_iva       REAL DEFAULT 0,
-        aliquota_iva      REAL DEFAULT 0,
-        data_scadenza     TEXT NOT NULL,
-        status            TEXT NOT NULL DEFAULT 'ATTESA',
-        data_pagamento    TEXT DEFAULT NULL,
-        metodo_pagamento  TEXT DEFAULT NULL,
-        riferimento       TEXT DEFAULT NULL,
-        note              TEXT DEFAULT NULL,
-        creato_da         TEXT DEFAULT NULL,
-        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id          TEXT NOT NULL,
+        numero_rata      INTEGER NOT NULL,
+        importo          REAL NOT NULL,
+        data_scadenza    TEXT NOT NULL,
+        status           TEXT NOT NULL DEFAULT 'ATTESA',
+        metodo_pagamento TEXT DEFAULT NULL,
+        riferimento      TEXT DEFAULT NULL,
+        note             TEXT DEFAULT NULL,
+        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `).run()
-    // Aggiungi colonne mancanti per tabelle pre-esistenti (ignora errori se già presenti)
-    try { await db.prepare(`ALTER TABLE rate_pagamento ADD COLUMN importo_iva REAL DEFAULT 0`).run() } catch {}
-    try { await db.prepare(`ALTER TABLE rate_pagamento ADD COLUMN aliquota_iva REAL DEFAULT 0`).run() } catch {}
 
-    // 1. Cancella eventuali rate precedenti in stato ATTESA (non quelle già pagate)
-    await db.prepare(`
-      DELETE FROM rate_pagamento
-      WHERE lead_id = ? AND status IN ('ATTESA', 'SCADUTA')
-    `).bind(leadId).run()
+    // Aggiungi colonne leads mancanti (migration non eseguita)
+    const leadsColsDefs: Array<[string, string]> = [
+      ['rateizzazione_attiva', 'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_saldo',  'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_note',   'TEXT DEFAULT NULL'],
+      ['riserva_dominio',      'INTEGER NOT NULL DEFAULT 0'],
+    ]
+    for (const [col, def] of leadsColsDefs) {
+      try { await db.prepare(`ALTER TABLE leads ADD COLUMN ${col} ${def}`).run() } catch {}
+    }
+    // Aggiungi colonne contracts mancanti
+    const contractsColsDefs: Array<[string, string]> = [
+      ['rateizzazione_attiva', 'INTEGER NOT NULL DEFAULT 0'],
+      ['riserva_dominio',      'INTEGER NOT NULL DEFAULT 0'],
+    ]
+    for (const [col, def] of contractsColsDefs) {
+      try { await db.prepare(`ALTER TABLE contracts ADD COLUMN ${col} ${def}`).run() } catch {}
+    }
+
+    // 1. Cancella rate precedenti ATTESA/SCADUTA
+    await db.prepare(`DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')`).bind(leadId).run()
 
     // 2. Inserisce le nuove rate
     for (const r of body.rate) {
       if (!r.importo || !r.data_scadenza) continue
       await db.prepare(`
-        INSERT INTO rate_pagamento
-          (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
+        INSERT INTO rate_pagamento (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
       `).bind(leadId, r.numero_rata, r.importo, r.data_scadenza, r.note || null, now, now).run()
     }
 
     // 3. Aggiorna flags sul lead
     await db.prepare(`
-      UPDATE leads SET
-        rateizzazione_attiva = 1,
-        riserva_dominio      = ?,
-        rateizzazione_note   = ?,
-        rateizzazione_saldo  = 0,
-        updated_at           = ?
-      WHERE id = ?
+      UPDATE leads SET rateizzazione_attiva=1, riserva_dominio=?, rateizzazione_note=?, rateizzazione_saldo=0, updated_at=?
+      WHERE id=?
     `).bind(body.riserva_dominio ? 1 : 0, body.note_rateizzazione || null, now, leadId).run()
 
-    // 4. Se esiste un contratto firmato: aggiorna anche lì
-    await db.prepare(`
-      UPDATE contracts SET
-        rateizzazione_attiva = 1,
-        riserva_dominio      = ?,
-        updated_at           = ?
-      WHERE leadId = ? AND status IN ('SIGNED','COMPLETED')
-    `).bind(body.riserva_dominio ? 1 : 0, now, leadId).run()
+    // 4. Aggiorna contratto firmato se esiste
+    try {
+      await db.prepare(`
+        UPDATE contracts SET rateizzazione_attiva=1, riserva_dominio=?, updated_at=?
+        WHERE leadId=? AND status IN ('SIGNED','COMPLETED')
+      `).bind(body.riserva_dominio ? 1 : 0, now, leadId).run()
+    } catch {}
 
-    console.log(`📅 [RATEIZZAZIONE] Lead ${leadId}: ${body.rate.length} rate impostate, riserva_dominio=${body.riserva_dominio}`)
-
-    return c.json({
-      success: true,
-      rate_create: body.rate.length,
-      riserva_dominio: body.riserva_dominio,
-      message: `Piano rateizzazione impostato: ${body.rate.length} rate`
-    })
+    console.log(`📅 [RATEIZZAZIONE] Lead ${leadId}: ${body.rate.length} rate impostate`)
+    return c.json({ success: true, rate_create: body.rate.length, message: `Piano rateizzazione impostato: ${body.rate.length} rate` })
   } catch (err: any) {
     console.error('❌ [RATEIZZAZIONE] Errore:', err)
-    return c.json({ success: false, error: err?.message }, 500)
+    return c.json({ success: false, error: err?.message ?? String(err) }, 500)
   }
 })
 

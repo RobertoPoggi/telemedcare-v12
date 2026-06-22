@@ -18597,47 +18597,30 @@ startxref
         AND (codice_sconto IS NULL OR codice_sconto = '')
         AND prezzo_anno IS NOT NULL AND prezzo_anno > 0
         ORDER BY created_at DESC
-      `).bind(`%${r}%`,`%${r}%`,`%${r.replace(" ","")}%`).all()).results||[];console.log(`🏷️ [CANALE-DISCOUNT] ${r}: ${c.length} lead candidati`);for(const u of c){const p=await km(e.env.DB,u.id,n,"CANALE","sistema-canale");p.success?(a++,console.log(`✅ [CANALE-DISCOUNT] ${u.id} → ${n}: ${p.message}`)):(i++,s.push(`${u.id}: ${p.message}`),console.warn(`⚠️ [CANALE-DISCOUNT] skip ${u.id}: ${p.message}`))}}return e.json({success:!0,applied:a,skipped:i,errors:s,message:`Sconti canale applicati: ${a} lead aggiornati, ${i} saltati`})}catch(t){return console.error("❌ [CANALE-DISCOUNT] Errore:",t),e.json({success:!1,error:t==null?void 0:t.message},500)}});I.post("/api/leads/:id/rateizzazione",Ge,async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"DB non configurato"},500);const a=await e.req.json();if(!a.rate||!Array.isArray(a.rate)||a.rate.length===0)return e.json({success:!1,error:"Array rate obbligatorio"},400);const i=e.env.DB,s=new Date().toISOString();await i.prepare(`
+      `).bind(`%${r}%`,`%${r}%`,`%${r.replace(" ","")}%`).all()).results||[];console.log(`🏷️ [CANALE-DISCOUNT] ${r}: ${c.length} lead candidati`);for(const u of c){const p=await km(e.env.DB,u.id,n,"CANALE","sistema-canale");p.success?(a++,console.log(`✅ [CANALE-DISCOUNT] ${u.id} → ${n}: ${p.message}`)):(i++,s.push(`${u.id}: ${p.message}`),console.warn(`⚠️ [CANALE-DISCOUNT] skip ${u.id}: ${p.message}`))}}return e.json({success:!0,applied:a,skipped:i,errors:s,message:`Sconti canale applicati: ${a} lead aggiornati, ${i} saltati`})}catch(t){return console.error("❌ [CANALE-DISCOUNT] Errore:",t),e.json({success:!1,error:t==null?void 0:t.message},500)}});I.post("/api/leads/:id/rateizzazione",Ge,async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"DB non configurato"},500);const a=await e.req.json();if(!a.rate||!Array.isArray(a.rate)||a.rate.length===0)return e.json({success:!1,error:"Array rate obbligatorio"},400);const i=e.env.DB,s=new Date().toISOString(),r="CREATE TABLE rate_pagamento";await i.prepare(`
       CREATE TABLE IF NOT EXISTS rate_pagamento (
-        id                INTEGER PRIMARY KEY AUTOINCREMENT,
-        lead_id           TEXT NOT NULL,
-        contract_id       TEXT DEFAULT NULL,
-        numero_rata       INTEGER NOT NULL,
-        importo           REAL NOT NULL,
-        importo_iva       REAL DEFAULT 0,
-        aliquota_iva      REAL DEFAULT 0,
-        data_scadenza     TEXT NOT NULL,
-        status            TEXT NOT NULL DEFAULT 'ATTESA',
-        data_pagamento    TEXT DEFAULT NULL,
-        metodo_pagamento  TEXT DEFAULT NULL,
-        riferimento       TEXT DEFAULT NULL,
-        note              TEXT DEFAULT NULL,
-        creato_da         TEXT DEFAULT NULL,
-        created_at        TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        lead_id          TEXT NOT NULL,
+        numero_rata      INTEGER NOT NULL,
+        importo          REAL NOT NULL,
+        data_scadenza    TEXT NOT NULL,
+        status           TEXT NOT NULL DEFAULT 'ATTESA',
+        metodo_pagamento TEXT DEFAULT NULL,
+        riferimento      TEXT DEFAULT NULL,
+        note             TEXT DEFAULT NULL,
+        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
       )
-    `).run();try{await i.prepare("ALTER TABLE rate_pagamento ADD COLUMN importo_iva REAL DEFAULT 0").run()}catch{}try{await i.prepare("ALTER TABLE rate_pagamento ADD COLUMN aliquota_iva REAL DEFAULT 0").run()}catch{}await i.prepare(`
-      DELETE FROM rate_pagamento
-      WHERE lead_id = ? AND status IN ('ATTESA', 'SCADUTA')
-    `).bind(o).run();for(const r of a.rate)!r.importo||!r.data_scadenza||await i.prepare(`
-        INSERT INTO rate_pagamento
-          (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
+    `).run();const n=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_saldo","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_note","TEXT DEFAULT NULL"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[c,u]of n)try{await i.prepare(`ALTER TABLE leads ADD COLUMN ${c} ${u}`).run()}catch{}const d=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[c,u]of d)try{await i.prepare(`ALTER TABLE contracts ADD COLUMN ${c} ${u}`).run()}catch{}await i.prepare("DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')").bind(o).run();for(const c of a.rate)!c.importo||!c.data_scadenza||await i.prepare(`
+        INSERT INTO rate_pagamento (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
-      `).bind(o,r.numero_rata,r.importo,r.data_scadenza,r.note||null,s,s).run();return await i.prepare(`
-      UPDATE leads SET
-        rateizzazione_attiva = 1,
-        riserva_dominio      = ?,
-        rateizzazione_note   = ?,
-        rateizzazione_saldo  = 0,
-        updated_at           = ?
-      WHERE id = ?
-    `).bind(a.riserva_dominio?1:0,a.note_rateizzazione||null,s,o).run(),await i.prepare(`
-      UPDATE contracts SET
-        rateizzazione_attiva = 1,
-        riserva_dominio      = ?,
-        updated_at           = ?
-      WHERE leadId = ? AND status IN ('SIGNED','COMPLETED')
-    `).bind(a.riserva_dominio?1:0,s,o).run(),console.log(`📅 [RATEIZZAZIONE] Lead ${o}: ${a.rate.length} rate impostate, riserva_dominio=${a.riserva_dominio}`),e.json({success:!0,rate_create:a.rate.length,riserva_dominio:a.riserva_dominio,message:`Piano rateizzazione impostato: ${a.rate.length} rate`})}catch(a){return console.error("❌ [RATEIZZAZIONE] Errore:",a),e.json({success:!1,error:a==null?void 0:a.message},500)}});I.get("/api/leads/:id/rateizzazione",Ge,async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"DB non configurato"},500);const a=e.env.DB,i=await a.prepare(`
+      `).bind(o,c.numero_rata,c.importo,c.data_scadenza,c.note||null,s,s).run();await i.prepare(`
+      UPDATE leads SET rateizzazione_attiva=1, riserva_dominio=?, rateizzazione_note=?, rateizzazione_saldo=0, updated_at=?
+      WHERE id=?
+    `).bind(a.riserva_dominio?1:0,a.note_rateizzazione||null,s,o).run();try{await i.prepare(`
+        UPDATE contracts SET rateizzazione_attiva=1, riserva_dominio=?, updated_at=?
+        WHERE leadId=? AND status IN ('SIGNED','COMPLETED')
+      `).bind(a.riserva_dominio?1:0,s,o).run()}catch{}return console.log(`📅 [RATEIZZAZIONE] Lead ${o}: ${a.rate.length} rate impostate`),e.json({success:!0,rate_create:a.rate.length,message:`Piano rateizzazione impostato: ${a.rate.length} rate`})}catch(a){return console.error("❌ [RATEIZZAZIONE] Errore:",a),e.json({success:!1,error:(a==null?void 0:a.message)??String(a)},500)}});I.get("/api/leads/:id/rateizzazione",Ge,async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"DB non configurato"},500);const a=e.env.DB,i=await a.prepare(`
       SELECT rateizzazione_attiva, rateizzazione_note, rateizzazione_saldo, riserva_dominio, prezzo_anno, prezzo_scontato
       FROM leads WHERE id = ?
     `).bind(o).first();if(!i)return e.json({success:!1,error:"Lead non trovato"},404);const s=await a.prepare(`
