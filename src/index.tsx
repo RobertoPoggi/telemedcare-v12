@@ -22307,10 +22307,9 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const body = await c.req.json() as {
-      rate: Array<{ numero_rata: number; importo: number; importo_iva?: number; aliquota_iva?: number; data_scadenza: string; note?: string }>
+      rate: Array<{ numero_rata: number; importo: number; data_scadenza: string; note?: string }>
       riserva_dominio: boolean
       note_rateizzazione?: string
-      aliquota_iva?: number
     }
 
     if (!body.rate || !Array.isArray(body.rate) || body.rate.length === 0) {
@@ -22351,16 +22350,14 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
       WHERE lead_id = ? AND status IN ('ATTESA', 'SCADUTA')
     `).bind(leadId).run()
 
-    // 2. Inserisce le nuove rate (con IVA se presente)
+    // 2. Inserisce le nuove rate
     for (const r of body.rate) {
       if (!r.importo || !r.data_scadenza) continue
-      const aliqIva   = r.aliquota_iva ?? body.aliquota_iva ?? 0
-      const importoIva = aliqIva > 0 ? Math.round(r.importo * aliqIva / (100 + aliqIva) * 100) / 100 : 0
       await db.prepare(`
         INSERT INTO rate_pagamento
-          (lead_id, numero_rata, importo, importo_iva, aliquota_iva, data_scadenza, status, note, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'ATTESA', ?, ?, ?)
-      `).bind(leadId, r.numero_rata, r.importo, importoIva, aliqIva, r.data_scadenza, r.note || null, now, now).run()
+          (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
+      `).bind(leadId, r.numero_rata, r.importo, r.data_scadenza, r.note || null, now, now).run()
     }
 
     // 3. Aggiorna flags sul lead
