@@ -4690,11 +4690,21 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="\${hasSconto ? 'Sconto: ' + escapeHtml(lead.codice_sconto || '') + ' — clicca per rimuovere o cambiare' : 'Applica Sconto'}">
                                     🏷️
                                 </button>
+                                <button
+                                    data-action="rateizzazione"
+                                    data-lead-id="\${lead.id}"
+                                    data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
+                                    data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
+                                    data-rateizzato="\${isRateizzato ? '1' : '0'}"
+                                    class="px-2 py-1 \${isRateizzato ? (isSaldato ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700') : 'bg-indigo-500 hover:bg-indigo-600'} text-white text-xs rounded transition-colors action-btn"
+                                    title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}">
+                                    📅
+                                </button>
 
                             </div>
                         </td>
                         <td class="py-3">
-                            <div class="flex items-center space-x-1">
+                            <div class="flex space-x-1">
                                 <button data-action="view" data-lead-id="\${lead.id}" 
                                         class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
                                         title="Visualizza">
@@ -4709,17 +4719,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                                         class="text-red-600 hover:text-red-800 px-1 crud-btn" 
                                         title="Elimina">
                                     <i class="fas fa-trash"></i>
-                                </button>
-                                <button
-                                    data-action="rateizzazione"
-                                    data-lead-id="\${lead.id}"
-                                    data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
-                                    data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
-                                    data-rateizzato="\${isRateizzato ? '1' : '0'}"
-                                    class="px-1 \${isRateizzato ? (isSaldato ? 'text-green-600 hover:text-green-800' : 'text-yellow-600 hover:text-yellow-800') : 'text-indigo-500 hover:text-indigo-700'} action-btn"
-                                    title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}"
-                                    style="font-size:14px;background:none;border:none;cursor:pointer;line-height:1;">
-                                    📅
                                 </button>
                             </div>
                         </td>
