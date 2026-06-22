@@ -6572,37 +6572,89 @@ ${370+t.length}
                 const codeTableEl = document.getElementById('discountByCodeTable');
                 if (codeTableEl) {
                     if (!discountByCode.length) {
-                        codeTableEl.innerHTML = '<p class="text-sm text-gray-400 py-2">Nessun codice sconto applicato</p>';
+                        codeTableEl.innerHTML = \`
+                            <div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;">
+                                <i class="fas fa-tag mr-2"></i>
+                                Nessun codice sconto nel sistema — aggiungili dalla Dashboard principale → sezione "Codici Sconto"
+                            </div>\`;
                     } else {
+                        // Colori badge sorgente codice
+                        const sorgenteBadge = (s) => ({
+                            'CANALE':    '<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">📡 CANALE</span>',
+                            'FORM':      '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">📋 FORM</span>',
+                            'MANUALE':   '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">✏️ MANUALE</span>',
+                            'PROMOZIONE':'<span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">🎁 PROMO</span>',
+                        }[s] || \`<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:9999px;font-size:11px;">\${s||'—'}</span>\`);
+
+                        // Calcola totali per riga totale
+                        const totLeads    = discountByCode.reduce((s, r) => s + (Number(r.leads)||0), 0);
+                        const totRisp     = discountByCode.reduce((s, r) => s + (Number(r.risparmio)||0), 0);
+                        const codiciUsati = discountByCode.filter(r => (Number(r.leads)||0) > 0).length;
+
                         const righe = discountByCode.map(dc => {
-                            const sorgBadge = {
-                                'FORM':      '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">FORM</span>',
-                                'CANALE':    '<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">CANALE</span>',
-                                'MANUALE':   '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">MANUALE</span>',
-                                'PROMOZIONE':'<span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">PROMO</span>',
-                            }[dc.sorgente] || \`<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:9999px;font-size:11px;">\${dc.sorgente||'?'}</span>\`;
-                            return \`<tr class="border-b border-gray-100 hover:bg-orange-50 transition-colors">
-                                <td class="py-2 px-3 font-bold text-orange-700">\${dc.codice}</td>
-                                <td class="py-2 px-3 text-center">\${sorgBadge}</td>
-                                <td class="py-2 px-3 text-center text-gray-700 font-semibold">\${dc.leads}</td>
-                                <td class="py-2 px-3 text-center text-green-700 font-semibold">€\${(dc.risparmio||0).toFixed(2)}</td>
-                                <td class="py-2 px-3 text-center text-blue-600">\${(dc.pct_media||0).toFixed(1)}%</td>
-                                <td class="py-2 px-3 text-center text-gray-500 text-xs">\${dc.tipo||'—'} · \${dc.valore_nominale||'—'}</td>
+                            const nLeads    = Number(dc.leads)    || 0;
+                            const nRisp     = Number(dc.risparmio)|| 0;
+                            const nPct      = Number(dc.pct_media)|| 0;
+                            const valNom    = dc.tipo === 'PERCENTUALE'
+                                ? \`\${dc.valore_nominale}%\`
+                                : \`€\${Number(dc.valore_nominale||0).toFixed(2)}\`;
+                            const attivoTag = dc.attivo
+                                ? '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;">✓ attivo</span>'
+                                : '<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;">✗ inattivo</span>';
+                            const rowBg = nLeads > 0 ? '' : 'background:#fafafa;';
+                            return \`<tr style="\${rowBg}border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='\${nLeads>0?'':'#fafafa'}'">
+                                <td style="padding:10px 12px;font-weight:700;color:#c2410c;font-family:monospace;font-size:13px;">\${dc.codice}</td>
+                                <td style="padding:10px 12px;font-size:12px;color:#6b7280;">\${dc.descrizione||'—'}</td>
+                                <td style="padding:10px 12px;text-align:center;">\${sorgenteBadge(dc.sorgente_codice)}</td>
+                                <td style="padding:10px 12px;text-align:center;font-size:12px;color:#374151;">\${dc.tipo||'—'} &nbsp;<strong>\${valNom}</strong></td>
+                                <td style="padding:10px 12px;text-align:center;">
+                                    \${nLeads > 0
+                                        ? \`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;padding:3px 10px;border-radius:9999px;font-weight:700;font-size:13px;">\${nLeads}</span>\`
+                                        : \`<span style="color:#d1d5db;font-size:12px;">0</span>\`
+                                    }
+                                </td>
+                                <td style="padding:10px 12px;text-align:center;font-weight:600;color:\${nRisp>0?'#065f46':'#9ca3af'};font-size:13px;">
+                                    \${nRisp > 0 ? \`€\${nRisp.toFixed(2)}\` : '<span style="color:#d1d5db;">—</span>'}
+                                </td>
+                                <td style="padding:10px 12px;text-align:center;font-size:13px;color:\${nPct>0?'#1d4ed8':'#9ca3af'};">
+                                    \${nPct > 0 ? nPct.toFixed(1)+'%' : '<span style="color:#d1d5db;">—</span>'}
+                                </td>
+                                <td style="padding:10px 12px;text-align:center;">\${attivoTag}</td>
                             </tr>\`;
                         }).join('');
+
+                        // Riga totale
+                        const rigaTotale = \`
+                            <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
+                                <td colspan="4" style="padding:10px 12px;font-weight:700;color:#374151;font-size:13px;">
+                                    📊 TOTALE — \${discountByCode.length} codici (\${codiciUsati} con utilizzi)
+                                </td>
+                                <td style="padding:10px 12px;text-align:center;">
+                                    <span style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;padding:3px 10px;border-radius:9999px;font-weight:800;font-size:14px;">\${totLeads}</span>
+                                </td>
+                                <td style="padding:10px 12px;text-align:center;font-weight:800;color:#065f46;font-size:14px;">€\${totRisp.toFixed(2)}</td>
+                                <td style="padding:10px 12px;text-align:center;color:#6b7280;font-size:12px;">
+                                    \${totLeads > 0 ? (totRisp / totLeads).toFixed(2) + ' €/lead medio' : '—'}
+                                </td>
+                                <td></td>
+                            </tr>\`;
+
                         codeTableEl.innerHTML = \`
-                            <table class="w-full text-sm">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;">
                                 <thead>
-                                    <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
-                                        <th class="py-2 px-3 text-left">Codice</th>
-                                        <th class="py-2 px-3 text-center">Sorgente</th>
-                                        <th class="py-2 px-3 text-center">Lead</th>
-                                        <th class="py-2 px-3 text-center">Risparmio €</th>
-                                        <th class="py-2 px-3 text-center">% media</th>
-                                        <th class="py-2 px-3 text-center">Tipo · Valore</th>
+                                    <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+                                        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Codice</th>
+                                        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Descrizione</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Sorgente</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Tipo · Valore</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Lead scontati</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Risparmio €</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">% media</th>
+                                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">Stato</th>
                                     </tr>
                                 </thead>
                                 <tbody>\${righe}</tbody>
+                                <tfoot>\${rigaTotale}</tfoot>
                             </table>
                         \`;
                     }
@@ -15571,18 +15623,21 @@ loadDDTs();
         FROM leads
       `).first();m={leads:Number(v==null?void 0:v.leads_scontati)||0,risparmio:Number(v==null?void 0:v.risparmio_totale)||0,pct_media:Number(v==null?void 0:v.pct_media)||0},f=(await e.env.DB.prepare(`
         SELECT
-          l.codice_sconto                                   AS codice,
-          l.sconto_sorgente                                 AS sorgente,
-          COUNT(l.id)                                       AS leads,
-          ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio,
-          ROUND(AVG(l.sconto_percentuale), 1)               AS pct_media,
-          dc.tipo                                           AS tipo,
-          dc.valore                                         AS valore_nominale
-        FROM leads l
-        LEFT JOIN discount_codes dc ON dc.codice = l.codice_sconto
-        WHERE l.codice_sconto IS NOT NULL AND l.codice_sconto != ''
-        GROUP BY l.codice_sconto, l.sconto_sorgente
-        ORDER BY leads DESC
+          dc.codice                                                           AS codice,
+          dc.descrizione                                                      AS descrizione,
+          dc.tipo                                                             AS tipo,
+          dc.valore                                                           AS valore_nominale,
+          dc.sorgente                                                         AS sorgente_codice,
+          dc.attivo                                                           AS attivo,
+          COUNT(l.id)                                                         AS leads,
+          ROUND(
+            COALESCE(SUM(COALESCE(l.prezzo_anno,0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno,0))), 0)
+          , 2)                                                                AS risparmio,
+          ROUND(COALESCE(AVG(CASE WHEN l.codice_sconto IS NOT NULL THEN l.sconto_percentuale ELSE NULL END), 0), 1) AS pct_media
+        FROM discount_codes dc
+        LEFT JOIN leads l ON l.codice_sconto = dc.codice
+        GROUP BY dc.codice, dc.descrizione, dc.tipo, dc.valore, dc.sorgente, dc.attivo
+        ORDER BY leads DESC, dc.codice ASC
       `).all()).results||[]}catch(h){console.warn("⚠️ channel-stats: errore query discount stats",h)}return e.json({success:!0,totalEcura:o,meta:t,google:a,diretto:l,altro:c,nonTracciato:u,breakdown:d,discountByCanale:g,discountGlobal:m,discountByCode:f})}catch(o){return console.error("❌ Errore channel-stats:",o),e.json({success:!1,error:"Errore recupero statistiche canale"},500)}});C.get("/api/leads/channel-debug",async e=>{try{if(!e.env.DB)return e.json({error:"DB non configurato"},400);if(!e.env.HUBSPOT_ACCESS_TOKEN)return e.json({error:"HUBSPOT_ACCESS_TOKEN mancante"},400);const o=e.env.DB,t=e.env.HUBSPOT_ACCESS_TOKEN,a=await o.prepare(`
       SELECT
         COALESCE(NULLIF(hs_object_source_detail_1,''), '(NULL/vuoto)') as valore,

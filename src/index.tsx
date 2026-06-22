@@ -7058,21 +7058,25 @@ app.get('/api/leads/channel-stats', async (c) => {
         pct_media: Number(dcGlobal?.pct_media)        || 0
       }
 
-      // Per codice sconto (top usage)
+      // Per codice sconto — parte da discount_codes (tutti i codici attivi)
+      // così appaiono anche i codici con 0 utilizzi
       const dcByCod = await c.env.DB.prepare(`
         SELECT
-          l.codice_sconto                                   AS codice,
-          l.sconto_sorgente                                 AS sorgente,
-          COUNT(l.id)                                       AS leads,
-          ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio,
-          ROUND(AVG(l.sconto_percentuale), 1)               AS pct_media,
-          dc.tipo                                           AS tipo,
-          dc.valore                                         AS valore_nominale
-        FROM leads l
-        LEFT JOIN discount_codes dc ON dc.codice = l.codice_sconto
-        WHERE l.codice_sconto IS NOT NULL AND l.codice_sconto != ''
-        GROUP BY l.codice_sconto, l.sconto_sorgente
-        ORDER BY leads DESC
+          dc.codice                                                           AS codice,
+          dc.descrizione                                                      AS descrizione,
+          dc.tipo                                                             AS tipo,
+          dc.valore                                                           AS valore_nominale,
+          dc.sorgente                                                         AS sorgente_codice,
+          dc.attivo                                                           AS attivo,
+          COUNT(l.id)                                                         AS leads,
+          ROUND(
+            COALESCE(SUM(COALESCE(l.prezzo_anno,0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno,0))), 0)
+          , 2)                                                                AS risparmio,
+          ROUND(COALESCE(AVG(CASE WHEN l.codice_sconto IS NOT NULL THEN l.sconto_percentuale ELSE NULL END), 0), 1) AS pct_media
+        FROM discount_codes dc
+        LEFT JOIN leads l ON l.codice_sconto = dc.codice
+        GROUP BY dc.codice, dc.descrizione, dc.tipo, dc.valore, dc.sorgente, dc.attivo
+        ORDER BY leads DESC, dc.codice ASC
       `).all()
       discountByCode = (dcByCod.results || []) as any[]
     } catch (dcErr) {
