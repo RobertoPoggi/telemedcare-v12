@@ -7770,9 +7770,7 @@ ${370+t.length}
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ ' + data.message + (riserva ? '
-🔒 Clausola Riserva di Dominio attiva' : '') + (aliqIva > 0 ? '
-🧾 IVA ' + aliqIva + '% inclusa nelle rate' : ''));
+                    alert('✅ ' + data.message + (riserva ? '\\n🔒 Clausola Riserva di Dominio attiva' : '') + (aliqIva > 0 ? '\\n🧾 IVA ' + aliqIva + '% inclusa nelle rate' : ''));
                     closeRateizzazioneModal();
                     loadLeadsData();
                 } else {
