@@ -47,6 +47,88 @@ function generateToken(): string {
 
 import { getBaseUrl } from './url-helper'
 
+// ========================================
+// HELPER: Piano Rateizzazione HTML
+// ========================================
+
+/**
+ * Genera il blocco HTML del piano di rateizzazione con IVA.
+ * @param rate      Array di rate dal DB
+ * @param prezzoBase Prezzo netto totale (IVA esclusa) — per ricalcolare IVA per rata
+ * @param ivaRate   Aliquota IVA (es. 0.22 o 0.04)
+ * @param note      Note opzionali sul piano
+ * @param forEmail  true → stile compatto per email; false → stile documento contratto/proforma
+ */
+function buildRateHtml(
+  rate: Array<{ numero_rata: number; importo: number; data_scadenza: string; status?: string }>,
+  ivaRate: number,
+  note?: string,
+  forEmail = false
+): string {
+  if (!rate || rate.length === 0) return ''
+
+  const ivaPerc = Math.round(ivaRate * 100)
+  const totaleImponibile = rate.reduce((s, r) => s + (Number(r.importo) || 0), 0)
+  const totaleIva = Math.round(totaleImponibile * ivaRate * 100) / 100
+  const totaleConIva = Math.round((totaleImponibile + totaleIva) * 100) / 100
+
+  const fmt = (n: number) => n.toFixed(2).replace('.', ',')
+  const fmtDate = (d: string) => { try { return new Date(d).toLocaleDateString('it-IT') } catch { return d || '—' } }
+
+  const borderColor = forEmail ? '#6366f1' : '#6366f1'
+  const bgHeader   = '#e0e7ff'
+  const bgAlt      = '#f5f3ff'
+  const headColor  = '#3730a3'
+  const titleColor = '#4338ca'
+
+  const rows = rate.map((r, idx) => {
+    const imp = Number(r.importo) || 0
+    const iva = Math.round(imp * ivaRate * 100) / 100
+    const tot = Math.round((imp + iva) * 100) / 100
+    const bg  = idx % 2 === 0 ? '#ffffff' : bgAlt
+    return `<tr style="background:${bg};">
+      <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;font-weight:600;color:#374151;">Rata&nbsp;${r.numero_rata}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;text-align:right;color:#374151;">€&nbsp;${fmt(imp)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;text-align:right;color:#374151;">€&nbsp;${fmt(iva)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;text-align:right;font-weight:700;color:#1e40af;">€&nbsp;${fmt(tot)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;color:#374151;">${fmtDate(r.data_scadenza)}</td>
+    </tr>`
+  }).join('')
+
+  const noteHtml = note
+    ? `<p style="font-size:12px;color:#6b7280;margin:10px 0 0;"><em>Note: ${note}</em></p>`
+    : ''
+
+  return `<div style="border:2px solid ${borderColor};border-radius:6px;padding:${forEmail ? '16px 20px' : '20px 24px'};margin:${forEmail ? '20px 0' : '28px 0'};background:#f5f3ff;">
+  <h${forEmail ? '3' : '2'} style="color:${titleColor};margin-top:0;font-size:${forEmail ? '15px' : '18px'};">📅 Piano di Pagamento Rateizzato</h${forEmail ? '3' : '2'}>
+  <p style="margin-bottom:14px;color:#374151;font-size:14px;">
+    Il corrispettivo totale è suddiviso in <strong>${rate.length}&nbsp;rate</strong> con IVA&nbsp;${ivaPerc}%:
+  </p>
+  <table style="width:100%;border-collapse:collapse;font-size:${forEmail ? '13px' : '14px'};">
+    <thead>
+      <tr style="background:${bgHeader};">
+        <th style="padding:10px 12px;text-align:left;color:${headColor};border-bottom:2px solid #818cf8;">Rata</th>
+        <th style="padding:10px 12px;text-align:right;color:${headColor};border-bottom:2px solid #818cf8;">Imponibile (€)</th>
+        <th style="padding:10px 12px;text-align:right;color:${headColor};border-bottom:2px solid #818cf8;">IVA&nbsp;${ivaPerc}% (€)</th>
+        <th style="padding:10px 12px;text-align:right;color:${headColor};border-bottom:2px solid #818cf8;">Totale IVA incl. (€)</th>
+        <th style="padding:10px 12px;text-align:left;color:${headColor};border-bottom:2px solid #818cf8;">Scadenza</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr style="background:${bgHeader};">
+        <td style="padding:10px 12px;font-weight:700;color:${headColor};">TOTALE</td>
+        <td style="padding:10px 12px;font-weight:700;color:${headColor};text-align:right;">€&nbsp;${fmt(totaleImponibile)}</td>
+        <td style="padding:10px 12px;font-weight:700;color:${headColor};text-align:right;">€&nbsp;${fmt(totaleIva)}</td>
+        <td style="padding:10px 12px;font-weight:700;color:#1e40af;text-align:right;">€&nbsp;${fmt(totaleConIva)}</td>
+        <td style="padding:10px 12px;"></td>
+      </tr>
+    </tfoot>
+  </table>
+  ${noteHtml}
+</div>`
+}
+
 /**
  * Genera HTML completo del contratto con tutti i dati del cliente
  */
@@ -412,7 +494,7 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     
     <h2>Metodo di pagamento</h2>
     ${contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0 ? `
-    <p>Il Cliente ha scelto il pagamento <strong>rateizzato</strong>. Medica GB emetterà le relative fatture secondo il piano di pagamento concordato riportato di seguito.</p>
+    <p>Il Cliente ha scelto il pagamento <strong>rateizzato</strong>. Medica GB emetterà le relative fatture secondo il piano di pagamento rateizzato concordato, riportato di seguito con la relativa IVA.</p>
     ` : `
     <p>Medica GB emetterà fattura anticipata di 12 mesi all'attivazione del Servizio e il Cliente procederà al pagamento a ricevimento della fattura stessa tramite bonifico bancario</p>
     `}
@@ -423,40 +505,9 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
 
-    ${contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0 ? `
-    <div style="border:2px solid #6366f1;border-radius:6px;padding:20px 24px;margin:28px 0;background:#f5f3ff;">
-      <h2 style="color:#4338ca;margin-top:0;font-size:18px;">📅 Piano di Pagamento Rateizzato</h2>
-      <p style="margin-bottom:16px;color:#374151;">
-        Il corrispettivo totale di <strong>${contractData.prezzoBase ? contractData.prezzoBase.toFixed(2).replace('.', ',') + ' €' : '—'}</strong>
-        è suddiviso in <strong>${contractData.rate.length} rate</strong> secondo il seguente calendario:
-        ${contractData.rateizzazione_note ? '<br><em style="color:#6b7280;">Note: ' + contractData.rateizzazione_note + '</em>' : ''}
-      </p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        <thead>
-          <tr style="background:#e0e7ff;">
-            <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #818cf8;color:#3730a3;">Rata</th>
-            <th style="padding:10px 12px;text-align:right;border-bottom:2px solid #818cf8;color:#3730a3;">Importo (€)</th>
-            <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #818cf8;color:#3730a3;">Scadenza</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${contractData.rate.map((r: any, idx: number) => `
-          <tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f5f3ff'};">
-            <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;color:#374151;font-weight:600;">Rata ${r.numero_rata}</td>
-            <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;color:#374151;text-align:right;font-weight:700;">€ ${typeof r.importo === 'number' ? r.importo.toFixed(2).replace('.', ',') : r.importo}</td>
-            <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;color:#374151;">${r.data_scadenza ? new Date(r.data_scadenza).toLocaleDateString('it-IT') : '—'}</td>
-          </tr>`).join('')}
-        </tbody>
-        <tfoot>
-          <tr style="background:#e0e7ff;">
-            <td style="padding:10px 12px;font-weight:700;color:#3730a3;">TOTALE</td>
-            <td style="padding:10px 12px;font-weight:700;color:#3730a3;text-align:right;">€ ${contractData.rate.reduce((s: number, r: any) => s + (Number(r.importo) || 0), 0).toFixed(2).replace('.', ',')}</td>
-            <td style="padding:10px 12px;"></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    ` : ''}
+    ${contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0
+      ? buildRateHtml(contractData.rate, ivaRateContratto, contractData.rateizzazione_note || '', false)
+      : ''}
     
     ${contractData.riserva_dominio ? `
     <div style="border:2px solid #c2410c;border-radius:4px;padding:16px 20px;margin:24px 0;background:#fff7ed;">
@@ -1168,25 +1219,31 @@ export async function inviaEmailContratto(
       LINK_FIRMA: `${baseUrl}/firma-contratto.html?v=${Date.now()}&contractId=${contractData.contractId}`,
       LINK_BROCHURE: linkBrochure,
       DATA_INVIO: new Date().toLocaleDateString('it-IT'),
-      // 📅 Piano rateizzazione (vuoto se non attivo)
+      // 📅 Piano rateizzazione con IVA (usato da template che già contengono il placeholder)
       PIANO_RATEIZZAZIONE: contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0
-        ? `<div style="background:#f5f3ff;border-left:4px solid #6366f1;border-radius:0 6px 6px 0;padding:16px 20px;margin:20px 0;">
-<strong style="color:#4338ca;">📅 Piano di Pagamento Rateizzato</strong><br>
-<span style="font-size:14px;color:#374151;">Il corrispettivo di <strong>€${contractData.prezzoBase ? contractData.prezzoBase.toFixed(2).replace('.', ',') : '—'}</strong> è suddiviso in <strong>${contractData.rate.length} rate</strong>:</span>
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;">
-<tr style="background:#e0e7ff;"><th style="padding:8px 10px;text-align:left;color:#3730a3;">Rata</th><th style="padding:8px 10px;text-align:right;color:#3730a3;">Importo</th><th style="padding:8px 10px;text-align:left;color:#3730a3;">Scadenza</th></tr>
-${contractData.rate.map((r: any) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;">Rata ${r.numero_rata}</td><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;text-align:right;font-weight:600;">€ ${typeof r.importo === 'number' ? r.importo.toFixed(2).replace('.', ',') : r.importo}</td><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;">${r.data_scadenza ? new Date(r.data_scadenza).toLocaleDateString('it-IT') : '—'}</td></tr>`).join('')}
-</table>
-${contractData.rateizzazione_note ? '<p style="font-size:12px;color:#6b7280;margin-top:10px;margin-bottom:0;"><em>Note: ' + contractData.rateizzazione_note + '</em></p>' : ''}
-</div>`
+        ? buildRateHtml(contractData.rate, ivaRateEmailTemplate, contractData.rateizzazione_note || '', true)
         : ''
     }
 
     console.log(`📧 [CONTRATTO] Template data:`, JSON.stringify(templateData, null, 2))
 
     // Renderizza template
-    const emailHtml = renderTemplate(template, templateData)
+    let emailHtml = renderTemplate(template, templateData)
     console.log(`📧 [CONTRATTO] Template renderizzato (${emailHtml.length} chars)`)
+
+    // 📅 INIEZIONE DIRETTA piano rateizzazione nell'email
+    // Funziona anche se il template (DB o file) non contiene {{PIANO_RATEIZZAZIONE}}
+    if (contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0) {
+      const rateBlock = buildRateHtml(contractData.rate, ivaRateEmailTemplate, contractData.rateizzazione_note || '', true)
+      // Inserisce prima della firma/chiusura del contenuto principale
+      const insertBefore = emailHtml.includes('Benvenuto/a nella famiglia') 
+        ? 'Benvenuto/a nella famiglia'
+        : emailHtml.includes('Vantaggi economici')
+        ? 'Vantaggi economici'
+        : '</td>'
+      emailHtml = emailHtml.replace(insertBefore, rateBlock + '\n' + insertBefore)
+      console.log(`📅 [CONTRATTO] Piano rateizzazione iniettato nell'email (${contractData.rate.length} rate)`)
+    }
 
     // Prepara allegati: Brochure PDF usando ASSETS binding
     const attachments = []
@@ -1355,17 +1412,9 @@ export async function inviaEmailProforma(
       LINK_PROFORMA_PDF: `${getBaseUrl(env)}/proforma-view?id=${proformaData.proformaId}`,
       LINK_PAGAMENTO: `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}`,
       DATA_INVIO: new Date().toLocaleDateString('it-IT'),
-      // 📅 Piano rateizzazione (vuoto se non attivo)
+      // 📅 Piano rateizzazione con IVA (usato da template che già contengono il placeholder)
       PIANO_RATEIZZAZIONE: (proformaData as any).rateizzazione_attiva && (proformaData as any).rate && (proformaData as any).rate.length > 0
-        ? `<div style="background:#f5f3ff;border-left:4px solid #6366f1;border-radius:0 6px 6px 0;padding:16px 20px;margin:20px 0;">
-<strong style="color:#4338ca;">📅 Piano di Pagamento Rateizzato</strong><br>
-<span style="font-size:14px;color:#374151;">Il corrispettivo di <strong>€${proformaData.prezzoBase ? proformaData.prezzoBase.toFixed(2).replace('.', ',') : '—'}</strong> è suddiviso in <strong>${(proformaData as any).rate.length} rate</strong>:</span>
-<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;">
-<tr style="background:#e0e7ff;"><th style="padding:8px 10px;text-align:left;color:#3730a3;">Rata</th><th style="padding:8px 10px;text-align:right;color:#3730a3;">Importo</th><th style="padding:8px 10px;text-align:left;color:#3730a3;">Scadenza</th></tr>
-${(proformaData as any).rate.map((r: any) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;">Rata ${r.numero_rata}</td><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;text-align:right;font-weight:600;">€ ${typeof r.importo === 'number' ? r.importo.toFixed(2).replace('.', ',') : r.importo}</td><td style="padding:7px 10px;border-bottom:1px solid #ddd6fe;">${r.data_scadenza ? new Date(r.data_scadenza).toLocaleDateString('it-IT') : '—'}</td></tr>`).join('')}
-</table>
-${(proformaData as any).rateizzazione_note ? '<p style="font-size:12px;color:#6b7280;margin-top:10px;margin-bottom:0;"><em>Note: ' + (proformaData as any).rateizzazione_note + '</em></p>' : ''}
-</div>`
+        ? buildRateHtml((proformaData as any).rate, ivaRate, (proformaData as any).rateizzazione_note || '', true)
         : ''
     }
 
@@ -1484,7 +1533,23 @@ p {margin: 18px 0; line-height: 1.9;}
 </html>` */
 
     // Renderizza template
-    const emailHtml = renderTemplate(template, templateData)
+    let emailHtml = renderTemplate(template, templateData)
+
+    // 📅 INIEZIONE DIRETTA piano rateizzazione nell'email proforma
+    // Funziona anche se il template (DB o file) non contiene {{PIANO_RATEIZZAZIONE}}
+    if ((proformaData as any).rateizzazione_attiva && (proformaData as any).rate && (proformaData as any).rate.length > 0) {
+      const rateBlock = buildRateHtml((proformaData as any).rate, ivaRate, (proformaData as any).rateizzazione_note || '', true)
+      // Inserisce dopo il riepilogo proforma (prima delle opzioni di pagamento)
+      const insertBefore = emailHtml.includes('Opzione 1: Pagamento')
+        ? 'Opzione 1: Pagamento'
+        : emailHtml.includes('PAGA ORA CON CARTA')
+        ? 'PAGA ORA CON CARTA'
+        : emailHtml.includes('Cosa succede dopo')
+        ? 'Cosa succede dopo'
+        : '</td>'
+      emailHtml = emailHtml.replace(insertBefore, rateBlock + '\n' + insertBefore)
+      console.log(`📅 [PROFORMA] Piano rateizzazione iniettato nell'email (${(proformaData as any).rate.length} rate)`)
+    }
 
     // Prepara allegati: Proforma PDF (solo se presente)
     const attachments = proformaData.proformaPdfUrl 
