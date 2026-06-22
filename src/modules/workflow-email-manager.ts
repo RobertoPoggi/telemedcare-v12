@@ -1228,22 +1228,8 @@ export async function inviaEmailContratto(
     console.log(`📧 [CONTRATTO] Template data:`, JSON.stringify(templateData, null, 2))
 
     // Renderizza template
-    let emailHtml = renderTemplate(template, templateData)
+    const emailHtml = renderTemplate(template, templateData)
     console.log(`📧 [CONTRATTO] Template renderizzato (${emailHtml.length} chars)`)
-
-    // 📅 INIEZIONE DIRETTA piano rateizzazione nell'email
-    // Funziona anche se il template (DB o file) non contiene {{PIANO_RATEIZZAZIONE}}
-    if (contractData.rateizzazione_attiva && contractData.rate && contractData.rate.length > 0) {
-      const rateBlock = buildRateHtml(contractData.rate, ivaRateEmailTemplate, contractData.rateizzazione_note || '', true)
-      // Inserisce prima della firma/chiusura del contenuto principale
-      const insertBefore = emailHtml.includes('Benvenuto/a nella famiglia') 
-        ? 'Benvenuto/a nella famiglia'
-        : emailHtml.includes('Vantaggi economici')
-        ? 'Vantaggi economici'
-        : '</td>'
-      emailHtml = emailHtml.replace(insertBefore, rateBlock + '\n' + insertBefore)
-      console.log(`📅 [CONTRATTO] Piano rateizzazione iniettato nell'email (${contractData.rate.length} rate)`)
-    }
 
     // Prepara allegati: Brochure PDF usando ASSETS binding
     const attachments = []
@@ -1533,23 +1519,7 @@ p {margin: 18px 0; line-height: 1.9;}
 </html>` */
 
     // Renderizza template
-    let emailHtml = renderTemplate(template, templateData)
-
-    // 📅 INIEZIONE DIRETTA piano rateizzazione nell'email proforma
-    // Funziona anche se il template (DB o file) non contiene {{PIANO_RATEIZZAZIONE}}
-    if ((proformaData as any).rateizzazione_attiva && (proformaData as any).rate && (proformaData as any).rate.length > 0) {
-      const rateBlock = buildRateHtml((proformaData as any).rate, ivaRate, (proformaData as any).rateizzazione_note || '', true)
-      // Inserisce dopo il riepilogo proforma (prima delle opzioni di pagamento)
-      const insertBefore = emailHtml.includes('Opzione 1: Pagamento')
-        ? 'Opzione 1: Pagamento'
-        : emailHtml.includes('PAGA ORA CON CARTA')
-        ? 'PAGA ORA CON CARTA'
-        : emailHtml.includes('Cosa succede dopo')
-        ? 'Cosa succede dopo'
-        : '</td>'
-      emailHtml = emailHtml.replace(insertBefore, rateBlock + '\n' + insertBefore)
-      console.log(`📅 [PROFORMA] Piano rateizzazione iniettato nell'email (${(proformaData as any).rate.length} rate)`)
-    }
+    const emailHtml = renderTemplate(template, templateData)
 
     // Prepara allegati: Proforma PDF (solo se presente)
     const attachments = proformaData.proformaPdfUrl 
