@@ -419,6 +419,30 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
     
+    ${contractData.riserva_dominio ? `
+    <div style="border:2px solid #c2410c;border-radius:4px;padding:16px 20px;margin:24px 0;background:#fff7ed;">
+      <h2 style="color:#c2410c;margin-top:0;">Patto di Riserva di Dominio</h2>
+      <p style="margin-bottom:10px;">
+        Ai sensi dell'art. 1523 e seguenti del Codice Civile, le parti concordano espressamente che
+        la proprietà del Dispositivo <strong>${dispositivo}</strong> fornito in esecuzione del presente
+        contratto rimane di <strong>Medica GB S.r.l.</strong> fino al completo pagamento dell'ultima rata
+        del piano di pagamento rateizzato concordato tra le parti.
+      </p>
+      <p style="margin-bottom:10px;">
+        Fino al momento del pagamento integrale, il Cliente è autorizzato a detenere e utilizzare il
+        Dispositivo come mero detentore precario, senza acquistarne la proprietà. Il trasferimento della
+        proprietà si perfeziona automaticamente, senza necessità di ulteriori atti, al momento in cui
+        il Cliente avrà corrisposto per intero il corrispettivo pattuito.
+      </p>
+      <p style="margin-bottom:0;">
+        In caso di mancato pagamento anche di una sola rata alle scadenze pattuite, Medica GB S.r.l.
+        ha facoltà di risolvere il contratto di diritto ai sensi dell'art. 1456 c.c. e di esigere
+        l'immediata restituzione del Dispositivo, fermo restando il diritto al risarcimento degli
+        eventuali danni subiti. Le rate già versate rimarranno acquisite da Medica GB S.r.l. a titolo
+        di compenso per il godimento del Dispositivo e per i servizi erogati nel periodo.
+      </p>
+    </div>
+    ` : ''}
     <h2>Riservatezza ed esclusiva</h2>
     <p>Il Cliente e Medica GB si impegnano reciprocamente a non divulgare o, comunque, non utilizzare, se non per motivi attinenti all'esercizio del presente contratto, tutte le informazioni di cui venissero a conoscenza nello svolgimento del Servizio.</p>
     <p>Il Cliente si impegna a contattare Medica GB per tutte le modifiche e proroghe del presente contratto.</p>
@@ -1212,6 +1236,8 @@ export async function inviaEmailProforma(
     isRinnovo?: boolean
     annoRinnovo?: number
     codiceOriginale?: string
+    // Rateizzazione
+    riserva_dominio?: boolean
   },
   env: any,
   db: D1Database

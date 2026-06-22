@@ -11519,7 +11519,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // ✅ Flag rinnovo passati a generateContractHtml per adattare sezione Tariffa
       isRinnovo: isRinnovoReq,
       annoRinnovo: annoRinnovoReq,
-      codiceOriginale: codiceOriginaleReq
+      codiceOriginale: codiceOriginaleReq,
+      // 🔒 Riserva di Dominio (solo per lead rateizzati con flag attivo)
+      riserva_dominio: Boolean(lead.riserva_dominio)
     }
     
     // Usa workflow per inviare email contratto
@@ -15397,7 +15399,8 @@ app.post('/api/contracts/sign', async (c) => {
           dataScadenza: new Date(Date.now() + scadenzaGiorni * 24 * 60 * 60 * 1000).toISOString(),
           isRinnovo: isRinnovoContract,
           annoRinnovo: annoRinnovoContract,
-          codiceOriginale: codiceOriginale
+          codiceOriginale: codiceOriginale,
+          riserva_dominio: Boolean(lead.riserva_dominio)  // Clausola Riserva di Dominio (art. 1523 c.c.)
         }
         
         console.log(`📊 [FIRMA→PROFORMA] Dati proforma (pre-UPSERT):`, JSON.stringify(proformaData, null, 2))
@@ -15477,6 +15480,7 @@ app.post('/api/contracts/sign', async (c) => {
                 prezzo_totale = ?,
                 iva_agevolata = ?,
                 is_rinnovo = ?,
+                riserva_dominio = ?,
                 status = ?,
                 updated_at = ?
               WHERE id = ?
@@ -15499,6 +15503,7 @@ app.post('/api/contracts/sign', async (c) => {
               prezzoBase,
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
+              lead.riserva_dominio ? 1 : 0,
               'SENT',
               new Date().toISOString(),
               proformaIdGenerated
@@ -15517,8 +15522,8 @@ app.post('/api/contracts/sign', async (c) => {
                 cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
                 cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
                 tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-                iva_agevolata, is_rinnovo, status, email_sent, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                iva_agevolata, is_rinnovo, riserva_dominio, status, email_sent, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
               contractId || '',
               lead.id,
@@ -15540,6 +15545,7 @@ app.post('/api/contracts/sign', async (c) => {
               prezzoBase,
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
+              lead.riserva_dominio ? 1 : 0,
               'SENT',
               false,
               new Date().toISOString(),
@@ -21815,6 +21821,89 @@ app.post('/api/migrate-schema', async (c) => {
       migrations.push(`⚠️ Errore creazione lead_discounts: ${e.message}`)
     }
 
+    // ─── MIGRAZIONE RATEIZZAZIONE: colonne leads ────────────────────────────
+    const leadsRateizz = [
+      { name: 'rateizzazione_attiva',    def: `INTEGER NOT NULL DEFAULT 0` },   // 1 = pagamento rateizzato
+      { name: 'rateizzazione_note',      def: `TEXT DEFAULT NULL` },             // note libere operatore
+      { name: 'rateizzazione_saldo',     def: `INTEGER NOT NULL DEFAULT 0` },   // 1 = saldato completamente
+      { name: 'riserva_dominio',         def: `INTEGER NOT NULL DEFAULT 1` },   // 1 = clausola riserva dominio attiva (default per rateizzati)
+    ]
+    for (const col of leadsRateizz) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+        migrations.push(`✅ leads.${col.name} aggiunto`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ leads.${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore leads.${col.name}: ${e.message}`)
+        }
+      }
+    }
+
+    // ─── MIGRAZIONE RATEIZZAZIONE: colonne contracts ─────────────────────────
+    const contractsRateizz = [
+      { name: 'rateizzazione_attiva', def: `INTEGER NOT NULL DEFAULT 0` },
+      { name: 'riserva_dominio',      def: `INTEGER NOT NULL DEFAULT 0` },
+    ]
+    for (const col of contractsRateizz) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE contracts ADD COLUMN ${col.name} ${col.def}`).run()
+        migrations.push(`✅ contracts.${col.name} aggiunto`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ contracts.${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore contracts.${col.name}: ${e.message}`)
+        }
+      }
+    }
+
+    // ─── MIGRAZIONE RATEIZZAZIONE: tabella rate_pagamento ───────────────────
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS rate_pagamento (
+          id                INTEGER PRIMARY KEY AUTOINCREMENT,
+          lead_id           TEXT NOT NULL,
+          contract_id       TEXT DEFAULT NULL,
+          numero_rata       INTEGER NOT NULL,          -- 1, 2, 3, ...
+          importo           REAL NOT NULL,             -- importo lordo (IVA inclusa se applicabile)
+          importo_iva       REAL DEFAULT 0,            -- quota IVA
+          data_scadenza     TEXT NOT NULL,             -- data entro cui pagare
+          status            TEXT NOT NULL DEFAULT 'ATTESA',  -- ATTESA | PAGATA | SCADUTA | ANNULLATA
+          data_pagamento    TEXT DEFAULT NULL,          -- data effettivo pagamento
+          metodo_pagamento  TEXT DEFAULT NULL,          -- BONIFICO | STRIPE | CONTANTI | ...
+          riferimento       TEXT DEFAULT NULL,          -- es. numero CRO/bonifico
+          note              TEXT DEFAULT NULL,
+          creato_da         TEXT DEFAULT NULL,          -- operatore che ha impostato
+          created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `).run()
+      migrations.push('✅ Tabella rate_pagamento creata (o già esiste)')
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore creazione rate_pagamento: ${e.message}`)
+    }
+
+    // ─── MIGRAZIONE RATEIZZAZIONE: colonne proforma ─────────────────────────
+    const proformaRateizz = [
+      { name: 'rata_numero',    def: `INTEGER DEFAULT NULL` },  // se è una proforma rata: quale rata
+      { name: 'rate_totali',    def: `INTEGER DEFAULT NULL` },  // numero totale di rate
+      { name: 'riserva_dominio', def: `INTEGER NOT NULL DEFAULT 0` },
+    ]
+    for (const col of proformaRateizz) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE proforma ADD COLUMN ${col.name} ${col.def}`).run()
+        migrations.push(`✅ proforma.${col.name} aggiunto`)
+      } catch (e: any) {
+        if (e.message && e.message.includes('duplicate column')) {
+          migrations.push(`ℹ️ proforma.${col.name} già esiste`)
+        } else {
+          migrations.push(`⚠️ Errore proforma.${col.name}: ${e.message}`)
+        }
+      }
+    }
+
     return c.json({
       success: true,
       message: 'Migrazione schema completata',
@@ -22192,6 +22281,199 @@ app.post('/api/leads/apply-canale-discounts', requireAuth, async (c) => {
   } catch (error: any) {
     console.error('❌ [CANALE-DISCOUNT] Errore:', error)
     return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RATEIZZAZIONE — endpoint CRUD
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── POST /api/leads/:id/rateizzazione — imposta piano rate per un lead ────
+app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const body = await c.req.json() as {
+      rate: Array<{ numero_rata: number; importo: number; data_scadenza: string; note?: string }>
+      riserva_dominio: boolean
+      note_rateizzazione?: string
+    }
+
+    if (!body.rate || !Array.isArray(body.rate) || body.rate.length === 0) {
+      return c.json({ success: false, error: 'Array rate obbligatorio' }, 400)
+    }
+
+    const db = c.env.DB
+    const now = new Date().toISOString()
+
+    // 1. Cancella eventuali rate precedenti in stato ATTESA (non quelle già pagate)
+    await db.prepare(`
+      DELETE FROM rate_pagamento
+      WHERE lead_id = ? AND status IN ('ATTESA', 'SCADUTA')
+    `).bind(leadId).run()
+
+    // 2. Inserisce le nuove rate
+    for (const r of body.rate) {
+      if (!r.importo || !r.data_scadenza) continue
+      await db.prepare(`
+        INSERT INTO rate_pagamento
+          (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
+      `).bind(leadId, r.numero_rata, r.importo, r.data_scadenza, r.note || null, now, now).run()
+    }
+
+    // 3. Aggiorna flags sul lead
+    await db.prepare(`
+      UPDATE leads SET
+        rateizzazione_attiva = 1,
+        riserva_dominio      = ?,
+        rateizzazione_note   = ?,
+        rateizzazione_saldo  = 0,
+        updated_at           = ?
+      WHERE id = ?
+    `).bind(body.riserva_dominio ? 1 : 0, body.note_rateizzazione || null, now, leadId).run()
+
+    // 4. Se esiste un contratto firmato: aggiorna anche lì
+    await db.prepare(`
+      UPDATE contracts SET
+        rateizzazione_attiva = 1,
+        riserva_dominio      = ?,
+        updated_at           = ?
+      WHERE leadId = ? AND status IN ('SIGNED','COMPLETED')
+    `).bind(body.riserva_dominio ? 1 : 0, now, leadId).run()
+
+    console.log(`📅 [RATEIZZAZIONE] Lead ${leadId}: ${body.rate.length} rate impostate, riserva_dominio=${body.riserva_dominio}`)
+
+    return c.json({
+      success: true,
+      rate_create: body.rate.length,
+      riserva_dominio: body.riserva_dominio,
+      message: `Piano rateizzazione impostato: ${body.rate.length} rate`
+    })
+  } catch (err: any) {
+    console.error('❌ [RATEIZZAZIONE] Errore:', err)
+    return c.json({ success: false, error: err?.message }, 500)
+  }
+})
+
+// ─── GET /api/leads/:id/rateizzazione — legge piano rate e stato ───────────
+app.get('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+
+    const lead = await db.prepare(`
+      SELECT rateizzazione_attiva, rateizzazione_note, rateizzazione_saldo, riserva_dominio, prezzo_anno, prezzo_scontato
+      FROM leads WHERE id = ?
+    `).bind(leadId).first() as any
+
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const rate = await db.prepare(`
+      SELECT * FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC
+    `).bind(leadId).all()
+
+    const totaleImporti = (rate.results || []).reduce((sum: number, r: any) => sum + (Number(r.importo) || 0), 0)
+    const totalePagato  = (rate.results || []).filter((r: any) => r.status === 'PAGATA').reduce((sum: number, r: any) => sum + (Number(r.importo) || 0), 0)
+    const ratePagate    = (rate.results || []).filter((r: any) => r.status === 'PAGATA').length
+
+    return c.json({
+      success: true,
+      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+      rateizzazione_saldo:  Boolean(lead.rateizzazione_saldo),
+      riserva_dominio:      Boolean(lead.riserva_dominio),
+      rateizzazione_note:   lead.rateizzazione_note,
+      prezzo_totale:        lead.prezzo_scontato || lead.prezzo_anno,
+      totale_rate:          totaleImporti,
+      totale_pagato:        totalePagato,
+      rate_pagate:          ratePagate,
+      rate_totali:          (rate.results || []).length,
+      rate:                 rate.results || []
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message }, 500)
+  }
+})
+
+// ─── PATCH /api/leads/:id/rate/:rataId — aggiorna stato singola rata ──────
+app.patch('/api/leads/:id/rate/:rataId', requireAuth, async (c) => {
+  const leadId  = c.req.param('id')
+  const rataId  = c.req.param('rataId')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const body = await c.req.json() as {
+      status: 'PAGATA' | 'ATTESA' | 'SCADUTA' | 'ANNULLATA'
+      data_pagamento?: string
+      metodo_pagamento?: string
+      riferimento?: string
+      note?: string
+    }
+    const db = c.env.DB
+    const now = new Date().toISOString()
+
+    await db.prepare(`
+      UPDATE rate_pagamento SET
+        status           = ?,
+        data_pagamento   = ?,
+        metodo_pagamento = ?,
+        riferimento      = ?,
+        note             = COALESCE(?, note),
+        updated_at       = ?
+      WHERE id = ? AND lead_id = ?
+    `).bind(
+      body.status,
+      body.status === 'PAGATA' ? (body.data_pagamento || now) : null,
+      body.metodo_pagamento || null,
+      body.riferimento || null,
+      body.note || null,
+      now,
+      rataId, leadId
+    ).run()
+
+    // Verifica se tutte le rate sono pagate → aggiorna saldo
+    const rate = await db.prepare(
+      `SELECT status FROM rate_pagamento WHERE lead_id = ?`
+    ).bind(leadId).all()
+    const tuttiPagati = (rate.results || []).length > 0
+      && (rate.results || []).every((r: any) => r.status === 'PAGATA')
+
+    if (tuttiPagati) {
+      await db.prepare(`
+        UPDATE leads SET rateizzazione_saldo = 1, updated_at = ? WHERE id = ?
+      `).bind(now, leadId).run()
+    }
+
+    return c.json({
+      success: true,
+      saldato: tuttiPagati,
+      message: `Rata ${rataId} aggiornata a ${body.status}${tuttiPagati ? ' — piano SALDATO ✅' : ''}`
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message }, 500)
+  }
+})
+
+// ─── DELETE /api/leads/:id/rateizzazione — rimuove piano rate ──────────────
+app.delete('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+    const now = new Date().toISOString()
+
+    await db.prepare(`DELETE FROM rate_pagamento WHERE lead_id = ? AND status = 'ATTESA'`).bind(leadId).run()
+    await db.prepare(`
+      UPDATE leads SET rateizzazione_attiva = 0, riserva_dominio = 0, rateizzazione_saldo = 0, rateizzazione_note = NULL, updated_at = ?
+      WHERE id = ?
+    `).bind(now, leadId).run()
+    await db.prepare(`
+      UPDATE contracts SET rateizzazione_attiva = 0, riserva_dominio = 0, updated_at = ? WHERE leadId = ?
+    `).bind(now, leadId).run()
+
+    return c.json({ success: true, message: 'Piano rateizzazione rimosso' })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message }, 500)
   }
 })
 

@@ -46,6 +46,9 @@ export interface ProformaData {
   // Pagamento
   linkPagamentoStripe?: string
   scadenzaPagamento: string
+
+  // Rateizzazione
+  riserva_dominio?: boolean
 }
 
 export interface ProformaGenerated {
@@ -203,7 +206,31 @@ export class ProformaGenerator {
       
       // Metadati
       CODICE_CONTRATTO: data.codiceContratto,
-      ANNO: new Date().getFullYear().toString()
+      ANNO: new Date().getFullYear().toString(),
+
+      // Clausola Riserva di Dominio (solo per rateizzati)
+      CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
+        ? `<div style="border:2px solid #c2410c;border-radius:4px;padding:16px 20px;margin:24px 0;background:#fff7ed;">
+  <h3 style="color:#c2410c;margin-top:0;">Patto di Riserva di Dominio (art. 1523 c.c.)</h3>
+  <p style="margin-bottom:10px;">
+    Ai sensi dell'art. 1523 e seguenti del Codice Civile, le parti concordano espressamente che
+    la proprietà del Dispositivo <strong>{{DISPOSITIVO}}</strong> fornito in esecuzione del presente
+    contratto rimane di <strong>Medica GB S.r.l.</strong> fino al completo pagamento dell'ultima rata
+    del piano di pagamento rateizzato concordato tra le parti.
+  </p>
+  <p style="margin-bottom:10px;">
+    Fino al momento del pagamento integrale, il Cliente è autorizzato a detenere e utilizzare il
+    Dispositivo come mero detentore precario, senza acquistarne la proprietà. Il trasferimento della
+    proprietà si perfeziona automaticamente al momento in cui il Cliente avrà corrisposto per intero
+    il corrispettivo pattuito.
+  </p>
+  <p style="margin-bottom:0;">
+    In caso di mancato pagamento anche di una sola rata, Medica GB S.r.l. ha facoltà di risolvere
+    il contratto di diritto ai sensi dell'art. 1456 c.c. e di esigere l'immediata restituzione del
+    Dispositivo, fermo restando il diritto al risarcimento degli eventuali danni subiti.
+  </p>
+</div>`
+        : ''
     }
     
     return TemplateEngine.render(template, variables)
@@ -393,6 +420,8 @@ export class ProformaGenerator {
       </tr>
     </table>
   </div>
+
+  {{CLAUSOLA_RISERVA_DOMINIO}}
 
   <div style="text-align: center; margin: 40px 0;">
     <h3 style="color: #3b82f6;">💳 PROCEDI AL PAGAMENTO</h3>

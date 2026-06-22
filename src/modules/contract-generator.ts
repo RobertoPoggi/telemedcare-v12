@@ -53,6 +53,9 @@ export interface ContractData {
 
   // IVA agevolata 4% (Legge 104 / disabilità 100%)
   iva_agevolata?: boolean | number
+
+  // Rateizzazione e Riserva di Dominio
+  riserva_dominio?: boolean | number  // se true: inserisce clausola riserva dominio
   
   // Generated
   codiceContratto?: string
@@ -252,6 +255,13 @@ export class ContractGenerator {
 
       // Prezzi IVA inclusa (alias)
       PREZZO_TOTALE: `€ ${totalePrimoAnno.toFixed(2).replace('.', ',')}`,
+
+      // Riserva di Dominio (clausola opzionale)
+      CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
+        ? `<h2 style="color:#c2410c;">Patto di Riserva di Dominio</h2>
+<p>Ai sensi dell'art. 1523 e seguenti del Codice Civile, le parti concordano espressamente che la propriet&agrave; del Dispositivo <strong>{{Dispositivo}}</strong> fornito in esecuzione del presente contratto rimane di Medica GB S.r.l. fino al completo pagamento dell'ultima rata del corrispettivo concordato. Il Cliente acquista la piena propriet&agrave; del Dispositivo soltanto al momento dell'integrale versamento del prezzo. Nel periodo intercorrente tra la consegna e il passaggio di propriet&agrave;, il Cliente &egrave; tenuto a custodire il Dispositivo con la diligenza del buon padre di famiglia, a non alienarlo n&eacute; a costituirvi diritti reali a favore di terzi, e a mantenerlo assicurato contro i rischi di furto, smarrimento e danneggiamento accidentale. In caso di mancato pagamento di anche una sola rata, Medica GB S.r.l. ha facolt&agrave; di risolvere il contratto e di esigere l'immediata restituzione del Dispositivo, salvo il risarcimento di ogni danno.</p>
+<p>&nbsp;</p>`
+        : '',
     }
     
     return TemplateEngine.render(template, variables)
@@ -424,6 +434,7 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p>Banca Popolare di Milano - Iban: IT97L0503401727000000003519</p>
 <p>&nbsp;</p>
+{{CLAUSOLA_RISERVA_DOMINIO}}
 <h2>Riservatezza ed esclusiva</h2>
 <p>Il Cliente e Medica GB si impegnano reciprocamente a non divulgare o, comunque, non utilizzare, se non per motivi attinenti all'esercizio del presente contratto, tutte le informazioni di cui venissero a conoscenza nello svolgimento del Servizio.</p>
 <p>Il Cliente si impegna a contattare Medica GB per tutte le modifiche e proroghe del presente contratto.</p>

@@ -4464,11 +4464,22 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const scontoLabel = scontoPerc > 0
                     ? \`-\${scontoPerc}%\`
                     : (scontoFisso > 0 ? \`-€\${scontoFisso}\` : '');
+
+                // ─── RATEIZZAZIONE ─────────────────────────────────────────
+                const isRateizzato  = Boolean(lead.rateizzazione_attiva);
+                const isSaldato     = Boolean(lead.rateizzazione_saldo);
+                const hasRiserva    = Boolean(lead.riserva_dominio);
+                const rateBadge     = isRateizzato
+                    ? (isSaldato
+                        ? \`<span style="display:inline-block;margin-top:3px;font-size:10px;background:#dcfce7;color:#166534;padding:1px 5px;border-radius:9999px;font-weight:600;">✅ Saldato</span>\`
+                        : \`<span style="display:inline-block;margin-top:3px;font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:9999px;font-weight:600;">📅 Rateizzato\${hasRiserva ? ' 🔒' : ''}</span>\`)
+                    : '';
+
                 const prezzoCellHtml = hasSconto
                     ? \`<div class="line-through text-gray-400 text-xs">€\${prezzo}</div>
                        <div class="font-bold text-orange-600">€\${prezzoScontato}</div>
-                       <span class="px-1 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-semibold">\${scontoLabel} \${escapeHtml(lead.codice_sconto || '')}</span>\`
-                    : \`<span class="font-bold text-green-600">€\${prezzo}</span>\`;
+                       <span class="px-1 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-semibold">\${scontoLabel} \${escapeHtml(lead.codice_sconto || '')}</span>\${rateBadge}\`
+                    : \`<span class="font-bold text-green-600">€\${prezzo}</span>\${rateBadge}\`;
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
@@ -4627,6 +4638,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="\${hasSconto ? 'Sconto: ' + escapeHtml(lead.codice_sconto || '') + ' — clicca per rimuovere o cambiare' : 'Applica Sconto'}">
                                     🏷️
                                 </button>
+                                <button
+                                    data-action="rateizzazione"
+                                    data-lead-id="\${lead.id}"
+                                    data-nome="\${escapeHtml((lead.nomeRichiedente||'') + ' ' + (lead.cognomeRichiedente||''))}"
+                                    data-prezzo="\${lead.prezzo_scontato || lead.prezzo_anno || 0}"
+                                    data-rateizzato="\${isRateizzato ? '1' : '0'}"
+                                    style="padding:2px 6px;background:\${isRateizzato ? (isSaldato ? '#16a34a' : '#d97706') : '#6366f1'};color:#fff;font-size:11px;border-radius:6px;border:none;cursor:pointer;"
+                                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+                                    title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}">
+                                    📅
+                                </button>
 
                             </div>
                         </td>
@@ -4674,6 +4696,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
                         else if (action === 'apply-discount') applyDiscount(leadId, this.getAttribute('data-codice-sconto'));
+                        else if (action === 'rateizzazione') openRateizzazioneModal(leadId, this.getAttribute('data-nome'), parseFloat(this.getAttribute('data-prezzo') || '0'), this.getAttribute('data-rateizzato') === '1');
                     });
                 });
                 
@@ -5171,6 +5194,289 @@ export const leads_dashboard = `<!DOCTYPE html>
             } catch (err) {
                 alert('❌ Errore di comunicazione: ' + err.message);
             }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // RATEIZZAZIONE — Modal + JS
+        // ════════════════════════════════════════════════════════════════════
+
+        // Inietta il modal nel DOM (una volta sola)
+        (function injectRateizzazioneModal() {
+            if (document.getElementById('rateizzazioneModal')) return;
+            const html = \`
+            <div id="rateizzazioneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+              <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:640px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                  <h2 style="font-size:18px;font-weight:700;color:#1f2937;margin:0;">📅 Rateizzazione pagamento</h2>
+                  <button onclick="closeRateizzazioneModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;">×</button>
+                </div>
+                <div id="rateizzazioneLeadInfo" style="font-size:13px;color:#4b5563;margin-bottom:16px;"></div>
+
+                <!-- Sezione esistente (visualizzazione rate) -->
+                <div id="rateizzazioneExisting" style="display:none;margin-bottom:16px;"></div>
+
+                <!-- Sezione configurazione nuove rate -->
+                <div id="rateizzazioneForm">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#374151;">Numero di rate *</label>
+                      <input type="number" id="rateNum" min="2" max="12" value="2"
+                             oninput="generaRigheRate()"
+                             style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+                    </div>
+                    <div>
+                      <label style="font-size:12px;font-weight:600;color:#374151;">Intervallo tra rate (mesi)</label>
+                      <input type="number" id="rateIntervallo" min="1" max="12" value="1"
+                             oninput="generaRigheRate()"
+                             style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+                    </div>
+                  </div>
+
+                  <!-- Tabella rate generata dinamicamente -->
+                  <div style="overflow-x:auto;margin-bottom:16px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;" id="rateTable">
+                      <thead>
+                        <tr style="background:#f9fafb;color:#6b7280;font-size:11px;text-transform:uppercase;">
+                          <th style="padding:8px 10px;text-align:left;">Rata</th>
+                          <th style="padding:8px 10px;text-align:left;">Importo (€)</th>
+                          <th style="padding:8px 10px;text-align:left;">Scadenza</th>
+                          <th style="padding:8px 10px;text-align:left;">Note</th>
+                        </tr>
+                      </thead>
+                      <tbody id="rateTableBody"></tbody>
+                    </table>
+                  </div>
+                  <div id="rateTotaleInfo" style="font-size:12px;color:#6b7280;margin-bottom:16px;"></div>
+
+                  <!-- Clausola Riserva di Dominio -->
+                  <div style="background:#fff7ed;border:2px solid #fed7aa;border-radius:10px;padding:14px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                      <input type="checkbox" id="riservaCheckbox" checked style="margin-top:2px;width:16px;height:16px;accent-color:#f97316;">
+                      <div>
+                        <div style="font-size:13px;font-weight:700;color:#c2410c;">🔒 Clausola Riserva di Dominio</div>
+                        <div style="font-size:11px;color:#92400e;margin-top:4px;line-height:1.5;">
+                          La proprietà del dispositivo resterà di Medica GB S.r.l. fino al completo pagamento dell'ultima rata.
+                          La clausola verrà inserita automaticamente nel contratto e nella fattura proforma.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Note rateizzazione -->
+                  <div style="margin-bottom:20px;">
+                    <label style="font-size:12px;font-weight:600;color:#374151;">Note interne (opzionale)</label>
+                    <textarea id="rateizzazioneNoteInput" rows="2" placeholder="Motivazione della rateizzazione..."
+                              style="width:100%;margin-top:4px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;resize:vertical;"></textarea>
+                  </div>
+                </div>
+
+                <!-- Footer pulsanti -->
+                <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:16px;">
+                  <button onclick="closeRateizzazioneModal()"
+                          style="padding:8px 16px;background:#f3f4f6;color:#374151;font-size:14px;font-weight:500;border-radius:8px;border:1px solid #d1d5db;cursor:pointer;"
+                          onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    Annulla
+                  </button>
+                  <button id="rateizzazioneDelBtn" onclick="deleteRateizzazione()"
+                          style="display:none;padding:8px 16px;background:#ef4444;color:#fff;font-size:14px;font-weight:600;border-radius:8px;border:none;cursor:pointer;"
+                          onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                    🗑 Rimuovi Piano
+                  </button>
+                  <button onclick="salvaRateizzazione()"
+                          style="padding:8px 18px;background:#6366f1;color:#ffffff;font-size:14px;font-weight:600;border-radius:8px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);"
+                          onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                    💾 Salva Piano Rate
+                  </button>
+                </div>
+              </div>
+            </div>\`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        })();
+
+        let _rateizzazioneLeadId  = null;
+        let _rateizzazionePrezzo  = 0;
+
+        async function openRateizzazioneModal(leadId, nome, prezzo, isRateizzato) {
+            _rateizzazioneLeadId = leadId;
+            _rateizzazionePrezzo = prezzo || 0;
+
+            // Info lead
+            document.getElementById('rateizzazioneLeadInfo').innerHTML =
+                \`<strong>Lead:</strong> \\${escapeHtml(nome || leadId)} &nbsp;|&nbsp; <strong>Importo totale:</strong> <span style="color:#6366f1;font-weight:700;">€\\${_rateizzazionePrezzo}</span>\`;
+
+            const modal = document.getElementById('rateizzazioneModal');
+            modal.style.display = 'flex';
+
+            // Se già rateizzato: carica piano esistente
+            const existingEl  = document.getElementById('rateizzazioneExisting');
+            const formEl      = document.getElementById('rateizzazioneForm');
+            const delBtn      = document.getElementById('rateizzazioneDelBtn');
+
+            existingEl.style.display = 'none';
+            existingEl.innerHTML     = '';
+
+            if (isRateizzato) {
+                delBtn.style.display = 'inline-block';
+                try {
+                    const res = await fetch('/api/leads/' + leadId + '/rateizzazione', { credentials: 'include' });
+                    const data = await res.json();
+                    if (data.success && data.rate && data.rate.length > 0) {
+                        const statusColors = { PAGATA:'#16a34a', ATTESA:'#d97706', SCADUTA:'#dc2626', ANNULLATA:'#6b7280' };
+                        const righe = data.rate.map(r => {
+                            const sc  = statusColors[r.status] || '#6b7280';
+                            const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
+                                \`<option value="\\${s}" \\${r.status===s?'selected':''}> \\${s}</option>\`).join('');
+                            return \`<tr style="border-bottom:1px solid #f3f4f6;">
+                                <td style="padding:6px 10px;font-weight:600;">Rata \\${r.numero_rata}</td>
+                                <td style="padding:6px 10px;">€\\${Number(r.importo).toFixed(2)}</td>
+                                <td style="padding:6px 10px;">\\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
+                                <td style="padding:6px 10px;">
+                                    <select onchange="aggiornaStato(\\${r.id},'\\${leadId}',this.value)"
+                                            style="font-size:12px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\\${sc};font-weight:600;">
+                                        \\${sel}
+                                    </select>
+                                </td>
+                                <td style="padding:6px 10px;font-size:11px;color:#6b7280;">\\${r.riferimento||r.note||''}</td>
+                            </tr>\`;
+                        }).join('');
+                        existingEl.innerHTML = \`
+                            <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;margin-bottom:12px;">
+                              <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;">
+                                📋 Piano attuale &nbsp;·&nbsp; Pagate: \\${data.rate_pagate}/\\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\\${data.totale_pagato.toFixed(2)}/€\\${data.totale_rate.toFixed(2)}
+                                \\${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
+                                \\${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
+                              </div>
+                              <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                                <thead><tr style="background:#e0e7ff;font-size:10px;text-transform:uppercase;color:#4338ca;">
+                                  <th style="padding:5px 10px;text-align:left;">Rata</th>
+                                  <th style="padding:5px 10px;text-align:left;">Importo</th>
+                                  <th style="padding:5px 10px;text-align:left;">Scadenza</th>
+                                  <th style="padding:5px 10px;text-align:left;">Stato</th>
+                                  <th style="padding:5px 10px;text-align:left;">Rif.</th>
+                                </tr></thead>
+                                <tbody>\\${righe}</tbody>
+                              </table>
+                            </div>
+                            <p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Modifica il piano qui sotto per sostituirlo:</p>\`;
+                        existingEl.style.display = 'block';
+                    }
+                } catch(e) { /* ignora */ }
+            } else {
+                delBtn.style.display = 'none';
+            }
+
+            // Pre-popola le rate con importo equo
+            generaRigheRate();
+        }
+
+        function generaRigheRate() {
+            const n         = parseInt(document.getElementById('rateNum').value) || 2;
+            const intervallo = parseInt(document.getElementById('rateIntervallo').value) || 1;
+            const totale    = _rateizzazionePrezzo || 0;
+            const base      = totale > 0 ? Math.floor((totale / n) * 100) / 100 : 0;
+            const resto     = totale > 0 ? Math.round((totale - base * n) * 100) / 100 : 0;
+            const oggi      = new Date();
+            const tbody     = document.getElementById('rateTableBody');
+            let html = '';
+            for (let i = 1; i <= n; i++) {
+                const importo   = i === n ? (base + resto).toFixed(2) : base.toFixed(2);
+                const scad      = new Date(oggi);
+                scad.setMonth(scad.getMonth() + (i - 1) * intervallo);
+                const scadStr   = scad.toISOString().substring(0, 10);
+                html += \`<tr style="border-bottom:1px solid #f3f4f6;">
+                    <td style="padding:6px 8px;font-weight:600;color:#4338ca;">Rata \\${i}</td>
+                    <td style="padding:6px 8px;">
+                        <input type="number" step="0.01" min="0" id="rataImporto_\\${i}" value="\\${importo}"
+                               style="width:90px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                    </td>
+                    <td style="padding:6px 8px;">
+                        <input type="date" id="rataScadenza_\\${i}" value="\\${scadStr}"
+                               style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                    </td>
+                    <td style="padding:6px 8px;">
+                        <input type="text" id="rataNote_\\${i}" placeholder="facoltativo"
+                               style="width:120px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+                    </td>
+                </tr>\`;
+            }
+            tbody.innerHTML = html;
+            const somma = totale > 0 ? \`— totale: €\\${totale}\` : '';
+            document.getElementById('rateTotaleInfo').textContent =
+                \`\\${n} rate da €\\${base} (ultima €\\${(base+resto).toFixed(2)}) \\${somma}\`;
+        }
+
+        async function aggiornaStato(rataId, leadId, newStatus) {
+            const metodo = newStatus === 'PAGATA' ? prompt('Metodo pagamento (BONIFICO / STRIPE / CONTANTI):') : null;
+            const rif    = newStatus === 'PAGATA' ? prompt('Riferimento (CRO/causale, facoltativo):') : null;
+            try {
+                const res = await fetch('/api/leads/' + leadId + '/rate/' + rataId, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: newStatus, metodo_pagamento: metodo, riferimento: rif })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.saldato) alert('✅ Piano SALDATO completamente!');
+                    else alert('✅ Stata aggiornata a ' + newStatus);
+                    closeRateizzazioneModal();
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'sconosciuto'));
+                }
+            } catch(e) { alert('❌ ' + e.message); }
+        }
+
+        async function salvaRateizzazione() {
+            const n = parseInt(document.getElementById('rateNum').value) || 2;
+            const rate = [];
+            for (let i = 1; i <= n; i++) {
+                const importo = parseFloat(document.getElementById('rataImporto_' + i)?.value);
+                const scad    = document.getElementById('rataScadenza_' + i)?.value;
+                const note    = document.getElementById('rataNote_' + i)?.value || '';
+                if (!importo || !scad) { alert('Compila importo e scadenza per tutte le rate.'); return; }
+                rate.push({ numero_rata: i, importo, data_scadenza: scad, note });
+            }
+            const riserva = document.getElementById('riservaCheckbox').checked;
+            const noteRat = document.getElementById('rateizzazioneNoteInput').value;
+            try {
+                const res = await fetch('/api/leads/' + _rateizzazioneLeadId + '/rateizzazione', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ rate, riserva_dominio: riserva, note_rateizzazione: noteRat })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ ' + data.message + (riserva ? '\\n🔒 Clausola Riserva di Dominio attiva' : ''));
+                    closeRateizzazioneModal();
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'sconosciuto'));
+                }
+            } catch(e) { alert('❌ ' + e.message); }
+        }
+
+        async function deleteRateizzazione() {
+            if (!confirm('Rimuovere il piano rateizzazione (le rate già pagate non vengono cancellate)?')) return;
+            try {
+                const res = await fetch('/api/leads/' + _rateizzazioneLeadId + '/rateizzazione', {
+                    method: 'DELETE', credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Piano rateizzazione rimosso');
+                    closeRateizzazioneModal();
+                    loadLeadsData();
+                } else {
+                    alert('❌ ' + (data.error || 'Errore'));
+                }
+            } catch(e) { alert('❌ ' + e.message); }
+        }
+
+        function closeRateizzazioneModal() {
+            const m = document.getElementById('rateizzazioneModal');
+            if (m) m.style.display = 'none';
         }
 
         // ============================================
