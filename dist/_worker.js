@@ -6938,7 +6938,7 @@ ${370+t.length}
 
                             </div>
                         </td>
-                        <td class="py-3">
+                        <td class="py-3 pl-3">
                             <div class="flex space-x-1">
                                 <button data-action="view" data-lead-id="\${lead.id}" 
                                         class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
