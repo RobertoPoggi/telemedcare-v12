@@ -168,6 +168,39 @@ export async function executeAutoImport(
       // Stop se pagina vuota o nessun cursore next
     } while (afterCursor && pageNum < MAX_PAGES)
     
+    // ✅ FALLBACK: se onlyEcura=true ma 0 contatti trovati con filtro "Form eCura",
+    // esegui una seconda ricerca SENZA il filtro hs_object_source_detail_1.
+    // Questo copre il caso in cui HubSpot non imposta hs_object_source_detail_1 sui nuovi
+    // contatti (comportamento osservato da giugno 2026 in poi).
+    // I contatti importati vengono comunque salvati con fonte='Form eCura'.
+    if (allContacts.length === 0 && config.onlyEcura) {
+      console.log(`⚠️  [AUTO-IMPORT] 0 contatti con filtro "Form eCura". Tentativo fallback senza filtro fonte...`)
+      const fallbackFilters: any = {
+        createdAfter: createdAfter.toISOString(),
+        limit: 100
+      }
+      // NO filtro hs_object_source_detail_1 — prende tutti i contatti recenti
+      let fallbackCursor: string | undefined = undefined
+      let fallbackPage = 0
+      do {
+        fallbackPage++
+        const searchFilters = fallbackCursor
+          ? { ...fallbackFilters, after: fallbackCursor }
+          : { ...fallbackFilters }
+        const response = await client.searchContacts(searchFilters)
+        const pageContacts = response.results || []
+        allContacts = allContacts.concat(pageContacts)
+        console.log(`📄 [AUTO-IMPORT FALLBACK] Pagina ${fallbackPage}: ${pageContacts.length} contatti (totale: ${allContacts.length})`)
+        fallbackCursor = response.paging?.next?.after
+      } while (fallbackCursor && fallbackPage < MAX_PAGES)
+      
+      if (allContacts.length > 0) {
+        console.log(`✅ [AUTO-IMPORT FALLBACK] Trovati ${allContacts.length} contatti senza filtro eCura — verranno importati come Form eCura`)
+      } else {
+        console.log(`ℹ️  [AUTO-IMPORT FALLBACK] Anche senza filtro: 0 contatti nel periodo. Nessun nuovo lead su HubSpot.`)
+      }
+    }
+    
     result.performance.hubspotContacts = allContacts.length
     console.log(`📊 [AUTO-IMPORT] Totale contatti HubSpot recuperati: ${allContacts.length} (${pageNum} pagine)`)
     

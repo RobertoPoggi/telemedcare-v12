@@ -18502,6 +18502,94 @@ app.get('/api/hubspot/auto-import/status', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
+// GET /api/hubspot/auto-import/diagnose - Diagnosi CRON: mostra cosa
+// restituisce HubSpot con e senza filtro "Form eCura" per gli ultimi N giorni
+// Uso: /api/hubspot/auto-import/diagnose?days=7
+// ─────────────────────────────────────────────────────────────────────
+app.get('/api/hubspot/auto-import/diagnose', async (c) => {
+  try {
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    const days = parseInt(c.req.query('days') || '7')
+    const createdAfter = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    const { HubSpotClient } = await import('./modules/hubspot-integration')
+    const client = new HubSpotClient(accessToken, portalId)
+
+    // 1. Ricerca CON filtro Form eCura
+    let withFilter: any[] = []
+    try {
+      const r1 = await client.searchContacts({
+        createdAfter: createdAfter.toISOString(),
+        hs_object_source_detail_1: 'Form eCura',
+        limit: 100
+      })
+      withFilter = r1.results || []
+    } catch (e) {
+      console.error('[DIAGNOSE] Errore ricerca con filtro:', e)
+    }
+
+    // 2. Ricerca SENZA filtro Form eCura (tutti i contatti recenti)
+    let withoutFilter: any[] = []
+    try {
+      const r2 = await client.searchContacts({
+        createdAfter: createdAfter.toISOString(),
+        limit: 100
+      })
+      withoutFilter = r2.results || []
+    } catch (e) {
+      console.error('[DIAGNOSE] Errore ricerca senza filtro:', e)
+    }
+
+    // Raggruppa i valori hs_object_source_detail_1 trovati senza filtro
+    const sourceDetailCounts: Record<string, number> = {}
+    for (const c2 of withoutFilter) {
+      const v = c2.properties?.hs_object_source_detail_1 || '(vuoto/null)'
+      sourceDetailCounts[v] = (sourceDetailCounts[v] || 0) + 1
+    }
+
+    return c.json({
+      success: true,
+      periodo: `Ultimi ${days} giorni (da ${createdAfter.toISOString()})`,
+      con_filtro_form_ecura: {
+        count: withFilter.length,
+        contatti: withFilter.map((x: any) => ({
+          id: x.id,
+          email: x.properties?.email,
+          firstname: x.properties?.firstname,
+          lastname: x.properties?.lastname,
+          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
+          createdate: x.properties?.createdate
+        }))
+      },
+      senza_filtro: {
+        count: withoutFilter.length,
+        distribuzione_hs_object_source_detail_1: Object.entries(sourceDetailCounts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([valore, count]) => ({ valore, count })),
+        contatti: withoutFilter.map((x: any) => ({
+          id: x.id,
+          email: x.properties?.email,
+          firstname: x.properties?.firstname,
+          lastname: x.properties?.lastname,
+          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
+          createdate: x.properties?.createdate
+        }))
+      },
+      analisi: withFilter.length === 0 && withoutFilter.length > 0
+        ? `⚠️ PROBLEMA RILEVATO: ${withoutFilter.length} contatti nel periodo ma NESSUNO con "Form eCura" in hs_object_source_detail_1. Il fallback automatico li importerà ora.`
+        : withFilter.length === 0 && withoutFilter.length === 0
+        ? `ℹ️ Nessun nuovo contatto HubSpot negli ultimi ${days} giorni.`
+        : `✅ ${withFilter.length} contatti trovati con filtro "Form eCura" (${withoutFilter.length} totali nel periodo).`
+    })
+  } catch (error) {
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────
 // POST /api/import/gsheet - Import lead da Google Sheets (backup eCura)
 // ─────────────────────────────────────────────────────────────────────
 app.post('/api/import/gsheet', async (c) => {

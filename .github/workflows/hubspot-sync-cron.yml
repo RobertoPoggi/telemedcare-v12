@@ -1,12 +1,14 @@
 name: HubSpot Auto Import (Form eCura)
 # 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
 # ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
-# 📅 Periodo: Importa lead creati negli ultimi 3 giorni (72h) come safety net
-# 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura'
+# 📅 Periodo: Importa lead creati negli ultimi 7 giorni (168h) come safety net
+# 🔍 Filtro PRIMARIO: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura'
+# 🔍 Filtro FALLBACK: se 0 risultati con filtro eCura, tenta senza filtro (tutti i contatti recenti)
 #
 # ℹ️  NOTA: imported=0 è NORMALE — i lead arrivano già via auto-import dashboard (ogni 5min).
 #    Questo cron serve come safety net per i giorni in cui nessuno apre la dashboard.
 #    Il campo "updated" indica lead già esistenti aggiornati con dati canale (META/GOOGLE/ecc).
+#    hubspotContacts=0 indica: 0 lead su HubSpot nel periodo (o token scaduto).
 
 on:
   schedule:
@@ -14,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Giorni da importare (default: 3)'
+        description: 'Giorni da importare (default: 7)'
         required: false
-        default: '3'
+        default: '7'
         type: string
       dryRun:
         description: 'Dry Run (solo simulazione, non salva)'
@@ -40,7 +42,7 @@ jobs:
       
       - name: 🔄 Trigger HubSpot Auto-Import
         run: |
-          DAYS="${{ github.event.inputs.days || '3' }}"
+          DAYS="${{ github.event.inputs.days || '7' }}"
           DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
           
           echo "🔄 Avvio import HubSpot..."
@@ -72,8 +74,13 @@ jobs:
             echo "📥 Nuovi: $IMPORTED | 🔄 Aggiornati: $UPDATED | ⏭️ Già presenti: $SKIPPED | ❌ Errori: $ERRORS_COUNT"
             echo "🔗 Contatti HubSpot trovati nel periodo: $HUBSPOT_CONTACTS"
             if [ "${IMPORTED}" = "0" ] && [ "${UPDATED}" = "0" ] && [ "${HUBSPOT_CONTACTS}" = "0" ]; then
-              echo "⚠️  Nessun contatto HubSpot trovato nel periodo — verificare HUBSPOT_ACCESS_TOKEN su Cloudflare"
-            elif [ "${IMPORTED}" = "0" ]; then
+              echo "⚠️  hubspotContacts=0: nessun contatto HubSpot nel periodo (${DAYS} giorni)."
+              echo "    Possibili cause:"
+              echo "    1. Non ci sono nuovi lead su HubSpot negli ultimi ${DAYS} giorni"
+              echo "    2. HUBSPOT_ACCESS_TOKEN scaduto (vai su Cloudflare Pages → Settings → Env Vars)"
+              echo "    3. Tutti i contatti HubSpot nel periodo mancano di hs_object_source_detail_1"
+              echo "    → Verifica con: GET /api/hubspot/auto-import/diagnose?days=${DAYS}"
+            elif [ "${IMPORTED}" = "0" ] && [ "${HUBSPOT_CONTACTS}" != "0" ]; then
               echo "ℹ️  Nessun nuovo lead: tutti i $HUBSPOT_CONTACTS contatti HubSpot erano già nel DB (importati via dashboard)"
             fi
             if [ "${ERRORS_COUNT:-0}" -gt 10 ] 2>/dev/null; then
