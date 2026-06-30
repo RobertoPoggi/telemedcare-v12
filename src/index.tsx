@@ -1451,6 +1451,16 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint ricerca lead per nome/cognome (one-shot admin)
+  if (path === '/api/oneshot-find-lead-3kqw7z' && method === 'GET') {
+    return next()
+  }
+
+  // Endpoint aggiornamento piano lead (one-shot admin)
+  if (path === '/api/oneshot-update-lead-piano-3kqw7z' && method === 'POST') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -31027,8 +31037,8 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
   }
 })
 
-// 🔍 ADMIN: Cerca lead per nome/cognome
-app.get('/api/admin/find-lead', async (c) => {
+// 🔍 ONE-SHOT: Cerca lead per nome/cognome (token nel path)
+app.get('/api/oneshot-find-lead-3kqw7z', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
     const nome = c.req.query('nome') || ''
@@ -31047,8 +31057,8 @@ app.get('/api/admin/find-lead', async (c) => {
   }
 })
 
-// 🔧 ADMIN: Aggiorna piano di un lead (es. BASE → AVANZATO)
-app.post('/api/admin/update-lead-piano', async (c) => {
+// 🔧 ONE-SHOT: Aggiorna piano di un lead (token nel path)
+app.post('/api/oneshot-update-lead-piano-3kqw7z', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
     const { id, piano, pacchetto } = await c.req.json()
