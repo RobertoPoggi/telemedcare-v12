@@ -31044,7 +31044,7 @@ app.get('/api/oneshot-find-lead-3kqw7z', async (c) => {
     const nome = c.req.query('nome') || ''
     const cognome = c.req.query('cognome') || ''
     const email = c.req.query('email') || ''
-    let query = `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, piano, servizio, stato, created_at FROM leads WHERE 1=1`
+    let query = `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, piano, servizio, stato, intestatarioContratto, cfIntestatario, cfAssistito, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario, indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito, luogoNascitaIntestatario, dataNascitaIntestatario, luogoNascitaAssistito, dataNascitaAssistito, created_at FROM leads WHERE 1=1`
     const binds: any[] = []
     if (cognome) { query += ` AND (cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ?)`;binds.push(`%${cognome}%`, `%${cognome}%`) }
     if (nome) { query += ` AND (nomeRichiedente LIKE ? OR nomeAssistito LIKE ?)`;binds.push(`%${nome}%`, `%${nome}%`) }
