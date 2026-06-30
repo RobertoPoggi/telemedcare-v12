@@ -18430,15 +18430,21 @@ app.post('/api/hubspot/auto-import', async (c) => {
     const { executeAutoImport, logAutoImport } = await import('./modules/hubspot-auto-import')
     
     const body = await c.req.json().catch(() => ({}))
+    // days=0 (o mancante) → dall'inizio campagna eCura (30/01/2026), come fa il tasto IRBEMA
+    // Questo copre i lead con createdate molto precedente alla data di arrivo nel CRM
+    const campaignStart = new Date('2026-01-30T00:00:00Z')
+    const daysSinceCampaign = Math.ceil((Date.now() - campaignStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const requestedDays = Number(body.days) || 0
     const config = {
       enabled: body.enabled !== false, // Default true
-      startHour: body.startHour || 0, // Default 0 (importa da mezzanotte)
-      days: body.days || 1, // ✅ Default 1 giorno (24 ore), configurabile
+      startHour: body.startHour || 0,
+      days: requestedDays > 0 ? requestedDays : daysSinceCampaign, // 0 = dall'inizio campagna
       onlyEcura: true, // 🔒 HARDCODED - Mai importare lead non-eCura!
       dryRun: body.dryRun || false
     }
     
-    console.log(`🔄 [AUTO-IMPORT API] Richiesta import incrementale ultimi ${config.days} ${config.days === 1 ? 'giorno' : 'giorni'} (dryRun: ${config.dryRun})`)
+    const fromLabel = requestedDays > 0 ? `ultimi ${config.days} giorni` : `dall'inizio campagna 30/01/2026 (${config.days} giorni)`
+    console.log(`🔄 [AUTO-IMPORT API] Richiesta import ${fromLabel} (dryRun: ${config.dryRun})`)
     
     // Ottieni baseUrl per email
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'

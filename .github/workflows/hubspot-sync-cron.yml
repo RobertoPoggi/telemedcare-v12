@@ -1,14 +1,13 @@
 name: HubSpot Auto Import (Form eCura)
 # 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
 # ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
-# 📅 Periodo: Importa lead creati negli ultimi 7 giorni (168h) come safety net
-# 🔍 Filtro PRIMARIO: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura'
-# 🔍 Filtro FALLBACK: se 0 risultati con filtro eCura, tenta senza filtro (tutti i contatti recenti)
+# 📅 Periodo: Dall'inizio campagna eCura (30/01/2026) — stesso comportamento del tasto IRBEMA
+# 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura' (IMMUTABILE)
 #
-# ℹ️  NOTA: imported=0 è NORMALE — i lead arrivano già via auto-import dashboard (ogni 5min).
-#    Questo cron serve come safety net per i giorni in cui nessuno apre la dashboard.
-#    Il campo "updated" indica lead già esistenti aggiornati con dati canale (META/GOOGLE/ecc).
-#    hubspotContacts=0 indica: 0 lead su HubSpot nel periodo (o token scaduto).
+# ℹ️  NOTA: imported=0 con skipped>0 è NORMALE — i lead erano già nel DB.
+#    I lead su HubSpot possono avere createdate molto precedente alla data di invio
+#    (es. lead raccolto settimane fa, inserito su HubSpot in ritardo).
+#    Per questo si parte sempre dall'inizio campagna, non da una finestra fissa.
 
 on:
   schedule:
@@ -16,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Giorni da importare (default: 7)'
+        description: 'Giorni da importare (0 = dall inizio campagna 30/01/2026)'
         required: false
-        default: '7'
+        default: '0'
         type: string
       dryRun:
         description: 'Dry Run (solo simulazione, non salva)'
@@ -42,13 +41,13 @@ jobs:
       
       - name: 🔄 Trigger HubSpot Auto-Import
         run: |
-          DAYS="${{ github.event.inputs.days || '7' }}"
+          DAYS="${{ github.event.inputs.days || '0' }}"
           DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
           
           echo "🔄 Avvio import HubSpot..."
-          echo "📅 Periodo: Ultimi $DAYS giorni"
+          echo "📅 Periodo: ${DAYS} giorni (0 = dall'inizio campagna 30/01/2026, come tasto IRBEMA)"
           echo "🌐 Target: https://telemedcare-v12.pages.dev"
-          echo "ℹ️  imported=0 è NORMALE se la dashboard è stata aperta di recente"
+          echo "ℹ️  imported=0 + skipped>0 è NORMALE — lead già nel DB"
           
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
@@ -74,14 +73,12 @@ jobs:
             echo "📥 Nuovi: $IMPORTED | 🔄 Aggiornati: $UPDATED | ⏭️ Già presenti: $SKIPPED | ❌ Errori: $ERRORS_COUNT"
             echo "🔗 Contatti HubSpot trovati nel periodo: $HUBSPOT_CONTACTS"
             if [ "${IMPORTED}" = "0" ] && [ "${UPDATED}" = "0" ] && [ "${HUBSPOT_CONTACTS}" = "0" ]; then
-              echo "⚠️  hubspotContacts=0: nessun contatto HubSpot nel periodo (${DAYS} giorni)."
-              echo "    Possibili cause:"
-              echo "    1. Non ci sono nuovi lead su HubSpot negli ultimi ${DAYS} giorni"
-              echo "    2. HUBSPOT_ACCESS_TOKEN scaduto (vai su Cloudflare Pages → Settings → Env Vars)"
-              echo "    3. Tutti i contatti HubSpot nel periodo mancano di hs_object_source_detail_1"
-              echo "    → Verifica con: GET /api/hubspot/auto-import/diagnose?days=${DAYS}"
+              echo "⚠️  hubspotContacts=0: nessun contatto 'Form eCura' trovato su HubSpot dall'inizio campagna."
+              echo "    Probabile causa: HUBSPOT_ACCESS_TOKEN scaduto."
+              echo "    → Verifica su Cloudflare Pages → Settings → Environment Variables"
+              echo "    → Oppure apri: GET /api/hubspot/auto-import/diagnose?days=30"
             elif [ "${IMPORTED}" = "0" ] && [ "${HUBSPOT_CONTACTS}" != "0" ]; then
-              echo "ℹ️  Nessun nuovo lead: tutti i $HUBSPOT_CONTACTS contatti HubSpot erano già nel DB (importati via dashboard)"
+              echo "ℹ️  Nessun nuovo lead: tutti i $HUBSPOT_CONTACTS contatti HubSpot erano già nel DB"
             fi
             if [ "${ERRORS_COUNT:-0}" -gt 10 ] 2>/dev/null; then
               echo "🚨 Troppi errori!"
