@@ -31037,7 +31037,7 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
   }
 })
 
-// 🔍 ONE-SHOT: Cerca lead per nome/cognome (token nel path)
+// 🔍 ONE-SHOT: Cerca lead per nome/cognome + contratti associati (token nel path)
 app.get('/api/oneshot-find-lead-3kqw7z', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
@@ -31051,7 +31051,15 @@ app.get('/api/oneshot-find-lead-3kqw7z', async (c) => {
     if (email) { query += ` AND email LIKE ?`;binds.push(`%${email}%`) }
     query += ` ORDER BY created_at DESC LIMIT 20`
     const result = await c.env.DB.prepare(query).bind(...binds).all()
-    return c.json({ success: true, count: result.results?.length || 0, leads: result.results || [] })
+    const leads = result.results || []
+    // Recupera anche i contratti per ogni lead trovato
+    const leadsWithContracts = await Promise.all(leads.map(async (lead: any) => {
+      const contracts = await c.env.DB.prepare(
+        `SELECT id, codice_contratto, piano, servizio, status, created_at FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 5`
+      ).bind(lead.id).all()
+      return { ...lead, contracts: contracts.results || [] }
+    }))
+    return c.json({ success: true, count: leads.length, leads: leadsWithContracts })
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500)
   }
