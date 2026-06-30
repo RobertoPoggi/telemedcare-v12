@@ -132,7 +132,7 @@ function buildRateHtml(
 /**
  * Genera HTML completo del contratto con tutti i dati del cliente
  */
-async function generateContractHtml(leadData: any, contractData: any): Promise<string> {
+export async function generateContractHtml(leadData: any, contractData: any): Promise<string> {
   const servizioNome = contractData.servizio || 'eCura PRO'
   const pianoNome = contractData.tipoServizio || 'BASE'
   const dispositivo = servizioNome.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'

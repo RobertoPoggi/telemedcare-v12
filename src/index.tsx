@@ -1461,6 +1461,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint rigenera HTML contratto senza email (one-shot admin)
+  if (path === '/api/oneshot-rigenera-html-contratto-9fx2v' && method === 'POST') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -31082,6 +31087,185 @@ app.post('/api/oneshot-update-lead-piano-3kqw7z', async (c) => {
     console.log(`✅ [ADMIN] Piano lead ${id} (${(current as any).nomeRichiedente} ${(current as any).cognomeRichiedente}) aggiornato: ${(current as any).piano} → ${pianoValid}`)
     return c.json({ success: true, message: `Piano aggiornato: ${(current as any).piano} → ${pianoValid}`, before: current, after: updated })
   } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST /api/oneshot-rigenera-html-contratto-9fx2v
+// Rigenera contenuto_html del contratto dal lead senza inviare email.
+// Utile quando il contratto è già SIGNED ma l'HTML era stato generato con dati sbagliati.
+// NON tocca: status, data_firma, signature_data, signature_ip, signed_at.
+app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const { contractId } = await c.req.json()
+    if (!contractId) return c.json({ success: false, error: 'contractId obbligatorio' }, 400)
+
+    // 1. Leggi contratto + lead
+    const contract = await c.env.DB.prepare(`
+      SELECT c.id, c.leadId, c.codice_contratto, c.tipo_contratto, c.servizio, c.piano,
+             c.status, c.prezzo_totale, c.prezzo_mensile, c.durata_mesi,
+             c.riserva_dominio, c.rateizzazione_attiva, c.rateizzazione_note,
+             c.isRinnovo, c.annoRinnovo, c.codiceOriginale,
+             c.data_firma, c.signed_at, c.signature_data
+      FROM contracts c
+      WHERE c.id = ?
+    `).bind(contractId).first() as any
+
+    if (!contract) return c.json({ success: false, error: `Contratto ${contractId} non trovato` }, 404)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
+      .bind(contract.leadId).first() as any
+
+    if (!lead) return c.json({ success: false, error: `Lead ${contract.leadId} non trovato` }, 404)
+
+    // 2. Ricostruisci leadData (stessa logica di send-contract)
+    const intestatario = lead.intestatarioContratto || 'richiedente'
+    const isIntestatarioRichiedente = (intestatario === 'richiedente')
+
+    const nomeIntestatario = isIntestatarioRichiedente
+      ? lead.nomeRichiedente
+      : (lead.nomeAssistito || lead.nomeRichiedente)
+    const cognomeIntestatario = isIntestatarioRichiedente
+      ? lead.cognomeRichiedente
+      : (lead.cognomeAssistito || lead.cognomeRichiedente)
+    const cfIntestatario = isIntestatarioRichiedente
+      ? (lead.cfIntestatario || lead.cfAssistito || '')
+      : (lead.cfAssistito || lead.cfIntestatario || '')
+    const indirizzoIntestatario = isIntestatarioRichiedente
+      ? (lead.indirizzoIntestatario || '')
+      : (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
+    const cittaIntestatario = isIntestatarioRichiedente
+      ? (lead.cittaIntestatario || '')
+      : (lead.cittaAssistito || lead.cittaIntestatario || '')
+    const capIntestatario = isIntestatarioRichiedente
+      ? (lead.capIntestatario || '')
+      : (lead.capAssistito || lead.capIntestatario || '')
+    const provinciaIntestatario = isIntestatarioRichiedente
+      ? (lead.provinciaIntestatario || '')
+      : (lead.provinciaAssistito || lead.provinciaIntestatario || '')
+    const luogoNascitaIntestatario = isIntestatarioRichiedente
+      ? (lead.luogoNascitaIntestatario || '')
+      : (lead.luogoNascitaAssistito || lead.luogoNascitaIntestatario || '')
+    const dataNascitaIntestatario = isIntestatarioRichiedente
+      ? (lead.dataNascitaIntestatario || '')
+      : (lead.dataNascitaAssistito || lead.dataNascitaIntestatario || '')
+
+    const leadData = {
+      id: lead.id,
+      nomeRichiedente: lead.nomeRichiedente,
+      cognomeRichiedente: lead.cognomeRichiedente,
+      email: lead.email,
+      telefono: lead.telefono || '',
+      nomeAssistito: lead.nomeAssistito || lead.nomeRichiedente,
+      cognomeAssistito: lead.cognomeAssistito || lead.cognomeRichiedente,
+      luogoNascitaAssistito: lead.luogoNascitaAssistito || '',
+      dataNascitaAssistito: lead.dataNascitaAssistito || '',
+      indirizzoAssistito: lead.indirizzoAssistito || '',
+      capAssistito: lead.capAssistito || '',
+      cittaAssistito: lead.cittaAssistito || '',
+      provinciaAssistito: lead.provinciaAssistito || '',
+      cfAssistito: lead.cfAssistito || '',
+      condizioniSalute: lead.condizioniSalute || '',
+      pacchetto: contract.piano || lead.piano || 'BASE',
+      servizio: contract.servizio || lead.servizio || 'eCura PRO',
+      intestatarioContratto: lead.intestatarioContratto || 'richiedente',
+      nomeIntestatario,
+      cognomeIntestatario,
+      emailIntestatario: lead.email,
+      telefonoIntestatario: lead.telefono || '',
+      cfIntestatario,
+      indirizzoIntestatario,
+      cittaIntestatario,
+      capIntestatario,
+      provinciaIntestatario,
+      luogoNascitaIntestatario,
+      dataNascitaIntestatario,
+      iva_agevolata: lead.iva_agevolata ? 1 : 0,
+      vuoleBrochure: false,
+      vuoleManuale: false,
+      vuoleContratto: true
+    }
+
+    // 3. Ricostruisci contractData
+    const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
+    const prezzoBase = contract.prezzo_totale || 0
+    const prezzoIvaInclusa = Math.round(prezzoBase * (1 + ivaRate) * 100) / 100
+
+    // Fetch rate se rateizzazione attiva
+    let rateContratto: any[] = []
+    if (contract.rateizzazione_attiva) {
+      try {
+        const rateRows = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(lead.id).all()
+        rateContratto = (rateRows?.results || []) as any[]
+      } catch (e) {
+        console.warn(`⚠️ [ONESHOT] Errore fetch rate:`, e)
+      }
+    }
+
+    const contractData = {
+      contractId: contract.id,
+      contractCode: contract.codice_contratto,
+      contractPdfUrl: '',
+      tipoServizio: contract.piano || contract.tipo_contratto || 'BASE',
+      servizio: contract.servizio || lead.servizio || 'eCura PRO',
+      prezzoBase: prezzoBase,
+      prezzoIvaInclusa: prezzoIvaInclusa,
+      isRinnovo: Boolean(contract.isRinnovo),
+      annoRinnovo: contract.annoRinnovo || 2,
+      codiceOriginale: contract.codiceOriginale || '',
+      riserva_dominio: Boolean(contract.riserva_dominio),
+      rateizzazione_attiva: Boolean(contract.rateizzazione_attiva),
+      rateizzazione_note: contract.rateizzazione_note || '',
+      rate: rateContratto
+    }
+
+    // 4. Rigenera HTML
+    const { generateContractHtml } = await import('./modules/workflow-email-manager')
+    const nuovoHtml = await generateContractHtml(leadData, contractData)
+
+    console.log(`📋 [ONESHOT] HTML rigenerato per ${contractId}: ${nuovoHtml.length} chars`)
+
+    // 5. UPDATE solo contenuto_html — NON toccare firma/status
+    await c.env.DB.prepare(`
+      UPDATE contracts SET
+        contenuto_html = ?,
+        updated_at = ?
+      WHERE id = ?
+    `).bind(nuovoHtml, new Date().toISOString(), contractId).run()
+
+    console.log(`✅ [ONESHOT] contenuto_html aggiornato per ${contractId} — firma/status intatti`)
+
+    // 6. Verifica
+    const verify = await c.env.DB.prepare(
+      'SELECT id, codice_contratto, status, data_firma, signed_at FROM contracts WHERE id = ?'
+    ).bind(contractId).first() as any
+
+    return c.json({
+      success: true,
+      message: `HTML contratto rigenerato correttamente. Status e firma intatti.`,
+      contratto: {
+        id: verify.id,
+        codice: verify.codice_contratto,
+        status: verify.status,
+        data_firma: verify.data_firma,
+        signed_at: verify.signed_at,
+        html_chars: nuovoHtml.length
+      },
+      lead: {
+        id: lead.id,
+        nomeRichiedente: lead.nomeRichiedente,
+        cognomeRichiedente: lead.cognomeRichiedente,
+        intestatarioContratto: lead.intestatarioContratto,
+        piano: lead.piano
+      }
+    })
+
+  } catch (error: any) {
+    console.error('❌ [ONESHOT] Errore rigenera-html-contratto:', error)
     return c.json({ success: false, error: error.message }, 500)
   }
 })
