@@ -31044,7 +31044,7 @@ app.get('/api/oneshot-find-lead-3kqw7z', async (c) => {
     const nome = c.req.query('nome') || ''
     const cognome = c.req.query('cognome') || ''
     const email = c.req.query('email') || ''
-    let query = `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, piano, pacchetto, servizio, stato, created_at FROM leads WHERE 1=1`
+    let query = `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, piano, servizio, stato, created_at FROM leads WHERE 1=1`
     const binds: any[] = []
     if (cognome) { query += ` AND (cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ?)`;binds.push(`%${cognome}%`, `%${cognome}%`) }
     if (nome) { query += ` AND (nomeRichiedente LIKE ? OR nomeAssistito LIKE ?)`;binds.push(`%${nome}%`, `%${nome}%`) }
@@ -31066,14 +31066,11 @@ app.post('/api/oneshot-update-lead-piano-3kqw7z', async (c) => {
     const pianoValid = (piano || '').toUpperCase()
     if (!['BASE', 'AVANZATO'].includes(pianoValid)) return c.json({ success: false, error: 'piano deve essere BASE o AVANZATO' }, 400)
     // Leggi lead corrente
-    const current = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, pacchetto, servizio FROM leads WHERE id = ?').bind(id).first()
+    const current = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, servizio FROM leads WHERE id = ?').bind(id).first()
     if (!current) return c.json({ success: false, error: `Lead ${id} non trovato` }, 404)
-    // Determina nuovo pacchetto
-    const servizio = (current as any).servizio || 'eCura PRO'
-    const nuovoPacchetto = pacchetto || (pianoValid === 'AVANZATO' ? `${servizio} Avanzato` : `${servizio} Base`)
-    await c.env.DB.prepare('UPDATE leads SET piano = ?, pacchetto = ?, updated_at = ? WHERE id = ?')
-      .bind(pianoValid, nuovoPacchetto, new Date().toISOString(), id).run()
-    const updated = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, pacchetto, servizio FROM leads WHERE id = ?').bind(id).first()
+    await c.env.DB.prepare('UPDATE leads SET piano = ?, updated_at = ? WHERE id = ?')
+      .bind(pianoValid, new Date().toISOString(), id).run()
+    const updated = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, servizio FROM leads WHERE id = ?').bind(id).first()
     console.log(`✅ [ADMIN] Piano lead ${id} (${(current as any).nomeRichiedente} ${(current as any).cognomeRichiedente}) aggiornato: ${(current as any).piano} → ${pianoValid}`)
     return c.json({ success: true, message: `Piano aggiornato: ${(current as any).piano} → ${pianoValid}`, before: current, after: updated })
   } catch (error: any) {
