@@ -31105,10 +31105,7 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
     // 1. Leggi contratto + lead
     const contract = await c.env.DB.prepare(`
       SELECT c.id, c.leadId, c.codice_contratto, c.tipo_contratto, c.servizio, c.piano,
-             c.status, c.prezzo_totale, c.prezzo_mensile, c.durata_mesi,
-             c.riserva_dominio, c.rateizzazione_attiva,
-             c.rinnovo_di, c.anno_rinnovo,
-             c.data_firma, c.signed_at, c.signature_data
+             c.status, c.prezzo_totale, c.prezzo_mensile, c.durata_mesi
       FROM contracts c
       WHERE c.id = ?
     `).bind(contractId).first() as any
@@ -31193,9 +31190,9 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
     const prezzoBase = contract.prezzo_totale || 0
     const prezzoIvaInclusa = Math.round(prezzoBase * (1 + ivaRate) * 100) / 100
 
-    // Fetch rate se rateizzazione attiva
+    // Fetch rate se rateizzazione attiva (leggi da lead, più affidabile)
     let rateContratto: any[] = []
-    if (contract.rateizzazione_attiva) {
+    if (lead.rateizzazione_attiva) {
       try {
         const rateRows = await c.env.DB.prepare(
           `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
@@ -31214,11 +31211,11 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
       servizio: contract.servizio || lead.servizio || 'eCura PRO',
       prezzoBase: prezzoBase,
       prezzoIvaInclusa: prezzoIvaInclusa,
-      isRinnovo: Boolean(contract.rinnovo_di),
-      annoRinnovo: contract.anno_rinnovo || 2,
-      codiceOriginale: contract.rinnovo_di || '',
-      riserva_dominio: Boolean(contract.riserva_dominio),
-      rateizzazione_attiva: Boolean(contract.rateizzazione_attiva),
+      isRinnovo: false,
+      annoRinnovo: 2,
+      codiceOriginale: '',
+      riserva_dominio: Boolean(lead.riserva_dominio),
+      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
       rateizzazione_note: lead.rateizzazione_note || '',
       rate: rateContratto
     }
@@ -31241,7 +31238,7 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
 
     // 6. Verifica
     const verify = await c.env.DB.prepare(
-      'SELECT id, codice_contratto, status, data_firma, signed_at FROM contracts WHERE id = ?'
+      'SELECT id, codice_contratto, status FROM contracts WHERE id = ?'
     ).bind(contractId).first() as any
 
     return c.json({
@@ -31251,8 +31248,6 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
         id: verify.id,
         codice: verify.codice_contratto,
         status: verify.status,
-        data_firma: verify.data_firma,
-        signed_at: verify.signed_at,
         html_chars: nuovoHtml.length
       },
       lead: {
