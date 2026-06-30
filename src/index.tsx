@@ -1367,6 +1367,15 @@ app.use('/api/*', async (c, next) => {
   if (path.match(/^\/api\/contracts\/[^\/]+$/) && method === 'GET') {
     return next() // Lettura singolo contratto (per firma-contratto.html)
   }
+
+  // 📄 Visualizzazione contratto firmato via link email (pubblico — ID nel link)
+  if (path.match(/^\/api\/contratti\/[^\/]+\/pdf-print$/) && method === 'GET') {
+    return next() // PDF contratto firmato via link email
+  }
+
+  if (path.match(/^\/api\/contratti\/[^\/]+\/view$/) && method === 'GET') {
+    return next() // Pagina HTML contratto firmato
+  }
   
   if (path === '/api/contracts/sign' && method === 'POST') {
     return next() // ⚠️ TEMPORANEO: Firma contratto pubblico (serve token system!)
@@ -15143,7 +15152,7 @@ app.post('/api/contracts/sign', async (c) => {
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
-      if (lead && c.env.RESEND_API_KEY) {
+      if (lead) {
         console.log(`📧 [FIRMA] Generazione e invio PDF contratto firmato`)
         
         // 1. GENERA HTML COMPLETO DEL CONTRATTO (con contenuto_html originale)
@@ -15346,7 +15355,7 @@ app.post('/api/contracts/sign', async (c) => {
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
-      if (lead && c.env.RESEND_API_KEY) {
+      if (lead) {
         console.log(`📧 [FIRMA→PROFORMA] Lead recuperato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
         
         // Importa funzione invio proforma
@@ -15650,7 +15659,7 @@ app.post('/api/contracts/sign', async (c) => {
           console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante) - email NON inviata`)
         }
       } else {
-        console.warn(`⚠️ [FIRMA→PROFORMA] Lead non trovato o RESEND_API_KEY mancante - proforma NON inviata`)
+        console.warn(`⚠️ [FIRMA→PROFORMA] Lead non trovato - proforma NON inviata`)
       }
     } catch (proformaError) {
       // Non blocchiamo la risposta se la proforma fallisce
