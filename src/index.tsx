@@ -31106,8 +31106,8 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
     const contract = await c.env.DB.prepare(`
       SELECT c.id, c.leadId, c.codice_contratto, c.tipo_contratto, c.servizio, c.piano,
              c.status, c.prezzo_totale, c.prezzo_mensile, c.durata_mesi,
-             c.riserva_dominio, c.rateizzazione_attiva, c.rateizzazione_note,
-             c.isRinnovo, c.annoRinnovo, c.codiceOriginale,
+             c.riserva_dominio, c.rateizzazione_attiva,
+             c.rinnovo_di, c.anno_rinnovo,
              c.data_firma, c.signed_at, c.signature_data
       FROM contracts c
       WHERE c.id = ?
@@ -31214,12 +31214,12 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
       servizio: contract.servizio || lead.servizio || 'eCura PRO',
       prezzoBase: prezzoBase,
       prezzoIvaInclusa: prezzoIvaInclusa,
-      isRinnovo: Boolean(contract.isRinnovo),
-      annoRinnovo: contract.annoRinnovo || 2,
-      codiceOriginale: contract.codiceOriginale || '',
+      isRinnovo: Boolean(contract.rinnovo_di),
+      annoRinnovo: contract.anno_rinnovo || 2,
+      codiceOriginale: contract.rinnovo_di || '',
       riserva_dominio: Boolean(contract.riserva_dominio),
       rateizzazione_attiva: Boolean(contract.rateizzazione_attiva),
-      rateizzazione_note: contract.rateizzazione_note || '',
+      rateizzazione_note: lead.rateizzazione_note || '',
       rate: rateContratto
     }
 
