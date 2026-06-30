@@ -174,49 +174,72 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataInizioServizio = new Date().toLocaleDateString('it-IT')
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
-  // ✅ LOGICA SEMPLIFICATA: Usa direttamente intestatarioContratto dal leadData
-  // Se intestatario = 'richiedente' → NON mostrare luogo/data nascita nel contratto
-  // Se intestatario = 'assistito' → mostrare luogo/data nascita
+  // ✅ LOGICA INTESTATARIO: dipende da intestatarioContratto
+  // Se 'richiedente' → dati richiedente (senza data/luogo nascita nel contratto)
+  // Se 'assistito'  → dati assistito (CON data/luogo nascita)
   const intestatarioType = leadData.intestatarioContratto || 'richiedente'
-  const intestatarioDiversoDaAssistito = (intestatarioType === 'richiedente')
-  
-  // ✅ FIX CRITICO: Dati intestatario già calcolati e passati da POST /api/leads/:id/send-contract
-  // IMPORTANTE: nomeIntestatario, cognomeIntestatario sono calcolati da intestatarioContratto
-  // Se mancano (vecchio workflow), usa fallback intelligenti
-  const nomeIntestatario = leadData.nomeIntestatario || 
-    (intestatarioType === 'assistito' ? leadData.nomeAssistito : leadData.nomeRichiedente) || 'N/A'
-  const cognomeIntestatario = leadData.cognomeIntestatario || 
-    (intestatarioType === 'assistito' ? leadData.cognomeAssistito : leadData.cognomeRichiedente) || 'N/A'
-  const luogoNascitaIntestatario = leadData.luogoNascitaIntestatario || 
-    (intestatarioType === 'assistito' ? leadData.luogoNascitaAssistito : '') || 'N/A'
-  const dataNascitaIntestatario = leadData.dataNascitaIntestatario || 
-    (intestatarioType === 'assistito' ? leadData.dataNascitaAssistito : '') || 'N/A'
+  const isIntestatarioRichiedente = (intestatarioType === 'richiedente')
+  // variabile legacy (usata nel template HTML)
+  const intestatarioDiversoDaAssistito = isIntestatarioRichiedente
+
+  // ── Dati intestatario (chi firma il contratto) ─────────────────────────────
+  // REGOLA: leggi sempre dal gruppo corretto (richiedente vs assistito)
+  const nomeIntestatario = isIntestatarioRichiedente
+    ? (leadData.nomeRichiedente || 'N/A')
+    : (leadData.nomeAssistito || leadData.nomeRichiedente || 'N/A')
+  const cognomeIntestatario = isIntestatarioRichiedente
+    ? (leadData.cognomeRichiedente || 'N/A')
+    : (leadData.cognomeAssistito || leadData.cognomeRichiedente || 'N/A')
+
+  // Data/luogo nascita: solo per assistito (richiedente = careGiver adulto, non serve)
+  const luogoNascitaIntestatario = isIntestatarioRichiedente
+    ? (leadData.luogoNascitaIntestatario || '')
+    : (leadData.luogoNascitaAssistito || leadData.luogoNascitaIntestatario || 'N/A')
+  const dataNascitaIntestatario = isIntestatarioRichiedente
+    ? (leadData.dataNascitaIntestatario || '')
+    : (leadData.dataNascitaAssistito || leadData.dataNascitaIntestatario || 'N/A')
+
+  // Indirizzo intestatario: sempre dal richiedente/intestatario
   const indirizzoIntestatario = leadData.indirizzoIntestatario || 'N/A'
   const capIntestatario = leadData.capIntestatario || 'N/A'
   const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
   const provinciaIntestatario = leadData.provinciaIntestatario || ''
-  // ✅ FIX PRIORITÀ CF: dipende da chi è l'intestatario
-  // - Se intestatario = 'assistito' → cfAssistito ha priorità (è il CF della persona che firma/intestata)
-  // - Se intestatario = 'richiedente' → cfIntestatario ha priorità, fallback su cfAssistito
-  // Motivo: cfIntestatario nel DB può contenere il CF del richiedente/caregiver (campo generico)
-  const cfIntestatario = intestatarioType === 'assistito'
-    ? (leadData.cfAssistito || leadData.cfIntestatario || 'N/A')
-    : (leadData.cfIntestatario || leadData.cfAssistito || 'N/A')
-  
-  // Care giver (richiedente) per i riferimenti
+
+  // CF: dipende da chi è l'intestatario
+  const cfIntestatario = isIntestatarioRichiedente
+    ? (leadData.cfIntestatario || 'N/A')           // CF richiedente (careGiver)
+    : (leadData.cfAssistito || leadData.cfIntestatario || 'N/A')  // CF assistito
+
+  // ── CareGiver (richiedente) per sezione Riferimenti ───────────────────────
+  // Se intestatario = richiedente → careGiver = nessun riferimento separato
+  // Se intestatario = assistito   → careGiver = richiedente (familiare/tutore)
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
   const cognomeCareGiver = leadData.cognomeRichiedente || cognomeIntestatario
   const telefonoCareGiver = leadData.telefono || 'N/A'
   const emailCareGiver = leadData.email || 'N/A'
-  
-  // ✅ Indirizzo spedizione = SEMPRE dell'assistito (dispositivo va a chi lo usa!)
-  // DEVE includere nome/cognome assistito PRIMA dell'indirizzo
-  const nomeAssistitoSpedizione = leadData.nomeAssistito || ''
-  const cognomeAssistitoSpedizione = leadData.cognomeAssistito || ''
-  const indirizzoSpedizione = leadData.indirizzoAssistito || 'N/A'
-  const capSpedizione = leadData.capAssistito || 'N/A'
-  const cittaSpedizione = leadData.cittaAssistito || 'N/A'
-  const provinciaSpedizione = leadData.provinciaAssistito || ''
+
+  // ── Indirizzo spedizione dispositivo ──────────────────────────────────────
+  // REGOLA: il dispositivo va consegnato all'INTESTATARIO del contratto
+  // - intestatario = 'richiedente' → indirizzo richiedente (indirizzoIntestatario)
+  // - intestatario = 'assistito'   → indirizzo assistito (indirizzoAssistito)
+  // Fallback: se non ci sono dati, usa l'indirizzo disponibile
+  const nomeSpedizione = nomeIntestatario
+  const cognomeSpedizione = cognomeIntestatario
+  const indirizzoSpedizione = isIntestatarioRichiedente
+    ? (leadData.indirizzoIntestatario || leadData.indirizzoAssistito || 'N/A')
+    : (leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A')
+  const capSpedizione = isIntestatarioRichiedente
+    ? (leadData.capIntestatario || leadData.capAssistito || 'N/A')
+    : (leadData.capAssistito || leadData.capIntestatario || 'N/A')
+  const cittaSpedizione = isIntestatarioRichiedente
+    ? (leadData.cittaIntestatario || leadData.cittaAssistito || 'N/A')
+    : (leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A')
+  const provinciaSpedizione = isIntestatarioRichiedente
+    ? (leadData.provinciaIntestatario || leadData.provinciaAssistito || '')
+    : (leadData.provinciaAssistito || leadData.provinciaIntestatario || '')
+  // legacy aliases (usati più avanti nel template)
+  const nomeAssistitoSpedizione = nomeSpedizione
+  const cognomeAssistitoSpedizione = cognomeSpedizione
   
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
