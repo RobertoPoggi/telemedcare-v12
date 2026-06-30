@@ -22,6 +22,8 @@ export interface EmailTemplate {
 export interface EmailData {
   to: string
   from?: string
+  cc?: string | string[]   // CC: copia conoscenza
+  bcc?: string | string[]  // BCC: copia nascosta
   subject: string
   html: string
   text?: string
@@ -501,8 +503,24 @@ export class EmailService {
         }
       }
       
+      // ✅ CC AUTOMATICO: aggiungi sempre info@ecura.it in CC su tutte le email ai lead
+      // Fallback anti-spam: se la mail finisce in spam, la riceviamo anche noi e possiamo
+      // girarla manualmente al lead tramite altra casella.
+      // Non aggiungere CC se il destinatario È già info@ecura.it (notifiche interne).
+      const CC_INTERNO = 'info@ecura.it'
+      if (emailData.to !== CC_INTERNO && !emailData.to.includes(CC_INTERNO)) {
+        const existingCc = emailData.cc
+          ? (Array.isArray(emailData.cc) ? emailData.cc : [emailData.cc])
+          : []
+        if (!existingCc.includes(CC_INTERNO)) {
+          emailData.cc = [...existingCc, CC_INTERNO]
+          console.log(`📋 [CC] Aggiunto CC automatico a ${CC_INTERNO} per email a ${emailData.to}`)
+        }
+      }
+
       console.log('📧 Invio email reale:', {
         to: emailData.to,
+        cc: emailData.cc,
         subject: emailData.subject,
         attachments: emailData.attachments?.length || 0,
         hasEnv: !!env,
@@ -607,9 +625,13 @@ export class EmailService {
     console.log('📧 SendGrid: From:', emailData.from || env?.RESEND_FROM || 'info@ecura.it')
     console.log('📧 SendGrid: To:', emailData.to)
     
-    const payload = {
+    const ccList = emailData.cc
+      ? (Array.isArray(emailData.cc) ? emailData.cc : [emailData.cc])
+      : []
+    const payload: any = {
       personalizations: [{
         to: [{ email: emailData.to }],
+        ...(ccList.length > 0 && { cc: ccList.map(e => ({ email: e })) }),
         subject: emailData.subject
       }],
       from: {
@@ -672,9 +694,13 @@ export class EmailService {
     console.log('📧 Resend: Using API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NONE')
     
     const fromEmail = emailData.from || env?.RESEND_FROM || 'info@ecura.it'
-    const payload = {
+    const ccList = emailData.cc
+      ? (Array.isArray(emailData.cc) ? emailData.cc : [emailData.cc])
+      : []
+    const payload: any = {
       from: `eCura <${fromEmail}>`,
       to: [emailData.to],
+      ...(ccList.length > 0 && { cc: ccList }),
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
@@ -720,12 +746,16 @@ export class EmailService {
     console.log('📧 Brevo: Invio a', emailData.to)
     
     const fromEmail = emailData.from || env?.RESEND_FROM || 'info@ecura.it'
-    const payload = {
+    const ccList = emailData.cc
+      ? (Array.isArray(emailData.cc) ? emailData.cc : [emailData.cc])
+      : []
+    const payload: any = {
       sender: {
         name: 'eCura',
         email: fromEmail
       },
       to: [{ email: emailData.to }],
+      ...(ccList.length > 0 && { cc: ccList.map(e => ({ email: e })) }),
       subject: emailData.subject,
       htmlContent: emailData.html,
       textContent: emailData.text || '',
