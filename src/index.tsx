@@ -1396,6 +1396,12 @@ app.use('/api/*', async (c, next) => {
     return next() // Webhook HubSpot
   }
 
+  // CRON GitHub Actions: endpoint auto-import non richiede auth utente
+  // (è già protetto da HUBSPOT_ACCESS_TOKEN lato server + filtro eCura hardcoded)
+  if (path === '/api/hubspot/auto-import' && method === 'POST') {
+    return next()
+  }
+
   // ONE-SHOT: Endpoint temporaneo inserimento Mazzarella (da rimuovere dopo uso)
   if (path === '/api/oneshot-mazzarella-7x9k2p' && method === 'POST') {
     return next()
@@ -18430,21 +18436,15 @@ app.post('/api/hubspot/auto-import', async (c) => {
     const { executeAutoImport, logAutoImport } = await import('./modules/hubspot-auto-import')
     
     const body = await c.req.json().catch(() => ({}))
-    // days=0 (o mancante) → dall'inizio campagna eCura (30/01/2026), come fa il tasto IRBEMA
-    // Questo copre i lead con createdate molto precedente alla data di arrivo nel CRM
-    const campaignStart = new Date('2026-01-30T00:00:00Z')
-    const daysSinceCampaign = Math.ceil((Date.now() - campaignStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    const requestedDays = Number(body.days) || 0
     const config = {
       enabled: body.enabled !== false, // Default true
       startHour: body.startHour || 0,
-      days: requestedDays > 0 ? requestedDays : daysSinceCampaign, // 0 = dall'inizio campagna
+      days: body.days || 7, // Default 7 giorni — stessa logica autorefresh dashboard
       onlyEcura: true, // 🔒 HARDCODED - Mai importare lead non-eCura!
       dryRun: body.dryRun || false
     }
     
-    const fromLabel = requestedDays > 0 ? `ultimi ${config.days} giorni` : `dall'inizio campagna 30/01/2026 (${config.days} giorni)`
-    console.log(`🔄 [AUTO-IMPORT API] Richiesta import ${fromLabel} (dryRun: ${config.dryRun})`)
+    console.log(`🔄 [AUTO-IMPORT API] Richiesta import ultimi ${config.days} giorni (dryRun: ${config.dryRun})`)
     
     // Ottieni baseUrl per email
     const baseUrl = c.env?.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'

@@ -1,13 +1,13 @@
 name: HubSpot Auto Import (Form eCura)
 # 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
 # ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
-# 📅 Periodo: Dall'inizio campagna eCura (30/01/2026) — stesso comportamento del tasto IRBEMA
+# 📅 Periodo: Ultimi 7 giorni — stessa logica dell'autorefresh dashboard
 # 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura' (IMMUTABILE)
 #
 # ℹ️  NOTA: imported=0 con skipped>0 è NORMALE — i lead erano già nel DB.
-#    I lead su HubSpot possono avere createdate molto precedente alla data di invio
-#    (es. lead raccolto settimane fa, inserito su HubSpot in ritardo).
-#    Per questo si parte sempre dall'inizio campagna, non da una finestra fissa.
+#    Il CRON è un safety net: se l'autorefresh dashboard li ha già caricati, skipped>0.
+#    Se hubspotContacts=0: o non ci sono nuovi lead eCura negli ultimi 7 giorni
+#    oppure il token è scaduto.
 
 on:
   schedule:
@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: 'Giorni da importare (0 = dall inizio campagna 30/01/2026)'
+        description: 'Giorni da importare (default: 7)'
         required: false
-        default: '0'
+        default: '7'
         type: string
       dryRun:
         description: 'Dry Run (solo simulazione, non salva)'
@@ -41,18 +41,19 @@ jobs:
       
       - name: 🔄 Trigger HubSpot Auto-Import
         run: |
-          DAYS="${{ github.event.inputs.days || '0' }}"
+          DAYS="${{ github.event.inputs.days || '7' }}"
           DRY_RUN="${{ github.event.inputs.dryRun || 'false' }}"
           
           echo "🔄 Avvio import HubSpot..."
-          echo "📅 Periodo: ${DAYS} giorni (0 = dall'inizio campagna 30/01/2026, come tasto IRBEMA)"
+          echo "📅 Periodo: Ultimi $DAYS giorni"
           echo "🌐 Target: https://telemedcare-v12.pages.dev"
-          echo "ℹ️  imported=0 + skipped>0 è NORMALE — lead già nel DB"
+          echo "ℹ️  imported=0 + skipped>0 è NORMALE — lead già nel DB via autorefresh dashboard"
           
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://telemedcare-v12.pages.dev/api/hubspot/auto-import" \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Action: true" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -d "{\"days\": $DAYS, \"dryRun\": $DRY_RUN, \"enabled\": true, \"startHour\": 0}")
           
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
