@@ -31018,6 +31018,50 @@ app.get('/api/oneshot-sync-dispositivi-da-assistiti-7vk2p', async (c) => {
   }
 })
 
+// 🔍 ADMIN: Cerca lead per nome/cognome
+app.get('/api/admin/find-lead', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const nome = c.req.query('nome') || ''
+    const cognome = c.req.query('cognome') || ''
+    const email = c.req.query('email') || ''
+    let query = `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, piano, pacchetto, servizio, stato, created_at FROM leads WHERE 1=1`
+    const binds: any[] = []
+    if (cognome) { query += ` AND (cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ?)`;binds.push(`%${cognome}%`, `%${cognome}%`) }
+    if (nome) { query += ` AND (nomeRichiedente LIKE ? OR nomeAssistito LIKE ?)`;binds.push(`%${nome}%`, `%${nome}%`) }
+    if (email) { query += ` AND email LIKE ?`;binds.push(`%${email}%`) }
+    query += ` ORDER BY created_at DESC LIMIT 20`
+    const result = await c.env.DB.prepare(query).bind(...binds).all()
+    return c.json({ success: true, count: result.results?.length || 0, leads: result.results || [] })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// 🔧 ADMIN: Aggiorna piano di un lead (es. BASE → AVANZATO)
+app.post('/api/admin/update-lead-piano', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const { id, piano, pacchetto } = await c.req.json()
+    if (!id) return c.json({ success: false, error: 'id obbligatorio' }, 400)
+    const pianoValid = (piano || '').toUpperCase()
+    if (!['BASE', 'AVANZATO'].includes(pianoValid)) return c.json({ success: false, error: 'piano deve essere BASE o AVANZATO' }, 400)
+    // Leggi lead corrente
+    const current = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, pacchetto, servizio FROM leads WHERE id = ?').bind(id).first()
+    if (!current) return c.json({ success: false, error: `Lead ${id} non trovato` }, 404)
+    // Determina nuovo pacchetto
+    const servizio = (current as any).servizio || 'eCura PRO'
+    const nuovoPacchetto = pacchetto || (pianoValid === 'AVANZATO' ? `${servizio} Avanzato` : `${servizio} Base`)
+    await c.env.DB.prepare('UPDATE leads SET piano = ?, pacchetto = ?, updated_at = ? WHERE id = ?')
+      .bind(pianoValid, nuovoPacchetto, new Date().toISOString(), id).run()
+    const updated = await c.env.DB.prepare('SELECT id, nomeRichiedente, cognomeRichiedente, piano, pacchetto, servizio FROM leads WHERE id = ?').bind(id).first()
+    console.log(`✅ [ADMIN] Piano lead ${id} (${(current as any).nomeRichiedente} ${(current as any).cognomeRichiedente}) aggiornato: ${(current as any).piano} → ${pianoValid}`)
+    return c.json({ success: true, message: `Piano aggiornato: ${(current as any).piano} → ${pianoValid}`, before: current, after: updated })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
