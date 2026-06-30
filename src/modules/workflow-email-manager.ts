@@ -175,15 +175,26 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
   const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
   
   // ✅ LOGICA INTESTATARIO: dipende da intestatarioContratto
-  // Se 'richiedente' → dati richiedente (senza data/luogo nascita nel contratto)
-  // Se 'assistito'  → dati assistito (CON data/luogo nascita)
+  // Se 'richiedente' → il contratto è intestato al Lead (richiedente/careGiver)
+  // Se 'assistito'  → il contratto è intestato all'assistito (anziano)
   const intestatarioType = leadData.intestatarioContratto || 'richiedente'
   const isIntestatarioRichiedente = (intestatarioType === 'richiedente')
   // variabile legacy (usata nel template HTML)
   const intestatarioDiversoDaAssistito = isIntestatarioRichiedente
 
   // ── Dati intestatario (chi firma il contratto) ─────────────────────────────
-  // REGOLA: leggi sempre dal gruppo corretto (richiedente vs assistito)
+  //
+  // STRUTTURA CAMPI DB:
+  // - nomeRichiedente/cognomeRichiedente = il lead (careGiver/familiare)
+  // - nomeAssistito/cognomeAssistito     = l'anziano
+  // - campi *Intestatario (indirizzo, CF, nascita) = sempre del RICHIEDENTE
+  //   (compilati dal form "Dati Intestatario" che e' il richiedente)
+  // - campi *Assistito (indirizzo, CF, nascita)    = sempre dell'ASSISTITO
+  //
+  // REGOLA CONTRATTO:
+  // intestatario='richiedente' → nome dal richiedente, dati anagrafici da *Intestatario
+  // intestatario='assistito'   → nome dall'assistito, dati anagrafici da *Assistito
+
   const nomeIntestatario = isIntestatarioRichiedente
     ? (leadData.nomeRichiedente || 'N/A')
     : (leadData.nomeAssistito || leadData.nomeRichiedente || 'N/A')
@@ -191,55 +202,50 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     ? (leadData.cognomeRichiedente || 'N/A')
     : (leadData.cognomeAssistito || leadData.cognomeRichiedente || 'N/A')
 
-  // Data/luogo nascita: solo per assistito (richiedente = careGiver adulto, non serve)
+  // Luogo/data nascita: dai campi *Intestatario o *Assistito secondo chi è intestatario
   const luogoNascitaIntestatario = isIntestatarioRichiedente
     ? (leadData.luogoNascitaIntestatario || '')
-    : (leadData.luogoNascitaAssistito || leadData.luogoNascitaIntestatario || 'N/A')
+    : (leadData.luogoNascitaAssistito || leadData.luogoNascitaIntestatario || '')
   const dataNascitaIntestatario = isIntestatarioRichiedente
     ? (leadData.dataNascitaIntestatario || '')
-    : (leadData.dataNascitaAssistito || leadData.dataNascitaIntestatario || 'N/A')
+    : (leadData.dataNascitaAssistito || leadData.dataNascitaIntestatario || '')
 
-  // Indirizzo intestatario: sempre dal richiedente/intestatario
-  const indirizzoIntestatario = leadData.indirizzoIntestatario || 'N/A'
-  const capIntestatario = leadData.capIntestatario || 'N/A'
-  const cittaIntestatario = leadData.cittaIntestatario || 'N/A'
-  const provinciaIntestatario = leadData.provinciaIntestatario || ''
+  // Indirizzo: dai campi *Intestatario o *Assistito secondo chi è intestatario
+  const indirizzoIntestatario = isIntestatarioRichiedente
+    ? (leadData.indirizzoIntestatario || 'N/A')
+    : (leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A')
+  const capIntestatario = isIntestatarioRichiedente
+    ? (leadData.capIntestatario || 'N/A')
+    : (leadData.capAssistito || leadData.capIntestatario || 'N/A')
+  const cittaIntestatario = isIntestatarioRichiedente
+    ? (leadData.cittaIntestatario || 'N/A')
+    : (leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A')
+  const provinciaIntestatario = isIntestatarioRichiedente
+    ? (leadData.provinciaIntestatario || '')
+    : (leadData.provinciaAssistito || leadData.provinciaIntestatario || '')
 
-  // CF: dipende da chi è l'intestatario
+  // CF: dai campi *Intestatario o *Assistito secondo chi è intestatario
   const cfIntestatario = isIntestatarioRichiedente
-    ? (leadData.cfIntestatario || 'N/A')           // CF richiedente (careGiver)
-    : (leadData.cfAssistito || leadData.cfIntestatario || 'N/A')  // CF assistito
+    ? (leadData.cfIntestatario || 'N/A')                               // CF del richiedente
+    : (leadData.cfAssistito || leadData.cfIntestatario || 'N/A')       // CF dell'assistito
 
   // ── CareGiver (richiedente) per sezione Riferimenti ───────────────────────
-  // Se intestatario = richiedente → careGiver = nessun riferimento separato
-  // Se intestatario = assistito   → careGiver = richiedente (familiare/tutore)
+  // Se intestatario = richiedente → i Riferimenti mostrano solo telefono/email (no nome duplicato)
+  // Se intestatario = assistito   → i Riferimenti mostrano il richiedente come familiare/tutore
   const nomeCareGiver = leadData.nomeRichiedente || nomeIntestatario
   const cognomeCareGiver = leadData.cognomeRichiedente || cognomeIntestatario
   const telefonoCareGiver = leadData.telefono || 'N/A'
   const emailCareGiver = leadData.email || 'N/A'
 
   // ── Indirizzo spedizione dispositivo ──────────────────────────────────────
-  // REGOLA: il dispositivo va consegnato all'INTESTATARIO del contratto
-  // - intestatario = 'richiedente' → indirizzo richiedente (indirizzoIntestatario)
-  // - intestatario = 'assistito'   → indirizzo assistito (indirizzoAssistito)
-  // Fallback: se non ci sono dati, usa l'indirizzo disponibile
-  const nomeSpedizione = nomeIntestatario
-  const cognomeSpedizione = cognomeIntestatario
-  const indirizzoSpedizione = isIntestatarioRichiedente
-    ? (leadData.indirizzoIntestatario || leadData.indirizzoAssistito || 'N/A')
-    : (leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A')
-  const capSpedizione = isIntestatarioRichiedente
-    ? (leadData.capIntestatario || leadData.capAssistito || 'N/A')
-    : (leadData.capAssistito || leadData.capIntestatario || 'N/A')
-  const cittaSpedizione = isIntestatarioRichiedente
-    ? (leadData.cittaIntestatario || leadData.cittaAssistito || 'N/A')
-    : (leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A')
-  const provinciaSpedizione = isIntestatarioRichiedente
-    ? (leadData.provinciaIntestatario || leadData.provinciaAssistito || '')
-    : (leadData.provinciaAssistito || leadData.provinciaIntestatario || '')
-  // legacy aliases (usati più avanti nel template)
-  const nomeAssistitoSpedizione = nomeSpedizione
-  const cognomeAssistitoSpedizione = cognomeSpedizione
+  // REGOLA FISSA: il dispositivo va SEMPRE al domicilio dell'ASSISTITO
+  // (indipendente dall'intestazione del contratto)
+  const nomeAssistitoSpedizione = leadData.nomeAssistito || leadData.nomeRichiedente || ''
+  const cognomeAssistitoSpedizione = leadData.cognomeAssistito || leadData.cognomeRichiedente || ''
+  const indirizzoSpedizione = leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A'
+  const capSpedizione = leadData.capAssistito || leadData.capIntestatario || 'N/A'
+  const cittaSpedizione = leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A'
+  const provinciaSpedizione = leadData.provinciaAssistito || leadData.provinciaIntestatario || ''
   
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
@@ -434,16 +440,16 @@ async function generateContractHtml(leadData: any, contractData: any): Promise<s
     
     <div class="party">
         ${intestatarioDiversoDaAssistito ? `
-            <!-- CASO 1: Intestatario ≠ Assistito -->
-            <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            <!-- CASO 1: Intestatario = Richiedente (il lead/careGiver firma il contratto) -->
+            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
             
-            <p><strong>Contatti:</strong> telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
+            <p><strong>Riferimenti:</strong> telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         ` : `
-            <!-- CASO 2: Intestatario = Assistito -->
-            <p>Sig. <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span> nato/a a <span class="highlight">${luogoNascitaIntestatario}</span> il <span class="highlight">${dataNascitaIntestatario}</span>, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            <!-- CASO 2: Intestatario = Assistito (l'anziano è intestatario del contratto) -->
+            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
             
             <p><strong>Riferimenti:</strong><br>
-            Signor <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
+            Signor/a <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         `}
         
         <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${nomeAssistitoSpedizione} ${cognomeAssistitoSpedizione} - ${indirizzoSpedizione} - ${capSpedizione} ${cittaSpedizione} (${provinciaSpedizione})</span></p>

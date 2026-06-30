@@ -447,7 +447,7 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(h
     </tfoot>
   </table>
   ${v}
-</div>`}async function kE(e,o){const t=o.servizio||"eCura PRO",a=o.tipoServizio||"BASE",i=t.includes("PREMIUM")?"SiDLY Vital Care":"SiDLY Care PRO",s=!!(o.isRinnovo||o.is_rinnovo),r=o.annoRinnovo||o.anno_rinnovo||2,n=o.codiceOriginale||o.rinnovo_di||"",d=o.prezzoBase;let c="PRO";t.includes("FAMILY")?c="FAMILY":t.includes("PREMIUM")?c="PREMIUM":t.includes("PRO")&&(c="PRO");const{getPricing:u}=await Promise.resolve().then(()=>bs),g=u(c,a),m=g?g.rinnovoBase:0,h=!!e.iva_agevolata,f=h?.04:.22,v=h?"4%":"22%",b=h?" (IVA agevolata 4% — Legge 104, disabilità 100%)":"",S=new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"long",year:"numeric"}),A=new Date().toLocaleDateString("it-IT"),y=new Date(Date.now()+365*24*60*60*1e3).toLocaleDateString("it-IT"),_=(e.intestatarioContratto||"richiedente")==="richiedente",L=_,x=_?e.nomeRichiedente||"N/A":e.nomeAssistito||e.nomeRichiedente||"N/A",z=_?e.cognomeRichiedente||"N/A":e.cognomeAssistito||e.cognomeRichiedente||"N/A",B=_?e.luogoNascitaIntestatario||"":e.luogoNascitaAssistito||e.luogoNascitaIntestatario||"N/A",N=_?e.dataNascitaIntestatario||"":e.dataNascitaAssistito||e.dataNascitaIntestatario||"N/A",R=e.indirizzoIntestatario||"N/A",w=e.capIntestatario||"N/A",k=e.cittaIntestatario||"N/A",M=e.provinciaIntestatario||"",U=_?e.cfIntestatario||"N/A":e.cfAssistito||e.cfIntestatario||"N/A",H=e.nomeRichiedente||x,G=e.cognomeRichiedente||z,q=e.telefono||"N/A",$=e.email||"N/A",ue=x,se=z,te=_?e.indirizzoIntestatario||e.indirizzoAssistito||"N/A":e.indirizzoAssistito||e.indirizzoIntestatario||"N/A",Ie=_?e.capIntestatario||e.capAssistito||"N/A":e.capAssistito||e.capIntestatario||"N/A",Ee=_?e.cittaIntestatario||e.cittaAssistito||"N/A":e.cittaAssistito||e.cittaIntestatario||"N/A",De=_?e.provinciaIntestatario||e.provinciaAssistito||"":e.provinciaAssistito||e.provinciaIntestatario||"",ae=ue,oe=se;return`
+</div>`}async function kE(e,o){const t=o.servizio||"eCura PRO",a=o.tipoServizio||"BASE",i=t.includes("PREMIUM")?"SiDLY Vital Care":"SiDLY Care PRO",s=!!(o.isRinnovo||o.is_rinnovo),r=o.annoRinnovo||o.anno_rinnovo||2,n=o.codiceOriginale||o.rinnovo_di||"",d=o.prezzoBase;let c="PRO";t.includes("FAMILY")?c="FAMILY":t.includes("PREMIUM")?c="PREMIUM":t.includes("PRO")&&(c="PRO");const{getPricing:u}=await Promise.resolve().then(()=>bs),g=u(c,a),m=g?g.rinnovoBase:0,h=!!e.iva_agevolata,f=h?.04:.22,v=h?"4%":"22%",b=h?" (IVA agevolata 4% — Legge 104, disabilità 100%)":"",S=new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"long",year:"numeric"}),A=new Date().toLocaleDateString("it-IT"),y=new Date(Date.now()+365*24*60*60*1e3).toLocaleDateString("it-IT"),_=(e.intestatarioContratto||"richiedente")==="richiedente",L=_,x=_?e.nomeRichiedente||"N/A":e.nomeAssistito||e.nomeRichiedente||"N/A",z=_?e.cognomeRichiedente||"N/A":e.cognomeAssistito||e.cognomeRichiedente||"N/A",B=_?e.luogoNascitaIntestatario||"":e.luogoNascitaAssistito||e.luogoNascitaIntestatario||"",N=_?e.dataNascitaIntestatario||"":e.dataNascitaAssistito||e.dataNascitaIntestatario||"",R=_?e.indirizzoIntestatario||"N/A":e.indirizzoAssistito||e.indirizzoIntestatario||"N/A",w=_?e.capIntestatario||"N/A":e.capAssistito||e.capIntestatario||"N/A",k=_?e.cittaIntestatario||"N/A":e.cittaAssistito||e.cittaIntestatario||"N/A",M=_?e.provinciaIntestatario||"":e.provinciaAssistito||e.provinciaIntestatario||"",U=_?e.cfIntestatario||"N/A":e.cfAssistito||e.cfIntestatario||"N/A",H=e.nomeRichiedente||x,G=e.cognomeRichiedente||z,q=e.telefono||"N/A",$=e.email||"N/A",ue=e.nomeAssistito||e.nomeRichiedente||"",se=e.cognomeAssistito||e.cognomeRichiedente||"",te=e.indirizzoAssistito||e.indirizzoIntestatario||"N/A",Ie=e.capAssistito||e.capIntestatario||"N/A",Ee=e.cittaAssistito||e.cittaIntestatario||"N/A",De=e.provinciaAssistito||e.provinciaIntestatario||"";return`
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -639,19 +639,19 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(h
     
     <div class="party">
         ${L?`
-            <!-- CASO 1: Intestatario ≠ Assistito -->
-            <p>Sig. <span class="highlight">${x} ${z}</span>, residente e domiciliato/a in <span class="highlight">${R} - ${w} ${k} (${M})</span> e con codice fiscale <span class="highlight">${U}</span>.</p>
+            <!-- CASO 1: Intestatario = Richiedente (il lead/careGiver firma il contratto) -->
+            <p>Sig./Sig.ra <span class="highlight">${x} ${z}</span>${B?` nato/a a <span class="highlight">${B}</span>`:""}${N?` il <span class="highlight">${N}</span>`:""}, residente e domiciliato/a in <span class="highlight">${R} - ${w} ${k} (${M})</span> e con codice fiscale <span class="highlight">${U}</span>.</p>
             
-            <p><strong>Contatti:</strong> telefono <span class="highlight">${q}</span> – e-mail <span class="highlight">${$}</span></p>
+            <p><strong>Riferimenti:</strong> telefono <span class="highlight">${q}</span> – e-mail <span class="highlight">${$}</span></p>
         `:`
-            <!-- CASO 2: Intestatario = Assistito -->
-            <p>Sig. <span class="highlight">${x} ${z}</span> nato/a a <span class="highlight">${B}</span> il <span class="highlight">${N}</span>, residente e domiciliato/a in <span class="highlight">${R} - ${w} ${k} (${M})</span> e con codice fiscale <span class="highlight">${U}</span>.</p>
+            <!-- CASO 2: Intestatario = Assistito (l'anziano è intestatario del contratto) -->
+            <p>Sig./Sig.ra <span class="highlight">${x} ${z}</span>${B?` nato/a a <span class="highlight">${B}</span>`:""}${N?` il <span class="highlight">${N}</span>`:""}, residente e domiciliato/a in <span class="highlight">${R} - ${w} ${k} (${M})</span> e con codice fiscale <span class="highlight">${U}</span>.</p>
             
             <p><strong>Riferimenti:</strong><br>
-            Signor <span class="highlight">${H} ${G}</span> – telefono <span class="highlight">${q}</span> – e-mail <span class="highlight">${$}</span></p>
+            Signor/a <span class="highlight">${H} ${G}</span> – telefono <span class="highlight">${q}</span> – e-mail <span class="highlight">${$}</span></p>
         `}
         
-        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${ae} ${oe} - ${te} - ${Ie} ${Ee} (${De})</span></p>
+        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${ue} ${se} - ${te} - ${Ie} ${Ee} (${De})</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>
