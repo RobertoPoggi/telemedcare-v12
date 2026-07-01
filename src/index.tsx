@@ -30326,13 +30326,11 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       numDdt = formatNumeroDdt(n, annoCorrente)
     }
 
-    // Data DDT: priorità → dataConsegna (manuale) → data_firma contratto → oggi in fuso IT (UTC+2)
-    // new Date().toISOString() usa UTC: alle 23:xx IT il giorno cambia → usiamo Intl per evitarlo
+    // Data DDT: è la data del DDT/consegna — indipendente dalla data firma contratto.
+    // Se passata esplicitamente dal frontend usala, altrimenti usa la data odierna
+    // in fuso Europe/Rome (non UTC, altrimenti alle 23:xx IT il giorno è già cambiato).
     const todayItaly = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
-    const dataDoc = dataConsegna
-      || (contract?.data_firma ? String(contract.data_firma).split('T')[0] : null)
-      || (contract?.signed_at  ? String(contract.signed_at).split('T')[0]  : null)
-      || todayItaly
+    const dataDoc = dataConsegna || todayItaly
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
     const baseUrl = new URL(c.req.url).origin
 
