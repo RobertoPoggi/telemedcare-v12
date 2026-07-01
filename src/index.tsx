@@ -28049,8 +28049,9 @@ app.get('/api/diag-auth', async (c) => {
 // Critical: Prevent rollback to V11 - 3x incidents in 24h
 app.get('/api/health', async (c) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = 'e8f4b21'
-  const BUILD_DATE = '2026-02-12T17:03:00Z'
+  // CF_PAGES_COMMIT_SHA è iniettato automaticamente da Cloudflare Pages durante il build
+  const GIT_COMMIT = (c.env as any)?.CF_PAGES_COMMIT_SHA?.slice(0,7) || '7ae8a51'
+  const BUILD_DATE = new Date().toISOString().slice(0, 10) + 'T00:00:00Z'
   
   try {
     // Check critical files existence
@@ -29714,7 +29715,7 @@ app.post('/api/oneshot-mazzarella-7x9k2p', async (c) => {
 // Version Guard Middleware - Logs all requests with version info
 app.use('*', async (c, next) => {
   const SYSTEM_VERSION = 'V12'
-  const GIT_COMMIT = 'e8f4b21'
+  const GIT_COMMIT = (c.env as any)?.CF_PAGES_COMMIT_SHA?.slice(0,7) || '7ae8a51'
   
   // Add version headers to ALL responses
   c.header('X-System-Version', SYSTEM_VERSION)
