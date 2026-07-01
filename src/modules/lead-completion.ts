@@ -462,7 +462,7 @@ export async function sendReminderEmail(
     // Invia email
     const result = await emailService.sendEmail({
       to: leadData.email,
-      subject: `⏰ Promemoria: Completa i tuoi dati TeleMedCare (${daysRemaining} giorni rimasti)`,
+      subject: `⏰ Promemoria: Completa i tuoi dati eCura (${daysRemaining} giorni rimasti)`,
       html: emailHtml,
       tags: [
         { name: 'tipo', value: 'reminder_completamento' },
@@ -517,7 +517,7 @@ export async function sendReminderFirma(
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
     <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Promemoria Firma Contratto</h1>
-    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">TeleMedCare – eCura</p>
+    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">eCura</p>
   </div>
   <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; color: #374151;">Gentile <strong>${nomeCliente}</strong>,</p>
@@ -547,7 +547,7 @@ export async function sendReminderFirma(
     
     const result = await emailService.sendEmail({
       to: leadData.email,
-      subject: `⏰ Promemoria: Il Suo contratto TeleMedCare è in attesa di firma`,
+      subject: `⏰ Promemoria: Il Suo contratto eCura è in attesa di firma`,
       html: emailHtml,
       tags: [
         { name: 'tipo', value: 'reminder_firma' },
@@ -605,7 +605,7 @@ export async function sendReminderProforma(
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
     <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Promemoria Pagamento</h1>
-    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">TeleMedCare – eCura</p>
+    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0;">eCura</p>
   </div>
   <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; color: #374151;">Gentile <strong>${nomeCliente}</strong>,</p>
@@ -636,7 +636,7 @@ export async function sendReminderProforma(
     
     const result = await emailService.sendEmail({
       to: leadData.email || proformaData.cliente_email,
-      subject: `⏰ Promemoria: Pagamento proforma TeleMedCare in attesa`,
+      subject: `⏰ Promemoria: Pagamento proforma eCura in attesa`,
       html: emailHtml,
       tags: [
         { name: 'tipo', value: 'reminder_proforma' },
