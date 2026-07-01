@@ -30326,7 +30326,13 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       numDdt = formatNumeroDdt(n, annoCorrente)
     }
 
-    const dataDoc = dataConsegna || new Date().toISOString().split('T')[0]
+    // Data DDT: priorità → dataConsegna (manuale) → data_firma contratto → oggi in fuso IT (UTC+2)
+    // new Date().toISOString() usa UTC: alle 23:xx IT il giorno cambia → usiamo Intl per evitarlo
+    const todayItaly = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
+    const dataDoc = dataConsegna
+      || (contract?.data_firma ? String(contract.data_firma).split('T')[0] : null)
+      || (contract?.signed_at  ? String(contract.signed_at).split('T')[0]  : null)
+      || todayItaly
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
     const baseUrl = new URL(c.req.url).origin
 
@@ -31323,12 +31329,14 @@ app.post('/api/oneshot-fix-ddt-vismara-7mq3k', async (c) => {
     await c.env.DB.prepare(`
       UPDATE ddts SET
         sim_number = ?,
+        data_consegna = '2026-07-01',
+        data_spedizione = '2026-07-01',
         note = ?,
         updated_at = ?
       WHERE id = ?
     `).bind(simNumber, notePulite, new Date().toISOString(), ddtId).run()
-    const after = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, sim_number, note FROM ddts WHERE id = ?').bind(ddtId).first()
-    return c.json({ success: true, migrated: { sim_number: simNumber }, before, after })
+    const after = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, sim_number, note FROM ddts WHERE id = ?').bind(ddtId).first()
+    return c.json({ success: true, migrated: { sim_number: simNumber, data_consegna: '2026-07-01' }, before, after })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
