@@ -88,14 +88,14 @@ export class EmailDocumentSender {
       
       if (data.contractPdfPath) {
         attachments.push({
-          filename: `Contratto_TeleMedCare_${data.tipoServizio}_${data.contractId}.pdf`,
+          filename: `Contratto_eCura_${data.tipoServizio}_${data.contractId}.pdf`,
           path: data.contractPdfPath,
           contentType: 'application/pdf'
         })
       }
       
       // 4. Invia email tramite EmailService
-      const subject = `TeleMedCare ${data.tipoServizio} - Contratto e Documentazione`
+      const subject = `eCura ${data.tipoServizio} - Contratto e Documentazione`
       
       const result = await this.emailService.sendEmail({
         to: data.recipientEmail,
@@ -157,14 +157,14 @@ export class EmailDocumentSender {
       
       if (data.proformaPdfPath) {
         attachments.push({
-          filename: `Proforma_TeleMedCare_${data.proformaId}.pdf`,
+          filename: `Proforma_eCura_${data.proformaId}.pdf`,
           path: data.proformaPdfPath,
           contentType: 'application/pdf'
         })
       }
       
       // 4. Invia email tramite EmailService
-      const subject = `TeleMedCare - Pro-forma ${data.tipoServizio}`
+      const subject = `eCura - Pro-forma ${data.tipoServizio}`
       
       const result = await this.emailService.sendEmail({
         to: data.recipientEmail,
@@ -226,7 +226,7 @@ export class EmailDocumentSender {
       
       if (data.contractPdfPath) {
         attachments.push({
-          filename: `Contratto_TeleMedCare_${data.tipoServizio}_${data.contractId}.pdf`,
+          filename: `Contratto_eCura_${data.tipoServizio}_${data.contractId}.pdf`,
           path: data.contractPdfPath,
           contentType: 'application/pdf'
         })
@@ -234,14 +234,14 @@ export class EmailDocumentSender {
       
       if (data.proformaPdfPath) {
         attachments.push({
-          filename: `Proforma_TeleMedCare_${data.proformaId}.pdf`,
+          filename: `Proforma_eCura_${data.proformaId}.pdf`,
           path: data.proformaPdfPath,
           contentType: 'application/pdf'
         })
       }
       
       // 4. Invia email tramite EmailService
-      const subject = `TeleMedCare ${data.tipoServizio} - Contratto e Pro-forma`
+      const subject = `eCura ${data.tipoServizio} - Contratto e Pro-forma`
       
       const result = await this.emailService.sendEmail({
         to: data.recipientEmail,

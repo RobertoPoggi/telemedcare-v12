@@ -178,16 +178,16 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
   
   return `
     <!DOCTYPE html>
-    <html><head><title>Contratto TeleMedCare ${tipoContratto}</title></head>
+    <html><head><title>Contratto eCura ${tipoContratto}</title></head>
     <body>
-      <h1>CONTRATTO DI SERVIZIO TELEMEDCARE ${tipoContratto}</h1>
+      <h1>CONTRATTO DI SERVIZIO ECURA ${tipoContratto}</h1>
       <h2>DATI CONTRAENTE</h2>
       <p><strong>Nome:</strong> ${nomeCompleto}</p>
       <p><strong>Email:</strong> ${emailContratto}</p>
       <p><strong>Telefono:</strong> ${telefonoContratto || 'Non specificato'}</p>
       
       <h2>SERVIZIO RICHIESTO</h2>
-      <p><strong>Tipo:</strong> TeleMedCare ${tipoContratto}</p>
+      <p><strong>Tipo:</strong> eCura ${tipoContratto}</p>
       <p><strong>Durata:</strong> ${prezzario.durata} mesi</p>
       <p><strong>Costo mensile:</strong> €${prezzario.mensile}</p>
       <p><strong>Costo totale:</strong> €${prezzario.totale}</p>
@@ -8903,7 +8903,7 @@ app.post('/api/contracts/send', async (c) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         contract.leadId, contractId, contract.email, 'email_invio_contratto',
-        `TeleMedCare - Contratto ${contract.codice_contratto}`, 'SENT', 'RESEND', new Date().toISOString()
+        `eCura - Contratto ${contract.codice_contratto}`, 'SENT', 'RESEND', new Date().toISOString()
       ).run()
       
       return c.json({
@@ -10497,7 +10497,7 @@ app.get('/api/contratti/:id/view', async (c) => {
         <html>
         <head><title>Contratto TMC-2024-${id.padStart(3, '0')}</title></head>
         <body style="font-family: Arial; padding: 20px;">
-          <h1>Contratto TeleMedCare</h1>
+          <h1>Contratto eCura</h1>
           <p><strong>Codice:</strong> TMC-2024-${id.padStart(3, '0')}</p>
           <p><strong>Tipo:</strong> Base</p>
           <p><strong>Data:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
@@ -10528,7 +10528,7 @@ app.get('/api/contratti/:id/view', async (c) => {
         <style>body { font-family: Arial; padding: 20px; }</style>
       </head>
       <body>
-        <h1>Contratto TeleMedCare</h1>
+        <h1>Contratto eCura</h1>
         <p><strong>Codice:</strong> ${contratto.codice}</p>
         <p><strong>Cliente:</strong> ${contratto.cliente_nome}</p>
         <p><strong>Email:</strong> ${contratto.cliente_email}</p>
@@ -14166,7 +14166,7 @@ app.get('/firma-contratto', async (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Firma Contratto TeleMedCare</title>
+        <title>Firma Contratto eCura</title>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -14412,7 +14412,7 @@ app.get('/firma-contratto', async (c) => {
                         \${contractHtml}
                         <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #ccc;">
                             <p style="text-align: center; color: #666; font-size: 12px;">
-                                Documento stampato da TeleMedCare - Contratto \${contractCode}<br>
+                                Documento stampato da eCura - Contratto \${contractCode}<br>
                                 Cliente: \${clientName}<br>
                                 Data stampa: \${new Date().toLocaleString('it-IT')}
                             </p>
@@ -15237,7 +15237,7 @@ app.post('/api/contracts/sign', async (c) => {
         // 1. GENERA HTML COMPLETO DEL CONTRATTO (con contenuto_html originale)
         const baseUrl = c.req.url.split('/api/')[0]
         const htmlContent = contract.contenuto_html || `
-          <h1>Contratto TeleMedCare</h1>
+          <h1>Contratto eCura</h1>
           <p><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
           <p><strong>Servizio:</strong> ${contract.servizio || 'N/A'}</p>
           <p><strong>Piano:</strong> ${contract.piano || 'N/A'}</p>
@@ -25194,7 +25194,7 @@ app.post('/api/email/preview', async (c) => {
       'BENVENUTO': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: white;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #10b981; margin: 0;">🎉 Benvenuto in TeleMedCare!</h1>
+            <h1 style="color: #10b981; margin: 0;">🎉 Benvenuto in eCura!</h1>
             <p style="color: #6b7280; margin: 5px 0;">Il futuro della telemedicina</p>
           </div>
           
@@ -29774,7 +29774,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       <p><strong>Assistito:</strong> ${lead.nomeAssistito} ${lead.cognomeAssistito}</p>
       <p><strong>Codice Contratto:</strong> ${contractCode}</p>
       <p><strong>Importo:</strong> €${pricing.setupTotale} (IVA inclusa)</p>
-      <p><em>Firma manuale apposta dallo staff TeleMedCare</em></p>
+      <p><em>Firma manuale apposta dallo staff eCura</em></p>
     `
     
     // Salva contratto nel DB — colonne reali della tabella contracts

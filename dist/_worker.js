@@ -1306,7 +1306,7 @@ ${s}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contratto TeleMedCare</title>
+    <title>Contratto eCura</title>
     <style>
         @page {
             size: A4;
@@ -1487,7 +1487,7 @@ ${s}
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Contratto TeleMedCare Base - {{CODICE_CONTRATTO}}</title>
+  <title>Contratto eCura Base - {{CODICE_CONTRATTO}}</title>
   <style>
     @page { size: A4; margin: 2cm; }
     body {
@@ -1671,7 +1671,7 @@ ${s}
   </div>
 
   <div class="footer">
-    <p>Contratto TeleMedCare Base - Codice: {{CODICE_CONTRATTO}}</p>
+    <p>Contratto eCura Base - Codice: {{CODICE_CONTRATTO}}</p>
     <p>Medica GB S.r.l. - P.IVA 12345678901 - www.ecura.it - info@ecura.it</p>
     <p>Documento generato elettronicamente - {{ANNO}}</p>
   </div>
@@ -1761,7 +1761,7 @@ startxref
         FROM contracts c
         JOIN leads l ON c.leadId = l.id
         WHERE c.id = ?
-      `).bind(o).first();if(!i)throw new Error("Contratto non trovato");console.log("📧 [CONTRACT] Invio contratto via email:",i.email);const r=(await Promise.resolve().then(()=>Fe)).default.getInstance(),n={NOME_CLIENTE:i.nomeRichiedente||"Cliente",PIANO_SERVIZIO:i.tipoServizio==="AVANZATO"?"TeleMedCare Avanzato":"TeleMedCare Base",PREZZO_PIANO:`€${i.prezzo_totale||0}`,CODICE_CLIENTE:i.leadId,LINK_FIRMA:`https://app.telemedcare.it/firma/${o}`},d=await r.sendTemplateEmail("INVIO_CONTRATTO",i.email,n,void 0,a);return d.success&&(await t.prepare(`
+      `).bind(o).first();if(!i)throw new Error("Contratto non trovato");console.log("📧 [CONTRACT] Invio contratto via email:",i.email);const r=(await Promise.resolve().then(()=>Fe)).default.getInstance(),n={NOME_CLIENTE:i.nomeRichiedente||"Cliente",PIANO_SERVIZIO:i.tipoServizio==="AVANZATO"?"eCura Avanzato":"eCura Base",PREZZO_PIANO:`€${i.prezzo_totale||0}`,CODICE_CLIENTE:i.leadId,LINK_FIRMA:`https://app.telemedcare.it/firma/${o}`},d=await r.sendTemplateEmail("INVIO_CONTRATTO",i.email,n,void 0,a);return d.success&&(await t.prepare(`
           UPDATE contracts 
           SET status = 'SENT', data_invio = datetime('now'), updated_at = datetime('now')
           WHERE id = ?
@@ -1917,7 +1917,7 @@ ${420+a.length}
 (Ricevera un'email con il link per la firma elettronica.) Tj
 0 -30 Td
 /F1 9 Tf
-(Documento generato automaticamente da eCura - TeleMedCare V12.0) Tj
+(Documento generato automaticamente da eCura) Tj
 0 -15 Td
 (Per informazioni: info@ecura.it | Tel: 800 123 456) Tj
 0 -15 Td
@@ -11420,16 +11420,16 @@ ${370+t.length}
 💊 Detrazione Fiscale 19%: ${xo(e.detrazioneFiscale19)}
   `.trim()}const SI={calculatePrice:sd,getAllPrices:xv,isValidPrice:Sv,formatPrice:xo,formatPriceBreakdown:wv},Is=Object.freeze(Object.defineProperty({__proto__:null,calculatePrice:sd,default:SI,formatPrice:xo,formatPriceBreakdown:wv,getAllPrices:xv,isValidPrice:Sv},Symbol.toStringTag,{value:"Module"}));var xg=Object.freeze,wI=Object.defineProperty,CI=(e,o)=>xg(wI(e,"raw",{value:xg(o||e.slice())})),Sg;function _I(e,o,t){const a=e.intestatarioContratto||"richiedente";let i,s,r;return a==="assistito"?(i=`${e.nomeAssistito||e.nomeRichiedente} ${e.cognomeAssistito||e.cognomeRichiedente}`,s=e.email,r=e.telefono):(i=`${e.nomeRichiedente} ${e.cognomeRichiedente}`,s=e.email,r=e.telefono),`
     <!DOCTYPE html>
-    <html><head><title>Contratto TeleMedCare ${o}</title></head>
+    <html><head><title>Contratto eCura ${o}</title></head>
     <body>
-      <h1>CONTRATTO DI SERVIZIO TELEMEDCARE ${o}</h1>
+      <h1>CONTRATTO DI SERVIZIO ECURA ${o}</h1>
       <h2>DATI CONTRAENTE</h2>
       <p><strong>Nome:</strong> ${i}</p>
       <p><strong>Email:</strong> ${s}</p>
       <p><strong>Telefono:</strong> ${r||"Non specificato"}</p>
       
       <h2>SERVIZIO RICHIESTO</h2>
-      <p><strong>Tipo:</strong> TeleMedCare ${o}</p>
+      <p><strong>Tipo:</strong> eCura ${o}</p>
       <p><strong>Durata:</strong> ${t.durata} mesi</p>
       <p><strong>Costo mensile:</strong> €${t.mensile}</p>
       <p><strong>Costo totale:</strong> €${t.totale}</p>
@@ -15855,7 +15855,7 @@ loadDDTs();
       `).bind(new Date().toISOString(),a).run(),await e.env.DB.prepare("UPDATE leads SET status = ? WHERE id = ?").bind("CONTRACT_SENT",i.leadId).run(),await e.env.DB.prepare(`
         INSERT INTO email_logs (leadId, contract_id, recipient_email, template_used, subject, status, provider_used, sent_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(i.leadId,a,i.email,"email_invio_contratto",`TeleMedCare - Contratto ${i.codice_contratto}`,"SENT","RESEND",new Date().toISOString()).run(),e.json({success:!0,message:`Contratto ${i.codice_contratto} inviato a ${i.email}`,email_status:d})):e.json({success:!1,error:"Errore invio email: "+d.error},500)}catch(t){return console.error("❌ Errore invio contratto:",t),e.json({success:!1,error:t.message},500)}});A.post("/api/proforma",async e=>{try{const{contractId:o}=await e.req.json(),t=await RI(o,e.env.DB);return e.json(t)}catch(o){return console.error("❌ Errore generazione proforma:",o),e.json({success:!1,error:o.message},500)}});A.post("/api/proforma/send",async e=>{var o;try{const t=e.req.header("Authorization");if(!t||!t.startsWith("Bearer "))return console.warn("⚠️ [PROFORMA-SEND] Tentativo accesso non autorizzato"),e.json({success:!1,error:"Unauthorized"},401);const{proformaId:a}=await e.req.json();if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);const i=await e.env.DB.prepare(`
+      `).bind(i.leadId,a,i.email,"email_invio_contratto",`eCura - Contratto ${i.codice_contratto}`,"SENT","RESEND",new Date().toISOString()).run(),e.json({success:!0,message:`Contratto ${i.codice_contratto} inviato a ${i.email}`,email_status:d})):e.json({success:!1,error:"Errore invio email: "+d.error},500)}catch(t){return console.error("❌ Errore invio contratto:",t),e.json({success:!1,error:t.message},500)}});A.post("/api/proforma",async e=>{try{const{contractId:o}=await e.req.json(),t=await RI(o,e.env.DB);return e.json(t)}catch(o){return console.error("❌ Errore generazione proforma:",o),e.json({success:!1,error:o.message},500)}});A.post("/api/proforma/send",async e=>{var o;try{const t=e.req.header("Authorization");if(!t||!t.startsWith("Bearer "))return console.warn("⚠️ [PROFORMA-SEND] Tentativo accesso non autorizzato"),e.json({success:!1,error:"Unauthorized"},401);const{proformaId:a}=await e.req.json();if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);const i=await e.env.DB.prepare(`
       SELECT p.*, l.nomeRichiedente, l.cognomeRichiedente, l.email
       FROM proforma p
       LEFT JOIN contracts c ON p.contract_id = c.id
@@ -16140,7 +16140,7 @@ loadDDTs();
         <html>
         <head><title>Contratto TMC-2024-${o.padStart(3,"0")}</title></head>
         <body style="font-family: Arial; padding: 20px;">
-          <h1>Contratto TeleMedCare</h1>
+          <h1>Contratto eCura</h1>
           <p><strong>Codice:</strong> TMC-2024-${o.padStart(3,"0")}</p>
           <p><strong>Tipo:</strong> Base</p>
           <p><strong>Data:</strong> ${new Date().toLocaleDateString("it-IT")}</p>
@@ -16162,7 +16162,7 @@ loadDDTs();
         <style>body { font-family: Arial; padding: 20px; }</style>
       </head>
       <body>
-        <h1>Contratto TeleMedCare</h1>
+        <h1>Contratto eCura</h1>
         <p><strong>Codice:</strong> ${a.codice}</p>
         <p><strong>Cliente:</strong> ${a.cliente_nome}</p>
         <p><strong>Email:</strong> ${a.cliente_email}</p>
@@ -16814,7 +16814,7 @@ startxref
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Firma Contratto TeleMedCare</title>
+        <title>Firma Contratto eCura</title>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -17060,7 +17060,7 @@ startxref
                         \${contractHtml}
                         <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #ccc;">
                             <p style="text-align: center; color: #666; font-size: 12px;">
-                                Documento stampato da TeleMedCare - Contratto \${contractCode}<br>
+                                Documento stampato da eCura - Contratto \${contractCode}<br>
                                 Cliente: \${clientName}<br>
                                 Data stampa: \${new Date().toLocaleString('it-IT')}
                             </p>
@@ -17721,7 +17721,7 @@ startxref
           signature_method = 'inline'
       WHERE id = ?
     `).bind(g,h,d||new Date().toISOString(),l||"",u||"",new Date().toISOString(),s).run(),console.log(`✅ Contratto firmato: ${s} da IP ${h}`);try{const f=await e.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(m.leadId).first();if(f){console.log("📧 [FIRMA] Generazione e invio PDF contratto firmato");const v=e.req.url.split("/api/")[0],b=m.contenuto_html||`
-          <h1>Contratto TeleMedCare</h1>
+          <h1>Contratto eCura</h1>
           <p><strong>Cliente:</strong> ${f.nomeRichiedente} ${f.cognomeRichiedente}</p>
           <p><strong>Servizio:</strong> ${m.servizio||"N/A"}</p>
           <p><strong>Piano:</strong> ${m.piano||"N/A"}</p>
@@ -19117,7 +19117,7 @@ startxref
       `,BENVENUTO:`
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: white;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #10b981; margin: 0;">🎉 Benvenuto in TeleMedCare!</h1>
+            <h1 style="color: #10b981; margin: 0;">🎉 Benvenuto in eCura!</h1>
             <p style="color: #6b7280; margin: 5px 0;">Il futuro della telemedicina</p>
           </div>
           
@@ -20570,7 +20570,7 @@ startxref
       <p><strong>Assistito:</strong> ${a.nomeAssistito} ${a.cognomeAssistito}</p>
       <p><strong>Codice Contratto:</strong> ${d}</p>
       <p><strong>Importo:</strong> €${m.setupTotale} (IVA inclusa)</p>
-      <p><em>Firma manuale apposta dallo staff TeleMedCare</em></p>
+      <p><em>Firma manuale apposta dallo staff eCura</em></p>
     `,f=`${d}-M${i}`;await e.env.DB.prepare(`
       INSERT INTO contracts (
         id, leadId, codice_contratto,

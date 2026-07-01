@@ -278,7 +278,7 @@ export class ContractGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contratto TeleMedCare</title>
+    <title>Contratto eCura</title>
     <style>
         @page {
             size: A4;
@@ -478,7 +478,7 @@ export class ContractGenerator {
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Contratto TeleMedCare Base - {{CODICE_CONTRATTO}}</title>
+  <title>Contratto eCura Base - {{CODICE_CONTRATTO}}</title>
   <style>
     @page { size: A4; margin: 2cm; }
     body {
@@ -662,7 +662,7 @@ export class ContractGenerator {
   </div>
 
   <div class="footer">
-    <p>Contratto TeleMedCare Base - Codice: {{CODICE_CONTRATTO}}</p>
+    <p>Contratto eCura Base - Codice: {{CODICE_CONTRATTO}}</p>
     <p>Medica GB S.r.l. - P.IVA 12345678901 - www.ecura.it - info@ecura.it</p>
     <p>Documento generato elettronicamente - {{ANNO}}</p>
   </div>
@@ -841,7 +841,7 @@ www.ecura.it
       // Prepara variabili
       const variables = {
         NOME_CLIENTE: contract.nomeRichiedente || 'Cliente',
-        PIANO_SERVIZIO: contract.tipoServizio === 'AVANZATO' ? 'TeleMedCare Avanzato' : 'TeleMedCare Base',
+        PIANO_SERVIZIO: contract.tipoServizio === 'AVANZATO' ? 'eCura Avanzato' : 'eCura Base',
         PREZZO_PIANO: `€${contract.prezzo_totale || 0}`,
         CODICE_CLIENTE: contract.leadId,
         LINK_FIRMA: `https://app.telemedcare.it/firma/${contractId}`
@@ -1059,7 +1059,7 @@ ${420 + textContent.length}
 (Ricevera un'email con il link per la firma elettronica.) Tj
 0 -30 Td
 /F1 9 Tf
-(Documento generato automaticamente da eCura - TeleMedCare V12.0) Tj
+(Documento generato automaticamente da eCura) Tj
 0 -15 Td
 (Per informazioni: info@ecura.it | Tel: 800 123 456) Tj
 0 -15 Td
