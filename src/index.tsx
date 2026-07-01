@@ -3716,7 +3716,8 @@ function renderTable() {
     var pdfBtn = d.pdf_url
       ? '<a href="' + esc(d.pdf_url) + '" target="_blank" class="text-blue-600 hover:text-blue-800 mr-2" title="PDF"><i class="fas fa-file-pdf"></i></a>'
       : '';
-    var viewBtn = '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Visualizza"><i class="fas fa-eye"></i></a>';
+    var ddtPrintId = encodeURIComponent(d.id || d.numero_ddt);
+    var viewBtn = '<a href="/api/ddts/' + ddtPrintId + '/pdf-print" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Stampa DDT"><i class="fas fa-print"></i></a>';
     var rowId = esc(d.id || d.numero_ddt);
 
     html += '<tr>';
@@ -3779,7 +3780,7 @@ function showDetail(id) {
   if (d.pdf_url) {
     btns += '<a href="' + esc(d.pdf_url) + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"><i class="fas fa-file-pdf mr-1"></i>PDF</a>';
   }
-  btns += '<a href="/ddt-view?id=' + encodeURIComponent(d.id || d.numero_ddt) + '" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg"><i class="fas fa-eye mr-1"></i>Visualizza DDT</a>';
+  btns += '<a href="/api/ddts/' + encodeURIComponent(d.id || d.numero_ddt) + '/pdf-print" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg"><i class="fas fa-print mr-1"></i>Stampa / PDF</a>';
   btns += '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Chiudi</button>';
   document.getElementById('modalFooter').innerHTML = btns;
 
