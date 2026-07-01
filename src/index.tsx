@@ -9857,10 +9857,12 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     // Legge signed_at del contratto collegato (campo Riferimento — distinta dalla data DDT)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT signed_at FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+          `SELECT signature_timestamp, signed_at FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
-    const dataFirmaContratto = contractRow?.signed_at || null
+    // signature_timestamp è la fonte di verità della data firma (es. "2026-07-01T...")
+    // signed_at come fallback
+    const dataFirmaContratto = contractRow?.signature_timestamp || contractRow?.signed_at || null
 
     // Formatta data italiana gg/mm/aa
     const formatDataIt = (d: string) => {
