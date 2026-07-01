@@ -9854,13 +9854,13 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge data_firma del contratto collegato (campo Riferimento — distinta dalla data DDT)
+    // Legge signed_at del contratto collegato (campo Riferimento — distinta dalla data DDT)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT data_firma, signed_at FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+          `SELECT signed_at FROM contracts WHERE contract_code = ? OR id = ? LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
-    const dataFirmaContratto = contractRow?.data_firma || contractRow?.signed_at || null
+    const dataFirmaContratto = contractRow?.signed_at || null
 
     // Formatta data italiana gg/mm/aa
     const formatDataIt = (d: string) => {
