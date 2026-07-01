@@ -294,14 +294,37 @@
     <script>
         let currentStep = 1;
         let leadId = null;
+        let completionToken = null;
 
-        // Get leadId from URL
+        // Get leadId or token from URL
         const urlParams = new URLSearchParams(window.location.search);
-        leadId = urlParams.get('leadId');
+        completionToken = urlParams.get('token');
+        leadId = urlParams.get('leadId') || urlParams.get('id');
 
-        if (!leadId) {
+        // ✅ FIX: Se arriva ?token= (dai reminder email), valida il token e ottieni il leadId
+        if (!leadId && completionToken) {
+            console.log('🔑 Token trovato, validazione in corso...');
+            (async () => {
+                try {
+                    const resp = await fetch(`/api/completion/validate/${encodeURIComponent(completionToken)}`);
+                    const data = await resp.json();
+                    if (data.success && data.lead && data.lead.id) {
+                        leadId = data.lead.id;
+                        console.log('✅ Token valido, leadId:', leadId);
+                        loadLeadData();
+                    } else {
+                        alert('⚠️ Link scaduto o non valido. Contatta info@ecura.it per assistenza.');
+                        window.location.href = '/';
+                    }
+                } catch (e) {
+                    alert('⚠️ Errore di rete. Riprova più tardi.');
+                }
+            })();
+        } else if (!leadId) {
             alert('⚠️ Link non valido. Contatta il supporto.');
             window.location.href = '/';
+        } else {
+            loadLeadData();
         }
 
         // Load existing lead data

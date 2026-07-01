@@ -508,7 +508,7 @@ export async function sendReminderFirma(
     const emailService = new EmailService(env)
     
     const baseUrl = getBaseUrl(env)
-    const firmaLink = contractData.pdf_url || `${baseUrl}/firma-contratto?id=${contractData.id}`
+    const firmaLink = contractData.pdf_url || `${baseUrl}/firma-contratto?contractId=${contractData.id}`
     
     const nomeCliente = `${leadData.nomeRichiedente || 'Cliente'} ${leadData.cognomeRichiedente || ''}`.trim()
     

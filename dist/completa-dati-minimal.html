@@ -237,9 +237,11 @@
     
     <script>
         let leadId = null;
+        let completionToken = null;
         
-        // Estrai leadId dall'URL
+        // Estrai parametri dall'URL
         const urlParams = new URLSearchParams(window.location.search);
+        completionToken = urlParams.get('token');
         leadId = urlParams.get('leadId') || urlParams.get('id');
         
         // ✅ FIX: Pulisci leadId rimuovendo caratteri extra (/, #, ?, ecc.)
@@ -248,7 +250,25 @@
             console.log('🔍 Lead ID pulito:', leadId);
         }
         
-        if (!leadId) {
+        // ✅ FIX: Se arriva ?token= (dai reminder email), valida il token e ottieni il leadId
+        if (!leadId && completionToken) {
+            console.log('🔑 Token trovato, validazione in corso...');
+            (async () => {
+                try {
+                    const resp = await fetch(`/api/completion/validate/${encodeURIComponent(completionToken)}`);
+                    const data = await resp.json();
+                    if (data.success && data.lead && data.lead.id) {
+                        leadId = data.lead.id;
+                        console.log('✅ Token valido, leadId:', leadId);
+                        loadLeadData();
+                    } else {
+                        showError('Link scaduto o non valido. Contatta <a href="mailto:info@ecura.it">info@ecura.it</a> per assistenza.');
+                    }
+                } catch (e) {
+                    showError('Errore di rete. Riprova più tardi.');
+                }
+            })();
+        } else if (!leadId) {
             showError('Link non valido. Manca l\'ID del lead.');
         } else {
             loadLeadData();
