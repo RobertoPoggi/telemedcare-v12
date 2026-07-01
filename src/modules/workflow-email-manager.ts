@@ -1815,7 +1815,11 @@ export async function inviaEmailConfigurazione(
       TELEFONO_RICHIEDENTE: clientData.telefono || '',
       SERVIZIO: clientData.servizio || 'eCura PRO', // ✅ FIX: separato da piano
       PIANO_SERVIZIO: clientData.piano || clientData.pacchetto || 'BASE', // ✅ FIX: solo piano
-      DISPOSITIVO: clientData.dispositivo || 'SiDLY VITAL CARE', // ✅ FIX: dispositivo
+      DISPOSITIVO: clientData.dispositivo || (
+        (clientData.servizio || '').toUpperCase().includes('PREMIUM') ? 'SiDLY Vital Care' :
+        (clientData.servizio || '').toUpperCase().includes('FAMILY') ? 'SiDLY Care PRO' :
+        'SiDLY Care PRO'
+      ), // calcolato dal servizio
       DATA_COMPILAZIONE: new Date().toLocaleDateString('it-IT', {
         day: '2-digit',
         month: '2-digit',

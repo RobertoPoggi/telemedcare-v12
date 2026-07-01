@@ -12682,16 +12682,28 @@ app.post('/api/configurations/submit', async (c) => {
       note_aggiuntive: configData.note_aggiuntive
     }
     
-    // A) Invia email configurazione a info@ecura.it
-    const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazione(
-      leadWithCode,
-      configDataForEmail,
-      c.env,
-      db
-    )
+    // ✅ CHECK: verifica se le email sono già state inviate (guard anti-duplicati)
+    const existingConfig = await db.prepare(
+      'SELECT email_benvenuto_inviata FROM configurations WHERE leadId = ? AND email_benvenuto_inviata = 1 LIMIT 1'
+    ).bind(leadId).first() as any
     
-    console.log(`📧 [CONFIG SUBMIT] Email configurazione (info@) result:`, emailConfigResult)
+    const emailGiaInviata = !!existingConfig?.email_benvenuto_inviata
     
+    if (emailGiaInviata) {
+      console.warn(`⚠️ [CONFIG SUBMIT] Email benvenuto già inviata per lead ${leadId} — skip duplicati`)
+      emailConfigSent = false
+      emailBenvenutoSent = false
+    } else {
+      // A) Invia email configurazione a info@ecura.it
+      const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazione(
+        leadWithCode,
+        configDataForEmail,
+        c.env,
+        db
+      )
+      
+      console.log(`📧 [CONFIG SUBMIT] Email configurazione (info@) result:`, emailConfigResult)
+      
       // B) Invia email di benvenuto al cliente
       const emailBenvenutoResult = await WorkflowEmailManager.inviaEmailBenvenuto(
         leadWithCode, // ✅ Lead con codiceCliente
@@ -12703,6 +12715,19 @@ app.post('/api/configurations/submit', async (c) => {
       
       emailConfigSent = emailConfigResult.success
       emailBenvenutoSent = emailBenvenutoResult.success
+      
+      // ✅ Aggiorna flag email_benvenuto_inviata per prevenire duplicati futuri
+      if (emailBenvenutoResult.success) {
+        try {
+          await db.prepare(
+            'UPDATE configurations SET email_benvenuto_inviata = 1 WHERE leadId = ? ORDER BY data_completamento DESC LIMIT 1'
+          ).bind(leadId).run()
+          console.log(`✅ [CONFIG SUBMIT] Flag email_benvenuto_inviata aggiornato per lead ${leadId}`)
+        } catch (flagErr) {
+          console.warn(`⚠️ [CONFIG SUBMIT] Impossibile aggiornare flag email_benvenuto_inviata:`, flagErr)
+        }
+      }
+    }
       
     } catch (emailError) {
       console.error('❌ [CONFIG SUBMIT] Errore invio email (non critico):', emailError)
