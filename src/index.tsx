@@ -9854,6 +9854,14 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
+    // Legge data_firma del contratto collegato (campo Riferimento — distinta dalla data DDT)
+    const contractRow = ddt.contract_code
+      ? await c.env.DB.prepare(
+          `SELECT data_firma, signed_at FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+        ).bind(ddt.contract_code, ddt.contract_code).first() as any
+      : null
+    const dataFirmaContratto = contractRow?.data_firma || contractRow?.signed_at || null
+
     // Formatta data italiana gg/mm/aa
     const formatDataIt = (d: string) => {
       if (!d) return '—'
@@ -9908,9 +9916,9 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
       descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     }
 
-    // Contratto riferimento formattato
-    const contrattoRif = ddt.data_consegna
-      ? `Contratto firmato del ${formatDataTrasporto(ddt.data_consegna)}`
+    // Contratto riferimento formattato — usa data_firma del contratto (NON data del DDT)
+    const contrattoRif = dataFirmaContratto
+      ? `Contratto firmato del ${formatDataTrasporto(String(dataFirmaContratto).split('T')[0])}`
       : contratto
 
     // SVG logo ECG (eCura - ispirato al template Medica GB)
