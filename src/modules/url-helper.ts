@@ -1,53 +1,43 @@
 /**
  * URL Helper - Gestisce URL base corretto per ogni ambiente
- * Usa CF_PAGES_URL fornito automaticamente da Cloudflare Pages
+ *
+ * ⚠️ IMPORTANTE: CF_PAGES_URL NON va usato per link nelle email.
+ * CF_PAGES_URL è l'URL del singolo deployment con hash univoco
+ * (es. df71e390.telemedcare-v12.pages.dev) — cambia ad ogni deploy
+ * e non è il dominio canonico del sito.
+ *
+ * Priorità corretta:
+ * 1. PUBLIC_URL  → impostata manualmente in Cloudflare Pages Settings
+ * 2. CF_PAGES_BRANCH === 'main' → https://telemedcare-v12.pages.dev (hardcoded)
+ * 3. Fallback hardcoded → https://telemedcare-v12.pages.dev
  */
 
 /**
- * Get base URL for the current environment (Production or Preview)
- * 
- * Cloudflare Pages provides CF_PAGES_URL automatically:
- * - Production (main branch): https://telemedcare-v12.pages.dev
- * - Preview (test-environment branch): https://test-environment.telemedcare-v12.pages.dev
- * - Preview (feature-xyz branch): https://feature-xyz.telemedcare-v12.pages.dev
- * 
+ * Get base URL for the current environment
+ * Returns always the canonical domain, never a per-deployment hash URL.
+ *
  * @param env - Environment object from Cloudflare Workers/Pages
- * @returns Base URL for the current environment
+ * @returns Canonical base URL (never a hash-deployment URL)
  */
 export function getBaseUrl(env: any): string {
-  const cfPagesUrl = env?.CF_PAGES_URL
   const publicUrl = env?.PUBLIC_URL
-  const pagesUrl = env?.PAGES_URL
   const cfPagesBranch = env?.CF_PAGES_BRANCH
-  const fallback = 'https://telemedcare-v12.pages.dev'
-  
-  // DEBUG: Log tutte le env vars URL disponibili
-  console.log('🌐 [URL-HELPER] Environment URL variables:')
-  console.log(`   CF_PAGES_URL: ${cfPagesUrl || '(undefined)'}`)
-  console.log(`   CF_PAGES_BRANCH: ${cfPagesBranch || '(undefined)'}`)
-  console.log(`   PUBLIC_URL: ${publicUrl || '(undefined)'}`)
-  console.log(`   PAGES_URL: ${pagesUrl || '(undefined)'}`)
-  
-  // FALLBACK: Se CF_PAGES_URL non disponibile, costruisci da CF_PAGES_BRANCH
-  let result = cfPagesUrl || publicUrl || pagesUrl
-  
-  if (!result && cfPagesBranch) {
-    // Costruisci URL manualmente da branch name
-    if (cfPagesBranch === 'main') {
-      result = 'https://telemedcare-v12.pages.dev'
-      console.log(`   🔧 Constructed from branch 'main': ${result}`)
-    } else {
-      result = `https://${cfPagesBranch}.telemedcare-v12.pages.dev`
-      console.log(`   🔧 Constructed from branch '${cfPagesBranch}': ${result}`)
-    }
+  const canonicalUrl = 'https://telemedcare-v12.pages.dev'
+
+  // 1. Priorità massima: PUBLIC_URL impostata manualmente (es. dominio custom)
+  if (publicUrl && !publicUrl.includes('pages.dev/')) {
+    console.log(`🌐 [URL-HELPER] Using PUBLIC_URL: ${publicUrl}`)
+    return publicUrl
   }
-  
-  if (!result) {
-    result = fallback
-    console.log(`   ⚠️ Using fallback: ${result}`)
-  } else {
-    console.log(`   ✅ Using: ${result}`)
+
+  // 2. Se siamo su branch main → dominio canonico
+  if (cfPagesBranch === 'main' || !cfPagesBranch) {
+    console.log(`🌐 [URL-HELPER] Using canonical URL (branch=${cfPagesBranch || 'unknown'}): ${canonicalUrl}`)
+    return canonicalUrl
   }
-  
-  return result
+
+  // 3. Preview branch → sottodominio branch (solo per test, non per email produzione)
+  const previewUrl = `https://${cfPagesBranch}.telemedcare-v12.pages.dev`
+  console.log(`🌐 [URL-HELPER] Preview branch '${cfPagesBranch}': ${previewUrl}`)
+  return previewUrl
 }
