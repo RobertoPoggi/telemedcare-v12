@@ -20750,7 +20750,7 @@ startxref
       WHERE id = ?
     `).bind(s,r,new Date().toISOString(),t).run();const n=await e.env.DB.prepare("SELECT id, numero_ddt, data_consegna, data_spedizione, sim_number, note FROM ddts WHERE id = ?").bind(t).first();return e.json({success:!0,migrated:{sim_number:s,data_consegna:"2026-07-01"},before:a,after:n})}catch(t){return e.json({success:!1,error:t.message},500)}});A.get("/api/oneshot-inspect-contracts-dates-4kx7p",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non configurato"},500);const t=await e.env.DB.prepare(`
       SELECT codice_contratto, status,
-             created_at, data_invio, data_firma,
+             created_at, data_invio,
              signed_at, signature_timestamp
       FROM contracts
       WHERE status IN ('firmato','SIGNED','signed')

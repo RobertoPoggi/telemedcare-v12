@@ -31362,7 +31362,7 @@ app.get('/api/oneshot-inspect-contracts-dates-4kx7p', async (c) => {
     if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
     const rows = await c.env.DB.prepare(`
       SELECT codice_contratto, status,
-             created_at, data_invio, data_firma,
+             created_at, data_invio,
              signed_at, signature_timestamp
       FROM contracts
       WHERE status IN ('firmato','SIGNED','signed')
