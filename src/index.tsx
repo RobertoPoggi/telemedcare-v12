@@ -1477,6 +1477,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Fix contract_code DDT Vismara → CTR-VISMARA-2026 (one-shot)
+  if (path === '/api/oneshot-fix-ddt-vismara-contract-code-8pz5r' && method === 'POST') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -31376,6 +31381,52 @@ app.get('/api/oneshot-inspect-contracts-dates-4kx7p', async (c) => {
     return c.json({ contracts: rows.results })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
+  }
+})
+
+// POST /api/oneshot-fix-ddt-vismara-contract-code-8pz5r
+// Corregge contract_code del DDT Vismara: 'CTR-LEAD-IRBEMA-00493' → 'CTR-VISMARA-2026'
+// Necessario perché la query pdf-print cerca codice_contratto = contract_code
+app.post('/api/oneshot-fix-ddt-vismara-contract-code-8pz5r', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const ddtId = 'DDT-LEAD-IRBEMA-00493-1782935330745'
+    const nuovoCodice = 'CTR-VISMARA-2026'
+
+    // Verifica stato prima
+    const before = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
+    ).bind(ddtId).first() as any
+    if (!before) return c.json({ success: false, error: 'DDT non trovato' }, 404)
+
+    // Verifica che il contratto esista
+    const contratto = await c.env.DB.prepare(
+      `SELECT codice_contratto, signature_timestamp, signed_at FROM contracts WHERE codice_contratto = ? LIMIT 1`
+    ).bind(nuovoCodice).first() as any
+    if (!contratto) return c.json({ success: false, error: `Contratto ${nuovoCodice} non trovato in DB` }, 404)
+
+    // Aggiorna contract_code sul DDT
+    await c.env.DB.prepare(
+      `UPDATE ddts SET contract_code = ?, updated_at = ? WHERE id = ?`
+    ).bind(nuovoCodice, new Date().toISOString(), ddtId).run()
+
+    const after = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
+    ).bind(ddtId).first()
+
+    return c.json({
+      success: true,
+      prima: before.contract_code,
+      dopo: nuovoCodice,
+      contratto_trovato: {
+        codice_contratto: contratto.codice_contratto,
+        signature_timestamp: contratto.signature_timestamp,
+        signed_at: contratto.signed_at
+      },
+      ddt_after: after
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
   }
 })
 
