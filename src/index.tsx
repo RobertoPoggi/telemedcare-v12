@@ -1466,6 +1466,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Fix DDT Vismara (one-shot admin)
+  if (path === '/api/oneshot-fix-ddt-vismara-7mq3k' && method === 'POST') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -9880,19 +9885,26 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     const serialNumber = ddt.serial_number || '—'
     const contratto = ddt.contract_code || '—'
     const noteRaw = ddt.note || ''
-    const noteClean = noteRaw.replace(/LeadID:[^\s|]+(\s*\|\s*)?/, '').trim()
+    const noteClean = noteRaw
+      .replace(/LeadID:[^\s|]+(\s*\|\s*)?/, '')
+      .replace(/SIM:[^\s|]+(\s*\|\s*)?/i, '')
+      .trim()
+
+    // Numero SIM: estratto dalle note (pattern "SIM:+39...") oppure da destinatario_telefono se sembra SIM (inizia con +48)
+    const simMatch = noteRaw.match(/SIM:([^\s|]+)/i)
+    const simNumber = simMatch ? simMatch[1] : (ddt.destinatario_telefono || '—')
 
     // Determina nome SIM in base al dispositivo
     const simNome = `SIM SiDLY per ${dispositivo}`
-    const simDescrizione = `SIM SiDLY per ${dispositivo} (numero SIM ${serialNumber}), per comunicazione e trasmissione dati.`
+    const simDescrizione = `SIM SiDLY per ${dispositivo} (numero SIM ${simNumber}), per comunicazione e trasmissione dati.`
 
     // Descrizione completa dispositivo (da template reale)
     let descrizioneDispositivo: string
     const dispLower = dispositivo.toLowerCase()
     if (dispLower.includes('vital')) {
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali e SN ${serialNumber} e, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else {
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali e SN ${serialNumber}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     }
 
     // Contratto riferimento formattato
@@ -31288,6 +31300,31 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
   } catch (error: any) {
     console.error('❌ [ONESHOT] Errore rigenera-html-contratto:', error)
     return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// POST /api/oneshot-fix-ddt-vismara-7mq3k
+// Corregge data_consegna e numero SIM del DDT Vismara (DDT-009-2026)
+app.post('/api/oneshot-fix-ddt-vismara-7mq3k', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const ddtId = 'DDT-LEAD-IRBEMA-00493-1782935330745'
+    const before = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, note, destinatario_telefono FROM ddts WHERE id = ?').bind(ddtId).first() as any
+    if (!before) return c.json({ success: false, error: 'DDT non trovato' }, 404)
+    // Aggiorna: data corretta 1-7-2026, SIM nelle note, telefono rimosso dal campo destinatario
+    const noteAggiornate = (before.note || '').replace(/SIM:[^\s|]+(\s*\|\s*)?/i, '').trim() + ' | SIM:+48725871336'
+    await c.env.DB.prepare(`
+      UPDATE ddts SET
+        data_consegna = ?,
+        data_spedizione = ?,
+        note = ?,
+        updated_at = ?
+      WHERE id = ?
+    `).bind('2026-07-01', '2026-07-01', noteAggiornate.trim().replace(/^\s*\|\s*/, ''), new Date().toISOString(), ddtId).run()
+    const after = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, note FROM ddts WHERE id = ?').bind(ddtId).first()
+    return c.json({ success: true, before, after })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
   }
 })
 
