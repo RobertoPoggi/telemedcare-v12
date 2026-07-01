@@ -1,11 +1,10 @@
 name: Send Reminder Emails (Cron Giornaliero)
 # 🔔 REMINDER AUTOMATICI GIORNALIERI
-# ⏰ Esecuzione: Ogni giorno alle 05:00 Italia (03:00 UTC)
-# ℹ️  GitHub Actions può slittare di 2-3h → arrivo reale ~07:00-08:00 IT
+# ⏰ Esecuzione: Ogni giorno alle 08:00 Italia (07:00 UTC)
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # Tutti i giorni alle 05:00 IT (03:00 UTC) — anticipo per slittamento GitHub
+    - cron: '0 7 * * *'   # Tutti i giorni alle 08:00 IT (07:00 UTC)
   workflow_dispatch:
     inputs:
       environment:
