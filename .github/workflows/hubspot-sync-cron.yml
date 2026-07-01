@@ -1,6 +1,7 @@
 name: HubSpot Auto Import (Form eCura)
 # 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
-# ⏰ Esecuzione: Ogni giorno alle 08:00 (fuso orario UTC+1 Italia)
+# ⏰ Esecuzione: Ogni giorno alle 05:00 IT (03:00 UTC)
+# ℹ️  GitHub Actions può slittare di 2-3h → arrivo reale ~07:00-08:00 IT
 # 📅 Periodo: Ultimi 7 giorni — stessa logica dell'autorefresh dashboard
 # 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura' (IMMUTABILE)
 #
@@ -11,7 +12,7 @@ name: HubSpot Auto Import (Form eCura)
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 3 * * *'   # 05:00 IT (03:00 UTC) — anticipo per slittamento GitHub
   workflow_dispatch:
     inputs:
       days:
@@ -97,7 +98,7 @@ jobs:
         if: always()
         run: |
           echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-          echo "📅 Prossima esecuzione: Domani ore 08:00 Italia"
+          echo "📅 Prossima esecuzione: Domani ore 05:00 UTC (07:00-08:00 IT circa)"
           echo ""
           echo "📌 Come interpretare i risultati:"
           echo "   imported=0, updated>0  → ✅ Normale: lead già nel DB, canali aggiornati"
