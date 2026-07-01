@@ -569,8 +569,18 @@
         }
 
         // Handle form submission
+        let isSubmitting = false; // ✅ Guard doppio submit
         document.getElementById('configurazione-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // ✅ Blocca doppio submit
+            if (isSubmitting) {
+                console.warn('⚠️ [FORM CONFIG] Submit già in corso, ignorato');
+                return;
+            }
+            isSubmitting = true;
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Invio in corso...'; }
             
             console.log('📤 [FORM CONFIG] Invio configurazione...');
             
@@ -655,6 +665,10 @@
                 
             } catch (error) {
                 console.error('❌ [FORM CONFIG] Errore invio:', error);
+                
+                // ✅ Reset guard in caso di errore (permette di riprovare)
+                isSubmitting = false;
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Invia configurazione'; }
                 
                 // ✅ Mostra dettagli errore per debugging
                 let errorMessage = 'Errore nell\'invio della configurazione. Riprova più tardi o contatta info@ecura.it';

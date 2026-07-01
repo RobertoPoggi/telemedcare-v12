@@ -1183,6 +1183,7 @@ app.use('*', async (c, next) => {
             proforma_number TEXT,
             dispositivo TEXT NOT NULL,
             serial_number TEXT,
+            sim_number TEXT,
             quantita INTEGER DEFAULT 1,
             destinatario_nome TEXT NOT NULL,
             destinatario_indirizzo TEXT NOT NULL,
@@ -9890,9 +9891,9 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
       .replace(/SIM:[^\s|]+(\s*\|\s*)?/i, '')
       .trim()
 
-    // Numero SIM: estratto dalle note (pattern "SIM:+39...") oppure da destinatario_telefono se sembra SIM (inizia con +48)
+    // Numero SIM: colonna dedicata sim_number (priorità), poi fallback note pattern "SIM:+xx"
     const simMatch = noteRaw.match(/SIM:([^\s|]+)/i)
-    const simNumber = simMatch ? simMatch[1] : (ddt.destinatario_telefono || '—')
+    const simNumber = ddt.sim_number || (simMatch ? simMatch[1] : '—')
 
     // Determina nome SIM in base al dispositivo
     const simNome = `SIM SiDLY per ${dispositivo}`
@@ -30355,6 +30356,8 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       ddtId = `DDT-${leadId}-${Date.now()}`
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
+      // Esegui migration sim_number se non esiste (idempotente)
+      try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
       await c.env.DB.prepare(`
         INSERT INTO ddts (
           id, numero_ddt, contract_code,
@@ -30362,17 +30365,17 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
           destinatario_nome, destinatario_indirizzo, destinatario_cap,
           destinatario_citta, destinatario_provincia,
           destinatario_email, destinatario_telefono,
-          dispositivo, serial_number, quantita,
+          dispositivo, serial_number, sim_number, quantita,
           status, pdf_url, pdf_generated, note,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
       `).bind(
         ddtId, numDdt, codiceContratto,
         dataDoc, dataDoc,
         nomeDestinatario, indirizzoDestinatario, capDestinatario,
         cittaDestinatario, provinciaDestinatario,
         lead.email || '', lead.telefono || '',
-        dispositivo, imei, 1,
+        dispositivo, imei, telefonoSim || null, 1,
         'CONSEGNATO', pdfUrl, 1, noteConLeadId
       ).run()
       ddtCreated = true
@@ -31304,25 +31307,28 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
 })
 
 // POST /api/oneshot-fix-ddt-vismara-7mq3k
-// Corregge data_consegna e numero SIM del DDT Vismara (DDT-009-2026)
+// Corregge data_consegna, aggiunge colonna sim_number e migra SIM di Vismara da note a sim_number
 app.post('/api/oneshot-fix-ddt-vismara-7mq3k', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    // Migration: aggiunge colonna sim_number se non esiste
+    try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
     const ddtId = 'DDT-LEAD-IRBEMA-00493-1782935330745'
-    const before = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, note, destinatario_telefono FROM ddts WHERE id = ?').bind(ddtId).first() as any
+    const before = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, note, sim_number FROM ddts WHERE id = ?').bind(ddtId).first() as any
     if (!before) return c.json({ success: false, error: 'DDT non trovato' }, 404)
-    // Aggiorna: data corretta 1-7-2026, SIM nelle note, telefono rimosso dal campo destinatario
-    const noteAggiornate = (before.note || '').replace(/SIM:[^\s|]+(\s*\|\s*)?/i, '').trim() + ' | SIM:+48725871336'
+    // Estrai SIM dalle note, pulisci le note, salva in sim_number
+    const simMatch = (before.note || '').match(/SIM:([^\s|]+)/i)
+    const simNumber = simMatch ? simMatch[1] : '+48725871336'
+    const notePulite = (before.note || '').replace(/\s*\|\s*SIM:[^\s|]+/i, '').replace(/SIM:[^\s|]+\s*\|\s*/i, '').trim()
     await c.env.DB.prepare(`
       UPDATE ddts SET
-        data_consegna = ?,
-        data_spedizione = ?,
+        sim_number = ?,
         note = ?,
         updated_at = ?
       WHERE id = ?
-    `).bind('2026-07-01', '2026-07-01', noteAggiornate.trim().replace(/^\s*\|\s*/, ''), new Date().toISOString(), ddtId).run()
-    const after = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, data_spedizione, note FROM ddts WHERE id = ?').bind(ddtId).first()
-    return c.json({ success: true, before, after })
+    `).bind(simNumber, notePulite, new Date().toISOString(), ddtId).run()
+    const after = await c.env.DB.prepare('SELECT id, numero_ddt, data_consegna, sim_number, note FROM ddts WHERE id = ?').bind(ddtId).first()
+    return c.json({ success: true, migrated: { sim_number: simNumber }, before, after })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
