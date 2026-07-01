@@ -374,6 +374,8 @@ export async function getTokensNeedingReminder(
       AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE')
       -- ❌ ESCLUDI lead non interessati
       AND l.status != 'NOT_INTERESTED'
+      -- ✅ SOLO lead eCura (da Form eCura o IRBEMA)
+      AND l.fonte IN ('Form eCura', 'IRBEMA')
       -- ✅ ORDINA PER PRIORITÀ
     ORDER BY 
       CASE l.status
@@ -809,6 +811,7 @@ export async function processReminders(
         AND l.email IS NOT NULL AND l.email != ''
         AND l.updated_at < ?
         AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        AND l.fonte IN ('Form eCura', 'IRBEMA')
         AND COALESCE(l.reminder_firma_count, 0) < ?
         AND (
           l.reminder_firma_sent_at IS NULL
@@ -875,6 +878,7 @@ export async function processReminders(
         AND p.status NOT IN ('paid', 'PAID')
         AND (l.email IS NOT NULL AND l.email != '' OR p.cliente_email IS NOT NULL AND p.cliente_email != '')
         AND l.updated_at < ?
+        AND l.fonte IN ('Form eCura', 'IRBEMA')
         AND COALESCE(l.reminder_proforma_count, 0) < ?
         AND (
           l.reminder_proforma_sent_at IS NULL
