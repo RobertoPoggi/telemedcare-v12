@@ -1482,6 +1482,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica fonte lead - mostra quali fonti ricevevano reminder (one-shot lettura)
+  if (path === '/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v' && method === 'GET') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -31427,6 +31432,74 @@ app.post('/api/oneshot-fix-ddt-vismara-contract-code-8pz5r', async (c) => {
     })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /api/oneshot-diagnosi-fonte-lead-reminder-9kx3v
+// Diagnostica: mostra la distribuzione delle fonti tra i lead che hanno (o avevano) token reminder
+// Utile per verificare quali lead NON-eCura ricevevano erroneamente i reminder
+app.get('/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    // 1. Distribuzione fonti tra lead con token reminder (attivi)
+    const fontiToken = await c.env.DB.prepare(`
+      SELECT l.fonte, COUNT(*) as count
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0
+        AND t.expires_at > datetime('now')
+      GROUP BY l.fonte
+      ORDER BY count DESC
+    `).all()
+
+    // 2. Lead NON-eCura con token attivo (quelli che ricevevano reminder per errore)
+    const leadNonEcura = await c.env.DB.prepare(`
+      SELECT l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+             l.fonte, l.status, t.reminder_count, t.created_at
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0
+        AND t.expires_at > datetime('now')
+        AND l.fonte NOT IN ('Form eCura', 'IRBEMA')
+        AND l.fonte IS NOT NULL
+      ORDER BY t.created_at DESC
+      LIMIT 30
+    `).all()
+
+    // 3. Lead con fonte NULL o vuota con token attivo
+    const leadFonteNull = await c.env.DB.prepare(`
+      SELECT l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+             l.fonte, l.status, t.reminder_count
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0
+        AND t.expires_at > datetime('now')
+        AND (l.fonte IS NULL OR l.fonte = '')
+      ORDER BY t.created_at DESC
+      LIMIT 30
+    `).all()
+
+    // 4. Totali eCura vs non-eCura
+    const totali = await c.env.DB.prepare(`
+      SELECT
+        COUNT(CASE WHEN l.fonte IN ('Form eCura', 'IRBEMA') THEN 1 END) as ecura,
+        COUNT(CASE WHEN l.fonte NOT IN ('Form eCura', 'IRBEMA') OR l.fonte IS NULL THEN 1 END) as non_ecura,
+        COUNT(*) as totale
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0 AND t.expires_at > datetime('now')
+    `).first()
+
+    return c.json({
+      riepilogo: totali,
+      fonti_distribuzione: fontiToken.results,
+      lead_non_ecura: leadNonEcura.results,
+      lead_fonte_null: leadFonteNull.results,
+      nota: 'I lead in lead_non_ecura e lead_fonte_null NON ricevono più reminder grazie al filtro fonte IN (Form eCura, IRBEMA)'
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
   }
 })
 
