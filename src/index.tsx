@@ -1472,6 +1472,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica campi data contratti (one-shot lettura)
+  if (path === '/api/oneshot-inspect-contracts-dates-4kx7p' && method === 'GET') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -31347,6 +31352,25 @@ app.post('/api/oneshot-fix-ddt-vismara-7mq3k', async (c) => {
     return c.json({ success: true, migrated: { sim_number: simNumber, data_consegna: '2026-07-01' }, before, after })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// GET /api/oneshot-inspect-contracts-dates-4kx7p
+// Diagnostica: mostra i campi data di tutti i contratti firmati (sola lettura)
+app.get('/api/oneshot-inspect-contracts-dates-4kx7p', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+    const rows = await c.env.DB.prepare(`
+      SELECT codice_contratto, status,
+             created_at, data_invio, data_firma,
+             signed_at, signature_timestamp
+      FROM contracts
+      WHERE status IN ('firmato','SIGNED','signed')
+      ORDER BY created_at DESC LIMIT 20
+    `).all()
+    return c.json({ contracts: rows.results })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
   }
 })
 
