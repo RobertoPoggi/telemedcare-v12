@@ -6299,6 +6299,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             const pianoSelect = document.getElementById('newPiano');
             const priceNote = document.getElementById('priceNote');
             
+            // ✅ FIX CRITICO: Salva il valore selezionato PRIMA di ricostruire innerHTML
+            // Senza questo salvataggio, quando l'utente sceglie AVANZATO e updatePrices()
+            // ricostruisce le <option>, il browser torna alla prima option (BASE), 
+            // impedendo di cambiare il piano tramite CRUD.
+            const pianoCorrente = pianoSelect.value;
+            
             // Prezzi per servizio (primo anno / rinnovo) - AGGIORNATI da ecura.it
             const prices = {
                 'eCura FAMILY': {
@@ -6328,6 +6334,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <option value="BASE">Piano BASE - €\${servicePrices.BASE.primo}/anno (rinnovo €\${servicePrices.BASE.rinnovo}/anno)</option>
                 <option value="AVANZATO">Piano AVANZATO - €\${servicePrices.AVANZATO.primo}/anno (rinnovo €\${servicePrices.AVANZATO.rinnovo}/anno)</option>
             \`;
+            
+            // ✅ FIX CRITICO: Ripristina il valore selezionato dall'utente dopo la ricostruzione HTML
+            // Questo permette di cambiare BASE→AVANZATO (e viceversa) tramite CRUD penna
+            if (pianoCorrente && (pianoCorrente === 'BASE' || pianoCorrente === 'AVANZATO')) {
+                pianoSelect.value = pianoCorrente;
+            }
             
             priceNote.textContent = \`I prezzi mostrati sono per il servizio \${servizio}. Include dispositivo \${dispositivo}.\`;
         }
