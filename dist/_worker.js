@@ -10231,10 +10231,14 @@ ${370+t.length}
                 // Azioni colonna destra
                 const clienteNome = (contract.cliente_nome || '') + ' ' + (contract.cliente_cognome || '');
                 const idSafe = JSON.stringify(contract.id);
-                const codiceSafe = JSON.stringify(contract.codice_contratto || contract.id);
-                const clienteNomeSafe = JSON.stringify(clienteNome.trim());
-                const leadIdSafe = JSON.stringify(contract.leadId || '');
                 const annoRinnovoSafe = (contract.anno_rinnovo || 1) + 1;
+
+                // ✅ FIX: uso apostrofi singoli per le stringhe negli onclick inline,
+                // così i doppi apici dell'attributo HTML non vengono rotti.
+                // JSON.stringify produce "valore" con " che rompe onclick="fn("valore")"
+                const codiceSafeQ  = (contract.codice_contratto || String(contract.id)).replace(/'/g, "\\'");
+                const clienteNomeQ = clienteNome.trim().replace(/'/g, "\\'");
+                const leadIdQ      = (contract.leadId || '').replace(/'/g, "\\'");
 
                 let azioniHtml = '';
                 if (isRinnovo && !rinnovoCompletato && isSigned) {
@@ -10245,7 +10249,7 @@ ${370+t.length}
                                class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
                                 ✍️ Firmato
                             </a>
-                            <button onclick="segnaRinnovoCompletato(\${idSafe}, \${codiceSafe})"
+                            <button onclick="segnaRinnovoCompletato(\${idSafe}, '\${codiceSafeQ}')"
                                     class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold">
                                 ✅ Completa Rinnovo
                             </button>
@@ -10267,7 +10271,7 @@ ${370+t.length}
                                class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
                                 ✍️ Firmato
                             </a>
-                            <button onclick="inviaRinnovo(\${leadIdSafe}, \${codiceSafe}, \${clienteNomeSafe}, \${ivaAgSafe}, \${annoRinnovoSafe})"
+                            <button onclick="inviaRinnovo('\${leadIdQ}', '\${codiceSafeQ}', '\${clienteNomeQ}', \${ivaAgSafe}, \${annoRinnovoSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
                                     title="Crea e invia contratto di rinnovo (\${tooltipIva})">
                                 🔄 Invia Rinnovo
