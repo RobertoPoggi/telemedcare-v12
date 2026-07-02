@@ -31577,10 +31577,10 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
       {
         id: 'DDT-PEPE-20260209',
         contract_code: 'CTR-PEPE-2026',
-        sim_number: null,                 // VITAL CARE: SIM separata, numero non confermato
-        dispositivo: 'SiDLY VITAL CARE', // CORRETTO: PDF originale dice VITAL CARE (non CARE PRO)
-        // NB: serial_number 868298060656916 in Excel è "Anna De Marco" → IMEI probabilmente errato
-        // Non aggiorniamo serial_number qui per non peggiorare la situazione
+        sim_number: '+48725871412',       // IMEI 868298060656916 → Anna De Marco (Excel)
+        // Pepe è il caregiver di Anna De Marco — IMEI e SIM sono corretti
+        serial_number: '868298060656916',
+        dispositivo: 'SiDLY CARE PRO',   // CARE PRO (il PDF originale riportava erroneamente VITAL)
       },
       {
         id: 'DDT-MACCHI-20260216',
