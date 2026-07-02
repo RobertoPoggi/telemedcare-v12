@@ -3984,9 +3984,10 @@ ${370+t.length}
             tb.innerHTML = list.map((d, idx) => {
                 const s = statusMap[(d.status||'').toLowerCase()] || ['bg-gray-100 text-gray-600','fa-question','—'];
                 const dtStr = d.created_at ? new Date(d.created_at).toLocaleDateString('it-IT') : '—';
-                const pdfBtn = d.pdf_url
-                    ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-500 hover:text-red-700" title="Apri PDF"><i class="fas fa-file-pdf"></i></a>'
-                    : '<span class="text-gray-300" title="Nessun PDF"><i class="fas fa-file-pdf"></i></span>';
+                // Usa sempre /api/ddts/:id/pdf-print — il pdf_url nel DB può essere obsoleto
+                // (le DDT vecchie avevano pdf_url=/ddt/DDT_xxx.pdf che non esiste)
+                const pdfHref = '/api/ddts/' + encodeURIComponent(d.id || d.numero_ddt) + '/pdf-print';
+                const pdfBtn = '<a href="' + pdfHref + '" target="_blank" class="text-red-500 hover:text-red-700" title="Apri PDF DDT"><i class="fas fa-file-pdf"></i></a>';
                 const contractLink = d.note
                     ? '<span class="text-xs text-gray-500 max-w-xs truncate block" title="' + escapeHtml(d.note) + '">' + escapeHtml(d.note).substring(0,30) + (d.note.length>30?'…':'') + '</span>'
                     : '—';
@@ -4012,7 +4013,9 @@ ${370+t.length}
             const d = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(x => x.id === idx || x.numero_ddt === idx);
             if (!d) return;
             document.getElementById('ddtModalTitle').textContent = 'DDT ' + (d.numero_ddt||d.id);
-            const pdfLink = d.pdf_url ? '<a href="' + escapeHtml(d.pdf_url) + '" target="_blank" class="text-red-600 hover:underline"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>' : '<span class="text-gray-400">Nessun PDF</span>';
+            // Usa sempre /api/ddts/:id/pdf-print (il pdf_url nel DB può essere obsoleto)
+            const pdfDetailHref = '/api/ddts/' + encodeURIComponent(d.id || d.numero_ddt) + '/pdf-print';
+            const pdfLink = '<a href="' + pdfDetailHref + '" target="_blank" class="text-red-600 hover:underline"><i class="fas fa-file-pdf mr-1"></i>Apri PDF</a>';
             document.getElementById('ddtModalBody').innerHTML =
                 '<div class="grid grid-cols-2 gap-3 text-sm">' +
                 '<div><span class="font-semibold text-gray-500">N° DDT:</span><p class="font-mono">' + escapeHtml(d.numero_ddt) + '</p></div>' +
