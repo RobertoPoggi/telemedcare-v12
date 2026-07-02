@@ -31849,90 +31849,74 @@ app.post('/api/oneshot-insert-ddt-capone-cozzi-8wk3r', async (c) => {
 })
 
 // POST /api/oneshot-fix-anagrafica-balzarotti-7rp4x
-// Aggiorna i dati anagrafici mancanti nel lead di Giuliana Balzarotti / Paolo Magri
-// Cerca il lead per email (paolo@paolomagri.com) oppure per ID passato nel body
-// Body JSON opzionale: { leadId, indirizzoIntestatario, capIntestatario, cittaIntestatario,
-//                        provinciaIntestatario, cfIntestatario,
-//                        indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito, cfAssistito,
-//                        luogoNascitaAssistito, dataNascitaAssistito,
-//                        luogoNascitaIntestatario, dataNascitaIntestatario }
+// Aggiorna i dati anagrafici di Giuliana Balzarotti nel lead LEAD-EXCEL-060 (richiedente: Paolo Magrì)
+// Dati verificati da documento anagrafico ufficiale:
+//   CF: BLZGLN35P67E504R → nata 27/09/1935 a Como (E504)
+//   Residenza: Via Statale per Lecco 23/A — 22100 Como (CO)
+// Il campo intestatarioContratto è 'assistito' → i campi *Intestatario* puntano all'assistita Giuliana
 app.post('/api/oneshot-fix-anagrafica-balzarotti-7rp4x', async (c) => {
   if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
   try {
-    const body = await c.req.json().catch(() => ({}))
-
-    // Trova il lead: prima per ID esplicito, poi per email del caregiver
+    // Trova il lead: cerca per ID noto, poi per email caregiver, poi per nome assistito
     let lead: any = null
-    if (body.leadId) {
-      lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(body.leadId).first()
-    }
-    if (!lead) {
-      lead = await c.env.DB.prepare("SELECT * FROM leads WHERE email = 'paolo@paolomagri.com' LIMIT 1").first()
-    }
-    if (!lead) {
-      // Prova anche per nome assistito
-      lead = await c.env.DB.prepare(
-        "SELECT * FROM leads WHERE nomeAssistito = 'Giuliana' AND cognomeAssistito = 'Balzarotti' LIMIT 1"
-      ).first()
-    }
-    if (!lead) {
-      return c.json({ success: false, error: 'Lead Balzarotti/Magri non trovato nel DB. Passa leadId nel body.' })
-    }
+    lead = await c.env.DB.prepare("SELECT * FROM leads WHERE id = 'LEAD-EXCEL-060' LIMIT 1").first()
+    if (!lead) lead = await c.env.DB.prepare("SELECT * FROM leads WHERE email = 'paolo@paolomagri.com' LIMIT 1").first()
+    if (!lead) lead = await c.env.DB.prepare("SELECT * FROM leads WHERE nomeAssistito = 'Giuliana' AND cognomeAssistito = 'Balzarotti' LIMIT 1").first()
+    if (!lead) return c.json({ success: false, error: 'Lead LEAD-EXCEL-060 (Balzarotti/Magrì) non trovato. Controlla il DB.' })
 
     console.log(`🔧 [ONESHOT-BALZAROTTI] Lead trovato: ${lead.id} — ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
 
-    // Dati da aggiornare: usa quelli del body se presenti, altrimenti usa i valori da aggiornare
-    const updates: Record<string, string> = {}
+    // ── Dati verificati da documento anagrafico ufficiale ─────────────────────
+    // CF BLZGLN35P67E504R → G=Giuliana, BLZ=Balzarotti, 35=1935, P=Settembre, 67=giorno F, E504=Como
+    const cf              = 'BLZGLN35P67E504R'
+    const indirizzo       = 'Via Statale per Lecco 23/A'
+    const cap             = '22100'
+    const citta           = 'Como'
+    const provincia       = 'CO'
+    const luogoNascita    = 'Como'
+    const dataNascita     = '1935-09-27'   // P=Settembre, 67→67-40=27 (donna)
 
-    const campi = [
-      'indirizzoIntestatario', 'capIntestatario', 'cittaIntestatario', 'provinciaIntestatario',
-      'cfIntestatario', 'luogoNascitaIntestatario', 'dataNascitaIntestatario',
-      'indirizzoAssistito', 'capAssistito', 'cittaAssistito', 'provinciaAssistito',
-      'cfAssistito', 'luogoNascitaAssistito', 'dataNascitaAssistito',
-      'nomeRichiedente', 'cognomeRichiedente', 'telefono', 'email'
-    ]
+    // Aggiorna sia i campi assistito sia i campi intestatario
+    // (intestatarioContratto = 'assistito' → il contratto usa i campi *Intestatario* per Giuliana)
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        cfAssistito              = ?,
+        indirizzoAssistito       = ?,
+        capAssistito             = ?,
+        cittaAssistito           = ?,
+        provinciaAssistito       = ?,
+        luogoNascitaAssistito    = ?,
+        dataNascitaAssistito     = ?,
+        cfIntestatario           = ?,
+        indirizzoIntestatario    = ?,
+        capIntestatario          = ?,
+        cittaIntestatario        = ?,
+        provinciaIntestatario    = ?,
+        luogoNascitaIntestatario = ?,
+        dataNascitaIntestatario  = ?,
+        intestatarioContratto    = 'assistito',
+        updated_at               = ?
+      WHERE id = ?
+    `).bind(
+      cf, indirizzo, cap, citta, provincia, luogoNascita, dataNascita,
+      cf, indirizzo, cap, citta, provincia, luogoNascita, dataNascita,
+      new Date().toISOString(),
+      lead.id
+    ).run()
 
-    for (const campo of campi) {
-      if (body[campo] !== undefined && body[campo] !== '') {
-        updates[campo] = body[campo]
+    console.log(`✅ [ONESHOT-BALZAROTTI] Anagrafica aggiornata per lead ${lead.id}`)
+
+    return c.json({
+      success: true,
+      leadId: lead.id,
+      messaggio: 'Anagrafica Giuliana Balzarotti aggiornata correttamente',
+      datiImpostati: {
+        cfAssistito: cf, cfIntestatario: cf,
+        indirizzo, cap, citta, provincia,
+        luogoNascita, dataNascita,
+        intestatarioContratto: 'assistito'
       }
-    }
-
-    if (Object.keys(updates).length === 0) {
-      // Restituisce i dati attuali del lead per diagnosi
-      return c.json({
-        success: false,
-        error: 'Nessun campo da aggiornare nel body. Passa i campi anagrafici da correggere.',
-        leadId: lead.id,
-        datiAttuali: {
-          nomeRichiedente: lead.nomeRichiedente,
-          cognomeRichiedente: lead.cognomeRichiedente,
-          email: lead.email,
-          telefono: lead.telefono,
-          nomeAssistito: lead.nomeAssistito,
-          cognomeAssistito: lead.cognomeAssistito,
-          indirizzoIntestatario: lead.indirizzoIntestatario,
-          capIntestatario: lead.capIntestatario,
-          cittaIntestatario: lead.cittaIntestatario,
-          provinciaIntestatario: lead.provinciaIntestatario,
-          cfIntestatario: lead.cfIntestatario,
-          indirizzoAssistito: lead.indirizzoAssistito,
-          capAssistito: lead.capAssistito,
-          cittaAssistito: lead.cittaAssistito,
-          provinciaAssistito: lead.provinciaAssistito,
-          cfAssistito: lead.cfAssistito,
-          luogoNascitaAssistito: lead.luogoNascitaAssistito,
-          dataNascitaAssistito: lead.dataNascitaAssistito,
-        }
-      })
-    }
-
-    const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ')
-    const binds = [...Object.values(updates), new Date().toISOString(), lead.id]
-    await c.env.DB.prepare(`UPDATE leads SET ${setClause}, updated_at = ? WHERE id = ?`).bind(...binds).run()
-
-    console.log(`✅ [ONESHOT-BALZAROTTI] Aggiornati campi:`, Object.keys(updates))
-    return c.json({ success: true, leadId: lead.id, campiAggiornati: updates })
+    })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
