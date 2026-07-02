@@ -31511,32 +31511,114 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
-    // Assicura che la colonna sim_number esista (migration idempotente)
+    // Migration idempotente: aggiunge colonne se non esistono
     try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
 
-    // Mappa completa: DDT id → { contract_code, sim_number }
-    // SIM presenti solo per VITAL CARE (hanno SIM integrata).
-    // CARE PRO non ha SIM dedicata → sim_number rimane null.
-    const fixes = [
-      // ── 2025 ──────────────────────────────────────────────────────────────
-      { id: 'DDT-EILEEN-20250514',    contract_code: 'CTR-KING-2025',        sim_number: null },
-      { id: 'DDT-PIZZUTTO-20250520',  contract_code: 'CTR-PIZZUTTO-G-2025',  sim_number: null },
-      { id: 'DDT-PENNACCHIO-20250522',contract_code: 'CTR-PENNACCHIO-2025',  sim_number: null },
-      { id: 'DDT-BALZAROTTI-20250617',contract_code: 'CTR-BALZAROTTI-2025',  sim_number: null },
-      // ── 2026 ──────────────────────────────────────────────────────────────
-      { id: 'DDT-LOCATELLI-20260206', contract_code: 'CTR-LOCATELLI-2026',   sim_number: null },
-      { id: 'DDT-PEPE-20260209',      contract_code: 'CTR-PEPE-2026',        sim_number: null },
-      { id: 'DDT-MACCHI-20260216',    contract_code: 'CTR-MACCHI-2026',      sim_number: '+48723162569' },
-      // Ronca, Delaude, Gallo: nessun codice contratto nel DB (contratti olografici/esterni)
-      // → contract_code rimane null, ma aggiorniamo la nota "Contratto firmato del gg-mm-aaaa"
-      // che verrà mostrata dal pdf-print come riferimento contratto
+    // ────────────────────────────────────────────────────────────────────────
+    // Dati verificati da:
+    //  • Excel SIM Card SiDLY MedicaGB (IMEI → SIM → Assistito)
+    //  • PDF DDT originali (dispositivo, data contratto)
+    //  • DB contratti (contract_code)
+    //
+    // Nota CARE PRO: ogni unità ha SIM Card integrata (lista Excel).
+    // Nota VITAL CARE: SIM separata non inclusa nella lista CARE PRO.
+    //   - Macchi VITAL: SIM +48723162569 (da note DDT originale)
+    //   - Locatelli VITAL: SIM non nota → rimane null
+    //   - Pepe: nel PDF originale è VITAL CARE (non CARE PRO come in DB)
+    //           IMEI 868298060656916 in lista CARE PRO risulta "Anna De Marco"
+    //           → IMEI probabilmente errato nel DB per Pepe (da verificare)
+    //           → aggiorniamo dispositivo a VITAL CARE ma lasciamo IMEI invariato
+    // ────────────────────────────────────────────────────────────────────────
+    type DdtFix = {
+      id: string
+      contract_code: string | null
+      sim_number: string | null
+      serial_number?: string | null   // aggiorna solo se fornito
+      dispositivo?: string | null     // aggiorna solo se fornito
+    }
+    const fixes: DdtFix[] = [
+      // ── 2025: SiDLY CARE PRO ─────────────────────────────────────────────
+      // SIM da Excel: IMEI → +48725871xxx
+      {
+        id: 'DDT-EILEEN-20250514',
+        contract_code: 'CTR-KING-2025',
+        sim_number: '+48725871962',       // IMEI 864866058470732 → Eileen King
+        serial_number: '864866058470732',
+        dispositivo: 'SiDLY CARE PRO',
+      },
+      {
+        id: 'DDT-PIZZUTTO-20250520',
+        contract_code: 'CTR-PIZZUTTO-G-2025',
+        sim_number: '+48725871916',       // IMEI 868298061152543 → Gianni Paolo Pizzutto
+        serial_number: '868298061152543',
+        dispositivo: 'SiDLY CARE PRO',
+      },
+      {
+        id: 'DDT-PENNACCHIO-20250522',
+        contract_code: 'CTR-PENNACCHIO-2025',
+        sim_number: '+48725872288',       // IMEI 868298061148327 → Rita Pennacchio
+        serial_number: '868298061148327',
+        dispositivo: 'SiDLY CARE PRO',
+      },
+      {
+        id: 'DDT-BALZAROTTI-20250617',
+        contract_code: 'CTR-BALZAROTTI-2025',
+        sim_number: '+48725872007',       // IMEI 864866055426687 → Giuliana Balzarotti
+        serial_number: '864866055426687',
+        dispositivo: 'SiDLY CARE PRO',
+      },
+      // ── 2026: SiDLY VITAL CARE ───────────────────────────────────────────
+      {
+        id: 'DDT-LOCATELLI-20260206',
+        contract_code: 'CTR-LOCATELLI-2026',
+        sim_number: null,                 // SIM VITAL non in lista CARE PRO, numero non noto
+        dispositivo: 'SiDLY VITAL CARE', // confermato da PDF
+      },
+      {
+        id: 'DDT-PEPE-20260209',
+        contract_code: 'CTR-PEPE-2026',
+        sim_number: null,                 // VITAL CARE: SIM separata, numero non confermato
+        dispositivo: 'SiDLY VITAL CARE', // CORRETTO: PDF originale dice VITAL CARE (non CARE PRO)
+        // NB: serial_number 868298060656916 in Excel è "Anna De Marco" → IMEI probabilmente errato
+        // Non aggiorniamo serial_number qui per non peggiorare la situazione
+      },
+      {
+        id: 'DDT-MACCHI-20260216',
+        contract_code: 'CTR-MACCHI-2026',
+        sim_number: '+48723162569',       // SIM VITAL confermata dal note DDT originale
+        serial_number: '862246076276621', // IMEI VITAL CARE (già aggiornato da fix precedente)
+        dispositivo: 'SiDLY VITAL CARE', // confermato da PDF originale
+      },
+      // ── Ronca, Delaude, Gallo: contratti olografici, nessun CTR- nel DB ──
+      {
+        id: 'DDT-RONCA-20260221',
+        contract_code: null,              // contratto olografico, codice non in DB
+        sim_number: null,                 // SIM non nota
+        serial_number: '862246076804059', // dal seed esistente (già corretto)
+        dispositivo: 'SiDLY VITAL CARE',
+      },
+      {
+        id: 'DDT-DELAUDE-20260224',
+        contract_code: null,
+        sim_number: '+48725871338',       // IMEI 868298061149689 → Delaude Margherita (da Excel)
+        serial_number: '868298061149689',
+        dispositivo: 'SiDLY CARE PRO',
+      },
+      {
+        id: 'DDT-GALLO-20260317',
+        contract_code: null,
+        sim_number: '+48725871342',       // IMEI 868298061148517 → Claudio Macchi in Excel
+        // NB: Excel assegna questo IMEI a Macchi ma il DDT Gallo lo usa — assumiamo corretto
+        serial_number: '868298061148517',
+        dispositivo: 'SiDLY CARE PRO',
+      },
     ]
 
     const results: any[] = []
     for (const fix of fixes) {
       try {
         const before = await c.env.DB.prepare(
-          'SELECT id, numero_ddt, contract_code, sim_number FROM ddts WHERE id = ?'
+          'SELECT id, numero_ddt, dispositivo, contract_code, sim_number, serial_number FROM ddts WHERE id = ?'
         ).bind(fix.id).first() as any
 
         if (!before) {
@@ -31544,20 +31626,35 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
           continue
         }
 
-        // Aggiorna solo i campi che mancano (non sovrascrivere valori già corretti)
-        const newContract = fix.contract_code || before.contract_code || null
-        const newSim      = fix.sim_number     || before.sim_number     || null
+        // Strategia: sovrascrive SEMPRE i campi forniti (dati verificati dai PDF/Excel)
+        // Per i campi non forniti nell'oggetto fix, mantiene il valore esistente
+        const newContract  = fix.contract_code  !== undefined ? fix.contract_code  : before.contract_code
+        const newSim       = fix.sim_number      !== undefined ? fix.sim_number      : before.sim_number
+        const newSerial    = fix.serial_number   !== undefined ? fix.serial_number   : before.serial_number
+        const newDisp      = fix.dispositivo     !== undefined ? fix.dispositivo     : before.dispositivo
 
-        await c.env.DB.prepare(
-          `UPDATE ddts SET contract_code = ?, sim_number = ?, updated_at = ? WHERE id = ?`
-        ).bind(newContract, newSim, new Date().toISOString(), fix.id).run()
+        await c.env.DB.prepare(`
+          UPDATE ddts
+          SET contract_code = ?, sim_number = ?, serial_number = ?, dispositivo = ?, updated_at = ?
+          WHERE id = ?
+        `).bind(newContract, newSim, newSerial, newDisp, new Date().toISOString(), fix.id).run()
 
         results.push({
           id: fix.id,
           numero_ddt: before.numero_ddt,
           status: 'UPDATED',
-          before: { contract_code: before.contract_code, sim_number: before.sim_number },
-          after:  { contract_code: newContract,          sim_number: newSim }
+          before: {
+            dispositivo:   before.dispositivo,
+            serial_number: before.serial_number,
+            contract_code: before.contract_code,
+            sim_number:    before.sim_number,
+          },
+          after: {
+            dispositivo:   newDisp,
+            serial_number: newSerial,
+            contract_code: newContract,
+            sim_number:    newSim,
+          }
         })
       } catch (e: any) {
         results.push({ id: fix.id, status: 'ERROR', error: e.message })
