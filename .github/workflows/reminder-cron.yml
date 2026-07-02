@@ -1,10 +1,10 @@
 name: Send Reminder Emails (Cron Giornaliero)
 # 🔔 REMINDER AUTOMATICI GIORNALIERI
-# ⏰ Esecuzione: Ogni giorno alle 08:00 Italia (07:00 UTC)
+# ⏰ Esecuzione: Ogni giorno alle 09:00 Italia (07:00 UTC)
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # Tutti i giorni alle 08:00 IT (07:00 UTC)
+    - cron: '0 7 * * *'   # Tutti i giorni alle 09:00 IT (07:00 UTC, ora legale)
   workflow_dispatch:
     inputs:
       environment:
@@ -24,44 +24,62 @@ jobs:
     name: Invia Reminder Automatici
     runs-on: ubuntu-latest
     steps:
-      - name: 📋 Info esecuzione
+      - name: 📋 Verifica prerequisiti
         run: |
           echo "🔔 Avvio reminder cron"
           echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           echo "🌐 Ambiente: ${{ github.event.inputs.environment || 'production' }}"
-          # Diagnostica: CRON_SECRET configurato su GitHub?
-          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
-            echo "⚠️  ATTENZIONE: CRON_SECRET non configurato in GitHub Secrets!"
-            echo "   → Vai su Settings → Secrets and variables → Actions → New repository secret"
-            echo "   → Aggiungi CRON_SECRET con lo stesso valore di Cloudflare Pages env vars"
+          echo "📌 Trigger: ${{ github.event_name }}"
+          echo ""
+
+          # ⛔ CONTROLLO CRITICO: CRON_SECRET deve essere configurato su GitHub
+          # Senza di esso, CF risponde 401 e il cron fallisce sempre.
+          # Per configurarlo: GitHub → Settings → Secrets and variables → Actions
+          # → New repository secret → Nome: CRON_SECRET → Valore: uguale a CF Pages env var CRON_SECRET
+          CRON_SECRET_VALUE="${{ secrets.CRON_SECRET }}"
+          if [ -z "$CRON_SECRET_VALUE" ]; then
+            echo "❌ ERRORE FATALE: CRON_SECRET non configurato in GitHub Secrets!"
+            echo ""
+            echo "📌 COME RISOLVERE:"
+            echo "   1. Vai su: github.com/RobertoPoggi/telemedcare-v12/settings/secrets/actions"
+            echo "   2. Clicca 'New repository secret'"
+            echo "   3. Nome: CRON_SECRET"
+            echo "   4. Valore: copia il valore da Cloudflare Pages → telemedcare-v12 → Settings → Environment variables → CRON_SECRET"
+            echo ""
+            echo "⚠️  Il job viene fermato. Tutti i 245+ run precedenti sono falliti per questo motivo."
+            exit 1
           else
-            echo "✅ CRON_SECRET configurato"
+            echo "✅ CRON_SECRET configurato in GitHub Secrets (lunghezza: ${#CRON_SECRET_VALUE} caratteri)"
           fi
 
       - name: 🔔 Trigger Reminder (Production)
-        if: ${{ github.event.inputs.environment == 'production' || github.event.inputs.environment == '' || github.event_name == 'schedule' }}
+        if: ${{ github.event.inputs.environment != 'preview' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           BASE_URL="https://telemedcare-v12.pages.dev"
-          
+
           echo "📡 Chiamata a $BASE_URL/api/cron/send-reminders ..."
-          
+
+          # Usa variabile d'ambiente per il secret (più sicuro, non esposto in shell)
           RESPONSE=$(curl -s -w "\n%{http_code}" \
-            --max-time 60 \
-            --connect-timeout 10 \
+            --max-time 90 \
+            --connect-timeout 15 \
             -X POST \
             "$BASE_URL/api/cron/send-reminders" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
             2>&1)
-          
+
           CURL_EXIT=$?
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n -1)
-          
-          echo "📊 HTTP Status: $HTTP_CODE"
+
+          echo "📊 HTTP Status: $HTTP_CODE (curl exit: $CURL_EXIT)"
           echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
-          
-          # Diagnostica per ogni codice HTTP
+          echo ""
+
+          # Gestione codici HTTP
           if [ "$HTTP_CODE" = "200" ]; then
             echo "✅ Reminder completati con successo"
 
@@ -71,42 +89,58 @@ jobs:
 
           elif [ "$HTTP_CODE" = "429" ]; then
             echo "⏭️  Skip: esecuzione recente già completata (rate limit 1 ora)"
+            echo "   → Normale se il cron è stato eseguito manualmente poco fa"
 
           elif [ "$HTTP_CODE" = "401" ]; then
             echo "❌ ERRORE 401 — Non autorizzato"
-            echo "   → CAUSA: CRON_SECRET su GitHub non corrisponde a quello su Cloudflare"
-            echo "   → VERIFICA 1: GitHub → Settings → Secrets → Actions → CRON_SECRET"
-            echo "   → VERIFICA 2: Cloudflare → Pages → telemedcare-v12 → Settings → Env vars → CRON_SECRET"
-            echo "   → I due valori devono essere IDENTICI"
+            echo ""
+            echo "   CAUSA: Il valore di CRON_SECRET su GitHub NON corrisponde a CRON_SECRET su Cloudflare Pages."
+            echo ""
+            echo "   📌 COME RISOLVERE:"
+            echo "   1. Apri Cloudflare Pages → telemedcare-v12 → Settings → Environment variables"
+            echo "   2. Copia il valore di CRON_SECRET"
+            echo "   3. Apri GitHub → Settings → Secrets and variables → Actions → CRON_SECRET"
+            echo "   4. Aggiorna il valore con quello copiato da Cloudflare"
+            echo "   5. I due valori devono essere IDENTICI (case sensitive)"
             exit 1
 
           elif [ "$HTTP_CODE" = "500" ]; then
-            echo "❌ ERRORE 500 — Errore interno server"
-            echo "   → Possibile causa: tabella system_config o lead_completion_tokens mancante nel DB prod"
-            echo "   → Possibile causa: eccezione in processReminders()"
-            echo "   → Controlla i log su Cloudflare → Pages → telemedcare-v12 → Functions → Logs"
+            echo "❌ ERRORE 500 — Errore interno server Cloudflare Worker"
+            echo "   → Controlla i log: Cloudflare → Pages → telemedcare-v12 → Functions → Logs"
+            echo "   → Cause comuni: tabella system_config mancante, eccezione in processReminders()"
             exit 1
 
+          elif [ "$HTTP_CODE" = "524" ]; then
+            echo "⚠️  TIMEOUT 524 — Il worker Cloudflare ha impiegato >30s (limite CF Pages)"
+            echo "   → Troppi lead da processare in una sola chiamata"
+            echo "   → Il cron probabilmente ha inviato alcuni reminder prima di andare in timeout"
+            echo "   → Non è un errore critico — i reminder verranno completati nelle prossime esecuzioni"
+            # NON exit 1 — il timeout parziale non è un failure fatale
+
           elif [ -z "$HTTP_CODE" ] || [ "$CURL_EXIT" != "0" ]; then
-            echo "❌ ERRORE: Timeout o errore di rete (curl exit code: $CURL_EXIT)"
-            echo "   → Il worker Cloudflare potrebbe aver impiegato >60s (timeout)"
-            echo "   → Controlla se ci sono troppi lead_completion_tokens da processare"
+            echo "❌ ERRORE: Timeout di rete o errore curl (exit code: $CURL_EXIT)"
+            echo "   → L'endpoint CF non ha risposto entro 90 secondi"
+            echo "   → Controlla lo stato di Cloudflare: https://www.cloudflarestatus.com"
             exit 1
 
           else
-            echo "❌ Errore HTTP inatteso: $HTTP_CODE"
+            echo "❌ Codice HTTP inatteso: $HTTP_CODE"
+            echo "   → Controlla i log su Cloudflare Pages → Functions → Logs"
             exit 1
           fi
 
       - name: 🔔 Trigger Reminder (Preview)
         if: ${{ github.event.inputs.environment == 'preview' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           echo "📡 Chiamata a preview.telemedcare-v12.pages.dev ..."
           RESPONSE=$(curl -s -w "\n%{http_code}" \
-            --max-time 60 \
+            --max-time 90 \
+            --connect-timeout 15 \
             -X POST "https://preview.telemedcare-v12.pages.dev/api/cron/send-reminders" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+            -H "Authorization: Bearer ${CRON_SECRET}")
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n -1)
           echo "📊 HTTP Status: $HTTP_CODE"
@@ -114,4 +148,6 @@ jobs:
 
       - name: 📊 Riepilogo
         if: always()
-        run: echo "⏰ Completato: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+        run: |
+          echo "⏰ Completato: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "📅 Prossima esecuzione schedulata: domani alle 07:00 UTC (09:00 IT)"
