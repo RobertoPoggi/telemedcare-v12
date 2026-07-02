@@ -31674,6 +31674,180 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
   }
 })
 
+// POST /api/oneshot-insert-ddt-capone-cozzi-8wk3r
+// Inserisce le 2 DDT mancanti: Maria Capone (DDT-007-2025) e Giuseppina Cozzi (DDT-008-2025)
+// Gli indirizzi vengono letti dal DB (tabella leads) in tempo reale.
+app.post('/api/oneshot-insert-ddt-capone-cozzi-8wk3r', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+
+    // Migration idempotente
+    try { await db.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
+
+    const results: any[] = []
+
+    // ── Leggi indirizzo di Giorgio Riela dal DB ───────────────────────────
+    const rielaLead = await db.prepare(`
+      SELECT indirizzo, citta, cap, provincia, nome, cognome
+      FROM leads
+      WHERE (cognome LIKE '%Riela%' OR nome LIKE '%Giorgio%')
+        AND cognome LIKE '%Riela%'
+      LIMIT 1
+    `).first() as any
+
+    const rielaIndirizzo  = rielaLead?.indirizzo  || 'Indirizzo da completare'
+    const rielaCap        = rielaLead?.cap         || '00000'
+    const rielaCitta      = rielaLead?.citta       || 'Da completare'
+    const rielaProvincia  = rielaLead?.provincia   || 'XX'
+
+    // ── Leggi indirizzo di Elisabetta Cattini dal DB ──────────────────────
+    const cattiniLead = await db.prepare(`
+      SELECT indirizzo, citta, cap, provincia, nome, cognome
+      FROM leads
+      WHERE cognome LIKE '%Cattini%'
+      LIMIT 1
+    `).first() as any
+
+    const cattiniIndirizzo = cattiniLead?.indirizzo || 'Indirizzo da completare'
+    const cattiniCap       = cattiniLead?.cap        || '00000'
+    const cattiniCitta     = cattiniLead?.citta      || 'Da completare'
+    const cattiniProvincia = cattiniLead?.provincia  || 'XX'
+
+    // ── DDT 1: Maria Capone → consegnato a Giorgio Riela (08/07/2025) ─────
+    // Contratto firmato 28/06/2025 → CTR-CAPONE-2025
+    // IMEI: 868298061173234 | SIM: +48725871337 | Dispositivo: CARE PRO
+    {
+      const ddtId     = 'DDT-CAPONE-20250708'
+      const numeroDDT = 'DDT-007-2025'
+
+      const existing = await db.prepare(
+        `SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?`
+      ).bind(ddtId, numeroDDT).first()
+
+      if (existing) {
+        results.push({ id: ddtId, numero: numeroDDT, status: 'ALREADY_EXISTS' })
+      } else {
+        await db.prepare(`
+          INSERT INTO ddts (
+            id, numero_ddt, contract_code,
+            dispositivo, serial_number, sim_number, quantita,
+            destinatario_nome, destinatario_indirizzo,
+            destinatario_cap, destinatario_citta, destinatario_provincia,
+            status, note,
+            data_consegna, data_spedizione,
+            pdf_url, pdf_generated,
+            created_at, updated_at
+          ) VALUES (
+            ?, ?, 'CTR-CAPONE-2025',
+            'SiDLY CARE PRO', '868298061173234', '+48725871337', 1,
+            'Giorgio Riela', ?,
+            ?, ?, ?,
+            'consegnato',
+            'DDT 7 del 08/07/2025 - Consegna SiDLY CARE PRO a Giorgio Riela per assistita Maria Capone. IMEI: 868298061173234. SIM: +48725871337. Contratto firmato del 28 giugno 2025.',
+            '2025-07-08', '2025-07-08',
+            NULL, 0,
+            '2025-07-08T00:00:00.000Z', ?
+          )
+        `).bind(
+          ddtId, numeroDDT,
+          rielaIndirizzo, rielaCap, rielaCitta, rielaProvincia,
+          new Date().toISOString()
+        ).run()
+
+        results.push({
+          id: ddtId,
+          numero: numeroDDT,
+          status: 'INSERTED',
+          assistita: 'Maria Capone',
+          destinatario: 'Giorgio Riela',
+          indirizzo_usato: `${rielaIndirizzo}, ${rielaCap} ${rielaCitta} (${rielaProvincia})`,
+          imei: '868298061173234',
+          sim: '+48725871337',
+          contratto: 'CTR-CAPONE-2025',
+          data_consegna: '2025-07-08',
+          data_firma_contratto: '2025-06-28',
+          fonte_indirizzo: rielaLead ? 'DB leads' : 'PLACEHOLDER — aggiornare manualmente',
+        })
+      }
+    }
+
+    // ── DDT 2: Giuseppina Cozzi → consegnato a Elisabetta Cattini (03/08/2025) ──
+    // Contratto firmato 14/07/2025 → CTR-COZZI-2025
+    // IMEI: 868298061148830 | SIM: +48725872298 | Dispositivo: CARE PRO
+    {
+      const ddtId     = 'DDT-COZZI-20250803'
+      const numeroDDT = 'DDT-008-2025'
+
+      const existing = await db.prepare(
+        `SELECT id FROM ddts WHERE id = ? OR numero_ddt = ?`
+      ).bind(ddtId, numeroDDT).first()
+
+      if (existing) {
+        results.push({ id: ddtId, numero: numeroDDT, status: 'ALREADY_EXISTS' })
+      } else {
+        await db.prepare(`
+          INSERT INTO ddts (
+            id, numero_ddt, contract_code,
+            dispositivo, serial_number, sim_number, quantita,
+            destinatario_nome, destinatario_indirizzo,
+            destinatario_cap, destinatario_citta, destinatario_provincia,
+            status, note,
+            data_consegna, data_spedizione,
+            pdf_url, pdf_generated,
+            created_at, updated_at
+          ) VALUES (
+            ?, ?, 'CTR-COZZI-2025',
+            'SiDLY CARE PRO', '868298061148830', '+48725872298', 1,
+            'Elisabetta Cattini', ?,
+            ?, ?, ?,
+            'consegnato',
+            'DDT 8 del 03/08/2025 - Consegna SiDLY CARE PRO a Elisabetta Cattini per assistita Giuseppina Cozzi. IMEI: 868298061148830. SIM: +48725872298. Contratto firmato del 14 luglio 2025.',
+            '2025-08-03', '2025-08-03',
+            NULL, 0,
+            '2025-08-03T00:00:00.000Z', ?
+          )
+        `).bind(
+          ddtId, numeroDDT,
+          cattiniIndirizzo, cattiniCap, cattiniCitta, cattiniProvincia,
+          new Date().toISOString()
+        ).run()
+
+        results.push({
+          id: ddtId,
+          numero: numeroDDT,
+          status: 'INSERTED',
+          assistita: 'Giuseppina Cozzi',
+          destinatario: 'Elisabetta Cattini',
+          indirizzo_usato: `${cattiniIndirizzo}, ${cattiniCap} ${cattiniCitta} (${cattiniProvincia})`,
+          imei: '868298061148830',
+          sim: '+48725872298',
+          contratto: 'CTR-COZZI-2025',
+          data_consegna: '2025-08-03',
+          data_firma_contratto: '2025-07-14',
+          fonte_indirizzo: cattiniLead ? 'DB leads' : 'PLACEHOLDER — aggiornare manualmente',
+        })
+      }
+    }
+
+    // Aggiorna anche il campo serial_number in dispositivi se presente
+    for (const { imei } of [
+      { imei: '868298061173234' },  // Capone
+      { imei: '868298061148830' },  // Cozzi
+    ]) {
+      try {
+        await db.prepare(
+          `UPDATE dispositivi SET serial_number = ? WHERE serial_number = ? OR imei = ?`
+        ).bind(imei, imei, imei).run()
+      } catch (_) {}
+    }
+
+    return c.json({ success: true, inserted: results.filter(r => r.status === 'INSERTED').length, results })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
