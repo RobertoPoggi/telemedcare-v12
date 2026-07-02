@@ -31542,7 +31542,7 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
       {
         id: 'DDT-EILEEN-20250514',
         contract_code: 'CTR-KING-2025',
-        sim_number: '+48725871962',       // IMEI 864866058470732 → Eileen King
+        sim_number: '+467191221638534',   // numero tel SIM Eileen King (da utente)
         serial_number: '864866058470732',
         dispositivo: 'SiDLY CARE PRO',
       },
@@ -31585,16 +31585,16 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
       {
         id: 'DDT-MACCHI-20260216',
         contract_code: 'CTR-MACCHI-2026',
-        sim_number: '+48723162569',       // SIM VITAL confermata dal note DDT originale
-        serial_number: '862246076276621', // IMEI VITAL CARE (già aggiornato da fix precedente)
-        dispositivo: 'SiDLY VITAL CARE', // confermato da PDF originale
+        sim_number: '+48723162569',       // SIM VITAL confermata dall'utente
+        serial_number: '862246076276621', // IMEI VITAL CARE
+        dispositivo: 'SiDLY VITAL CARE',
       },
       // ── Ronca, Delaude, Gallo: contratti olografici, nessun CTR- nel DB ──
       {
         id: 'DDT-RONCA-20260221',
         contract_code: null,              // contratto olografico, codice non in DB
-        sim_number: null,                 // SIM non nota
-        serial_number: '862246076804059', // dal seed esistente (già corretto)
+        sim_number: '+48723162449',       // SIM VITAL confermata dall'utente
+        serial_number: '862246076804059',
         dispositivo: 'SiDLY VITAL CARE',
       },
       {
@@ -31607,10 +31607,17 @@ app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
       {
         id: 'DDT-GALLO-20260317',
         contract_code: null,
-        sim_number: '+48725871342',       // IMEI 868298061148517 → Claudio Macchi in Excel
-        // NB: Excel assegna questo IMEI a Macchi ma il DDT Gallo lo usa — assumiamo corretto
+        sim_number: '+48725871342',       // IMEI 868298061148517 (da Excel)
         serial_number: '868298061148517',
         dispositivo: 'SiDLY CARE PRO',
+      },
+      // ── Vassalluzzo (DDT-007-2026): VITAL CARE ───────────────────────────
+      {
+        id: 'DDT-VASSALLUZZO-20260416',
+        contract_code: null,              // contratto olografico
+        sim_number: '+48723162559',       // SIM VITAL confermata dall'utente
+        serial_number: '862246076803994', // IMEI dal seed
+        dispositivo: 'SiDLY VITAL CARE',
       },
     ]
 
