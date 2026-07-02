@@ -31504,6 +31504,72 @@ app.get('/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v', async (c) => {
   }
 })
 
+// POST /api/oneshot-fix-ddt-sim-contract-5rk9w
+// Aggiorna sim_number e contract_code per tutte le DDT storiche che ne sono prive.
+// I dati SIM non erano salvati nel campo dedicato (solo in note), i contract_code erano null.
+app.post('/api/oneshot-fix-ddt-sim-contract-5rk9w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+
+    // Assicura che la colonna sim_number esista (migration idempotente)
+    try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
+
+    // Mappa completa: DDT id → { contract_code, sim_number }
+    // SIM presenti solo per VITAL CARE (hanno SIM integrata).
+    // CARE PRO non ha SIM dedicata → sim_number rimane null.
+    const fixes = [
+      // ── 2025 ──────────────────────────────────────────────────────────────
+      { id: 'DDT-EILEEN-20250514',    contract_code: 'CTR-KING-2025',        sim_number: null },
+      { id: 'DDT-PIZZUTTO-20250520',  contract_code: 'CTR-PIZZUTTO-G-2025',  sim_number: null },
+      { id: 'DDT-PENNACCHIO-20250522',contract_code: 'CTR-PENNACCHIO-2025',  sim_number: null },
+      { id: 'DDT-BALZAROTTI-20250617',contract_code: 'CTR-BALZAROTTI-2025',  sim_number: null },
+      // ── 2026 ──────────────────────────────────────────────────────────────
+      { id: 'DDT-LOCATELLI-20260206', contract_code: 'CTR-LOCATELLI-2026',   sim_number: null },
+      { id: 'DDT-PEPE-20260209',      contract_code: 'CTR-PEPE-2026',        sim_number: null },
+      { id: 'DDT-MACCHI-20260216',    contract_code: 'CTR-MACCHI-2026',      sim_number: '+48723162569' },
+      // Ronca, Delaude, Gallo: nessun codice contratto nel DB (contratti olografici/esterni)
+      // → contract_code rimane null, ma aggiorniamo la nota "Contratto firmato del gg-mm-aaaa"
+      // che verrà mostrata dal pdf-print come riferimento contratto
+    ]
+
+    const results: any[] = []
+    for (const fix of fixes) {
+      try {
+        const before = await c.env.DB.prepare(
+          'SELECT id, numero_ddt, contract_code, sim_number FROM ddts WHERE id = ?'
+        ).bind(fix.id).first() as any
+
+        if (!before) {
+          results.push({ id: fix.id, status: 'NOT_FOUND' })
+          continue
+        }
+
+        // Aggiorna solo i campi che mancano (non sovrascrivere valori già corretti)
+        const newContract = fix.contract_code || before.contract_code || null
+        const newSim      = fix.sim_number     || before.sim_number     || null
+
+        await c.env.DB.prepare(
+          `UPDATE ddts SET contract_code = ?, sim_number = ?, updated_at = ? WHERE id = ?`
+        ).bind(newContract, newSim, new Date().toISOString(), fix.id).run()
+
+        results.push({
+          id: fix.id,
+          numero_ddt: before.numero_ddt,
+          status: 'UPDATED',
+          before: { contract_code: before.contract_code, sim_number: before.sim_number },
+          after:  { contract_code: newContract,          sim_number: newSim }
+        })
+      } catch (e: any) {
+        results.push({ id: fix.id, status: 'ERROR', error: e.message })
+      }
+    }
+
+    return c.json({ success: true, total: fixes.length, results })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
