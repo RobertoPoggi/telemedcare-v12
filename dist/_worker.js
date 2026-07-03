@@ -10180,6 +10180,27 @@ ${370+t.length}
             }
         }
 
+        async function segnaRinnovoFirmato(rinnovoId, codiceRinnovo) {
+            if (!confirm(\`✅ Segnare il rinnovo \${codiceRinnovo} come FIRMATO manualmente?\\n\\nUsa questa opzione se il cliente ha firmato fuori dal portale digitale.\`)) return;
+            try {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/segna-firmato\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'SIGNED' })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert('✅ Rinnovo segnato come firmato!');
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                }
+            } catch (err) {
+                alert('❌ Errore di rete: ' + err.message);
+            }
+        }
+
         // ────────────────────────────────────────────────────────────────────────
 
         function renderContractsTable(contracts) {
@@ -10272,70 +10293,82 @@ ${370+t.length}
 
                 let azioniHtml = '';
                 if (isRinnovo && !rinnovoCompletato && isSigned) {
-                    // Rinnovo firmato ma non ancora marcato completato
+                    // Rinnovo firmato ma non ancora marcato completato — PDF + COMPLETA in riga
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
+                        <div class="flex items-center gap-1">
                             <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
-                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
-                                ✍️ Firmato
+                               class="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors font-semibold"
+                               title="Apri PDF firmato">
+                                ✍️
                             </a>
                             <button onclick="segnaRinnovoCompletato(\${idSafe}, '\${codiceSafeQ}')"
-                                    class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold">
-                                ✅ Completa Rinnovo
+                                    class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold"
+                                    title="Segna il rinnovo come completato">
+                                ✅ COMPLETA
                             </button>
                         </div>
                     \`;
                 } else if (isRinnovo && rinnovoCompletato) {
                     // Rinnovo completato
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
-                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">✅ Rinnovo Completato</span>
+                        <div class="flex items-center gap-1">
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">✅ Completato</span>
                             \${contract.rinnovo_data_completamento ? \`<span class="text-xs text-gray-400">\${new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT')}</span>\` : ''}
                         </div>
                     \`;
                 } else if (!isRinnovo && isSigned) {
-                    // Contratto originale firmato — mostra link + pulsante "Invia Rinnovo"
+                    // Contratto originale firmato — PDF + CREA RINNOVO in riga
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
+                        <div class="flex items-center gap-1">
                             <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
-                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
-                                ✍️ Firmato
+                               class="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors font-semibold"
+                               title="Apri PDF firmato">
+                                ✍️
                             </a>
                             <button onclick="inviaRinnovo('\${leadIdQ}', '\${codiceSafeQ}', '\${clienteNomeQ}', \${ivaAgSafe}, \${annoRinnovoSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
-                                    title="Crea e invia contratto di rinnovo (\${tooltipIva})">
-                                🔄 Invia Rinnovo
+                                    title="Crea contratto rinnovo (\${tooltipIva}) — genera link firma senza inviare email">
+                                🔄 CREA RINNOVO
                             </button>
                         </div>
                     \`;
                 } else if (isRinnovo && !isSigned) {
-                    // Rinnovo creato, in attesa firma
-                    // email_sent=0 → email non ancora inviata (dryRun) → mostra pulsante "Invia Email"
+                    // Rinnovo creato, in attesa firma — 3 azioni in riga
                     const emailSent = contract.email_sent == 1 || contract.email_sent === true;
                     const idRinnovoSafe = JSON.stringify(contract.id);
-                    const codiceSafeR = (contract.codice_contratto || '').replace(/'/g, "\\'");
-                    const emailClienteSafe = (contract.email_cliente || '').replace(/'/g, "\\'");
+                    const codiceSafeR = (contract.codice_contratto || '').replace(/'/g, "'");
+                    const emailClienteSafe = (contract.email_cliente || '').replace(/'/g, "'");
                     const firmaUrlRinnovo = \`/firma-contratto.html?contractId=\${encodeURIComponent(contract.id)}\`;
                     if (!emailSent) {
+                        // Email NON ancora inviata: 🔗 verifica + 📧 INVIA RINNOVO
                         azioniHtml = \`
-                            <div class="flex flex-col gap-1 items-center">
+                            <div class="flex items-center gap-1">
                                 <a href="\${firmaUrlRinnovo}" target="_blank"
-                                   class="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold hover:bg-indigo-200"
-                                   title="Apri il link firma per verificarlo">
-                                    🔗 Verifica Link
+                                   class="px-2 py-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-xs font-semibold transition-colors"
+                                   title="Verifica il link firma prima di inviare">
+                                    🔗
                                 </a>
                                 <button onclick="inviaEmailRinnovo(\${idRinnovoSafe}, '\${codiceSafeR}', '\${emailClienteSafe}')"
                                         class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs transition-colors font-semibold"
-                                        title="Invia email con link firma al cliente">
-                                    📧 Invia Email
+                                        title="Invia email rinnovo al cliente">
+                                    📧 INVIA RINNOVO
                                 </button>
                             </div>
                         \`;
                     } else {
+                        // Email inviata, attesa firma: 🔗 link + ✅ RINNOVO FIRMATO
                         azioniHtml = \`
-                            <div class="flex flex-col gap-1 items-center">
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">⏳ Attesa firma</span>
-                                <a href="\${firmaUrlRinnovo}" target="_blank" class="text-xs text-blue-500 hover:underline">🔗 Link firma</a>
+                            <div class="flex items-center gap-1">
+                                <a href="\${firmaUrlRinnovo}" target="_blank"
+                                   class="px-2 py-1 bg-indigo-400 hover:bg-indigo-500 text-white rounded text-xs font-semibold transition-colors"
+                                   title="Link firma rinnovo">
+                                    🔗
+                                </a>
+                                <button onclick="segnaRinnovoFirmato(\${idRinnovoSafe}, '\${codiceSafeR}')"
+                                        class="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-xs transition-colors font-semibold"
+                                        title="Segna il rinnovo come firmato manualmente">
+                                    ✅ RINNOVO FIRMATO
+                                </button>
                             </div>
                         \`;
                     }
@@ -16978,7 +17011,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ge.sendEmail({to:((r=e.env)==nul
         <a href="${r}">✍️ Clicchi qui per firmare il contratto di rinnovo</a><br><br>
         Tariffa: € ${f.toFixed(2)} (${p} inclusa)<br>
         Codice: ${l}</p>`}return await I.sendEmail({to:s.email,subject:`Rinnovo annuale del Suo servizio eCura — ${l}`,html:y,text:`Rinnovo servizio eCura — firma online: ${r}`}),await I.sendEmail({to:((t=e.env)==null?void 0:t.EMAIL_TO)||"info@ecura.it",subject:`🔄 Rinnovo inviato: ${s.nomeRichiedente} ${s.cognomeRichiedente} — ${l}`,html:`<p>Email rinnovo inviata a <strong>${s.email}</strong>.<br>
-             Link firma: <a href="${r}">${r}</a></p>`,text:`Rinnovo inviato: ${l} — ${s.email}`}),console.log(`📧 Email rinnovo inviata a ${s.email} (contratto ${a})`),e.json({success:!0,rinnovoId:a,codiceRinnovo:l,emailInviataA:s.email,firmaUrl:r,message:`✅ Email di rinnovo inviata a ${s.email}`})}catch(a){return console.error("❌ Errore invio email rinnovo:",a),e.json({success:!1,error:"Errore invio email rinnovo",details:a instanceof Error?a.message:String(a)},500)}});A.patch("/api/contracts/:id/rinnovo-completato",async e=>{var t;const o=e.req.param("id");try{const i=(await e.req.json()).completato!==!1;if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non disponibile"},500);const s=new Date().toISOString();await e.env.DB.prepare(`
+             Link firma: <a href="${r}">${r}</a></p>`,text:`Rinnovo inviato: ${l} — ${s.email}`}),console.log(`📧 Email rinnovo inviata a ${s.email} (contratto ${a})`),e.json({success:!0,rinnovoId:a,codiceRinnovo:l,emailInviataA:s.email,firmaUrl:r,message:`✅ Email di rinnovo inviata a ${s.email}`})}catch(a){return console.error("❌ Errore invio email rinnovo:",a),e.json({success:!1,error:"Errore invio email rinnovo",details:a instanceof Error?a.message:String(a)},500)}});A.patch("/api/contracts/:id/segna-firmato",async e=>{var t;const o=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non disponibile"},500);const a=new Date().toISOString();return await e.env.DB.prepare("UPDATE contracts SET status = 'SIGNED', updated_at = ? WHERE id = ?").bind(a,o).run(),console.log(`✅ Contratto ${o} segnato come SIGNED manualmente`),e.json({success:!0,contractId:o,status:"SIGNED"})}catch(a){return console.error("❌ Errore segna-firmato:",a),e.json({success:!1,error:"Errore aggiornamento",details:a instanceof Error?a.message:String(a)},500)}});A.patch("/api/contracts/:id/rinnovo-completato",async e=>{var t;const o=e.req.param("id");try{const i=(await e.req.json()).completato!==!1;if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non disponibile"},500);const s=new Date().toISOString();await e.env.DB.prepare(`
       UPDATE contracts
       SET rinnovo_completato = ?,
           rinnovo_data_completamento = ?,

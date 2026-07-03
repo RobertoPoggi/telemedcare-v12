@@ -7904,6 +7904,27 @@ export const data_dashboard = `<!DOCTYPE html>
             }
         }
 
+        async function segnaRinnovoFirmato(rinnovoId, codiceRinnovo) {
+            if (!confirm(\`✅ Segnare il rinnovo \${codiceRinnovo} come FIRMATO manualmente?\\n\\nUsa questa opzione se il cliente ha firmato fuori dal portale digitale.\`)) return;
+            try {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/segna-firmato\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'SIGNED' })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert('✅ Rinnovo segnato come firmato!');
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
+                }
+            } catch (err) {
+                alert('❌ Errore di rete: ' + err.message);
+            }
+        }
+
         // ────────────────────────────────────────────────────────────────────────
 
         function renderContractsTable(contracts) {
@@ -7996,70 +8017,82 @@ export const data_dashboard = `<!DOCTYPE html>
 
                 let azioniHtml = '';
                 if (isRinnovo && !rinnovoCompletato && isSigned) {
-                    // Rinnovo firmato ma non ancora marcato completato
+                    // Rinnovo firmato ma non ancora marcato completato — PDF + COMPLETA in riga
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
+                        <div class="flex items-center gap-1">
                             <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
-                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
-                                ✍️ Firmato
+                               class="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors font-semibold"
+                               title="Apri PDF firmato">
+                                ✍️
                             </a>
                             <button onclick="segnaRinnovoCompletato(\${idSafe}, '\${codiceSafeQ}')"
-                                    class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold">
-                                ✅ Completa Rinnovo
+                                    class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs transition-colors font-semibold"
+                                    title="Segna il rinnovo come completato">
+                                ✅ COMPLETA
                             </button>
                         </div>
                     \`;
                 } else if (isRinnovo && rinnovoCompletato) {
                     // Rinnovo completato
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
-                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">✅ Rinnovo Completato</span>
+                        <div class="flex items-center gap-1">
+                            <span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">✅ Completato</span>
                             \${contract.rinnovo_data_completamento ? \`<span class="text-xs text-gray-400">\${new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT')}</span>\` : ''}
                         </div>
                     \`;
                 } else if (!isRinnovo && isSigned) {
-                    // Contratto originale firmato — mostra link + pulsante "Invia Rinnovo"
+                    // Contratto originale firmato — PDF + CREA RINNOVO in riga
                     azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
+                        <div class="flex items-center gap-1">
                             <a href="/api/contratti/\${contract.id}/pdf-print" target="_blank"
-                               class="inline-block px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors">
-                                ✍️ Firmato
+                               class="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors font-semibold"
+                               title="Apri PDF firmato">
+                                ✍️
                             </a>
                             <button onclick="inviaRinnovo('\${leadIdQ}', '\${codiceSafeQ}', '\${clienteNomeQ}', \${ivaAgSafe}, \${annoRinnovoSafe})"
                                     class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors font-semibold"
-                                    title="Crea e invia contratto di rinnovo (\${tooltipIva})">
-                                🔄 Invia Rinnovo
+                                    title="Crea contratto rinnovo (\${tooltipIva}) — genera link firma senza inviare email">
+                                🔄 CREA RINNOVO
                             </button>
                         </div>
                     \`;
                 } else if (isRinnovo && !isSigned) {
-                    // Rinnovo creato, in attesa firma
-                    // email_sent=0 → email non ancora inviata (dryRun) → mostra pulsante "Invia Email"
+                    // Rinnovo creato, in attesa firma — 3 azioni in riga
                     const emailSent = contract.email_sent == 1 || contract.email_sent === true;
                     const idRinnovoSafe = JSON.stringify(contract.id);
-                    const codiceSafeR = (contract.codice_contratto || '').replace(/'/g, "\\'");
-                    const emailClienteSafe = (contract.email_cliente || '').replace(/'/g, "\\'");
+                    const codiceSafeR = (contract.codice_contratto || '').replace(/'/g, "\'");
+                    const emailClienteSafe = (contract.email_cliente || '').replace(/'/g, "\'");
                     const firmaUrlRinnovo = \`/firma-contratto.html?contractId=\${encodeURIComponent(contract.id)}\`;
                     if (!emailSent) {
+                        // Email NON ancora inviata: 🔗 verifica + 📧 INVIA RINNOVO
                         azioniHtml = \`
-                            <div class="flex flex-col gap-1 items-center">
+                            <div class="flex items-center gap-1">
                                 <a href="\${firmaUrlRinnovo}" target="_blank"
-                                   class="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold hover:bg-indigo-200"
-                                   title="Apri il link firma per verificarlo">
-                                    🔗 Verifica Link
+                                   class="px-2 py-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-xs font-semibold transition-colors"
+                                   title="Verifica il link firma prima di inviare">
+                                    🔗
                                 </a>
                                 <button onclick="inviaEmailRinnovo(\${idRinnovoSafe}, '\${codiceSafeR}', '\${emailClienteSafe}')"
                                         class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs transition-colors font-semibold"
-                                        title="Invia email con link firma al cliente">
-                                    📧 Invia Email
+                                        title="Invia email rinnovo al cliente">
+                                    📧 INVIA RINNOVO
                                 </button>
                             </div>
                         \`;
                     } else {
+                        // Email inviata, attesa firma: 🔗 link + ✅ RINNOVO FIRMATO
                         azioniHtml = \`
-                            <div class="flex flex-col gap-1 items-center">
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">⏳ Attesa firma</span>
-                                <a href="\${firmaUrlRinnovo}" target="_blank" class="text-xs text-blue-500 hover:underline">🔗 Link firma</a>
+                            <div class="flex items-center gap-1">
+                                <a href="\${firmaUrlRinnovo}" target="_blank"
+                                   class="px-2 py-1 bg-indigo-400 hover:bg-indigo-500 text-white rounded text-xs font-semibold transition-colors"
+                                   title="Link firma rinnovo">
+                                    🔗
+                                </a>
+                                <button onclick="segnaRinnovoFirmato(\${idRinnovoSafe}, '\${codiceSafeR}')"
+                                        class="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded text-xs transition-colors font-semibold"
+                                        title="Segna il rinnovo come firmato manualmente">
+                                    ✅ RINNOVO FIRMATO
+                                </button>
                             </div>
                         \`;
                     }

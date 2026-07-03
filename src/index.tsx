@@ -14171,6 +14171,27 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
 })
 
 /**
+/**
+ * PATCH /api/contracts/:id/segna-firmato
+ * Segna un contratto rinnovo come SIGNED manualmente (firma fuori portale).
+ */
+app.patch('/api/contracts/:id/segna-firmato', async (c) => {
+  const contractId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(
+      `UPDATE contracts SET status = 'SIGNED', updated_at = ? WHERE id = ?`
+    ).bind(now, contractId).run()
+    console.log(`✅ Contratto ${contractId} segnato come SIGNED manualmente`)
+    return c.json({ success: true, contractId, status: 'SIGNED' })
+  } catch (error) {
+    console.error('❌ Errore segna-firmato:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
  * PATCH /api/contracts/:id/rinnovo-completato
  * Segna un contratto di rinnovo come completato (firmato + proforma pagata).
  * Body: { completato: boolean }
