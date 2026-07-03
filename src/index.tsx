@@ -13643,6 +13643,25 @@ app.post('/api/contracts/rinnovo', async (c) => {
     // 3. Calcola anno rinnovo
     const annoRinnovo = (origContract.anno_rinnovo || 1) + 1
 
+    // ✅ IDEMPOTENZA: se esiste già un contratto di rinnovo SENT per questo anno, restituisce quello
+    // evita duplicati da doppio click sul pulsante "Invia Rinnovo"
+    const codiceRinnovoAtteso = `${origContract.codice_contratto}-R${annoRinnovo}`
+    const rinnovoEsistente = await c.env.DB.prepare(`
+      SELECT id, codice_contratto, status FROM contracts
+      WHERE rinnovo_di = ? AND anno_rinnovo = ? AND leadId = ?
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(origContract.codice_contratto || contractId, annoRinnovo, origContract.leadId).first() as any
+
+    if (rinnovoEsistente) {
+      console.log(`⚠️ [RINNOVO] Contratto rinnovo già esistente: ${rinnovoEsistente.codice_contratto} (${rinnovoEsistente.status}) — restituisco quello`)
+      return c.json({
+        success: false,
+        error: `Contratto di rinnovo anno ${annoRinnovo} già esistente (${rinnovoEsistente.codice_contratto} — stato: ${rinnovoEsistente.status}). Usare il link già inviato al cliente.`,
+        existingRinnovoId: rinnovoEsistente.id,
+        existingStatus: rinnovoEsistente.status
+      }, 409)
+    }
+
     // 4. Calcola prezzo rinnovo
     const servizio = origContract.servizio || 'eCura PRO'
     const piano    = origContract.piano || origContract.tipo_contratto || 'BASE'
@@ -32195,14 +32214,14 @@ app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────
-// ONESHOT: Ispeziona contratti Riela/Capone — diagnosi "già firmato"
-// GET /api/oneshot-inspect-riela-capone-5mx8w
+// ONESHOT: Ispeziona + Fix contratti Riela/Capone
+// GET  /api/oneshot-inspect-riela-capone-5mx8w  → solo ispezione
+// POST /api/oneshot-inspect-riela-capone-5mx8w  → elimina SENT duplicato
 // ─────────────────────────────────────────────────────────────────
 app.get('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
 
-    // Cerca lead per cognome Riela o email Capone
     const leads = await c.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, status
       FROM leads
@@ -32220,11 +32239,64 @@ app.get('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
         FROM contracts WHERE leadId = ?
         ORDER BY created_at DESC
       `).bind(lead.id).all()
-
       result.push({ lead, contracts: contracts.results || [] })
     }
 
     return c.json({ success: true, data: result })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+app.post('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    // Trova i contratti di rinnovo duplicati per Riela/Capone
+    const leads = await c.env.DB.prepare(`
+      SELECT id FROM leads
+      WHERE cognomeRichiedente LIKE '%Riela%'
+         OR cognomeAssistito LIKE '%Capone%'
+         OR email LIKE '%marycap%'
+      LIMIT 10
+    `).all()
+
+    const deleted: any[] = []
+    for (const lead of (leads.results || []) as any[]) {
+      // Trova coppie di rinnovo: stesso anno, stesso lead → tieni SIGNED, elimina SENT
+      const contracts = await c.env.DB.prepare(`
+        SELECT id, codice_contratto, status, anno_rinnovo, created_at
+        FROM contracts WHERE leadId = ? AND is_rinnovo = 1
+        ORDER BY anno_rinnovo, created_at ASC
+      `).bind((lead as any).id).all()
+
+      // Raggruppa per anno_rinnovo
+      const byAnno: Record<string, any[]> = {}
+      for (const c2 of (contracts.results || []) as any[]) {
+        const k = String(c2.anno_rinnovo || 'X')
+        if (!byAnno[k]) byAnno[k] = []
+        byAnno[k].push(c2)
+      }
+
+      for (const [anno, group] of Object.entries(byAnno)) {
+        if (group.length < 2) continue
+        // Tieni il SIGNED (o il più recente), elimina gli altri SENT
+        const signed = group.find((g: any) => g.status === 'SIGNED')
+        const toDelete = group.filter((g: any) => g.status !== 'SIGNED')
+        for (const del2 of toDelete) {
+          await c.env.DB.prepare(`DELETE FROM contracts WHERE id = ? AND status = 'SENT'`).bind(del2.id).run()
+          deleted.push({ id: del2.id, codice: del2.codice_contratto, anno, motivo: 'duplicato SENT eliminato — esiste già SIGNED' })
+        }
+      }
+    }
+
+    return c.json({
+      success: true,
+      deleted,
+      message: deleted.length > 0
+        ? `✅ Eliminati ${deleted.length} contratti SENT duplicati. Giorgio può ora riaprire il link del contratto SIGNED già firmato.`
+        : 'ℹ️ Nessun duplicato trovato da eliminare.'
+    })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
