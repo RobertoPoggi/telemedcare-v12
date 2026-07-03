@@ -13737,46 +13737,161 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
       await emailService.sendEmail({
         to: lead.email,
-        subject: `🔄 Rinnovo Contratto eCura ${servizio} ${piano} — Anno ${annoRinnovo}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: #e8f5e9; border: 2px solid #27ae60; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
-              <h2 style="color: #1b5e20; margin: 0;">🔄 Rinnovo Contratto eCura</h2>
-              <p style="color: #2e7d32; margin: 8px 0 0 0;">Anno ${annoRinnovo} — ${codiceRinnovo}</p>
-            </div>
+        subject: `Rinnovo annuale del Suo servizio eCura — ${codiceRinnovo}`,
+        html: `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rinnovo annuale servizio eCura</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;color:#333;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+  <tr><td align="center">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
-            <p>Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
+    <!-- HEADER -->
+    <tr>
+      <td style="background:linear-gradient(135deg,#0066CC 0%,#0099CC 100%);padding:32px 40px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:1px;text-transform:uppercase;">Medica GB S.r.l. — eCura</p>
+        <h1 style="margin:0;font-size:26px;font-weight:700;color:#fff;">Rinnovo del Suo servizio eCura</h1>
+        <p style="margin:10px 0 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Anno ${annoRinnovo} &nbsp;·&nbsp; ${codiceRinnovo}</p>
+      </td>
+    </tr>
 
-            <p>È giunto il momento del rinnovo del suo servizio <strong>${servizio} — Piano ${piano}</strong>.</p>
+    <!-- AVVISO RINNOVO (non un nuovo contratto) -->
+    <tr>
+      <td style="background:#fff8e1;border-left:4px solid #f59e0b;padding:16px 40px;">
+        <p style="margin:0;font-size:14px;color:#92400e;">
+          <strong>⚠️ Nota:</strong> Questa comunicazione riguarda esclusivamente il <strong>rinnovo annuale del servizio</strong> già attivo.
+          Non viene inviato alcun nuovo dispositivo: il Suo <strong>${origContract.servizio?.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE'} resta con Lei</strong> così com'è.
+        </p>
+      </td>
+    </tr>
 
-            <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-              <p style="margin: 4px 0;"><strong>Contratto originale:</strong> ${origContract.codice_contratto || contractId}</p>
-              <p style="margin: 4px 0;"><strong>Codice rinnovo:</strong> ${codiceRinnovo}</p>
-              <p style="margin: 4px 0;"><strong>Periodo:</strong> ${dataInizio} → ${dataScadenza}</p>
-              <p style="margin: 4px 0;"><strong>Tariffa rinnovo:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)${ivaNote}</p>
-            </div>
+    <!-- CORPO -->
+    <tr>
+      <td style="padding:36px 40px;">
+        <p style="font-size:16px;margin:0 0 20px 0;">Gentile <strong>${lead.nomeRichiedente} ${lead.cognomeRichiedente}</strong>,</p>
 
-            <p>La tariffa di rinnovo è ridotta rispetto all'anno di prima attivazione in quanto non comprende il dispositivo e il setup iniziale.</p>
+        <p style="margin:0 0 16px 0;line-height:1.7;">
+          il contratto di servizio <strong>${servizio} — Piano ${piano}</strong>
+          (codice <strong>${origContract.codice_contratto || contractId}</strong>)
+          è in scadenza. Per continuare a beneficiare del servizio senza interruzioni,
+          Le chiediamo di firmare digitalmente il contratto di rinnovo per il prossimo anno.
+        </p>
 
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${firmaUrl}"
-                 style="display: inline-block; padding: 16px 32px; background: #16a34a; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                ✍️ Firma il Contratto di Rinnovo
-              </a>
-            </div>
+        <!-- COSA INCLUDE IL RINNOVO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:24px 0;">
+          <tr><td style="padding:20px 24px;">
+            <p style="margin:0 0 12px 0;font-size:15px;font-weight:700;color:#166534;">✅ Cosa include il rinnovo (Anno ${annoRinnovo})</p>
+            <table cellpadding="0" cellspacing="0">
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📡 &nbsp;Piattaforma web + App di teleassistenza per 12 mesi</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📶 &nbsp;SIM dati per trasmissione e comunicazione vocale</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">🛠️ &nbsp;Assistenza tecnica e aggiornamenti software/firmware</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📅 &nbsp;Validità: <strong>${dataInizio}</strong> → <strong>${dataScadenza}</strong></td></tr>
+            </table>
+          </td></tr>
+        </table>
 
-            <p style="font-size: 13px; color: #6b7280;">
-              Dopo la firma riceverà la proforma per il pagamento del rinnovo.
-              Per qualsiasi domanda contatti info@ecura.it o chiami il nostro servizio clienti.
+        <!-- COSA NON INCLUDE -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3f2;border-radius:8px;margin:0 0 24px 0;">
+          <tr><td style="padding:16px 24px;">
+            <p style="margin:0;font-size:14px;color:#991b1b;">
+              ❌ <strong>Non incluso nel rinnovo:</strong> nessun nuovo dispositivo.
+              Il Suo <strong>${origContract.servizio?.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE'}</strong>
+              rimane di Sua proprietà e continua a funzionare esattamente come prima.
             </p>
+          </td></tr>
+        </table>
 
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-            <p style="font-size: 11px; color: #9ca3af; text-align: center;">
-              Medica GB S.r.l. — Corso Giuseppe Garibaldi 34, 20121 Milano — P.IVA 12435130963
+        <!-- RIEPILOGO ECONOMICO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 28px 0;">
+          <tr><td style="background:#f9fafb;padding:12px 20px;border-radius:8px 8px 0 0;">
+            <p style="margin:0;font-size:14px;font-weight:700;color:#374151;">💶 Riepilogo tariffario</p>
+          </td></tr>
+          <tr><td style="padding:16px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="4">
+              <tr>
+                <td style="font-size:14px;color:#6b7280;">Contratto originale</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">${origContract.codice_contratto || contractId}</td>
+              </tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;">Codice rinnovo</td>
+                <td style="font-size:14px;text-align:right;color:#374151;font-weight:600;">${codiceRinnovo}</td>
+              </tr>
+              <tr><td colspan="2" style="padding:8px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;"></td></tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;">Importo netto</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">€ ${rinnovoBase.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;">${ivaLabel}</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">€ ${ivaImporto.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="font-size:15px;font-weight:700;color:#111827;padding-top:8px;">Totale rinnovo</td>
+                <td style="font-size:15px;font-weight:700;text-align:right;color:#0066CC;padding-top:8px;">€ ${rinnovoTotale.toFixed(2).replace('.', ',')}${ivaNote ? '<br><span style=\"font-size:11px;font-weight:400;color:#6b7280;\">' + ivaNote + '</span>' : ''}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+
+        <!-- CTA FIRMA -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center" style="padding:10px 0 28px 0;">
+            <a href="${firmaUrl}"
+               style="display:inline-block;padding:18px 44px;background:linear-gradient(135deg,#0066CC,#0099CC);color:#fff;text-decoration:none;border-radius:8px;font-size:17px;font-weight:700;letter-spacing:0.3px;">
+              ✍️ Firma il Rinnovo
+            </a>
+            <p style="margin:14px 0 0 0;font-size:12px;color:#9ca3af;">
+              Clic sul pulsante per aprire il documento di rinnovo e firmarlo digitalmente
             </p>
-          </div>
-        `,
-        text: `Rinnovo contratto eCura ${servizio} ${piano} - Anno ${annoRinnovo}. Firma online: ${firmaUrl}`
+          </td></tr>
+        </table>
+
+        <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0;">
+          Dopo la firma riceverà la <strong>proforma per il pagamento</strong> tramite bonifico bancario.<br>
+          Per qualsiasi domanda: <a href="mailto:info@ecura.it" style="color:#0066CC;">info@ecura.it</a>
+          &nbsp;·&nbsp; +39 335 730 1206 &nbsp;·&nbsp; +39 331 643 2390
+        </p>
+      </td>
+    </tr>
+
+    <!-- FOOTER -->
+    <tr>
+      <td style="background:#2c3e50;padding:24px 40px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-size:13px;color:#d1d5db;font-weight:600;">Medica GB S.r.l. — Startup Innovativa a Vocazione Sociale</p>
+        <p style="margin:0 0 4px 0;font-size:12px;color:#9ca3af;">Milano: Corso Garibaldi 34, 20121 &nbsp;|&nbsp; Genova: Via delle Eriche 53, 16148</p>
+        <p style="margin:0;font-size:12px;color:#9ca3af;">P.IVA 12435130963 &nbsp;|&nbsp; <a href="mailto:info@ecura.it" style="color:#60a5fa;">info@ecura.it</a> &nbsp;|&nbsp; <a href="https://www.ecura.it" style="color:#60a5fa;">www.ecura.it</a></p>
+      </td>
+    </tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>`,
+        text: `Rinnovo annuale servizio eCura ${servizio} ${piano} - Anno ${annoRinnovo}.
+
+Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},
+
+il contratto ${origContract.codice_contratto || contractId} è in scadenza. 
+Questa email riguarda solo il RINNOVO DEL SERVIZIO: non viene inviato alcun nuovo dispositivo.
+
+Cosa include il rinnovo:
+- Piattaforma web + App di teleassistenza per 12 mesi
+- SIM dati per 12 mesi
+- Assistenza tecnica e aggiornamenti software/firmware
+
+Periodo: ${dataInizio} → ${dataScadenza}
+Tariffa rinnovo: € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)${ivaNote}
+Codice rinnovo: ${codiceRinnovo}
+
+Firma online: ${firmaUrl}
+
+Per qualsiasi domanda: info@ecura.it — +39 335 730 1206
+Medica GB S.r.l. — P.IVA 12435130963`
       })
 
       // Notifica interna a info@ecura.it
