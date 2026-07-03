@@ -1492,6 +1492,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica rinnovo Capone
+  if (path === '/api/oneshot-diag-rinnovo-capone-7wq3x' && method === 'GET') {
+    return next()
+  }
+
   
   // Endpoint email-templates: accessibili con session cookie (gestiti dai propri handler)
   if (path.startsWith('/api/email-templates/') || path.startsWith('/api/discount-codes')) {
@@ -32209,6 +32214,70 @@ app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
       success: false,
       error: error instanceof Error ? error.message : String(error)
     }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// ONESHOT: Diagnostica rinnovo Capone — esegue ogni step e mostra dove fallisce
+// GET /api/oneshot-diag-rinnovo-capone-7wq3x
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/oneshot-diag-rinnovo-capone-7wq3x', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    const LEAD_ID    = 'LEAD-IRBEMA-00061'
+    const CODICE_ORI = 'CTR-CAPONE-2025'
+    const steps: any[] = []
+
+    // Step 1: trova contratto originale per codice
+    const origContract = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo, rinnovo_di,
+              data_scadenza, prezzo_totale, piano, servizio, leadId
+       FROM contracts WHERE codice_contratto = ? AND leadId = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(CODICE_ORI, LEAD_ID).first() as any
+    steps.push({ step: '1_contratto_originale', found: !!origContract, data: origContract || null })
+
+    if (!origContract) return c.json({ success: false, steps, error: 'Contratto originale non trovato' })
+
+    // Step 2: trova lead
+    const lead = await c.env.DB.prepare(
+      `SELECT id, nomeRichiedente, cognomeRichiedente, email, iva_agevolata FROM leads WHERE id = ?`
+    ).bind(origContract.leadId).first() as any
+    steps.push({ step: '2_lead', found: !!lead, data: lead || null })
+
+    if (!lead) return c.json({ success: false, steps, error: 'Lead non trovato' })
+
+    // Step 3: calcola anno rinnovo
+    const annoRinnovo = (origContract.anno_rinnovo || 1) + 1
+    steps.push({ step: '3_anno_rinnovo', annoRinnovo })
+
+    // Step 4: verifica idempotenza
+    const rinnovoEsistente = await c.env.DB.prepare(`
+      SELECT id, codice_contratto, status FROM contracts
+      WHERE rinnovo_di = ? AND anno_rinnovo = ? AND leadId = ?
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(CODICE_ORI, annoRinnovo, origContract.leadId).first() as any
+    steps.push({ step: '4_idempotenza', rinnovoEsistente: rinnovoEsistente || null })
+
+    // Step 5: tutti i contratti del lead (per vedere cosa c'è nel DB)
+    const allContracts = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo, rinnovo_di, data_scadenza
+       FROM contracts WHERE leadId = ? ORDER BY created_at DESC`
+    ).bind(LEAD_ID).all()
+    steps.push({ step: '5_tutti_contratti_lead', contracts: allContracts.results || [] })
+
+    // Step 6: schema colonne contracts
+    const schema = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const cols = (schema.results || []).map((r: any) => r.name)
+    steps.push({ step: '6_schema_colonne', cols })
+
+    // Step 7: calcola rinnovoId
+    const rinnovoId = `RINNOVO-${origContract.codice_contratto}-Y${annoRinnovo}-${Date.now()}`
+    steps.push({ step: '7_rinnovoId_generato', rinnovoId, pulito: !rinnovoId.includes('CONTRACT_') })
+
+    return c.json({ success: true, steps })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message, stack: e.stack?.split('\n').slice(0,5) }, 500)
   }
 })
 
