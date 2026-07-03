@@ -31968,13 +31968,25 @@ app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
     const hasTeleMedCare = htmlContent.includes('TeleMedCare')
     const hasECura = htmlContent.includes('eCura')
 
+    // Crea tabella email_templates se non esiste (schema atteso da template-loader-clean.ts)
+    await c.env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS email_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        subject TEXT,
+        content TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )
+    `).run()
+
     // UPSERT nel DB email_templates
     const result = await c.env.DB.prepare(`
       INSERT INTO email_templates (name, subject, content, updated_at)
       VALUES (?, ?, ?, datetime('now'))
       ON CONFLICT(name) DO UPDATE SET
         content = excluded.content,
-        updated_at = excluded.updated_at
+        updated_at = datetime('now')
     `).bind(templateName, `Promemoria - Completa i tuoi dati eCura`, htmlContent).run()
 
     console.log(`✅ [ONESHOT-SYNC-REMINDER] "${templateName}" aggiornato nel DB (changes: ${result.meta?.changes})`)
