@@ -32422,32 +32422,36 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
       }, 409)
     }
 
-    // 3. INSERT esplicito con campi nominativi (robusto rispetto allo schema D1)
+    // 3. INSERT esplicito con le colonne reali del DB di produzione
+    //    (schema da /api/contracts/rinnovo: id, leadId, codice_contratto, tipo_contratto,
+    //     piano, servizio, template_utilizzato, contenuto_html, status, prezzo_totale,
+    //     prezzo_mensile, is_rinnovo, rinnovo_di, anno_rinnovo,
+    //     data_inizio, data_scadenza, data_invio, created_at, updated_at)
     await c.env.DB.prepare(`
       INSERT INTO contracts (
         id, leadId, codice_contratto, tipo_contratto, piano, servizio,
-        dispositivo, importo_mensile, importo_annuale, durata_mesi,
-        data_invio, signed_at, status, pdf_url, firma_url,
-        is_rinnovo, anno_rinnovo, contratto_originale_id,
-        data_inizio, data_scadenza, contenuto_html,
-        created_at, updated_at, note, prezzo_totale
+        template_utilizzato, contenuto_html,
+        status, prezzo_totale, prezzo_mensile,
+        is_rinnovo, rinnovo_di, anno_rinnovo,
+        data_inizio, data_scadenza,
+        data_invio, created_at, updated_at
       ) VALUES (
         ?,
         ?, ?, ?, ?, ?,
-        ?, ?, ?, ?,
-        ?, ?, ?, ?, ?,
+        ?, ?,
         ?, ?, ?,
         ?, ?, ?,
-        ?, ?, ?, ?
+        ?, ?,
+        ?, ?, ?
       )
     `).bind(
       NEW_ID,
       existing.leadId, existing.codice_contratto, existing.tipo_contratto, existing.piano, existing.servizio,
-      existing.dispositivo, existing.importo_mensile, existing.importo_annuale, existing.durata_mesi,
-      existing.data_invio, existing.signed_at, existing.status, existing.pdf_url, existing.firma_url,
-      existing.is_rinnovo, existing.anno_rinnovo, existing.contratto_originale_id,
-      DATA_INIZIO, DATA_SCADENZA, existing.contenuto_html,
-      existing.created_at, new Date().toISOString(), existing.note, existing.prezzo_totale
+      existing.template_utilizzato, existing.contenuto_html,
+      existing.status, existing.prezzo_totale, existing.prezzo_mensile,
+      existing.is_rinnovo, existing.rinnovo_di, existing.anno_rinnovo,
+      DATA_INIZIO, DATA_SCADENZA,
+      existing.data_invio, existing.created_at, new Date().toISOString()
     ).run()
 
     // 4. Elimina il vecchio record con ID malformato
