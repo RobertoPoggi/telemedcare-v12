@@ -8104,27 +8104,37 @@ export const data_dashboard = `<!DOCTYPE html>
                     const dataComp = contract.rinnovo_data_completamento
                         ? new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT') : '';
 
+                    // JSON.stringify produce "valore" con virgolette doppie —
+                    // sicuro dentro onclick="..." senza conflitti di escape
+                    const jLeadId   = JSON.stringify(contract.leadId || '');
+                    const jCodice   = JSON.stringify(contract.codice_contratto || String(contract.id));
+                    const jCliente  = JSON.stringify(clienteNome.trim());
+                    const jRinnovoId = idRinnovoSafe; // già JSON.stringify
+                    const jCodiceR  = JSON.stringify(contract.codice_contratto || '');
+                    const jEmail    = JSON.stringify(contract.email_cliente || '');
+                    const jIdSafe   = idSafe; // già JSON.stringify
+
                     const btn1 = icnBtn('\uD83D\uDD04', 'Crea contratto rinnovo',
-                        'inviaRinnovo(\'' + leadIdQ + '\',\'' + codiceSafeQ + '\',\'' + clienteNomeQ + '\',' + ivaAgSafe + ',' + annoRinnovoSafe + ')',
+                        'inviaRinnovo(' + jLeadId + ',' + jCodice + ',' + jCliente + ',' + ivaAgSafe + ',' + annoRinnovoSafe + ')',
                         st1, 'blue');
                     const btn2 = icnBtn('\uD83D\uDCE7', 'Invia email rinnovo al cliente',
-                        'inviaEmailRinnovo(' + idRinnovoSafe + ',\'' + codiceSafeR + '\',\'' + emailClienteSafe + '\')',
+                        'inviaEmailRinnovo(' + jRinnovoId + ',' + jCodiceR + ',' + jEmail + ')',
                         st2, 'orange');
                     const btn3 = icnLink('\u270D\uFE0F', 'Apri link firma rinnovo', firmaUrlRinnovo, st3, 'indigo');
                     const btn3b = (step === 3)
-                        ? '<button onclick="segnaRinnovoFirmato(' + idRinnovoSafe + ',\'' + codiceSafeR + '\')" style="' + IC + 'background:#d1fae5;color:#065f46;" title="Segna firmato manualmente">\u2705</button>'
+                        ? '<button onclick="segnaRinnovoFirmato(' + jRinnovoId + ',' + jCodiceR + ')" style="' + IC + 'background:#d1fae5;color:#065f46;" title="Segna firmato manualmente">\u2705</button>'
                         : '';
                     const btn4 = icnBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',
-                        'creaProformaRinnovo(' + idRinnovoSafe + ',\'' + codiceSafeR + '\')',
+                        'creaProformaRinnovo(' + jRinnovoId + ',' + jCodiceR + ')',
                         st4, 'violet');
                     const btn5 = icnBtn('\uD83D\uDCE4', 'Invia proforma al cliente',
-                        'inviaProformaRinnovo(' + idRinnovoSafe + ',\'' + codiceSafeR + '\')',
+                        'inviaProformaRinnovo(' + jRinnovoId + ',' + jCodiceR + ')',
                         st5, 'violet');
                     const btn6 = icnLink('\uD83D\uDCB0', 'Paga proforma online', proformaUrl, st6, 'green');
                     const btn6b = done_all
                         ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
                         : (step === 6
-                            ? '<button onclick="segnaRinnovoCompletato(' + idSafe + ',\'' + codiceSafeQ + '\')" style="' + IC + 'background:#d1fae5;color:#065f46;" title="Segna completato manualmente">\u2705</button>'
+                            ? '<button onclick="segnaRinnovoCompletato(' + jIdSafe + ',' + jCodice + ')" style="' + IC + 'background:#d1fae5;color:#065f46;" title="Segna completato manualmente">\u2705</button>'
                             : '');
 
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
