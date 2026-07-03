@@ -7959,9 +7959,50 @@ export const data_dashboard = `<!DOCTYPE html>
 
         // ────────────────────────────────────────────────────────────────────────
 
+        // ── Stili condivisi per icone rinnovo ──────────────────────────────────
+        var _IC_BASE = 'width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:15px;border:none;text-decoration:none;box-sizing:border-box;';
+        var _IC_DONE = _IC_BASE + 'background:#f3f4f6;color:#9ca3af;cursor:default;';
+        var _IC_FUT  = _IC_BASE + 'background:#f9fafb;color:#d1d5db;cursor:not-allowed;';
+
+        function rinnovoMkBtn(emoji, titleTxt, action, s, colHex, extraData) {
+            if (s === 'done')   return '<span style="' + _IC_DONE + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
+            if (s === 'future') return '<span style="' + _IC_FUT  + '" title="disponibile dopo step precedente">' + emoji + '</span>';
+            var st = _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
+            return '<button class="rinnovo-btn" style="' + st + '" title="' + titleTxt + '" data-action="' + action + '" ' + extraData + '>' + emoji + '</button>';
+        }
+        function rinnovoMkLink(emoji, titleTxt, href, s, colHex) {
+            if (s === 'done')   return '<span style="' + _IC_DONE + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
+            if (s === 'future') return '<span style="' + _IC_FUT  + '" title="disponibile dopo step precedente">' + emoji + '</span>';
+            var st = _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
+            return '<a href="' + href + '" target="_blank" style="' + st + '" title="' + titleTxt + '">' + emoji + '</a>';
+        }
+
+        // ── Event delegation contratti — registrata UNA SOLA VOLTA su document ──
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.rinnovo-btn');
+            if (!btn) return;
+            var action  = btn.getAttribute('data-action');
+            var leadId  = btn.getAttribute('data-lead-id') || '';
+            var codice  = btn.getAttribute('data-codice')  || '';
+            var cliente = btn.getAttribute('data-cliente') || '';
+            var iva     = btn.getAttribute('data-iva') === 'true';
+            var anno    = parseInt(btn.getAttribute('data-anno') || '2', 10);
+            var id      = btn.getAttribute('data-id')      || '';
+            var codiceR = btn.getAttribute('data-codicer') || '';
+            var email   = btn.getAttribute('data-email')   || '';
+            var idSafe  = btn.getAttribute('data-idsafe')  || '';
+
+            if      (action === 'rinnovo-crea')            inviaRinnovo(leadId, codice, cliente, iva, anno);
+            else if (action === 'rinnovo-invia-email')     inviaEmailRinnovo(id, codiceR, email);
+            else if (action === 'rinnovo-segna-firmato')   segnaRinnovoFirmato(id, codiceR);
+            else if (action === 'rinnovo-crea-proforma')   creaProformaRinnovo(id, codiceR);
+            else if (action === 'rinnovo-invia-proforma')  inviaProformaRinnovo(id, codiceR);
+            else if (action === 'rinnovo-segna-completato') segnaRinnovoCompletato(idSafe, codice);
+        });
+
         function renderContractsTable(contracts) {
-            const tbody = document.getElementById('contractsTable');
-            const countElement = document.getElementById('contractsCount');
+            var tbody = document.getElementById('contractsTable');
+            var countElement = document.getElementById('contractsCount');
             
             // Aggiorna contatore
             countElement.textContent = contracts.length;
@@ -8056,66 +8097,48 @@ export const data_dashboard = `<!DOCTYPE html>
                 else if (isRinnovo && isSigned && proformaCreata && !proformaInviata)                      step = 5;
                 else if (isRinnovo && isSigned && proformaInviata && !proformaPagata && !rinnovoCompletato) step = 6;
 
-                let azioniHtml = '';
+                var azioniHtml = '';
                 if (step === 0 && !rinnovoCompletato) {
                     azioniHtml = '<span class="text-gray-300 text-xs">\u2014</span>';
                 } else {
-                    const IC = 'width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:15px;border:none;text-decoration:none;box-sizing:border-box;';
-                    const doneStyle = IC + 'background:#f3f4f6;color:#9ca3af;cursor:default;';
-                    const futStyle  = IC + 'background:#f9fafb;color:#d1d5db;cursor:not-allowed;';
-                    const done_all  = rinnovoCompletato;
-                    const st1 = done_all ? 'done' : (step > 1 ? 'done' : step === 1 ? 'active' : 'future');
-                    const st2 = done_all ? 'done' : (step > 2 ? 'done' : step === 2 ? 'active' : 'future');
-                    const st3 = done_all ? 'done' : (step > 3 ? 'done' : step === 3 ? 'active' : 'future');
-                    const st4 = done_all ? 'done' : (step > 4 ? 'done' : step === 4 ? 'active' : 'future');
-                    const st5 = done_all ? 'done' : (step > 5 ? 'done' : step === 5 ? 'active' : 'future');
-                    const st6 = done_all ? 'done' : (step === 6 ? 'active' : 'future');
+                    var done_all = rinnovoCompletato;
+                    var st1 = done_all ? 'done' : (step > 1 ? 'done' : step === 1 ? 'active' : 'future');
+                    var st2 = done_all ? 'done' : (step > 2 ? 'done' : step === 2 ? 'active' : 'future');
+                    var st3 = done_all ? 'done' : (step > 3 ? 'done' : step === 3 ? 'active' : 'future');
+                    var st4 = done_all ? 'done' : (step > 4 ? 'done' : step === 4 ? 'active' : 'future');
+                    var st5 = done_all ? 'done' : (step > 5 ? 'done' : step === 5 ? 'active' : 'future');
+                    var st6 = done_all ? 'done' : (step === 6 ? 'active' : 'future');
 
-                    const proformaUrl = contract.proforma_rinnovo_id
+                    var proformaUrl = contract.proforma_rinnovo_id
                         ? '/api/proforma/' + encodeURIComponent(contract.proforma_rinnovo_id) + '/pay'
                         : '#';
-                    const dataComp = contract.rinnovo_data_completamento
+                    var dataComp = contract.rinnovo_data_completamento
                         ? new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT') : '';
 
-                    // ── Helper: produce HTML senza onclick inline (data-* pattern) ──
-                    // Tutti i valori necessari vanno in data-attributes; event delegation li legge dopo.
-                    function mkBtn(emoji, titleTxt, action, s, colHex, extraData) {
-                        if (s === 'done') return '<span style="' + doneStyle + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
-                        if (s === 'future') return '<span style="' + futStyle + '" title="disponibile dopo step precedente">' + emoji + '</span>';
-                        var st = IC + 'background:' + colHex + ';color:#fff;cursor:pointer;';
-                        return '<button class="rinnovo-btn" style="' + st + '" title="' + titleTxt + '" data-action="' + action + '" ' + extraData + '>' + emoji + '</button>';
-                    }
-                    function mkLink(emoji, titleTxt, href, s, colHex) {
-                        if (s === 'done') return '<span style="' + doneStyle + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
-                        if (s === 'future') return '<span style="' + futStyle + '" title="disponibile dopo step precedente">' + emoji + '</span>';
-                        var st = IC + 'background:' + colHex + ';color:#fff;cursor:pointer;';
-                        return '<a href="' + href + '" target="_blank" style="' + st + '" title="' + titleTxt + '">' + emoji + '</a>';
-                    }
+                    // data-* attributes — valori semplici, & encodati per sicurezza
+                    var dLeadId  = 'data-lead-id="'  + (contract.leadId || '') + '"';
+                    var dCodice  = 'data-codice="'   + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
+                    var dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
+                    var dIva     = 'data-iva="'      + ivaAgSafe + '"';
+                    var dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
+                    var dId      = 'data-id="'       + contract.id + '"';
+                    var dEmail   = 'data-email="'    + (contract.email_cliente || '').replace(/"/g, '&quot;') + '"';
+                    var dCodiceR = 'data-codicer="'  + (contract.codice_contratto || '').replace(/"/g, '&quot;') + '"';
+                    var dIdSafe  = 'data-idsafe="'   + contract.id + '"';
 
-                    // data-* attributes per ogni button: tutti valori semplici, nessun escape critico
-                    const dLeadId  = 'data-lead-id="'  + (contract.leadId || '') + '"';
-                    const dCodice  = 'data-codice="'   + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
-                    const dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
-                    const dIva     = 'data-iva="'      + ivaAgSafe + '"';
-                    const dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
-                    const dId      = 'data-id="'       + contract.id + '"';
-                    const dEmail   = 'data-email="'    + (contract.email_cliente || '').replace(/"/g, '&quot;') + '"';
-                    const dCodiceR = 'data-codicer="'  + (contract.codice_contratto || '').replace(/"/g, '&quot;') + '"';
-                    const dIdSafe  = 'data-idsafe="'   + contract.id + '"';
-
-                    const btn1 = mkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',   'rinnovo-crea',         st1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
-                    const btn2 = mkBtn('\uD83D\uDCE7', 'Invia email rinnovo',      'rinnovo-invia-email',  st2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
-                    const btn3 = mkLink('\u270D\uFE0F', 'Apri link firma rinnovo', firmaUrlRinnovo,        st3, '#4f46e5');
-                    const btn3b = (step === 3)
-                        ? '<button class="rinnovo-btn" style="' + IC + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna firmato manualmente" data-action="rinnovo-segna-firmato" ' + dId + ' ' + dCodiceR + '>\u2705</button>'
+                    var btn1  = rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',    'rinnovo-crea',            st1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
+                    var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',     st2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
+                    var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,           st3, '#4f46e5');
+                    var btn3b = (step === 3)
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna firmato manualmente" data-action="rinnovo-segna-firmato" ' + dId + ' ' + dCodiceR + '>\u2705</button>'
                         : '';
-                    const btn4 = mkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',   'rinnovo-crea-proforma',  st4, '#7c3aed', dId + ' ' + dCodiceR);
-                    const btn5 = mkBtn('\uD83D\uDCE4', 'Invia proforma al cliente','rinnovo-invia-proforma', st5, '#7c3aed', dId + ' ' + dCodiceR);
-                    const btn6 = mkLink('\uD83D\uDCB0', 'Paga proforma online',    proformaUrl,             st6, '#16a34a');
-                    const btn6b = done_all
+                    var btn4  = rinnovoMkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',     'rinnovo-crea-proforma',   st4, '#7c3aed', dId + ' ' + dCodiceR);
+                    var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma',  st5, '#7c3aed', dId + ' ' + dCodiceR);
+                    var btn6  = rinnovoMkLink('\uD83D\uDCB0', 'Paga proforma online',     proformaUrl,               st6, '#16a34a');
+                    var btn6b = done_all
                         ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
                         : (step === 6
-                            ? '<button class="rinnovo-btn" style="' + IC + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>'
+                            ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>'
                             : '');
 
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
@@ -8161,38 +8184,6 @@ export const data_dashboard = `<!DOCTYPE html>
                     </tr>
                 \`;
             }).join('');
-
-            // ── Event delegation per tutti i bottoni rinnovo (pattern identico leads) ──
-            setTimeout(function() {
-                document.querySelectorAll('.rinnovo-btn').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        var action  = this.getAttribute('data-action');
-                        var leadId  = this.getAttribute('data-lead-id') || '';
-                        var codice  = this.getAttribute('data-codice')  || '';
-                        var cliente = this.getAttribute('data-cliente') || '';
-                        var iva     = this.getAttribute('data-iva') === 'true';
-                        var anno    = parseInt(this.getAttribute('data-anno') || '2', 10);
-                        var id      = this.getAttribute('data-id')      || '';
-                        var codiceR = this.getAttribute('data-codicer') || '';
-                        var email   = this.getAttribute('data-email')   || '';
-                        var idSafe  = this.getAttribute('data-idsafe')  || '';
-
-                        if (action === 'rinnovo-crea') {
-                            inviaRinnovo(leadId, codice, cliente, iva, anno);
-                        } else if (action === 'rinnovo-invia-email') {
-                            inviaEmailRinnovo(id, codiceR, email);
-                        } else if (action === 'rinnovo-segna-firmato') {
-                            segnaRinnovoFirmato(id, codiceR);
-                        } else if (action === 'rinnovo-crea-proforma') {
-                            creaProformaRinnovo(id, codiceR);
-                        } else if (action === 'rinnovo-invia-proforma') {
-                            inviaProformaRinnovo(id, codiceR);
-                        } else if (action === 'rinnovo-segna-completato') {
-                            segnaRinnovoCompletato(idSafe, codice);
-                        }
-                    });
-                });
-            }, 0);
         }
 
         function getDispositivoForService(servizio) {
