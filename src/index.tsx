@@ -13704,7 +13704,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
     // 6. Genera codice contratto rinnovo
     const codiceRinnovo = `${origContract.codice_contratto}-R${annoRinnovo}`
-    const rinnovoId = `RINNOVO-${origContract.id}-Y${annoRinnovo}-${Date.now()}`
+    const rinnovoId = `RINNOVO-${origContract.codice_contratto}-Y${annoRinnovo}-${Date.now()}`
 
     // 7. Leggi template HTML rinnovo e sostituisci variabili
     let templateHtml = ''
