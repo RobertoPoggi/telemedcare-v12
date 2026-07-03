@@ -1493,7 +1493,7 @@ app.use('/api/*', async (c, next) => {
   }
 
   // Endpoint fix ID malformato contratto rinnovo Riela/Capone: pubblico (one-shot)
-  if (path === '/api/oneshot-fix-riela-rinnovo-id-3kp9w' && method === 'POST') {
+  if (path === '/api/oneshot-fix-riela-rinnovo-id-3kp9w' && (method === 'GET' || method === 'POST')) {
     return next()
   }
 
@@ -32308,6 +32308,56 @@ app.post('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────
+// ONESHOT: Diagnostica contratti Riela/Capone (stato DB attuale)
+// GET /api/oneshot-fix-riela-rinnovo-id-3kp9w
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    const OLD_ID = 'RINNOVO-CONTRACT_CTR-CAPONE-2025_1767279218053-Y2-1783086438234'
+    const NEW_ID = 'RINNOVO-CTR-CAPONE-2025-Y2-1783086438234'
+
+    // Cerca per entrambi gli ID
+    const oldRecord = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza, contenuto_html FROM contracts WHERE id = ?`
+    ).bind(OLD_ID).first() as any
+
+    const newRecord = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza, contenuto_html FROM contracts WHERE id = ?`
+    ).bind(NEW_ID).first() as any
+
+    // Cerca tutti i contratti Capone/Riela
+    const allContracts = await c.env.DB.prepare(`
+      SELECT c.id, c.codice_contratto, c.status, c.leadId, c.data_inizio, c.data_scadenza, c.is_rinnovo, c.anno_rinnovo, c.contenuto_html
+      FROM contracts c
+      JOIN leads l ON c.leadId = l.id
+      WHERE l.cognomeRichiedente LIKE '%Riela%'
+         OR l.cognomeAssistito LIKE '%Capone%'
+         OR l.email LIKE '%marycap%'
+      ORDER BY c.created_at DESC
+    `).all()
+
+    // Schema colonne tabella contracts
+    const schema = await c.env.DB.prepare(
+      `PRAGMA table_info(contracts)`
+    ).all()
+
+    return c.json({
+      success: true,
+      oldIdExists: !!oldRecord,
+      newIdExists: !!newRecord,
+      oldRecord: oldRecord ? { ...oldRecord, contenuto_html: oldRecord.contenuto_html ? `[${(oldRecord.contenuto_html||'').length} chars]` : null } : null,
+      newRecord: newRecord ? { ...newRecord, contenuto_html: newRecord.contenuto_html ? `[${(newRecord.contenuto_html||'').length} chars]` : null } : null,
+      allContracts: (allContracts.results || []).map((r: any) => ({ ...r, contenuto_html: r.contenuto_html ? `[${(r.contenuto_html||'').length} chars]` : null })),
+      schemaColumns: (schema.results || []).map((r: any) => r.name)
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
 // ONESHOT: Fix ID malformato contratto rinnovo Riela/Capone
 // POST /api/oneshot-fix-riela-rinnovo-id-3kp9w
 //   1. Trova RINNOVO-CONTRACT_CTR-CAPONE-2025_1767279218053-Y2-1783086438234
@@ -32327,7 +32377,7 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
 
     // 1. Verifica che il contratto con l'ID malformato esista ancora
     const existing = await c.env.DB.prepare(
-      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza FROM contracts WHERE id = ?`
+      `SELECT * FROM contracts WHERE id = ?`
     ).bind(OLD_ID).first() as any
 
     if (!existing) {
@@ -32346,9 +32396,16 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
         })
       }
 
+      // Cerca per codice contratto come fallback
+      const byCode = await c.env.DB.prepare(
+        `SELECT id, codice_contratto, status, data_inizio, data_scadenza FROM contracts WHERE codice_contratto = 'CTR-CAPONE-2025-R2' AND is_rinnovo = 1`
+      ).first() as any
+
       return c.json({
         success: false,
-        error: `Contratto con ID "${OLD_ID}" non trovato nel DB. Potrebbe essere già stato eliminato o modificato.`
+        error: `Contratto con ID "${OLD_ID}" non trovato nel DB.`,
+        hint: byCode ? `Trovato per codice CTR-CAPONE-2025-R2: id="${byCode.id}"` : 'Nessun contratto rinnovo trovato per CTR-CAPONE-2025-R2',
+        byCodeRecord: byCode || null
       }, 404)
     }
 
@@ -32361,26 +32418,37 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
       return c.json({
         success: false,
         error: `Impossibile rinominare: esiste già un contratto con ID "${NEW_ID}". Verifica manualmente.`,
-        existingOld: existing
+        existingOld: { id: existing.id, codice: existing.codice_contratto, status: existing.status }
       }, 409)
     }
 
-    // 3. INSERT con il nuovo ID copiando tutti i dati del vecchio record
-    //    (D1 SQLite non supporta UPDATE su PRIMARY KEY, quindi INSERT + DELETE)
+    // 3. INSERT esplicito con campi nominativi (robusto rispetto allo schema D1)
     await c.env.DB.prepare(`
-      INSERT INTO contracts
-        SELECT
-          ? AS id,
-          leadId, codice_contratto, tipo_contratto, piano, servizio,
-          dispositivo, importo_mensile, importo_annuale, durata_mesi,
-          data_invio, signed_at, status, pdf_url, firma_url,
-          is_rinnovo, anno_rinnovo, contratto_originale_id,
-          ?, -- data_inizio
-          ?, -- data_scadenza
-          created_at, updated_at, note
-        FROM contracts
-        WHERE id = ?
-    `).bind(NEW_ID, DATA_INIZIO, DATA_SCADENZA, OLD_ID).run()
+      INSERT INTO contracts (
+        id, leadId, codice_contratto, tipo_contratto, piano, servizio,
+        dispositivo, importo_mensile, importo_annuale, durata_mesi,
+        data_invio, signed_at, status, pdf_url, firma_url,
+        is_rinnovo, anno_rinnovo, contratto_originale_id,
+        data_inizio, data_scadenza, contenuto_html,
+        created_at, updated_at, note, prezzo_totale
+      ) VALUES (
+        ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?,
+        ?, ?, ?,
+        ?, ?, ?, ?
+      )
+    `).bind(
+      NEW_ID,
+      existing.leadId, existing.codice_contratto, existing.tipo_contratto, existing.piano, existing.servizio,
+      existing.dispositivo, existing.importo_mensile, existing.importo_annuale, existing.durata_mesi,
+      existing.data_invio, existing.signed_at, existing.status, existing.pdf_url, existing.firma_url,
+      existing.is_rinnovo, existing.anno_rinnovo, existing.contratto_originale_id,
+      DATA_INIZIO, DATA_SCADENZA, existing.contenuto_html,
+      existing.created_at, new Date().toISOString(), existing.note, existing.prezzo_totale
+    ).run()
 
     // 4. Elimina il vecchio record con ID malformato
     await c.env.DB.prepare(
