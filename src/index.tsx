@@ -11496,12 +11496,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
         }, 404)
       }
 
-      // Chiama internamente la logica della route /api/contracts/rinnovo
-      const rinnovoResp = await fetch(new URL('/api/contracts/rinnovo', c.req.url).toString(), {
+      // ✅ Chiama la logica rinnovo direttamente via app.fetch (no self-fetch, non supportato in CF Workers)
+      const rinnovoReq = new Request('https://internal/api/contracts/rinnovo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Cookie': c.req.header('Cookie') || '' },
         body: JSON.stringify({ contractId: origContract.id, annoRinnovo: annoRinnovoReq })
       })
+      const rinnovoResp = await app.fetch(rinnovoReq, c.env, c.executionCtx)
       const rinnovoResult = await rinnovoResp.json() as any
       return c.json(rinnovoResult, rinnovoResp.status as any)
     }
