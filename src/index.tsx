@@ -1492,6 +1492,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Endpoint fix ID malformato contratto rinnovo Riela/Capone: pubblico (one-shot)
+  if (path === '/api/oneshot-fix-riela-rinnovo-id-3kp9w' && method === 'POST') {
+    return next()
+  }
+
 
   
   // Endpoint email-templates: accessibili con session cookie (gestiti dai propri handler)
@@ -32299,6 +32304,108 @@ app.post('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
     })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────
+// ONESHOT: Fix ID malformato contratto rinnovo Riela/Capone
+// POST /api/oneshot-fix-riela-rinnovo-id-3kp9w
+//   1. Trova RINNOVO-CONTRACT_CTR-CAPONE-2025_1767279218053-Y2-1783086438234
+//   2. Aggiorna id → RINNOVO-CTR-CAPONE-2025-Y2-1783086438234
+//   3. Imposta data_inizio = '2026-06-28', data_scadenza = '2027-06-27'
+//   4. Restituisce il nuovo link firma
+// ─────────────────────────────────────────────────────────────────
+app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    const OLD_ID = 'RINNOVO-CONTRACT_CTR-CAPONE-2025_1767279218053-Y2-1783086438234'
+    const NEW_ID = 'RINNOVO-CTR-CAPONE-2025-Y2-1783086438234'
+    const DATA_INIZIO = '2026-06-28'
+    const DATA_SCADENZA = '2027-06-27'
+    const BASE_URL = 'https://telemedcare-v12.pages.dev'
+
+    // 1. Verifica che il contratto con l'ID malformato esista ancora
+    const existing = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza FROM contracts WHERE id = ?`
+    ).bind(OLD_ID).first() as any
+
+    if (!existing) {
+      // Controlla se è già stato rinominato
+      const alreadyFixed = await c.env.DB.prepare(
+        `SELECT id, codice_contratto, status, data_inizio, data_scadenza FROM contracts WHERE id = ?`
+      ).bind(NEW_ID).first() as any
+
+      if (alreadyFixed) {
+        return c.json({
+          success: true,
+          alreadyFixed: true,
+          message: 'ℹ️ Il contratto era già stato rinominato in precedenza.',
+          record: alreadyFixed,
+          newLink: `${BASE_URL}/firma-contratto.html?contractId=${NEW_ID}`
+        })
+      }
+
+      return c.json({
+        success: false,
+        error: `Contratto con ID "${OLD_ID}" non trovato nel DB. Potrebbe essere già stato eliminato o modificato.`
+      }, 404)
+    }
+
+    // 2. Verifica che non esista già un record con il NEW_ID (evita collisioni PK)
+    const newIdCheck = await c.env.DB.prepare(
+      `SELECT id FROM contracts WHERE id = ?`
+    ).bind(NEW_ID).first()
+
+    if (newIdCheck) {
+      return c.json({
+        success: false,
+        error: `Impossibile rinominare: esiste già un contratto con ID "${NEW_ID}". Verifica manualmente.`,
+        existingOld: existing
+      }, 409)
+    }
+
+    // 3. INSERT con il nuovo ID copiando tutti i dati del vecchio record
+    //    (D1 SQLite non supporta UPDATE su PRIMARY KEY, quindi INSERT + DELETE)
+    await c.env.DB.prepare(`
+      INSERT INTO contracts
+        SELECT
+          ? AS id,
+          leadId, codice_contratto, tipo_contratto, piano, servizio,
+          dispositivo, importo_mensile, importo_annuale, durata_mesi,
+          data_invio, signed_at, status, pdf_url, firma_url,
+          is_rinnovo, anno_rinnovo, contratto_originale_id,
+          ?, -- data_inizio
+          ?, -- data_scadenza
+          created_at, updated_at, note
+        FROM contracts
+        WHERE id = ?
+    `).bind(NEW_ID, DATA_INIZIO, DATA_SCADENZA, OLD_ID).run()
+
+    // 4. Elimina il vecchio record con ID malformato
+    await c.env.DB.prepare(
+      `DELETE FROM contracts WHERE id = ?`
+    ).bind(OLD_ID).run()
+
+    // 5. Verifica finale
+    const fixed = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, status, data_inizio, data_scadenza, leadId FROM contracts WHERE id = ?`
+    ).bind(NEW_ID).first() as any
+
+    const newLink = `${BASE_URL}/firma-contratto.html?contractId=${NEW_ID}`
+
+    return c.json({
+      success: true,
+      message: '✅ Contratto rinnovo Riela/Capone aggiornato con successo.',
+      oldId: OLD_ID,
+      newId: NEW_ID,
+      dateSet: { data_inizio: DATA_INIZIO, data_scadenza: DATA_SCADENZA },
+      record: fixed,
+      newLink,
+      istruzioni: `Inviare a Giorgio Riela (gr@ecotorino.it) il seguente link per firmare il rinnovo: ${newLink}`
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message, stack: e.stack }, 500)
   }
 })
 
