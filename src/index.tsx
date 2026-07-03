@@ -31922,6 +31922,84 @@ app.post('/api/oneshot-fix-anagrafica-balzarotti-7rp4x', async (c) => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────────
+// ONESHOT: Sincronizza template email_reminder_completamento → DB
+// POST /api/oneshot-sync-reminder-ecura-9kx2q
+// Nessuna auth richiesta — sostituisce "TeleMedCare" con "eCura" nel DB
+// ─────────────────────────────────────────────────────────────────
+app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
+  const templateName = 'email_reminder_completamento'
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    const { getBaseUrl } = await import('./modules/url-helper')
+    const baseUrl = getBaseUrl(c.env)
+
+    // Prova a leggere il file statico aggiornato
+    const pathsToTry = [
+      `${baseUrl}/templates/email/${templateName}.html`,
+      `${baseUrl}/templates/email/${templateName}`
+    ]
+
+    let htmlContent: string | null = null
+    let usedPath = ''
+    for (const url of pathsToTry) {
+      try {
+        const res = await fetch(url)
+        if (res.ok) {
+          htmlContent = await res.text()
+          usedPath = url
+          break
+        }
+      } catch {}
+    }
+
+    if (!htmlContent) {
+      return c.json({
+        success: false,
+        error: `File template "${templateName}" non trovato`,
+        pathsTried: pathsToTry
+      }, 404)
+    }
+
+    // Verifica che il file contenga "eCura" e non "TeleMedCare"
+    const hasTeleMedCare = htmlContent.includes('TeleMedCare')
+    const hasECura = htmlContent.includes('eCura')
+
+    // UPSERT nel DB email_templates
+    const result = await c.env.DB.prepare(`
+      INSERT INTO email_templates (name, subject, content, updated_at)
+      VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(name) DO UPDATE SET
+        content = excluded.content,
+        updated_at = excluded.updated_at
+    `).bind(templateName, `Promemoria - Completa i tuoi dati eCura`, htmlContent).run()
+
+    console.log(`✅ [ONESHOT-SYNC-REMINDER] "${templateName}" aggiornato nel DB (changes: ${result.meta?.changes})`)
+
+    return c.json({
+      success: true,
+      templateName,
+      fileUrl: usedPath,
+      contentLength: htmlContent.length,
+      changes: result.meta?.changes,
+      checks: { hasTeleMedCare, hasECura },
+      note: hasTeleMedCare
+        ? '⚠️ Il file contiene ancora "TeleMedCare" — controlla public/templates/email/email_reminder_completamento.html'
+        : '✅ File corretto: "eCura" presente, "TeleMedCare" assente'
+    })
+
+  } catch (error) {
+    console.error('❌ [ONESHOT-SYNC-REMINDER] Errore:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
