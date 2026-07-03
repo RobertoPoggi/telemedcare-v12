@@ -7829,7 +7829,7 @@ export const data_dashboard = `<!DOCTYPE html>
         async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
             if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
             const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
-            if (!confirm(\`🔄 Inviare il contratto di RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nViene generato e inviato per firma al cliente il contratto ufficiale di rinnovo.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
+            if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l'email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l'email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
                 const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
                     method: 'POST',
@@ -7842,8 +7842,38 @@ export const data_dashboard = `<!DOCTYPE html>
                     })
                 });
                 const result = await resp.json();
+                if (result.success && result.dryRun) {
+                    // dryRun: mostra link per verifica prima di inviare email
+                    const apri = confirm(
+                        \`✅ Contratto creato: \${result.codiceRinnovo}\\n\\n\` +
+                        \`🔗 Link firma:\\n\${result.firmaUrl}\\n\\n\` +
+                        \`Premi OK per APRIRE il link e verificarlo.\\n\` +
+                        \`Poi usa il pulsante "📧 Invia Email" in dashboard per inviarlo al cliente.\`
+                    );
+                    if (apri) window.open(result.firmaUrl, '_blank');
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else if (result.success) {
+                    alert(\`✅ Contratto di rinnovo inviato!\\n\\nCodice: \${result.codiceRinnovo}\\n\\n📧 Email con link di firma inviata al cliente.\`);
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || result.details || 'Riprovare'));
+                }
+            } catch (err) {
+                alert('❌ Errore di rete: ' + err.message);
+            }
+        }
+
+        async function inviaEmailRinnovo(rinnovoId, codiceRinnovo, emailCliente) {
+            if (!confirm(\`📧 Inviare l'email di rinnovo a \${emailCliente}?\\n\\nContratto: \${codiceRinnovo}\\n\\nL'email con il link di firma sarà inviata al cliente.\`)) return;
+            try {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/send-rinnovo-email\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const result = await resp.json();
                 if (result.success) {
-                    alert(\`✅ Contratto di rinnovo inviato!\\n\\nCodice: \${result.contractCode}\\n\\n📧 Email con link di firma inviata al cliente.\`);
+                    alert(\`✅ Email inviata a \${result.emailInviataA}!\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || result.details || 'Riprovare'));
@@ -8003,13 +8033,36 @@ export const data_dashboard = `<!DOCTYPE html>
                         </div>
                     \`;
                 } else if (isRinnovo && !isSigned) {
-                    // Rinnovo inviato, in attesa firma
-                    azioniHtml = \`
-                        <div class="flex flex-col gap-1 items-center">
-                            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">⏳ Attesa firma</span>
-                            <span class="text-xs text-gray-400">Rinnovo inviato</span>
-                        </div>
-                    \`;
+                    // Rinnovo creato, in attesa firma
+                    // email_sent=0 → email non ancora inviata (dryRun) → mostra pulsante "Invia Email"
+                    const emailSent = contract.email_sent == 1 || contract.email_sent === true;
+                    const idRinnovoSafe = JSON.stringify(contract.id);
+                    const codiceSafeR = (contract.codice_contratto || '').replace(/'/g, "\\'");
+                    const emailClienteSafe = (contract.email_cliente || '').replace(/'/g, "\\'");
+                    const firmaUrlRinnovo = \`/firma-contratto.html?contractId=\${encodeURIComponent(contract.id)}\`;
+                    if (!emailSent) {
+                        azioniHtml = \`
+                            <div class="flex flex-col gap-1 items-center">
+                                <a href="\${firmaUrlRinnovo}" target="_blank"
+                                   class="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold hover:bg-indigo-200"
+                                   title="Apri il link firma per verificarlo">
+                                    🔗 Verifica Link
+                                </a>
+                                <button onclick="inviaEmailRinnovo(\${idRinnovoSafe}, '\${codiceSafeR}', '\${emailClienteSafe}')"
+                                        class="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs transition-colors font-semibold"
+                                        title="Invia email con link firma al cliente">
+                                    📧 Invia Email
+                                </button>
+                            </div>
+                        \`;
+                    } else {
+                        azioniHtml = \`
+                            <div class="flex flex-col gap-1 items-center">
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">⏳ Attesa firma</span>
+                                <a href="\${firmaUrlRinnovo}" target="_blank" class="text-xs text-blue-500 hover:underline">🔗 Link firma</a>
+                            </div>
+                        \`;
+                    }
                 } else {
                     azioniHtml = '<span class="text-gray-400 text-xs">N/A</span>';
                 }

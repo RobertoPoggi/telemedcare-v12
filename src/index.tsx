@@ -11497,10 +11497,11 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       }
 
       // ✅ Chiama la logica rinnovo direttamente via app.fetch (no self-fetch, non supportato in CF Workers)
+      // dryRun=true: crea contratto nel DB ma NON invia email — restituisce link per verifica
       const rinnovoReq = new Request('https://internal/api/contracts/rinnovo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Cookie': c.req.header('Cookie') || '' },
-        body: JSON.stringify({ contractId: origContract.id, annoRinnovo: annoRinnovoReq })
+        body: JSON.stringify({ contractId: origContract.id, annoRinnovo: annoRinnovoReq, dryRun: true })
       })
       const rinnovoResp = await app.fetch(rinnovoReq, c.env, c.executionCtx)
       const rinnovoResult = await rinnovoResp.json() as any
@@ -13613,12 +13614,16 @@ const PREZZI_RINNOVO_BASE: Record<string, Record<string, number>> = {
 /**
  * POST /api/contracts/rinnovo
  * Crea un contratto di rinnovo a partire dal contratto originale e lo invia per firma.
- * Body: { contractId: string }   (ID del contratto originale da rinnovare)
+ * Body: { contractId: string, dryRun?: boolean }
+ * Se dryRun=true: crea il contratto nel DB (status SENT) ma NON invia l'email.
+ * Restituisce il link firma per verifica manuale.
+ * Per inviare l'email dopo: POST /api/contracts/:rinnovoId/send-rinnovo-email
  */
 app.post('/api/contracts/rinnovo', async (c) => {
   try {
     const body = await c.req.json()
     const { contractId } = body
+    const dryRun = !!(body.dryRun || body.dry_run)
 
     if (!contractId) {
       return c.json({ success: false, error: 'contractId richiesto' }, 400)
@@ -13761,15 +13766,16 @@ app.post('/api/contracts/rinnovo', async (c) => {
     })
 
     // 8. Inserisci contratto rinnovo nel DB
+    // ✅ FIX: rimossa data_inizio (colonna non presente nel DB di produzione)
     await c.env.DB.prepare(`
       INSERT INTO contracts (
         id, leadId, codice_contratto, tipo_contratto, piano, servizio,
         template_utilizzato, contenuto_html,
         status, prezzo_totale, prezzo_mensile,
         is_rinnovo, rinnovo_di, anno_rinnovo,
-        data_inizio, data_scadenza,
+        data_scadenza,
         data_invio, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       rinnovoId,
       origContract.leadId,
@@ -13785,7 +13791,6 @@ app.post('/api/contracts/rinnovo', async (c) => {
       1,
       origContract.codice_contratto || contractId,
       annoRinnovo,
-      inizioRinnovo.toISOString().split('T')[0],    // data_inizio
       scadenzaRinnovo.toISOString().split('T')[0],  // data_scadenza
       oggi.toISOString(),
       oggi.toISOString(),
@@ -13794,9 +13799,28 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
     console.log(`✅ Contratto rinnovo creato: ${rinnovoId} (${codiceRinnovo}) per lead ${origContract.leadId}`)
 
+    const baseUrl = new URL(c.req.url).origin
+    const firmaUrl = `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`
+
+    // dryRun: restituisce il link senza inviare email
+    if (dryRun) {
+      console.log(`🧪 [RINNOVO dryRun] Contratto creato, email NON inviata. Link: ${firmaUrl}`)
+      return c.json({
+        success: true,
+        dryRun: true,
+        rinnovoId,
+        codiceRinnovo,
+        annoRinnovo,
+        prezzoRinnovo: rinnovoTotale,
+        ivaLabel,
+        firmaUrl,
+        emailInviata: false,
+        message: `✅ Contratto ${codiceRinnovo} creato. Email NON inviata (dryRun). Verifica il link firma, poi premi "Invia Email" dalla dashboard.`
+      })
+    }
+
     // 9. Invia email con link firma
     if (lead.email && c.env.RESEND_API_KEY) {
-      const baseUrl = new URL(c.req.url).origin
       const firmaUrl = `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`
 
       const EmailServiceModule = await import('./modules/email-service')
@@ -14013,11 +14037,13 @@ Medica GB S.r.l. — P.IVA 12435130963`
 
     return c.json({
       success: true,
+      dryRun: false,
       rinnovoId,
       codiceRinnovo,
       annoRinnovo,
       prezzoRinnovo: rinnovoTotale,
       ivaLabel,
+      firmaUrl: `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`,
       emailInviata: !!(lead.email && c.env.RESEND_API_KEY),
       message: `Contratto di rinnovo ${codiceRinnovo} creato e inviato per firma`
     })
@@ -14027,6 +14053,118 @@ Medica GB S.r.l. — P.IVA 12435130963`
     return c.json({
       success: false,
       error: 'Errore creazione contratto rinnovo',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
+ * POST /api/contracts/:id/send-rinnovo-email
+ * Invia l'email di rinnovo per un contratto già creato (dryRun completato).
+ * Usato dopo verifica manuale del link firma.
+ */
+app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
+  try {
+    const rinnovoId = c.req.param('id')
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
+
+    // Carica contratto rinnovo
+    const contract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE id = ?`
+    ).bind(rinnovoId).first() as any
+
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    if (!contract.is_rinnovo) return c.json({ success: false, error: 'Non è un contratto di rinnovo' }, 400)
+
+    // Carica lead
+    const lead = await c.env.DB.prepare(
+      `SELECT * FROM leads WHERE id = ?`
+    ).bind(contract.leadId).first() as any
+
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    if (!lead.email) return c.json({ success: false, error: 'Email lead mancante' }, 400)
+    if (!c.env.RESEND_API_KEY) return c.json({ success: false, error: 'RESEND_API_KEY non configurata' }, 500)
+
+    const baseUrl = new URL(c.req.url).origin
+    const firmaUrl = `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`
+    const annoRinnovo  = contract.anno_rinnovo || 2
+    const codiceRinnovo = contract.codice_contratto
+    const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
+    const ivaLabel = lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
+    const rinnovoBase   = contract.prezzo_totale || 240
+    const ivaImporto    = Math.round(rinnovoBase * ivaRate * 100) / 100
+    const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
+    const servizio = contract.servizio || 'eCura PRO'
+    const piano    = contract.piano || 'BASE'
+
+    const EmailServiceModule = await import('./modules/email-service')
+    const emailService = new EmailServiceModule.EmailService(c.env)
+
+    // Template email
+    let emailHtml: string
+    try {
+      const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+      const tpl = await loadEmailTemplate('email_rinnovo_contratto', c.env.DB, c.env)
+      emailHtml = renderTemplate(tpl, {
+        ANNO_RINNOVO:               String(annoRinnovo),
+        CODICE_RINNOVO:             codiceRinnovo,
+        CODICE_CONTRATTO_ORIGINALE: contract.rinnovo_di || '',
+        NOME_CLIENTE:               lead.nomeRichiedente || '',
+        COGNOME_CLIENTE:            lead.cognomeRichiedente || '',
+        SERVIZIO:                   servizio,
+        PIANO:                      piano,
+        DISPOSITIVO:                servizio.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE',
+        DATA_INIZIO_SERVIZIO:       '',
+        DATA_SCADENZA:              contract.data_scadenza || '',
+        IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
+        IVA_IMPORTO:                ivaImporto.toFixed(2),
+        IVA_LABEL:                  ivaLabel,
+        IVA_NOTE:                   ivaNote,
+        PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
+        LINK_FIRMA:                 firmaUrl,
+      })
+    } catch {
+      emailHtml = `<p>Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},<br>
+        il rinnovo del Suo servizio eCura è pronto per la firma.<br>
+        <a href="${firmaUrl}">✍️ Clicchi qui per firmare il contratto di rinnovo</a><br><br>
+        Tariffa: € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)<br>
+        Codice: ${codiceRinnovo}</p>`
+    }
+
+    // Invia email al cliente
+    await emailService.sendEmail({
+      to: lead.email,
+      subject: `Rinnovo annuale del Suo servizio eCura — ${codiceRinnovo}`,
+      html: emailHtml,
+      text: `Rinnovo servizio eCura — firma online: ${firmaUrl}`
+    })
+
+    // Notifica interna
+    await emailService.sendEmail({
+      to: c.env?.EMAIL_TO || 'info@ecura.it',
+      subject: `🔄 Rinnovo inviato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente} — ${codiceRinnovo}`,
+      html: `<p>Email rinnovo inviata a <strong>${lead.email}</strong>.<br>
+             Link firma: <a href="${firmaUrl}">${firmaUrl}</a></p>`,
+      text: `Rinnovo inviato: ${codiceRinnovo} — ${lead.email}`
+    })
+
+    console.log(`📧 Email rinnovo inviata a ${lead.email} (contratto ${rinnovoId})`)
+
+    return c.json({
+      success: true,
+      rinnovoId,
+      codiceRinnovo,
+      emailInviataA: lead.email,
+      firmaUrl,
+      message: `✅ Email di rinnovo inviata a ${lead.email}`
+    })
+
+  } catch (error) {
+    console.error('❌ Errore invio email rinnovo:', error)
+    return c.json({
+      success: false,
+      error: 'Errore invio email rinnovo',
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
