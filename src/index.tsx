@@ -30948,16 +30948,16 @@ app.post('/api/admin/sync-template/:name', async (c) => {
 
     console.log(`📝 [SYNC-TEMPLATE] "${templateName}" letto da ${usedPath} (${htmlContent.length} chars)`)
 
-    // UPSERT nel DB email_templates
+    // UPSERT in document_templates (tabella corretta per i template email)
     const result = await c.env.DB.prepare(`
-      INSERT INTO email_templates (name, subject, content, updated_at)
-      VALUES (?, ?, ?, datetime('now'))
-      ON CONFLICT(name) DO UPDATE SET
-        content = excluded.content,
-        updated_at = excluded.updated_at
-    `).bind(templateName, templateName, htmlContent).run()
+      INSERT INTO document_templates (id, name, type, subject, html_content, category, active, updated_at)
+      VALUES (?, ?, 'email', ?, ?, 'email', 1, datetime('now'))
+      ON CONFLICT(id) DO UPDATE SET
+        html_content = excluded.html_content,
+        updated_at   = datetime('now')
+    `).bind(templateName, templateName, templateName, htmlContent).run()
 
-    console.log(`✅ [SYNC-TEMPLATE] "${templateName}" aggiornato nel DB (changes: ${result.meta?.changes})`)
+    console.log(`✅ [SYNC-TEMPLATE] "${templateName}" aggiornato in document_templates (changes: ${result.meta?.changes})`)
 
     return c.json({
       success: true,
@@ -30990,8 +30990,8 @@ app.delete('/api/email/template/:name/reset', async (c) => {
     
     console.log(`🗑️ [TEMPLATE-RESET] Rimozione template "${templateName}" dal database...`)
     
-    // Delete template from database
-    const result = await c.env.DB.prepare('DELETE FROM email_templates WHERE name = ?')
+    // Delete template from database (document_templates è la tabella corretta)
+    const result = await c.env.DB.prepare('DELETE FROM document_templates WHERE id = ?')
       .bind(templateName)
       .run()
     
@@ -31968,26 +31968,21 @@ app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
     const hasTeleMedCare = htmlContent.includes('TeleMedCare')
     const hasECura = htmlContent.includes('eCura')
 
-    // Crea tabella email_templates se non esiste (schema atteso da template-loader-clean.ts)
-    await c.env.DB.prepare(`
-      CREATE TABLE IF NOT EXISTS email_templates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        subject TEXT,
-        content TEXT NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now'))
-      )
-    `).run()
-
-    // UPSERT nel DB email_templates
+    // UPSERT in document_templates (tabella corretta, usata da template-loader-clean.ts)
+    // id = templateName, type = 'email', html_content = contenuto HTML
     const result = await c.env.DB.prepare(`
-      INSERT INTO email_templates (name, subject, content, updated_at)
-      VALUES (?, ?, ?, datetime('now'))
-      ON CONFLICT(name) DO UPDATE SET
-        content = excluded.content,
-        updated_at = datetime('now')
-    `).bind(templateName, `Promemoria - Completa i tuoi dati eCura`, htmlContent).run()
+      INSERT INTO document_templates (id, name, type, subject, html_content, category, active, updated_at)
+      VALUES (?, ?, 'email', ?, ?, 'reminder', 1, datetime('now'))
+      ON CONFLICT(id) DO UPDATE SET
+        html_content = excluded.html_content,
+        subject      = excluded.subject,
+        updated_at   = datetime('now')
+    `).bind(
+      templateName,
+      templateName,
+      `Promemoria - Completa i tuoi dati eCura`,
+      htmlContent
+    ).run()
 
     console.log(`✅ [ONESHOT-SYNC-REMINDER] "${templateName}" aggiornato nel DB (changes: ${result.meta?.changes})`)
 

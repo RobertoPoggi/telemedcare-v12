@@ -17,13 +17,13 @@ export async function loadEmailTemplate(
   // 🔄 PRIORITÀ 1: Carica dal DATABASE
   try {
     console.log(`📂 [TEMPLATE] Tentativo caricamento da DB: "${templateName}"`)
-    const dbTemplate = await db.prepare('SELECT id, name, subject, content FROM email_templates WHERE name = ?')
+    const dbTemplate = await db.prepare('SELECT id, name, subject, html_content FROM document_templates WHERE name = ? AND active = 1')
       .bind(templateName)
       .first()
     
-    if (dbTemplate && (dbTemplate as any).content) {
-      console.log(`✅ [TEMPLATE] Caricato dal DB: "${templateName}" (${((dbTemplate as any).content as string).length} chars)`)
-      return (dbTemplate as any).content as string
+    if (dbTemplate && (dbTemplate as any).html_content) {
+      console.log(`✅ [TEMPLATE] Caricato dal DB: "${templateName}" (${((dbTemplate as any).html_content as string).length} chars)`)
+      return (dbTemplate as any).html_content as string
     }
     
     console.log(`⚠️ [TEMPLATE] Template "${templateName}" non trovato nel DB, provo file statico...`)
