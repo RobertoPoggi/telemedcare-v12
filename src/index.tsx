@@ -11474,6 +11474,34 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     const annoRinnovoReq     = body.annoRinnovo || body.anno_rinnovo || 2
     const codiceOriginaleReq = body.codiceOriginale || body.rinnovo_di || ''
 
+    // 🔄 SE È UN RINNOVO: usa la route dedicata /api/contracts/rinnovo
+    // che invia email_rinnovo_contratto invece di email_invio_contratto (primo contratto)
+    if (isRinnovoReq) {
+      console.log(`🔄 [SEND-CONTRACT] isRinnovo=true → delega a logica rinnovo dedicata (codice originale: ${codiceOriginaleReq})`)
+
+      // Trova il contractId del contratto originale dal codice
+      const origContract = await c.env.DB.prepare(
+        `SELECT id FROM contracts WHERE codice_contratto = ? AND leadId = ? ORDER BY created_at DESC LIMIT 1`
+      ).bind(codiceOriginaleReq, leadId).first() as any
+
+      if (!origContract) {
+        return c.json({
+          success: false,
+          error: 'Contratto originale non trovato',
+          details: `Nessun contratto con codice "${codiceOriginaleReq}" per il lead ${leadId}`
+        }, 404)
+      }
+
+      // Chiama internamente la logica della route /api/contracts/rinnovo
+      const rinnovoResp = await fetch(new URL('/api/contracts/rinnovo', c.req.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': c.req.header('Cookie') || '' },
+        body: JSON.stringify({ contractId: origContract.id, annoRinnovo: annoRinnovoReq })
+      })
+      const rinnovoResult = await rinnovoResp.json() as any
+      return c.json(rinnovoResult, rinnovoResp.status as any)
+    }
+
     const timestamp = Date.now()
     const cognome = (lead.cognomeAssistito || lead.cognomeRichiedente || 'UNKNOWN').toUpperCase().replace(/[^A-Z]/g, '')
     const anno = new Date().getFullYear()
