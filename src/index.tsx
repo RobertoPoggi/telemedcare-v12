@@ -13655,11 +13655,23 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
     // 5. Date del rinnovo
+    // Inizio = giorno successivo alla scadenza del contratto originale
+    // Se data_scadenza non disponibile, fallback a oggi
     const oggi = new Date()
-    const dataInizio  = oggi.toLocaleDateString('it-IT')
-    const scadenzaData = new Date(oggi)
-    scadenzaData.setFullYear(scadenzaData.getFullYear() + 1)
-    const dataScadenza = scadenzaData.toLocaleDateString('it-IT')
+    let inizioRinnovo: Date
+    if (origContract.data_scadenza) {
+      inizioRinnovo = new Date(origContract.data_scadenza)
+      inizioRinnovo.setDate(inizioRinnovo.getDate() + 1) // giorno dopo la scadenza
+    } else {
+      console.warn('⚠️ [RINNOVO] data_scadenza contratto originale mancante — uso data odierna come inizio')
+      inizioRinnovo = new Date(oggi)
+    }
+    const scadenzaRinnovo = new Date(inizioRinnovo)
+    scadenzaRinnovo.setFullYear(scadenzaRinnovo.getFullYear() + 1)
+    scadenzaRinnovo.setDate(scadenzaRinnovo.getDate() - 1) // scadenza = ultimo giorno del 12° mese
+
+    const dataInizio  = inizioRinnovo.toLocaleDateString('it-IT')
+    const dataScadenza = scadenzaRinnovo.toLocaleDateString('it-IT')
 
     // Data contratto originale formattata
     const dataOrigFormatted = origContract.data_firma
@@ -13731,8 +13743,9 @@ app.post('/api/contracts/rinnovo', async (c) => {
         template_utilizzato, contenuto_html,
         status, prezzo_totale, prezzo_mensile,
         is_rinnovo, rinnovo_di, anno_rinnovo,
+        data_inizio, data_scadenza,
         data_invio, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       rinnovoId,
       origContract.leadId,
@@ -13743,11 +13756,13 @@ app.post('/api/contracts/rinnovo', async (c) => {
       'contratto_rinnovo_b2c',
       htmlCompiled,
       'SENT',
-      rinnovoBase,           // prezzo_totale = base IVA esclusa (coerente con DB)
-      Math.round(rinnovoBase / 12 * 100) / 100,  // prezzo_mensile
-      1,                     // is_rinnovo
-      origContract.codice_contratto || contractId, // rinnovo_di
+      rinnovoBase,
+      Math.round(rinnovoBase / 12 * 100) / 100,
+      1,
+      origContract.codice_contratto || contractId,
       annoRinnovo,
+      inizioRinnovo.toISOString().split('T')[0],    // data_inizio
+      scadenzaRinnovo.toISOString().split('T')[0],  // data_scadenza
       oggi.toISOString(),
       oggi.toISOString(),
       oggi.toISOString()
