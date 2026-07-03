@@ -32318,18 +32318,23 @@ app.get('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
     const OLD_ID = 'RINNOVO-CONTRACT_CTR-CAPONE-2025_1767279218053-Y2-1783086438234'
     const NEW_ID = 'RINNOVO-CTR-CAPONE-2025-Y2-1783086438234'
 
-    // Cerca per entrambi gli ID
+    // Schema reale del DB (PRAGMA non crashante)
+    const schema = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const cols = (schema.results || []).map((r: any) => r.name) as string[]
+
+    // Cerca per entrambi gli ID (solo colonne sicure: id, codice_contratto, status, leadId)
     const oldRecord = await c.env.DB.prepare(
-      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza, contenuto_html FROM contracts WHERE id = ?`
+      `SELECT id, codice_contratto, status, leadId FROM contracts WHERE id = ?`
     ).bind(OLD_ID).first() as any
 
     const newRecord = await c.env.DB.prepare(
-      `SELECT id, codice_contratto, status, leadId, data_inizio, data_scadenza, contenuto_html FROM contracts WHERE id = ?`
+      `SELECT id, codice_contratto, status, leadId FROM contracts WHERE id = ?`
     ).bind(NEW_ID).first() as any
 
-    // Cerca tutti i contratti Capone/Riela
+    // Tutti i contratti Capone/Riela (colonne sicure)
     const allContracts = await c.env.DB.prepare(`
-      SELECT c.id, c.codice_contratto, c.status, c.leadId, c.data_inizio, c.data_scadenza, c.is_rinnovo, c.anno_rinnovo, c.contenuto_html
+      SELECT c.id, c.codice_contratto, c.status, c.leadId, c.is_rinnovo, c.anno_rinnovo,
+             c.data_scadenza, c.created_at
       FROM contracts c
       JOIN leads l ON c.leadId = l.id
       WHERE l.cognomeRichiedente LIKE '%Riela%'
@@ -32338,19 +32343,19 @@ app.get('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
       ORDER BY c.created_at DESC
     `).all()
 
-    // Schema colonne tabella contracts
-    const schema = await c.env.DB.prepare(
-      `PRAGMA table_info(contracts)`
-    ).all()
-
     return c.json({
       success: true,
       oldIdExists: !!oldRecord,
       newIdExists: !!newRecord,
-      oldRecord: oldRecord ? { ...oldRecord, contenuto_html: oldRecord.contenuto_html ? `[${(oldRecord.contenuto_html||'').length} chars]` : null } : null,
-      newRecord: newRecord ? { ...newRecord, contenuto_html: newRecord.contenuto_html ? `[${(newRecord.contenuto_html||'').length} chars]` : null } : null,
-      allContracts: (allContracts.results || []).map((r: any) => ({ ...r, contenuto_html: r.contenuto_html ? `[${(r.contenuto_html||'').length} chars]` : null })),
-      schemaColumns: (schema.results || []).map((r: any) => r.name)
+      oldRecord: oldRecord || null,
+      newRecord: newRecord || null,
+      allContracts: allContracts.results || [],
+      schemaColumns: cols,
+      hasDataInizio: cols.includes('data_inizio'),
+      hasDataScadenza: cols.includes('data_scadenza'),
+      hasRinnovoDi: cols.includes('rinnovo_di'),
+      hasTemplateUtilizzato: cols.includes('template_utilizzato'),
+      hasContenutoHtml: cols.includes('contenuto_html')
     })
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
@@ -32375,7 +32380,11 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
     const DATA_SCADENZA = '2027-06-27'
     const BASE_URL = 'https://telemedcare-v12.pages.dev'
 
-    // 1. Verifica che il contratto con l'ID malformato esista ancora
+    // 1. Leggi schema reale per sapere quali colonne esistono
+    const schemaRes = await c.env.DB.prepare(`PRAGMA table_info(contracts)`).all()
+    const existingCols = new Set((schemaRes.results || []).map((r: any) => r.name as string))
+
+    // 2. Verifica che il contratto con l'ID malformato esista ancora
     const existing = await c.env.DB.prepare(
       `SELECT * FROM contracts WHERE id = ?`
     ).bind(OLD_ID).first() as any
@@ -32383,7 +32392,7 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
     if (!existing) {
       // Controlla se è già stato rinominato
       const alreadyFixed = await c.env.DB.prepare(
-        `SELECT id, codice_contratto, status, data_inizio, data_scadenza FROM contracts WHERE id = ?`
+        `SELECT id, codice_contratto, status, data_scadenza FROM contracts WHERE id = ?`
       ).bind(NEW_ID).first() as any
 
       if (alreadyFixed) {
@@ -32398,18 +32407,19 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
 
       // Cerca per codice contratto come fallback
       const byCode = await c.env.DB.prepare(
-        `SELECT id, codice_contratto, status, data_inizio, data_scadenza FROM contracts WHERE codice_contratto = 'CTR-CAPONE-2025-R2' AND is_rinnovo = 1`
+        `SELECT id, codice_contratto, status, data_scadenza FROM contracts WHERE codice_contratto = 'CTR-CAPONE-2025-R2' AND is_rinnovo = 1`
       ).first() as any
 
       return c.json({
         success: false,
         error: `Contratto con ID "${OLD_ID}" non trovato nel DB.`,
         hint: byCode ? `Trovato per codice CTR-CAPONE-2025-R2: id="${byCode.id}"` : 'Nessun contratto rinnovo trovato per CTR-CAPONE-2025-R2',
-        byCodeRecord: byCode || null
+        byCodeRecord: byCode || null,
+        schemaColumns: [...existingCols]
       }, 404)
     }
 
-    // 2. Verifica che non esista già un record con il NEW_ID (evita collisioni PK)
+    // 3. Verifica che non esista già un record con il NEW_ID (evita collisioni PK)
     const newIdCheck = await c.env.DB.prepare(
       `SELECT id FROM contracts WHERE id = ?`
     ).bind(NEW_ID).first()
@@ -32422,46 +32432,52 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
       }, 409)
     }
 
-    // 3. INSERT esplicito con le colonne reali del DB di produzione
-    //    (schema da /api/contracts/rinnovo: id, leadId, codice_contratto, tipo_contratto,
-    //     piano, servizio, template_utilizzato, contenuto_html, status, prezzo_totale,
-    //     prezzo_mensile, is_rinnovo, rinnovo_di, anno_rinnovo,
-    //     data_inizio, data_scadenza, data_invio, created_at, updated_at)
-    await c.env.DB.prepare(`
-      INSERT INTO contracts (
-        id, leadId, codice_contratto, tipo_contratto, piano, servizio,
-        template_utilizzato, contenuto_html,
-        status, prezzo_totale, prezzo_mensile,
-        is_rinnovo, rinnovo_di, anno_rinnovo,
-        data_inizio, data_scadenza,
-        data_invio, created_at, updated_at
-      ) VALUES (
-        ?,
-        ?, ?, ?, ?, ?,
-        ?, ?,
-        ?, ?, ?,
-        ?, ?, ?,
-        ?, ?,
-        ?, ?, ?
-      )
-    `).bind(
-      NEW_ID,
-      existing.leadId, existing.codice_contratto, existing.tipo_contratto, existing.piano, existing.servizio,
-      existing.template_utilizzato, existing.contenuto_html,
-      existing.status, existing.prezzo_totale, existing.prezzo_mensile,
-      existing.is_rinnovo, existing.rinnovo_di, existing.anno_rinnovo,
-      DATA_INIZIO, DATA_SCADENZA,
-      existing.data_invio, existing.created_at, new Date().toISOString()
-    ).run()
+    // 4. Costruisci INSERT adattivo: solo colonne che esistono nel DB di produzione
+    //    Colonne obbligatorie sempre presenti: id, leadId, status, created_at, updated_at
+    //    Colonne opzionali: aggiunte solo se presenti nello schema
+    const insertCols: string[] = ['id', 'leadId', 'status', 'created_at', 'updated_at']
+    const insertVals: any[]    = [NEW_ID, existing.leadId, existing.status, existing.created_at, new Date().toISOString()]
 
-    // 4. Elimina il vecchio record con ID malformato
+    const optionalCols: Array<{ col: string; val: any }> = [
+      { col: 'codice_contratto',   val: existing.codice_contratto },
+      { col: 'tipo_contratto',     val: existing.tipo_contratto },
+      { col: 'piano',              val: existing.piano },
+      { col: 'servizio',           val: existing.servizio },
+      { col: 'template_utilizzato',val: existing.template_utilizzato },
+      { col: 'contenuto_html',     val: existing.contenuto_html },
+      { col: 'prezzo_totale',      val: existing.prezzo_totale },
+      { col: 'prezzo_mensile',     val: existing.prezzo_mensile },
+      { col: 'is_rinnovo',         val: existing.is_rinnovo },
+      { col: 'rinnovo_di',         val: existing.rinnovo_di },
+      { col: 'anno_rinnovo',       val: existing.anno_rinnovo },
+      { col: 'data_scadenza',      val: DATA_SCADENZA },    // ← aggiorna a 2027-06-27
+      { col: 'data_inizio',        val: DATA_INIZIO },      // ← solo se esiste
+      { col: 'data_invio',         val: existing.data_invio },
+      { col: 'data_firma',         val: existing.data_firma },
+      { col: 'signed_at',          val: existing.signed_at },
+      { col: 'pdf_url',            val: existing.pdf_url },
+      { col: 'email_sent',         val: existing.email_sent },
+      { col: 'durata_mesi',        val: existing.durata_mesi },
+    ]
+
+    for (const { col, val } of optionalCols) {
+      if (existingCols.has(col)) {
+        insertCols.push(col)
+        insertVals.push(val ?? null)
+      }
+    }
+
+    const placeholders = insertCols.map(() => '?').join(', ')
     await c.env.DB.prepare(
-      `DELETE FROM contracts WHERE id = ?`
-    ).bind(OLD_ID).run()
+      `INSERT INTO contracts (${insertCols.join(', ')}) VALUES (${placeholders})`
+    ).bind(...insertVals).run()
 
-    // 5. Verifica finale
+    // 5. Elimina il vecchio record con ID malformato
+    await c.env.DB.prepare(`DELETE FROM contracts WHERE id = ?`).bind(OLD_ID).run()
+
+    // 6. Verifica finale
     const fixed = await c.env.DB.prepare(
-      `SELECT id, codice_contratto, status, data_inizio, data_scadenza, leadId FROM contracts WHERE id = ?`
+      `SELECT id, codice_contratto, status, data_scadenza, leadId FROM contracts WHERE id = ?`
     ).bind(NEW_ID).first() as any
 
     const newLink = `${BASE_URL}/firma-contratto.html?contractId=${NEW_ID}`
@@ -32471,7 +32487,8 @@ app.post('/api/oneshot-fix-riela-rinnovo-id-3kp9w', async (c) => {
       message: '✅ Contratto rinnovo Riela/Capone aggiornato con successo.',
       oldId: OLD_ID,
       newId: NEW_ID,
-      dateSet: { data_inizio: DATA_INIZIO, data_scadenza: DATA_SCADENZA },
+      columnsInserted: insertCols,
+      dateSet: { data_scadenza: DATA_SCADENZA },
       record: fixed,
       newLink,
       istruzioni: `Inviare a Giorgio Riela (gr@ecotorino.it) il seguente link per firmare il rinnovo: ${newLink}`
