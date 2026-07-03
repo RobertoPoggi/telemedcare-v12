@@ -19,12 +19,13 @@
       </td>
     </tr>
 
-    <!-- AVVISO: NON è un nuovo contratto -->
+    <!-- NOVITÀ APP -->
     <tr>
-      <td style="background:#fff8e1;border-left:4px solid #f59e0b;padding:16px 40px;">
-        <p style="margin:0;font-size:14px;color:#92400e;">
-          <strong>⚠️ Nota importante:</strong> Questa comunicazione riguarda esclusivamente il <strong>rinnovo annuale del servizio</strong> già attivo.
-          Non viene inviato alcun nuovo dispositivo: il Suo <strong>{{DISPOSITIVO}}</strong> resta con Lei così com'è.
+      <td style="background:linear-gradient(135deg,#e0f2fe 0%,#dbeafe 100%);border-left:4px solid #0066CC;padding:18px 40px;">
+        <p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#1e40af;">🎉 Novità — Nuova app SiDLY HEALTH</p>
+        <p style="margin:0;font-size:14px;color:#1e3a8a;line-height:1.6;">
+          È ora disponibile la nuova app <strong>SiDLY HEALTH</strong>, scaricabile gratuitamente dagli store
+          <strong>iOS</strong> e <strong>Android</strong>. Con il rinnovo potrà subito aggiornare l'app e scoprire le nuove funzionalità.
         </p>
       </td>
     </tr>
@@ -34,33 +35,46 @@
       <td style="padding:36px 40px;">
         <p style="font-size:16px;margin:0 0 20px 0;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
 
-        <p style="margin:0 0 16px 0;line-height:1.7;">
+        <p style="margin:0 0 20px 0;line-height:1.7;">
           il contratto di servizio <strong>{{SERVIZIO}} — Piano {{PIANO}}</strong>
           (codice <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>, in vigore dal {{DATA_CONTRATTO_ORIGINALE}})
           è in scadenza. Per continuare a beneficiare del servizio senza interruzioni,
-          Le chiediamo di firmare digitalmente il contratto di rinnovo per il prossimo anno.
+          Le chiediamo di firmare il contratto di rinnovo per il prossimo anno.
         </p>
 
         <!-- COSA INCLUDE IL RINNOVO -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:0 0 16px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:0 0 24px 0;">
           <tr><td style="padding:20px 24px;">
-            <p style="margin:0 0 12px 0;font-size:15px;font-weight:700;color:#166534;">✅ Cosa include il rinnovo (Anno {{ANNO_RINNOVO}})</p>
-            <table cellpadding="0" cellspacing="0">
-              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📡 &nbsp;Piattaforma web + App di teleassistenza per 12 mesi</td></tr>
-              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📶 &nbsp;SIM dati per trasmissione e comunicazione vocale</td></tr>
-              <tr><td style="padding:4px 0;font-size:14px;color:#333;">🛠️ &nbsp;Assistenza tecnica e aggiornamenti software/firmware</td></tr>
-              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📅 &nbsp;Validità: <strong>{{DATA_INIZIO_SERVIZIO}}</strong> → <strong>{{DATA_SCADENZA}}</strong></td></tr>
+            <p style="margin:0 0 14px 0;font-size:15px;font-weight:700;color:#166534;">Il rinnovo include per altri 12 mesi:</p>
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td width="36" style="padding:7px 0;vertical-align:top;font-size:20px;">📱</td>
+                <td style="padding:7px 0;font-size:14px;color:#333;line-height:1.5;">
+                  <strong>App SiDLY HEALTH e WebApp eCura</strong><br>
+                  <span style="color:#6b7280;">Accesso alla piattaforma di teleassistenza da smartphone e browser</span>
+                </td>
+              </tr>
+              <tr>
+                <td width="36" style="padding:7px 0;vertical-align:top;font-size:20px;">📶</td>
+                <td style="padding:7px 0;font-size:14px;color:#333;line-height:1.5;">
+                  <strong>Traffico SIM</strong><br>
+                  <span style="color:#6b7280;">Connettività dati per trasmissione parametri e comunicazione vocale</span>
+                </td>
+              </tr>
+              <tr>
+                <td width="36" style="padding:7px 0;vertical-align:top;font-size:20px;">🛠️</td>
+                <td style="padding:7px 0;font-size:14px;color:#333;line-height:1.5;">
+                  <strong>Assistenza tecnica</strong><br>
+                  <span style="color:#6b7280;">Supporto dedicato e aggiornamenti software/firmware del dispositivo</span>
+                </td>
+              </tr>
+              <tr>
+                <td width="36" style="padding:7px 0;vertical-align:top;font-size:20px;">📅</td>
+                <td style="padding:7px 0;font-size:14px;color:#333;line-height:1.5;">
+                  <strong>Validità:</strong> {{DATA_INIZIO_SERVIZIO}} → {{DATA_SCADENZA}}
+                </td>
+              </tr>
             </table>
-          </td></tr>
-        </table>
-
-        <!-- COSA NON INCLUDE -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3f2;border-radius:8px;margin:0 0 24px 0;">
-          <tr><td style="padding:16px 24px;">
-            <p style="margin:0;font-size:14px;color:#991b1b;">
-              ❌ <strong>Non incluso nel rinnovo:</strong> nessun nuovo dispositivo.
-              Il Suo <strong>{{DISPOSITIVO}}</strong> rimane di Sua proprietà e continua a funzionare esattamente come prima.
-            </p>
           </td></tr>
         </table>
 
