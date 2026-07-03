@@ -21027,7 +21027,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ce.sendEmail({to:((r=e.env)==nul
       LIMIT 10
     `).all(),a=[];for(const i of t.results||[]){const s=await e.env.DB.prepare(`
         SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo,
-               data_invio, data_firma, data_scadenza, created_at
+               data_invio, signed_at, data_scadenza, created_at
         FROM contracts WHERE leadId = ?
         ORDER BY created_at DESC
       `).bind(i.id).all();a.push({lead:i,contracts:s.results||[]})}return e.json({success:!0,data:a})}catch(t){return e.json({success:!1,error:t.message},500)}});A.post("/api/oneshot-inspect-riela-capone-5mx8w",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non configurato"},500);const t=await e.env.DB.prepare(`

@@ -32235,10 +32235,10 @@ app.get('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
     for (const lead of (leads.results || []) as any[]) {
       const contracts = await c.env.DB.prepare(`
         SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo,
-               data_invio, data_firma, data_scadenza, created_at
+               data_invio, signed_at, data_scadenza, created_at
         FROM contracts WHERE leadId = ?
         ORDER BY created_at DESC
-      `).bind(lead.id).all()
+      `).bind((lead as any).id).all()
       result.push({ lead, contracts: contracts.results || [] })
     }
 
