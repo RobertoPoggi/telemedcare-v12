@@ -32194,6 +32194,42 @@ app.post('/api/oneshot-sync-reminder-ecura-9kx2q', async (c) => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────────
+// ONESHOT: Ispeziona contratti Riela/Capone — diagnosi "già firmato"
+// GET /api/oneshot-inspect-riela-capone-5mx8w
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/oneshot-inspect-riela-capone-5mx8w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+
+    // Cerca lead per cognome Riela o email Capone
+    const leads = await c.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, email, status
+      FROM leads
+      WHERE cognomeRichiedente LIKE '%Riela%'
+         OR cognomeAssistito LIKE '%Capone%'
+         OR email LIKE '%marycap%'
+      LIMIT 10
+    `).all()
+
+    const result: any[] = []
+    for (const lead of (leads.results || []) as any[]) {
+      const contracts = await c.env.DB.prepare(`
+        SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo,
+               data_invio, data_firma, data_scadenza, created_at
+        FROM contracts WHERE leadId = ?
+        ORDER BY created_at DESC
+      `).bind(lead.id).all()
+
+      result.push({ lead, contracts: contracts.results || [] })
+    }
+
+    return c.json({ success: true, data: result })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
