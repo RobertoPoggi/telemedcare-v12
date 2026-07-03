@@ -731,11 +731,14 @@ app.use('*', async (c, next) => {
       // ── RINNOVI CONTRATTUALI ──────────────────────────────────────────────────
       // Migrazione: colonne rinnovo su contracts
       const rinnovoContractsCols = [
-        { name: 'is_rinnovo',          def: `INTEGER DEFAULT 0` },        // 1 = questo è un contratto di rinnovo
-        { name: 'rinnovo_di',          def: `TEXT DEFAULT NULL` },         // codice_contratto del contratto originale
-        { name: 'rinnovo_completato',  def: `INTEGER DEFAULT 0` },         // 1 = firmato + proforma pagata
-        { name: 'rinnovo_data_completamento', def: `TEXT DEFAULT NULL` },  // timestamp completamento rinnovo
-        { name: 'anno_rinnovo',        def: `INTEGER DEFAULT NULL` },      // es. 2, 3... (anno del rinnovo)
+        { name: 'is_rinnovo',               def: `INTEGER DEFAULT 0` },     // 1 = questo è un contratto di rinnovo
+        { name: 'rinnovo_di',               def: `TEXT DEFAULT NULL` },      // codice_contratto del contratto originale
+        { name: 'rinnovo_completato',       def: `INTEGER DEFAULT 0` },      // 1 = firmato + proforma pagata
+        { name: 'rinnovo_data_completamento', def: `TEXT DEFAULT NULL` },    // timestamp completamento rinnovo
+        { name: 'anno_rinnovo',             def: `INTEGER DEFAULT NULL` },   // es. 2, 3... (anno del rinnovo)
+        { name: 'proforma_rinnovo_id',      def: `TEXT DEFAULT NULL` },      // ID proforma associata al rinnovo
+        { name: 'proforma_rinnovo_sent',    def: `INTEGER DEFAULT 0` },      // 1 = email proforma inviata
+        { name: 'proforma_rinnovo_paid',    def: `INTEGER DEFAULT 0` },      // 1 = proforma pagata
       ]
       for (const col of rinnovoContractsCols) {
         try {
@@ -14171,7 +14174,6 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
 })
 
 /**
-/**
  * PATCH /api/contracts/:id/segna-firmato
  * Segna un contratto rinnovo come SIGNED manualmente (firma fuori portale).
  */
@@ -14188,6 +14190,142 @@ app.patch('/api/contracts/:id/segna-firmato', async (c) => {
   } catch (error) {
     console.error('❌ Errore segna-firmato:', error)
     return c.json({ success: false, error: 'Errore aggiornamento', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
+ * POST /api/contracts/:id/crea-proforma-rinnovo
+ * Crea una proforma per un contratto di rinnovo già firmato.
+ * Idempotente: se esiste già una proforma_rinnovo_id non ne crea un'altra.
+ */
+app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
+  const contractId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    // Carica contratto rinnovo
+    const contract = await c.env.DB.prepare(
+      `SELECT id, leadId, codice_contratto, piano, servizio, prezzo_totale, prezzo_mensile,
+              is_rinnovo, anno_rinnovo, proforma_rinnovo_id
+       FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    if (!contract.is_rinnovo) return c.json({ success: false, error: 'Questo contratto non è un rinnovo' }, 400)
+    if (contract.proforma_rinnovo_id) return c.json({
+      success: true, alreadyExists: true,
+      proformaId: contract.proforma_rinnovo_id,
+      message: 'Proforma già esistente'
+    })
+
+    // Carica lead
+    const lead = await c.env.DB.prepare(
+      `SELECT id, nomeIntestatario, cognomeIntestatario, emailIntestatario,
+              nomeRichiedente, cognomeRichiedente, email, iva_agevolata
+       FROM leads WHERE id = ?`
+    ).bind(contract.leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const ivaAg = !!(lead.iva_agevolata)
+    const nomeCliente = (lead.nomeIntestatario || lead.nomeRichiedente || 'Cliente').trim()
+    const cognomeCliente = (lead.cognomeIntestatario || lead.cognomeRichiedente || '').trim()
+    const emailCliente = lead.emailIntestatario || lead.email || ''
+    const prezzoTotale = parseFloat(contract.prezzo_totale) || 0
+    const prezzoMensile = parseFloat(contract.prezzo_mensile) || 0
+
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const proformaId = `PRF-RINNOVO-${contractId}-${Date.now()}`
+    const numeroProforma = `PRF${year}${month}-R${contract.anno_rinnovo || 2}-${random}`
+    const dataScadenza = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    await c.env.DB.prepare(`
+      INSERT INTO proforma (
+        id, contract_id, leadId, numero_proforma,
+        data_emissione, data_scadenza, status,
+        cliente_nome, cliente_email,
+        prezzo_totale, prezzo_mensile, tipo_servizio, piano,
+        iva_agevolata, is_rinnovo,
+        email_sent, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'CREATED', ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+    `).bind(
+      proformaId, contractId, contract.leadId, numeroProforma,
+      now.toISOString(), dataScadenza,
+      `${nomeCliente} ${cognomeCliente}`.trim(), emailCliente,
+      prezzoTotale, prezzoMensile,
+      contract.servizio || '', contract.piano || '',
+      ivaAg ? 1 : 0,
+      now.toISOString(), now.toISOString()
+    ).run()
+
+    // Aggiorna contratto con riferimento proforma
+    await c.env.DB.prepare(
+      `UPDATE contracts SET proforma_rinnovo_id = ?, updated_at = ? WHERE id = ?`
+    ).bind(proformaId, now.toISOString(), contractId).run()
+
+    console.log(`✅ Proforma rinnovo creata: ${proformaId} per contratto ${contractId}`)
+    return c.json({
+      success: true, proformaId, numeroProforma,
+      emailCliente, prezzoTotale,
+      message: `Proforma ${numeroProforma} creata. Email NON ancora inviata.`
+    })
+  } catch (error) {
+    console.error('❌ Errore crea-proforma-rinnovo:', error)
+    return c.json({ success: false, error: 'Errore creazione proforma', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
+ * POST /api/contracts/:id/invia-proforma-rinnovo
+ * Invia via email la proforma di rinnovo al cliente.
+ */
+app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
+  const contractId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    const contract = await c.env.DB.prepare(
+      `SELECT id, leadId, codice_contratto, proforma_rinnovo_id, proforma_rinnovo_sent FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    if (!contract.proforma_rinnovo_id) return c.json({ success: false, error: 'Nessuna proforma creata — crea prima la proforma' }, 400)
+
+    const proforma = await c.env.DB.prepare(`SELECT * FROM proforma WHERE id = ?`)
+      .bind(contract.proforma_rinnovo_id).first() as any
+    if (!proforma) return c.json({ success: false, error: 'Proforma non trovata nel DB' }, 404)
+
+    // Invia email proforma
+    let emailResult = { success: false, error: 'EmailService non configurato' }
+    try {
+      emailResult = await inviaEmailProforma(proforma, c.env)
+    } catch (e: any) {
+      console.error('❌ Errore invio email proforma rinnovo:', e)
+      emailResult = { success: false, error: e.message }
+    }
+
+    const now = new Date().toISOString()
+    if (emailResult.success) {
+      await c.env.DB.prepare(
+        `UPDATE contracts SET proforma_rinnovo_sent = 1, updated_at = ? WHERE id = ?`
+      ).bind(now, contractId).run()
+      await c.env.DB.prepare(
+        `UPDATE proforma SET email_sent = 1, status = 'SENT', data_invio = ?, updated_at = ? WHERE id = ?`
+      ).bind(now, now, contract.proforma_rinnovo_id).run()
+    }
+
+    return c.json({
+      success: emailResult.success,
+      proformaId: contract.proforma_rinnovo_id,
+      emailInviataA: proforma.cliente_email,
+      emailResult,
+      message: emailResult.success
+        ? `✅ Email proforma inviata a ${proforma.cliente_email}`
+        : `⚠️ Proforma aggiornata ma email fallita: ${(emailResult as any).error}`
+    })
+  } catch (error) {
+    console.error('❌ Errore invia-proforma-rinnovo:', error)
+    return c.json({ success: false, error: 'Errore invio proforma', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
