@@ -13735,10 +13735,33 @@ app.post('/api/contracts/rinnovo', async (c) => {
       const EmailServiceModule = await import('./modules/email-service')
       const emailService = new EmailServiceModule.EmailService(c.env)
 
-      await emailService.sendEmail({
-        to: lead.email,
-        subject: `Rinnovo annuale del Suo servizio eCura — ${codiceRinnovo}`,
-        html: `<!DOCTYPE html>
+      // Carica template email rinnovo da DB/file statico
+      let emailHtml: string
+      try {
+        const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+        const tpl = await loadEmailTemplate('email_rinnovo_contratto', c.env.DB, c.env)
+        emailHtml = renderTemplate(tpl, {
+          ANNO_RINNOVO:               String(annoRinnovo),
+          CODICE_RINNOVO:             codiceRinnovo,
+          CODICE_CONTRATTO_ORIGINALE: origContract.codice_contratto || contractId,
+          DATA_CONTRATTO_ORIGINALE:   dataOrigFormatted,
+          NOME_CLIENTE:               lead.nomeRichiedente || '',
+          COGNOME_CLIENTE:            lead.cognomeRichiedente || '',
+          SERVIZIO:                   servizio,
+          PIANO:                      piano,
+          DISPOSITIVO:                origContract.servizio?.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE',
+          DATA_INIZIO_SERVIZIO:       dataInizio,
+          DATA_SCADENZA:              dataScadenza,
+          IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
+          IVA_IMPORTO:                ivaImporto.toFixed(2),
+          IVA_LABEL:                  ivaLabel,
+          IVA_NOTE:                   ivaNote,
+          PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
+          LINK_FIRMA:                 firmaUrl,
+        })
+      } catch (tplErr) {
+        console.warn('⚠️ Template email_rinnovo_contratto non trovato, uso HTML inline:', tplErr)
+        emailHtml = `<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -13871,12 +13894,18 @@ app.post('/api/contracts/rinnovo', async (c) => {
   </td></tr>
 </table>
 </body>
-</html>`,
+</html>`
+      }
+
+      await emailService.sendEmail({
+        to: lead.email,
+        subject: `Rinnovo annuale del Suo servizio eCura — ${codiceRinnovo}`,
+        html: emailHtml,
         text: `Rinnovo annuale servizio eCura ${servizio} ${piano} - Anno ${annoRinnovo}.
 
 Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},
 
-il contratto ${origContract.codice_contratto || contractId} è in scadenza. 
+il contratto ${origContract.codice_contratto || contractId} è in scadenza.
 Questa email riguarda solo il RINNOVO DEL SERVIZIO: non viene inviato alcun nuovo dispositivo.
 
 Cosa include il rinnovo:

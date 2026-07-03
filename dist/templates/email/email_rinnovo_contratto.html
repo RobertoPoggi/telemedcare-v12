@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rinnovo annuale servizio eCura</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;color:#333;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+  <tr><td align="center">
+  <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+    <!-- HEADER -->
+    <tr>
+      <td style="background:linear-gradient(135deg,#0066CC 0%,#0099CC 100%);padding:32px 40px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:1px;text-transform:uppercase;">Medica GB S.r.l. — eCura</p>
+        <h1 style="margin:0;font-size:26px;font-weight:700;color:#fff;">Rinnovo del Suo servizio eCura</h1>
+        <p style="margin:10px 0 0 0;font-size:15px;color:rgba(255,255,255,0.9);">Anno {{ANNO_RINNOVO}} &nbsp;·&nbsp; {{CODICE_RINNOVO}}</p>
+      </td>
+    </tr>
+
+    <!-- AVVISO: NON è un nuovo contratto -->
+    <tr>
+      <td style="background:#fff8e1;border-left:4px solid #f59e0b;padding:16px 40px;">
+        <p style="margin:0;font-size:14px;color:#92400e;">
+          <strong>⚠️ Nota importante:</strong> Questa comunicazione riguarda esclusivamente il <strong>rinnovo annuale del servizio</strong> già attivo.
+          Non viene inviato alcun nuovo dispositivo: il Suo <strong>{{DISPOSITIVO}}</strong> resta con Lei così com'è.
+        </p>
+      </td>
+    </tr>
+
+    <!-- CORPO -->
+    <tr>
+      <td style="padding:36px 40px;">
+        <p style="font-size:16px;margin:0 0 20px 0;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+
+        <p style="margin:0 0 16px 0;line-height:1.7;">
+          il contratto di servizio <strong>{{SERVIZIO}} — Piano {{PIANO}}</strong>
+          (codice <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>, in vigore dal {{DATA_CONTRATTO_ORIGINALE}})
+          è in scadenza. Per continuare a beneficiare del servizio senza interruzioni,
+          Le chiediamo di firmare digitalmente il contratto di rinnovo per il prossimo anno.
+        </p>
+
+        <!-- COSA INCLUDE IL RINNOVO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:0 0 16px 0;">
+          <tr><td style="padding:20px 24px;">
+            <p style="margin:0 0 12px 0;font-size:15px;font-weight:700;color:#166534;">✅ Cosa include il rinnovo (Anno {{ANNO_RINNOVO}})</p>
+            <table cellpadding="0" cellspacing="0">
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📡 &nbsp;Piattaforma web + App di teleassistenza per 12 mesi</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📶 &nbsp;SIM dati per trasmissione e comunicazione vocale</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">🛠️ &nbsp;Assistenza tecnica e aggiornamenti software/firmware</td></tr>
+              <tr><td style="padding:4px 0;font-size:14px;color:#333;">📅 &nbsp;Validità: <strong>{{DATA_INIZIO_SERVIZIO}}</strong> → <strong>{{DATA_SCADENZA}}</strong></td></tr>
+            </table>
+          </td></tr>
+        </table>
+
+        <!-- COSA NON INCLUDE -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3f2;border-radius:8px;margin:0 0 24px 0;">
+          <tr><td style="padding:16px 24px;">
+            <p style="margin:0;font-size:14px;color:#991b1b;">
+              ❌ <strong>Non incluso nel rinnovo:</strong> nessun nuovo dispositivo.
+              Il Suo <strong>{{DISPOSITIVO}}</strong> rimane di Sua proprietà e continua a funzionare esattamente come prima.
+            </p>
+          </td></tr>
+        </table>
+
+        <!-- RIEPILOGO ECONOMICO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;margin:0 0 28px 0;">
+          <tr><td style="background:#f9fafb;padding:12px 20px;border-radius:8px 8px 0 0;">
+            <p style="margin:0;font-size:14px;font-weight:700;color:#374151;">💶 Riepilogo tariffario</p>
+          </td></tr>
+          <tr><td style="padding:16px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="4">
+              <tr>
+                <td style="font-size:14px;color:#6b7280;padding:3px 0;">Contratto originale</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">{{CODICE_CONTRATTO_ORIGINALE}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;padding:3px 0;">Codice rinnovo</td>
+                <td style="font-size:14px;text-align:right;color:#374151;font-weight:600;">{{CODICE_RINNOVO}}</td>
+              </tr>
+              <tr><td colspan="2" style="padding:8px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:0;"></td></tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;padding:3px 0;">Importo netto</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">€ {{IMPORTO_RINNOVO_NETTO}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:14px;color:#6b7280;padding:3px 0;">{{IVA_LABEL}}</td>
+                <td style="font-size:14px;text-align:right;color:#374151;">€ {{IVA_IMPORTO}}</td>
+              </tr>
+              <tr>
+                <td style="font-size:15px;font-weight:700;color:#111827;padding:10px 0 3px 0;">Totale rinnovo</td>
+                <td style="font-size:16px;font-weight:700;text-align:right;color:#0066CC;padding:10px 0 3px 0;">{{PREZZO_RINNOVO}}</td>
+              </tr>
+              <tr>
+                <td colspan="2" style="font-size:12px;color:#6b7280;padding:0;">{{IVA_NOTE}}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+
+        <!-- CTA FIRMA -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td align="center" style="padding:10px 0 28px 0;">
+            <a href="{{LINK_FIRMA}}"
+               style="display:inline-block;padding:18px 44px;background:linear-gradient(135deg,#0066CC,#0099CC);color:#fff;text-decoration:none;border-radius:8px;font-size:17px;font-weight:700;letter-spacing:0.3px;">
+              ✍️ Firma il Rinnovo
+            </a>
+            <p style="margin:14px 0 0 0;font-size:12px;color:#9ca3af;">
+              Clicchi sul pulsante per aprire il documento di rinnovo e firmarlo digitalmente
+            </p>
+          </td></tr>
+        </table>
+
+        <p style="font-size:13px;color:#6b7280;line-height:1.7;margin:0;">
+          Dopo la firma riceverà la <strong>proforma per il pagamento</strong> tramite bonifico bancario.<br>
+          Per qualsiasi domanda: <a href="mailto:info@ecura.it" style="color:#0066CC;">info@ecura.it</a>
+          &nbsp;·&nbsp; +39 335 730 1206 &nbsp;·&nbsp; +39 331 643 2390
+        </p>
+      </td>
+    </tr>
+
+    <!-- FOOTER -->
+    <tr>
+      <td style="background:#2c3e50;padding:24px 40px;text-align:center;">
+        <p style="margin:0 0 6px 0;font-size:13px;color:#d1d5db;font-weight:600;">Medica GB S.r.l. — Startup Innovativa a Vocazione Sociale</p>
+        <p style="margin:0 0 4px 0;font-size:12px;color:#9ca3af;">Milano: Corso Garibaldi 34, 20121 &nbsp;|&nbsp; Genova: Via delle Eriche 53, 16148</p>
+        <p style="margin:0;font-size:12px;color:#9ca3af;">
+          P.IVA 12435130963 &nbsp;|&nbsp;
+          <a href="mailto:info@ecura.it" style="color:#60a5fa;">info@ecura.it</a> &nbsp;|&nbsp;
+          <a href="https://www.ecura.it" style="color:#60a5fa;">www.ecura.it</a>
+        </p>
+      </td>
+    </tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>
