@@ -10284,11 +10284,7 @@ ${370+t.length}
             countElement.textContent = contracts.length;
             
             if (contracts.length === 0) {
-                tbody.innerHTML = \`
-                    <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-400">Nessun contratto trovato</td>
-                    </tr>
-                \`;
+                tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-gray-400">Nessun contratto trovato</td></tr>';
                 return;
             }
 
@@ -10306,12 +10302,13 @@ ${370+t.length}
                 const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
                 const ivaAgSafe = ivaAg ? 'true' : 'false';
 
-                // Badge rinnovo
-                const rinnovo_badge = isRinnovo
-                    ? \`<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full ml-1" title="Contratto di rinnovo anno \${contract.anno_rinnovo || 2}">🔄 R\${contract.anno_rinnovo || 2}</span>\`
+                // Badge rinnovo — NO backtick, solo concatenazione
+                var _annoR = contract.anno_rinnovo || 2;
+                var rinnovo_badge = isRinnovo
+                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full ml-1" title="Contratto di rinnovo anno ' + _annoR + '">🔄 R' + _annoR + '</span>'
                     : '';
-                const completato_badge = rinnovoCompletato
-                    ? \`<span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full ml-1" title="Rinnovo completato">✅</span>\`
+                var completato_badge = rinnovoCompletato
+                    ? '<span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full ml-1" title="Rinnovo completato">✅</span>'
                     : '';
 
                 // Row highlight
@@ -10322,7 +10319,7 @@ ${370+t.length}
                 // Data scadenza con evidenziazione
                 let scadenzaHtml = '<span class="text-gray-400 text-xs">N/A</span>';
                 if (contract.codice_contratto) {
-                    console.log(\`📅 [RENDER] \${contract.codice_contratto}: data_scadenza = "\${contract.data_scadenza}" (tipo: \${typeof contract.data_scadenza})\`);
+                    console.log('📅 [RENDER] ' + contract.codice_contratto + ': data_scadenza = "' + contract.data_scadenza + '" (tipo: ' + typeof contract.data_scadenza + ')');
                 }
                 if (contract.data_scadenza) {
                     try {
@@ -10343,12 +10340,12 @@ ${370+t.length}
                                 colorClass = 'text-yellow-600';
                                 icon = '<i class="fas fa-calendar-check mr-1"></i>';
                             }
-                            scadenzaHtml = \`<span class="\${colorClass} text-xs">\${icon}\${scadenza.toLocaleDateString('it-IT')}</span>\`;
+                            scadenzaHtml = '<span class="' + colorClass + ' text-xs">' + icon + scadenza.toLocaleDateString('it-IT') + '</span>';
                         } else {
-                            console.warn(\`⚠️ [RENDER] Data scadenza invalida per \${contract.codice_contratto}: \${contract.data_scadenza}\`);
+                            console.warn('⚠️ [RENDER] Data scadenza invalida per ' + contract.codice_contratto + ': ' + contract.data_scadenza);
                         }
                     } catch (e) {
-                        console.error(\`❌ [RENDER] Errore parsing data per \${contract.codice_contratto}:\`, e);
+                        console.error('❌ [RENDER] Errore parsing data per ' + contract.codice_contratto + ':', e);
                     }
                 }
 
@@ -10422,43 +10419,26 @@ ${370+t.length}
                         + '</div>';
                 }
 
-                return \`
-                    <tr class="border-b border-gray-100 \${rowBg}">
-                        <td class="py-3 text-xs">
-                            <code class="bg-gray-100 px-2 py-1 rounded">\${contract.codice_contratto || contract.id}</code>
-                            \${rinnovo_badge}\${completato_badge}
-                            \${isRinnovo && contract.rinnovo_di ? \`<div class="text-xs text-gray-400 mt-1">↳ \${contract.rinnovo_di}</div>\` : ''}
-                        </td>
-                        <td class="py-3 text-sm font-medium">
-                            \${escapeHtml(contract.cliente_nome)} \${escapeHtml(contract.cliente_cognome)}
-                        </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                \${contract.servizio || contract.tipo_servizio || 'N/A'}
-                            </span>
-                        </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
-                                \${contract.piano || 'N/A'}
-                            </span>
-                        </td>
-                        <td class="py-3 text-sm text-gray-600">\${dispositivo}</td>
-                        <td class="py-3 text-sm font-bold \${isRinnovo ? 'text-green-700' : 'text-green-600'}">
-                            €\${parseFloat(contract.prezzo_totale || 0).toFixed(2)}
-                            \${isRinnovo ? '<div class="text-xs font-normal text-green-600">rinnovo</div>' : ''}
-                        </td>
-                        <td class="py-3">
-                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">
-                                \${contract.status || 'SENT'}
-                            </span>
-                        </td>
-                        <td class="py-3 text-xs text-gray-500">\${date}</td>
-                        <td class="py-3" title="Scadenza contratto">\${scadenzaHtml}</td>
-                        <td class="py-3 text-center">
-                            \${azioniHtml}
-                        </td>
-                    </tr>
-                \`;
+                // NO backtick — pura concatenazione per evitare il SyntaxError nel browser
+                return '<tr class="border-b border-gray-100 ' + rowBg + '">'
+                    + '<td class="py-3 text-xs">'
+                    +   '<code class="bg-gray-100 px-2 py-1 rounded">' + (contract.codice_contratto || contract.id) + '</code>'
+                    +   rinnovo_badge + completato_badge
+                    +   (isRinnovo && contract.rinnovo_di ? '<div class="text-xs text-gray-400 mt-1">↳ ' + contract.rinnovo_di + '</div>' : '')
+                    + '</td>'
+                    + '<td class="py-3 text-sm font-medium">' + escapeHtml(contract.cliente_nome) + ' ' + escapeHtml(contract.cliente_cognome) + '</td>'
+                    + '<td class="py-3"><span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">' + (contract.servizio || contract.tipo_servizio || 'N/A') + '</span></td>'
+                    + '<td class="py-3"><span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">' + (contract.piano || 'N/A') + '</span></td>'
+                    + '<td class="py-3 text-sm text-gray-600">' + dispositivo + '</td>'
+                    + '<td class="py-3 text-sm font-bold ' + (isRinnovo ? 'text-green-700' : 'text-green-600') + '">'
+                    +   '€' + parseFloat(contract.prezzo_totale || 0).toFixed(2)
+                    +   (isRinnovo ? '<div class="text-xs font-normal text-green-600">rinnovo</div>' : '')
+                    + '</td>'
+                    + '<td class="py-3"><span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded font-medium">' + (contract.status || 'SENT') + '</span></td>'
+                    + '<td class="py-3 text-xs text-gray-500">' + date + '</td>'
+                    + '<td class="py-3" title="Scadenza contratto">' + scadenzaHtml + '</td>'
+                    + '<td class="py-3 text-center">' + azioniHtml + '</td>'
+                    + '</tr>';
             }).join('');
         }
 
