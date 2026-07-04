@@ -8087,8 +8087,14 @@ export const data_dashboard = `<!DOCTYPE html>
                 
                 const date = new Date(contract.created_at).toLocaleDateString('it-IT');
                 const isRinnovo = contract.is_rinnovo == 1 || contract.is_rinnovo === true;
-                const rinnovoCompletato = contract.rinnovo_completato == 1 || contract.rinnovo_completato === true;
+                // Per la riga originale usa il flag completato dal figlio rinnovo (rinnovo_figlio_completato)
+                const rinnovoCompletato = isRinnovo
+                    ? (contract.rinnovo_completato == 1 || contract.rinnovo_completato === true)
+                    : (contract.rinnovo_figlio_completato == 1 || contract.rinnovo_figlio_completato === true);
+                // isSigned: stato firma del contratto corrente (sempre dal proprio status)
                 const isSigned = contract.status === 'SIGNED';
+                // rinnovoFiglioFirmato: usato nella logica di step per la riga originale (steps 4+)
+                const rinnovoFiglioFirmato = contract.rinnovo_status === 'SIGNED';
                 const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
                 const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
                 const ivaAgSafe = ivaAg ? 'true' : 'false';
@@ -8149,10 +8155,20 @@ export const data_dashboard = `<!DOCTYPE html>
                 // Se esiste il contratto rinnovo figlio (rinnovo_contract_id), usa quello per il link firma
                 var rinnovoFiglioId = contract.rinnovo_contract_id || '';
                 const firmaUrlRinnovo  = '/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoFiglioId || contract.id);
-                const emailSent        = contract.email_sent == 1 || contract.email_sent === true;
-                const proformaCreata   = !!(contract.proforma_rinnovo_id);
-                const proformaInviata  = contract.proforma_rinnovo_sent == 1 || contract.proforma_rinnovo_sent === true;
-                const proformaPagata   = contract.proforma_rinnovo_paid == 1 || contract.proforma_rinnovo_paid === true;
+                // Per la riga ORIGINALE (is_rinnovo=false) i flag di stato vengono dal contratto FIGLIO
+                // Per la riga RINNOVO  (is_rinnovo=true)  i flag vengono dalla riga stessa
+                const emailSent       = isRinnovo
+                    ? (contract.email_sent == 1 || contract.email_sent === true)
+                    : (contract.rinnovo_email_sent == 1 || contract.rinnovo_email_sent === true);
+                const proformaCreata  = isRinnovo
+                    ? !!(contract.proforma_rinnovo_id)
+                    : !!(contract.rinnovo_proforma_id);
+                const proformaInviata = isRinnovo
+                    ? (contract.proforma_rinnovo_sent == 1 || contract.proforma_rinnovo_sent === true)
+                    : (contract.rinnovo_proforma_sent == 1 || contract.rinnovo_proforma_sent === true);
+                const proformaPagata  = isRinnovo
+                    ? (contract.proforma_rinnovo_paid == 1 || contract.proforma_rinnovo_paid === true)
+                    : (contract.rinnovo_proforma_paid == 1 || contract.rinnovo_proforma_paid === true);
 
                 // Calcolo step corrente (0=nessuno, 1..6)
                 let step = 0;

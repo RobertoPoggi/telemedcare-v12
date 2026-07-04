@@ -6033,6 +6033,37 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
   }
 })
 
+/**
+ * POST /api/admin/fix-rinnovo-email-sent
+ * Correzione one-shot: imposta email_sent=1 su tutti i contratti rinnovo
+ * che hanno status != 'DRAFT' e email_sent=0, così il btn3 ✍️ si attiva.
+ * Usare quando l'email è stata inviata prima del fix del 2026-07-04.
+ */
+app.post('/api/admin/fix-rinnovo-email-sent', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // Contratti rinnovo già inviati (status SENT o SIGNED) ma con email_sent=0
+    const result = await c.env.DB.prepare(`
+      UPDATE contracts
+      SET email_sent = 1, updated_at = ?
+      WHERE is_rinnovo = 1
+        AND email_sent = 0
+        AND status IN ('SENT', 'SIGNED')
+    `).bind(new Date().toISOString()).run()
+
+    console.log(`✅ fix-rinnovo-email-sent: email_sent=1 impostato su ${result.meta.changes} contratti`)
+    return c.json({
+      success: true,
+      updated: result.meta.changes,
+      message: `email_sent=1 impostato su ${result.meta.changes} contratti rinnovo`
+    })
+  } catch (error) {
+    console.error('❌ Errore fix-rinnovo-email-sent:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 // 🔧 ENDPOINT: Aggiorna fonte per lead di TEST → 'Form eCura x Test'
 // Cattura:
 //   1. Lead con nome o cognome che è esattamente "TEST" (es. "TEST TEST", "Nur TEST")
@@ -8117,7 +8148,12 @@ app.get('/api/contratti', async (c) => {
         s.timestamp_firma as data_firma,
         r.id as rinnovo_contract_id,
         r.codice_contratto as rinnovo_codice,
-        r.status as rinnovo_status
+        r.status as rinnovo_status,
+        r.email_sent as rinnovo_email_sent,
+        r.proforma_rinnovo_id as rinnovo_proforma_id,
+        r.proforma_rinnovo_sent as rinnovo_proforma_sent,
+        r.proforma_rinnovo_paid as rinnovo_proforma_paid,
+        r.rinnovo_completato as rinnovo_figlio_completato
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id 
       LEFT JOIN signatures s ON c.id = s.contract_id
