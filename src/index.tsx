@@ -13743,9 +13743,9 @@ app.post('/api/contracts/rinnovo', async (c) => {
       return html.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
     }
 
-    const prezzoTotalePrimoAnno = origContract.prezzo_totale
-      ? (origContract.prezzo_totale * (1 + ivaRate)).toFixed(2)
-      : rinnovoTotale.toFixed(2)
+    const prezzoTotalePrimoAnnoNum = origContract.prezzo_totale
+      ? (origContract.prezzo_totale * (1 + ivaRate)).toFixed(2).replace('.', ',')
+      : rinnovoTotale.toFixed(2).replace('.', ',')
 
     const htmlCompiled = varReplace(templateHtml, {
       SERVIZIO:                   servizio.replace('eCura ', ''),
@@ -13761,15 +13761,15 @@ app.post('/api/contracts/rinnovo', async (c) => {
       COGNOME_CLIENTE:            lead.cognomeRichiedente || '',
       EMAIL_CLIENTE:              lead.email || '',
       TELEFONO_CLIENTE:           lead.telefono || '',
-      DISPOSITIVO:                origContract.servizio?.includes('PRO') ? 'SiDLY CARE PRO' : 'SiDLY CARE',
+      DISPOSITIVO:                origContract.servizio?.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
       DATA_INIZIO_SERVIZIO:       dataInizio,
       DATA_SCADENZA:              dataScadenza,
-      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
-      IVA_IMPORTO:                ivaImporto.toFixed(2),
+      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2).replace('.', ','),
+      IVA_IMPORTO:                ivaImporto.toFixed(2).replace('.', ','),
       IVA_LABEL:                  ivaLabel,
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
-      PREZZO_TOTALE:              `€ ${Number(prezzoTotalePrimoAnno).toFixed(2).replace('.', ',')}`,
+      PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
     })
 
     // 8. Inserisci contratto rinnovo nel DB
@@ -14102,23 +14102,30 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const ivaNote = ivaAgevolata ? ' (IVA agevolata 4%)' : ''
 
     // Date
+    // DATA_SCADENZA del rinnovo corrente (dal campo data_scadenza del contratto rinnovo)
     const dataScadenzaRinnovo = contract.data_scadenza
       ? new Date(contract.data_scadenza) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-    const dataInizioRinnovo = new Date(dataScadenzaRinnovo.getTime() - 365 * 24 * 60 * 60 * 1000)
+    // DATA_INIZIO = scadenza contratto precedente + 1 giorno (non -365 dalla fine rinnovo)
+    const dataScadenzaPrecedente = origContract?.data_scadenza
+      ? new Date(origContract.data_scadenza) : null
+    const dataInizioRinnovo = dataScadenzaPrecedente
+      ? new Date(dataScadenzaPrecedente.getTime() + 24 * 60 * 60 * 1000)   // +1 giorno
+      : new Date(dataScadenzaRinnovo.getTime() - 365 * 24 * 60 * 60 * 1000) // fallback
     const dataInizio = dataInizioRinnovo.toLocaleDateString('it-IT')
     const dataScadenza = dataScadenzaRinnovo.toLocaleDateString('it-IT')
     const dataContrattoOrig = origContract?.data_invio
       ? new Date(origContract.data_invio).toLocaleDateString('it-IT') : 'N/A'
-    const dataScadenzaOrig = origContract?.data_scadenza
-      ? new Date(origContract.data_scadenza).toLocaleDateString('it-IT') : 'N/A'
+    const dataScadenzaOrig = dataScadenzaPrecedente
+      ? dataScadenzaPrecedente.toLocaleDateString('it-IT') : 'N/A'
     const oggi = new Date().toLocaleDateString('it-IT')
 
     const servizio = contract.servizio || origContract?.servizio || 'eCura PRO'
     const piano = contract.piano || contract.tipo_contratto || origContract?.piano || 'BASE'
     const annoRinnovo = contract.anno_rinnovo || 2
-    const prezzoTotalePrimoAnno = origContract?.prezzo_totale
-      ? (parseFloat(origContract.prezzo_totale) * (1 + ivaRate)).toFixed(2)
-      : rinnovoTotale.toFixed(2)
+    // Prezzo primo anno IVA inclusa — solo il numero, il template mette già "€ "
+    const prezzoTotalePrimoAnnoNum = origContract?.prezzo_totale
+      ? (parseFloat(origContract.prezzo_totale) * (1 + ivaRate)).toFixed(2).replace('.', ',')
+      : rinnovoTotale.toFixed(2).replace('.', ',')
 
     // Template inlinato (Cloudflare Workers non ha accesso al filesystem)
     const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
@@ -14141,12 +14148,13 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       DISPOSITIVO:                servizio.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
       DATA_INIZIO_SERVIZIO:       dataInizio,
       DATA_SCADENZA:              dataScadenza,
-      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
-      IVA_IMPORTO:                ivaImporto.toFixed(2),
+      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2).replace('.', ','),
+      IVA_IMPORTO:                ivaImporto.toFixed(2).replace('.', ','),
       IVA_LABEL:                  ivaLabel,
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
-      PREZZO_TOTALE:              `€ ${Number(prezzoTotalePrimoAnno).toFixed(2).replace('.', ',')}`,
+      // PREZZO_TOTALE_PRIMO_ANNO: solo numero con €, il template lo usa senza aggiungere € extra
+      PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
     }
     const htmlCompiled = templateHtml.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
 
