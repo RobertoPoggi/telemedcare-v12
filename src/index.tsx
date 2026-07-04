@@ -1381,6 +1381,10 @@ app.use('/api/*', async (c, next) => {
     return next() // Pagina HTML contratto firmato
   }
   
+  if (path.match(/^\/api\/contracts\/[^\/]+\/rigenera-html$/) && method === 'POST') {
+    return next() // Rigenera HTML contratto rinnovo — chiamato dal bottone 👁️ in dashboard
+  }
+
   if (path === '/api/contracts/sign' && method === 'POST') {
     return next() // ⚠️ TEMPORANEO: Firma contratto pubblico (serve token system!)
   }
@@ -16681,17 +16685,14 @@ app.get('/api/contracts/:id', async (c) => {
     if (contract.leadId) {
       try {
         const lead = await c.env.DB.prepare(`
-          SELECT 
-            nomeIntestatario, cognomeIntestatario, emailIntestatario,
-            nomeRichiedente, cognomeRichiedente, email
+          SELECT nomeRichiedente, cognomeRichiedente, email
           FROM leads WHERE id = ?
         `).bind(contract.leadId).first() as any
         
         if (lead) {
-          // ✅ PRIORITÀ: Intestatario > Richiedente (il contratto va intestato a chi paga)
-          nomeCliente = lead.nomeIntestatario || lead.nomeRichiedente || 'Cliente'
-          cognomeCliente = lead.cognomeIntestatario || lead.cognomeRichiedente || ''
-          emailCliente = lead.emailIntestatario || lead.email || ''
+          nomeCliente = lead.nomeRichiedente || 'Cliente'
+          cognomeCliente = lead.cognomeRichiedente || ''
+          emailCliente = lead.email || ''
         }
       } catch (leadError) {
         console.warn('⚠️  Errore caricamento lead:', leadError)
