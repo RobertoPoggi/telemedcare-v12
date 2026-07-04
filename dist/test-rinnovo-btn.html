@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<div id="log" style="font-family:monospace;padding:10px;background:#f0f0f0;margin:10px;"></div>
+<div id="container"></div>
+<script>
+function log(msg) {
+  console.log(msg);
+  document.getElementById('log').innerHTML += msg + '<br>';
+}
+
+var _IC_BASE = 'width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:15px;border:none;text-decoration:none;box-sizing:border-box;';
+
+function rinnovoMkBtn(emoji, titleTxt, action, s, colHex, extraData) {
+    if (s === 'future') return '<span style="' + _IC_BASE + 'background:#f9fafb;color:#d1d5db;cursor:not-allowed;" title="future">' + emoji + '</span>';
+    var st = _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
+    return '<button class="rinnovo-btn" style="' + st + '" title="' + titleTxt + '" data-action="' + action + '" ' + extraData + '>' + emoji + '</button>';
+}
+
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.rinnovo-btn');
+    if (!btn) { log('click on non-btn: ' + e.target.tagName); return; }
+    log('✅ CLICK OK: ' + btn.getAttribute('data-action'));
+});
+
+var html = '<div style="display:flex;gap:4px;">'
+  + rinnovoMkBtn('🔄','Crea rinnovo','rinnovo-crea','active','#2563eb','data-id="1"')
+  + rinnovoMkBtn('📧','Invia email','rinnovo-invia-email','active','#f97316','data-id="1"')
+  + rinnovoMkBtn('📋','Crea proforma','rinnovo-crea-proforma','future','#7c3aed','data-id="1"')
+  + '</div>';
+document.getElementById('container').innerHTML = html;
+
+var btns = document.querySelectorAll('.rinnovo-btn');
+log('Buttons found: ' + btns.length);
+btns.forEach(function(b,i){ log('btn['+i+'] action='+b.getAttribute('data-action')+' tag='+b.tagName); });
+</script>
+</body>
+</html>

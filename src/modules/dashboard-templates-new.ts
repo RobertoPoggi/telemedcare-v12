@@ -8138,8 +8138,9 @@ export const data_dashboard = `<!DOCTYPE html>
                             ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>'
                             : '');
 
+                    var _stepLabel = '<span style="font-size:9px;color:#9ca3af;margin-left:2px;" title="Step corrente: ' + step + (done_all ? ' (completato)' : '') + '">S:' + step + '</span>';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
-                        + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b
+                        + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b + _stepLabel
                         + '</div>';
                 }
 
