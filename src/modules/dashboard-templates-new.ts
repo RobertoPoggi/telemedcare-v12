@@ -7957,6 +7957,59 @@ export const data_dashboard = `<!DOCTYPE html>
             } catch (err) { alert('❌ Errore di rete: ' + err.message); }
         }
 
+        async function vediAnteprimaProforma(rinnovoId, codiceRinnovo) {
+            try {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/preview-proforma-email\`, {
+                    method: 'GET', credentials: 'include'
+                });
+                const result = await resp.json();
+                if (!result.success) { alert('❌ Errore: ' + (result.error || 'Riprovare')); return; }
+                const p = result.preview;
+
+                // Crea modal anteprima
+                var existingModal = document.getElementById('proforma-preview-modal');
+                if (existingModal) existingModal.remove();
+
+                var modal = document.createElement('div');
+                modal.id = 'proforma-preview-modal';
+                modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);';
+                modal.innerHTML =
+                    '<div style="background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.25);max-width:780px;width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">'
+                  + '<div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">'
+                  +   '<div>'
+                  +     '<div style="font-weight:700;font-size:16px;">🔍 Anteprima Email Proforma</div>'
+                  +     '<div style="font-size:12px;color:#6b7280;margin-top:2px;">'
+                  +       '<strong>A:</strong> ' + p.to + '&nbsp;&nbsp;|&nbsp;&nbsp;'
+                  +       '<strong>Oggetto:</strong> ' + p.subject
+                  +     '</div>'
+                  +     '<div style="font-size:12px;color:#374151;margin-top:4px;">'
+                  +       '<strong>Importo:</strong> ' + p.importoTotale + '&nbsp;(' + p.ivaLabel + ')&nbsp;&nbsp;|&nbsp;&nbsp;'
+                  +       '<strong>Proforma:</strong> ' + p.numeroProforma
+                  +     '</div>'
+                  +   '</div>'
+                  +   '<button id="close-preview-modal" style="background:#f3f4f6;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:18px;" title="Chiudi">✕</button>'
+                  + '</div>'
+                  + '<div style="flex:1;overflow-y:auto;padding:0;">'
+                  +   '<iframe id="preview-iframe" style="width:100%;height:520px;border:none;" srcdoc="' + p.html.replace(/"/g, '&quot;') + '"></iframe>'
+                  + '</div>'
+                  + '<div style="padding:14px 20px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">'
+                  +   '<button id="preview-cancel-btn" style="padding:8px 18px;border-radius:6px;border:1px solid #d1d5db;background:#f9fafb;cursor:pointer;font-size:14px;">Annulla</button>'
+                  +   '<button id="preview-send-btn" style="padding:8px 20px;border-radius:6px;border:none;background:#7c3aed;color:#fff;font-weight:600;cursor:pointer;font-size:14px;">📤 Invia ora</button>'
+                  + '</div>'
+                  + '</div>';
+
+                document.body.appendChild(modal);
+
+                document.getElementById('close-preview-modal').onclick = function() { modal.remove(); };
+                document.getElementById('preview-cancel-btn').onclick  = function() { modal.remove(); };
+                document.getElementById('preview-send-btn').onclick    = function() {
+                    modal.remove();
+                    inviaProformaRinnovo(rinnovoId, codiceRinnovo);
+                };
+                modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+            } catch (err) { alert('❌ Errore di rete: ' + err.message); }
+        }
+
         // ────────────────────────────────────────────────────────────────────────
 
         // ── Stili condivisi per icone rinnovo ──────────────────────────────────
@@ -7993,13 +8046,14 @@ export const data_dashboard = `<!DOCTYPE html>
             var idSafe    = btn.getAttribute('data-idsafe')    || '';
             var rinnovoId = btn.getAttribute('data-rinnovo-id') || '';
 
-            if      (action === 'rinnovo-crea')            inviaRinnovo(leadId, codice, cliente, iva, anno);
-            else if (action === 'rinnovo-invia-email')     inviaEmailRinnovo(id, codiceR, email);
-            else if (action === 'rinnovo-segna-firmato')   segnaRinnovoFirmato(id, codiceR);
-            else if (action === 'rinnovo-crea-proforma')   creaProformaRinnovo(id, codiceR);
-            else if (action === 'rinnovo-invia-proforma')  inviaProformaRinnovo(id, codiceR);
-            else if (action === 'rinnovo-segna-completato') segnaRinnovoCompletato(idSafe, codice);
-            else if (action === 'rinnovo-vedi')            vediContrattoRinnovo(rinnovoId);
+            if      (action === 'rinnovo-crea')               inviaRinnovo(leadId, codice, cliente, iva, anno);
+            else if (action === 'rinnovo-invia-email')        inviaEmailRinnovo(id, codiceR, email);
+            else if (action === 'rinnovo-segna-firmato')      segnaRinnovoFirmato(id, codiceR);
+            else if (action === 'rinnovo-crea-proforma')      creaProformaRinnovo(id, codiceR);
+            else if (action === 'rinnovo-anteprima-proforma') vediAnteprimaProforma(id, codiceR);
+            else if (action === 'rinnovo-invia-proforma')     inviaProformaRinnovo(id, codiceR);
+            else if (action === 'rinnovo-segna-completato')   segnaRinnovoCompletato(idSafe, codice);
+            else if (action === 'rinnovo-vedi')               vediContrattoRinnovo(rinnovoId);
         });
 
         async function vediContrattoRinnovo(rinnovoId) {
@@ -8146,8 +8200,11 @@ export const data_dashboard = `<!DOCTYPE html>
                     var btn3b = (step === 3)
                         ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna firmato manualmente" data-action="rinnovo-segna-firmato" ' + dId + ' ' + dCodiceR + '>\u2705</button>'
                         : '';
-                    var btn4  = rinnovoMkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',     'rinnovo-crea-proforma',   st4, '#7c3aed', dId + ' ' + dCodiceR);
-                    var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma',  st5, '#7c3aed', dId + ' ' + dCodiceR);
+                    var btn4  = rinnovoMkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',       'rinnovo-crea-proforma',      st4, '#7c3aed', dId + ' ' + dCodiceR);
+                    var btn4b = (step === 5)
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0891b2;color:#fff;cursor:pointer;" title="Anteprima email proforma (prima di inviare)" data-action="rinnovo-anteprima-proforma" ' + dId + ' ' + dCodiceR + '>\uD83D\uDD0D</button>'
+                        : '';
+                    var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma',   st5, '#7c3aed', dId + ' ' + dCodiceR);
                     var btn6  = rinnovoMkLink('\uD83D\uDCB0', 'Paga proforma online',     proformaUrl,               st6, '#16a34a');
                     var btn6b = done_all
                         ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
@@ -8162,7 +8219,7 @@ export const data_dashboard = `<!DOCTYPE html>
                         ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (aggiorna template e apre in nuova tab)" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>\uD83D\uDC41\uFE0F</button>'
                         : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
-                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b
+                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn4b + btn5 + btn6 + btn6b
                         + '</div>';
                 }
 

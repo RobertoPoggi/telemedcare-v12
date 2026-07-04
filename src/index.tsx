@@ -14273,6 +14273,12 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
 
     console.log(`📧 Email rinnovo inviata a ${lead.email} (contratto ${rinnovoId})`)
 
+    // ✅ FIX: Segna email_sent=1 sul contratto rinnovo → attiva il bottone ✍️ (step=3)
+    await c.env.DB.prepare(
+      `UPDATE contracts SET email_sent = 1, updated_at = ? WHERE id = ?`
+    ).bind(new Date().toISOString(), rinnovoId).run()
+    console.log(`✅ email_sent=1 impostato sul contratto rinnovo ${rinnovoId}`)
+
     return c.json({
       success: true,
       rinnovoId,
@@ -14445,6 +14451,117 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
   } catch (error) {
     console.error('❌ Errore invia-proforma-rinnovo:', error)
     return c.json({ success: false, error: 'Errore invio proforma', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
+ * GET /api/contracts/:id/preview-proforma-email
+ * Restituisce l'anteprima dell'email proforma (destinatario, oggetto, corpo HTML)
+ * senza inviarla — usato dal bottone 🔍 prima di premere 📤 "Invia proforma".
+ */
+app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
+  const contractId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    // Carica contratto
+    const contract = await c.env.DB.prepare(
+      `SELECT id, leadId, codice_contratto, proforma_rinnovo_id, is_rinnovo, anno_rinnovo, rinnovo_di, servizio, piano, prezzo_totale FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    if (!contract.proforma_rinnovo_id) return c.json({ success: false, error: 'Nessuna proforma creata — crea prima la proforma (📋)' }, 400)
+
+    // Carica proforma
+    const proforma = await c.env.DB.prepare(`SELECT * FROM proforma WHERE id = ?`)
+      .bind(contract.proforma_rinnovo_id).first() as any
+    if (!proforma) return c.json({ success: false, error: 'Proforma non trovata nel DB' }, 404)
+
+    // Carica lead
+    const lead = await c.env.DB.prepare(`SELECT * FROM leads WHERE id = ?`)
+      .bind(contract.leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    // ── Ricostruisce gli stessi dati che userebbe inviaEmailProforma ──────────
+    const isRinnovo    = contract.is_rinnovo == 1 || contract.is_rinnovo === true
+    const annoRinnovo  = contract.anno_rinnovo || 2
+    const codiceOriginale = contract.rinnovo_di || ''
+    const ivaAgevolata = !!(lead.iva_agevolata)
+    const ivaRate      = ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel     = ivaAgevolata ? '4%' : '22%'
+    const imponibile   = proforma.prezzo_totale ?? contract.prezzo_totale ?? 0
+    const importoIva   = Math.round(imponibile * ivaRate * 100) / 100
+    const totaleConIva = Math.round((imponibile + importoIva) * 100) / 100
+
+    const servizioNorm = (contract.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase()
+    const pianoTipo    = (contract.piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
+    const titoloProforma = isRinnovo
+      ? `🔄 Proforma Rinnovo Anno ${annoRinnovo} — eCura ${servizioNorm} ${pianoTipo}`
+      : `✅ Pro-forma eCura ${servizioNorm} ${pianoTipo}`
+    const causale = isRinnovo
+      ? `Rinnovo Anno ${annoRinnovo} ${proforma.numero_proforma} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}${codiceOriginale ? ' (rinnovo ' + codiceOriginale + ')' : ''}`
+      : `Proforma ${proforma.numero_proforma} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`
+    const notaRinnovo = isRinnovo
+      ? `<div style="background:#e8f5e9;border-left:4px solid #27ae60;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;"><strong style="color:#1b5e20;">🔄 Proforma di Rinnovo — Anno ${annoRinnovo}</strong><br><span style="color:#2e7d32;font-size:13px;">La tariffa di rinnovo è agevolata rispetto al primo anno.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span></div>`
+      : ''
+    const baseUrl = new URL(c.req.url).origin
+    const scadenzaStr = proforma.data_scadenza
+      ? new Date(proforma.data_scadenza).toLocaleDateString('it-IT') : ''
+
+    const templateData: Record<string,string> = {
+      NOME_CLIENTE:         lead.nomeRichiedente || '',
+      COGNOME_CLIENTE:      lead.cognomeRichiedente || '',
+      PIANO_SERVIZIO:       titoloProforma,
+      NUMERO_PROFORMA:      proforma.numero_proforma || '',
+      IMPORTO_BASE:         `€${Number(imponibile).toFixed(2).replace('.', ',')}`,
+      IMPORTO_IVA:          `€${importoIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA:      `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE:       `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IVA_LABEL:            `IVA ${ivaLabel}`,
+      IVA_NOTE:             ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      SCADENZA_PAGAMENTO:   scadenzaStr,
+      IBAN:                 'IT97L0503401727000000003519',
+      CAUSALE:              causale,
+      NOTA_RINNOVO:         notaRinnovo,
+      LINK_PROFORMA_PDF:    `${baseUrl}/proforma-view?id=${contract.proforma_rinnovo_id}`,
+      LINK_PAGAMENTO:       `${baseUrl}/pagamento.html?proformaId=${contract.proforma_rinnovo_id}`,
+      DATA_INVIO:           new Date().toLocaleDateString('it-IT'),
+      PIANO_RATEIZZAZIONE:  '',
+    }
+
+    // Carica template email (stesso template usato da inviaEmailProforma)
+    let emailHtml = ''
+    try {
+      const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+      const tpl = await loadEmailTemplate('email_invio_proforma', c.env.DB, c.env)
+      emailHtml = renderTemplate(tpl, templateData)
+    } catch {
+      // Fallback minimale se template non caricato
+      emailHtml = `<p>Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},</p>
+        <p>La proforma <strong>${proforma.numero_proforma}</strong> è pronta.</p>
+        <p><strong>Importo totale (IVA ${ivaLabel} inclusa): ${totaleConIva.toFixed(2).replace('.', ',')} €</strong></p>
+        <p>Causale bonifico: ${causale}</p>
+        <p>IBAN: IT97L0503401727000000003519</p>`
+    }
+
+    const subject = isRinnovo
+      ? `Proforma rinnovo Anno ${annoRinnovo} — ${proforma.numero_proforma}`
+      : `Pro-forma servizio eCura — ${proforma.numero_proforma}`
+
+    return c.json({
+      success: true,
+      preview: {
+        to:       lead.email,
+        subject,
+        html:     emailHtml,
+        importoTotale: `€ ${totaleConIva.toFixed(2).replace('.', ',')}`,
+        numeroProforma: proforma.numero_proforma,
+        ivaLabel: `IVA ${ivaLabel}`,
+        causale,
+      }
+    })
+  } catch (error) {
+    console.error('❌ Errore preview-proforma-email:', error)
+    return c.json({ success: false, error: 'Errore generazione anteprima', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 
@@ -16058,21 +16175,18 @@ app.post('/api/contracts/sign', async (c) => {
       // Non bloccare il processo se l'email fallisce
     }
     
-    // ✅ CRITICAL FIX: Trigger automatico generazione e invio proforma dopo firma
+    // ✅ FIX: Auto-CREA proforma dopo firma digitale (senza inviarla — invio = passo manuale con anteprima)
     try {
-      console.log(`📊 [FIRMA→PROFORMA] Avvio workflow proforma per contratto ${contractId}`)
+      console.log(`📊 [FIRMA→PROFORMA] Avvio creazione proforma per contratto ${contractId} (invio manuale)`)
       
       // Recupera lead completo
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
         .bind(contract.leadId).first() as any
       
       if (lead) {
-        console.log(`📧 [FIRMA→PROFORMA] Lead recuperato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
+        console.log(`📝 [FIRMA→PROFORMA] Lead recuperato: ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`)
         
-        // Importa funzione invio proforma
-        const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
-        
-        // ── Flag rinnovo ──────────────────────────────────────────────────────
+        // ── Flag rinnovo ──────────────────────────────────────────────────────────
         const isRinnovoContract = contract.is_rinnovo == 1 || contract.is_rinnovo === true
         const annoRinnovoContract = contract.anno_rinnovo || 2
         const codiceOriginale = contract.rinnovo_di || ''
@@ -16269,12 +16383,12 @@ app.post('/api/contracts/sign', async (c) => {
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
-              'SENT',
+              'PENDING',  // ✅ FIX: non ancora inviata — invio = passo manuale dopo anteprima
               new Date().toISOString(),
               proformaIdGenerated
             ).run()
             
-            console.log(`✅ [FIRMA→PROFORMA] UPDATE proforma completato (ID ${proformaIdGenerated})`)
+            console.log(`✅ [FIRMA→PROFORMA] UPDATE proforma completato (ID ${proformaIdGenerated}, status=PENDING)`)
             
           } else {
             // ✅ INSERT: Proforma non esiste, creane una nuova
@@ -16311,13 +16425,13 @@ app.post('/api/contracts/sign', async (c) => {
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
-              'SENT',
+              'PENDING',  // ✅ FIX: non ancora inviata — invio = passo manuale dopo anteprima
               false,
               new Date().toISOString(),
               new Date().toISOString()
             ).run()
             
-            console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito`)
+            console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito (status=PENDING)`)
             console.log(`🔍 [FIRMA→PROFORMA] insertResult.meta:`, JSON.stringify(insertResult.meta || {}))
             
             // Recupera l'ID auto-generato
@@ -16346,28 +16460,16 @@ app.post('/api/contracts/sign', async (c) => {
           // Continua comunque con l'invio email
         }
         
-        // Se abbiamo l'ID, invia email proforma
+        // ✅ FIX: Salva proforma_rinnovo_id sul contratto — NON inviare email (invio = manuale con anteprima)
         if (proformaIdGenerated) {
-          // Aggiorna proformaData con l'ID generato
-          proformaData.proformaId = String(proformaIdGenerated)
-          console.log(`📊 [FIRMA→PROFORMA] Dati proforma aggiornati con ID ${proformaIdGenerated}:`, JSON.stringify(proformaData, null, 2))
-          
-          // Invia email proforma
-          const proformaResult = await inviaEmailProforma(
-            lead,
-            proformaData,
-            c.env,
-            c.env.DB
-          )
-          
-          if (proformaResult.success) {
-            console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) inviata con successo a ${lead.email}`)
-            console.log(`✅ [FIRMA→PROFORMA] Email IDs:`, proformaResult.messageIds)
-          } else {
-            console.error(`❌ [FIRMA→PROFORMA] Errore invio proforma:`, proformaResult.errors)
-          }
+          // Collega la proforma al contratto rinnovo
+          await c.env.DB.prepare(
+            `UPDATE contracts SET proforma_rinnovo_id = ?, updated_at = ? WHERE id = ?`
+          ).bind(proformaIdGenerated, new Date().toISOString(), contractId).run()
+          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) creata e collegata al contratto ${contractId}`)
+          console.log(`📤 [FIRMA→PROFORMA] Email NON inviata — l'operatore invierà dopo anteprima (pulsante 📤 step=5)`)
         } else {
-          console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante) - email NON inviata`)
+          console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante)`)
         }
       } else {
         console.warn(`⚠️ [FIRMA→PROFORMA] Lead non trovato - proforma NON inviata`)
