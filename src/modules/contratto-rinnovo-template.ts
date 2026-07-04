@@ -1,0 +1,331 @@
+// Auto-generated from templates/contracts/contratto_rinnovo_b2c.html
+export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratto Rinnovo eCura {{SERVIZIO}} {{PIANO}} — {{CODICE_CONTRATTO}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #1a1a1a;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0;
+            background: #fff;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #0066CC;
+            padding: 28px 40px 22px 40px;
+            margin-bottom: 0;
+        }
+        .logo-line {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0066CC;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .company-tagline {
+            font-size: 9.5pt;
+            color: #555;
+            margin-bottom: 12px;
+        }
+        .contract-title {
+            font-size: 17pt;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 10px 0 4px 0;
+        }
+        .contract-subtitle {
+            font-size: 12pt;
+            color: #0066CC;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        .rinnovo-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            border: 1.5px solid #27ae60;
+            border-radius: 20px;
+            padding: 5px 18px;
+            font-size: 10pt;
+            color: #1b5e20;
+            font-weight: 700;
+            margin: 6px 0 0 0;
+        }
+        .meta-row {
+            background: #f4f7fc;
+            border-top: 1px solid #dde3f0;
+            padding: 10px 40px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9.5pt;
+            color: #444;
+        }
+        .body-content {
+            padding: 28px 40px;
+        }
+        h2 {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #0066CC;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid #d1daf0;
+            padding-bottom: 4px;
+            margin: 24px 0 10px 0;
+        }
+        h2:first-child {
+            margin-top: 0;
+        }
+        p {
+            margin: 6px 0;
+            text-align: justify;
+        }
+        ul {
+            margin: 8px 0 8px 0;
+            padding-left: 22px;
+        }
+        ul li {
+            margin-bottom: 4px;
+        }
+        .parties-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 10px 0;
+        }
+        .party-box {
+            background: #f9fafb;
+            border: 1px solid #e0e6f0;
+            border-radius: 6px;
+            padding: 14px 16px;
+        }
+        .party-box .party-label {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #0066CC;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 10.5pt;
+        }
+        .price-table td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #e8edf5;
+        }
+        .price-table tr:last-child td {
+            border-bottom: none;
+        }
+        .price-table .total-row td {
+            background: #e8f0fc;
+            font-weight: 700;
+            font-size: 12pt;
+            color: #0066CC;
+            border-top: 2px solid #0066CC;
+        }
+        .price-table .label-col {
+            color: #444;
+        }
+        .price-table .value-col {
+            text-align: right;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .iban-box {
+            background: #f0f4ff;
+            border: 1px solid #b8c8f0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-size: 10.5pt;
+        }
+        .iban-box .iban-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 12pt;
+            color: #0066CC;
+            letter-spacing: 1px;
+        }
+        .info-box {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 10pt;
+        }
+        .recesso-box {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-size: 10pt;
+        }
+        .footer-note {
+            border-top: 2px solid #e0e6f0;
+            padding: 14px 40px;
+            font-size: 9pt;
+            color: #777;
+            text-align: center;
+            margin-top: 10px;
+        }
+        @media print {
+            body { background: white; }
+            .header { padding: 20px 30px 16px 30px; }
+            .body-content { padding: 20px 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- INTESTAZIONE -->
+    <div class="header">
+        <div class="logo-line">Medica GB S.r.l.</div>
+        <div class="company-tagline">Startup Innovativa a Vocazione Sociale &nbsp;|&nbsp; P.IVA 12435130963 &nbsp;|&nbsp; info@ecura.it</div>
+        <div class="contract-title">Contratto di Rinnovo Servizio</div>
+        <div class="contract-subtitle">eCura {{SERVIZIO}} — Piano {{PIANO}}</div>
+        <div class="rinnovo-badge">🔄 Rinnovo Anno {{ANNO_RINNOVO}}</div>
+    </div>
+
+    <div class="meta-row">
+        <span><strong>Codice contratto:</strong> {{CODICE_CONTRATTO}}</span>
+        <span><strong>Data:</strong> {{DATA_CONTRATTO}}</span>
+        <span><strong>Rinnova:</strong> {{CODICE_CONTRATTO_ORIGINALE}}</span>
+    </div>
+
+    <div class="body-content">
+
+        <h2>Parti del contratto</h2>
+        <div class="parties-grid">
+            <div class="party-box">
+                <div class="party-label">Fornitore</div>
+                <strong>Medica GB S.r.l.</strong><br>
+                Startup Innovativa a Vocazione Sociale<br>
+                Corso Giuseppe Garibaldi 34, 20121 Milano<br>
+                Via delle Eriche 53, 16148 Genova<br>
+                P.IVA: 12435130963 &nbsp;|&nbsp; REA: MI-2661409<br>
+                PEC: info@pec.medicagb.it<br>
+                Email: <a href="mailto:info@ecura.it">info@ecura.it</a><br>
+                Tel: 335 730 1206 &nbsp;|&nbsp; 331 643 2390<br>
+                <br>
+                di seguito denominata <em>"<strong>Medica GB</strong>"</em>
+            </div>
+            <div class="party-box">
+                <div class="party-label">Cliente</div>
+                <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong><br>
+                Email: {{EMAIL_CLIENTE}}<br>
+                Telefono: {{TELEFONO_CLIENTE}}<br>
+                <br>
+                di seguito denominato/a <em>"<strong>Cliente</strong>"</em>
+            </div>
+        </div>
+
+        <h2>Premesse</h2>
+        <p>Le parti hanno già stipulato il contratto di servizio eCura {{SERVIZIO}} Piano {{PIANO}} con codice
+        <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>, firmato in data <strong>{{DATA_CONTRATTO_ORIGINALE}}</strong>
+        con scadenza <strong>{{DATA_SCADENZA_ORIGINALE}}</strong>.</p>
+        <p>Il Cliente ha regolarmente usufruito del servizio nel corso dell'anno precedente e intende rinnovarlo
+        alle condizioni agevolate previste per le annualità successive alla prima.</p>
+        <p>Le parti concordano pertanto il rinnovo del contratto di servizio alle condizioni di seguito indicate.</p>
+
+        <h2>Oggetto del rinnovo</h2>
+        <p>Le parti concordano il rinnovo del servizio di teleassistenza e telemedicina denominato
+        <strong>eCura {{SERVIZIO}}</strong> con <strong>Piano {{PIANO}}</strong>, per ulteriori
+        <strong>12 (dodici) mesi</strong>.</p>
+        <p>Il rinnovo comprende:</p>
+        <ul>
+            <li>Piattaforma web e applicazione mobile di teleassistenza per 12 mesi</li>
+            <li>SIM dati per trasmissione parametri vitali e comunicazione vocale per 12 mesi</li>
+            <li>Assistenza tecnica telefonica e da remoto per 12 mesi</li>
+            <li>Aggiornamenti software e firmware del dispositivo <strong>{{DISPOSITIVO}}</strong></li>
+            <li>Monitoraggio parametri vitali e alerting 24/7</li>
+        </ul>
+        <p><em>Il dispositivo <strong>{{DISPOSITIVO}}</strong> è già di proprietà del Cliente;
+        il rinnovo non include la consegna di un nuovo dispositivo.</em></p>
+
+        <h2>Durata</h2>
+        <p>Il presente rinnovo ha durata di <strong>12 (dodici) mesi</strong>, con decorrenza
+        <strong>{{DATA_INIZIO_SERVIZIO}}</strong> e scadenza <strong>{{DATA_SCADENZA}}</strong>.</p>
+        <p>Il contratto è ulteriormente rinnovabile per periodi di 12 mesi, salvo disdetta scritta comunicata
+        con almeno <strong>30 giorni di anticipo</strong> rispetto alla scadenza tramite email a
+        <a href="mailto:info@ecura.it">info@ecura.it</a> o raccomandata A/R.</p>
+
+        <h2>Condizioni economiche</h2>
+        <table class="price-table">
+            <tr>
+                <td class="label-col">Importo rinnovo ({{IVA_LABEL}} esclusa)</td>
+                <td class="value-col">€ {{IMPORTO_RINNOVO_NETTO}}</td>
+            </tr>
+            <tr>
+                <td class="label-col">{{IVA_LABEL}}</td>
+                <td class="value-col">€ {{IVA_IMPORTO}}</td>
+            </tr>
+            <tr class="total-row">
+                <td class="label-col">TOTALE RINNOVO ({{IVA_LABEL}} inclusa){{IVA_NOTE}}</td>
+                <td class="value-col">{{PREZZO_RINNOVO}}</td>
+            </tr>
+        </table>
+        <p>La tariffa di rinnovo è <strong>agevolata rispetto alla prima annualità</strong>
+        (€&nbsp;{{PREZZO_TOTALE}}) in quanto non comprende il dispositivo e il costo di setup iniziale.</p>
+
+        <h2>Modalità di pagamento</h2>
+        <p>Medica GB S.r.l. emetterà proforma/fattura anticipata per il rinnovo dei 12 mesi.
+        Il Cliente procederà al pagamento tramite <strong>bonifico bancario</strong>:</p>
+        <div class="iban-box">
+            <strong>Intestato a:</strong> Medica GB S.r.l.<br>
+            <strong>Banca:</strong> Banca Popolare di Milano<br>
+            <strong>IBAN:</strong> <span class="iban-value">IT97 L050 3401 7270 0000 0003 519</span><br>
+            <strong>Causale:</strong> Rinnovo eCura {{SERVIZIO}} {{PIANO}} Anno {{ANNO_RINNOVO}} — {{CODICE_CONTRATTO}}
+        </div>
+
+        <h2>Condizioni generali</h2>
+        <p>Tutte le condizioni generali del contratto originale <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>
+        (riservatezza, responsabilità, protezione dei dati, foro competente) rimangono invariate e si intendono
+        integralmente richiamate nel presente rinnovo.</p>
+        <p>Medica GB S.r.l. garantisce il trattamento dei dati personali e sanitari nel rispetto del
+        Regolamento UE 2016/679 (GDPR). I dati sono conservati su infrastrutture certificate e crittografate.</p>
+
+        <div class="recesso-box">
+            <strong>⚖️ Diritto di recesso (D.Lgs. 206/2005 — Codice del Consumo):</strong><br>
+            Il Cliente ha diritto di recedere dal presente rinnovo entro <strong>14 giorni</strong>
+            dalla sottoscrizione, senza necessità di fornire motivazioni,
+            inviando comunicazione scritta a <a href="mailto:info@ecura.it">info@ecura.it</a>.
+        </div>
+
+        <h2>Foro competente</h2>
+        <p>Per qualsiasi controversia derivante dal presente contratto di rinnovo, le parti eleggono
+        come foro competente il <strong>Tribunale di Milano</strong>, salvo diversa disposizione
+        normativa inderogabile a tutela del consumatore.</p>
+
+        <div class="info-box">
+            <strong>ℹ️ Informazione importante:</strong><br>
+            Firmando digitalmente questo documento, il Cliente conferma di aver letto e accettato le
+            condizioni del rinnovo, inclusa la tariffa annuale di <strong>{{PREZZO_RINNOVO}}</strong>
+            ({{IVA_LABEL}} inclusa). La firma digitale ha piena validità legale ai sensi del D.Lgs. 82/2005 (CAD).
+        </div>
+
+    </div>
+
+    <div class="footer-note">
+        Documento generato il {{DATA_CONTRATTO}} &nbsp;|&nbsp;
+        Medica GB S.r.l. &nbsp;|&nbsp; P.IVA 12435130963 &nbsp;|&nbsp;
+        <a href="mailto:info@ecura.it">info@ecura.it</a> &nbsp;|&nbsp;
+        <a href="https://www.ecura.it">www.ecura.it</a>
+    </div>
+
+</body>
+</html>
+`;

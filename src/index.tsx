@@ -3,6 +3,9 @@ import { serveStatic } from 'hono/cloudflare-workers'
 
 // Force rebuild 2026-01-31 16:45 - Fix dashboard toggle switches
 
+// Inline template for rinnovo contract (Cloudflare Workers has no FS)
+import { CONTRATTO_RINNOVO_B2C_TEMPLATE } from './modules/contratto-rinnovo-template'
+
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
 
@@ -13732,20 +13735,8 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const codiceRinnovo = `${origContract.codice_contratto}-R${annoRinnovo}`
     const rinnovoId = `RINNOVO-${origContract.codice_contratto}-Y${annoRinnovo}-${Date.now()}`
 
-    // 7. Leggi template HTML rinnovo e sostituisci variabili
-    let templateHtml = ''
-    try {
-      const fs = await import('node:fs/promises')
-      const path = await import('node:path')
-      const templatePath = path.resolve('./templates/contracts/contratto_rinnovo_b2c.html')
-      templateHtml = await fs.readFile(templatePath, 'utf-8')
-    } catch (e) {
-      console.warn('⚠️ Template file non trovato, uso template inline minimo')
-      templateHtml = `<h1>Rinnovo Contratto eCura {{SERVIZIO}} {{PIANO}}</h1>
-        <p>Gentile {{NOME_CLIENTE}} {{COGNOME_CLIENTE}},<br>
-        Si rinnova il contratto <strong>{{CODICE_CONTRATTO_ORIGINALE}}</strong>.<br>
-        Tariffa annuale di rinnovo: <strong>€{{PREZZO_RINNOVO}}</strong> ({{IVA_LABEL}} inclusa).</p>`
-    }
+    // 7. Template HTML rinnovo inlinato (Cloudflare Workers non ha FS)
+    const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
 
     // Sostituisci placeholder
     const varReplace = (html: string, vars: Record<string, string>) => {
@@ -14129,15 +14120,8 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       ? (parseFloat(origContract.prezzo_totale) * (1 + ivaRate)).toFixed(2)
       : rinnovoTotale.toFixed(2)
 
-    // Leggi template
-    let templateHtml = ''
-    try {
-      const fs = await import('node:fs/promises')
-      const path = await import('node:path')
-      templateHtml = await fs.readFile(path.resolve('./templates/contracts/contratto_rinnovo_b2c.html'), 'utf-8')
-    } catch {
-      return c.json({ success: false, error: 'Template contratto_rinnovo_b2c.html non trovato' }, 500)
-    }
+    // Template inlinato (Cloudflare Workers non ha accesso al filesystem)
+    const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
 
     // Sostituisci placeholder
     const vars: Record<string, string> = {
