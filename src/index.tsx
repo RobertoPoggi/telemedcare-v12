@@ -8098,14 +8098,23 @@ app.get('/api/contratti', async (c) => {
         c.anno_rinnovo,
         c.rinnovo_completato,
         c.rinnovo_data_completamento,
+        c.email_sent,
+        c.proforma_rinnovo_id,
+        c.proforma_rinnovo_sent,
+        c.proforma_rinnovo_paid,
         l.nomeRichiedente,
         l.cognomeRichiedente,
         l.email,
+        l.email as email_cliente,
         l.iva_agevolata,
-        s.timestamp_firma as data_firma
+        s.timestamp_firma as data_firma,
+        r.id as rinnovo_contract_id,
+        r.codice_contratto as rinnovo_codice,
+        r.status as rinnovo_status
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id 
       LEFT JOIN signatures s ON c.id = s.contract_id
+      LEFT JOIN contracts r ON r.rinnovo_di = c.codice_contratto AND r.is_rinnovo = 1
       ORDER BY c.created_at DESC LIMIT 200
     `).all()
     

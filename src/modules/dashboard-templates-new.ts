@@ -8079,7 +8079,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 const annoRinnovoSafe = (contract.anno_rinnovo || 1) + 1;
 
                 // ─ Dati comuni per azioni rinnovo ────────────────────────────
-                const firmaUrlRinnovo  = '/firma-contratto.html?contractId=' + encodeURIComponent(contract.id);
+                // Se esiste il contratto rinnovo figlio (rinnovo_contract_id), usa quello per il link firma
+                var rinnovoFiglioId = contract.rinnovo_contract_id || '';
+                const firmaUrlRinnovo  = '/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoFiglioId || contract.id);
                 const emailSent        = contract.email_sent == 1 || contract.email_sent === true;
                 const proformaCreata   = !!(contract.proforma_rinnovo_id);
                 const proformaInviata  = contract.proforma_rinnovo_sent == 1 || contract.proforma_rinnovo_sent === true;
@@ -8118,10 +8120,12 @@ export const data_dashboard = `<!DOCTYPE html>
                     var dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
                     var dIva     = 'data-iva="'      + ivaAgSafe + '"';
                     var dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
-                    var dId      = 'data-id="'       + contract.id + '"';
-                    var dEmail   = 'data-email="'    + (contract.email_cliente || '').replace(/"/g, '&quot;') + '"';
-                    var dCodiceR = 'data-codicer="'  + (contract.codice_contratto || '').replace(/"/g, '&quot;') + '"';
-                    var dIdSafe  = 'data-idsafe="'   + contract.id + '"';
+                    // Per step 2+: le azioni agiscono sul contratto RINNOVO FIGLIO (rinnovoFiglioId), non sull'originale
+                    var rinnovoActId = rinnovoFiglioId || contract.id;
+                    var dId      = 'data-id="'       + rinnovoActId + '"';
+                    var dEmail   = 'data-email="'    + (contract.email_cliente || contract.email || '').replace(/"/g, '&quot;') + '"';
+                    var dCodiceR = 'data-codicer="'  + (contract.rinnovo_codice || contract.codice_contratto || '').replace(/"/g, '&quot;') + '"';
+                    var dIdSafe  = 'data-idsafe="'   + rinnovoActId + '"';
 
                     var btn1  = rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',    'rinnovo-crea',            st1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
                     var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',     st2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
@@ -8139,8 +8143,12 @@ export const data_dashboard = `<!DOCTYPE html>
                             : '');
 
                     var _stepLabel = '<span style="font-size:9px;color:#9ca3af;margin-left:2px;" title="Step corrente: ' + step + (done_all ? ' (completato)' : '') + '">S:' + step + '</span>';
+                    // Bottone 👁️ Vedi contratto — sempre visibile se esiste il contratto rinnovo figlio
+                    var btnVedi = rinnovoFiglioId
+                        ? '<a href="/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoFiglioId) + '" target="_blank" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;text-decoration:none;" title="Visualizza contratto rinnovo prima di inviarlo">\uD83D\uDC41\uFE0F</a>'
+                        : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
-                        + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b + _stepLabel
+                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b + _stepLabel
                         + '</div>';
                 }
 
