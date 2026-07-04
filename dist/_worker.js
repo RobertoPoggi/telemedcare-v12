@@ -10431,11 +10431,11 @@ ${370+t.length}
                             ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>✅</button>'
                             : '');
 
-                    // Bottone 👁️ Vedi contratto — sempre visibile se esiste il contratto rinnovo figlio
-                    // Rigenera l'HTML prima di aprire (assicura template aggiornato)
-                    var dRinnovoId = 'data-rinnovo-id="' + rinnovoFiglioId + '"';
-                    var btnVedi = rinnovoFiglioId
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (aggiorna template e apre in nuova tab)" data-action="rinnovo-vedi" ' + dRinnovoId + '>👁️</button>'
+                    // Bottone 👁️ Vedi contratto — appare SOLO sulla riga RINNOVO (isRinnovo=true)
+                    // usa contract.id direttamente (è già il contratto rinnovo)
+                    var dSelfRinnovoId = 'data-rinnovo-id="' + contract.id + '"';
+                    var btnVedi = isRinnovo
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (aggiorna template e apre in nuova tab)" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>👁️</button>'
                         : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
                         + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b
