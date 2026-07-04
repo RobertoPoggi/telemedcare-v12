@@ -10229,13 +10229,22 @@ ${370+t.length}
                 <div class="text-sm text-gray-600">
                     <span id="contractsCount">0</span> contratti trovati
                 </div>
-                <button 
-                    id="resetFilters" 
-                    class="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                    onclick="resetContractFilters()"
-                >
-                    <i class="fas fa-redo mr-1"></i> Reset Filtri
-                </button>
+                <div class="flex items-center gap-3">
+                    <button 
+                        id="resetFilters" 
+                        class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        onclick="resetContractFilters()"
+                    >
+                        <i class="fas fa-redo mr-1"></i> Reset Filtri
+                    </button>
+                    <button
+                        class="text-xs text-orange-600 hover:text-orange-800 font-medium border border-orange-300 rounded px-2 py-1"
+                        title="Corregge email_sent=0 sui contratti rinnovo già inviati — usare se il bottone ✍️ non si attiva dopo aver inviato l'email"
+                        onclick="fixRinnovoEmailSent()"
+                    >
+                        🔧 Fix DB rinnovi
+                    </button>
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -10699,6 +10708,22 @@ ${370+t.length}
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || result.message || 'Riprovare'));
+                }
+            } catch (err) { alert('❌ Errore di rete: ' + err.message); }
+        }
+
+        async function fixRinnovoEmailSent() {
+            if (!confirm('🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\'email.')) return;
+            try {
+                const resp = await fetch('/api/admin/fix-rinnovo-email-sent', {
+                    method: 'POST', credentials: 'include'
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert('✅ ' + result.message + '\\n\\nRicarico la tabella...');
+                    if (typeof loadContractsData === 'function') loadContractsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Riprovare'));
                 }
             } catch (err) { alert('❌ Errore di rete: ' + err.message); }
         }
