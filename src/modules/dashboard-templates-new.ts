@@ -7990,7 +7990,8 @@ export const data_dashboard = `<!DOCTYPE html>
             var id      = btn.getAttribute('data-id')      || '';
             var codiceR = btn.getAttribute('data-codicer') || '';
             var email   = btn.getAttribute('data-email')   || '';
-            var idSafe  = btn.getAttribute('data-idsafe')  || '';
+            var idSafe    = btn.getAttribute('data-idsafe')    || '';
+            var rinnovoId = btn.getAttribute('data-rinnovo-id') || '';
 
             if      (action === 'rinnovo-crea')            inviaRinnovo(leadId, codice, cliente, iva, anno);
             else if (action === 'rinnovo-invia-email')     inviaEmailRinnovo(id, codiceR, email);
@@ -7998,7 +7999,19 @@ export const data_dashboard = `<!DOCTYPE html>
             else if (action === 'rinnovo-crea-proforma')   creaProformaRinnovo(id, codiceR);
             else if (action === 'rinnovo-invia-proforma')  inviaProformaRinnovo(id, codiceR);
             else if (action === 'rinnovo-segna-completato') segnaRinnovoCompletato(idSafe, codice);
+            else if (action === 'rinnovo-vedi')            vediContrattoRinnovo(rinnovoId);
         });
+
+        async function vediContrattoRinnovo(rinnovoId) {
+            if (!rinnovoId) { alert('ID contratto rinnovo non trovato'); return; }
+            try {
+                // Rigenera l'HTML con il template aggiornato prima di aprire
+                await fetch('/api/contracts/' + rinnovoId + '/rigenera-html', { method: 'POST' });
+            } catch(e) {
+                console.warn('Rigenera HTML non critico:', e);
+            }
+            window.open('/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoId), '_blank');
+        }
 
         function renderContractsTable(contracts) {
             var tbody = document.getElementById('contractsTable');
@@ -8142,13 +8155,14 @@ export const data_dashboard = `<!DOCTYPE html>
                             ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>'
                             : '');
 
-                    var _stepLabel = '<span style="font-size:9px;color:#9ca3af;margin-left:2px;" title="Step corrente: ' + step + (done_all ? ' (completato)' : '') + '">S:' + step + '</span>';
                     // Bottone 👁️ Vedi contratto — sempre visibile se esiste il contratto rinnovo figlio
+                    // Rigenera l'HTML prima di aprire (assicura template aggiornato)
+                    var dRinnovoId = 'data-rinnovo-id="' + rinnovoFiglioId + '"';
                     var btnVedi = rinnovoFiglioId
-                        ? '<a href="/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoFiglioId) + '" target="_blank" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;text-decoration:none;" title="Visualizza contratto rinnovo prima di inviarlo">\uD83D\uDC41\uFE0F</a>'
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (aggiorna template e apre in nuova tab)" data-action="rinnovo-vedi" ' + dRinnovoId + '>\uD83D\uDC41\uFE0F</button>'
                         : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
-                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b + _stepLabel
+                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn5 + btn6 + btn6b
                         + '</div>';
                 }
 

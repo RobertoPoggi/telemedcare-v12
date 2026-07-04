@@ -14071,6 +14071,120 @@ Medica GB S.r.l. — P.IVA 12435130963`
 })
 
 /**
+ * POST /api/contracts/:id/rigenera-html
+ * Rigenera il contenuto_html di un contratto rinnovo esistente
+ * usando il template contratto_rinnovo_b2c.html aggiornato.
+ * Utile quando il contratto è stato creato con un template vecchio/incompleto.
+ */
+app.post('/api/contracts/:id/rigenera-html', async (c) => {
+  try {
+    const rinnovoId = c.req.param('id')
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
+
+    // Carica contratto rinnovo
+    const contract = await c.env.DB.prepare(`
+      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata
+      FROM contracts c
+      LEFT JOIN leads l ON c.leadId = l.id
+      WHERE c.id = ?
+    `).bind(rinnovoId).first() as any
+
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+    if (!contract.is_rinnovo) return c.json({ success: false, error: 'Non è un contratto di rinnovo' }, 400)
+
+    // Contratto originale
+    const origContract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE codice_contratto = ? LIMIT 1`
+    ).bind(contract.rinnovo_di).first() as any
+
+    // Calcolo prezzi
+    const ivaAgevolata = !!(contract.iva_agevolata)
+    const ivaRate = ivaAgevolata ? 0.04 : 0.22
+    const rinnovoBase = parseFloat(contract.prezzo_totale || 0)
+    const ivaImporto = Math.round(rinnovoBase * ivaRate * 100) / 100
+    const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
+    const ivaLabel = ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote = ivaAgevolata ? ' (IVA agevolata 4%)' : ''
+
+    // Date
+    const dataScadenzaRinnovo = contract.data_scadenza
+      ? new Date(contract.data_scadenza) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    const dataInizioRinnovo = new Date(dataScadenzaRinnovo.getTime() - 365 * 24 * 60 * 60 * 1000)
+    const dataInizio = dataInizioRinnovo.toLocaleDateString('it-IT')
+    const dataScadenza = dataScadenzaRinnovo.toLocaleDateString('it-IT')
+    const dataContrattoOrig = origContract?.data_invio
+      ? new Date(origContract.data_invio).toLocaleDateString('it-IT') : 'N/A'
+    const dataScadenzaOrig = origContract?.data_scadenza
+      ? new Date(origContract.data_scadenza).toLocaleDateString('it-IT') : 'N/A'
+    const oggi = new Date().toLocaleDateString('it-IT')
+
+    const servizio = contract.servizio || origContract?.servizio || 'eCura PRO'
+    const piano = contract.piano || contract.tipo_contratto || origContract?.piano || 'BASE'
+    const annoRinnovo = contract.anno_rinnovo || 2
+    const prezzoTotalePrimoAnno = origContract?.prezzo_totale
+      ? (parseFloat(origContract.prezzo_totale) * (1 + ivaRate)).toFixed(2)
+      : rinnovoTotale.toFixed(2)
+
+    // Leggi template
+    let templateHtml = ''
+    try {
+      const fs = await import('node:fs/promises')
+      const path = await import('node:path')
+      templateHtml = await fs.readFile(path.resolve('./templates/contracts/contratto_rinnovo_b2c.html'), 'utf-8')
+    } catch {
+      return c.json({ success: false, error: 'Template contratto_rinnovo_b2c.html non trovato' }, 500)
+    }
+
+    // Sostituisci placeholder
+    const vars: Record<string, string> = {
+      SERVIZIO:                   servizio.replace('eCura ', '').replace('ecura ', ''),
+      PIANO:                      piano,
+      CODICE_CONTRATTO:           contract.codice_contratto || rinnovoId,
+      CONTRACT_ID:                rinnovoId,
+      DATA_CONTRATTO:             oggi,
+      ANNO_RINNOVO:               String(annoRinnovo),
+      CODICE_CONTRATTO_ORIGINALE: contract.rinnovo_di || origContract?.codice_contratto || 'N/A',
+      DATA_CONTRATTO_ORIGINALE:   dataContrattoOrig,
+      DATA_SCADENZA_ORIGINALE:    dataScadenzaOrig,
+      NOME_CLIENTE:               contract.nomeRichiedente || '',
+      COGNOME_CLIENTE:            contract.cognomeRichiedente || '',
+      EMAIL_CLIENTE:              contract.email || '',
+      TELEFONO_CLIENTE:           contract.telefono || '',
+      DISPOSITIVO:                servizio.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
+      DATA_INIZIO_SERVIZIO:       dataInizio,
+      DATA_SCADENZA:              dataScadenza,
+      IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2),
+      IVA_IMPORTO:                ivaImporto.toFixed(2),
+      IVA_LABEL:                  ivaLabel,
+      IVA_NOTE:                   ivaNote,
+      PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
+      PREZZO_TOTALE:              `€ ${Number(prezzoTotalePrimoAnno).toFixed(2).replace('.', ',')}`,
+    }
+    const htmlCompiled = templateHtml.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
+
+    // Aggiorna nel DB
+    await c.env.DB.prepare(
+      `UPDATE contracts SET contenuto_html = ?, updated_at = ? WHERE id = ?`
+    ).bind(htmlCompiled, new Date().toISOString(), rinnovoId).run()
+
+    return c.json({
+      success: true,
+      message: `✅ HTML contratto ${contract.codice_contratto} rigenerato con il template aggiornato`,
+      codice: contract.codice_contratto,
+      nomeCliente: `${contract.nomeRichiedente} ${contract.cognomeRichiedente}`,
+      prezzoRinnovo: `€ ${rinnovoTotale.toFixed(2)}`,
+    })
+  } catch (error) {
+    console.error('❌ Errore rigenera-html:', error)
+    return c.json({
+      success: false,
+      error: 'Errore rigenerazione HTML',
+      details: error instanceof Error ? error.message : String(error)
+    }, 500)
+  }
+})
+
+/**
  * POST /api/contracts/:id/send-rinnovo-email
  * Invia l'email di rinnovo per un contratto già creato (dryRun completato).
  * Usato dopo verifica manuale del link firma.
@@ -14716,7 +14830,7 @@ app.get('/firma-contratto', async (c) => {
         <div class="container">
             <div class="header">
                 <h1>✍️ Firma Digitale Contratto</h1>
-                <p>TeleMedCare - Servizio eCura</p>
+                <p>Medica GB S.r.l. — Servizio eCura</p>
             </div>
             
             <div class="content">
