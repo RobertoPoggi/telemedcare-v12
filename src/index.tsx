@@ -6034,16 +6034,15 @@ app.post('/api/admin/fix-fonte-irbema', async (c) => {
 })
 
 /**
- * POST /api/admin/fix-rinnovo-email-sent
+ * POST /api/contracts/fix-email-sent
  * Correzione one-shot: imposta email_sent=1 su tutti i contratti rinnovo
- * che hanno status != 'DRAFT' e email_sent=0, così il btn3 ✍️ si attiva.
- * Usare quando l'email è stata inviata prima del fix del 2026-07-04.
+ * che hanno status SENT/SIGNED e email_sent=0, così il btn3 ✍️ si attiva.
+ * Protetto dalla sessione utente normale (non richiede ADMIN_SECRET_TOKEN).
  */
-app.post('/api/admin/fix-rinnovo-email-sent', async (c) => {
+app.post('/api/contracts/fix-email-sent', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
 
-    // Contratti rinnovo già inviati (status SENT o SIGNED) ma con email_sent=0
     const result = await c.env.DB.prepare(`
       UPDATE contracts
       SET email_sent = 1, updated_at = ?
@@ -6052,14 +6051,14 @@ app.post('/api/admin/fix-rinnovo-email-sent', async (c) => {
         AND status IN ('SENT', 'SIGNED')
     `).bind(new Date().toISOString()).run()
 
-    console.log(`✅ fix-rinnovo-email-sent: email_sent=1 impostato su ${result.meta.changes} contratti`)
+    console.log(`✅ fix-email-sent: email_sent=1 impostato su ${result.meta.changes} contratti rinnovo`)
     return c.json({
       success: true,
       updated: result.meta.changes,
       message: `email_sent=1 impostato su ${result.meta.changes} contratti rinnovo`
     })
   } catch (error) {
-    console.error('❌ Errore fix-rinnovo-email-sent:', error)
+    console.error('❌ Errore fix-email-sent:', error)
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
   }
 })

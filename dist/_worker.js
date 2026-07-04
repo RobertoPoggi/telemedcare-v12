@@ -10715,7 +10715,7 @@ ${370+t.length}
         async function fixRinnovoEmailSent() {
             if (!confirm('🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\'email.')) return;
             try {
-                const resp = await fetch('/api/admin/fix-rinnovo-email-sent', {
+                const resp = await fetch('/api/contracts/fix-email-sent', {
                     method: 'POST', credentials: 'include'
                 });
                 const result = await resp.json();
@@ -16206,13 +16206,13 @@ loadDDTs();
       SET fonte = 'Form eCura'
       WHERE (fonte = 'HUBSPOT' OR fonte LIKE 'HubSpot%' OR fonte IS NULL OR fonte = '' OR fonte = 'IRBEMA')
         AND id LIKE 'LEAD-IRBEMA-%'
-    `).run();return console.log(`✅ Fonte aggiornata per ${t.meta.changes} lead`),e.json({success:!0,message:"Fonte aggiornata da HUBSPOT a IRBEMA",leadsUpdated:t.meta.changes})}catch(t){return console.error("❌ Errore correzione fonte:",t),e.json({success:!1,error:t instanceof Error?t.message:String(t)},500)}});A.post("/api/admin/fix-rinnovo-email-sent",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);const t=await e.env.DB.prepare(`
+    `).run();return console.log(`✅ Fonte aggiornata per ${t.meta.changes} lead`),e.json({success:!0,message:"Fonte aggiornata da HUBSPOT a IRBEMA",leadsUpdated:t.meta.changes})}catch(t){return console.error("❌ Errore correzione fonte:",t),e.json({success:!1,error:t instanceof Error?t.message:String(t)},500)}});A.post("/api/contracts/fix-email-sent",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);const t=await e.env.DB.prepare(`
       UPDATE contracts
       SET email_sent = 1, updated_at = ?
       WHERE is_rinnovo = 1
         AND email_sent = 0
         AND status IN ('SENT', 'SIGNED')
-    `).bind(new Date().toISOString()).run();return console.log(`✅ fix-rinnovo-email-sent: email_sent=1 impostato su ${t.meta.changes} contratti`),e.json({success:!0,updated:t.meta.changes,message:`email_sent=1 impostato su ${t.meta.changes} contratti rinnovo`})}catch(t){return console.error("❌ Errore fix-rinnovo-email-sent:",t),e.json({success:!1,error:t instanceof Error?t.message:String(t)},500)}});A.post("/api/admin/fix-test-leads",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Aggiornamento fonte lead di TEST → Form eCura x Test");const a=(await e.env.DB.prepare(`
+    `).bind(new Date().toISOString()).run();return console.log(`✅ fix-email-sent: email_sent=1 impostato su ${t.meta.changes} contratti rinnovo`),e.json({success:!0,updated:t.meta.changes,message:`email_sent=1 impostato su ${t.meta.changes} contratti rinnovo`})}catch(t){return console.error("❌ Errore fix-email-sent:",t),e.json({success:!1,error:t instanceof Error?t.message:String(t)},500)}});A.post("/api/admin/fix-test-leads",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({success:!1,error:"Database non configurato"},500);console.log("🔧 Aggiornamento fonte lead di TEST → Form eCura x Test");const a=(await e.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente, email, fonte
       FROM leads
       WHERE fonte != 'Form eCura x Test'

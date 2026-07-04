@@ -7969,7 +7969,7 @@ export const data_dashboard = `<!DOCTYPE html>
         async function fixRinnovoEmailSent() {
             if (!confirm('🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\'email.')) return;
             try {
-                const resp = await fetch('/api/admin/fix-rinnovo-email-sent', {
+                const resp = await fetch('/api/contracts/fix-email-sent', {
                     method: 'POST', credentials: 'include'
                 });
                 const result = await resp.json();
