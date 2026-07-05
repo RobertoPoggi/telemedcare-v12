@@ -33185,6 +33185,39 @@ app.post('/api/oneshot-segna-rinnovo-completato-5mx8z', async (c) => {
   }
 })
 
+// POST /api/oneshot-aggiorna-servizio-contratto-2qx9k
+// Aggiorna servizio/piano/dispositivo di un contratto (cerca per codice_contratto)
+// Body: { codiceContratto, servizio?, piano?, dispositivo? }
+app.post('/api/oneshot-aggiorna-servizio-contratto-2qx9k', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { codiceContratto, servizio, piano } = body
+    if (!codiceContratto) return c.json({ error: 'codiceContratto richiesto' }, 400)
+
+    const contract = await c.env.DB.prepare(
+      `SELECT id, codice_contratto, servizio, piano FROM contracts WHERE codice_contratto = ? LIMIT 1`
+    ).bind(codiceContratto).first() as any
+    if (!contract) return c.json({ error: `Contratto "${codiceContratto}" non trovato` }, 404)
+
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      UPDATE contracts SET
+        servizio   = COALESCE(?, servizio),
+        piano      = COALESCE(?, piano),
+        updated_at = ?
+      WHERE id = ?
+    `).bind(servizio || null, piano || null, now, contract.id).run()
+
+    const updated = await c.env.DB.prepare(
+      `SELECT codice_contratto, servizio, piano FROM contracts WHERE id = ?`
+    ).bind(contract.id).first()
+    return c.json({ success: true, message: `✅ Contratto ${codiceContratto} aggiornato`, updated })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
