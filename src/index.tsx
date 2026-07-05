@@ -14116,8 +14116,17 @@ Medica GB S.r.l. — P.IVA 12435130963`
  */
 app.post('/api/contracts/:id/rigenera-html', async (c) => {
   try {
-    const rinnovoId = c.req.param('id')
+    const idParam = c.req.param('id')
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
+
+    // Supporta sia id che codice_contratto come parametro
+    // Prima tenta per id, poi per codice_contratto
+    let rinnovoId = idParam
+    const byId = await c.env.DB.prepare(`SELECT id FROM contracts WHERE id = ? LIMIT 1`).bind(idParam).first() as any
+    if (!byId) {
+      const byCode = await c.env.DB.prepare(`SELECT id FROM contracts WHERE codice_contratto = ? AND is_rinnovo = 1 LIMIT 1`).bind(idParam).first() as any
+      if (byCode) rinnovoId = byCode.id
+    }
 
     // Carica contratto rinnovo con tutti i dati intestatario dal lead
     // Include anche i campi "vecchi" (indirizzo, citta, cap, provincia, codiceFiscaleIntestatario)
