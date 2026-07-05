@@ -33091,21 +33091,24 @@ app.post('/api/oneshot-crea-e-completa-rinnovo-6nw4y', async (c) => {
       const dataInizio = new Date(dataScadenzaOrig.getTime() + 86400000)
       const dataScadenza = new Date(dataInizio.getTime() + 365 * 86400000)
 
+      const prezzoMensile = Math.round(rinnovoTotale / 12 * 100) / 100
       await c.env.DB.prepare(`
         INSERT INTO contracts (
           id, leadId, codice_contratto, tipo_contratto, template_utilizzato, contenuto_html, status,
-          prezzo_totale, piano, servizio, is_rinnovo, anno_rinnovo, rinnovo_di,
+          prezzo_mensile, durata_mesi, prezzo_totale, piano, servizio,
+          is_rinnovo, anno_rinnovo, rinnovo_di,
           data_invio, data_scadenza,
           email_sent, signed_at,
           proforma_rinnovo_sent, proforma_rinnovo_paid,
           rinnovo_completato, rinnovo_data_completamento,
           created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `).bind(
         rinnovoId, orig.leadId, codiceRinnovo, orig.tipo_contratto || 'RINNOVO', 'contratto_rinnovo_b2c',
         `<p>Contratto rinnovo ${codiceRinnovo} — inserito manualmente. Clicca 👁️ per rigenerare.</p>`,
         'SIGNED',
-        rinnovoTotale, orig.piano, orig.servizio, 1, annoRinnovo, orig.codice_contratto,
+        prezzoMensile, 12, rinnovoTotale, orig.piano, orig.servizio,
+        1, annoRinnovo, orig.codice_contratto,
         now, dataScadenza.toISOString().split('T')[0],
         1, now,
         1, 1,
