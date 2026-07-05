@@ -8038,21 +8038,23 @@ export const data_dashboard = `<!DOCTYPE html>
         // ────────────────────────────────────────────────────────────────────────
 
         // ── Stili condivisi per icone rinnovo ──────────────────────────────────
+        // Tutti i bottoni sono SEMPRE cliccabili — il colore indica solo lo stato:
+        //   colore pieno  = azione disponibile / step corrente
+        //   verde scuro   = già completato (ma ri-cliccabile)
         var _IC_BASE = 'width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:15px;border:none;text-decoration:none;box-sizing:border-box;';
-        var _IC_DONE = _IC_BASE + 'background:#f3f4f6;color:#9ca3af;cursor:default;';
-        var _IC_FUT  = _IC_BASE + 'background:#f9fafb;color:#d1d5db;cursor:not-allowed;';
+        var _IC_DONE_BTN = _IC_BASE + 'background:#bbf7d0;color:#065f46;cursor:pointer;';  // verde chiaro, cliccabile
 
-        function rinnovoMkBtn(emoji, titleTxt, action, s, colHex, extraData) {
-            if (s === 'done')   return '<span style="' + _IC_DONE + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
-            if (s === 'future') return '<span style="' + _IC_FUT  + '" title="disponibile dopo step precedente">' + emoji + '</span>';
-            var st = _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
-            return '<button class="rinnovo-btn" style="' + st + '" title="' + titleTxt + '" data-action="' + action + '" ' + extraData + '>' + emoji + '</button>';
+        function rinnovoMkBtn(emoji, titleTxt, action, done, colHex, extraData) {
+            var st = done
+                ? _IC_DONE_BTN
+                : _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
+            return '<button class="rinnovo-btn" style="' + st + '" title="' + titleTxt + (done ? ' \u2714 (già fatto — ri-cliccabile)' : '') + '" data-action="' + action + '" ' + extraData + '>' + emoji + '</button>';
         }
-        function rinnovoMkLink(emoji, titleTxt, href, s, colHex) {
-            if (s === 'done')   return '<span style="' + _IC_DONE + '" title="' + titleTxt + ' \u2714">' + emoji + '</span>';
-            if (s === 'future') return '<span style="' + _IC_FUT  + '" title="disponibile dopo step precedente">' + emoji + '</span>';
-            var st = _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
-            return '<a href="' + href + '" target="_blank" style="' + st + '" title="' + titleTxt + '">' + emoji + '</a>';
+        function rinnovoMkLink(emoji, titleTxt, href, done, colHex) {
+            var st = done
+                ? _IC_DONE_BTN
+                : _IC_BASE + 'background:' + colHex + ';color:#fff;cursor:pointer;';
+            return '<a href="' + href + '" target="_blank" style="' + st + '" title="' + titleTxt + (done ? ' \u2714' : '') + '">' + emoji + '</a>';
         }
 
         // ── Event delegation contratti — registrata UNA SOLA VOLTA su document ──
@@ -8242,13 +8244,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 if (step === 0 && !rinnovoCompletato) {
                     azioniHtml = '<span class="text-gray-300 text-xs">\u2014</span>';
                 } else {
-                    var done_all = rinnovoCompletato;
-                    var st1 = done_all ? 'done' : (step > 1 ? 'done' : step === 1 ? 'active' : 'future');
-                    var st2 = done_all ? 'done' : (step > 2 ? 'done' : step === 2 ? 'active' : 'future');
-                    var st3 = done_all ? 'done' : (step > 3 ? 'done' : step === 3 ? 'active' : 'future');
-                    var st4 = done_all ? 'done' : (step > 4 ? 'done' : step === 4 ? 'active' : 'future');
-                    var st5 = done_all ? 'done' : (step > 5 ? 'done' : step === 5 ? 'active' : 'future');
-                    var st6 = done_all ? 'done' : (step === 6 ? 'active' : 'future');
+                    // ── Tutti i bottoni sono SEMPRE cliccabili ────────────────────────────
+                    // done=true → verde chiaro (già fatto, ma ri-cliccabile)
+                    // done=false → colore pieno
 
                     var proformaUrl = contract.proforma_rinnovo_id
                         ? '/api/proforma/' + encodeURIComponent(contract.proforma_rinnovo_id) + '/pay'
@@ -8256,45 +8254,54 @@ export const data_dashboard = `<!DOCTYPE html>
                     var dataComp = contract.rinnovo_data_completamento
                         ? new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT') : '';
 
-                    // data-* attributes — valori semplici, & encodati per sicurezza
+                    // data-* attributes
                     var dLeadId  = 'data-lead-id="'  + (contract.leadId || '') + '"';
                     var dCodice  = 'data-codice="'   + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
                     var dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
                     var dIva     = 'data-iva="'      + ivaAgSafe + '"';
                     var dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
-                    // Per step 2+: le azioni agiscono sul contratto RINNOVO FIGLIO (rinnovoFiglioId), non sull'originale
                     var rinnovoActId = rinnovoFiglioId || contract.id;
                     var dId      = 'data-id="'       + rinnovoActId + '"';
                     var dEmail   = 'data-email="'    + (contract.email_cliente || contract.email || '').replace(/"/g, '&quot;') + '"';
                     var dCodiceR = 'data-codicer="'  + (contract.rinnovo_codice || contract.codice_contratto || '').replace(/"/g, '&quot;') + '"';
                     var dIdSafe  = 'data-idsafe="'   + rinnovoActId + '"';
 
-                    var btn1  = rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',    'rinnovo-crea',            st1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
-                    var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',     st2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
-                    var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,           st3, '#4f46e5');
-                    var btn3b = (step === 3)
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna firmato manualmente" data-action="rinnovo-segna-firmato" ' + dId + ' ' + dCodiceR + '>\u2705</button>'
-                        : '';
-                    var btn4  = rinnovoMkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',       'rinnovo-crea-proforma',      st4, '#7c3aed', dId + ' ' + dCodiceR);
-                    var btn4b = (step === 5)
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0891b2;color:#fff;cursor:pointer;" title="Anteprima email proforma (prima di inviare)" data-action="rinnovo-anteprima-proforma" ' + dId + ' ' + dCodiceR + '>\uD83D\uDD0D</button>'
-                        : '';
-                    var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma',   st5, '#7c3aed', dId + ' ' + dCodiceR);
-                    var btn6  = rinnovoMkLink('\uD83D\uDCB0', 'Paga proforma online',     proformaUrl,               st6, '#16a34a');
-                    var btn6b = done_all
-                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
-                        : (step === 6
-                            ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna completato manualmente" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>'
-                            : '');
+                    // Stato done per ogni bottone (solo per colorazione — non blocca il click)
+                    var d1 = isRinnovo || rinnovoCompletato;          // rinnovo già creato
+                    var d2 = emailSent || rinnovoCompletato;          // email già inviata
+                    var d3 = isSigned  || rinnovoCompletato;          // già firmato
+                    var d4 = proformaCreata  || rinnovoCompletato;    // proforma già creata
+                    var d5 = proformaInviata || rinnovoCompletato;    // proforma già inviata
+                    var d6 = proformaPagata  || rinnovoCompletato;    // già pagata
 
-                    // Bottoni 👁️ e 🔄 — appaiono SOLO sulla riga RINNOVO (isRinnovo=true)
+                    var btn1  = rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',    'rinnovo-crea',           d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
+                    var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',    d2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
+                    var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,          d3, '#4f46e5');
+                    // btn3b: segna firmato manualmente — visibile solo se rinnovo esiste e non ancora firmato
+                    var btn3b = (isRinnovo && !isSigned)
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#6ee7b7;color:#065f46;cursor:pointer;" title="Segna firmato manualmente" data-action="rinnovo-segna-firmato" ' + dId + ' ' + dCodiceR + '>\u2705</button>'
+                        : '';
+                    var btn4  = rinnovoMkBtn('\uD83D\uDCCB', 'Crea proforma rinnovo',      'rinnovo-crea-proforma',  d4, '#7c3aed', dId + ' ' + dCodiceR);
+                    // btn4b: anteprima proforma — visibile solo se proforma esiste e non ancora inviata
+                    var btn4b = (proformaCreata && !proformaInviata)
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0891b2;color:#fff;cursor:pointer;" title="Anteprima email proforma" data-action="rinnovo-anteprima-proforma" ' + dId + ' ' + dCodiceR + '>\uD83D\uDD0D</button>'
+                        : '';
+                    var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma', d5, '#7c3aed', dId + ' ' + dCodiceR);
+                    var btn6  = rinnovoMkLink('\uD83D\uDCB0', 'Paga proforma online',     proformaUrl,             d6, '#16a34a');
+                    // btn6b: segna completato — sempre visibile se rinnovo esiste, diventa badge se già completato
+                    var btn6b = rinnovoCompletato
+                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
+                        : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna rinnovo completato" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>';
+
+                    // 👁️ Vedi contratto — sempre visibile su righe rinnovo
                     var dSelfRinnovoId = 'data-rinnovo-id="' + contract.id + '"';
                     var dSelfCodice    = 'data-codice="'     + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
                     var btnVedi = isRinnovo
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (rigenera template e apre in nuova tab)" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>\uD83D\uDC41\uFE0F</button>'
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>\uD83D\uDC41\uFE0F</button>'
                         : '';
+                    // 🔄 Rigenera contratto — sempre visibile su righe rinnovo
                     var btnRigenera = isRinnovo
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#f59e0b;color:#fff;cursor:pointer;" title="Rigenera contratto (aggiorna intestatario, indirizzi, importi)" data-action="rinnovo-rigenera" ' + dSelfRinnovoId + ' ' + dSelfCodice + '>\uD83D\uDD04</button>'
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#f59e0b;color:#fff;cursor:pointer;" title="Rigenera HTML contratto (aggiorna dati anagrafici)" data-action="rinnovo-rigenera" ' + dSelfRinnovoId + ' ' + dSelfCodice + '>\uD83D\uDD04</button>'
                         : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
                         + btnVedi + btnRigenera + btn1 + btn2 + btn3 + btn3b + btn4 + btn4b + btn5 + btn6 + btn6b
