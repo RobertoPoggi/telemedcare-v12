@@ -14131,8 +14131,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
         l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
         l.nomeAssistito, l.cognomeAssistito,
         l.cfAssistito, l.indirizzoAssistito,
-        l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-        l.indirizzo, l.citta, l.cap, l.provincia
+        l.cittaAssistito, l.capAssistito, l.provinciaAssistito
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ?
@@ -14192,21 +14191,21 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       cognomeCliente   = contract.cognomeAssistito   || ''
       // Fallback: cfAssistito → cfIntestatario → codiceFiscaleIntestatario
       cfCliente        = contract.cfAssistito        || contract.cfIntestatario || contract.codiceFiscaleIntestatario || ''
-      // Fallback: campi *Assistito → campi *Intestatario → campi generici leads
-      indirizzoCliente = contract.indirizzoAssistito || contract.indirizzoIntestatario || contract.indirizzo || ''
-      cittaCliente     = contract.cittaAssistito     || contract.cittaIntestatario     || contract.citta     || ''
-      capCliente       = contract.capAssistito       || contract.capIntestatario       || contract.cap       || ''
-      provinciaCliente = contract.provinciaAssistito || contract.provinciaIntestatario || contract.provincia || ''
+      // Fallback: campi *Assistito → campi *Intestatario
+      indirizzoCliente = contract.indirizzoAssistito || contract.indirizzoIntestatario || ''
+      cittaCliente     = contract.cittaAssistito     || contract.cittaIntestatario     || ''
+      capCliente       = contract.capAssistito       || contract.capIntestatario       || ''
+      provinciaCliente = contract.provinciaAssistito || contract.provinciaIntestatario || ''
     } else {
       nomeCliente      = contract.nomeRichiedente    || ''
       cognomeCliente   = contract.cognomeRichiedente || ''
       // Fallback: cfIntestatario → codiceFiscaleIntestatario → cfAssistito
       cfCliente        = contract.cfIntestatario     || contract.codiceFiscaleIntestatario || contract.cfAssistito || ''
-      // Fallback: campi *Intestatario → campi generici leads → campi *Assistito
-      indirizzoCliente = contract.indirizzoIntestatario || contract.indirizzo || contract.indirizzoAssistito || ''
-      cittaCliente     = contract.cittaIntestatario     || contract.citta     || contract.cittaAssistito     || ''
-      capCliente       = contract.capIntestatario       || contract.cap       || contract.capAssistito       || ''
-      provinciaCliente = contract.provinciaIntestatario || contract.provincia || contract.provinciaAssistito || ''
+      // Fallback: campi *Intestatario → campi *Assistito
+      indirizzoCliente = contract.indirizzoIntestatario || contract.indirizzoAssistito || ''
+      cittaCliente     = contract.cittaIntestatario     || contract.cittaAssistito     || ''
+      capCliente       = contract.capIntestatario       || contract.capAssistito       || ''
+      provinciaCliente = contract.provinciaIntestatario || contract.provinciaAssistito || ''
     }
 
     // Placeholder se ancora vuoti dopo tutti i fallback
