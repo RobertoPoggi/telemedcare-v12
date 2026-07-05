@@ -21793,26 +21793,46 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ve.sendEmail({to:((s=e.env)==nul
       ORDER BY created_at DESC LIMIT 1
     `).bind(i,d,r.leadId).first();n.push({step:"4_idempotenza",rinnovoEsistente:l||null});const u=await e.env.DB.prepare(`SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo, rinnovo_di, data_scadenza
        FROM contracts WHERE leadId = ? ORDER BY created_at DESC`).bind(a).all();n.push({step:"5_tutti_contratti_lead",contracts:u.results||[]});const g=((await e.env.DB.prepare("PRAGMA table_info(contracts)").all()).results||[]).map(h=>h.name);n.push({step:"6_schema_colonne",cols:g});const m=`RINNOVO-${r.codice_contratto}-Y${d}-${Date.now()}`;return n.push({step:"7_rinnovoId_generato",rinnovoId:m,pulito:!m.includes("CONTRACT_")}),e.json({success:!0,steps:n})}catch(a){return e.json({success:!1,error:a.message,stack:(t=a.stack)==null?void 0:t.split(`
-`).slice(0,5)},500)}});A.post("/api/oneshot-set-anagrafica-lead-8kp2x",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.req.json(),{cognome:a,nomeRichiedente:i,cf:n,indirizzo:r,cap:s,citta:d,provincia:l,dataNascita:u,luogoNascita:p}=t;if(!a||!n||!r||!s||!d||!l)return e.json({error:"Campi obbligatori: cognome, cf, indirizzo, cap, citta, provincia"},400);const g=t.codiceContratto;let m;if(g){const f=await e.env.DB.prepare("SELECT leadId FROM contracts WHERE codice_contratto = ? LIMIT 1").bind(g).first();if(!f)return e.json({error:`Contratto "${g}" non trovato`},404);m=await e.env.DB.prepare("SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE id = ? LIMIT 1").bind(f.leadId).first()}else i?m=await e.env.DB.prepare(`SELECT id, nomeRichiedente, cognomeRichiedente FROM leads
+`).slice(0,5)},500)}});A.post("/api/oneshot-set-anagrafica-lead-8kp2x",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.req.json(),{cognome:a,nomeRichiedente:i,cf:n,indirizzo:r,cap:s,citta:d,provincia:l,dataNascita:u,luogoNascita:p}=t;if(!a||!n||!r||!s||!d||!l)return e.json({error:"Campi obbligatori: cognome, cf, indirizzo, cap, citta, provincia"},400);const g=t.codiceContratto;let m;if(g){const T=await e.env.DB.prepare("SELECT leadId FROM contracts WHERE codice_contratto = ? LIMIT 1").bind(g).first();if(!T)return e.json({error:`Contratto "${g}" non trovato`},404);m=await e.env.DB.prepare("SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE id = ? LIMIT 1").bind(T.leadId).first()}else i?m=await e.env.DB.prepare(`SELECT id, nomeRichiedente, cognomeRichiedente FROM leads
          WHERE (cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ?)
            AND (nomeRichiedente LIKE ? OR nomeAssistito LIKE ?) LIMIT 1`).bind(`%${a}%`,`%${a}%`,`%${i}%`,`%${i}%`).first():m=await e.env.DB.prepare(`SELECT id, nomeRichiedente, cognomeRichiedente FROM leads
-         WHERE cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ? LIMIT 1`).bind(`%${a}%`,`%${a}%`).first();if(!m)return e.json({error:`Lead con cognome "${a}" non trovato`},404);await e.env.DB.prepare(`
-      UPDATE leads SET
-        cfIntestatario            = ?,
-        codiceFiscaleIntestatario = ?,
-        indirizzoIntestatario     = ?,
-        capIntestatario           = ?,
-        cittaIntestatario         = ?,
-        provinciaIntestatario     = ?,
-        dataNascitaIntestatario   = ?,
-        luogoNascitaIntestatario  = ?,
-        updated_at                = ?
-      WHERE id = ?
-    `).bind(n,n,r,s,d,l,u||null,p||null,new Date().toISOString(),m.id).run();const h=await e.env.DB.prepare(`
+         WHERE cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ? LIMIT 1`).bind(`%${a}%`,`%${a}%`).first();if(!m)return e.json({error:`Lead con cognome "${a}" non trovato`},404);const h=!!t.anche_assistito,f=new Date().toISOString();h?await e.env.DB.prepare(`
+        UPDATE leads SET
+          cfIntestatario            = ?,
+          codiceFiscaleIntestatario = ?,
+          indirizzoIntestatario     = ?,
+          capIntestatario           = ?,
+          cittaIntestatario         = ?,
+          provinciaIntestatario     = ?,
+          dataNascitaIntestatario   = ?,
+          luogoNascitaIntestatario  = ?,
+          cfAssistito               = ?,
+          codiceFiscaleAssistito    = ?,
+          indirizzoAssistito        = ?,
+          capAssistito              = ?,
+          cittaAssistito            = ?,
+          provinciaAssistito        = ?,
+          dataNascitaAssistito      = ?,
+          luogoNascitaAssistito     = ?,
+          updated_at                = ?
+        WHERE id = ?
+      `).bind(n,n,r,s,d,l,u||null,p||null,n,n,r,s,d,l,u||null,p||null,f,m.id).run():await e.env.DB.prepare(`
+        UPDATE leads SET
+          cfIntestatario            = ?,
+          codiceFiscaleIntestatario = ?,
+          indirizzoIntestatario     = ?,
+          capIntestatario           = ?,
+          cittaIntestatario         = ?,
+          provinciaIntestatario     = ?,
+          dataNascitaIntestatario   = ?,
+          luogoNascitaIntestatario  = ?,
+          updated_at                = ?
+        WHERE id = ?
+      `).bind(n,n,r,s,d,l,u||null,p||null,f,m.id).run();const v=await e.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente,
         cfIntestatario, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario
       FROM leads WHERE id = ?
-    `).bind(m.id).first();return e.json({success:!0,message:`Anagrafica aggiornata per ${m.nomeRichiedente} ${m.cognomeRichiedente}`,updated:h})}catch(t){return e.json({success:!1,error:t.message},500)}});A.get("/api/oneshot-read-lead-capone-3jx7w",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.env.DB.prepare(`
+    `).bind(m.id).first();return e.json({success:!0,message:`Anagrafica aggiornata per ${m.nomeRichiedente} ${m.cognomeRichiedente}`,updated:v})}catch(t){return e.json({success:!1,error:t.message},500)}});A.get("/api/oneshot-read-lead-capone-3jx7w",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente, email,
         intestatarioContratto,
         cfIntestatario, codiceFiscaleIntestatario,

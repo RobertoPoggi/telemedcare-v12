@@ -32926,22 +32926,49 @@ app.post('/api/oneshot-set-anagrafica-lead-8kp2x', async (c) => {
     }
     if (!lead) return c.json({ error: `Lead con cognome "${cognome}" non trovato` }, 404)
 
-    await c.env.DB.prepare(`
-      UPDATE leads SET
-        cfIntestatario            = ?,
-        codiceFiscaleIntestatario = ?,
-        indirizzoIntestatario     = ?,
-        capIntestatario           = ?,
-        cittaIntestatario         = ?,
-        provinciaIntestatario     = ?,
-        dataNascitaIntestatario   = ?,
-        luogoNascitaIntestatario  = ?,
-        updated_at                = ?
-      WHERE id = ?
-    `).bind(cf, cf, indirizzo, cap, citta, provincia,
-      dataNascita || null, luogoNascita || null,
-      new Date().toISOString(), lead.id
-    ).run()
+    // Se anche_assistito=true aggiorna entrambi i set (utile quando intestatarioContratto='assistito')
+    const ancheAssistito = !!(body.anche_assistito)
+    const now = new Date().toISOString()
+    if (ancheAssistito) {
+      await c.env.DB.prepare(`
+        UPDATE leads SET
+          cfIntestatario            = ?,
+          codiceFiscaleIntestatario = ?,
+          indirizzoIntestatario     = ?,
+          capIntestatario           = ?,
+          cittaIntestatario         = ?,
+          provinciaIntestatario     = ?,
+          dataNascitaIntestatario   = ?,
+          luogoNascitaIntestatario  = ?,
+          cfAssistito               = ?,
+          codiceFiscaleAssistito    = ?,
+          indirizzoAssistito        = ?,
+          capAssistito              = ?,
+          cittaAssistito            = ?,
+          provinciaAssistito        = ?,
+          dataNascitaAssistito      = ?,
+          luogoNascitaAssistito     = ?,
+          updated_at                = ?
+        WHERE id = ?
+      `).bind(cf, cf, indirizzo, cap, citta, provincia, dataNascita || null, luogoNascita || null,
+              cf, cf, indirizzo, cap, citta, provincia, dataNascita || null, luogoNascita || null,
+              now, lead.id).run()
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE leads SET
+          cfIntestatario            = ?,
+          codiceFiscaleIntestatario = ?,
+          indirizzoIntestatario     = ?,
+          capIntestatario           = ?,
+          cittaIntestatario         = ?,
+          provinciaIntestatario     = ?,
+          dataNascitaIntestatario   = ?,
+          luogoNascitaIntestatario  = ?,
+          updated_at                = ?
+        WHERE id = ?
+      `).bind(cf, cf, indirizzo, cap, citta, provincia,
+        dataNascita || null, luogoNascita || null, now, lead.id).run()
+    }
 
     const updated = await c.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente,
