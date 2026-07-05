@@ -21793,7 +21793,23 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ve.sendEmail({to:((s=e.env)==nul
       ORDER BY created_at DESC LIMIT 1
     `).bind(i,d,r.leadId).first();n.push({step:"4_idempotenza",rinnovoEsistente:l||null});const u=await e.env.DB.prepare(`SELECT id, codice_contratto, status, is_rinnovo, anno_rinnovo, rinnovo_di, data_scadenza
        FROM contracts WHERE leadId = ? ORDER BY created_at DESC`).bind(a).all();n.push({step:"5_tutti_contratti_lead",contracts:u.results||[]});const m=((await e.env.DB.prepare("PRAGMA table_info(contracts)").all()).results||[]).map(h=>h.name);n.push({step:"6_schema_colonne",cols:m});const g=`RINNOVO-${r.codice_contratto}-Y${d}-${Date.now()}`;return n.push({step:"7_rinnovoId_generato",rinnovoId:g,pulito:!g.includes("CONTRACT_")}),e.json({success:!0,steps:n})}catch(a){return e.json({success:!1,error:a.message,stack:(t=a.stack)==null?void 0:t.split(`
-`).slice(0,5)},500)}});A.get("/api/oneshot-read-lead-capone-3jx7w",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.env.DB.prepare(`
+`).slice(0,5)},500)}});A.post("/api/oneshot-set-anagrafica-lead-8kp2x",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.req.json(),{cognome:a,nomeRichiedente:i,cf:n,indirizzo:r,cap:s,citta:d,provincia:l,dataNascita:u,luogoNascita:p}=t;if(!a||!n||!r||!s||!d||!l)return e.json({error:"Campi obbligatori: cognome, cf, indirizzo, cap, citta, provincia"},400);let m;if(i?m=await e.env.DB.prepare("SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? AND nomeRichiedente LIKE ? LIMIT 1").bind(`%${a}%`,`%${i}%`).first():m=await e.env.DB.prepare("SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? LIMIT 1").bind(`%${a}%`).first(),!m)return e.json({error:`Lead con cognome "${a}" non trovato`},404);await e.env.DB.prepare(`
+      UPDATE leads SET
+        cfIntestatario            = ?,
+        codiceFiscaleIntestatario = ?,
+        indirizzoIntestatario     = ?,
+        capIntestatario           = ?,
+        cittaIntestatario         = ?,
+        provinciaIntestatario     = ?,
+        dataNascitaIntestatario   = ?,
+        luogoNascitaIntestatario  = ?,
+        updated_at                = ?
+      WHERE id = ?
+    `).bind(n,n,r,s,d,l,u||null,p||null,new Date().toISOString(),m.id).run();const g=await e.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente,
+        cfIntestatario, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario
+      FROM leads WHERE id = ?
+    `).bind(m.id).first();return e.json({success:!0,message:`Anagrafica aggiornata per ${m.nomeRichiedente} ${m.cognomeRichiedente}`,updated:g})}catch(t){return e.json({success:!1,error:t.message},500)}});A.get("/api/oneshot-read-lead-capone-3jx7w",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.env.DB.prepare(`
       SELECT id, nomeRichiedente, cognomeRichiedente, email,
         intestatarioContratto,
         cfIntestatario, codiceFiscaleIntestatario,

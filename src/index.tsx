@@ -32889,6 +32889,58 @@ app.get('/api/oneshot-diag-rinnovo-capone-7wq3x', async (c) => {
   }
 })
 
+// POST /api/oneshot-set-anagrafica-lead-8kp2x
+// Aggiorna dati anagrafici di QUALSIASI lead cercandolo per cognome
+// Body: { cognome, nomeRichiedente?, cf, indirizzo, cap, citta, provincia, dataNascita?, luogoNascita? }
+app.post('/api/oneshot-set-anagrafica-lead-8kp2x', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { cognome, nomeRichiedente, cf, indirizzo, cap, citta, provincia, dataNascita, luogoNascita } = body
+    if (!cognome || !cf || !indirizzo || !cap || !citta || !provincia) {
+      return c.json({ error: 'Campi obbligatori: cognome, cf, indirizzo, cap, citta, provincia' }, 400)
+    }
+    // Cerca per cognomeRichiedente (e opzionalmente nomeRichiedente)
+    let lead: any
+    if (nomeRichiedente) {
+      lead = await c.env.DB.prepare(
+        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? AND nomeRichiedente LIKE ? LIMIT 1`
+      ).bind(`%${cognome}%`, `%${nomeRichiedente}%`).first()
+    } else {
+      lead = await c.env.DB.prepare(
+        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? LIMIT 1`
+      ).bind(`%${cognome}%`).first()
+    }
+    if (!lead) return c.json({ error: `Lead con cognome "${cognome}" non trovato` }, 404)
+
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        cfIntestatario            = ?,
+        codiceFiscaleIntestatario = ?,
+        indirizzoIntestatario     = ?,
+        capIntestatario           = ?,
+        cittaIntestatario         = ?,
+        provinciaIntestatario     = ?,
+        dataNascitaIntestatario   = ?,
+        luogoNascitaIntestatario  = ?,
+        updated_at                = ?
+      WHERE id = ?
+    `).bind(cf, cf, indirizzo, cap, citta, provincia,
+      dataNascita || null, luogoNascita || null,
+      new Date().toISOString(), lead.id
+    ).run()
+
+    const updated = await c.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente,
+        cfIntestatario, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario
+      FROM leads WHERE id = ?
+    `).bind(lead.id).first()
+    return c.json({ success: true, message: `Anagrafica aggiornata per ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`, updated })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // GET /api/oneshot-read-lead-capone-3jx7w
 // Legge TUTTI i campi anagrafici del lead Capone dal DB di produzione
 app.get('/api/oneshot-read-lead-capone-3jx7w', async (c) => {
