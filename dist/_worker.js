@@ -10832,7 +10832,6 @@ ${370+t.length}
             else if (action === 'rinnovo-invia-proforma')     inviaProformaRinnovo(id, codiceR);
             else if (action === 'rinnovo-segna-completato')   segnaRinnovoCompletato(idSafe, codice);
             else if (action === 'rinnovo-vedi')               vediContrattoRinnovo(rinnovoId);
-            else if (action === 'rinnovo-rigenera')            rigeneraContrattoRinnovo(rinnovoId, codice, btn);
         });
 
         async function vediContrattoRinnovo(rinnovoId) {
@@ -10843,40 +10842,6 @@ ${370+t.length}
                 console.warn('Rigenera HTML non critico:', e);
             }
             window.open('/firma-contratto.html?contractId=' + encodeURIComponent(rinnovoId), '_blank');
-        }
-
-        async function rigeneraContrattoRinnovo(rinnovoId, codiceRinnovo, btn) {
-            if (!rinnovoId) { alert('ID contratto rinnovo non trovato'); return; }
-            // Feedback visivo sul bottone
-            var orig = btn.innerHTML;
-            btn.innerHTML = '⏳';
-            btn.disabled = true;
-            btn.style.opacity = '0.6';
-            try {
-                const resp = await fetch('/api/contracts/' + rinnovoId + '/rigenera-html', {
-                    method: 'POST', credentials: 'include'
-                });
-                const result = await resp.json();
-                if (result.success) {
-                    btn.innerHTML = '✅';
-                    setTimeout(function() {
-                        btn.innerHTML = orig;
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                    }, 1500);
-                    if (typeof loadContractsData === 'function') loadContractsData();
-                } else {
-                    btn.innerHTML = orig;
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    alert('❌ Errore rigenera: ' + (result.error || result.details || 'Riprovare'));
-                }
-            } catch(err) {
-                btn.innerHTML = orig;
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                alert('❌ Errore di rete: ' + err.message);
-            }
         }
 
         function renderContractsTable(contracts) {
@@ -11045,17 +11010,13 @@ ${370+t.length}
                         : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna rinnovo completato" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>✅</button>';
 
                     // 👁️ Vedi contratto — sempre visibile su righe rinnovo
+                    // Rigenera silenziosamente l'HTML (dati aggiornati) poi apre la tab
                     var dSelfRinnovoId = 'data-rinnovo-id="' + contract.id + '"';
-                    var dSelfCodice    = 'data-codice="'     + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
                     var btnVedi = isRinnovo
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>👁️</button>'
-                        : '';
-                    // 🔄 Rigenera contratto — sempre visibile su righe rinnovo
-                    var btnRigenera = isRinnovo
-                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#f59e0b;color:#fff;cursor:pointer;" title="Rigenera HTML contratto (aggiorna dati anagrafici)" data-action="rinnovo-rigenera" ' + dSelfRinnovoId + ' ' + dSelfCodice + '>🔄</button>'
+                        ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0ea5e9;color:#fff;cursor:pointer;" title="Visualizza contratto rinnovo (rigenera e apre in nuova tab)" data-action="rinnovo-vedi" ' + dSelfRinnovoId + '>👁️</button>'
                         : '';
                     azioniHtml = '<div style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'
-                        + btnVedi + btnRigenera + btn1 + btn2 + btn3 + btn3b + btn4 + btn4b + btn5 + btn6 + btn6b
+                        + btnVedi + btn1 + btn2 + btn3 + btn3b + btn4 + btn4b + btn5 + btn6 + btn6b
                         + '</div>';
                 }
 
