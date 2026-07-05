@@ -33093,16 +33093,16 @@ app.post('/api/oneshot-crea-e-completa-rinnovo-6nw4y', async (c) => {
 
       await c.env.DB.prepare(`
         INSERT INTO contracts (
-          id, leadId, codice_contratto, tipo_contratto, status,
+          id, leadId, codice_contratto, tipo_contratto, template_utilizzato, status,
           prezzo_totale, piano, servizio, is_rinnovo, anno_rinnovo, rinnovo_di,
           data_invio, data_scadenza,
           email_sent, signed_at,
           proforma_rinnovo_sent, proforma_rinnovo_paid,
           rinnovo_completato, rinnovo_data_completamento,
           created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       `).bind(
-        rinnovoId, orig.leadId, codiceRinnovo, orig.tipo_contratto || 'RINNOVO', 'SIGNED',
+        rinnovoId, orig.leadId, codiceRinnovo, orig.tipo_contratto || 'RINNOVO', 'contratto_rinnovo_b2c', 'SIGNED',
         rinnovoTotale, orig.piano, orig.servizio, 1, annoRinnovo, orig.codice_contratto,
         now, dataScadenza.toISOString().split('T')[0],
         1, now,
