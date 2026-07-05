@@ -32890,6 +32890,67 @@ app.get('/api/oneshot-diag-rinnovo-capone-7wq3x', async (c) => {
   }
 })
 
+// GET /api/oneshot-read-lead-capone-3jx7w
+// Legge TUTTI i campi anagrafici del lead Capone dal DB di produzione
+app.get('/api/oneshot-read-lead-capone-3jx7w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const lead = await c.env.DB.prepare(`
+      SELECT id, nomeRichiedente, cognomeRichiedente, email,
+        intestatarioContratto,
+        cfIntestatario, codiceFiscaleIntestatario,
+        indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
+        luogoNascitaIntestatario, dataNascitaIntestatario,
+        nomeAssistito, cognomeAssistito,
+        cfAssistito, codiceFiscaleAssistito,
+        indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
+        luogoNascitaAssistito, dataNascitaAssistito
+      FROM leads WHERE id = 'LEAD-IRBEMA-00061'
+    `).first() as any
+    return c.json({ success: true, lead })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// POST /api/oneshot-set-anagrafica-capone-3jx7w
+// Aggiorna i dati anagrafici mancanti del lead Capone
+// Body: { cf, indirizzo, cap, citta, provincia, dataNascita?, luogoNascita? }
+app.post('/api/oneshot-set-anagrafica-capone-3jx7w', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { cf, indirizzo, cap, citta, provincia, dataNascita, luogoNascita } = body
+    if (!cf || !indirizzo || !cap || !citta || !provincia) {
+      return c.json({ error: 'Campi obbligatori: cf, indirizzo, cap, citta, provincia' }, 400)
+    }
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        cfIntestatario           = ?,
+        codiceFiscaleIntestatario = ?,
+        indirizzoIntestatario    = ?,
+        capIntestatario          = ?,
+        cittaIntestatario        = ?,
+        provinciaIntestatario    = ?,
+        dataNascitaIntestatario  = ?,
+        luogoNascitaIntestatario = ?,
+        updated_at               = ?
+      WHERE id = 'LEAD-IRBEMA-00061'
+    `).bind(
+      cf, cf, indirizzo, cap, citta, provincia,
+      dataNascita || null, luogoNascita || null,
+      new Date().toISOString()
+    ).run()
+    const updated = await c.env.DB.prepare(`
+      SELECT cfIntestatario, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario
+      FROM leads WHERE id = 'LEAD-IRBEMA-00061'
+    `).first()
+    return c.json({ success: true, message: 'Anagrafica Capone aggiornata', updated })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
