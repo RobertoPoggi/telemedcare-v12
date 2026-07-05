@@ -14112,15 +14112,19 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
 
     // Carica contratto rinnovo con tutti i dati intestatario dal lead
+    // Include anche i campi "vecchi" (indirizzo, citta, cap, provincia, codiceFiscaleIntestatario)
+    // come fallback per lead creati prima dell'ALTER TABLE che ha aggiunto i campi *Intestatario
     const contract = await c.env.DB.prepare(`
       SELECT c.*,
         l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata,
         l.intestatarioContratto,
-        l.cfIntestatario, l.indirizzoIntestatario,
+        l.cfIntestatario, l.codiceFiscaleIntestatario,
+        l.indirizzoIntestatario,
         l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
         l.nomeAssistito, l.cognomeAssistito,
         l.cfAssistito, l.indirizzoAssistito,
-        l.cittaAssistito, l.capAssistito, l.provinciaAssistito
+        l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+        l.indirizzo, l.citta, l.cap, l.provincia
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ?
@@ -14178,20 +14182,31 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     if (intestatario === 'assistito') {
       nomeCliente      = contract.nomeAssistito      || ''
       cognomeCliente   = contract.cognomeAssistito   || ''
-      cfCliente        = contract.cfAssistito        || ''
-      indirizzoCliente = contract.indirizzoAssistito || ''
-      cittaCliente     = contract.cittaAssistito     || ''
-      capCliente       = contract.capAssistito       || ''
-      provinciaCliente = contract.provinciaAssistito || ''
+      // Fallback: cfAssistito → cfIntestatario → codiceFiscaleIntestatario
+      cfCliente        = contract.cfAssistito        || contract.cfIntestatario || contract.codiceFiscaleIntestatario || ''
+      // Fallback: campi *Assistito → campi *Intestatario → campi generici leads
+      indirizzoCliente = contract.indirizzoAssistito || contract.indirizzoIntestatario || contract.indirizzo || ''
+      cittaCliente     = contract.cittaAssistito     || contract.cittaIntestatario     || contract.citta     || ''
+      capCliente       = contract.capAssistito       || contract.capIntestatario       || contract.cap       || ''
+      provinciaCliente = contract.provinciaAssistito || contract.provinciaIntestatario || contract.provincia || ''
     } else {
       nomeCliente      = contract.nomeRichiedente    || ''
       cognomeCliente   = contract.cognomeRichiedente || ''
-      cfCliente        = contract.cfIntestatario     || ''
-      indirizzoCliente = contract.indirizzoIntestatario || ''
-      cittaCliente     = contract.cittaIntestatario  || ''
-      capCliente       = contract.capIntestatario    || ''
-      provinciaCliente = contract.provinciaIntestatario || ''
+      // Fallback: cfIntestatario → codiceFiscaleIntestatario → cfAssistito
+      cfCliente        = contract.cfIntestatario     || contract.codiceFiscaleIntestatario || contract.cfAssistito || ''
+      // Fallback: campi *Intestatario → campi generici leads → campi *Assistito
+      indirizzoCliente = contract.indirizzoIntestatario || contract.indirizzo || contract.indirizzoAssistito || ''
+      cittaCliente     = contract.cittaIntestatario     || contract.citta     || contract.cittaAssistito     || ''
+      capCliente       = contract.capIntestatario       || contract.cap       || contract.capAssistito       || ''
+      provinciaCliente = contract.provinciaIntestatario || contract.provincia || contract.provinciaAssistito || ''
     }
+
+    // Placeholder se ancora vuoti dopo tutti i fallback
+    if (!cfCliente)        cfCliente        = '— da completare —'
+    if (!indirizzoCliente) indirizzoCliente = '— da completare —'
+    if (!cittaCliente)     cittaCliente     = '— da completare —'
+    if (!capCliente)       capCliente       = '—'
+    if (!provinciaCliente) provinciaCliente = '—'
 
     // Template inlinato (Cloudflare Workers non ha accesso al filesystem)
     const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
