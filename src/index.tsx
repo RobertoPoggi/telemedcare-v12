@@ -33051,6 +33051,52 @@ app.post('/api/oneshot-set-anagrafica-capone-3jx7w', async (c) => {
   }
 })
 
+// POST /api/oneshot-segna-rinnovo-completato-5mx8z
+// Segna un contratto rinnovo come SIGNED + proforma pagata + rinnovo completato
+// Body: { codiceOriginale: "CTR-PIPPO-2025" }
+// Cerca il contratto rinnovo figlio (is_rinnovo=1) e aggiorna tutti i flag
+app.post('/api/oneshot-segna-rinnovo-completato-5mx8z', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { codiceOriginale } = body
+    if (!codiceOriginale) return c.json({ error: 'codiceOriginale richiesto' }, 400)
+
+    // Trova il contratto rinnovo figlio
+    const rinnovo = await c.env.DB.prepare(`
+      SELECT id, codice_contratto, status, anno_rinnovo
+      FROM contracts
+      WHERE rinnovo_di = ? AND is_rinnovo = 1
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(codiceOriginale).first() as any
+
+    if (!rinnovo) return c.json({ error: `Nessun contratto rinnovo trovato per "${codiceOriginale}"` }, 404)
+
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      UPDATE contracts SET
+        status                  = 'SIGNED',
+        signed_at               = ?,
+        email_sent              = 1,
+        proforma_rinnovo_sent   = 1,
+        proforma_rinnovo_paid   = 1,
+        rinnovo_completato      = 1,
+        rinnovo_data_completamento = ?,
+        updated_at              = ?
+      WHERE id = ?
+    `).bind(now, now, now, rinnovo.id).run()
+
+    return c.json({
+      success: true,
+      message: `✅ Rinnovo ${rinnovo.codice_contratto} segnato come firmato e pagato`,
+      rinnovoId: rinnovo.id,
+      codice: rinnovo.codice_contratto
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
