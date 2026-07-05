@@ -33201,13 +33201,17 @@ app.post('/api/oneshot-aggiorna-servizio-contratto-2qx9k', async (c) => {
     if (!contract) return c.json({ error: `Contratto "${codiceContratto}" non trovato` }, 404)
 
     const now = new Date().toISOString()
+    const prezzoTotale = body.prezzoTotale ? parseFloat(body.prezzoTotale) : null
+    const prezzoMensile = prezzoTotale ? Math.round(prezzoTotale / 12 * 100) / 100 : null
     await c.env.DB.prepare(`
       UPDATE contracts SET
-        servizio   = COALESCE(?, servizio),
-        piano      = COALESCE(?, piano),
-        updated_at = ?
+        servizio      = COALESCE(?, servizio),
+        piano         = COALESCE(?, piano),
+        prezzo_totale = COALESCE(?, prezzo_totale),
+        prezzo_mensile = COALESCE(?, prezzo_mensile),
+        updated_at    = ?
       WHERE id = ?
-    `).bind(servizio || null, piano || null, now, contract.id).run()
+    `).bind(servizio || null, piano || null, prezzoTotale, prezzoMensile, now, contract.id).run()
 
     const updated = await c.env.DB.prepare(
       `SELECT codice_contratto, servizio, piano FROM contracts WHERE id = ?`
