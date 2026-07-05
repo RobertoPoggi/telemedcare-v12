@@ -32900,16 +32900,29 @@ app.post('/api/oneshot-set-anagrafica-lead-8kp2x', async (c) => {
     if (!cognome || !cf || !indirizzo || !cap || !citta || !provincia) {
       return c.json({ error: 'Campi obbligatori: cognome, cf, indirizzo, cap, citta, provincia' }, 400)
     }
-    // Cerca per cognomeRichiedente (e opzionalmente nomeRichiedente)
+    // Cerca per cognomeRichiedente O cognomeAssistito (e opzionalmente nomeRichiedente/nomeAssistito)
+    // Oppure direttamente per codiceContratto
+    const codiceContratto = body.codiceContratto
     let lead: any
-    if (nomeRichiedente) {
+    if (codiceContratto) {
+      const contract = await c.env.DB.prepare(
+        `SELECT leadId FROM contracts WHERE codice_contratto = ? LIMIT 1`
+      ).bind(codiceContratto).first() as any
+      if (!contract) return c.json({ error: `Contratto "${codiceContratto}" non trovato` }, 404)
       lead = await c.env.DB.prepare(
-        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? AND nomeRichiedente LIKE ? LIMIT 1`
-      ).bind(`%${cognome}%`, `%${nomeRichiedente}%`).first()
+        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE id = ? LIMIT 1`
+      ).bind(contract.leadId).first()
+    } else if (nomeRichiedente) {
+      lead = await c.env.DB.prepare(
+        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads
+         WHERE (cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ?)
+           AND (nomeRichiedente LIKE ? OR nomeAssistito LIKE ?) LIMIT 1`
+      ).bind(`%${cognome}%`, `%${cognome}%`, `%${nomeRichiedente}%`, `%${nomeRichiedente}%`).first()
     } else {
       lead = await c.env.DB.prepare(
-        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads WHERE cognomeRichiedente LIKE ? LIMIT 1`
-      ).bind(`%${cognome}%`).first()
+        `SELECT id, nomeRichiedente, cognomeRichiedente FROM leads
+         WHERE cognomeRichiedente LIKE ? OR cognomeAssistito LIKE ? LIMIT 1`
+      ).bind(`%${cognome}%`, `%${cognome}%`).first()
     }
     if (!lead) return c.json({ error: `Lead con cognome "${cognome}" non trovato` }, 404)
 
