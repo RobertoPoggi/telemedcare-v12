@@ -14111,9 +14111,16 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const rinnovoId = c.req.param('id')
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
 
-    // Carica contratto rinnovo
+    // Carica contratto rinnovo con tutti i dati intestatario dal lead
     const contract = await c.env.DB.prepare(`
-      SELECT c.*, l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata
+      SELECT c.*,
+        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata,
+        l.intestatarioContratto,
+        l.cfIntestatario, l.indirizzoIntestatario,
+        l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
+        l.nomeAssistito, l.cognomeAssistito,
+        l.cfAssistito, l.indirizzoAssistito,
+        l.cittaAssistito, l.capAssistito, l.provinciaAssistito
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ?
@@ -14157,10 +14164,34 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const servizio = contract.servizio || origContract?.servizio || 'eCura PRO'
     const piano = contract.piano || contract.tipo_contratto || origContract?.piano || 'BASE'
     const annoRinnovo = contract.anno_rinnovo || 2
-    // Prezzo primo anno IVA inclusa — solo il numero, il template mette già "€ "
+    // Prezzo primo anno IVA inclusa
     const prezzoTotalePrimoAnnoNum = origContract?.prezzo_totale
       ? (parseFloat(origContract.prezzo_totale) * (1 + ivaRate)).toFixed(2).replace('.', ',')
       : rinnovoTotale.toFixed(2).replace('.', ',')
+
+    // ── Dati intestatario (richiedente o assistito) ───────────────────────────
+    const intestatario = contract.intestatarioContratto || 'richiedente'
+    let nomeCliente: string, cognomeCliente: string
+    let cfCliente: string, indirizzoCliente: string
+    let cittaCliente: string, capCliente: string, provinciaCliente: string
+
+    if (intestatario === 'assistito') {
+      nomeCliente      = contract.nomeAssistito      || ''
+      cognomeCliente   = contract.cognomeAssistito   || ''
+      cfCliente        = contract.cfAssistito        || ''
+      indirizzoCliente = contract.indirizzoAssistito || ''
+      cittaCliente     = contract.cittaAssistito     || ''
+      capCliente       = contract.capAssistito       || ''
+      provinciaCliente = contract.provinciaAssistito || ''
+    } else {
+      nomeCliente      = contract.nomeRichiedente    || ''
+      cognomeCliente   = contract.cognomeRichiedente || ''
+      cfCliente        = contract.cfIntestatario     || ''
+      indirizzoCliente = contract.indirizzoIntestatario || ''
+      cittaCliente     = contract.cittaIntestatario  || ''
+      capCliente       = contract.capIntestatario    || ''
+      provinciaCliente = contract.provinciaIntestatario || ''
+    }
 
     // Template inlinato (Cloudflare Workers non ha accesso al filesystem)
     const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
@@ -14176,8 +14207,13 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       CODICE_CONTRATTO_ORIGINALE: contract.rinnovo_di || origContract?.codice_contratto || 'N/A',
       DATA_CONTRATTO_ORIGINALE:   dataContrattoOrig,
       DATA_SCADENZA_ORIGINALE:    dataScadenzaOrig,
-      NOME_CLIENTE:               contract.nomeRichiedente || '',
-      COGNOME_CLIENTE:            contract.cognomeRichiedente || '',
+      NOME_CLIENTE:               nomeCliente,
+      COGNOME_CLIENTE:            cognomeCliente,
+      CF_CLIENTE:                 cfCliente,
+      INDIRIZZO_CLIENTE:          indirizzoCliente,
+      CITTA_CLIENTE:              cittaCliente,
+      CAP_CLIENTE:                capCliente,
+      PROVINCIA_CLIENTE:          provinciaCliente,
       EMAIL_CLIENTE:              contract.email || '',
       TELEFONO_CLIENTE:           contract.telefono || '',
       DISPOSITIVO:                servizio.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
@@ -14188,7 +14224,6 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       IVA_LABEL:                  ivaLabel,
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
-      // PREZZO_TOTALE_PRIMO_ANNO: solo numero con €, il template lo usa senza aggiungere € extra
       PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
     }
     const htmlCompiled = templateHtml.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)

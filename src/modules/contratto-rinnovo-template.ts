@@ -255,6 +255,9 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
             <div class="party-box">
                 <div class="party-label">Cliente</div>
                 <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong><br>
+                {{INDIRIZZO_CLIENTE}}<br>
+                {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}})<br>
+                Codice Fiscale: {{CF_CLIENTE}}<br>
                 Email: {{EMAIL_CLIENTE}}<br>
                 Telefono: {{TELEFONO_CLIENTE}}<br>
                 <br>
@@ -317,6 +320,8 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
         </table>
         <p>La tariffa di rinnovo è <strong>agevolata rispetto alla prima annualità</strong>
         ({{PREZZO_TOTALE_PRIMO_ANNO}}) in quanto non include il costo del dispositivo e il setup iniziale.</p>
+        <p>La medesima tariffa di <strong>{{PREZZO_RINNOVO}}</strong> si applicherà alle annualità successive,
+        salvo variazioni comunicate per iscritto con almeno 30 giorni di anticipo.</p>
 
         <!-- ART. 5 — MODALITÀ DI PAGAMENTO -->
         <h2>Art. 5 — Modalità di pagamento</h2>
