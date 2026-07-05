@@ -13695,6 +13695,14 @@ app.post('/api/contracts/rinnovo', async (c) => {
       return c.json({ success: false, error: 'Contratto originale non trovato' }, 404)
     }
 
+    // ✅ GUARD: non si può creare un rinnovo di un rinnovo
+    if (origContract.is_rinnovo) {
+      return c.json({
+        success: false,
+        error: `Il contratto ${origContract.codice_contratto} è già un rinnovo (anno ${origContract.anno_rinnovo}). Il rinnovo si crea solo dal contratto originale.`
+      }, 400)
+    }
+
     // 2. Carica lead
     const lead = await c.env.DB.prepare(
       `SELECT * FROM leads WHERE id = ?`

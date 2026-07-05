@@ -8239,7 +8239,11 @@ export const data_dashboard = `<!DOCTYPE html>
                     var d5 = proformaInviata || rinnovoCompletato;    // proforma già inviata
                     var d6 = proformaPagata  || rinnovoCompletato;    // già pagata
 
-                    var btn1  = rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo',    'rinnovo-crea',           d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno);
+                    // btn1: Crea rinnovo — visibile SOLO sulla riga originale (non su righe rinnovo)
+                    // Se isRinnovo=true significa che questa riga è già un rinnovo: non si crea un rinnovo di un rinnovo
+                    var btn1  = !isRinnovo
+                        ? rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo', 'rinnovo-crea', d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno)
+                        : '';
                     var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',    d2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
                     var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,          d3, '#4f46e5');
                     // btn3b: segna firmato manualmente — visibile solo se rinnovo esiste e non ancora firmato
