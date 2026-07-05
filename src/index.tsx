@@ -33051,6 +33051,89 @@ app.post('/api/oneshot-set-anagrafica-capone-3jx7w', async (c) => {
   }
 })
 
+// POST /api/oneshot-crea-e-completa-rinnovo-6nw4y
+// Crea il contratto rinnovo R2 (se non esiste) e lo segna subito come SIGNED + pagato + completato
+// Body: { codiceOriginale: "CTR-PIPPO-2025" }
+app.post('/api/oneshot-crea-e-completa-rinnovo-6nw4y', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { codiceOriginale } = body
+    if (!codiceOriginale) return c.json({ error: 'codiceOriginale richiesto' }, 400)
+
+    // Contratto originale
+    const orig = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE codice_contratto = ? AND is_rinnovo = 0 LIMIT 1`
+    ).bind(codiceOriginale).first() as any
+    if (!orig) return c.json({ error: `Contratto originale "${codiceOriginale}" non trovato` }, 404)
+
+    // Verifica se esiste già un rinnovo
+    let rinnovo = await c.env.DB.prepare(
+      `SELECT id, codice_contratto FROM contracts WHERE rinnovo_di = ? AND is_rinnovo = 1 ORDER BY created_at DESC LIMIT 1`
+    ).bind(codiceOriginale).first() as any
+
+    const now = new Date().toISOString()
+
+    if (!rinnovo) {
+      // Crea il contratto rinnovo
+      const lead = await c.env.DB.prepare(`SELECT * FROM leads WHERE id = ?`).bind(orig.leadId).first() as any
+      if (!lead) return c.json({ error: 'Lead non trovato' }, 404)
+
+      const annoRinnovo = (orig.anno_rinnovo || 1) + 1
+      const rinnovoId = `RINNOVO-${orig.codice_contratto}-Y${annoRinnovo}-${Date.now()}`
+      const codiceRinnovo = `${orig.codice_contratto}-R${annoRinnovo}`
+      const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
+      const PREZZI: Record<string,Record<string,number>> = { 'eCura PRO': { BASE: 240, PLUS: 360 }, 'eCura': { BASE: 180 } }
+      const rinnovoBase = PREZZI[orig.servizio]?.[orig.piano] ?? 240
+      const rinnovoTotale = Math.round(rinnovoBase * (1 + ivaRate) * 100) / 100
+
+      const dataScadenzaOrig = orig.data_scadenza ? new Date(orig.data_scadenza) : new Date()
+      const dataInizio = new Date(dataScadenzaOrig.getTime() + 86400000)
+      const dataScadenza = new Date(dataInizio.getTime() + 365 * 86400000)
+
+      await c.env.DB.prepare(`
+        INSERT INTO contracts (
+          id, leadId, codice_contratto, tipo_contratto, status,
+          prezzo_totale, piano, servizio, is_rinnovo, anno_rinnovo, rinnovo_di,
+          data_invio, data_scadenza,
+          email_sent, signed_at,
+          proforma_rinnovo_sent, proforma_rinnovo_paid,
+          rinnovo_completato, rinnovo_data_completamento,
+          created_at, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `).bind(
+        rinnovoId, orig.leadId, codiceRinnovo, orig.tipo_contratto || 'RINNOVO', 'SIGNED',
+        rinnovoTotale, orig.piano, orig.servizio, 1, annoRinnovo, orig.codice_contratto,
+        now, dataScadenza.toISOString().split('T')[0],
+        1, now,
+        1, 1,
+        1, now,
+        now, now
+      ).run()
+
+      rinnovo = { id: rinnovoId, codice_contratto: codiceRinnovo }
+    } else {
+      // Esiste già — aggiorna i flag
+      await c.env.DB.prepare(`
+        UPDATE contracts SET
+          status = 'SIGNED', signed_at = ?, email_sent = 1,
+          proforma_rinnovo_sent = 1, proforma_rinnovo_paid = 1,
+          rinnovo_completato = 1, rinnovo_data_completamento = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(now, now, now, rinnovo.id).run()
+    }
+
+    return c.json({
+      success: true,
+      message: `✅ Rinnovo ${rinnovo.codice_contratto} creato e segnato come firmato e pagato`,
+      rinnovoId: rinnovo.id,
+      codice: rinnovo.codice_contratto
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // POST /api/oneshot-segna-rinnovo-completato-5mx8z
 // Segna un contratto rinnovo come SIGNED + proforma pagata + rinnovo completato
 // Body: { codiceOriginale: "CTR-PIPPO-2025" }

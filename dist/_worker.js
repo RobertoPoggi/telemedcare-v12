@@ -21858,7 +21858,23 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ve.sendEmail({to:((s=e.env)==nul
     `).bind(a,a,i,n,r,s,d||null,l||null,new Date().toISOString()).run();const u=await e.env.DB.prepare(`
       SELECT cfIntestatario, indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario
       FROM leads WHERE id = 'LEAD-IRBEMA-00061'
-    `).first();return e.json({success:!0,message:"Anagrafica Capone aggiornata",updated:u})}catch(t){return e.json({success:!1,error:t.message},500)}});A.post("/api/oneshot-segna-rinnovo-completato-5mx8z",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.req.json(),{codiceOriginale:a}=t;if(!a)return e.json({error:"codiceOriginale richiesto"},400);const i=await e.env.DB.prepare(`
+    `).first();return e.json({success:!0,message:"Anagrafica Capone aggiornata",updated:u})}catch(t){return e.json({success:!1,error:t.message},500)}});A.post("/api/oneshot-crea-e-completa-rinnovo-6nw4y",async e=>{var o,t;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const a=await e.req.json(),{codiceOriginale:i}=a;if(!i)return e.json({error:"codiceOriginale richiesto"},400);const n=await e.env.DB.prepare("SELECT * FROM contracts WHERE codice_contratto = ? AND is_rinnovo = 0 LIMIT 1").bind(i).first();if(!n)return e.json({error:`Contratto originale "${i}" non trovato`},404);let r=await e.env.DB.prepare("SELECT id, codice_contratto FROM contracts WHERE rinnovo_di = ? AND is_rinnovo = 1 ORDER BY created_at DESC LIMIT 1").bind(i).first();const s=new Date().toISOString();if(r)await e.env.DB.prepare(`
+        UPDATE contracts SET
+          status = 'SIGNED', signed_at = ?, email_sent = 1,
+          proforma_rinnovo_sent = 1, proforma_rinnovo_paid = 1,
+          rinnovo_completato = 1, rinnovo_data_completamento = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(s,s,s,r.id).run();else{const d=await e.env.DB.prepare("SELECT * FROM leads WHERE id = ?").bind(n.leadId).first();if(!d)return e.json({error:"Lead non trovato"},404);const l=(n.anno_rinnovo||1)+1,u=`RINNOVO-${n.codice_contratto}-Y${l}-${Date.now()}`,p=`${n.codice_contratto}-R${l}`,g=d.iva_agevolata?.04:.22,h=((t={"eCura PRO":{BASE:240,PLUS:360},eCura:{BASE:180}}[n.servizio])==null?void 0:t[n.piano])??240,f=Math.round(h*(1+g)*100)/100,v=n.data_scadenza?new Date(n.data_scadenza):new Date,b=new Date(v.getTime()+864e5),S=new Date(b.getTime()+365*864e5);await e.env.DB.prepare(`
+        INSERT INTO contracts (
+          id, leadId, codice_contratto, tipo_contratto, status,
+          prezzo_totale, piano, servizio, is_rinnovo, anno_rinnovo, rinnovo_di,
+          data_invio, data_scadenza,
+          email_sent, signed_at,
+          proforma_rinnovo_sent, proforma_rinnovo_paid,
+          rinnovo_completato, rinnovo_data_completamento,
+          created_at, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `).bind(u,n.leadId,p,n.tipo_contratto||"RINNOVO","SIGNED",f,n.piano,n.servizio,1,l,n.codice_contratto,s,S.toISOString().split("T")[0],1,s,1,1,1,s,s,s).run(),r={id:u,codice_contratto:p}}return e.json({success:!0,message:`✅ Rinnovo ${r.codice_contratto} creato e segnato come firmato e pagato`,rinnovoId:r.id,codice:r.codice_contratto})}catch(a){return e.json({success:!1,error:a.message},500)}});A.post("/api/oneshot-segna-rinnovo-completato-5mx8z",async e=>{var o;try{if(!((o=e.env)!=null&&o.DB))return e.json({error:"DB non disponibile"},500);const t=await e.req.json(),{codiceOriginale:a}=t;if(!a)return e.json({error:"codiceOriginale richiesto"},400);const i=await e.env.DB.prepare(`
       SELECT id, codice_contratto, status, anno_rinnovo
       FROM contracts
       WHERE rinnovo_di = ? AND is_rinnovo = 1
