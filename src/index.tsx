@@ -33222,6 +33222,40 @@ app.post('/api/oneshot-aggiorna-servizio-contratto-2qx9k', async (c) => {
   }
 })
 
+// POST /api/oneshot-set-intestatario-lead-4vr2k
+// Imposta intestatarioContratto + nomeAssistito/cognomeAssistito su un lead
+// Body: { codiceContratto, intestatario: 'assistito'|'richiedente', nomeAssistito?, cognomeAssistito? }
+app.post('/api/oneshot-set-intestatario-lead-4vr2k', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const { codiceContratto, intestatario, nomeAssistito, cognomeAssistito } = body
+    if (!codiceContratto || !intestatario) return c.json({ error: 'codiceContratto e intestatario richiesti' }, 400)
+
+    const contract = await c.env.DB.prepare(
+      `SELECT leadId FROM contracts WHERE codice_contratto = ? LIMIT 1`
+    ).bind(codiceContratto).first() as any
+    if (!contract) return c.json({ error: `Contratto "${codiceContratto}" non trovato` }, 404)
+
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        intestatarioContratto = ?,
+        nomeAssistito         = COALESCE(?, nomeAssistito),
+        cognomeAssistito      = COALESCE(?, cognomeAssistito),
+        updated_at            = ?
+      WHERE id = ?
+    `).bind(intestatario, nomeAssistito || null, cognomeAssistito || null, now, contract.leadId).run()
+
+    const updated = await c.env.DB.prepare(
+      `SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito, intestatarioContratto FROM leads WHERE id = ?`
+    ).bind(contract.leadId).first()
+    return c.json({ success: true, message: `✅ intestatarioContratto = '${intestatario}' aggiornato`, updated })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
   fetch: app.fetch.bind(app)
