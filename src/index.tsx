@@ -14550,7 +14550,9 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
 
     const contract = await c.env.DB.prepare(
-      `SELECT id, leadId, codice_contratto, proforma_rinnovo_id, proforma_rinnovo_sent FROM contracts WHERE id = ?`
+      `SELECT id, leadId, codice_contratto, proforma_rinnovo_id, proforma_rinnovo_sent,
+              is_rinnovo, anno_rinnovo, rinnovo_di, servizio, piano, prezzo_totale
+       FROM contracts WHERE id = ?`
     ).bind(contractId).first() as any
     if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
     if (!contract.proforma_rinnovo_id) return c.json({ success: false, error: 'Nessuna proforma creata — crea prima la proforma' }, 400)
@@ -14559,10 +14561,91 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
       .bind(contract.proforma_rinnovo_id).first() as any
     if (!proforma) return c.json({ success: false, error: 'Proforma non trovata nel DB' }, 404)
 
-    // Invia email proforma
-    let emailResult = { success: false, error: 'EmailService non configurato' }
+    const lead = await c.env.DB.prepare(`SELECT * FROM leads WHERE id = ?`)
+      .bind(contract.leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    // ── Calcoli IVA ──────────────────────────────────────────────────────────
+    const isRinnovo     = contract.is_rinnovo == 1
+    const annoRinnovo   = contract.anno_rinnovo || 2
+    const codiceOrig    = contract.rinnovo_di || ''
+    const ivaAgevolata  = !!(lead.iva_agevolata)
+    const ivaRate       = ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel      = ivaAgevolata ? '4%' : '22%'
+    const imponibile    = parseFloat(proforma.prezzo_totale ?? contract.prezzo_totale ?? 0)
+    const importoIva    = Math.round(imponibile * ivaRate * 100) / 100
+    const totaleConIva  = Math.round((imponibile + importoIva) * 100) / 100
+
+    // ── Variabili testuali ───────────────────────────────────────────────────
+    const servizioNorm  = (contract.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase()
+    const pianoTipo     = (contract.piano || 'BASE').toUpperCase()
+    const titoloProforma = isRinnovo
+      ? `🔄 Proforma Rinnovo Anno ${annoRinnovo} — eCura ${servizioNorm} ${pianoTipo}`
+      : `✅ Pro-forma eCura ${servizioNorm} ${pianoTipo}`
+    const causale = isRinnovo
+      ? `Rinnovo Anno ${annoRinnovo} ${proforma.numero_proforma} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}${codiceOrig ? ' (rinnovo ' + codiceOrig + ')' : ''}`
+      : `Proforma ${proforma.numero_proforma} - ${lead.nomeRichiedente} ${lead.cognomeRichiedente}`
+    const notaRinnovo = isRinnovo
+      ? `<div style="background:#e8f5e9;border-left:4px solid #27ae60;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;"><strong style="color:#1b5e20;">🔄 Proforma di Rinnovo — Anno ${annoRinnovo}</strong><br><span style="color:#2e7d32;font-size:13px;">La tariffa di rinnovo è agevolata rispetto al primo anno.${codiceOrig ? ' Contratto originale: <strong>' + codiceOrig + '</strong>.' : ''}</span></div>`
+      : ''
+
+    // Dispositivo dal servizio
+    const servizioFull = contract.servizio || ''
+    const dispositivo  = servizioFull.includes('PREMIUM') || servizioFull.toLowerCase().includes('vital')
+      ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+
+    // Passi dopo pagamento — diversi per rinnovo e primo contratto
+    const passiDopoRinnovo = `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
+  <li>Riceverai la fattura fiscale definitiva via email</li>
+  <li>Il servizio verrà rinnovato automaticamente dalla data di decorrenza</li>
+  <li>Riceverai conferma di attivazione del rinnovo via email</li>
+  <li>Il nostro team rimane a tua disposizione per qualsiasi necessità al <strong>335 730 1206</strong></li>
+</ol>`
+    const passiDopoNuovo = `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
+  <li>Riceverai la fattura fiscale definitiva via email</li>
+  <li>Ti invieremo il dispositivo ${dispositivo} entro 10 giorni lavorativi</li>
+  <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+  <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+</ol>`
+
+    const baseUrl = new URL(c.req.url).origin
+    const scadenzaStr = proforma.data_scadenza
+      ? new Date(proforma.data_scadenza).toLocaleDateString('it-IT') : ''
+
+    const templateData: Record<string, string> = {
+      NOME_CLIENTE:          lead.nomeRichiedente    || '',
+      COGNOME_CLIENTE:       lead.cognomeRichiedente || '',
+      PIANO_SERVIZIO:        titoloProforma,
+      NUMERO_PROFORMA:       proforma.numero_proforma || '',
+      IMPORTO_BASE:          `€${imponibile.toFixed(2).replace('.', ',')}`,
+      IMPORTO_IVA:           `€${importoIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA:       `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE:        `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IVA_LABEL:             `IVA ${ivaLabel}`,
+      IVA_NOTE:              ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      SCADENZA_PAGAMENTO:    scadenzaStr,
+      IBAN:                  'IT97L0503401727000000003519',
+      CAUSALE:               causale,
+      NOTA_RINNOVO:          notaRinnovo,
+      LINK_PROFORMA_PDF:     `${baseUrl}/proforma-view?id=${contract.proforma_rinnovo_id}`,
+      LINK_PAGAMENTO:        `${baseUrl}/pagamento.html?proformaId=${contract.proforma_rinnovo_id}`,
+      DATA_INVIO:            new Date().toLocaleDateString('it-IT'),
+      PIANO_RATEIZZAZIONE:   '',
+      PASSI_DOPO_PAGAMENTO:  isRinnovo ? passiDopoRinnovo : passiDopoNuovo,
+    }
+
+    // Invia usando il template email completo (via sendTemplateEmail che gestisce env)
+    let emailResult: any = { success: false, error: 'Template non caricato' }
     try {
-      emailResult = await inviaEmailProforma(proforma, c.env)
+      const EmailService = (await import('./modules/email-service')).default
+      const emailService = EmailService.getInstance()
+      emailResult = await emailService.sendTemplateEmail(
+        'INVIO_PROFORMA',
+        proforma.cliente_email || lead.email,
+        templateData,
+        undefined,
+        c.env
+      )
     } catch (e: any) {
       console.error('❌ Errore invio email proforma rinnovo:', e)
       emailResult = { success: false, error: e.message }
@@ -14581,11 +14664,12 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
     return c.json({
       success: emailResult.success,
       proformaId: contract.proforma_rinnovo_id,
-      emailInviataA: proforma.cliente_email,
+      emailInviataA: proforma.cliente_email || lead.email,
+      causale,
       emailResult,
       message: emailResult.success
-        ? `✅ Email proforma inviata a ${proforma.cliente_email}`
-        : `⚠️ Proforma aggiornata ma email fallita: ${(emailResult as any).error}`
+        ? `✅ Email proforma inviata a ${proforma.cliente_email || lead.email}`
+        : `⚠️ Proforma aggiornata ma email fallita: ${emailResult.error}`
     })
   } catch (error) {
     console.error('❌ Errore invia-proforma-rinnovo:', error)
@@ -14646,25 +14730,44 @@ app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
     const scadenzaStr = proforma.data_scadenza
       ? new Date(proforma.data_scadenza).toLocaleDateString('it-IT') : ''
 
+    // Dispositivo dal servizio (per passi post-pagamento)
+    const servizioFullPreview = contract.servizio || ''
+    const dispositivoPreview  = servizioFullPreview.includes('PREMIUM') || servizioFullPreview.toLowerCase().includes('vital')
+      ? 'SiDLY VITAL CARE' : 'SiDLY CARE PRO'
+    const passiDopoPreview = isRinnovo
+      ? `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
+  <li>Riceverai la fattura fiscale definitiva via email</li>
+  <li>Il servizio verrà rinnovato automaticamente dalla data di decorrenza</li>
+  <li>Riceverai conferma di attivazione del rinnovo via email</li>
+  <li>Il nostro team rimane a tua disposizione per qualsiasi necessità al <strong>335 730 1206</strong></li>
+</ol>`
+      : `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
+  <li>Riceverai la fattura fiscale definitiva via email</li>
+  <li>Ti invieremo il dispositivo ${dispositivoPreview} entro 10 giorni lavorativi</li>
+  <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+  <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+</ol>`
+
     const templateData: Record<string,string> = {
-      NOME_CLIENTE:         lead.nomeRichiedente || '',
-      COGNOME_CLIENTE:      lead.cognomeRichiedente || '',
-      PIANO_SERVIZIO:       titoloProforma,
-      NUMERO_PROFORMA:      proforma.numero_proforma || '',
-      IMPORTO_BASE:         `€${Number(imponibile).toFixed(2).replace('.', ',')}`,
-      IMPORTO_IVA:          `€${importoIva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_CON_IVA:      `€${totaleConIva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_TOTALE:       `€${totaleConIva.toFixed(2).replace('.', ',')}`,
-      IVA_LABEL:            `IVA ${ivaLabel}`,
-      IVA_NOTE:             ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
-      SCADENZA_PAGAMENTO:   scadenzaStr,
-      IBAN:                 'IT97L0503401727000000003519',
-      CAUSALE:              causale,
-      NOTA_RINNOVO:         notaRinnovo,
-      LINK_PROFORMA_PDF:    `${baseUrl}/proforma-view?id=${contract.proforma_rinnovo_id}`,
-      LINK_PAGAMENTO:       `${baseUrl}/pagamento.html?proformaId=${contract.proforma_rinnovo_id}`,
-      DATA_INVIO:           new Date().toLocaleDateString('it-IT'),
-      PIANO_RATEIZZAZIONE:  '',
+      NOME_CLIENTE:            lead.nomeRichiedente || '',
+      COGNOME_CLIENTE:         lead.cognomeRichiedente || '',
+      PIANO_SERVIZIO:          titoloProforma,
+      NUMERO_PROFORMA:         proforma.numero_proforma || '',
+      IMPORTO_BASE:            `€${Number(imponibile).toFixed(2).replace('.', ',')}`,
+      IMPORTO_IVA:             `€${importoIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA:         `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_TOTALE:          `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IVA_LABEL:               `IVA ${ivaLabel}`,
+      IVA_NOTE:                ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      SCADENZA_PAGAMENTO:      scadenzaStr,
+      IBAN:                    'IT97L0503401727000000003519',
+      CAUSALE:                 causale,
+      NOTA_RINNOVO:            notaRinnovo,
+      LINK_PROFORMA_PDF:       `${baseUrl}/proforma-view?id=${contract.proforma_rinnovo_id}`,
+      LINK_PAGAMENTO:          `${baseUrl}/pagamento.html?proformaId=${contract.proforma_rinnovo_id}`,
+      DATA_INVIO:              new Date().toLocaleDateString('it-IT'),
+      PIANO_RATEIZZAZIONE:     '',
+      PASSI_DOPO_PAGAMENTO:    passiDopoPreview,
     }
 
     // Carica template email (stesso template usato da inviaEmailProforma)
