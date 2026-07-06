@@ -14268,7 +14268,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       success: true,
       message: `✅ HTML contratto ${contract.codice_contratto} rigenerato con il template aggiornato`,
       codice: contract.codice_contratto,
-      nomeCliente: `${contract.nomeRichiedente} ${contract.cognomeRichiedente}`,
+      nomeCliente: `${nomeCliente} ${cognomeCliente}`.trim(),
       prezzoRinnovo: `€ ${rinnovoTotale.toFixed(2)}`,
     })
   } catch (error) {
