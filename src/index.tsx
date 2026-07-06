@@ -14443,58 +14443,96 @@ app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
       message: 'Proforma già esistente'
     })
 
-    // Carica lead
+    // Carica lead + dati intestatario (stessa logica di rigenera-html)
     const lead = await c.env.DB.prepare(
-      `SELECT id, nomeIntestatario, cognomeIntestatario, emailIntestatario,
-              nomeRichiedente, cognomeRichiedente, email, iva_agevolata
+      `SELECT id, intestatarioContratto,
+              nomeRichiedente, cognomeRichiedente, email, telefono, iva_agevolata,
+              nomeAssistito, cognomeAssistito,
+              cfIntestatario, codiceFiscaleIntestatario, indirizzoIntestatario,
+              cittaIntestatario, capIntestatario, provinciaIntestatario,
+              cfAssistito, indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito
        FROM leads WHERE id = ?`
     ).bind(contract.leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
 
     const ivaAg = !!(lead.iva_agevolata)
-    const nomeCliente = (lead.nomeIntestatario || lead.nomeRichiedente || 'Cliente').trim()
-    const cognomeCliente = (lead.cognomeIntestatario || lead.cognomeRichiedente || '').trim()
-    const emailCliente = lead.emailIntestatario || lead.email || ''
+    const intestatario = lead.intestatarioContratto || 'richiedente'
+
+    let nomeCliente: string, cognomeCliente: string, cfCliente: string
+    let indirizzoCliente: string, cittaCliente: string, capCliente: string, provinciaCliente: string
+    if (intestatario === 'assistito') {
+      nomeCliente      = lead.nomeAssistito      || lead.nomeRichiedente    || 'Cliente'
+      cognomeCliente   = lead.cognomeAssistito   || lead.cognomeRichiedente || ''
+      cfCliente        = lead.cfAssistito        || lead.cfIntestatario     || lead.codiceFiscaleIntestatario || ''
+      indirizzoCliente = lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+      cittaCliente     = lead.cittaAssistito     || lead.cittaIntestatario  || ''
+      capCliente       = lead.capAssistito       || lead.capIntestatario    || ''
+      provinciaCliente = lead.provinciaAssistito || lead.provinciaIntestatario || ''
+    } else {
+      nomeCliente      = lead.nomeRichiedente    || 'Cliente'
+      cognomeCliente   = lead.cognomeRichiedente || ''
+      cfCliente        = lead.cfIntestatario     || lead.codiceFiscaleIntestatario || lead.cfAssistito || ''
+      indirizzoCliente = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+      cittaCliente     = lead.cittaIntestatario  || lead.cittaAssistito     || ''
+      capCliente       = lead.capIntestatario    || lead.capAssistito       || ''
+      provinciaCliente = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+    }
+
+    const emailCliente = lead.email || ''
+    const telefonoCliente = lead.telefono || ''
     const prezzoTotale = parseFloat(contract.prezzo_totale) || 0
-    const prezzoMensile = parseFloat(contract.prezzo_mensile) || 0
+    const prezzoMensile = parseFloat(contract.prezzo_mensile) || (prezzoTotale / 12)
 
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
     const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-    const proformaId = `PRF-RINNOVO-${contractId}-${Date.now()}`
     const numeroProforma = `PRF${year}${month}-R${contract.anno_rinnovo || 2}-${random}`
     const dataScadenza = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
+    // INSERT corretto — id è INTEGER autoincrement, no colonna "piano"
     await c.env.DB.prepare(`
       INSERT INTO proforma (
-        id, contract_id, leadId, numero_proforma,
+        contract_id, leadId, numero_proforma,
         data_emissione, data_scadenza, status,
-        cliente_nome, cliente_email,
-        prezzo_totale, prezzo_mensile, tipo_servizio, piano,
+        cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
+        cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
+        tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
         iva_agevolata, is_rinnovo,
         email_sent, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 'CREATED', ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, 'CREATED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 1, 0, ?, ?)
     `).bind(
-      proformaId, contractId, contract.leadId, numeroProforma,
-      now.toISOString(), dataScadenza,
-      `${nomeCliente} ${cognomeCliente}`.trim(), emailCliente,
-      prezzoTotale, prezzoMensile,
-      contract.servizio || '', contract.piano || '',
+      contractId, contract.leadId, numeroProforma,
+      now.toISOString().split('T')[0], dataScadenza,
+      nomeCliente.trim(), cognomeCliente.trim(), emailCliente, telefonoCliente,
+      indirizzoCliente, cittaCliente, capCliente, provinciaCliente, cfCliente,
+      contract.servizio || '',
+      prezzoMensile.toFixed(2),
+      prezzoTotale,
       ivaAg ? 1 : 0,
       now.toISOString(), now.toISOString()
     ).run()
 
-    // Aggiorna contratto con riferimento proforma
+    // Recupera l'id INTEGER assegnato da SQLite
+    const inserted = await c.env.DB.prepare(
+      `SELECT id FROM proforma WHERE contract_id = ? ORDER BY id DESC LIMIT 1`
+    ).bind(contractId).first() as any
+    const proformaIntId = inserted?.id
+
+    // Aggiorna contratto con riferimento proforma (id INTEGER come stringa)
     await c.env.DB.prepare(
       `UPDATE contracts SET proforma_rinnovo_id = ?, updated_at = ? WHERE id = ?`
-    ).bind(proformaId, now.toISOString(), contractId).run()
+    ).bind(String(proformaIntId), now.toISOString(), contractId).run()
 
-    console.log(`✅ Proforma rinnovo creata: ${proformaId} per contratto ${contractId}`)
+    console.log(`✅ Proforma rinnovo creata: id=${proformaIntId} (${numeroProforma}) per contratto ${contractId}`)
     return c.json({
-      success: true, proformaId, numeroProforma,
-      emailCliente, prezzoTotale,
-      message: `Proforma ${numeroProforma} creata. Email NON ancora inviata.`
+      success: true,
+      proformaId: proformaIntId,
+      numeroProforma,
+      emailCliente,
+      nomeCliente: `${nomeCliente} ${cognomeCliente}`.trim(),
+      prezzoTotale,
+      message: `Proforma ${numeroProforma} creata per ${nomeCliente} ${cognomeCliente}. Email NON ancora inviata.`
     })
   } catch (error) {
     console.error('❌ Errore crea-proforma-rinnovo:', error)
@@ -14536,8 +14574,8 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
         `UPDATE contracts SET proforma_rinnovo_sent = 1, updated_at = ? WHERE id = ?`
       ).bind(now, contractId).run()
       await c.env.DB.prepare(
-        `UPDATE proforma SET email_sent = 1, status = 'SENT', data_invio = ?, updated_at = ? WHERE id = ?`
-      ).bind(now, now, contract.proforma_rinnovo_id).run()
+        `UPDATE proforma SET email_sent = 1, status = 'SENT', updated_at = ? WHERE id = ?`
+      ).bind(now, contract.proforma_rinnovo_id).run()
     }
 
     return c.json({
