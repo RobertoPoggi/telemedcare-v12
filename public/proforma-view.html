@@ -173,21 +173,8 @@ th {
   </thead>
   <tbody>
     <tr>
-      <td>
-        <strong>TIPO DI PRESTAZIONE: SERVIZI DI TELEASSISTENZA <span id="piano-servizio"></span> CON <span id="dispositivo-1"></span></strong><br/>
-        <small style="display: block; margin-top: 10px; line-height: 1.6;">
-          Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. 
-          In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale 
-          bidirezionale consente di parlare con la Centrale Operativa. E' integrato con sensori che consentono la geolocalizzazione, 
-          il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. 
-          E' un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA – ALTRI) 
-          e codice BD/RDM <span id="codice-bd-rdm"></span> del repertorio dispositivi medicali e, come tale, consente la rilevazione della 
-          Frequenza Cardiaca (FC) e della Saturazione (SpO2). E' inclusa basetta per la ricarica, alimentatore e cavo. 
-          Installazione e collaudo inclusi. SIM SiDLY per <span id="dispositivo-2"></span>, per comunicazione e trasmissione dati. 
-          Piattaforma/APP SiDLYCARE (Dispositivo medicale in classe I)
-        </small><br/>
-        <small style="display: block; margin-top: 10px;"><strong>Durata del Servizio:</strong> 12 mesi</small><br/>
-        <small><strong>Include:</strong> Dispositivo <span id="dispositivo-3"></span>, Configurazione, Piattaforma Web/APP, SIM dati, Chiamate bidirezionali<span id="centrale-operativa"></span></small>
+      <td id="riga-servizio">
+        <!-- popolato dinamicamente da JS -->
       </td>
       <td class="text-center">1</td>
       <td class="text-right">€ <span id="prezzo-base"></span></td>
@@ -236,14 +223,8 @@ th {
   </ul>
 </div>
 
-<div style="background: #e7f3ff; border-left: 4px solid #1e40af; padding: 15px; margin: 20px 0;">
-  <p style="margin: 0; font-weight: bold;">✓ Cosa succede dopo il pagamento?</p>
-  <ol style="margin: 10px 0; padding-left: 20px;">
-    <li>Riceverai la fattura fiscale definitiva via email</li>
-    <li>Ti invieremo il dispositivo SiDLY CARE PRO entro 10 giorni lavorativi</li>
-    <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
-    <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
-  </ol>
+<div id="box-dopo-pagamento" style="background: #e7f3ff; border-left: 4px solid #1e40af; padding: 15px; margin: 20px 0;">
+  <!-- popolato dinamicamente da JS -->
 </div>
 
 <div class="footer">
@@ -294,35 +275,92 @@ if (!proformaId) {
       document.getElementById('telefono-cliente').textContent = proforma.cliente_telefono || 'N/D';
       
       // Servizio e Piano
-      const servizio = proforma.servizio || 'eCura PRO';
+      const servizio = proforma.servizio || proforma.tipo_servizio || 'eCura PRO';
       const piano = proforma.piano || 'BASE';
-      
+      const isRinnovo = !!(proforma.is_rinnovo);
+
       // Determina il dispositivo dal servizio
       let dispositivo = 'SiDLY CARE PRO'; // Default
-      
-      // Mappatura corretta servizio → dispositivo
-      if (servizio.includes('PREMIUM')) {
+      if (servizio.includes('PREMIUM') || servizio.toLowerCase().includes('vital')) {
         dispositivo = 'SiDLY VITAL CARE';
-      } else if (servizio.includes('PROFESSIONAL') || servizio.includes('PRO')) {
+      } else if (servizio.includes('PRO') || servizio.includes('PROFESSIONAL')) {
         dispositivo = 'SiDLY CARE PRO';
-      } else if (servizio.includes('FAMILY')) {
-        dispositivo = 'SiDLY CARE PRO'; // Con funzionalità ridotte
       }
-      
+
       // Determina il codice BD/RDM
       const codiceBdRdm = dispositivo === 'SiDLY CARE PRO' ? '2853576' : '2853300';
-      
+
       // Determina la centrale operativa
       const centraleOperativa = piano === 'AVANZATO' ? ' e Centrale Operativa H24' : '';
-      
-      // Popola i nuovi campi
-      document.getElementById('piano-servizio').textContent = piano;
-      document.getElementById('dispositivo-1').textContent = dispositivo;
-      document.getElementById('dispositivo-2').textContent = dispositivo;
-      document.getElementById('dispositivo-3').textContent = dispositivo;
-      document.getElementById('codice-bd-rdm').textContent = codiceBdRdm;
-      document.getElementById('centrale-operativa').textContent = centraleOperativa;
-      
+
+      // Badge rinnovo nell'header invoice-info
+      if (isRinnovo) {
+        const invoiceTitle = document.querySelector('.invoice-info h2');
+        if (invoiceTitle) {
+          invoiceTitle.innerHTML = 'FATTURA PROFORMA<br><span style="font-size:13px;font-weight:600;color:#27ae60;background:#e8f5e9;border:1px solid #27ae60;border-radius:12px;padding:2px 12px;">🔄 RINNOVO SERVIZIO</span>';
+        }
+      }
+
+      // Riga descrizione servizio — DIVERSA per rinnovo vs primo contratto
+      const rigaServizio = document.getElementById('riga-servizio');
+      if (isRinnovo) {
+        rigaServizio.innerHTML = `
+          <strong>RINNOVO ANNUALE — SERVIZI DI TELEASSISTENZA ${piano} CON ${dispositivo}</strong><br/>
+          <small style="display:block;margin-top:10px;line-height:1.6;">
+            Rinnovo annuale del servizio eCura ${servizio} Piano ${piano} per 12 (dodici) mesi.
+            Il servizio include: piattaforma web e applicazione mobile di teleassistenza, SIM dati per
+            trasmissione parametri vitali, Centrale Operativa H24/7${centraleOperativa ? ' con operatori sanitari qualificati' : ''},
+            monitoraggio parametri vitali e alerting 24/7, assistenza tecnica telefonica e da remoto,
+            aggiornamenti software e firmware del dispositivo <strong>${dispositivo}</strong>,
+            rilevamento automatico cadute, GPS e geolocalizzazione in tempo reale,
+            supporto familiare con notifiche push su App dedicata.
+          </small><br/>
+          <small style="display:block;margin-top:6px;">
+            <strong>Durata del Servizio:</strong> 12 mesi
+          </small><br/>
+          <small style="display:block;margin-top:4px;color:#1b5e20;font-weight:600;">
+            ℹ️ Il dispositivo ${dispositivo} è già di proprietà del Cliente. Il presente rinnovo non include la consegna di un nuovo dispositivo.
+          </small>`;
+      } else {
+        rigaServizio.innerHTML = `
+          <strong>TIPO DI PRESTAZIONE: SERVIZI DI TELEASSISTENZA ${piano} CON ${dispositivo}</strong><br/>
+          <small style="display:block;margin-top:10px;line-height:1.6;">
+            Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone.
+            In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale
+            bidirezionale consente di parlare con la Centrale Operativa. E' integrato con sensori che consentono la geolocalizzazione,
+            il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione.
+            E' un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA – ALTRI)
+            e codice BD/RDM ${codiceBdRdm} del repertorio dispositivi medicali e, come tale, consente la rilevazione della
+            Frequenza Cardiaca (FC) e della Saturazione (SpO2). E' inclusa basetta per la ricarica, alimentatore e cavo.
+            Installazione e collaudo inclusi. SIM SiDLY per ${dispositivo}, per comunicazione e trasmissione dati.
+            Piattaforma/APP SiDLYCARE (Dispositivo medicale in classe I)
+          </small><br/>
+          <small style="display:block;margin-top:10px;"><strong>Durata del Servizio:</strong> 12 mesi</small><br/>
+          <small><strong>Include:</strong> Dispositivo ${dispositivo}, Configurazione, Piattaforma Web/APP, SIM dati, Chiamate bidirezionali${centraleOperativa}</small>`;
+      }
+
+      // Box "Cosa succede dopo il pagamento?" — diverso per rinnovo
+      const boxDopo = document.getElementById('box-dopo-pagamento');
+      if (isRinnovo) {
+        boxDopo.innerHTML = `
+          <p style="margin:0;font-weight:bold;">✓ Cosa succede dopo il pagamento?</p>
+          <ol style="margin:10px 0;padding-left:20px;">
+            <li>Riceverai la fattura fiscale definitiva via email</li>
+            <li>Il servizio verrà rinnovato automaticamente dalla data di decorrenza</li>
+            <li>Riceverai conferma di attivazione del rinnovo via email</li>
+            <li>Il nostro team rimane a tua disposizione per qualsiasi necessità al <strong>335 730 1206</strong></li>
+          </ol>`;
+      } else {
+        boxDopo.innerHTML = `
+          <p style="margin:0;font-weight:bold;">✓ Cosa succede dopo il pagamento?</p>
+          <ol style="margin:10px 0;padding-left:20px;">
+            <li>Riceverai la fattura fiscale definitiva via email</li>
+            <li>Ti invieremo il dispositivo ${dispositivo} entro 10 giorni lavorativi</li>
+            <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+            <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+          </ol>`;
+      }
+
       document.getElementById('causale-numero').textContent = proforma.numero_proforma || '';
       document.getElementById('causale-servizio').textContent = `${servizio} ${piano}`;
       
