@@ -4,7 +4,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 // Force rebuild 2026-01-31 16:45 - Fix dashboard toggle switches
 
 // Inline template for rinnovo contract (Cloudflare Workers has no FS)
-import { CONTRATTO_RINNOVO_B2C_TEMPLATE } from './modules/contratto-rinnovo-template'
+import { CONTRATTO_RINNOVO_B2C_TEMPLATE, PROFORMA_INTERNA_TEMPLATE } from './modules/contratto-rinnovo-template'
 
 // Import Database Schema (SINGLE SOURCE OF TRUTH)
 import { buildLeadUpdateQuery } from './database-schema'
@@ -14674,6 +14674,140 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
   } catch (error) {
     console.error('❌ Errore invia-proforma-rinnovo:', error)
     return c.json({ success: false, error: 'Errore invio proforma', details: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
+ * GET /api/contracts/:id/proforma-interna-html
+ * Genera e restituisce l'HTML della Pro Forma interna (stile amministrativo PDF)
+ * per un contratto di rinnovo. Usato per stampa/download PDF lato admin.
+ */
+app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
+  const contractId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    // Carica contratto
+    const contract = await c.env.DB.prepare(
+      `SELECT id, leadId, codice_contratto, is_rinnovo, anno_rinnovo, rinnovo_di,
+              servizio, piano, prezzo_totale, proforma_rinnovo_id
+       FROM contracts WHERE id = ?`
+    ).bind(contractId).first() as any
+    if (!contract) return c.json({ success: false, error: 'Contratto non trovato' }, 404)
+
+    // Carica lead con dati intestatario
+    const lead = await c.env.DB.prepare(
+      `SELECT nomeRichiedente, cognomeRichiedente, email,
+              intestatarioContratto,
+              nomeAssistito, cognomeAssistito,
+              cfIntestatario, codiceFiscaleIntestatario, cfAssistito,
+              indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario,
+              indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
+              iva_agevolata,
+              imei_dispositivo, numero_sim, sn_dispositivo
+       FROM leads WHERE id = ?`
+    ).bind(contract.leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    // Logica intestatario
+    const intestatario = lead.intestatarioContratto || 'richiedente'
+    let nome: string, cognome: string, cf: string, indirizzo: string, citta: string, cap: string, prov: string
+    if (intestatario === 'assistito') {
+      nome     = lead.nomeAssistito     || lead.nomeRichiedente    || ''
+      cognome  = lead.cognomeAssistito  || lead.cognomeRichiedente || ''
+      cf       = lead.cfAssistito       || lead.cfIntestatario     || lead.codiceFiscaleIntestatario || ''
+      indirizzo= lead.indirizzoAssistito|| lead.indirizzoIntestatario || ''
+      citta    = lead.cittaAssistito    || lead.cittaIntestatario   || ''
+      cap      = lead.capAssistito      || lead.capIntestatario     || ''
+      prov     = lead.provinciaAssistito|| lead.provinciaIntestatario || ''
+    } else {
+      nome     = lead.nomeRichiedente    || ''
+      cognome  = lead.cognomeRichiedente || ''
+      cf       = lead.cfIntestatario     || lead.codiceFiscaleIntestatario || lead.cfAssistito || ''
+      indirizzo= lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+      citta    = lead.cittaIntestatario  || lead.cittaAssistito     || ''
+      cap      = lead.capIntestatario    || lead.capAssistito       || ''
+      prov     = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+    }
+    const capCitta = `${cap} ${citta}${prov ? ' (' + prov + ')' : ''}`.trim()
+
+    // Prezzi
+    const ivaAgevolata = !!(lead.iva_agevolata)
+    const ivaPct       = ivaAgevolata ? 4 : 22
+    const netto        = parseFloat(contract.prezzo_totale) || 0
+    const ivaAmt       = Math.round(netto * ivaPct / 100 * 100) / 100
+    const totale       = Math.round((netto + ivaAmt) * 100) / 100
+    const fmt          = (n: number) => n.toFixed(2).replace('.', ',')
+
+    // Dispositivo
+    const servizio   = contract.servizio || ''
+    const piano      = contract.piano    || 'BASE'
+    const dispositivo= servizio.includes('PREMIUM') || servizio.toLowerCase().includes('vital')
+      ? 'SiDLY VITAL CARE' : 'SiDLY Care PRO'
+    const bdRdm      = dispositivo.includes('VITAL') ? '2853300' : '2853576'
+    const snDev      = lead.sn_dispositivo || '—'
+    const sim        = lead.numero_sim     || '—'
+
+    // Data doc
+    const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    // Proforma ID
+    const codiceProforma = contract.proforma_rinnovo_id
+      ? `PRF-${contract.codice_contratto}`
+      : contract.codice_contratto || contractId
+
+    // Data attivazione (dal contratto corrente o rinnovo)
+    const isRinnovo     = contract.is_rinnovo == 1
+    const annoRinnovo   = contract.anno_rinnovo || 2
+    const dataAttivazione = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+    // Testo prestazione
+    const titoloPrestatazione = isRinnovo ? 'RINNOVO SERVIZIO DI TELEASSISTENZA' : 'TIPOLOGIA PRESTAZIONE EROGATA'
+    const badgeRinnovo        = isRinnovo ? '<span class="badge-rinnovo">🔄 RINNOVO</span>' : ''
+    const tipoPrestazioneTesto = isRinnovo
+      ? `Rinnovo annuale del Servizio di TeleAssistenza ${piano} con Dispositivo ${dispositivo}. ` +
+        `Il servizio include: piattaforma web e applicazione mobile di teleassistenza, SIM dati ` +
+        `(numero SIM ${sim}) per trasmissione parametri vitali e comunicazione, ` +
+        `Centrale Operativa H24/7, monitoraggio parametri vitali e sistema di alerting 24/7, ` +
+        `assistenza tecnica telefonica e da remoto, aggiornamenti software e firmware del ` +
+        `dispositivo ${dispositivo} (S/N ${snDev}), rilevamento automatico cadute, ` +
+        `GPS e geolocalizzazione in tempo reale, supporto familiare con notifiche push su App dedicata. ` +
+        `Il dispositivo ${dispositivo} è già di proprietà del Cliente; il presente rinnovo non include ` +
+        `la consegna di un nuovo dispositivo. Dispositivo Medico certificato in classe IIA con codice ` +
+        `CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA – ALTRI) e codice BD/RDM ${bdRdm}.`
+      : `Attivazione Servizio di TeleAssistenza ${piano} con Dispositivo ${dispositivo}. ` +
+        `Sistema di allarme mobile di piccole dimensioni ed indossabile progettato per monitorare e ` +
+        `proteggere le persone. Dispositivo Medico certificato in classe IIA con codice CND V0399 ` +
+        `(DISPOSITIVI CON FUNZIONI DI MISURA – ALTRI) e codice BD/RDM ${bdRdm} del repertorio ` +
+        `dispositivi medicali, S/N ${snDev}. Consente la rilevazione della Frequenza Cardiaca (FC) e ` +
+        `della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. ` +
+        `Installazione e collaudo inclusi. SIM inclusa (numero SIM ${sim}) per comunicazione e trasmissione dati.`
+
+    const causale = isRinnovo
+      ? `Pro Forma ${codiceProforma} – ${nome} ${cognome} – Rinnovo eCura ${servizio.replace(/^eCura\s*/i,'').toUpperCase()} ${piano} Anno ${annoRinnovo}`
+      : `Pro Forma ${codiceProforma} – ${nome} ${cognome} – Attivazione eCura ${servizio.replace(/^eCura\s*/i,'').toUpperCase()} ${piano}`
+
+    // Sostituisci placeholder
+    const vars: Record<string, string> = {
+      NOME: nome.toUpperCase(), COGNOME: cognome.toUpperCase(),
+      CF: cf.toUpperCase(),
+      INDIRIZZO: indirizzo, CAP_CITTA: capCitta,
+      DATA_ATTIVAZIONE: dataAttivazione,
+      NETTO: fmt(netto), IVA_PCT: String(ivaPct), IVA_AMT: fmt(ivaAmt), TOTALE: fmt(totale),
+      SIM: sim, SN_DISPOSITIVO: snDev, DISPOSITIVO: dispositivo, BD_RDM: bdRdm,
+      CODICE_PROFORMA: codiceProforma,
+      DATA_DOC: `Milano, ${oggi}`,
+      TIPO_PRESTAZIONE_TESTO: tipoPrestazioneTesto,
+      TITOLO_PRESTAZIONE: titoloPrestatazione,
+      BADGE_RINNOVO: badgeRinnovo,
+      CAUSALE_BONIFICO: causale,
+    }
+    const html = PROFORMA_INTERNA_TEMPLATE.replace(/\{\{([A-Z_]+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`)
+
+    return c.html(html)
+  } catch (error) {
+    console.error('❌ Errore proforma-interna-html:', error)
+    return c.json({ success: false, error: 'Errore generazione proforma interna', details: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
 

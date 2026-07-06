@@ -476,3 +476,89 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>
 `;
+
+/**
+ * PROFORMA_INTERNA_TEMPLATE
+ * Template HTML per Pro Forma interna stile "amministrativo" — da usare con
+ * l'endpoint /api/contracts/:id/genera-proforma-interna-html.
+ * Variabili: {{NOME}}, {{COGNOME}}, {{CF}}, {{INDIRIZZO}}, {{CAP_CITTA}},
+ *            {{DATA_ATTIVAZIONE}}, {{NETTO}}, {{IVA_PCT}}, {{IVA_AMT}}, {{TOTALE}},
+ *            {{SIM}}, {{SN_DISPOSITIVO}}, {{DISPOSITIVO}}, {{BD_RDM}},
+ *            {{CODICE_PROFORMA}}, {{DATA_DOC}},
+ *            {{TIPO_PRESTAZIONE_TESTO}}, {{TITOLO_PRESTAZIONE}},
+ *            {{BADGE_RINNOVO}}, {{CAUSALE_BONIFICO}}
+ */
+export const PROFORMA_INTERNA_TEMPLATE = `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pro Forma — {{NOME}} {{COGNOME}}</title>
+<style>
+@page { size: A4; margin: 18mm 18mm 22mm 18mm; }
+* { box-sizing: border-box; }
+body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111; line-height: 1.45; margin: 0; }
+.top-line { border-top: 2px solid #333; margin-bottom: 6px; }
+.header-title { text-align: center; font-size: 14pt; font-weight: bold; margin: 10px 0 4px; letter-spacing: 0.5px; }
+.header-date  { text-align: center; font-size: 10pt; margin-bottom: 16px; }
+.section-title { font-size: 10.5pt; font-weight: bold; border-bottom: 1px solid #555; margin: 14px 0 6px; padding-bottom: 2px; letter-spacing: 0.3px; }
+.data-grid { display: grid; grid-template-columns: 160px 1fr; gap: 3px 8px; margin-bottom: 4px; }
+.data-label { font-weight: bold; color: #333; }
+.data-value { color: #111; }
+.prestazione-box { border: 1px solid #aaa; padding: 10px 12px; margin: 10px 0; font-size: 9.5pt; line-height: 1.55; background: #fafafa; }
+.totale-box { background: #f0f4ff; border: 2px solid #2a5abd; border-radius: 4px; padding: 10px 16px; margin: 14px 0; text-align: right; font-size: 13pt; font-weight: bold; color: #1a3a9e; }
+.iban-box { background: #fffbe6; border: 1px solid #d4a017; border-radius: 4px; padding: 10px 14px; margin: 10px 0; font-size: 9.5pt; }
+.iban-value { font-family: 'Courier New', monospace; font-size: 11pt; font-weight: bold; color: #1a3a9e; letter-spacing: 1px; }
+.nota-legale { font-size: 8.5pt; color: #555; font-style: italic; margin: 16px 0 6px; border-top: 1px solid #ccc; padding-top: 8px; }
+.footer { text-align: center; font-size: 8pt; color: #555; margin-top: 10px; }
+.footer-line { border-top: 1px solid #888; margin-bottom: 6px; }
+.badge-rinnovo { display: inline-block; background: #e8f5e9; border: 1.5px solid #27ae60; border-radius: 12px; padding: 2px 14px; font-size: 9pt; color: #1b5e20; font-weight: bold; margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="top-line"></div>
+<div class="header-title">PRO FORMA MEDICA GB SRL {{BADGE_RINNOVO}}</div>
+<div class="header-date">{{DATA_DOC}} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>{{CODICE_PROFORMA}}</strong></div>
+
+<div class="section-title">ANAGRAFICA PAZIENTE</div>
+<div class="data-grid">
+  <span class="data-label">NOME:</span>         <span class="data-value">{{NOME}}</span>
+  <span class="data-label">COGNOME:</span>      <span class="data-value">{{COGNOME}}</span>
+  <span class="data-label">C.F.:</span>         <span class="data-value"><strong>{{CF}}</strong></span>
+  <span class="data-label">RESIDENTE IN:</span> <span class="data-value">{{INDIRIZZO}}</span>
+  <span class="data-label">CITTÀ:</span>        <span class="data-value">{{CAP_CITTA}}</span>
+</div>
+
+<div class="section-title">{{TITOLO_PRESTAZIONE}}</div>
+<div class="data-grid">
+  <span class="data-label">DATA ATTIVAZIONE:</span> <span class="data-value"><strong>{{DATA_ATTIVAZIONE}}</strong></span>
+  <span class="data-label">TIPO DI PRESTAZIONE:</span> <span class="data-value"></span>
+</div>
+<div class="prestazione-box">{{TIPO_PRESTAZIONE_TESTO}}</div>
+
+<div class="totale-box">
+  IMPONIBILE: € {{NETTO}} &nbsp;+&nbsp; IVA {{IVA_PCT}}% (€ {{IVA_AMT}}) &nbsp;=&nbsp;
+  <span style="font-size:15pt;">TOTALE: € {{TOTALE}}</span>
+</div>
+
+<div class="section-title">PAGAMENTO CON BONIFICO</div>
+<div class="iban-box">
+  <div style="margin-bottom:6px;"><strong>Intestato a:</strong> Medica GB S.r.l. &nbsp;&nbsp; <strong>Banca:</strong> Banca BPM S.p.A. – Filiale Milano-Garibaldi</div>
+  <div style="margin-bottom:4px;"><strong>ABI:</strong> 05034 &nbsp;&nbsp; <strong>CAB:</strong> 01727 &nbsp;&nbsp; <strong>C/C:</strong> 03519</div>
+  <div><strong>IBAN:</strong> <span class="iban-value">IT97 L050 3401 7270 0000 0003 519</span></div>
+  <div style="margin-top:6px;"><strong>Causale:</strong> {{CAUSALE_BONIFICO}}</div>
+</div>
+
+<div class="nota-legale">
+  Il presente documento non costituisce fattura che verrà emessa all'atto del pagamento ai sensi dell'art. 6 DPR 26.10.1972 n. 633.
+</div>
+
+<div class="footer">
+  <div class="footer-line"></div>
+  <p><strong>Medica GB S.r.l.</strong> &nbsp;|&nbsp; Corso Garibaldi 34 – 20121 Milano</p>
+  <p>PEC: medicagbsrl@pecimprese.it &nbsp;|&nbsp; E.mail: info@medicagb.it</p>
+  <p>Codice Fiscale e P.IVA: 12435130963 &nbsp;|&nbsp; REA: MI-2661409 &nbsp;|&nbsp; www.medicagb.it</p>
+</div>
+</body>
+</html>
+`;
