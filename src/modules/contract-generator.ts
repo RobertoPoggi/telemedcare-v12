@@ -256,6 +256,11 @@ export class ContractGenerator {
       // Prezzi IVA inclusa (alias)
       PREZZO_TOTALE: `€ ${totalePrimoAnno.toFixed(2).replace('.', ',')}`,
 
+      // ✅ FIX: Telemonitoraggio parametri vitali solo per PRO e PREMIUM (non FAMILY)
+      SEZIONE_PARAMETRI_VITALI: (servizioType !== 'FAMILY')
+        ? `<p>Misurazioni della frequenza cardiaca e della saturazione di ossigeno: è possibile impostare una notifica che arrivi ai familiari e/o Centrale Operativa (ove prevista) tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>\n<p>&nbsp;</p>`
+        : '',
+
       // Riserva di Dominio (clausola opzionale)
       CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
         ? `<h2 style="color:#c2410c;">Patto di Riserva di Dominio</h2>
@@ -394,8 +399,7 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p>Posizione GPS e GPS-assistito: consente di localizzare l'assistito quando viene inviato l'allarme. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing).</p>
 <p>&nbsp;</p>
-<p>Misurazioni della frequenza cardiaca e della saturazione di ossigeno: è possibile impostare una notifica che arrivi ai familiari e/o Centrale Operativa (ove prevista) tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>
-<p>&nbsp;</p>
+{{SEZIONE_PARAMETRI_VITALI}}
 <p>Pulsante SOS: premendo il pulsante SOS per circa 3 secondi è possibile effettuare una chiamata vocale ai care giver / famigliari (piano base) o alla Centrale Operativa (piano avanzato) e inviare una notifica di emergenza (geolocalizzata) ai familiari o alla Centrale Operativa stessa.</p>
 <p>&nbsp;</p>
 <p>Assistenza vocale: informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione dispositivo, messa in carica del dispositivo, segnalazione di batteria scarica, ecc.</p>
@@ -413,7 +417,7 @@ export class ContractGenerator {
 <ul>
 <li>Dispositivo {{Dispositivo}}</li>
 <li>Configurazione del Dispositivo e del Processo di Comunicazione con la Centrale Operativa (ove previsto) e/o uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
-<li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+<li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
 <li>Piano {{Piano}}</li>
 </ul>
 <p>&nbsp;</p>
@@ -421,7 +425,7 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <ul>
 <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
-<li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+<li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
 <li>Piano {{Piano}}</li>
 </ul>
 <p>&nbsp;</p>

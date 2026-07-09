@@ -8921,14 +8921,17 @@ app.post('/api/contracts/send', async (c) => {
     }
     
     // Prepara dati contratto per la funzione
+    // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+    const ivaRateContr8931 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const prezzoBaseContr8931 = contract.prezzo_totale || 480
     const contractData = {
       contractId: contract.id,
       contractCode: contract.codice_contratto,
       contractPdfUrl: contract.pdf_url || '',
       tipoServizio: contract.tipo_contratto || contract.piano,
       servizio: contract.servizio,
-      prezzoBase: contract.prezzo_totale || 480,
-      prezzoIvaInclusa: (contract.prezzo_totale || 480) * 1.22
+      prezzoBase: prezzoBaseContr8931,
+      prezzoIvaInclusa: Math.round(prezzoBaseContr8931 * (1 + ivaRateContr8931) * 100) / 100  // ✅ IVA corretta
     }
     
     // NON passare documentUrls - workflow usa brochure-manager automaticamente
@@ -12221,6 +12224,9 @@ app.post('/api/leads/:id/complete', async (c) => {
             console.log(`   - dispositivo: ${pricing.dispositivo}`)
             
             // Prepara contractData
+            // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+            const ivaRateContr12231 = (updatedLead as any).iva_agevolata ? 0.04 : 0.22
+            const prezzoIvaInclusaContr12231 = Math.round(pricing.setupBase * (1 + ivaRateContr12231) * 100) / 100
             const contractData = {
               contractId,
               contractCode,
@@ -12228,7 +12234,7 @@ app.post('/api/leads/:id/complete', async (c) => {
               tipoServizio: piano,
               servizio: servizioRaw,
               prezzoBase: pricing.setupBase,
-              prezzoIvaInclusa: pricing.setupTotale
+              prezzoIvaInclusa: prezzoIvaInclusaContr12231  // ✅ IVA corretta (4% se agevolata, 22% standard)
             }
             
             // Document URLs
@@ -13195,6 +13201,9 @@ app.post('/api/lead/:id/complete', async (c) => {
             setupTotale: pricing.setupTotale
           })
           
+          // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+          const ivaRateContr13204 = (updatedLead as any).iva_agevolata ? 0.04 : 0.22
+          const prezzoIvaInclusaContr13204 = Math.round(pricing.setupBase * (1 + ivaRateContr13204) * 100) / 100
           const contractData = {
             contractId,
             contractCode,
@@ -13202,7 +13211,7 @@ app.post('/api/lead/:id/complete', async (c) => {
             tipoServizio: piano,
             servizio: servizio,
             prezzoBase: pricing.setupBase,
-            prezzoIvaInclusa: pricing.setupTotale
+            prezzoIvaInclusa: prezzoIvaInclusaContr13204  // ✅ IVA corretta (4% se agevolata, 22% standard)
           }
           
           // ✅ Brochure unificata
@@ -17968,6 +17977,9 @@ app.post('/api/leads', async (c) => {
         addDebugLog(`📋 [LEAD] Contratto richiesto: SI - Procedura attiva`)
         try {
           // Crea contractData
+          // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+          const ivaRateContrattoLead17977 = (leadData as any).iva_agevolata ? 0.04 : 0.22
+          const prezzoIvaInclusaLead17977 = Math.round(pricing.setupBase * (1 + ivaRateContrattoLead17977) * 100) / 100
           const contractData = {
             contractId: `contract-${Date.now()}`,
             contractCode: `CONTRACT_CTR-MOCK-${new Date().getFullYear()}_${Date.now()}`,
@@ -17975,7 +17987,7 @@ app.post('/api/leads', async (c) => {
             tipoServizio: leadData.pacchetto || 'BASE', // BASE o AVANZATO
             servizio: leadData.servizio || 'eCura PRO', // eCura PRO, eCura FAMILY, eCura PREMIUM
             prezzoBase: pricing.setupBase,
-            prezzoIvaInclusa: pricing.setupTotale
+            prezzoIvaInclusa: prezzoIvaInclusaLead17977  // ✅ IVA corretta (4% se agevolata, 22% standard)
           }
           
           addDebugLog(`📋 [LEAD] contractData creato: ${contractData.contractId}`)
@@ -29303,6 +29315,9 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
       }, 400)
     }
     
+    // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+    const ivaRateContr29313 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const prezzoIvaInclusaContr29313 = Math.round(pricing.setupBase * (1 + ivaRateContr29313) * 100) / 100
     const contractData = {
       contractId,
       contractCode,
@@ -29310,7 +29325,7 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
       tipoServizio: piano,
       servizio: servizioRaw,
       prezzoBase: pricing.setupBase,
-      prezzoIvaInclusa: pricing.setupTotale
+      prezzoIvaInclusa: prezzoIvaInclusaContr29313  // ✅ IVA corretta (4% se agevolata, 22% standard)
     }
     
     // ✅ Brochure unificata
@@ -31143,6 +31158,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       }
     }
 
+    // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+    const ivaRateProforma31161 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const prezzoIvaInclusaProforma31161 = Math.round(pricing.setupBase * (1 + ivaRateProforma31161) * 100) / 100
     const proformaData = {
       proformaId: '', // Sarà popolato dopo INSERT/UPDATE
       numeroProforma,
@@ -31150,7 +31168,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
       tipoServizio: piano,
       servizio: servizio,
       prezzoBase: pricing.setupBase,
-      prezzoIvaInclusa: pricing.setupTotale,
+      prezzoIvaInclusa: prezzoIvaInclusaProforma31161,  // ✅ IVA corretta (4% se agevolata, 22% standard)
       dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // ✅ 3 giorni massimo
       riserva_dominio: Boolean(lead.riserva_dominio),
       rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),

@@ -165,6 +165,11 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const ivaPercContratto = ivaAgevolataContratto ? '4%' : '22%'
   const ivaNoteContratto = ivaAgevolataContratto ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
+  // ✅ FIX IVA AGEVOLATA: ricalcola sempre prezzoIvaInclusa con l'aliquota corretta del lead
+  // (pricing.setupTotale usa sempre 22%; qui sovrascriviamo con aliquota reale del cliente)
+  const prezzoIvaInclusaCorretto = Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100
+  const totaleRinnovoCorretto = Math.round(importoAnniSuccessivi * (1 + ivaRateContratto) * 100) / 100
+
   const dataContratto = new Date().toLocaleDateString('it-IT', { 
     day: '2-digit', 
     month: 'long', 
@@ -482,7 +487,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
         
         <p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing) con invio automatico dell'allarme in caso di uscita dalla zona sicura.</p>
         
-        <p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari tramite APP quando i valori rilevati vanno oltre le soglie impostate in piattaforma (comunicate dal proprio Medico di Base).</p>
+        ${servizioTipo !== 'FAMILY' ? `<p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari tramite APP quando i valori rilevati vanno oltre le soglie impostate in piattaforma (comunicate dal proprio Medico di Base).</p>` : ''}
         
         <p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione bracciale, messa in carica del bracciale, segnalazione di batteria scarica, ecc.</p>
         
@@ -502,22 +507,22 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
       <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>
       <span style="color:#2e7d32; font-size:13px;">La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span>
     </div>
-    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100} € inclusa iva</span>) e include:</p>
+    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € inclusa iva</span>) e include:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
-        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        <li>SIM multiprovider (prefisso +48 o +33) per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     ` : `
-    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${contractData.prezzoIvaInclusa || Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100} € inclusa iva</span>) e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € inclusa iva</span>) e include:</p>
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
-        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € inclusa iva</span>) con inclusi:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
-        <li>SIM per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
+        <li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     `}
     
