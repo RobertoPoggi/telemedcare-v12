@@ -224,11 +224,11 @@ export function getCaratteristicheComplete(servizio: ServizioeCura, piano: Piano
  * "Oggetto del Contratto", differenziato per servizio (FAMILY/PRO/PREMIUM)
  * e per piano (BASE/AVANZATO).
  *
- * FAMILY BASE:    SOS→familiari, cadute→familiari, voce→familiari, GPS+geofencing, farmaci
- * FAMILY AVANZATO: SOS→CO, cadute→CO, voce→CO, GPS senza geofencing, NO farmaci
- * PRO BASE:       come FAMILY BASE + AI cadute avanzata, GPS multi-tech, freq.card/SpO2, geofencing avanzato, farmaci
- * PRO AVANZATO:   come FAMILY AVANZATO + AI cadute avanzata, GPS multi-tech, freq.card/SpO2 (notifica CO), NO farmaci
- * PREMIUM BASE:   come PRO BASE + sonno, AI predittiva, dashboard clinica, telemedicina
+ * FAMILY BASE:      SOS→familiari, cadute→familiari, voce→familiari, GPS base — NO geofencing, NO farmaci
+ * FAMILY AVANZATO:  SOS→CO, cadute→CO, voce→CO, GPS base — NO geofencing, NO farmaci
+ * PRO BASE:         come FAMILY BASE + AI cadute avanzata, GPS multi-tech, freq.card/SpO2, geofencing avanzato, farmaci vocali
+ * PRO AVANZATO:     come FAMILY AVANZATO + AI cadute avanzata, GPS multi-tech, freq.card/SpO2 (notifica CO), geofencing avanzato, farmaci vocali
+ * PREMIUM BASE:     come PRO BASE + sonno, AI predittiva, dashboard clinica, telemedicina
  * PREMIUM AVANZATO: come PRO AVANZATO + sonno, AI predittiva, dashboard clinica, telemedicina
  */
 export function getDescrizioneFunzioniDispositivo(
@@ -264,7 +264,7 @@ export function getDescrizioneFunzioniDispositivo(
 
   // ── GPS ───────────────────────────────────────────────────────────────────
   const gpsMultitech = isProOrPremium ? ' con tecnologia multi-sistema (GPS + Wi-Fi beacon + BLE) per localizzazione precisa sia indoor che outdoor' : ''
-  const gpsGeofencing = (!isAvanzato)  // BASE: geofencing; AVANZATO: no geofencing
+  const gpsGeofencing = isProOrPremium  // solo PRO e PREMIUM (qualsiasi piano); FAMILY mai
     ? ' È inoltre possibile impostare una cosiddetta area sicura per l\'assistito (geo-fencing) con invio automatico dell\'allarme in caso di uscita dalla zona sicura.'
     : ''
   const sezioneGPS = `<p><strong>Posizione GPS e GPS-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP${gpsMultitech}.${gpsGeofencing}</p>`
@@ -293,12 +293,9 @@ export function getDescrizioneFunzioniDispositivo(
   // ── Assistenza vocale (tutti) ─────────────────────────────────────────────
   const sezioneASSISTENZA = `<p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione bracciale, messa in carica del bracciale, segnalazione di batteria scarica, ecc.</p>`
 
-  // ── Promemoria farmaci (BASE tutti i servizi; AVANZATO solo FAMILY no, PRO/PREMIUM sì)
-  // Dal sito: PRO ha "promemoria farmaci vocali"; FAMILY non li menziona;
-  // Dal contratto Ventre (FAMILY AVANZATO): farmaci assenti
-  const hasFarmaci = !isAvanzato  // Piano BASE: sempre incluso
-    || isProOrPremium             // Piano AVANZATO + PRO/PREMIUM: incluso (vocali)
-  const sezioneFARMACI = (hasFarmaci && !isAvanzato) || (isProOrPremium && isAvanzato)
+  // ── Promemoria farmaci (solo PRO e PREMIUM — qualsiasi piano; FAMILY MAI)
+  // Fonte: www.ecura.it — FAMILY non include promemoria farmaci vocali
+  const sezioneFARMACI = isProOrPremium
     ? `<p><strong>Promemoria farmaci vocali:</strong> messaggi vocali ricordano all'assistito l'orario in cui assumere i farmaci (aderenza terapeutica).</p>`
     : ''
 
