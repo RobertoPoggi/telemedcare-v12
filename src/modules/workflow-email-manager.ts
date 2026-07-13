@@ -479,19 +479,29 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <p>L'oggetto del presente Contratto è l'erogazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" mediante l'utilizzo del Dispositivo ${dispositivo}. Le funzioni del Dispositivo ${dispositivo} sono le seguenti:</p>
     
     <div class="feature-list">
+        ${pianoNome === 'AVANZATO' ? `
+        <p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms alla Centrale Operativa. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
+        
+        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (Centrale Operativa disponibile h24/7 giorni su 7) ed inviare una notifica di emergenza (SMS geolocalizzato) alla Centrale Operativa.</p>
+        
+        <p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma ${dispositivo} i contatti della Centrale Operativa; dopo l'invio dell'allarme la Centrale Operativa riceve una chiamata dal bracciale e può parlare con l'assistito; inoltre, in qualsiasi momento, la Centrale Operativa (configurata in Piattaforma) può contattare l'assistito tramite il bracciale.</p>
+        
+        <p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP.</p>
+        ` : `
         <p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms ai familiari. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
         
-        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (in caso di mancata risposta, in cascata, ai successivi contatti di emergenza configurati) ed inviare una notifica di emergenza (SMS geolocalizzato) ai familiari configurati in Piattaforma).</p>
+        <p><strong>Pulsante SOS:</strong> premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (in caso di mancata risposta, in cascata, ai successivi contatti di emergenza configurati) ed inviare una notifica di emergenza (SMS geolocalizzato) ai familiari configurati in Piattaforma.</p>
         
         <p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma ${dispositivo} i contatti dei familiari; dopo l'invio dell'allarme i familiari (configurati in Piattaforma) ricevono una chiamata dal bracciale e possono parlare con l'assistito; inoltre, in qualsiasi momento, i familiari (configurati in Piattaforma) possono contattare l'assistito tramite il bracciale.</p>
         
         <p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing) con invio automatico dell'allarme in caso di uscita dalla zona sicura.</p>
         
-        ${servizioTipo !== 'FAMILY' ? `<p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ai familiari tramite APP quando i valori rilevati vanno oltre le soglie impostate in piattaforma (comunicate dal proprio Medico di Base).</p>` : ''}
+        <p><strong>Promemoria per l'assunzione dei farmaci:</strong> un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>
+        `}
+        
+        ${servizioTipo !== 'FAMILY' ? `<p><strong>Misurazioni della frequenza cardiaca e della saturazione di ossigeno:</strong> è possibile impostare una notifica che arrivi ${pianoNome === 'AVANZATO' ? 'alla Centrale Operativa' : 'ai familiari'} tramite APP quando i valori rilevati vanno oltre le soglie impostate in piattaforma (comunicate dal proprio Medico di Base).</p>` : ''}
         
         <p><strong>Assistenza vocale:</strong> informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione bracciale, messa in carica del bracciale, segnalazione di batteria scarica, ecc.</p>
-        
-        <p><strong>Promemoria per l'assunzione dei farmaci:</strong> un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>
         
         <p><strong>Registrazione dei passi:</strong> aiuta a valutare quanto sei attivo durante la giornata. Inoltre, monitorando le calorie bruciate, aiuta a mantenere una dieta sana.</p>
     </div>

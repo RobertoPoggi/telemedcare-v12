@@ -258,8 +258,29 @@ export class ContractGenerator {
 
       // ✅ FIX: Telemonitoraggio parametri vitali solo per PRO e PREMIUM (non FAMILY)
       SEZIONE_PARAMETRI_VITALI: (servizioType !== 'FAMILY')
-        ? `<p>Misurazioni della frequenza cardiaca e della saturazione di ossigeno: è possibile impostare una notifica che arrivi ai familiari e/o Centrale Operativa (ove prevista) tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>\n<p>&nbsp;</p>`
+        ? `<p>Misurazioni della frequenza cardiaca e della saturazione di ossigeno: è possibile impostare una notifica che arrivi ${pianoType === 'AVANZATO' ? 'alla Centrale Operativa' : 'ai familiari'} tramite APP quando i valori rilevati vanno oltre le soglie programmate (comunicate dal proprio Medico di Base).</p>\n<p>&nbsp;</p>`
         : '',
+
+      // ✅ FIX: Descrizioni funzioni differenziate per Piano BASE vs Piano AVANZATO
+      // Piano AVANZATO: Centrale Operativa h24 al posto dei familiari
+      // Piano BASE: familiari, geo-fencing, promemoria farmaci
+      SEZIONE_FUNZIONI_DISPOSITIVO: pianoType === 'AVANZATO'
+        ? `<p>Rilevatore automatico di caduta: effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms alla Centrale Operativa. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
+<p>&nbsp;</p>
+<p>Pulsante SOS: premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (Centrale Operativa disponibile h24/7 giorni su 7) ed inviare una notifica di emergenza (SMS geolocalizzato) alla Centrale Operativa.</p>
+<p>&nbsp;</p>
+<p>Comunicazione vocale bidirezionale: è possibile configurare sulla Piattaforma i contatti della Centrale Operativa; dopo l'invio dell'allarme la Centrale Operativa riceve una chiamata dal dispositivo e può parlare con l'assistito; inoltre, in qualsiasi momento, la Centrale Operativa (configurata in Piattaforma) può contattare l'assistito tramite il dispositivo.</p>
+<p>&nbsp;</p>
+<p>Posizione GPS e GPS-assistito: consente di localizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP.</p>`
+        : `<p>Rilevatore automatico di caduta: effettua una chiamata vocale di allarme, in caso di caduta, e invia una notifica tramite sms ai familiari. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
+<p>&nbsp;</p>
+<p>Pulsante SOS: premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza (in caso di mancata risposta, in cascata, ai successivi contatti di emergenza configurati) ed inviare una notifica di emergenza (SMS geolocalizzato) ai familiari configurati in Piattaforma.</p>
+<p>&nbsp;</p>
+<p>Comunicazione vocale bidirezionale: è possibile configurare sulla Piattaforma i contatti dei familiari; dopo l'invio dell'allarme i familiari (configurati in Piattaforma) ricevono una chiamata dal dispositivo e possono parlare con l'assistito; in qualsiasi momento i familiari (configurati in Piattaforma) possono contattare l'assistito tramite il dispositivo.</p>
+<p>&nbsp;</p>
+<p>Posizione GPS e GPS-assistito: consente di localizzare l'assistito quando viene inviato l'allarme. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing) con invio automatico dell'allarme in caso di uscita dalla zona sicura.</p>
+<p>&nbsp;</p>
+<p>Promemoria per l'assunzione dei farmaci: un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>`,
 
       // Riserva di Dominio (clausola opzionale)
       CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
@@ -393,18 +414,12 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p>Le funzioni del dispositivo {{Dispositivo}} sono le seguenti:</p>
 <p>&nbsp;</p>
-<p>Comunicazione vocale bidirezionale: è possibile configurare sulla Piattaforma i contatti dei familiari oltre a quelli della Centrale Operativa ove prevista; dopo l'invio dell'allarme i familiari e/o la Centrale Operativa (piano avanzato) ricevono una chiamata dal dispositivo e possono parlare con l'assistito; in qualsiasi momento i familiari e/o la Centrale Operativa (piano avanzato) possono contattare l'assistito tramite il dispositivo.</p>
-<p>&nbsp;</p>
-<p>Rilevatore automatico di caduta: effettua una chiamata vocale di allarme, in caso di caduta, ai Care Givers e Famigliari (Piano Base) e alla Centrale Operativa (Piano Avanzato) e invia una notifica tramite sms ai familiari e, nel piano avanzato anche alla Centrale Operativa. Nell'sms arriverà sia il link da cliccare per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici che è stato possibile rilevare.</p>
-<p>&nbsp;</p>
-<p>Posizione GPS e GPS-assistito: consente di localizzare l'assistito quando viene inviato l'allarme. È inoltre possibile impostare una cosiddetta area sicura per l'assistito (geo-fencing).</p>
+{{SEZIONE_FUNZIONI_DISPOSITIVO}}
 <p>&nbsp;</p>
 {{SEZIONE_PARAMETRI_VITALI}}
-<p>Pulsante SOS: premendo il pulsante SOS per circa 3 secondi è possibile effettuare una chiamata vocale ai care giver / famigliari (piano base) o alla Centrale Operativa (piano avanzato) e inviare una notifica di emergenza (geolocalizzata) ai familiari o alla Centrale Operativa stessa.</p>
-<p>&nbsp;</p>
 <p>Assistenza vocale: informa l'assistito in relazione ai seguenti eventi: pressione pulsante SOS, attivazione dispositivo, messa in carica del dispositivo, segnalazione di batteria scarica, ecc.</p>
 <p>&nbsp;</p>
-<p>Promemoria per l'assunzione dei farmaci: un messaggio ricorda l'orario in cui assumere i farmaci (aderenza terapeutica).</p>
+<p>Registrazione dei passi: aiuta a valutare quanto sei attivo durante la giornata. Inoltre, monitorando le calorie bruciate, aiuta a mantenere una dieta sana.</p>
 <p>&nbsp;</p>
 <h2>Durata del Servizio</h2>
 <p>Il Servizio di TeleAssistenza {{Servizio}} ha una durata di 12 mesi a partire da {{DATA_INIZIO_SERVIZIO}} fino al {{DATA_SCADENZA}}.</p>
