@@ -166,7 +166,6 @@ export const PIANI_ECURA: Record<PianoeCura, PianoConfig> = {
     caratteristiche: [
       'Configurazione da remoto del dispositivo',
       'Settaggio dei contatti dei familiari e care giver',
-      'Inserimento iniziale dei promemoria farmaci',
       'Formazione una tantum per aggiornamenti in autonomia (incluso reporting)',
       'Notifiche e allarmi direttamente ai familiari h24/7 giorni',
       'Supporto tecnico per il dispositivo'
@@ -213,9 +212,21 @@ export function getDescrizioneServizio(servizio: ServizioeCura, piano: PianoeCur
 }
 
 export function getCaratteristicheComplete(servizio: ServizioeCura, piano: PianoeCura): string[] {
+  const isProOrPremium = servizio === 'PRO' || servizio === 'PREMIUM'
+
+  // Le caratteristiche del piano BASE non includono i promemoria farmaci:
+  // quella voce è riservata a PRO e PREMIUM (fonte: www.ecura.it)
+  const pianoCaratteristiche = [...PIANI_ECURA[piano].caratteristiche]
+  if (isProOrPremium && piano === 'BASE') {
+    // Inserisci 'Inserimento iniziale dei promemoria farmaci' dopo 'Settaggio dei contatti'
+    const idxSettaggio = pianoCaratteristiche.findIndex(c => c.startsWith('Settaggio dei contatti'))
+    const insertAt = idxSettaggio >= 0 ? idxSettaggio + 1 : 1
+    pianoCaratteristiche.splice(insertAt, 0, 'Inserimento iniziale dei promemoria farmaci')
+  }
+
   return [
     ...SERVIZI_ECURA[servizio].caratteristiche,
-    ...PIANI_ECURA[piano].caratteristiche
+    ...pianoCaratteristiche
   ]
 }
 
