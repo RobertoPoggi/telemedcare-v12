@@ -9186,7 +9186,7 @@ app.get('/api/debug-schema', async (c) => {
 // POST /api/create-payment-intent - Crea un Payment Intent Stripe per il pagamento
 app.post('/api/create-payment-intent', async (c) => {
   try {
-    const { proformaId } = await c.req.json()
+    const { proformaId, numeroRata } = await c.req.json()
     
     if (!proformaId) {
       return c.json({ success: false, error: 'proformaId richiesto' }, 400)
@@ -9234,27 +9234,53 @@ app.post('/api/create-payment-intent', async (c) => {
     }
     
     // Calcola importo in centesimi (Stripe richiede l'importo in centesimi)
-    // WORKAROUND: Se importo_totale è sbagliato (IVA duplicata), usa importo_base + IVA
     let totalAmount = 0
-    
-    // Leggi i campi dalla proforma
-    const importo_base = parseFloat(proforma.importo_base || '0')
-    const importo_iva = parseFloat(proforma.importo_iva || '0')
-    const importo_totale = parseFloat(proforma.importo_totale || '0')
-    
-    // Validazione: se importo_totale > importo_base * 1.5 → probabilmente IVA duplicata
-    if (importo_totale > importo_base * 1.5 && importo_base > 0) {
-      // USA importo_base + importo_iva (calcolo corretto)
-      totalAmount = importo_base + importo_iva
-      console.warn(`⚠️ [PAYMENT] Importo totale sospetto (€${importo_totale.toFixed(2)}), uso importo_base + IVA = €${totalAmount.toFixed(2)}`)
-    } else if (importo_totale > 0) {
-      // USA importo_totale se sembra corretto
-      totalAmount = importo_totale
-      console.log(`✅ [PAYMENT] Uso importo_totale: €${totalAmount.toFixed(2)}`)
-    } else {
-      // Fallback su prezzo_totale (campo legacy)
-      totalAmount = parseFloat(proforma.prezzo_totale || '0')
-      console.log(`📦 [PAYMENT] Fallback prezzo_totale: €${totalAmount.toFixed(2)}`)
+
+    // ── RATEIZZAZIONE: se è stata specificata una rata, carica importo da rate_pagamento ──
+    if (numeroRata && proforma.lead_id) {
+      try {
+        const rata = await c.env.DB.prepare(`
+          SELECT importo, numero_rata, data_scadenza, status
+          FROM rate_pagamento
+          WHERE lead_id = ? AND numero_rata = ?
+          LIMIT 1
+        `).bind(proforma.lead_id, numeroRata).first()
+        
+        if (rata) {
+          // Importo nella tabella è l'imponibile; calcola IVA in base al flag iva_agevolata del lead
+          const lead = await c.env.DB.prepare(`SELECT iva_agevolata FROM leads WHERE id = ? LIMIT 1`)
+            .bind(proforma.lead_id).first()
+          const ivaRateRata = (lead as any)?.iva_agevolata ? 0.04 : 0.22
+          const imponibileRata = Number((rata as any).importo) || 0
+          totalAmount = Math.round((imponibileRata * (1 + ivaRateRata)) * 100) / 100
+          console.log(`✅ [PAYMENT] Rata ${numeroRata}: imponibile €${imponibileRata.toFixed(2)}, IVA ${ivaRateRata*100}%, totale €${totalAmount.toFixed(2)}`)
+        } else {
+          console.warn(`⚠️ [PAYMENT] Rata ${numeroRata} non trovata per lead ${proforma.lead_id}, fallback su importo proforma`)
+        }
+      } catch (err) {
+        console.warn('[PAYMENT] Errore lettura rata:', err)
+      }
+    }
+
+    // Se non è rateizzato (o rata non trovata) → usa importo totale proforma
+    if (totalAmount <= 0) {
+      // WORKAROUND: Se importo_totale è sbagliato (IVA duplicata), usa importo_base + IVA
+      const importo_base = parseFloat(proforma.importo_base || '0')
+      const importo_iva = parseFloat(proforma.importo_iva || '0')
+      const importo_totale = parseFloat(proforma.importo_totale || '0')
+      
+      // Validazione: se importo_totale > importo_base * 1.5 → probabilmente IVA duplicata
+      if (importo_totale > importo_base * 1.5 && importo_base > 0) {
+        totalAmount = importo_base + importo_iva
+        console.warn(`⚠️ [PAYMENT] Importo totale sospetto (€${importo_totale.toFixed(2)}), uso importo_base + IVA = €${totalAmount.toFixed(2)}`)
+      } else if (importo_totale > 0) {
+        totalAmount = importo_totale
+        console.log(`✅ [PAYMENT] Uso importo_totale: €${totalAmount.toFixed(2)}`)
+      } else {
+        // Fallback su prezzo_totale (campo legacy)
+        totalAmount = parseFloat(proforma.prezzo_totale || '0')
+        console.log(`📦 [PAYMENT] Fallback prezzo_totale: €${totalAmount.toFixed(2)}`)
+      }
     }
     
     if (totalAmount <= 0) {
@@ -9268,15 +9294,17 @@ app.post('/api/create-payment-intent', async (c) => {
     // Crea Payment Intent usando il modulo payment-manager
     const { createStripePaymentIntent } = await import('./modules/payment-manager')
     
+    const rataLabel = numeroRata ? ` — Rata ${numeroRata}` : ''
     const result = await createStripePaymentIntent(
       c.env,
       amountInCents,
-      `Pagamento Proforma ${proforma.numero_proforma} - eCura ${proforma.servizio || proforma.tipo_servizio || ''}`,
+      `Pagamento Proforma ${proforma.numero_proforma}${rataLabel} - eCura ${proforma.servizio || proforma.tipo_servizio || ''}`,
       {
         proformaId: proforma.id,
         proforma_number: proforma.numero_proforma,
         contract_code: contract?.contract_code || contract?.codice_contratto || contract?.id || '',
-        leadId: proforma.leadId
+        leadId: proforma.leadId,
+        ...(numeroRata ? { numero_rata: String(numeroRata) } : {})
       }
     )
     

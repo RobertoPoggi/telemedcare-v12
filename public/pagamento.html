@@ -357,9 +357,10 @@
         let proformaData = null;
         let clientSecret = null;
 
-        // Recupera proformaId dalla query string
+        // Recupera proformaId e rata (opzionale) dalla query string
         const urlParams = new URLSearchParams(window.location.search);
         const proformaId = urlParams.get('proformaId');
+        const numeroRata = urlParams.get('rata') ? parseInt(urlParams.get('rata'), 10) : null;
 
         // Inizializza la pagina
         async function init() {
@@ -398,16 +399,23 @@
             document.getElementById('piano').textContent = proformaData.piano || 'BASE';
             document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
             
-            // ✅ REGOLA UNIVERSALE: L'API già calcola tutto correttamente
-            // Usa prezzo_base (IVA ESCLUSA), importo_iva e importo_totale (IVA INCLUSA)
+            // ✅ RATEIZZAZIONE: se è specificata una rata, mostra solo quell'importo
+            // Il server calcolerà l'importo IVA inclusa della rata; qui usiamo il totale proforma come fallback
             const prezzoBase = parseFloat(proformaData.prezzo_base || proformaData.prezzo_totale || 0);
-            const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * 0.22);
-            const totale = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
-            document.getElementById('totale').textContent = `€${totale}`;
-            document.getElementById('importo-bonifico').textContent = `€${totale}`;
+            const ivaPerc = proformaData.iva_agevolata ? 0.04 : 0.22;
+            const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * ivaPerc);
+            const totaleProforma = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
             
-            // Causale bonifico
-            const causale = `Proforma ${proformaData.numero_proforma} - TeleMedCare ${proformaData.servizio || 'eCura'}`;
+            // Etichetta importo: per rata specifica il numero, altrimenti totale
+            const etichettaImporto = numeroRata
+                ? `€${totaleProforma} (Rata ${numeroRata} — importo calcolato al pagamento)`
+                : `€${totaleProforma}`;
+            document.getElementById('totale').textContent = etichettaImporto;
+            document.getElementById('importo-bonifico').textContent = etichettaImporto;
+            
+            // Causale bonifico: include il numero rata se presente
+            const rataLabel = numeroRata ? ` — Rata ${numeroRata}` : '';
+            const causale = `Proforma ${proformaData.numero_proforma}${rataLabel} - eCura ${proformaData.servizio || 'eCura'}`;
             document.getElementById('causale-bonifico').textContent = causale;
             
             // Mostra i dettagli
@@ -439,12 +447,15 @@
                 stripe = Stripe(keyData.publishableKey);
                 console.log('✅ [STRIPE] Stripe.js inizializzato');
                 
-                // Crea il Payment Intent
-                console.log('💳 [STRIPE] Creazione Payment Intent per proforma:', proformaId);
+                // Crea il Payment Intent — passa numeroRata se presente (per rateizzazione)
+                const rataLog = numeroRata ? ` (Rata ${numeroRata})` : '';
+                console.log(`💳 [STRIPE] Creazione Payment Intent per proforma: ${proformaId}${rataLog}`);
+                const piPayload = { proformaId: proformaId };
+                if (numeroRata) piPayload.numeroRata = numeroRata;
                 const piResponse = await fetch('/api/create-payment-intent', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ proformaId: proformaId })
+                    body: JSON.stringify(piPayload)
                 });
                 
                 const piData = await piResponse.json();
@@ -544,15 +555,14 @@
                     let backendError = null;
                     
                     try {
-                        // ✅ Calcola importo totale da proformaData (IVA inclusa)
-                        const prezzoBase = parseFloat(proformaData.prezzo_totale || proformaData.importo_totale || 0);
-                        const iva = prezzoBase * 0.22;
-                        const importoTotale = prezzoBase + iva;
+                        // ✅ Usa l'importo reale confermato da Stripe (amount è in centesimi)
+                        // Questo gestisce correttamente sia pagamento unico sia singola rata
+                        const importoTotale = (paymentIntent.amount || 0) / 100;
                         
-                        console.log('💰 [PAYMENT] Importo calcolato:', {
-                            prezzoBase,
-                            iva,
-                            importoTotale
+                        console.log('💰 [PAYMENT] Importo da Stripe:', {
+                            amountCents: paymentIntent.amount,
+                            importoTotale,
+                            numeroRata: numeroRata || null
                         });
                         
                         const backendResponse = await fetch('/api/payments', {
@@ -560,11 +570,12 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 proformaId: proformaData.id || proformaId,
-                                importo: importoTotale, // ✅ Importo IVA INCLUSA
+                                importo: importoTotale, // ✅ Importo IVA INCLUSA (da Stripe)
                                 metodoPagamento: 'stripe',
                                 transactionId: paymentIntent.id,
                                 stripePaymentIntentId: paymentIntent.id,
-                                autoConfirm: true
+                                autoConfirm: true,
+                                ...(numeroRata ? { numeroRata: numeroRata } : {})
                             })
                         });
                         

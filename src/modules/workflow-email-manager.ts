@@ -1381,6 +1381,9 @@ export async function inviaEmailProforma(
     codiceOriginale?: string
     // Rateizzazione
     riserva_dominio?: boolean
+    rateizzazione_attiva?: boolean
+    rateizzazione_note?: string
+    rate?: Array<{ numero_rata: number; importo: number; data_scadenza: string; status?: string }>
   },
   env: any,
   db: D1Database
@@ -1429,15 +1432,45 @@ export async function inviaEmailProforma(
       ? `<div style="background:#e8f5e9;border-left:4px solid #27ae60;padding:12px 16px;margin:16px 0;border-radius:0 4px 4px 0;"><strong style="color:#1b5e20;">🔄 Proforma di Rinnovo — Anno ${annoRinnovo}</strong><br><span style="color:#2e7d32;font-size:13px;">La tariffa di rinnovo è agevolata rispetto al primo anno in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span></div>`
       : ''
     
+    // ── Rateizzazione: calcola importi Rata 1 se attiva ─────────────────────
+    const isRateizzato = !!(proformaData.rateizzazione_attiva && proformaData.rate && proformaData.rate.length > 0)
+    const rate1 = isRateizzato ? proformaData.rate![0] : null
+
+    // Importo da mostrare nell'email: per rateizzato → solo Rata 1 IVA inclusa
+    const imponibileEmail  = isRateizzato ? (Number(rate1!.importo) || 0) : imponibile
+    const importoIvaEmail  = Math.round(imponibileEmail * ivaRate * 100) / 100
+    const totaleEmail      = Math.round((imponibileEmail + importoIvaEmail) * 100) / 100
+
+    // Etichetta "TOTALE DA PAGARE": per rateizzato specifica "Rata 1 di N"
+    const labelTotale = isRateizzato
+      ? `€${totaleEmail.toFixed(2).replace('.', ',')} (Rata 1 di ${proformaData.rate!.length})`
+      : `€${totaleEmail.toFixed(2).replace('.', ',')}`
+
+    // Link Stripe: aggiunge &rata=1 per rateizzato → pagamento.html gestisce l'importo corretto
+    const linkPagamento = isRateizzato
+      ? `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}&rata=1`
+      : `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}`
+
+    // Passi dopo il pagamento: diversi per rateizzato e pagamento unico
+    const passiDopoRateizzato = `<p style="margin:6px 0; font-size:14px;">1️⃣ Riceverà la <strong>conferma di pagamento</strong> della Rata 1 via email</p>
+<p style="margin:6px 0; font-size:14px;">2️⃣ Le invieremo il <strong>dispositivo SiDLY</strong> (consegna 5-10 giorni lavorativi)</p>
+<p style="margin:6px 0; font-size:14px;">3️⃣ Riceverà le <strong>istruzioni per la configurazione</strong> del dispositivo</p>
+<p style="margin:6px 0; font-size:14px;">4️⃣ Il nostro team La contatterà per <strong>programmare l'attivazione</strong></p>
+<p style="margin:6px 0; font-size:14px;">5️⃣ Riceverà un <strong>reminder via email per le rate successive</strong> (Rata 2 e Rata 3) con il link per il pagamento</p>`
+    const passiDopoSingolo = `<p style="margin:6px 0; font-size:14px;">1️⃣ Riceverà la <strong>fattura fiscale</strong> definitiva via email</p>
+<p style="margin:6px 0; font-size:14px;">2️⃣ Le invieremo il <strong>dispositivo SiDLY</strong> (consegna 5-10 giorni lavorativi)</p>
+<p style="margin:6px 0; font-size:14px;">3️⃣ Riceverà le <strong>istruzioni per la configurazione</strong> del dispositivo</p>
+<p style="margin:6px 0; font-size:14px;">4️⃣ Il nostro team La contatterà per <strong>programmare l'attivazione</strong></p>`
+
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
       PIANO_SERVIZIO: titoloProforma,
       NUMERO_PROFORMA: proformaData.numeroProforma,
-      IMPORTO_BASE: `€${imponibile.toFixed(2).replace('.', ',')}`,
-      IMPORTO_IVA: `€${importoIva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_CON_IVA: `€${totaleConIva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_TOTALE: `€${totaleConIva.toFixed(2).replace('.', ',')}`,
+      IMPORTO_BASE: `€${imponibileEmail.toFixed(2).replace('.', ',')}`,
+      IMPORTO_IVA: `€${importoIvaEmail.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA: labelTotale,
+      IMPORTO_TOTALE: labelTotale,
       IVA_LABEL: `IVA ${ivaLabel}`,
       IVA_NOTE: ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
@@ -1445,12 +1478,14 @@ export async function inviaEmailProforma(
       CAUSALE: causale,
       NOTA_RINNOVO: notaRinnovo,
       LINK_PROFORMA_PDF: `${getBaseUrl(env)}/proforma-view?id=${proformaData.proformaId}`,
-      LINK_PAGAMENTO: `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}`,
+      LINK_PAGAMENTO: linkPagamento,
       DATA_INVIO: new Date().toLocaleDateString('it-IT'),
-      // 📅 Piano rateizzazione con IVA (usato da template che già contengono il placeholder)
-      PIANO_RATEIZZAZIONE: (proformaData as any).rateizzazione_attiva && (proformaData as any).rate && (proformaData as any).rate.length > 0
-        ? buildRateHtml((proformaData as any).rate, ivaRate, (proformaData as any).rateizzazione_note || '', true)
-        : ''
+      // 📅 Piano rateizzazione con IVA (tabella completa di tutte le rate)
+      PIANO_RATEIZZAZIONE: isRateizzato
+        ? buildRateHtml(proformaData.rate!, ivaRate, proformaData.rateizzazione_note || '', true)
+        : '',
+      // 📋 Passi dopo il pagamento
+      PASSI_DOPO_PAGAMENTO: isRateizzato ? passiDopoRateizzato : passiDopoSingolo
     }
 
     // ✅ CARICA IL TEMPLATE DA FILE (come tutti gli altri!)
