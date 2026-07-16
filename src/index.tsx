@@ -32096,78 +32096,180 @@ app.post('/api/leads/:id/manual-payment', async (c) => {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
     
-    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    const db = c.env.DB
+    const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
     
     if (!lead) {
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
-    
-    console.log(`✅ [MANUAL-PAYMENT] Conferma pagamento manuale per lead ${leadId}`)
 
-    // ─── TRIGGER PROMOZIONE: se viene passato un codice_promo nel body, applicalo ───
-    let scontoApplicato: any = null
+    // ─── Leggi body (codice_promo + campi pagamento opzionali) ───────────────
+    let bodyParsed: any = {}
     try {
       const bodyRaw = await c.req.raw.clone().text()
-      let bodyParsed: any = {}
-      try { bodyParsed = JSON.parse(bodyRaw) } catch (_) { /* body vuoto o non-JSON, ok */ }
+      try { bodyParsed = JSON.parse(bodyRaw) } catch (_) { /* body vuoto, ok */ }
+    } catch (_) {}
+
+    const isRateizzato = !!(lead.rateizzazione_attiva)
+    console.log(`✅ [MANUAL-PAYMENT] Lead ${leadId} — rateizzato: ${isRateizzato}`)
+
+    // ─── TRIGGER PROMOZIONE ────────────────────────────────────────────────────
+    let scontoApplicato: any = null
+    try {
       const codicePromo = bodyParsed?.codice_promo
       if (codicePromo && (!lead.codice_sconto)) {
-        // Applica sconto promozionale solo se il lead non ha già uno sconto
         const promoResult = await applyDiscountToLead(
-          c.env.DB, leadId, codicePromo.toUpperCase(), 'PROMOZIONE', 'manual-payment'
+          db, leadId, codicePromo.toUpperCase(), 'PROMOZIONE', 'manual-payment'
         )
         if (promoResult.success) {
           scontoApplicato = promoResult
-          console.log(`🏷️ [MANUAL-PAYMENT] Sconto promozionale applicato: ${promoResult.message}`)
+          console.log(`🏷️ [MANUAL-PAYMENT] Sconto applicato: ${promoResult.message}`)
         } else {
-          console.warn(`⚠️ [MANUAL-PAYMENT] Sconto promo non applicato: ${promoResult.message}`)
+          console.warn(`⚠️ [MANUAL-PAYMENT] Sconto non applicato: ${promoResult.message}`)
         }
       }
     } catch (scontoErr) {
-      console.warn('⚠️ [MANUAL-PAYMENT] Errore lettura codice_promo:', scontoErr)
+      console.warn('⚠️ [MANUAL-PAYMENT] Errore codice_promo:', scontoErr)
     }
-    
-    // Aggiorna proforma (se esiste)
-    const proforma = await c.env.DB.prepare(
+
+    const now = new Date().toISOString()
+    const codiceCliente = `CLI-${Date.now()}`
+
+    // ─── PERCORSO A: CLIENTE RATEIZZATO ───────────────────────────────────────
+    // Segna Rata 1 come PAGATA, NON saldare la proforma (restano ancora rate),
+    // aggiorna lead a PAYMENT_RECEIVED, invia email configurazione.
+    if (isRateizzato) {
+      // Trova Rata 1 nella tabella rate_pagamento
+      const rata1 = await db.prepare(`
+        SELECT id, numero_rata, importo, data_scadenza, status
+        FROM rate_pagamento
+        WHERE lead_id = ? AND numero_rata = 1
+        LIMIT 1
+      `).bind(leadId).first() as any
+
+      if (!rata1) {
+        // Rate non trovate: fallback — segnala warning ma prosegui senza segnare rata
+        console.warn(`⚠️ [MANUAL-PAYMENT] Rata 1 non trovata per lead ${leadId} — proseguo senza aggiornare rate_pagamento`)
+      } else if (rata1.status === 'PAGATA') {
+        console.log(`ℹ️ [MANUAL-PAYMENT] Rata 1 già PAGATA per lead ${leadId} — skip aggiornamento rata`)
+      } else {
+        // Segna Rata 1 come PAGATA
+        await db.prepare(`
+          UPDATE rate_pagamento SET
+            status           = 'PAGATA',
+            data_pagamento   = ?,
+            metodo_pagamento = ?,
+            riferimento      = ?,
+            updated_at       = ?
+          WHERE id = ? AND lead_id = ?
+        `).bind(
+          bodyParsed?.data_pagamento || now,
+          bodyParsed?.metodo_pagamento || 'manuale',
+          bodyParsed?.riferimento || null,
+          now,
+          rata1.id, leadId
+        ).run()
+        console.log(`✅ [MANUAL-PAYMENT] Rata 1 (id=${rata1.id}) segnata come PAGATA`)
+      }
+
+      // Verifica se TUTTE le rate sono già pagate → aggiorna saldo completo
+      const tutteLeRate = await db.prepare(`
+        SELECT status FROM rate_pagamento WHERE lead_id = ?
+      `).bind(leadId).all()
+      const tuttoSaldato = (tutteLeRate.results || []).length > 0
+        && (tutteLeRate.results || []).every((r: any) => r.status === 'PAGATA')
+
+      if (tuttoSaldato) {
+        // Caso raro: rata unica o già tutte pagate → salda anche la proforma
+        const proforma = await db.prepare(
+          'SELECT id, numero_proforma FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
+        ).bind(leadId).first() as any
+        if (proforma) {
+          await db.prepare('UPDATE proforma SET status = ? WHERE id = ?').bind('PAID', proforma.id).run()
+          console.log(`✅ [MANUAL-PAYMENT] Tutte le rate pagate — proforma ${proforma.numero_proforma} marcata PAID`)
+        }
+        await db.prepare(`UPDATE leads SET rateizzazione_saldo = 1, updated_at = ? WHERE id = ?`)
+          .bind(now, leadId).run()
+      } else {
+        // Proforma rimane aperta (ci sono ancora rate in attesa)
+        console.log(`ℹ️ [MANUAL-PAYMENT] Proforma NON saldata — rate rimanenti ancora in attesa`)
+      }
+
+      // Aggiorna status lead
+      await db.prepare(`UPDATE leads SET status = 'PAYMENT_RECEIVED', updated_at = ? WHERE id = ?`)
+        .bind(now, leadId).run()
+
+      // Conta rate totali e pagate per il messaggio di risposta
+      const rateAggiornate = await db.prepare(`
+        SELECT numero_rata, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC
+      `).bind(leadId).all()
+      const ratePagate = (rateAggiornate.results || []).filter((r: any) => r.status === 'PAGATA').length
+      const rateTotali = (rateAggiornate.results || []).length
+
+      // Invia email configurazione (uguale al pagamento unico — il dispositivo parte dopo Rata 1)
+      console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email configurazione (rateizzato, rata 1/${rateTotali})`)
+      const { inviaEmailConfigurazionePostPagamento } = await import('./modules/workflow-email-manager')
+      const result = await inviaEmailConfigurazionePostPagamento(
+        { ...lead, codiceCliente },
+        c.env,
+        db
+      )
+
+      if (result.success) {
+        await db.prepare('UPDATE leads SET status = ? WHERE id = ?').bind('CONFIGURATION_SENT', leadId).run()
+        console.log(`✅ [MANUAL-PAYMENT→CONFIG] Email configurazione inviata a ${lead.email}`)
+      } else {
+        console.warn(`⚠️ [MANUAL-PAYMENT→CONFIG] Email non inviata: ${result.errors.join(', ')}`)
+      }
+
+      return c.json({
+        success: true,
+        rateizzato: true,
+        rata_segnata: 1,
+        rate_pagate: ratePagate,
+        rate_totali: rateTotali,
+        saldo_completo: tuttoSaldato,
+        email_configurazione_inviata: result.success,
+        message: tuttoSaldato
+          ? `Piano saldato completamente. Email configurazione inviata a ${lead.email}.`
+          : `Rata 1/${rateTotali} segnata PAGATA. Email configurazione inviata a ${lead.email}. Rate rimanenti: ${rateTotali - ratePagate}.`,
+        codiceCliente,
+        ...(scontoApplicato ? {
+          sconto_applicato: true,
+          sconto_info: scontoApplicato.message,
+          prezzo_finale: scontoApplicato.prezzo_finale
+        } : {})
+      })
+    }
+
+    // ─── PERCORSO B: PAGAMENTO UNICO (comportamento originale) ────────────────
+    const proforma = await db.prepare(
       'SELECT * FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
     ).bind(leadId).first() as any
-    
+
     if (proforma) {
-      await c.env.DB.prepare('UPDATE proforma SET status = ? WHERE id = ?')
-        .bind('PAID', proforma.id).run()
-      console.log(`✅ [MANUAL-PAYMENT] Proforma ${proforma.numero_proforma} marcata come pagata`)
+      await db.prepare('UPDATE proforma SET status = ? WHERE id = ?').bind('PAID', proforma.id).run()
+      console.log(`✅ [MANUAL-PAYMENT] Proforma ${proforma.numero_proforma} marcata come PAID`)
     }
-    
-    // Genera codice cliente
-    const codiceCliente = `CLI-${Date.now()}`
-    
-    // Aggiorna lead (rimuovo codice_cliente perché la colonna non esiste nella tabella)
-    await c.env.DB.prepare(`
-      UPDATE leads SET 
-        status = 'PAYMENT_RECEIVED',
-        updated_at = ?
-      WHERE id = ?
-    `).bind(new Date().toISOString(), leadId).run()
-    
-    // 🔥 TRIGGER: Invia email form configurazione
-    console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email form configurazione`)
-    
+
+    await db.prepare(`UPDATE leads SET status = 'PAYMENT_RECEIVED', updated_at = ? WHERE id = ?`)
+      .bind(now, leadId).run()
+
+    console.log(`📧 [MANUAL-PAYMENT→CONFIG] Invio email configurazione (pagamento unico)`)
     const { inviaEmailConfigurazionePostPagamento } = await import('./modules/workflow-email-manager')
     const result = await inviaEmailConfigurazionePostPagamento(
       { ...lead, codiceCliente },
       c.env,
-      c.env.DB
+      db
     )
-    
+
     if (result.success) {
-      // Aggiorna status
-      await c.env.DB.prepare('UPDATE leads SET status = ? WHERE id = ?')
-        .bind('CONFIGURATION_SENT', leadId).run()
-      
+      await db.prepare('UPDATE leads SET status = ? WHERE id = ?').bind('CONFIGURATION_SENT', leadId).run()
       console.log(`✅ [MANUAL-PAYMENT→CONFIG] Email configurazione inviata a ${lead.email}`)
-      
+
       return c.json({
         success: true,
+        rateizzato: false,
         message: `Pagamento confermato ed email configurazione inviata a ${lead.email}`,
         codiceCliente,
         ...(scontoApplicato ? {
