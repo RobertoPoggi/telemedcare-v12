@@ -2172,6 +2172,120 @@ export async function inviaEmailConfigurazionePostPagamento(
   return result
 }
 
+// ============================================================================
+// REMINDER AUTOMATICO RATA — inviato dal cron giornaliero
+// ============================================================================
+
+/**
+ * Invia l'email di reminder per una rata in scadenza.
+ * Chiamata da processRataReminders() nel cron giornaliero.
+ */
+export async function sendRataReminderEmail(
+  leadData: {
+    id: string | number
+    nomeRichiedente: string
+    cognomeRichiedente: string
+    email: string
+    iva_agevolata?: number | boolean
+    [key: string]: any
+  },
+  rataData: {
+    id: number
+    numero_rata: number
+    totale_rate: number
+    importo: number          // imponibile della rata
+    data_scadenza: string
+  },
+  proformaData: {
+    proformaId: string
+    numeroProforma: string
+    servizio: string
+    piano: string
+  },
+  allRate: Array<{ numero_rata: number; importo: number; data_scadenza: string; status?: string }>,
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult> {
+  const result: WorkflowEmailResult = {
+    success: false,
+    step: 'reminder_rata',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    const emailService = new EmailService(env)
+    const ivaAgevolata = !!(leadData.iva_agevolata)
+    const ivaRate      = ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel     = ivaAgevolata ? '4%' : '22%'
+
+    const imponibile = Number(rataData.importo) || 0
+    const importoIva = Math.round(imponibile * ivaRate * 100) / 100
+    const totaleRata = Math.round((imponibile + importoIva) * 100) / 100
+    const fmt = (n: number) => `€${n.toFixed(2).replace('.', ',')}`
+
+    const scadenzaFmt = (() => {
+      try { return new Date(rataData.data_scadenza).toLocaleDateString('it-IT') }
+      catch { return rataData.data_scadenza }
+    })()
+
+    const linkPagamento = `${getBaseUrl(env)}/pagamento.html?proformaId=${proformaData.proformaId}&rata=${rataData.numero_rata}`
+
+    const causale = `Rata ${rataData.numero_rata}/${rataData.totale_rate} — Proforma ${proformaData.numeroProforma} — ${leadData.nomeRichiedente} ${leadData.cognomeRichiedente}`
+
+    const pianoRateHtml = allRate.length > 0
+      ? buildRateHtml(allRate, ivaRate, '', true)
+      : ''
+
+    const templateData = {
+      NOME_CLIENTE:        leadData.nomeRichiedente,
+      COGNOME_CLIENTE:     leadData.cognomeRichiedente,
+      NUMERO_RATA:         String(rataData.numero_rata),
+      TOTALE_RATE:         String(rataData.totale_rate),
+      NUMERO_PROFORMA:     proformaData.numeroProforma,
+      PIANO_SERVIZIO:      `eCura ${proformaData.servizio} ${proformaData.piano}`,
+      IMPORTO_BASE:        fmt(imponibile),
+      IMPORTO_IVA:         fmt(importoIva),
+      IMPORTO_RATA_IVA:    fmt(totaleRata),
+      IVA_LABEL:           `IVA ${ivaLabel}`,
+      IVA_NOTE:            ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      SCADENZA_RATA:       scadenzaFmt,
+      LINK_PAGAMENTO_RATA: linkPagamento,
+      IBAN:                'IT97L0503401727000000003519',
+      CAUSALE:             causale,
+      PIANO_RATEIZZAZIONE: pianoRateHtml,
+      DATA_INVIO:          new Date().toLocaleDateString('it-IT')
+    }
+
+    const template = await loadEmailTemplate('email_reminder_rata', db, env)
+    const htmlContent = TemplateEngine.render(template, templateData)
+
+    const oggetto = `⏰ Reminder Rata ${rataData.numero_rata}/${rataData.totale_rate} — scadenza ${scadenzaFmt} — eCura`
+
+    const sendResult = await emailService.sendEmail({
+      to: leadData.email,
+      subject: oggetto,
+      html: htmlContent
+    })
+
+    if (sendResult.success) {
+      result.success = true
+      result.emailsSent.push(`email_reminder_rata${rataData.numero_rata} -> ${leadData.email}`)
+      result.messageIds = [sendResult.messageId]
+      console.log(`✅ [CRON-RATA] Reminder rata ${rataData.numero_rata} inviato a ${leadData.email}: ${sendResult.messageId}`)
+    } else {
+      result.errors.push(`Errore invio reminder rata ${rataData.numero_rata}: ${sendResult.error}`)
+      console.error(`❌ [CRON-RATA] Errore invio reminder rata ${rataData.numero_rata}:`, sendResult.error)
+    }
+
+  } catch (error: any) {
+    result.errors.push(`Eccezione reminder rata: ${error.message}`)
+    console.error(`❌ [CRON-RATA] Eccezione:`, error)
+  }
+
+  return result
+}
+
 export default {
   inviaEmailNotificaInfo,
   inviaEmailDocumentiInformativi,
@@ -2180,5 +2294,6 @@ export default {
   inviaEmailBenvenuto,
   inviaEmailConfigurazione,
   inviaEmailConfigurazionePostPagamento,
-  inviaEmailConfermaAttivazione
+  inviaEmailConfermaAttivazione,
+  sendRataReminderEmail
 }

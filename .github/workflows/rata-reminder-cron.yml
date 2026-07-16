@@ -1,0 +1,132 @@
+name: Rata Reminder Automatico (Cron Giornaliero)
+# 📅 REMINDER AUTOMATICI RATE IN SCADENZA
+# ⏰ Esecuzione: Ogni giorno alle 09:30 Italia (07:30 UTC ora legale)
+# 🎯 Logica: invia email per rate con scadenza entro 7 giorni, non ancora pagate,
+#            e per cui non è già stato inviato un reminder oggi.
+
+on:
+  schedule:
+    - cron: '30 7 * * *'   # Tutti i giorni alle 09:30 IT (07:30 UTC, ora legale)
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente target'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+permissions:
+  contents: read
+
+jobs:
+  rata-reminders:
+    name: Invia Reminder Rate in Scadenza
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📋 Verifica prerequisiti
+        run: |
+          echo "📅 Avvio rata-reminder cron"
+          echo "⏰ $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌐 Ambiente: ${{ github.event.inputs.environment || 'production' }}"
+          echo "📌 Trigger: ${{ github.event_name }}"
+          echo ""
+
+          CRON_SECRET_VALUE="${{ secrets.CRON_SECRET }}"
+          if [ -z "$CRON_SECRET_VALUE" ]; then
+            echo "❌ ERRORE FATALE: CRON_SECRET non configurato in GitHub Secrets!"
+            echo ""
+            echo "📌 COME RISOLVERE:"
+            echo "   1. Vai su: github.com/RobertoPoggi/telemedcare-v12/settings/secrets/actions"
+            echo "   2. Clicca 'New repository secret'"
+            echo "   3. Nome: CRON_SECRET"
+            echo "   4. Valore: copia il valore da Cloudflare Pages → telemedcare-v12 → Settings → Environment variables → CRON_SECRET"
+            exit 1
+          else
+            echo "✅ CRON_SECRET configurato (lunghezza: ${#CRON_SECRET_VALUE} caratteri)"
+          fi
+
+      - name: 📅 Trigger Rata Reminder (Production)
+        if: ${{ github.event.inputs.environment != 'preview' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          BASE_URL="https://telemedcare-v12.pages.dev"
+
+          echo "📡 Chiamata a $BASE_URL/api/cron/rata-reminders ..."
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            --max-time 90 \
+            --connect-timeout 15 \
+            -X POST \
+            "$BASE_URL/api/cron/rata-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            2>&1)
+
+          CURL_EXIT=$?
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "📊 HTTP Status: $HTTP_CODE (curl exit: $CURL_EXIT)"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+          echo ""
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Reminder rate completati con successo"
+
+          elif [ "$HTTP_CODE" = "429" ]; then
+            echo "⏭️  Skip: esecuzione recente già completata (rate limit)"
+
+          elif [ "$HTTP_CODE" = "401" ]; then
+            echo "❌ ERRORE 401 — CRON_SECRET non corrisponde tra GitHub e Cloudflare"
+            exit 1
+
+          elif [ "$HTTP_CODE" = "500" ]; then
+            echo "❌ ERRORE 500 — Errore interno Worker"
+            echo "   → Controlla: Cloudflare → Pages → telemedcare-v12 → Functions → Logs"
+            exit 1
+
+          elif [ "$HTTP_CODE" = "524" ]; then
+            echo "⚠️  TIMEOUT 524 — Worker >30s (CF Pages limit)"
+            echo "   → Alcuni reminder potrebbero essere stati inviati. Normale per grandi volumi."
+
+          elif [ -z "$HTTP_CODE" ] || [ "$CURL_EXIT" != "0" ]; then
+            echo "❌ ERRORE: Timeout di rete o errore curl (exit code: $CURL_EXIT)"
+            exit 1
+
+          else
+            echo "❌ Codice HTTP inatteso: $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: 📅 Trigger Rata Reminder (Preview)
+        if: ${{ github.event.inputs.environment == 'preview' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "📡 Chiamata a preview.telemedcare-v12.pages.dev ..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            --max-time 90 \
+            --connect-timeout 15 \
+            -X POST "https://preview.telemedcare-v12.pages.dev/api/cron/rata-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CRON_SECRET}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+
+      - name: 📊 Riepilogo
+        if: always()
+        run: |
+          echo "⏰ Completato: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "📅 Prossima esecuzione schedulata: domani alle 07:30 UTC (09:30 IT)"
+          echo ""
+          echo "ℹ️  Logica reminder:"
+          echo "   • Rate con scadenza entro 7 giorni da oggi"
+          echo "   • Solo rate non pagate (status ≠ PAGATA/paid/ANNULLATA)"
+          echo "   • Non più di 1 reminder al giorno per rata (reminder_sent_at)"
+          echo "   • Colonna reminder_sent_at aggiunta automaticamente se mancante"

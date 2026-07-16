@@ -20609,6 +20609,201 @@ app.post('/api/cron/send-reminders', async (c) => {
   }
 })
 
+// ============================================================================
+// POST /api/cron/rata-reminders — Invia reminder automatici per rate in scadenza
+// Chiamato da GitHub Actions ogni giorno alle 09:30 IT (07:30 UTC)
+// Invia reminder 7 giorni prima della scadenza e il giorno stesso
+// ============================================================================
+app.post('/api/cron/rata-reminders', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    const env = c.env
+
+    if (!db) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Verifica Authorization header
+    const authHeader = c.req.header('Authorization')
+    const cronSecret = env.CRON_SECRET
+    if (!cronSecret) {
+      console.warn('⚠️ [CRON-RATA] CRON_SECRET non configurato — endpoint non protetto!')
+    } else if (authHeader !== `Bearer ${cronSecret}`) {
+      console.warn(`⚠️ [CRON-RATA] Tentativo non autorizzato`)
+      return c.json({ success: false, error: 'Non autorizzato' }, 401)
+    }
+
+    console.log('📅 [CRON-RATA] Avvio reminder rate in scadenza...')
+
+    // ── Aggiungi colonne reminder se mancanti (safe migration) ────────────────
+    const safeAlter = async (sql: string) => {
+      try { await db.prepare(sql).run() } catch (_) { /* già presente */ }
+    }
+    await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_sent_at TEXT DEFAULT NULL`)
+    await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_count INTEGER DEFAULT 0`)
+
+    // ── Query: rate con scadenza entro 7 giorni, non ancora pagate, reminder non
+    //    inviato oggi. Il join con leads e proforma ci dà tutti i dati necessari. ─
+    const oggi = new Date()
+    const tra7gg = new Date(oggi)
+    tra7gg.setDate(tra7gg.getDate() + 7)
+    const oggiStr    = oggi.toISOString().slice(0, 10)
+    const tra7ggStr  = tra7gg.toISOString().slice(0, 10)
+
+    type RataRow = {
+      rata_id: number
+      lead_id: string
+      numero_rata: number
+      importo: number
+      data_scadenza: string
+      reminder_sent_at: string | null
+      reminder_count: number
+      // lead
+      nomeRichiedente: string
+      cognomeRichiedente: string
+      email: string
+      iva_agevolata: number
+      // proforma
+      proforma_id: string | null
+      numero_proforma: string | null
+      servizio: string | null
+      piano: string | null
+    }
+
+    const rateResult = await db.prepare(`
+      SELECT
+        r.id           AS rata_id,
+        r.lead_id,
+        r.numero_rata,
+        r.importo,
+        r.data_scadenza,
+        r.reminder_sent_at,
+        COALESCE(r.reminder_count, 0) AS reminder_count,
+        l.nomeRichiedente,
+        l.cognomeRichiedente,
+        l.email,
+        COALESCE(l.iva_agevolata, 0) AS iva_agevolata,
+        p.id           AS proforma_id,
+        p.numero_proforma,
+        p.servizio,
+        p.piano
+      FROM rate_pagamento r
+      JOIN leads l ON l.id = r.lead_id
+      LEFT JOIN proforma p ON p.lead_id = r.lead_id
+      WHERE r.status NOT IN ('PAGATA', 'paid', 'ANNULLATA')
+        AND r.data_scadenza BETWEEN ? AND ?
+        AND (r.reminder_sent_at IS NULL OR date(r.reminder_sent_at) < ?)
+        AND l.email IS NOT NULL
+        AND l.email != ''
+      ORDER BY r.data_scadenza ASC, r.lead_id ASC, r.numero_rata ASC
+    `).bind(oggiStr, tra7ggStr, oggiStr).all<RataRow>()
+
+    const rate = rateResult.results || []
+    console.log(`📅 [CRON-RATA] Rate trovate in scadenza: ${rate.length}`)
+
+    if (rate.length === 0) {
+      return c.json({
+        success: true,
+        message: 'Nessuna rata in scadenza nei prossimi 7 giorni',
+        stats: { total: 0, sent: 0, failed: 0, skipped: 0 }
+      })
+    }
+
+    const { sendRataReminderEmail } = await import('./modules/workflow-email-manager')
+
+    let sent = 0, failed = 0, skipped = 0
+    const details: Array<{ rata_id: number; lead_id: string; rata: number; esito: string }> = []
+
+    // Raggruppa per lead per caricare tutte le rate del lead una volta sola
+    const leadIds = [...new Set(rate.map(r => r.lead_id))]
+
+    for (const leadId of leadIds) {
+      // Carica tutte le rate del lead per mostrare il piano completo nell'email
+      const tutteLeRateResult = await db.prepare(`
+        SELECT numero_rata, importo, data_scadenza, status
+        FROM rate_pagamento
+        WHERE lead_id = ?
+        ORDER BY numero_rata ASC
+      `).bind(leadId).all<{ numero_rata: number; importo: number; data_scadenza: string; status: string }>()
+      const tutteLeRate = tutteLeRateResult.results || []
+      const totaleRate = tutteLeRate.length
+
+      // Prendi la prima proforma del lead (per il link pagamento)
+      const rateDelLead = rate.filter(r => r.lead_id === leadId)
+      const primaRata = rateDelLead[0]
+
+      const leadData = {
+        id: primaRata.lead_id,
+        nomeRichiedente: primaRata.nomeRichiedente,
+        cognomeRichiedente: primaRata.cognomeRichiedente,
+        email: primaRata.email,
+        iva_agevolata: primaRata.iva_agevolata
+      }
+
+      const proformaInfo = {
+        proformaId: primaRata.proforma_id || primaRata.lead_id,
+        numeroProforma: primaRata.numero_proforma || `—`,
+        servizio: primaRata.servizio || 'PRO',
+        piano: primaRata.piano || 'BASE'
+      }
+
+      // Invia un reminder per ogni rata in scadenza di questo lead
+      for (const rata of rateDelLead) {
+        try {
+          const esito = await sendRataReminderEmail(
+            leadData,
+            {
+              id: rata.rata_id,
+              numero_rata: rata.numero_rata,
+              totale_rate: totaleRate,
+              importo: rata.importo,
+              data_scadenza: rata.data_scadenza
+            },
+            proformaInfo,
+            tutteLeRate,
+            env,
+            db
+          )
+
+          if (esito.success) {
+            sent++
+            details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: 'sent' })
+            // Aggiorna reminder_sent_at e reminder_count
+            await db.prepare(`
+              UPDATE rate_pagamento
+              SET reminder_sent_at = datetime('now'),
+                  reminder_count   = COALESCE(reminder_count, 0) + 1,
+                  updated_at       = datetime('now')
+              WHERE id = ?
+            `).bind(rata.rata_id).run()
+          } else {
+            failed++
+            details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: `failed: ${esito.errors.join('; ')}` })
+          }
+        } catch (err: any) {
+          failed++
+          details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: `exception: ${err.message}` })
+          console.error(`❌ [CRON-RATA] Eccezione rata ${rata.rata_id}:`, err)
+        }
+      }
+    }
+
+    console.log(`✅ [CRON-RATA] Completato: ${sent} inviati, ${failed} falliti, ${skipped} skippati`)
+
+    return c.json({
+      success: true,
+      message: `Reminder rate completati: ${sent} inviati, ${failed} falliti`,
+      stats: { total: rate.length, sent, failed, skipped },
+      window: { da: oggiStr, a: tra7ggStr },
+      details
+    })
+
+  } catch (error: any) {
+    console.error('❌ [CRON-RATA] Errore generale:', error)
+    return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
 // GET /api/cron/send-reminders - Test endpoint (richiede auth in production)
 app.get('/api/cron/send-reminders', async (c) => {
   try {
