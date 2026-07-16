@@ -11708,7 +11708,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // 📅 Rateizzazione
       rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
       rateizzazione_note: lead.rateizzazione_note || '',
-      rate: rateContratto
+      rate: rateContratto,
+      // 📅 Data inizio servizio: priorità DB field → today (usata da generateContractHtml)
+      dataInizio: lead.data_inizio_servizio || lead.data_attivazione || null
     }
     
     // Usa workflow per inviare email contratto

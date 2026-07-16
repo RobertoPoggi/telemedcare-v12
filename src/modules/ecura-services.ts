@@ -256,7 +256,7 @@ export function getDescrizioneFunzioniDispositivo(
   const cadutaAI = isProOrPremium
     ? ' grazie all\'AI avanzata addestrata su 14.000 cadute reali'
     : ''
-  const sezioneCADUTA = `<p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta${cadutaAI}, e invia una notifica tramite SMS ${dest}. Nell'SMS arriverà sia il link per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici rilevati.</p>`
+  const sezioneCADUTA = `<p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta${cadutaAI}, e invia una notifica tramite sms ${dest}. Nell'sms arriverà sia il link per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici rilevati.</p>`
 
   // ── Pulsante SOS ──────────────────────────────────────────────────────────
   const sosDestinatario = isAvanzato
@@ -278,7 +278,7 @@ export function getDescrizioneFunzioniDispositivo(
   const gpsGeofencing = isProOrPremium  // solo PRO e PREMIUM (qualsiasi piano); FAMILY mai
     ? ' È inoltre possibile impostare una cosiddetta area sicura per l\'assistito (geo-fencing) con invio automatico dell\'allarme in caso di uscita dalla zona sicura.'
     : ''
-  const sezioneGPS = `<p><strong>Posizione GPS e GPS-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP${gpsMultitech}.${gpsGeofencing}</p>`
+  const sezioneGPS = `<p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP${gpsMultitech}.${gpsGeofencing}</p>`
 
   // ── Parametri vitali (solo PRO e PREMIUM) ────────────────────────────────
   const vitaliDest = isAvanzato ? 'alla Centrale Operativa' : 'ai familiari'

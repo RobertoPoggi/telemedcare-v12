@@ -174,14 +174,33 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const prezzoIvaInclusaCorretto = Math.round(importoPrimoAnno * (1 + ivaRateContratto) * 100) / 100
   const totaleRinnovoCorretto = Math.round(importoAnniSuccessivi * (1 + ivaRateContratto) * 100) / 100
 
-  const dataContratto = new Date().toLocaleDateString('it-IT', { 
-    day: '2-digit', 
-    month: 'long', 
-    year: 'numeric' 
-  })
-  
-  const dataInizioServizio = new Date().toLocaleDateString('it-IT')
-  const dataScadenza = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('it-IT')
+  // ── Date contratto ──────────────────────────────────────────────────────────
+  // Priorità: contractData.dataInizio → leadData.data_inizio_servizio → today
+  // Il PDF originale usa la data del lead (es. 09/07/2026), NON la data di stampa.
+  const parseDateIt = (raw: string | undefined | null): Date | null => {
+    if (!raw) return null
+    // Accetta yyyy-mm-dd, dd/mm/yyyy, ISO
+    const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw)
+    if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]))
+    const dmy = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(raw)
+    if (dmy) return new Date(parseInt(dmy[3]), parseInt(dmy[2]) - 1, parseInt(dmy[1]))
+    const d = new Date(raw)
+    return isNaN(d.getTime()) ? null : d
+  }
+  const fmtItShort = (d: Date) => d.toLocaleDateString('it-IT')
+  const fmtItLong  = (d: Date) => d.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+
+  const rawDataInizio = (contractData as any).dataInizio
+    || (leadData as any).data_inizio_servizio
+    || (contractData as any).data_inizio
+    || null
+  const dataInizioObj = parseDateIt(rawDataInizio) ?? new Date()
+  const dataScadenzaObj = new Date(dataInizioObj)
+  dataScadenzaObj.setFullYear(dataScadenzaObj.getFullYear() + 1)
+
+  const dataContratto      = fmtItLong(dataInizioObj)   // es. "09 luglio 2026"
+  const dataInizioServizio = fmtItShort(dataInizioObj)  // es. "09/07/2026"
+  const dataScadenza       = fmtItShort(dataScadenzaObj) // es. "09/07/2027"
   
   // ✅ LOGICA INTESTATARIO: dipende da intestatarioContratto
   // Se 'richiedente' → il contratto è intestato al Lead (richiedente/careGiver)
@@ -586,6 +605,12 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
         <p>E.mail: info@ecura.it</p>
         <p>Codice Fiscale e P.IVA: 12435130963 - REA: MI-2661409</p>
         <p>www.medicagb.it</p>
+    </div>
+
+    <div style="margin-top:30px; padding-top:10px; border-top:1px solid #ccc; font-size:11px; color:#666; text-align:center;">
+        <p>Documento stampato da eCura - Contratto ${contractData.contractCode}</p>
+        <p>Cliente: ${cognomeIntestatario} ${nomeIntestatario}</p>
+        <p>Data stampa: ${new Date().toLocaleDateString('it-IT')}, ${new Date().toLocaleTimeString('it-IT')}</p>
     </div>
 </body>
 </html>
