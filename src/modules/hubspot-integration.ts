@@ -196,13 +196,15 @@ export class HubSpotClient {
       })
     }
     
-    // ✅ FILTRO FORM ECURA — usa CONTAINS_TOKEN per catturare anche
-    // "Form eCura_ META", "Form eCura_ GOOGLE", "Form eCura_ ALTRO"
-    // introdotti da HubSpot il 12-13 maggio 2026 con integrazione campaign tracking
+    // ✅ FILTRO FORM ECURA — usa CONTAINS (substring) invece di CONTAINS_TOKEN
+    // perché hs_object_source_detail_1 è un campo STRINGA, non enumeration.
+    // CONTAINS_TOKEN tokenizza per spazi → 'Form eCura' non è un token in 'Form eCura_ GOOGLE'
+    // CONTAINS invece cerca la sottostringa → cattura 'Form eCura', 'Form eCura_ GOOGLE', 'Form eCura_ META', ecc.
+    // Il filtro rimane STRETTO: solo lead il cui campo CONTIENE 'Form eCura'
     if (filters.hs_object_source_detail_1) {
       filtersArray.push({
         propertyName: 'hs_object_source_detail_1',
-        operator: 'CONTAINS_TOKEN',
+        operator: 'CONTAINS',
         value: filters.hs_object_source_detail_1
       })
     }

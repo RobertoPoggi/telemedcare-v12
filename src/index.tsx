@@ -19748,6 +19748,7 @@ app.get('/api/hubspot/auto-import/status', async (c) => {
 // GET /api/hubspot/auto-import/diagnose - Diagnosi CRON: mostra cosa
 // restituisce HubSpot con e senza filtro "Form eCura" per gli ultimi N giorni
 // Uso: /api/hubspot/auto-import/diagnose?days=7
+// Uso con ricerca specifica: /api/hubspot/auto-import/diagnose?days=7&email=luciano@example.com
 // ─────────────────────────────────────────────────────────────────────
 app.get('/api/hubspot/auto-import/diagnose', async (c) => {
   try {
@@ -19757,11 +19758,24 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
       return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
     }
     const days = parseInt(c.req.query('days') || '7')
+    const emailCerca = c.req.query('email') || null
+    const cognomeCerca = c.req.query('cognome') || null
     const createdAfter = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
     const { HubSpotClient } = await import('./modules/hubspot-integration')
     const client = new HubSpotClient(accessToken, portalId)
 
-    // 1. Ricerca CON filtro Form eCura
+    // 0. Ricerca lead specifico per email (se fornita) — mostra il valore ESATTO di hs_object_source_detail_1
+    let leadSpecifico: any[] = []
+    if (emailCerca) {
+      try {
+        const r0 = await client.searchContacts({ email: emailCerca, limit: 5 })
+        leadSpecifico = r0.results || []
+      } catch (e) {
+        console.error('[DIAGNOSE] Errore ricerca lead specifico per email:', e)
+      }
+    }
+
+    // 1. Ricerca CON filtro Form eCura (usa CONTAINS — substring match su campo stringa)
     let withFilter: any[] = []
     try {
       const r1 = await client.searchContacts({
@@ -19793,39 +19807,60 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
       sourceDetailCounts[v] = (sourceDetailCounts[v] || 0) + 1
     }
 
+    // Cerca cognome nei contatti senza filtro se specificato
+    const matchByCognome = cognomeCerca
+      ? withoutFilter.filter((x: any) =>
+          (x.properties?.lastname || '').toLowerCase().includes(cognomeCerca.toLowerCase()) ||
+          (x.properties?.firstname || '').toLowerCase().includes(cognomeCerca.toLowerCase())
+        )
+      : []
+
+    const mapContact = (x: any) => ({
+      id: x.id,
+      email: x.properties?.email,
+      firstname: x.properties?.firstname,
+      lastname: x.properties?.lastname,
+      hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
+      hs_object_source_detail_1_esatto: JSON.stringify(x.properties?.hs_object_source_detail_1),
+      createdate: x.properties?.createdate
+    })
+
+    const analisiMsg = withFilter.length === 0 && withoutFilter.length > 0
+      ? `⚠️ PROBLEMA: ${withoutFilter.length} contatti nel periodo ma NESSUNO trovato con CONTAINS 'Form eCura'. Verificare il valore esatto del campo su HubSpot.`
+      : withFilter.length === 0 && withoutFilter.length === 0
+      ? `ℹ️ Nessun nuovo contatto HubSpot negli ultimi ${days} giorni.`
+      : `✅ ${withFilter.length} contatti trovati con CONTAINS 'Form eCura' (${withoutFilter.length} totali nel periodo).`
+
     return c.json({
       success: true,
+      operatore_filtro: 'CONTAINS (substring match — corretto per campo stringa hs_object_source_detail_1)',
       periodo: `Ultimi ${days} giorni (da ${createdAfter.toISOString()})`,
+      ...(leadSpecifico.length > 0 || emailCerca ? {
+        lead_specifico_per_email: {
+          email_cercata: emailCerca,
+          trovato: leadSpecifico.length > 0,
+          dati: leadSpecifico.map(mapContact)
+        }
+      } : {}),
+      ...(cognomeCerca ? {
+        match_per_cognome_nel_periodo: {
+          cognome_cercato: cognomeCerca,
+          trovati: matchByCognome.length,
+          dati: matchByCognome.map(mapContact)
+        }
+      } : {}),
       con_filtro_form_ecura: {
         count: withFilter.length,
-        contatti: withFilter.map((x: any) => ({
-          id: x.id,
-          email: x.properties?.email,
-          firstname: x.properties?.firstname,
-          lastname: x.properties?.lastname,
-          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
-          createdate: x.properties?.createdate
-        }))
+        contatti: withFilter.map(mapContact)
       },
       senza_filtro: {
         count: withoutFilter.length,
         distribuzione_hs_object_source_detail_1: Object.entries(sourceDetailCounts)
           .sort((a, b) => b[1] - a[1])
           .map(([valore, count]) => ({ valore, count })),
-        contatti: withoutFilter.map((x: any) => ({
-          id: x.id,
-          email: x.properties?.email,
-          firstname: x.properties?.firstname,
-          lastname: x.properties?.lastname,
-          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
-          createdate: x.properties?.createdate
-        }))
+        contatti: withoutFilter.map(mapContact)
       },
-      analisi: withFilter.length === 0 && withoutFilter.length > 0
-        ? `⚠️ PROBLEMA RILEVATO: ${withoutFilter.length} contatti nel periodo ma NESSUNO con "Form eCura" in hs_object_source_detail_1. Il fallback automatico li importerà ora.`
-        : withFilter.length === 0 && withoutFilter.length === 0
-        ? `ℹ️ Nessun nuovo contatto HubSpot negli ultimi ${days} giorni.`
-        : `✅ ${withFilter.length} contatti trovati con filtro "Form eCura" (${withoutFilter.length} totali nel periodo).`
+      analisi: analisiMsg
     })
   } catch (error) {
     return c.json({ success: false, error: (error as Error).message }, 500)
