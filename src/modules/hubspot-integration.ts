@@ -157,6 +157,7 @@ export class HubSpotClient {
     email?: string
     hs_lead_status?: string
     hs_object_source_detail_1?: string // Filtro fonte (es. "Form eCura")
+    servizio_di_interesse_has_property?: boolean // Cerca lead con servizio_di_interesse valorizzato
     limit?: number
     after?: string // Cursore paginazione HubSpot (da response.paging.next.after)
     properties?: string[]
@@ -199,11 +200,10 @@ export class HubSpotClient {
     }
 
     if (filters.hs_object_source_detail_1) {
-      // ── filterGroup 1 ────────────────────────────────────────────────────────
+      // ── filterGroup principale ────────────────────────────────────────────────
       // Lead con hs_object_source_detail_1 che contiene 'Form eCura'
       // (caso normale: 'Form eCura', 'Form eCura_ GOOGLE', 'Form eCura_ META' …)
       // Usa CONTAINS_TOKEN + wildcard (*Form eCura*) = substring match.
-      // NON esiste operatore CONTAINS nella HubSpot Search API.
       filterGroups.push({
         filters: [
           ...commonFilters,
@@ -214,20 +214,17 @@ export class HubSpotClient {
           }
         ]
       })
-
-      // ── filterGroup 2 (OR) ───────────────────────────────────────────────────
-      // Lead con servizio_di_interesse = uno dei servizi eCura che gestiamo.
-      // Il form eCura usa valori: "Family", "Professional", "Premium" (e varianti).
-      // Con operatore IN i valori devono essere lowercase.
-      // Questo cattura Clementi ("Professional") e qualsiasi lead il cui
-      // hs_object_source_detail_1 sia sbagliato ma il servizio sia corretto.
+    } else if (filters.servizio_di_interesse_has_property) {
+      // ── filterGroup secondario (ricerca separata) ─────────────────────────────
+      // Lead con servizio_di_interesse valorizzato ma hs_object_source_detail_1 sbagliato.
+      // Le custom property HubSpot non sono indicizzate per IN/EQ nella Search API,
+      // ma HAS_PROPERTY funziona. Questa ricerca viene fatta separatamente e mergiata.
       filterGroups.push({
         filters: [
           ...commonFilters,
           {
             propertyName: 'servizio_di_interesse',
-            operator: 'IN',
-            values: ['family', 'professional', 'premium']
+            operator: 'HAS_PROPERTY'
           }
         ]
       })

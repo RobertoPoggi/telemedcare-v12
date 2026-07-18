@@ -141,35 +141,63 @@ export async function executeAutoImport(
       baseFilters.hs_object_source_detail_1 = 'Form eCura'
       console.log('🔍 [AUTO-IMPORT] Filtro attivo: solo lead da Form eCura')
     }
-    
-    // ✅ PAGINAZIONE COMPLETA: loop su tutte le pagine HubSpot
-    // HubSpot restituisce max 100 contatti per chiamata; se ci sono più di 100
-    // il campo response.paging.next.after indica il cursore per la pagina successiva.
-    let allContacts: any[] = []
-    let afterCursor: string | undefined = undefined
-    let pageNum = 0
-    const MAX_PAGES = 20 // Limite sicurezza: 20 pagine × 100 = 2000 contatti max
-    
-    do {
-      pageNum++
-      const searchFilters = afterCursor
-        ? { ...baseFilters, after: afterCursor }
-        : { ...baseFilters }
-      
-      const response = await client.searchContacts(searchFilters)
-      const pageContacts = response.results || []
-      allContacts = allContacts.concat(pageContacts)
-      
-      console.log(`📄 [AUTO-IMPORT] Pagina ${pageNum}: ${pageContacts.length} contatti (totale fin qui: ${allContacts.length})`)
-      
-      // Controlla se c'è una pagina successiva
-      afterCursor = response.paging?.next?.after
-      
-      // Stop se pagina vuota o nessun cursore next
-    } while (afterCursor && pageNum < MAX_PAGES)
-    
+
+    // Helper: pagina su searchContacts con un set di filtri dato
+    const fetchAllPages = async (filters: any): Promise<any[]> => {
+      const contacts: any[] = []
+      let cursor: string | undefined = undefined
+      let page = 0
+      const MAX_PAGES = 20
+      do {
+        page++
+        const resp = await client.searchContacts(cursor ? { ...filters, after: cursor } : filters)
+        const batch = resp.results || []
+        contacts.push(...batch)
+        console.log(`📄 [AUTO-IMPORT] Pagina ${page}: ${batch.length} contatti (tot: ${contacts.length})`)
+        cursor = resp.paging?.next?.after
+      } while (cursor && page < MAX_PAGES)
+      return contacts
+    }
+
+    // ── Ricerca principale: filtro Form eCura (o nessun filtro se onlyEcura=false)
+    let allContacts: any[] = await fetchAllPages(baseFilters)
+    console.log(`📊 [AUTO-IMPORT] Ricerca principale: ${allContacts.length} contatti`)
+
+    // ── Ricerca secondaria (solo se onlyEcura): lead con servizio_di_interesse valorizzato
+    // Le custom property HubSpot non sono indicizzate nella Search API per il filtro IN/EQ,
+    // quindi usiamo HAS_PROPERTY (presenza del campo) + deduplicazione per ID.
+    // Cattura lead eCura in cui hs_object_source_detail_1 è sbagliato (es. classe Elementor).
+    if (config.onlyEcura) {
+      try {
+        const secondaryFilters = {
+          createdAfter: createdAfter.toISOString(),
+          limit: 100,
+          servizio_di_interesse_has_property: true // flag speciale, vedi searchContacts
+        }
+        const secondaryContacts = await fetchAllPages({
+          ...baseFilters,
+          hs_object_source_detail_1: undefined,      // rimuovi filtro fonte
+          servizio_di_interesse_has_property: true   // flag per filterGroup secondario
+        })
+        console.log(`📊 [AUTO-IMPORT] Ricerca secondaria (servizio_di_interesse): ${secondaryContacts.length} contatti`)
+        // Merge deduplicato per ID
+        const seenIds = new Set(allContacts.map((c: any) => c.id))
+        let nuovi = 0
+        for (const c of secondaryContacts) {
+          if (!seenIds.has(c.id)) {
+            allContacts.push(c)
+            seenIds.add(c.id)
+            nuovi++
+          }
+        }
+        if (nuovi > 0) console.log(`➕ [AUTO-IMPORT] Aggiunti ${nuovi} contatti dalla ricerca secondaria`)
+      } catch (e) {
+        console.error('⚠️ [AUTO-IMPORT] Errore ricerca secondaria (non bloccante):', e)
+      }
+    }
+
     result.performance.hubspotContacts = allContacts.length
-    console.log(`📊 [AUTO-IMPORT] Totale contatti HubSpot recuperati: ${allContacts.length} (${pageNum} pagine)`)
+    console.log(`📊 [AUTO-IMPORT] Totale contatti dopo merge: ${allContacts.length}`)
     
     if (allContacts.length === 0) {
       result.success = true
