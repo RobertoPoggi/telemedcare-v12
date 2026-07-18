@@ -38,6 +38,7 @@ export interface GSheetImportConfig {
   sheetGid?: string        // gid del foglio (0 per il primo)
   dryRun?: boolean
   apiKey?: string          // GOOGLE_SHEETS_API_KEY (opzionale se sheet è pubblico)
+  accessToken?: string     // GOOGLE_ACCESS_TOKEN — token già valido (scade ~1h); usato direttamente senza refresh
   refreshToken?: string    // GOOGLE_REFRESH_TOKEN OAuth2 per fogli privati
   oauthClientId?: string   // GOOGLE_OAUTH_CLIENT_ID
   oauthClientSecret?: string // GOOGLE_OAUTH_CLIENT_SECRET
@@ -269,30 +270,49 @@ async function getAccessTokenFromRefreshToken(config: GSheetImportConfig): Promi
   }
 }
 
+async function callSheetsApiV4(spreadsheetId: string, token: string): Promise<string | null> {
+  const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z`
+  const res = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } })
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error(`[GSHEET] Sheets API v4 error ${res.status}:`, errText.slice(0, 200))
+    return null
+  }
+  const json = await res.json() as { values?: string[][] }
+  if (!json.values || json.values.length === 0) return null
+  return json.values
+    .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+}
+
 async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   const { spreadsheetId, sheetGid = '0', apiKey } = config
 
   const isHtml = (text: string) =>
     text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
 
+  // ── Prova 0: Access Token diretto (GOOGLE_ACCESS_TOKEN)
+  // Usato quando il refresh token non è disponibile (playground client_secret inaccessibile).
+  // L'utente aggiorna manualmente GOOGLE_ACCESS_TOKEN su Cloudflare ogni ~1h.
+  if (config.accessToken) {
+    const csv = await callSheetsApiV4(spreadsheetId, config.accessToken)
+    if (csv) {
+      const rows = csv.split('\n').length
+      console.log(`✅ [GSHEET] Accesso via GOOGLE_ACCESS_TOKEN riuscito (${rows} righe)`)
+      return csv
+    }
+    console.warn('[GSHEET] GOOGLE_ACCESS_TOKEN presente ma non funzionante — probabile scadenza. Provo metodi alternativi.')
+  }
+
   // ── Prova 1: OAuth2 con Refresh Token (fogli privati NUR Workspace)
   // medicagbsrl@gmail.com ha accesso Editor al foglio — usiamo il suo refresh token
-  const accessToken = await getAccessTokenFromRefreshToken(config)
-  if (accessToken) {
-    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z`
-    const res = await fetch(apiUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    })
-    if (res.ok) {
-      const json = await res.json() as { values?: string[][] }
-      if (json.values && json.values.length > 0) {
-        console.log(`✅ [GSHEET] Accesso via OAuth2 refresh token riuscito (${json.values.length} righe)`)
-        return json.values
-          .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
-          .join('\n')
-      }
-    } else {
-      console.error(`[GSHEET] OAuth2 API error ${res.status}:`, await res.text())
+  const refreshedToken = await getAccessTokenFromRefreshToken(config)
+  if (refreshedToken) {
+    const csv = await callSheetsApiV4(spreadsheetId, refreshedToken)
+    if (csv) {
+      const rows = csv.split('\n').length
+      console.log(`✅ [GSHEET] Accesso via OAuth2 refresh token riuscito (${rows} righe)`)
+      return csv
     }
   }
 
@@ -342,7 +362,9 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
 
   throw new Error(
     'Errore accesso foglio — impossibile accedere al Google Sheet. ' +
-    'Verifica che GOOGLE_REFRESH_TOKEN, GOOGLE_OAUTH_CLIENT_ID e GOOGLE_OAUTH_CLIENT_SECRET siano configurati su Cloudflare.'
+    'Configura GOOGLE_ACCESS_TOKEN su Cloudflare con un token OAuth2 valido (ottenuto da OAuth Playground). ' +
+    'Il token scade ogni ~1h e va aggiornato manualmente. ' +
+    'In alternativa configura GOOGLE_REFRESH_TOKEN + GOOGLE_OAUTH_CLIENT_ID + GOOGLE_OAUTH_CLIENT_SECRET per il refresh automatico.'
   )
 }
 

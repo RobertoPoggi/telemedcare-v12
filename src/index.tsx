@@ -19888,7 +19888,8 @@ app.post('/api/import/gsheet', async (c) => {
       sheetGid: body.gid || '0',
       dryRun: body.dryRun === true,
       apiKey: c.env?.GOOGLE_SHEETS_API_KEY,
-      refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,
+      accessToken: c.env?.GOOGLE_ACCESS_TOKEN,        // token diretto (scade ~1h, aggiornamento manuale)
+      refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,       // refresh automatico (richiede client_secret)
       oauthClientId: c.env?.GOOGLE_OAUTH_CLIENT_ID,
       oauthClientSecret: c.env?.GOOGLE_OAUTH_CLIENT_SECRET
     })
