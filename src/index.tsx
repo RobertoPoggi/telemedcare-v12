@@ -20085,6 +20085,107 @@ app.get('/api/hubspot/verify-leads', async (c) => {
 })
 
 
+// ─────────────────────────────────────────────────────────────────────
+// GET /api/hubspot/lookup - Cerca un contatto su HubSpot per email o cognome
+// Senza filtro eCura — mostra TUTTI i campi rilevanti per diagnostica
+// Uso: /api/hubspot/lookup?email=xxx@yyy.it
+//      /api/hubspot/lookup?cognome=Clementi
+// ─────────────────────────────────────────────────────────────────────
+app.get('/api/hubspot/lookup', async (c) => {
+  try {
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    const portalId = c.env?.HUBSPOT_PORTAL_ID
+    if (!accessToken || !portalId) {
+      return c.json({ success: false, error: 'Credenziali HubSpot non configurate' }, 500)
+    }
+    const emailQuery = c.req.query('email') || null
+    const cognomeQuery = c.req.query('cognome') || null
+    if (!emailQuery && !cognomeQuery) {
+      return c.json({ success: false, error: 'Passa ?email= oppure ?cognome=' }, 400)
+    }
+
+    const properties = [
+      'firstname', 'lastname', 'email', 'phone', 'mobilephone',
+      'createdate', 'lastmodifieddate',
+      'hs_object_source_detail_1',
+      'hs_object_source',
+      'hs_analytics_source',
+      'hs_analytics_source_data_1',
+      'hs_analytics_source_data_2',
+      'hs_latest_source',
+      'hs_latest_source_data_1',
+      'servizio_ecura', 'piano_ecura',
+      'servizio_di_interesse', 'piano_desiderato',
+      'city', 'hs_lead_status'
+    ]
+
+    // Costruisce i filtri in base al parametro ricevuto
+    const filters: any[] = []
+    if (emailQuery) {
+      filters.push({ propertyName: 'email', operator: 'EQ', value: emailQuery })
+    } else if (cognomeQuery) {
+      filters.push({ propertyName: 'lastname', operator: 'CONTAINS_TOKEN', value: cognomeQuery })
+    }
+
+    const resp = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filterGroups: [{ filters }],
+        properties,
+        limit: 10,
+        sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }]
+      })
+    })
+
+    const raw = await resp.json() as any
+    if (!resp.ok) {
+      return c.json({ success: false, error: 'HubSpot API error', details: raw }, resp.status as any)
+    }
+
+    const results = (raw.results || []).map((x: any) => {
+      const p = x.properties || {}
+      const detail = p.hs_object_source_detail_1 || null
+      const passaFiltroEcura = detail ? detail.includes('Form eCura') : false
+      return {
+        hubspot_id: x.id,
+        nome: `${p.firstname || ''} ${p.lastname || ''}`.trim(),
+        email: p.email,
+        telefono: p.phone || p.mobilephone,
+        city: p.city,
+        createdate: p.createdate,
+        hs_object_source_detail_1: detail,
+        hs_object_source_detail_1_json: JSON.stringify(detail),
+        passa_filtro_ecura: passaFiltroEcura,
+        motivo_no_import: !passaFiltroEcura
+          ? `hs_object_source_detail_1="${detail}" NON contiene 'Form eCura'`
+          : null,
+        hs_object_source: p.hs_object_source,
+        hs_analytics_source: p.hs_analytics_source,
+        hs_analytics_source_data_1: p.hs_analytics_source_data_1,
+        hs_latest_source: p.hs_latest_source,
+        servizio_ecura: p.servizio_ecura,
+        piano_ecura: p.piano_ecura,
+        servizio_di_interesse: p.servizio_di_interesse,
+        piano_desiderato: p.piano_desiderato
+      }
+    })
+
+    return c.json({
+      success: true,
+      query: emailQuery ? { email: emailQuery } : { cognome: cognomeQuery },
+      count: results.length,
+      risultati: results,
+      nota: 'Ricerca SENZA filtro eCura — mostra il valore esatto di hs_object_source_detail_1'
+    })
+  } catch (error) {
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
 // ========================================
 // LEAD COMPLETION SYSTEM
 // ========================================
