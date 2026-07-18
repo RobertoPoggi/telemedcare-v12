@@ -227,7 +227,7 @@ export class HubSpotClient {
           {
             propertyName: 'servizio_di_interesse',
             operator: 'IN',
-            values: ['family', 'professional', 'pro', 'premium', 'vital']
+            values: ['family', 'professional', 'premium']
           }
         ]
       })
