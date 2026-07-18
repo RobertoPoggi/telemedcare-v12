@@ -19868,6 +19868,127 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
+// POST /api/leads/public — Endpoint pubblico per form landing eCura
+// NON usa HubSpot. Riceve lead dalla landing proprietaria su ecura.it.
+// Auth: X-API-Key header (LANDING_API_KEY env var) oppure open se non configurata
+// ─────────────────────────────────────────────────────────────────────
+app.post('/api/leads/public', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // ── Auth opzionale via X-API-Key ──────────────────────
+    const landingApiKey = c.env?.LANDING_API_KEY
+    if (landingApiKey) {
+      const providedKey = c.req.header('X-API-Key') || c.req.header('x-api-key')
+      if (providedKey !== landingApiKey) {
+        return c.json({ success: false, error: 'Unauthorized' }, 401)
+      }
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+    const { nomeRichiedente, cognomeRichiedente, email, telefono,
+            servizio, piano, tipoServizio, note, status,
+            gdprConsent, consensoMarketing,
+            canale_acquisizione, hs_object_source_detail_1,
+            dettaglio_fonte, utm_source, utm_medium, utm_campaign,
+            landing_variant, page_url } = body
+
+    // Validazione base
+    if (!nomeRichiedente?.trim()) return c.json({ success: false, error: 'Nome obbligatorio' }, 422)
+    if (!telefono?.trim()) return c.json({ success: false, error: 'Telefono obbligatorio' }, 422)
+    if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return c.json({ success: false, error: 'Email non valida' }, 422)
+    }
+
+    // Blocca domini interni
+    const BLOCKED = ['nur.it','nur.com','medica-gb.it','medicagb.it']
+    const domain = email.split('@')[1]?.toLowerCase() || ''
+    if (BLOCKED.some(d => domain === d || domain.endsWith('.' + d))) {
+      return c.json({ success: true }) // silenzioso
+    }
+
+    // Deduplicazione: cerca per email o telefono
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM leads WHERE email = ? OR (telefono != '' AND telefono = ?) LIMIT 1`
+    ).bind(email.trim().toLowerCase(), telefono.trim()).first()
+
+    if (existing) {
+      // Lead già presente: aggiorna solo campi vuoti
+      await c.env.DB.prepare(`
+        UPDATE leads SET
+          nomeRichiedente  = CASE WHEN nomeRichiedente  IS NULL OR nomeRichiedente  = '' THEN ? ELSE nomeRichiedente  END,
+          cognomeRichiedente = CASE WHEN cognomeRichiedente IS NULL OR cognomeRichiedente = '' THEN ? ELSE cognomeRichiedente END,
+          servizio         = CASE WHEN servizio IS NULL OR servizio = '' THEN ? ELSE servizio END,
+          piano            = CASE WHEN piano IS NULL OR piano = '' THEN ? ELSE piano END,
+          note             = CASE WHEN note IS NULL OR note = '' THEN ? ELSE note END,
+          canale_acquisizione = CASE WHEN canale_acquisizione IS NULL OR canale_acquisizione = '' THEN ? ELSE canale_acquisizione END,
+          updated_at = ?
+        WHERE id = ?
+      `).bind(
+        nomeRichiedente, cognomeRichiedente || '',
+        servizio || 'eCura PRO', piano || 'BASE',
+        note || null, canale_acquisizione || null,
+        new Date().toISOString(),
+        (existing as any).id
+      ).run()
+      return c.json({ success: true, id: (existing as any).id, duplicate: true })
+    }
+
+    // Genera ID lead LEAD-LANDING-XXXXX
+    const lastLead = await c.env.DB.prepare(
+      `SELECT id FROM leads WHERE id LIKE 'LEAD-LANDING-%' ORDER BY id DESC LIMIT 1`
+    ).first()
+    let nextNum = 1
+    if (lastLead?.id) {
+      const m = (lastLead.id as string).match(/LEAD-LANDING-(\d+)/)
+      if (m) nextNum = parseInt(m[1]) + 1
+    }
+    const leadId = `LEAD-LANDING-${nextNum.toString().padStart(5, '0')}`
+
+    await c.env.DB.prepare(`
+      INSERT INTO leads (
+        id, nomeRichiedente, cognomeRichiedente, email, telefono,
+        servizio, piano, tipoServizio,
+        fonte, status, note,
+        hs_object_source, hs_object_source_detail_1, dettaglio_fonte,
+        canale_acquisizione,
+        gdprConsent, consensoMarketing,
+        vuoleContratto, vuoleBrochure, vuoleManuale,
+        created_at, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    `).bind(
+      leadId,
+      nomeRichiedente.trim(),
+      cognomeRichiedente?.trim() || '',
+      email.trim().toLowerCase(),
+      telefono.trim(),
+      servizio || 'eCura PRO',
+      piano || 'BASE',
+      tipoServizio || (piano === 'AVANZATO' ? 'AVANZATO' : 'BASE'),
+      'Form eCura',
+      status || 'NEW',
+      note || null,
+      'FORM',
+      hs_object_source_detail_1 || `Form eCura_ ${(utm_source || 'LANDING').toUpperCase()}`,
+      dettaglio_fonte || 'ecura_landing',
+      canale_acquisizione || null,
+      gdprConsent ? 1 : 0,
+      consensoMarketing ? 1 : 0,
+      'No', 'No', 'No',
+      new Date().toISOString(),
+      new Date().toISOString()
+    ).run()
+
+    console.log(`✅ [LANDING] Nuovo lead: ${leadId} (${email})`)
+    return c.json({ success: true, id: leadId })
+
+  } catch (error: any) {
+    console.error('❌ [LANDING] Errore:', error)
+    return c.json({ success: false, error: 'Errore interno del server' }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────
 // POST /api/import/gsheet - Import lead da Google Sheets (backup eCura)
 // ─────────────────────────────────────────────────────────────────────
 app.post('/api/import/gsheet', async (c) => {
