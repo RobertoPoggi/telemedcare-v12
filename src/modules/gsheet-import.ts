@@ -47,6 +47,19 @@ export interface GSheetImportConfig {
 }
 
 // ─────────────────────────────────────────────
+// DOMINI BLOCCATI (interni / test)
+// ─────────────────────────────────────────────
+
+/** Domini email da NON importare mai — lead interni o di test */
+const BLOCKED_EMAIL_DOMAINS = ['nur.it', 'nur.com', 'medica-gb.it', 'medicagb.it']
+
+function isBlockedEmail(email: string): boolean {
+  if (!email) return false
+  const domain = email.split('@')[1]?.toLowerCase() || ''
+  return BLOCKED_EMAIL_DOMAINS.some(blocked => domain === blocked || domain.endsWith('.' + blocked))
+}
+
+// ─────────────────────────────────────────────
 // COLONNE ATTESE (case-insensitive, trim)
 // ─────────────────────────────────────────────
 
@@ -494,6 +507,13 @@ export async function executeGSheetImport(
     if ((!email || !email.includes('@')) && !telefono) {
       result.skipped++
       console.log(`⏭️  [GSHEET-IMPORT] Riga ${i + 2}: email e telefono mancanti — skip`)
+      continue
+    }
+
+    // 🚫 Blocca domini interni/test (es. @nur.it)
+    if (isBlockedEmail(email)) {
+      result.skipped++
+      console.log(`🚫 [GSHEET-IMPORT] Riga ${i + 2}: dominio bloccato (${email}) — skip`)
       continue
     }
     // Genera email placeholder per lead senza email (necessaria per deduplicazione DB)

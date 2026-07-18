@@ -18,6 +18,19 @@ import type { D1Database } from '@cloudflare/workers-types'
 import { getBaseUrl } from './url-helper'
 import { applyDiscountFromNotes } from './discount-from-notes'
 
+// ─────────────────────────────────────────────
+// DOMINI BLOCCATI (interni / test)
+// ─────────────────────────────────────────────
+
+/** Domini email da NON importare mai — lead interni o di test */
+const BLOCKED_EMAIL_DOMAINS = ['nur.it', 'nur.com', 'medica-gb.it', 'medicagb.it']
+
+function isBlockedEmail(email: string): boolean {
+  if (!email) return false
+  const domain = email.split('@')[1]?.toLowerCase() || ''
+  return BLOCKED_EMAIL_DOMAINS.some(blocked => domain === blocked || domain.endsWith('.' + blocked))
+}
+
 // =====================================================================
 // TYPES
 // =====================================================================
@@ -209,6 +222,13 @@ export async function executeAutoImport(
     // Processa ogni contatto (tutte le pagine)
     for (const contact of allContacts) {
       try {
+        // 🚫 Blocca domini interni/test (es. @nur.it)
+        if (isBlockedEmail(contact.properties.email || '')) {
+          console.log(`🚫 [AUTO-IMPORT] Dominio bloccato (${contact.properties.email}) — skip`)
+          result.skipped++
+          continue
+        }
+
         // Verifica se esiste già (by email o external_source_id)
         // ⚠️ Recupera anche la fonte per proteggere i lead di test
         const existing = await db.prepare(`
