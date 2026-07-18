@@ -38,6 +38,9 @@ export interface GSheetImportConfig {
   sheetGid?: string        // gid del foglio (0 per il primo)
   dryRun?: boolean
   apiKey?: string          // GOOGLE_SHEETS_API_KEY (opzionale se sheet è pubblico)
+  refreshToken?: string    // GOOGLE_REFRESH_TOKEN OAuth2 per fogli privati
+  oauthClientId?: string   // GOOGLE_OAUTH_CLIENT_ID
+  oauthClientSecret?: string // GOOGLE_OAUTH_CLIENT_SECRET
   skipFirstRow?: boolean   // true = prima riga è intestazione (default true)
 }
 
@@ -237,15 +240,63 @@ function normalizeStatus(raw: string): string {
 // FETCH CSV DAL GOOGLE SHEET
 // ─────────────────────────────────────────────
 
+/**
+ * Ottiene un access token OAuth2 dal refresh token
+ */
+async function getAccessTokenFromRefreshToken(config: GSheetImportConfig): Promise<string | null> {
+  const { refreshToken, oauthClientId, oauthClientSecret } = config
+  if (!refreshToken || !oauthClientId || !oauthClientSecret) return null
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: oauthClientId,
+        client_secret: oauthClientSecret
+      }).toString()
+    })
+    if (!res.ok) {
+      console.error('[GSHEET] Errore refresh token:', await res.text())
+      return null
+    }
+    const json = await res.json() as { access_token?: string }
+    return json.access_token || null
+  } catch (e) {
+    console.error('[GSHEET] Eccezione refresh token:', e)
+    return null
+  }
+}
+
 async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   const { spreadsheetId, sheetGid = '0', apiKey } = config
 
   const isHtml = (text: string) =>
     text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
 
-  // ── Prova 1: URL "Pubblica sul Web" (/pub?output=csv)
-  // Funziona anche con Google Workspace che vieta la condivisione pubblica esterna.
-  // Richiede che il foglio sia pubblicato via File → Condividi → Pubblica sul Web.
+  // ── Prova 1: OAuth2 con Refresh Token (fogli privati NUR Workspace)
+  // medicagbsrl@gmail.com ha accesso Editor al foglio — usiamo il suo refresh token
+  const accessToken = await getAccessTokenFromRefreshToken(config)
+  if (accessToken) {
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z`
+    const res = await fetch(apiUrl, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    })
+    if (res.ok) {
+      const json = await res.json() as { values?: string[][] }
+      if (json.values && json.values.length > 0) {
+        console.log(`✅ [GSHEET] Accesso via OAuth2 refresh token riuscito (${json.values.length} righe)`)
+        return json.values
+          .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
+          .join('\n')
+      }
+    } else {
+      console.error(`[GSHEET] OAuth2 API error ${res.status}:`, await res.text())
+    }
+  }
+
+  // ── Prova 2: URL "Pubblica sul Web" (/pub?output=csv)
   const pubUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/pub?gid=${sheetGid}&single=true&output=csv`
   try {
     const res = await fetch(pubUrl, { redirect: 'follow' })
@@ -258,8 +309,7 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
     }
   } catch (_) { /* fallthrough */ }
 
-  // ── Prova 2: export CSV diretto (/export?format=csv)
-  // Funziona solo se il foglio è "Chiunque con il link può visualizzare".
+  // ── Prova 3: export CSV diretto (/export?format=csv)
   const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${sheetGid}`
   try {
     const res = await fetch(exportUrl, { headers: { 'Accept': 'text/csv' }, redirect: 'follow' })
@@ -272,7 +322,7 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
     }
   } catch (_) { /* fallthrough */ }
 
-  // ── Prova 3: Google Sheets API v4 con API Key
+  // ── Prova 4: Google Sheets API v4 con API Key
   if (apiKey) {
     const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z?key=${apiKey}`
     const res = await fetch(apiUrl)
@@ -291,9 +341,8 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   }
 
   throw new Error(
-    'Errore accesso foglio — Errore sconosciuto. ' +
-    'Vai su File → Condividi → Pubblica sul Web → scegli CSV → clicca Pubblica. ' +
-    'Il foglio non deve essere necessariamente pubblico: la pubblicazione web è separata dalla condivisione.'
+    'Errore accesso foglio — impossibile accedere al Google Sheet. ' +
+    'Verifica che GOOGLE_REFRESH_TOKEN, GOOGLE_OAUTH_CLIENT_ID e GOOGLE_OAUTH_CLIENT_SECRET siano configurati su Cloudflare.'
   )
 }
 

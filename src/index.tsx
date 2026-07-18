@@ -19887,7 +19887,10 @@ app.post('/api/import/gsheet', async (c) => {
       spreadsheetId: SPREADSHEET_ID,
       sheetGid: body.gid || '0',
       dryRun: body.dryRun === true,
-      apiKey: c.env?.GOOGLE_SHEETS_API_KEY
+      apiKey: c.env?.GOOGLE_SHEETS_API_KEY,
+      refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,
+      oauthClientId: c.env?.GOOGLE_OAUTH_CLIENT_ID,
+      oauthClientSecret: c.env?.GOOGLE_OAUTH_CLIENT_SECRET
     })
 
     return c.json(result)
