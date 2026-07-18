@@ -1708,9 +1708,24 @@ export async function inviaEmailBenvenuto(
       // ❌ CODICE_CLIENTE rimosso (non disponibile)
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
-      SERVIZI_INCLUSI: pianoType === 'AVANZATO'
-        ? `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li><li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li></ul>`
-        : `<ul style="margin:4px 0; padding-left:20px;"><li>Dispositivo ${dispositivo}</li><li>Chiamate di emergenza</li><li>Monitoraggio base</li></ul>`,
+      // Servizi inclusi: variano per tipo servizio (FAMILY non ha telemonitoraggio FC/SpO2)
+      SERVIZI_INCLUSI: (() => {
+        const base = `<li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li>`
+        if (servizioType === 'FAMILY') {
+          // Family: NO telemonitoraggio FC/SpO2 (non incluso nel servizio)
+          return pianoType === 'AVANZATO'
+            ? `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute automatico</li><li>Geolocalizzazione GPS</li></ul>`
+            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute</li></ul>`
+        } else if (servizioType === 'PREMIUM') {
+          // Premium: telemonitoraggio completo incluso
+          return `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Analisi del sonno</li><li>Geolocalizzazione GPS avanzata</li></ul>`
+        } else {
+          // PRO: telemonitoraggio FC/SpO2 incluso
+          return pianoType === 'AVANZATO'
+            ? `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Geolocalizzazione GPS</li></ul>`
+            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute</li></ul>`
+        }
+      })(),
       PREZZO_PIANO: prezzoBase
     }
 
