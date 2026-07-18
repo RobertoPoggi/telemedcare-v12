@@ -162,56 +162,82 @@ export class HubSpotClient {
     properties?: string[]
   }): Promise<HubSpotSearchResponse> {
     const filterGroups = []
-    const filtersArray = []
-    
+
+    // Filtri comuni a tutti i filterGroup (data, email, status)
+    const commonFilters: any[] = []
+
     if (filters.createdAfter) {
-      filtersArray.push({
+      commonFilters.push({
         propertyName: 'createdate',
         operator: 'GTE',
         value: new Date(filters.createdAfter).getTime().toString()
       })
     }
-    
+
     if (filters.createdBefore) {
-      filtersArray.push({
+      commonFilters.push({
         propertyName: 'createdate',
         operator: 'LTE',
         value: new Date(filters.createdBefore).getTime().toString()
       })
     }
-    
+
     if (filters.email) {
-      filtersArray.push({
+      commonFilters.push({
         propertyName: 'email',
         operator: 'EQ',
         value: filters.email
       })
     }
-    
+
     if (filters.hs_lead_status) {
-      filtersArray.push({
+      commonFilters.push({
         propertyName: 'hs_lead_status',
         operator: 'EQ',
         value: filters.hs_lead_status
       })
     }
-    
-    // ✅ FILTRO FORM ECURA — usa CONTAINS_TOKEN con wildcard (*Form eCura*)
-    // HubSpot Search API supporta solo: LT, LTE, GT, GTE, EQ, NEQ, BETWEEN, IN, NOT_IN,
-    // HAS_PROPERTY, NOT_HAS_PROPERTY, CONTAINS_TOKEN, NOT_CONTAINS_TOKEN.
-    // NON esiste operatore CONTAINS puro. CONTAINS_TOKEN con wildcard * = substring match.
-    // Esempio: '*Form eCura*' trova 'Form eCura', 'Form eCura_ GOOGLE', 'Form eCura_ META', ecc.
-    // Il filtro rimane STRETTO: solo lead il cui campo contiene la sottostringa 'Form eCura'.
+
     if (filters.hs_object_source_detail_1) {
-      filtersArray.push({
-        propertyName: 'hs_object_source_detail_1',
-        operator: 'CONTAINS_TOKEN',
-        value: `*${filters.hs_object_source_detail_1}*`
+      // ── filterGroup 1 ────────────────────────────────────────────────────────
+      // Lead con hs_object_source_detail_1 che contiene 'Form eCura'
+      // (caso normale: 'Form eCura', 'Form eCura_ GOOGLE', 'Form eCura_ META' …)
+      // Usa CONTAINS_TOKEN + wildcard (*Form eCura*) = substring match.
+      // NON esiste operatore CONTAINS nella HubSpot Search API.
+      filterGroups.push({
+        filters: [
+          ...commonFilters,
+          {
+            propertyName: 'hs_object_source_detail_1',
+            operator: 'CONTAINS_TOKEN',
+            value: `*${filters.hs_object_source_detail_1}*`
+          }
+        ]
       })
-    }
-    
-    if (filtersArray.length > 0) {
-      filterGroups.push({ filters: filtersArray })
+
+      // ── filterGroup 2 (OR) ───────────────────────────────────────────────────
+      // Lead in cui hs_object_source_detail_1 è sbagliato (es. classe CSS Elementor
+      // ".elementor-form, .cft-processed") ma i campi custom eCura sono valorizzati.
+      // servizio_di_interesse e piano_desiderato esistono SOLO per lead da form eCura:
+      // sono campi custom HubSpot creati appositamente per quella integrazione.
+      // Questo criterio cattura Clementi (e casi simili futuri) senza allargare
+      // il filtro ad altri lead non-eCura.
+      filterGroups.push({
+        filters: [
+          ...commonFilters,
+          {
+            propertyName: 'servizio_di_interesse',
+            operator: 'HAS_PROPERTY'
+          },
+          {
+            propertyName: 'piano_desiderato',
+            operator: 'HAS_PROPERTY'
+          }
+        ]
+      })
+    } else if (commonFilters.length > 0) {
+      // Nessun filtro eCura specifico → usa solo i filtri comuni
+      filterGroups.push({ filters: commonFilters })
     }
     
     const properties = filters.properties || [
