@@ -19887,9 +19887,10 @@ app.post('/api/import/gsheet', async (c) => {
       spreadsheetId: SPREADSHEET_ID,
       sheetGid: body.gid || '0',
       dryRun: body.dryRun === true,
+      appsScriptUrl: c.env?.GOOGLE_APPS_SCRIPT_URL,   // ✅ soluzione definitiva — Apps Script Web App
       apiKey: c.env?.GOOGLE_SHEETS_API_KEY,
-      accessToken: c.env?.GOOGLE_ACCESS_TOKEN,        // token diretto (scade ~1h, aggiornamento manuale)
-      refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,       // refresh automatico (richiede client_secret)
+      accessToken: c.env?.GOOGLE_ACCESS_TOKEN,        // fallback: token diretto (scade ~1h)
+      refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,       // fallback: refresh automatico (richiede client_secret)
       oauthClientId: c.env?.GOOGLE_OAUTH_CLIENT_ID,
       oauthClientSecret: c.env?.GOOGLE_OAUTH_CLIENT_SECRET
     })

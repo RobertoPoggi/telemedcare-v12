@@ -42,6 +42,7 @@ export interface GSheetImportConfig {
   refreshToken?: string    // GOOGLE_REFRESH_TOKEN OAuth2 per fogli privati
   oauthClientId?: string   // GOOGLE_OAUTH_CLIENT_ID
   oauthClientSecret?: string // GOOGLE_OAUTH_CLIENT_SECRET
+  appsScriptUrl?: string   // GOOGLE_APPS_SCRIPT_URL — Web App Apps Script (soluzione definitiva, no OAuth)
   skipFirstRow?: boolean   // true = prima riga è intestazione (default true)
 }
 
@@ -291,7 +292,31 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   const isHtml = (text: string) =>
     text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
 
-  // ── Prova 0: Access Token diretto (GOOGLE_ACCESS_TOKEN)
+  // ── Prova 0a: Google Apps Script Web App (soluzione definitiva — no OAuth, no carta di credito)
+  // medicagbsrl@gmail.com ha creato uno script su script.google.com che legge il foglio
+  // e lo espone come JSON via URL segreto. Funziona per sempre senza scadenza.
+  if (config.appsScriptUrl) {
+    try {
+      const res = await fetch(config.appsScriptUrl, { redirect: 'follow' })
+      if (res.ok) {
+        const json = await res.json() as { values?: string[][], error?: string }
+        if (json.error) {
+          console.error('[GSHEET] Apps Script error:', json.error)
+        } else if (json.values && json.values.length > 0) {
+          console.log(`✅ [GSHEET] Accesso via Apps Script riuscito (${json.values.length} righe)`)
+          return json.values
+            .map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+            .join('\n')
+        }
+      } else {
+        console.error(`[GSHEET] Apps Script HTTP error ${res.status}`)
+      }
+    } catch (e) {
+      console.error('[GSHEET] Apps Script fetch error:', e)
+    }
+  }
+
+  // ── Prova 0b: Access Token diretto (GOOGLE_ACCESS_TOKEN)
   // Usato quando il refresh token non è disponibile (playground client_secret inaccessibile).
   // L'utente aggiorna manualmente GOOGLE_ACCESS_TOKEN su Cloudflare ogni ~1h.
   if (config.accessToken) {
@@ -362,9 +387,7 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
 
   throw new Error(
     'Errore accesso foglio — impossibile accedere al Google Sheet. ' +
-    'Configura GOOGLE_ACCESS_TOKEN su Cloudflare con un token OAuth2 valido (ottenuto da OAuth Playground). ' +
-    'Il token scade ogni ~1h e va aggiornato manualmente. ' +
-    'In alternativa configura GOOGLE_REFRESH_TOKEN + GOOGLE_OAUTH_CLIENT_ID + GOOGLE_OAUTH_CLIENT_SECRET per il refresh automatico.'
+    'Configura GOOGLE_APPS_SCRIPT_URL su Cloudflare con l\'URL della Web App Google Apps Script.'
   )
 }
 
