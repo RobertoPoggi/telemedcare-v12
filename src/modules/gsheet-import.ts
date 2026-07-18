@@ -240,33 +240,41 @@ function normalizeStatus(raw: string): string {
 async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   const { spreadsheetId, sheetGid = '0', apiKey } = config
 
-  // Prova 1: export CSV pubblico (se sheet è "Chiunque con il link può visualizzare")
-  const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${sheetGid}`
+  const isHtml = (text: string) =>
+    text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
 
-  // Prova 2: Google Sheets API v4 (richiede API Key)
-  const apiUrl = apiKey
-    ? `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z?key=${apiKey}`
-    : null
-
-  // Tenta export diretto
+  // ── Prova 1: URL "Pubblica sul Web" (/pub?output=csv)
+  // Funziona anche con Google Workspace che vieta la condivisione pubblica esterna.
+  // Richiede che il foglio sia pubblicato via File → Condividi → Pubblica sul Web.
+  const pubUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/pub?gid=${sheetGid}&single=true&output=csv`
   try {
-    const res = await fetch(exportUrl, {
-      headers: { 'Accept': 'text/csv' },
-      redirect: 'follow'
-    })
+    const res = await fetch(pubUrl, { redirect: 'follow' })
     if (res.ok) {
       const text = await res.text()
-      // Se la risposta è HTML (pagina di login Google), è privato
-      if (!text.includes('<!DOCTYPE') && !text.includes('<html')) {
+      if (!isHtml(text) && text.trim().length > 0) {
+        console.log(`✅ [GSHEET] Accesso via /pub?output=csv riuscito (${text.length} bytes)`)
         return text
       }
     }
-  } catch (_) {
-    // fallthrough
-  }
+  } catch (_) { /* fallthrough */ }
 
-  // Tenta API con chiave
-  if (apiUrl) {
+  // ── Prova 2: export CSV diretto (/export?format=csv)
+  // Funziona solo se il foglio è "Chiunque con il link può visualizzare".
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${sheetGid}`
+  try {
+    const res = await fetch(exportUrl, { headers: { 'Accept': 'text/csv' }, redirect: 'follow' })
+    if (res.ok) {
+      const text = await res.text()
+      if (!isHtml(text) && text.trim().length > 0) {
+        console.log(`✅ [GSHEET] Accesso via /export?format=csv riuscito (${text.length} bytes)`)
+        return text
+      }
+    }
+  } catch (_) { /* fallthrough */ }
+
+  // ── Prova 3: Google Sheets API v4 con API Key
+  if (apiKey) {
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z?key=${apiKey}`
     const res = await fetch(apiUrl)
     if (!res.ok) {
       const err = await res.text()
@@ -276,16 +284,16 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
     if (!json.values || json.values.length === 0) {
       throw new Error('Google Sheets API: nessun dato nel foglio')
     }
-    // Converti values[][] in CSV
+    console.log(`✅ [GSHEET] Accesso via Sheets API v4 riuscito (${json.values.length} righe)`)
     return json.values
       .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
       .join('\n')
   }
 
   throw new Error(
-    'Il Google Sheet non è accessibile. ' +
-    'Assicurati che sia condiviso come "Chiunque con il link può visualizzare" ' +
-    'oppure configura GOOGLE_SHEETS_API_KEY su Cloudflare.'
+    'Errore accesso foglio — Errore sconosciuto. ' +
+    'Vai su File → Condividi → Pubblica sul Web → scegli CSV → clicca Pubblica. ' +
+    'Il foglio non deve essere necessariamente pubblico: la pubblicazione web è separata dalla condivisione.'
   )
 }
 
