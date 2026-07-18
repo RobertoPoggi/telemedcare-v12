@@ -1339,7 +1339,8 @@ const PUBLIC_ENDPOINTS = [
   '/api/stripe-public-key',       // Chiave pubblica Stripe (GET)
   '/api/create-payment-intent',   // Creazione pagamento (POST)
   '/api/payments',                // Conferma pagamento (POST)
-  '/api/hubspot/webhook'          // Webhook HubSpot (POST)
+  '/api/hubspot/webhook',         // Webhook HubSpot (POST)
+  '/api/leads/public'             // Form landing eCura pubblico (POST)
 ]
 
 app.use('/api/*', async (c, next) => {
@@ -1414,6 +1415,10 @@ app.use('/api/*', async (c, next) => {
   
   if (path === '/api/hubspot/webhook' && method === 'POST') {
     return next() // Webhook HubSpot
+  }
+
+  if (path === '/api/leads/public' && method === 'POST') {
+    return next() // Form landing eCura pubblico
   }
 
   // CRON GitHub Actions: endpoint auto-import non richiede auth utente
