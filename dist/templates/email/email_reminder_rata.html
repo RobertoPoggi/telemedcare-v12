@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reminder Rata eCura</title>
+  <style>
+    body { margin:0; padding:0; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background-color:#f4f4f4; }
+    img { border:0; height:auto; line-height:100%; outline:none; text-decoration:none; display:block; }
+    a { color:#0275d8; text-decoration:none; }
+    @media only screen and (max-width:620px) {
+      .container { width:100% !important; }
+      .content { padding:16px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif; color:#333333;">
+
+  <!-- Preheader nascosto -->
+  <div style="display:none; max-height:0; max-width:0; overflow:hidden; font-size:1px; line-height:1px; color:#f4f4f4; opacity:0;">
+    Reminder pagamento Rata {{NUMERO_RATA}} — scadenza {{SCADENZA_RATA}} — eCura
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" role="presentation"
+               style="width:600px; max-width:600px; background-color:#ffffff; border-radius:8px; overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:20px 24px; background-color:#0b63a5; color:#ffffff; text-align:left;">
+              <h1 style="margin:0; font-size:20px; font-weight:600; font-family:Arial, Helvetica, sans-serif;">eCura</h1>
+              <p style="margin:6px 0 0; font-size:13px; opacity:0.95;">La tecnologia che Le salva salute e vita</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td class="content" style="padding:24px; background-color:#ffffff;">
+              <p style="margin:0 0 16px; font-size:15px;">Gentile <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong>,</p>
+
+              <p style="margin:0 0 18px; font-size:15px; line-height:1.5;">
+                Le inviamo questo promemoria per ricordarLe che è in scadenza la <strong>Rata {{NUMERO_RATA}} di {{TOTALE_RATE}}</strong>
+                del Suo piano di pagamento rateizzato eCura.
+              </p>
+
+              <!-- Box rata in scadenza -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+                     style="margin:18px 0; background-color:#fff8e1; border:2px solid #f59e0b; border-radius:8px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <p style="margin:0 0 12px; font-size:17px; font-weight:700; color:#b45309;">
+                      ⏰ Rata {{NUMERO_RATA}} in scadenza
+                    </p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Proforma:</strong> {{NUMERO_PROFORMA}}</p>
+                    <p style="margin:0 0 6px; font-size:14px;"><strong>Servizio:</strong> {{PIANO_SERVIZIO}}</p>
+                    <hr style="border:none; border-top:1px solid #fcd34d; margin:12px 0;">
+                    <p style="margin:0 0 4px; font-size:14px; color:#666;">
+                      <strong>Imponibile:</strong> {{IMPORTO_BASE}}<br>
+                      <strong>{{IVA_LABEL}}:</strong> {{IMPORTO_IVA}}{{IVA_NOTE}}
+                    </p>
+                    <p style="margin:8px 0 0; font-size:20px; font-weight:700; color:#b45309;">
+                      <strong>IMPORTO DA PAGARE: {{IMPORTO_RATA_IVA}}</strong>
+                    </p>
+                    <p style="margin:6px 0 0; font-size:13px; color:#92400e;">
+                      📅 Scadenza: <strong>{{SCADENZA_RATA}}</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Opzione 1: Pagamento Stripe -->
+              <div style="margin:24px 0; padding:20px; background-color:#e8f5e9; border-radius:8px; border-left:4px solid #4caf50;">
+                <h3 style="margin:0 0 12px; font-size:16px; color:#2e7d32;">
+                  ✅ Opzione 1: Pagamento Immediato con Carta (CONSIGLIATO)
+                </h3>
+                <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
+                  Il metodo più veloce e sicuro. Clicchi sul pulsante per pagare esattamente l'importo di questa rata:
+                </p>
+                <ul style="margin:0 0 16px; padding-left:20px; font-size:14px;">
+                  <li>✨ Pagamento sicuro con Carta di Credito</li>
+                  <li>🔒 Transazione protetta e certificata</li>
+                  <li>💳 Accettiamo tutte le carte di credito/debito</li>
+                </ul>
+                <div style="text-align:center; margin:16px 0;">
+                  <a href="{{LINK_PAGAMENTO_RATA}}"
+                     style="display:inline-block;
+                            padding:14px 32px;
+                            background:linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                            color:#ffffff;
+                            text-decoration:none;
+                            border-radius:6px;
+                            font-size:16px;
+                            font-weight:600;
+                            box-shadow:0 4px 8px rgba(76,175,80,0.3);">
+                    💳 PAGA ORA RATA {{NUMERO_RATA}} — {{IMPORTO_RATA_IVA}}
+                  </a>
+                </div>
+              </div>
+
+              <!-- Opzione 2: Bonifico Bancario -->
+              <div style="margin:24px 0; padding:20px; background-color:#fff3e0; border-radius:8px; border-left:4px solid #ff9800;">
+                <h3 style="margin:0 0 12px; font-size:16px; color:#e65100;">
+                  🏦 Opzione 2: Bonifico Bancario
+                </h3>
+                <p style="margin:0 0 14px; font-size:14px; line-height:1.5;">
+                  In alternativa può effettuare il pagamento tramite bonifico bancario:
+                </p>
+                <table width="100%" cellpadding="6" cellspacing="0" border="0"
+                       style="font-size:13px; background-color:#ffffff; border:1px solid #ddd; border-radius:4px;">
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">Beneficiario:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;">Medica GB S.r.l.</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">IBAN:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;">{{IBAN}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600; border-bottom:1px solid #eee;">Causale:</td>
+                    <td style="padding:8px; border-bottom:1px solid #eee;"><strong>{{CAUSALE}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px; font-weight:600;">Importo:</td>
+                    <td style="padding:8px; font-weight:700; color:#e65100;">{{IMPORTO_RATA_IVA}}</td>
+                  </tr>
+                </table>
+                <p style="margin:10px 0 0; font-size:12px; color:#888;">
+                  💡 Ricordi di inserire la causale esatta per permetterci di abbinare il pagamento.
+                </p>
+              </div>
+
+              <!-- Riepilogo piano rate -->
+              {{PIANO_RATEIZZAZIONE}}
+
+              <!-- Contatti -->
+              <p style="margin:22px 0 0; font-size:14px;">
+                Per qualsiasi domanda o necessità, non esiti a contattarci a
+                <a href="mailto:info@ecura.it" style="color:#0b63a5;">info@ecura.it</a>
+                oppure al <a href="tel:+393357301206" style="color:#0b63a5;">+39 335 730 1206</a>.
+              </p>
+
+              <p style="margin:16px 0 0; font-size:14px;">Cordiali saluti,<br><strong>Il Team eCura</strong></p>
+              <p style="margin:6px 0 0; font-size:12px; color:#888888;"><em>"La tecnologia che Le salva salute e vita"</em></p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:14px 24px; background-color:#fafafa; text-align:center; font-size:12px; color:#888888;">
+              <strong>Medica GB S.r.l.</strong><br>
+              Corso Garibaldi 34 – 20121 Milano<br>
+              P.IVA: 12435130963 | PEC: medicagbsrl@pecimprese.it<br>
+              <a href="mailto:info@ecura.it" style="color:#0b63a5;">info@ecura.it</a> |
+              <a href="https://www.medicagb.it" style="color:#0b63a5;">www.medicagb.it</a>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

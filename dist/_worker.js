@@ -6081,6 +6081,8 @@ ${370+t.length}
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
             // Verifica connessione al foglio (dry run silenzioso)
+            var statusEl = document.getElementById('gsheet-status');
+            if (statusEl) statusEl.innerHTML = '<p style="color:#374151;font-size:14px;">⏳ Verifica accesso al foglio...</p>';
             try {
                 var checkRes = await fetch('/api/import/gsheet', {
                     method: 'POST',
@@ -6098,16 +6100,20 @@ ${370+t.length}
                             (checkData.skipped > 0 ? '<p style="margin:4px 0 0;font-size:12px;color:#6b7280;">⏭️ Già presenti / senza email: ' + checkData.skipped + '</p>' : '') +
                             '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Clicca <strong>Importa</strong> per salvare nel database, oppure <strong>Test</strong> per un dry run dettagliato.</p>';
                     } else {
+                        // Mostra warning ma NON disabilitare il bottone Importa —
+                        // l'errore può essere transitorio (Worker occupato, timeout).
+                        // L'utente può comunque provare il dry run o l'import direttamente.
                         statusEl.innerHTML =
-                            '<p style="margin:0 0 6px;color:#dc2626;font-weight:600;font-size:14px;">❌ Errore accesso foglio</p>' +
-                            '<p style="margin:0;font-size:13px;color:#374151;">' + (checkData.error || 'Errore sconosciuto') + '</p>' +
-                            '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Assicurati che il foglio sia condiviso come "Chiunque con il link può visualizzare".</p>';
-                        document.getElementById('gsheet-import-btn').disabled = true;
+                            '<p style="margin:0 0 6px;color:#d97706;font-weight:600;font-size:14px;">⚠️ Verifica non riuscita</p>' +
+                            '<p style="margin:0;font-size:13px;color:#374151;">' + (checkData.message || checkData.error || 'Errore transitorio') + '</p>' +
+                            '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Puoi comunque cliccare <strong>Test (Dry Run)</strong> o <strong>Importa</strong> per riprovare.</p>';
                     }
                 }
             } catch (e) {
                 var statusEl2 = document.getElementById('gsheet-status');
-                if (statusEl2) statusEl2.innerHTML = '<p style="color:#dc2626;font-size:14px;">❌ Errore di rete: ' + e.message + '</p>';
+                if (statusEl2) statusEl2.innerHTML =
+                    '<p style="margin:0 0 6px;color:#d97706;font-weight:600;font-size:14px;">⚠️ Verifica non riuscita (errore di rete)</p>' +
+                    '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Puoi comunque cliccare <strong>Test (Dry Run)</strong> o <strong>Importa</strong> per riprovare.</p>';
             }
         }
         window.importFromExcel = importFromExcel;
