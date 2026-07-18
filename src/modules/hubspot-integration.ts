@@ -216,22 +216,18 @@ export class HubSpotClient {
       })
 
       // ── filterGroup 2 (OR) ───────────────────────────────────────────────────
-      // Lead in cui hs_object_source_detail_1 è sbagliato (es. classe CSS Elementor
-      // ".elementor-form, .cft-processed") ma i campi custom eCura sono valorizzati.
-      // servizio_di_interesse e piano_desiderato esistono SOLO per lead da form eCura:
-      // sono campi custom HubSpot creati appositamente per quella integrazione.
-      // Questo criterio cattura Clementi (e casi simili futuri) senza allargare
-      // il filtro ad altri lead non-eCura.
+      // Lead con servizio_di_interesse = uno dei servizi eCura che gestiamo.
+      // Il form eCura usa valori: "Family", "Professional", "Premium" (e varianti).
+      // Con operatore IN i valori devono essere lowercase.
+      // Questo cattura Clementi ("Professional") e qualsiasi lead il cui
+      // hs_object_source_detail_1 sia sbagliato ma il servizio sia corretto.
       filterGroups.push({
         filters: [
           ...commonFilters,
           {
             propertyName: 'servizio_di_interesse',
-            operator: 'HAS_PROPERTY'
-          },
-          {
-            propertyName: 'piano_desiderato',
-            operator: 'HAS_PROPERTY'
+            operator: 'IN',
+            values: ['family', 'professional', 'pro', 'premium', 'vital']
           }
         ]
       })
