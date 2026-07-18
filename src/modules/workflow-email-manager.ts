@@ -1720,10 +1720,10 @@ export async function inviaEmailBenvenuto(
           // Premium: telemonitoraggio completo incluso
           return `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Analisi del sonno</li><li>Geolocalizzazione GPS avanzata</li></ul>`
         } else {
-          // PRO: telemonitoraggio FC/SpO2 incluso
+          // PRO BASE e AVANZATO: telemonitoraggio FC/SpO2 sempre incluso
           return pianoType === 'AVANZATO'
             ? `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Geolocalizzazione GPS</li></ul>`
-            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute</li></ul>`
+            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Rilevamento cadute</li></ul>`
         }
       })(),
       PREZZO_PIANO: prezzoBase
