@@ -19833,7 +19833,7 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
 
     return c.json({
       success: true,
-      operatore_filtro: 'CONTAINS (substring match — corretto per campo stringa hs_object_source_detail_1)',
+      operatore_filtro: 'CONTAINS_TOKEN con wildcard *Form eCura* — substring match corretto per HubSpot Search API',
       periodo: `Ultimi ${days} giorni (da ${createdAfter.toISOString()})`,
       ...(leadSpecifico.length > 0 || emailCerca ? {
         lead_specifico_per_email: {
