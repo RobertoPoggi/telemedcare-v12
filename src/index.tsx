@@ -20186,6 +20186,106 @@ app.get('/api/hubspot/lookup', async (c) => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────────────
+// GET /api/hubspot/test-filter - Testa il body JSON esatto mandato a HubSpot
+// Simula esattamente la chiamata di IRBEMA (doppio filterGroup OR)
+// Uso: /api/hubspot/test-filter?days=2
+// ─────────────────────────────────────────────────────────────────────
+app.get('/api/hubspot/test-filter', async (c) => {
+  try {
+    const accessToken = c.env?.HUBSPOT_ACCESS_TOKEN
+    if (!accessToken) return c.json({ error: 'HUBSPOT_ACCESS_TOKEN mancante' }, 500)
+
+    const days = parseInt(c.req.query('days') || '2')
+    const createdAfter = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    const createdAfterMs = createdAfter.getTime().toString()
+
+    // Body esatto che manda searchContacts con onlyEcura:true
+    const requestBody = {
+      filterGroups: [
+        {
+          filters: [
+            { propertyName: 'createdate', operator: 'GTE', value: createdAfterMs },
+            { propertyName: 'hs_object_source_detail_1', operator: 'CONTAINS_TOKEN', value: '*Form eCura*' }
+          ]
+        },
+        {
+          filters: [
+            { propertyName: 'createdate', operator: 'GTE', value: createdAfterMs },
+            { propertyName: 'servizio_di_interesse', operator: 'IN', values: ['family', 'professional', 'premium'] }
+          ]
+        }
+      ],
+      properties: ['firstname', 'lastname', 'email', 'createdate', 'hs_object_source_detail_1', 'servizio_di_interesse', 'piano_desiderato'],
+      limit: 50,
+      sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }]
+    }
+
+    const resp = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    })
+
+    const raw = await resp.json() as any
+
+    // Cerca anche Clementi specificamente
+    const clementiBodies = {
+      filterGroups: [{ filters: [{ propertyName: 'lastname', operator: 'CONTAINS_TOKEN', value: 'Clementi' }] }],
+      properties: ['firstname', 'lastname', 'email', 'createdate', 'hs_object_source_detail_1', 'servizio_di_interesse'],
+      limit: 5
+    }
+    const clementiResp = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(clementiBodies)
+    })
+    const clementiRaw = await clementiResp.json() as any
+
+    // Verifica se Clementi è in DB locale
+    let clementiInDB = null
+    if (c.env?.DB) {
+      clementiInDB = await c.env.DB.prepare(
+        `SELECT id, nomeRichiedente, cognomeRichiedente, email, external_source_id, status FROM leads WHERE cognomeRichiedente LIKE '%Clementi%' OR email LIKE '%clucius%' LIMIT 3`
+      ).all()
+    }
+
+    return c.json({
+      request_body_mandato: requestBody,
+      http_status: resp.status,
+      risultati_filtro_ecura: {
+        total: raw.total,
+        count: (raw.results || []).length,
+        contatti: (raw.results || []).map((x: any) => ({
+          id: x.id,
+          nome: `${x.properties?.firstname || ''} ${x.properties?.lastname || ''}`.trim(),
+          email: x.properties?.email,
+          createdate: x.properties?.createdate,
+          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
+          servizio_di_interesse: x.properties?.servizio_di_interesse
+        })),
+        errore: raw.status ? raw : null
+      },
+      clementi_su_hubspot: {
+        http_status: clementiResp.status,
+        count: (clementiRaw.results || []).length,
+        contatti: (clementiRaw.results || []).map((x: any) => ({
+          id: x.id,
+          nome: `${x.properties?.firstname || ''} ${x.properties?.lastname || ''}`.trim(),
+          email: x.properties?.email,
+          hs_object_source_detail_1: x.properties?.hs_object_source_detail_1,
+          servizio_di_interesse: x.properties?.servizio_di_interesse,
+          passa_filtro: !!(x.properties?.hs_object_source_detail_1?.includes('Form eCura') ||
+            ['family','professional','premium'].includes((x.properties?.servizio_di_interesse || '').toLowerCase()))
+        }))
+      },
+      clementi_in_db_locale: clementiInDB?.results || []
+    })
+  } catch (error) {
+    return c.json({ success: false, error: (error as Error).message }, 500)
+  }
+})
+
 // ========================================
 // LEAD COMPLETION SYSTEM
 // ========================================
