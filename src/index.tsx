@@ -7117,6 +7117,35 @@ app.get('/api/leads/channel-stats', async (c) => {
     // nonTracciato = lead eCura senza canale_acquisizione
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
+    // ─── Query landing: lead dalla landing proprietaria ecura.it ──────────
+    // Identificati da dettaglio_fonte = 'ecura_landing', con breakdown per canale
+    let landingTotal = 0
+    let landingMeta = 0
+    let landingGoogle = 0
+    let landingDiretto = 0
+    let landingAltro = 0
+    let landingNonTracciato = 0
+    try {
+      const landingRes = await c.env.DB.prepare(`
+        SELECT canale_acquisizione, COUNT(*) as count
+        FROM leads
+        WHERE dettaglio_fonte = 'ecura_landing'
+        GROUP BY canale_acquisizione
+      `).all()
+      for (const row of (landingRes.results || []) as any[]) {
+        const cnt = Number(row.count) || 0
+        landingTotal += cnt
+        const val = (row.canale_acquisizione || '').toUpperCase()
+        if (val === 'META'      || val.includes('META'))    landingMeta    += cnt
+        else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  landingGoogle  += cnt
+        else if (val === 'DIRETTO' || val.includes('DIRETTO')) landingDiretto += cnt
+        else if (val === 'ALTRO'   || val.includes('ALTRO'))   landingAltro   += cnt
+        else landingNonTracciato += cnt
+      }
+    } catch (err) {
+      console.warn('⚠️ channel-stats: errore query landing', err)
+    }
+
     // ─── Query 3: statistiche sconto per canale ────────────────────────────
     // Per ogni canale_acquisizione: conteggio lead con sconto, valore totale scontato, % media
     let discountByCanale: Record<string, { count: number; leads: number; risparmio: number; pct_media: number }> = {}
@@ -7193,6 +7222,15 @@ app.get('/api/leads/channel-stats', async (c) => {
       altro,
       nonTracciato,
       breakdown,
+      // Landing proprietaria ecura.it (dettaglio_fonte = 'ecura_landing')
+      landing: {
+        total:       landingTotal,
+        meta:        landingMeta,
+        google:      landingGoogle,
+        diretto:     landingDiretto,
+        altro:       landingAltro,
+        nonTracciato: landingNonTracciato
+      },
       // Statistiche sconto
       discountByCanale,
       discountGlobal,

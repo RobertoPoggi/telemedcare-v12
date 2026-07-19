@@ -2605,13 +2605,18 @@ export const dashboard = `<!DOCTYPE html>
         // Totale = numero assistiti (non tutti i lead).
         function renderFontesDistributionFromAssistiti(assistiti) {
             const fonteColors = {
-                'Privati Irbema':       'bg-blue-500',
-                'Networking':           'bg-purple-500',
-                'eCura — Google':       'bg-red-500',
-                'eCura — Meta (FB/IG)': 'bg-indigo-500',
-                'eCura — Diretto':      'bg-green-500',
-                'eCura — Altro':        'bg-yellow-500',
-                'Altro':                'bg-gray-400'
+                'Privati Irbema':              'bg-blue-500',
+                'Networking':                  'bg-purple-500',
+                'eCura — Google':              'bg-red-500',
+                'eCura — Meta (FB/IG)':        'bg-indigo-500',
+                'eCura — Diretto':             'bg-green-500',
+                'eCura — Altro':               'bg-yellow-500',
+                'eCura — Landing':             'bg-emerald-500',
+                'eCura — Landing (Meta)':      'bg-emerald-600',
+                'eCura — Landing (Google)':    'bg-emerald-400',
+                'eCura — Landing (Diretto)':   'bg-teal-500',
+                'eCura — Landing (Altro)':     'bg-teal-400',
+                'Altro':                       'bg-gray-400'
             };
 
             var fonteCounts = {};
@@ -2621,8 +2626,17 @@ export const dashboard = `<!DOCTYPE html>
                 var leadId          = (assistito.lead_id || assistito.id || '').toString().toUpperCase();
                 var etichetta       = 'Altro';
 
-                // Priorità 1: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — lead da Form eCura
-                if (canale === 'GOOGLE') {
+                // Priorità 1: landing proprietaria (dettaglio_fonte = 'ecura_landing')
+                var dettaglio = (assistito.dettaglio_fonte || '').trim();
+                if (dettaglio === 'ecura_landing') {
+                    if (canale === 'META')    etichetta = 'eCura — Landing (Meta)';
+                    else if (canale === 'GOOGLE')  etichetta = 'eCura — Landing (Google)';
+                    else if (canale === 'DIRETTO') etichetta = 'eCura — Landing (Diretto)';
+                    else if (canale === 'ALTRO')   etichetta = 'eCura — Landing (Altro)';
+                    else                           etichetta = 'eCura — Landing';
+                }
+                // Priorità 2: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — Form eCura classico
+                else if (canale === 'GOOGLE') {
                     etichetta = 'eCura — Google';
                 } else if (canale === 'META') {
                     etichetta = 'eCura — Meta (FB/IG)';
@@ -2631,7 +2645,7 @@ export const dashboard = `<!DOCTYPE html>
                 } else if (canale === 'ALTRO') {
                     etichetta = 'eCura — Altro';
                 }
-                // Priorità 2: campo fonte dal lead (o fonte_override da assistiti)
+                // Priorità 3: campo fonte dal lead
                 else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || fonte === 'Privati Irbema' || leadId.includes('IRBEMA')) {
                     etichetta = 'Privati Irbema';
                 } else if (fonte === 'NETWORKING' || fonte === 'Networking' || fonte.toLowerCase().includes('network')) {
@@ -4032,15 +4046,24 @@ export const leads_dashboard = `<!DOCTYPE html>
                     };
                     const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO'];
                     fonteSelect.innerHTML = '<option value="">Tutte le Fonti</option>';
-                    // Aggiungi opzione "tutti i lead eCura" come gruppo
+                    // Sezione 1: Form eCura (tutti i canali)
                     fonteSelect.innerHTML += '<option value="__ECURA_ALL__">— Form eCura (tutti i canali) —</option>';
                     canaliOrdinati.forEach(canale => {
                         const option = document.createElement('option');
-                        option.value = '__CANALE__' + canale;  // prefisso per distinguere da fonte raw
+                        option.value = '__CANALE__' + canale;
                         option.textContent = canaleIcons[canale] || canale;
                         fonteSelect.appendChild(option);
                     });
-                    // Sezione 2: altre fonti raw dal DB (non-eCura)
+                    // Sezione 2: Landing proprietaria eCura
+                    fonteSelect.innerHTML += '<option disabled>──────────────</option>';
+                    fonteSelect.innerHTML += '<option value="__LANDING_ALL__">🏠 eCura — Landing (tutti i canali)</option>';
+                    canaliOrdinati.forEach(canale => {
+                        const option = document.createElement('option');
+                        option.value = '__LANDING__' + canale;
+                        option.textContent = '    ' + canaleIcons[canale].replace('eCura —', 'Landing —');
+                        fonteSelect.appendChild(option);
+                    });
+                    // Sezione 3: altre fonti raw dal DB (non-eCura)
                     const fontiRaw = [...new Set(allLeads
                         .map(l => l.fonte || '')
                         .filter(f => f && f !== 'Form eCura' && !f.startsWith('Form eCura_'))
@@ -4049,7 +4072,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         fonteSelect.innerHTML += '<option disabled>──────────────</option>';
                         fontiRaw.forEach(fonte => {
                             const option = document.createElement('option');
-                            option.value = '__FONTE__' + fonte;  // prefisso per fonte raw
+                            option.value = '__FONTE__' + fonte;
                             option.textContent = fonte;
                             fonteSelect.appendChild(option);
                         });
@@ -4219,18 +4242,23 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('🔍 updateChannelsBreakdown — usa API channel-stats per i canali eCura');
 
             const fonteColors = {
-                'Sito www.eCura.it':    'bg-cyan-500',
-                'Privati IRBEMA':       'bg-blue-500',
-                'eCura — Meta (FB/IG)': 'bg-indigo-500',
-                'eCura — Google':       'bg-red-500',
-                'eCura — Diretto':      'bg-green-500',
-                'eCura — Altro':        'bg-yellow-500',
-                'eCura — Non tracciato':'bg-gray-400',
-                'Form eCura x Test':    'bg-yellow-300',
-                'B2B IRBEMA':           'bg-purple-500',
-                'Sito web Medica GB':   'bg-pink-500',
-                'NETWORKING':           'bg-teal-500',
-                'Form Contattaci':      'bg-orange-400'
+                'Sito www.eCura.it':           'bg-cyan-500',
+                'Privati IRBEMA':              'bg-blue-500',
+                'eCura — Meta (FB/IG)':        'bg-indigo-500',
+                'eCura — Google':              'bg-red-500',
+                'eCura — Diretto':             'bg-green-500',
+                'eCura — Altro':               'bg-yellow-500',
+                'eCura — Non tracciato':       'bg-gray-400',
+                'eCura — Landing':             'bg-emerald-500',
+                'eCura — Landing (Meta)':      'bg-emerald-600',
+                'eCura — Landing (Google)':    'bg-emerald-400',
+                'eCura — Landing (Diretto)':   'bg-teal-500',
+                'eCura — Landing (Altro)':     'bg-teal-400',
+                'Form eCura x Test':           'bg-yellow-300',
+                'B2B IRBEMA':                  'bg-purple-500',
+                'Sito web Medica GB':          'bg-pink-500',
+                'NETWORKING':                  'bg-teal-500',
+                'Form Contattaci':             'bg-orange-400'
             };
 
             // Passo 1: canali eCura dall'API (stessa sorgente dei box → numeri identici)
@@ -4245,6 +4273,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                     if (data.diretto > 0) sources['eCura — Diretto']      = data.diretto;
                     if (data.altro   > 0) sources['eCura — Altro']        = data.altro;
                     if (data.nonTracciato > 0) sources['eCura — Non tracciato'] = data.nonTracciato;
+                    // Landing proprietaria ecura.it — dettagliata per canale se disponibile
+                    const l = data.landing || {};
+                    if (l.total > 0) {
+                        if (l.meta    > 0) sources['eCura — Landing (Meta)']    = l.meta;
+                        if (l.google  > 0) sources['eCura — Landing (Google)']  = l.google;
+                        if (l.diretto > 0) sources['eCura — Landing (Diretto)'] = l.diretto;
+                        if (l.altro   > 0) sources['eCura — Landing (Altro)']   = l.altro;
+                        if (l.nonTracciato > 0) sources['eCura — Landing'] = l.nonTracciato;
+                    }
                     discountByCanale = data.discountByCanale || {};
                 }
             } catch (e) {
@@ -4252,9 +4289,11 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
+            // I lead landing (dettaglio_fonte='ecura_landing') sono già contati sopra → saltiamo
             (leads || []).forEach(l => {
                 const fonteDB = l.fonte || '';
                 if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
+                if ((l.dettaglio_fonte || '') === 'ecura_landing') return; // già nei box Landing
                 const etichetta = fonteDB || 'Non specificato';
                 sources[etichetta] = (sources[etichetta] || 0) + 1;
             });
@@ -4820,20 +4859,27 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // ═══════════════════════════════════════════════════════════
                 const leadFonte = lead.fonte || '';
                 const leadCanale = lead.canale_acquisizione || ''; // META/GOOGLE/DIRETTO/ALTRO
+                const leadDettaglio = lead.dettaglio_fonte || '';
                 const isEcura = leadFonte === 'Form eCura' || leadFonte.startsWith('Form eCura_');
+                const isLanding = leadDettaglio === 'ecura_landing';
 
                 let matchFonte = true;
                 if (!fonteFilter) {
                     matchFonte = true; // nessun filtro
                 } else if (fonteFilter === '__ECURA_ALL__') {
-                    // Tutti i lead Form eCura (qualunque canale, esclusi i test)
+                    // Tutti i lead Form eCura incluse le landing
                     matchFonte = isEcura;
                 } else if (fonteFilter.startsWith('__CANALE__')) {
-                    // Filtra per canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO)
-                    // VINCOLO: solo lead Form eCura (fonte = 'Form eCura')
-                    // Senza questo vincolo i lead IRBEMA con canale popolato verrebbero contati
+                    // Filtra per canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — Form eCura escluse landing
                     const canaleTarget = fonteFilter.replace('__CANALE__', '');
-                    matchFonte = isEcura && leadCanale === canaleTarget;
+                    matchFonte = isEcura && !isLanding && leadCanale === canaleTarget;
+                } else if (fonteFilter === '__LANDING_ALL__') {
+                    // Tutti i lead dalla landing proprietaria
+                    matchFonte = isLanding;
+                } else if (fonteFilter.startsWith('__LANDING__')) {
+                    // Landing per canale specifico
+                    const canaleTarget = fonteFilter.replace('__LANDING__', '');
+                    matchFonte = isLanding && leadCanale === canaleTarget;
                 } else if (fonteFilter.startsWith('__FONTE__')) {
                     // Filtra per fonte raw (IRBEMA, B2B, Test, ecc.)
                     const fonteTarget = fonteFilter.replace('__FONTE__', '');
