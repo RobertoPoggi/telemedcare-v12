@@ -336,6 +336,176 @@ export const home = `<!DOCTYPE html>
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════
+             MARKETING HUB
+        ══════════════════════════════════════════════════════════════ -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-bullhorn text-orange-500 mr-3"></i>
+                Marketing Hub
+                <span class="ml-3 bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full">NUOVO</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <!-- Google ADS -->
+                <a href="/admin/google-ads" class="bg-white rounded-xl shadow-md card-hover overflow-hidden border-2 border-transparent hover:border-yellow-400 group">
+                    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-google text-5xl"></i>
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
+                                ADS
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2">Google ADS</h3>
+                        <p class="text-yellow-100 text-sm">Generatore campagne e annunci</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Generatore annunci ottimizzati
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Keyword + Negative keyword
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Export CSV Google Ads Editor
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                Analisi UTM dai lead in DB
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button class="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-all">
+                                Accedi <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- META ADS — coming soon -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fab fa-meta text-5xl"></i>
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
+                                PRESTO
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2">META ADS</h3>
+                        <p class="text-blue-100 text-sm">Facebook &amp; Instagram Ads</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Generatore audience Facebook
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Creazione copy annunci META
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Lookalike da lead DB
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Performance tracking UTM
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
+                                In Sviluppo <i class="fas fa-hammer ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI MARKETING — coming soon -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
+                    <div class="bg-gradient-to-r from-violet-600 to-purple-700 p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-robot text-5xl"></i>
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
+                                PRESTO
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2">AI Marketing</h3>
+                        <p class="text-violet-100 text-sm">Automazione intelligente</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Scoring automatico lead
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Email nurturing AI
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Previsione conversione
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Ottimizzazione budget
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
+                                In Sviluppo <i class="fas fa-hammer ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO MANAGER — coming soon -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
+                    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <i class="fas fa-search text-5xl"></i>
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
+                                PRESTO
+                            </span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2">SEO Manager</h3>
+                        <p class="text-emerald-100 text-sm">Posizionamento organico</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Keyword research integrato
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Monitor posizioni SERP
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Generatore contenuti SEO
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <i class="fas fa-clock text-gray-300 mr-2"></i>
+                                Analisi competitor
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
+                                In Sviluppo <i class="fas fa-hammer ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <!-- Servizi eCura -->
         <div class="mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">

@@ -49,6 +49,7 @@ import type { AuthSession, UserRole } from './modules/auth-service'
 
 // Import Dashboard Templates
 import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
+import { renderGoogleAdsDashboard } from './modules/google-ads-dashboard'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
@@ -28935,6 +28936,13 @@ app.get('/admin/workflow-manager', (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'workflow')
   return c.html(workflow_manager)
+})
+
+// Google ADS Manager - Generatore annunci, keyword planner, export CSV
+app.get('/admin/google-ads', requireAuth, (c) => {
+  c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
+  c.header('X-TeleMedCare-Dashboard', 'google-ads')
+  return c.html(renderGoogleAdsDashboard())
 })
 
 // Route Test Contratti
