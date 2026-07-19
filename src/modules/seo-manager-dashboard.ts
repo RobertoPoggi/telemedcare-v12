@@ -68,7 +68,7 @@ export function renderSeoManagerDashboard(): string {
 <div style="background:linear-gradient(135deg,#059669 0%,#0d9488 100%)" class="text-white px-6 py-5 shadow-lg">
   <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
     <div class="flex items-center gap-4">
-      <a href="/home" style="background:rgba(255,255,255,.2);backdrop-filter:blur(4px)" class="hover:bg-opacity-30 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2">
+      <a href="/" style="background:rgba(255,255,255,.2);backdrop-filter:blur(4px)" class="hover:bg-opacity-30 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2">
         <i class="fas fa-arrow-left"></i>Home
       </a>
       <div class="flex items-center gap-3">
@@ -1198,7 +1198,7 @@ function runSeoAutopilot() {
         '<strong>Meta Description:</strong> Scopri tutto su ' + kw + ': come funziona, vantaggi, costi e come prenotare. Guida aggiornata 2025 con dati ISS e ISTAT.\\n\\n' +
         '<strong>Schema Markup:</strong> MedicalOrganization + FAQPage + HowTo (generati)\\n\\n' +
         '<strong>Struttura:</strong>\\n' +
-        '  H2: Cos\\'è ' + kw + ' e come funziona\\n' +
+        '  H2: Cos\’è ' + kw + ' e come funziona\\n' +
         '  H2: Vantaggi rispetto alla visita tradizionale\\n' +
         '  H2: Come prenotare: guida passo-passo\\n' +
         '  H2: Costi e rimborsi SSN\\n' +
@@ -1342,7 +1342,7 @@ function optimizeAlt() {
 
 // ── Audience ───────────────────────────────────────────────────────
 const seoPersonas = [
-  { name: 'Martina, 38 anni', job: 'Manager Milano · Famiglia con 2 figli', desc: 'Lavora da casa 3 giorni su 5. Non ha tempo per file d\'attesa. Cerca uno specialista online affidabile per i figli e per sé. Budget medio-alto. Priorità: velocità e qualità.', kw: ['pediatra online urgente', 'specialista cardiologico', 'prenotazione rapida'] },
+  { name: 'Martina, 38 anni', job: 'Manager Milano · Famiglia con 2 figli', desc: 'Lavora da casa 3 giorni su 5. Non ha tempo per file d’attesa. Cerca uno specialista online affidabile per i figli e per sé. Budget medio-alto. Priorità: velocità e qualità.', kw: ['pediatra online urgente', 'specialista cardiologico', 'prenotazione rapida'] },
   { name: 'Giuseppe, 67 anni', job: 'Pensionato Napoli · Caregiver figlia disabile', desc: 'Gestisce la salute propria e della figlia. Non può spostarsi facilmente. Cerca soluzioni digitali semplici. Usa smartphone base. Priorità: semplicità e assistenza telefonica.', kw: ['medico anziani online', 'assistenza domiciliare', 'visita accessibile'] },
   { name: 'Federica, 29 anni', job: 'Freelancer Torino · Single', desc: 'Smart worker nomade. Spesso fuori città. Ha bisogno di un medico raggiungibile ovunque. Esperta di tecnologia. Priorità: app intuitiva, prezzi trasparenti, immediata disponibilità.', kw: ['medico digitale 24h', 'dermatologo online', 'seconda opinione veloce'] },
   { name: 'Marco, 45 anni', job: 'Imprenditore Roma · Alto reddito', desc: 'Poco tempo, molto stress. Vuole il meglio per la salute. Disposto a pagare per la qualità. Cerca specialisti di alto livello in tempi brevi. Priorità: eccellenza e discrezione.', kw: ['cardiologo privato online', 'specialista premium', 'consulto urgente'] }
@@ -1368,9 +1368,9 @@ function genYTScriptSeo(topic) {
     content.textContent = '🎬 SCRIPT VIDEO: ' + topic + '\\n' +
       '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n' +
       '[HOOK - 0:00-0:15]\\n' +
-      '"Sai quante ore italiani perdono in sala d\'attesa ogni anno? Oltre 200 milioni. Oggi ti spiego come azzerarle con il medico online."\\n\\n' +
+      '"Sai quante ore italiani perdono in sala d’attesa ogni anno? Oltre 200 milioni. Oggi ti spiego come azzerarle con il medico online."\\n\\n' +
       '[INTRO - 0:15-0:45]\\nBenvenuto/a! Sono [Nome], e in questo video ti mostro [topic] in modo chiaro e pratico.\\n\\n' +
-      '[PUNTO 1 - 0:45-2:00]\\nCos\'è e come funziona — Spiegazione semplice con esempi concreti...\\n\\n' +
+      '[PUNTO 1 - 0:45-2:00]\\nCos’è e come funziona — Spiegazione semplice con esempi concreti...\\n\\n' +
       '[PUNTO 2 - 2:00-3:30]\\nVantaggi rispetto al metodo tradizionale — Dati e statistiche (cita: ISTAT 2024, ISS)...\\n\\n' +
       '[PUNTO 3 - 3:30-4:45]\\nCome iniziare in 3 passi — Demo pratica della piattaforma...\\n\\n' +
       '[CTA - 4:45-5:00]\\n"Link in descrizione per prenotare la tua prima visita — prima consulenza GRATIS. Iscriviti al canale per altri contenuti su salute digitale!"\\n\\n' +

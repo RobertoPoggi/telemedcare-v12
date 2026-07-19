@@ -47,7 +47,7 @@ export function renderAiMarketingDashboard(): string {
 <div style="background:linear-gradient(135deg,#7C3AED 0%,#4F46E5 100%)" class="text-white px-6 py-5 shadow-lg">
   <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
     <div class="flex items-center gap-4">
-      <a href="/home" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
+      <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
         <i class="fas fa-arrow-left mr-1"></i>Home
       </a>
       <div>
@@ -1123,13 +1123,13 @@ Caratteristiche principali:
 function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[onclick="showTab(\\'' + name + '\\')"]').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => { if(b.getAttribute('onclick') === 'showTab("'+name+'")'){ b.classList.add('active'); }});
   document.getElementById('tab-' + name).classList.add('active');
 }
 
 // ── Autopilot ────────────────────────────────────────────────────────────────
 const _apArticles = [
-  {kw:'bracciale cadute anziani', words:1847, text:'## Bracciale Cadute Anziani: Guida Completa 2026\n\nSecondo i dati ISTAT 2025, ogni anno in Italia si registrano **412.000 ricoveri ospedalieri** causati da cadute tra gli over 65, con un costo per il SSN di 4,8 miliardi di euro. Il 35% delle cadute avviene di notte, quando nessun familiare è presente.\n\n### Cos\'è il rilevamento cadute AI\nIl sistema di rilevamento cadute basato su intelligenza artificiale utilizza un accelerometro 3D e algoritmi di machine learning per distinguere automaticamente una caduta accidentale dal normale movimento quotidiano. La meta-analisi del Lancet Digital Health (2026) su 45.000 pazienti riporta un\'accuracy del **94.7%**.\n\n### eCura: il bracciale certificato CE Classe IIa\nIl bracciale eCura di Medica GB è l\'unico dispositivo di telesoccorso sul mercato italiano con:\n- Certificazione CE Classe IIa (dispositivo medico)\n- AI rilevamento cadute con accuracy 94.7%\n- Centrale operativa H24 con risposta in 45 secondi\n- GPS integrato e impermeabilità IP67\n- Piano completo da **€390/anno** (tutto incluso)\n\n### Confronto con i competitor\n[Vedi tabella comparativa completa su /compare]\n\n### Conclusione\nPer le famiglie italiane con genitori anziani soli, eCura rappresenta oggi la soluzione più completa e tecnologicamente avanzata. La certificazione CE IIa garantisce standard medici, l\'AI riduce i falsi allarmi e la centrale H24 assicura intervento immediato.\n\n**Attiva eCura oggi → €390/anno tutto incluso**'},
+  {kw:'bracciale cadute anziani', words:1847, text:'## Bracciale Cadute Anziani: Guida Completa 2026\n\nSecondo i dati ISTAT 2025, ogni anno in Italia si registrano **412.000 ricoveri ospedalieri** causati da cadute tra gli over 65, con un costo per il SSN di 4,8 miliardi di euro. Il 35% delle cadute avviene di notte, quando nessun familiare è presente.\n\n### Cos’è il rilevamento cadute AI\nIl sistema di rilevamento cadute basato su intelligenza artificiale utilizza un accelerometro 3D e algoritmi di machine learning per distinguere automaticamente una caduta accidentale dal normale movimento quotidiano. La meta-analisi del Lancet Digital Health (2026) su 45.000 pazienti riporta un’accuracy del **94.7%**.\n\n### eCura: il bracciale certificato CE Classe IIa\nIl bracciale eCura di Medica GB è l’unico dispositivo di telesoccorso sul mercato italiano con:\n- Certificazione CE Classe IIa (dispositivo medico)\n- AI rilevamento cadute con accuracy 94.7%\n- Centrale operativa H24 con risposta in 45 secondi\n- GPS integrato e impermeabilità IP67\n- Piano completo da **€390/anno** (tutto incluso)\n\n### Confronto con i competitor\n[Vedi tabella comparativa completa su /compare]\n\n### Conclusione\nPer le famiglie italiane con genitori anziani soli, eCura rappresenta oggi la soluzione più completa e tecnologicamente avanzata. La certificazione CE IIa garantisce standard medici, l’AI riduce i falsi allarmi e la centrale H24 assicura intervento immediato.\n\n**Attiva eCura oggi → €390/anno tutto incluso**'},
 ];
 
 function generateAutopilot() {

@@ -47,7 +47,7 @@ export function renderGoogleAdsDashboard(): string {
 <div style="background:linear-gradient(135deg,#4285F4 0%,#34A853 50%,#FBBC05 100%)" class="text-white px-6 py-5 shadow-lg">
   <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
     <div class="flex items-center gap-4">
-      <a href="/home" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
+      <a href="/" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
         <i class="fas fa-arrow-left mr-1"></i>Home
       </a>
       <div>
@@ -795,7 +795,7 @@ const ADS_DATA = {
     ],
     descriptions: [
       'A differenza dei semplici salvavita, eCura monitora cadute con AI, GPS preciso e parametri vitali H24. Classe IIa.',
-      'Stai cercando un\'alternativa più completa? eCura ha Centrale Operativa H24, GPS indoor/outdoor e AI predittiva.',
+      "Stai cercando un'alternativa più completa? eCura ha Centrale Operativa H24, GPS indoor/outdoor e AI predittiva.",
       'Dispositivo medico certificato Classe IIa: non solo SOS, ma monitoraggio completo. Da €390/anno detraibile al 19%.',
       'Confronta eCura: GPS multi-tech indoor/outdoor, rileva cadute in 3 sec, app famiglia, centrale H24. Richiedi info.',
     ],
@@ -940,7 +940,7 @@ function generateAds() {
         <span class="text-xs text-gray-400 w-4 text-right">\${i+1}</span>
         <span class="flex-1 text-sm">\${h}</span>
         <span class="\${cls} text-xs w-8 text-right">\${len}/30</span>
-        <button onclick="copyText('\${h.replace(/'/g,"\\\\'")}',this)" class="copy-btn px-2 py-1 rounded text-xs text-gray-400 hover:text-blue-500 transition">
+        <button onclick="copyText(this.dataset.v,this)" data-v="${h}" class="copy-btn px-2 py-1 rounded text-xs text-gray-400 hover:text-blue-500 transition">
           <i class="fas fa-copy"></i>
         </button>
       </div>
@@ -1019,7 +1019,7 @@ function renderFullMatrix(headlines, descriptions) {
       <td class="px-3 py-2 font-medium text-gray-800">\${h}</td>
       <td class="px-3 py-2 text-center \${charCls}">\${len}/30</td>
       <td class="px-3 py-2 text-center"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold">H</span></td>
-      <td class="px-3 py-2 text-center"><button onclick="copyText('\${h.replace(/'/g,"\\\\'")}',this)" class="copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
+      <td class="px-3 py-2 text-center"><button onclick="copyText(this.dataset.v,this)" data-v="${h}" class="copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
     </tr>\`;
   });
 
