@@ -348,16 +348,16 @@ export const home = `<!DOCTYPE html>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <!-- Google ADS -->
-                <a href="/admin/google-ads" class="bg-white rounded-xl shadow-md card-hover overflow-hidden border-2 border-transparent hover:border-yellow-400 group">
-                    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 p-6 text-white">
+                <a href="/admin/google-ads" class="bg-white rounded-xl shadow-md card-hover overflow-hidden border-2 border-transparent hover:border-orange-500 group">
+                    <div class="p-6 text-white" style="background:linear-gradient(135deg,#E8711A 0%,#D93025 100%)">
                         <div class="flex items-center justify-between mb-4">
-                            <i class="fab fa-google text-5xl"></i>
-                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
+                            <i class="fab fa-google text-5xl" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))"></i>
+                            <span class="bg-white bg-opacity-25 border border-white border-opacity-40 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
                                 ADS
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2">Google ADS</h3>
-                        <p class="text-yellow-100 text-sm">Generatore campagne e annunci</p>
+                        <h3 class="text-2xl font-bold mb-1 drop-shadow">Google ADS</h3>
+                        <p class="text-orange-100 text-sm font-medium">Generatore campagne e annunci</p>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
@@ -379,7 +379,7 @@ export const home = `<!DOCTYPE html>
                             </div>
                         </div>
                         <div class="mt-6">
-                            <button class="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-all">
+                            <button class="w-full text-white font-bold py-3 rounded-lg transition-all shadow-md" style="background:linear-gradient(135deg,#E8711A,#D93025)">
                                 Accedi <i class="fas fa-arrow-right ml-2"></i>
                             </button>
                         </div>
@@ -387,121 +387,85 @@ export const home = `<!DOCTYPE html>
                 </a>
 
                 <!-- META ADS — coming soon -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
-                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-60">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
                         <div class="flex items-center justify-between mb-4">
                             <i class="fab fa-meta text-5xl"></i>
                             <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
-                                PRESTO
+                                PROSSIMAMENTE
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2">META ADS</h3>
-                        <p class="text-blue-100 text-sm">Facebook &amp; Instagram Ads</p>
+                        <h3 class="text-2xl font-bold mb-1">META ADS</h3>
+                        <p class="text-blue-100 text-sm font-medium">Facebook &amp; Instagram Ads</p>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Generatore audience Facebook
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Creazione copy annunci META
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Lookalike da lead DB
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Performance tracking UTM
-                            </div>
+                            <div class="flex items-center text-sm text-gray-400"><i class="fas fa-clock text-gray-300 mr-2"></i>Generatore audience Facebook</div>
+                            <div class="flex items-center text-sm text-gray-400"><i class="fas fa-clock text-gray-300 mr-2"></i>Creazione copy annunci META</div>
+                            <div class="flex items-center text-sm text-gray-400"><i class="fas fa-clock text-gray-300 mr-2"></i>Lookalike da lead DB</div>
+                            <div class="flex items-center text-sm text-gray-400"><i class="fas fa-clock text-gray-300 mr-2"></i>Performance tracking UTM</div>
                         </div>
                         <div class="mt-6">
-                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
+                            <button class="w-full bg-gray-100 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
                                 In Sviluppo <i class="fas fa-hammer ml-2"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- AI MARKETING — coming soon -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
-                    <div class="bg-gradient-to-r from-violet-600 to-purple-700 p-6 text-white">
+                <!-- AI MARKETING — ATTIVO -->
+                <a href="/admin/ai-marketing" class="bg-white rounded-xl shadow-md card-hover overflow-hidden border-2 border-transparent hover:border-violet-500 group">
+                    <div class="p-6 text-white" style="background:linear-gradient(135deg,#7C3AED 0%,#4F46E5 100%)">
                         <div class="flex items-center justify-between mb-4">
-                            <i class="fas fa-robot text-5xl"></i>
-                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
-                                PRESTO
+                            <i class="fas fa-robot text-5xl" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))"></i>
+                            <span class="bg-white bg-opacity-25 border border-white border-opacity-40 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                                AI
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2">AI Marketing</h3>
-                        <p class="text-violet-100 text-sm">Automazione intelligente</p>
+                        <h3 class="text-2xl font-bold mb-1 drop-shadow">AI Marketing</h3>
+                        <p class="text-violet-100 text-sm font-medium">Contenuti e automazione intelligente</p>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Scoring automatico lead
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Email nurturing AI
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Previsione conversione
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Ottimizzazione budget
-                            </div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Autopilot — 1 articolo/giorno</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Ricerca web profonda</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Generazione immagini AI</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Video YouTube &amp; targeting</div>
                         </div>
                         <div class="mt-6">
-                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
-                                In Sviluppo <i class="fas fa-hammer ml-2"></i>
+                            <button class="w-full text-white font-bold py-3 rounded-lg transition-all shadow-md" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+                                Accedi <i class="fas fa-arrow-right ml-2"></i>
                             </button>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <!-- SEO MANAGER — coming soon -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-dashed border-gray-200 opacity-70">
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
+                <!-- SEO MANAGER — ATTIVO -->
+                <a href="/admin/seo-manager" class="bg-white rounded-xl shadow-md card-hover overflow-hidden border-2 border-transparent hover:border-emerald-500 group">
+                    <div class="p-6 text-white" style="background:linear-gradient(135deg,#059669 0%,#0D9488 100%)">
                         <div class="flex items-center justify-between mb-4">
-                            <i class="fas fa-search text-5xl"></i>
-                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">
-                                PRESTO
+                            <i class="fas fa-search-plus text-5xl" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))"></i>
+                            <span class="bg-white bg-opacity-25 border border-white border-opacity-40 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                                SEO
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-2">SEO Manager</h3>
-                        <p class="text-emerald-100 text-sm">Posizionamento organico</p>
+                        <h3 class="text-2xl font-bold mb-1 drop-shadow">SEO Manager</h3>
+                        <p class="text-emerald-100 text-sm font-medium">Posizionamento organico avanzato</p>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Keyword research integrato
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Monitor posizioni SERP
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Generatore contenuti SEO
-                            </div>
-                            <div class="flex items-center text-sm text-gray-400">
-                                <i class="fas fa-clock text-gray-300 mr-2"></i>
-                                Analisi competitor
-                            </div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Ricerca keyword &amp; SERP</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Analisi competitor</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Content score &amp; linking</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Backlink &amp; audience</div>
                         </div>
                         <div class="mt-6">
-                            <button class="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>
-                                In Sviluppo <i class="fas fa-hammer ml-2"></i>
+                            <button class="w-full text-white font-bold py-3 rounded-lg transition-all shadow-md" style="background:linear-gradient(135deg,#059669,#0D9488)">
+                                Accedi <i class="fas fa-arrow-right ml-2"></i>
                             </button>
                         </div>
                     </div>
-                </div>
+                </a>
 
             </div>
         </div>
