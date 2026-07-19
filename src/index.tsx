@@ -19989,6 +19989,100 @@ app.post('/api/leads/public', async (c) => {
     ).run()
 
     console.log(`✅ [LANDING] Nuovo lead: ${leadId} (${email})`)
+
+    // ── 1. Notifica admin (mail a info@ecura.it) ──────────────
+    try {
+      await sendNewLeadNotification(leadId, {
+        nomeRichiedente: nomeRichiedente.trim(),
+        cognomeRichiedente: cognomeRichiedente?.trim() || '',
+        email: email.trim().toLowerCase(),
+        telefono: telefono.trim(),
+        servizio: servizio || 'eCura PRO',
+        piano: piano || 'BASE',
+        fonte: 'Form eCura',
+        note: note || undefined,
+        created_at: new Date().toISOString()
+      }, c.env)
+      console.log(`📧 [LANDING] Notifica admin inviata per ${leadId}`)
+    } catch (notifErr) {
+      console.error(`⚠️ [LANDING] Errore notifica admin per ${leadId}:`, notifErr)
+    }
+
+    // ── 2. Email "Completa la tua richiesta" al lead ──────────
+    try {
+      // Controlla se le email ai lead sono abilitate
+      const leadEmailSetting = await c.env.DB.prepare(
+        "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
+      ).first()
+      const leadEmailEnabled = (leadEmailSetting as any)?.value === 'true'
+
+      if (leadEmailEnabled) {
+        const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
+        const EmailServiceMod = (await import('./modules/email-service')).default
+        const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+
+        // Rileggi il lead appena inserito
+        const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+        if (!insertedLead) throw new Error('Lead non trovato dopo INSERT')
+
+        const config = await getSystemConfig(c.env.DB)
+        const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
+
+        const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+        const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+
+        const { missing, available } = getMissingFields(insertedLead)
+
+        const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+
+        const availableFieldsList = Object.entries(available as Record<string, any>).map(([label, value]) => ({
+          FIELD_LABEL: label, FIELD_VALUE: value
+        }))
+
+        const fieldMetadata: Record<string, any> = {
+          'telefono':              { label: 'Telefono',              type: 'tel',    placeholder: '+39 3XX XXX XXXX', required: true },
+          'cittaIntestatario':     { label: 'Città',                 type: 'text',   placeholder: 'Es. Milano',       required: true },
+          'citta':                 { label: 'Città',                 type: 'text',   placeholder: 'Es. Milano',       required: true },
+          'nomeAssistito':         { label: 'Nome Assistito',        type: 'text',   placeholder: 'Nome',             required: true },
+          'cognomeAssistito':      { label: 'Cognome Assistito',     type: 'text',   placeholder: 'Cognome',          required: true },
+          'dataNascitaAssistito':  { label: 'Data Nascita Assistito',type: 'date',   placeholder: '',                 required: true },
+          'cittaAssistito':        { label: 'Città Assistito',       type: 'text',   placeholder: 'Es. Roma',         required: true }
+        }
+
+        const missingFieldsList = (missing as string[]).map((field: string) => ({
+          FIELD_NAME:        field,
+          FIELD_LABEL:       fieldMetadata[field]?.label       || field,
+          FIELD_TYPE:        fieldMetadata[field]?.type        || 'text',
+          FIELD_PLACEHOLDER: fieldMetadata[field]?.placeholder || '',
+          FIELD_REQUIRED:    fieldMetadata[field]?.required    ? 'required' : ''
+        }))
+
+        const html = renderTemplate(template.content || '', {
+          NOME_RICHIEDENTE:  (insertedLead as any).nomeRichiedente  || '',
+          COGNOME_RICHIEDENTE: (insertedLead as any).cognomeRichiedente || '',
+          LEAD_ID:           leadId,
+          COMPLETION_URL:    completionUrl,
+          AVAILABLE_FIELDS:  availableFieldsList,
+          MISSING_FIELDS:    missingFieldsList,
+          DAYS_VALID:        config.auto_completion_token_days.toString()
+        })
+
+        await EmailServiceMod.send({
+          to: email.trim().toLowerCase(),
+          from: c.env.RESEND_FROM || c.env.EMAIL_FROM || 'info@ecura.it',
+          subject: template.subject || 'Completa la tua richiesta eCura - Ultimi dettagli necessari',
+          html
+        }, c.env)
+
+        console.log(`✅ [LANDING] Email completamento inviata a: ${email} (token: ${token.token})`)
+      } else {
+        console.log(`⏭️ [LANDING] Email completamento NON inviata: switch lead_email_notifications_enabled disabilitato`)
+      }
+    } catch (emailErr) {
+      console.error(`⚠️ [LANDING] Errore email completamento per ${leadId}:`, emailErr)
+      // Non blocca la risposta al form
+    }
+
     return c.json({ success: true, id: leadId })
 
   } catch (error: any) {
