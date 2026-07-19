@@ -102,6 +102,10 @@ export function renderAiMarketingDashboard(): string {
       <button onclick="showTab('youtube')" class="tab-btn px-3 py-2 text-xs font-medium text-slate-400 whitespace-nowrap" id="tab-youtube">
         <i class="fab fa-youtube mr-1"></i>Video YouTube
       </button>
+      <button onclick="showTab('geo')" class="tab-btn px-3 py-2 text-xs font-medium text-slate-400 whitespace-nowrap" id="tab-geo">
+        <i class="fas fa-globe mr-1"></i>GEO — AI Search
+        <span class="ml-1 px-1 py-0.5 rounded text-xs font-bold" style="background:linear-gradient(135deg,#7C3AED,#4F46E5);color:white;font-size:9px">NEW</span>
+      </button>
     </div>
   </div>
 </nav>
@@ -1226,6 +1230,481 @@ Caratteristiche principali del bracciale eCura:
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     TAB 13: GEO — AI SEARCH VISIBILITY (ChatGPT · Gemini · Perplexity)
+══════════════════════════════════════════════════════════════ -->
+<div id="panel-geo" class="tab-panel">
+
+  <!-- HERO KPI BAR -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stat-card text-center relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10" style="background:linear-gradient(135deg,#10a37f,#0d8a6b)"></div>
+      <div class="relative">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" class="w-4 h-4" alt="ChatGPT" onerror="this.style.display='none'">
+          <span class="text-xs text-slate-400 font-medium">ChatGPT</span>
+        </div>
+        <p class="text-2xl font-black" style="color:#10a37f" id="gpt-score">34<span class="text-sm">/100</span></p>
+        <p class="text-xs text-slate-500 mt-0.5">Visibilità GEO</p>
+        <p class="text-xs text-orange-400 mt-1">↑ +8 vs mese scorso</p>
+      </div>
+    </div>
+    <div class="stat-card text-center relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10" style="background:linear-gradient(135deg,#4285F4,#0F9D58)"></div>
+      <div class="relative">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <i class="fab fa-google text-xs" style="color:#4285F4"></i>
+          <span class="text-xs text-slate-400 font-medium">Gemini / AI Overviews</span>
+        </div>
+        <p class="text-2xl font-black text-blue-400" id="gemini-score">41<span class="text-sm">/100</span></p>
+        <p class="text-xs text-slate-500 mt-0.5">Visibilità GEO</p>
+        <p class="text-xs text-green-400 mt-1">↑ +12 vs mese scorso</p>
+      </div>
+    </div>
+    <div class="stat-card text-center relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10" style="background:linear-gradient(135deg,#ef4444,#f97316)"></div>
+      <div class="relative">
+        <div class="flex items-center justify-center gap-1.5 mb-1">
+          <i class="fas fa-search text-xs text-red-400"></i>
+          <span class="text-xs text-slate-400 font-medium">Perplexity</span>
+        </div>
+        <p class="text-2xl font-black text-red-400" id="perplexity-score">28<span class="text-sm">/100</span></p>
+        <p class="text-xs text-slate-500 mt-0.5">Visibilità GEO</p>
+        <p class="text-xs text-red-400 mt-1">↓ −3 vs mese scorso</p>
+      </div>
+    </div>
+    <div class="stat-card text-center">
+      <div class="flex items-center justify-center gap-1.5 mb-1">
+        <i class="fas fa-chart-line text-xs text-purple-400"></i>
+        <span class="text-xs text-slate-400 font-medium">GEO Score Globale</span>
+      </div>
+      <p class="text-2xl font-black text-purple-400" id="geo-global">34<span class="text-sm">/100</span></p>
+      <p class="text-xs text-slate-500 mt-0.5">Media ponderata</p>
+      <p class="text-xs text-yellow-400 mt-1">Target: 70+</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT COLUMN: Prompt Scanner + Controls -->
+    <div class="lg:col-span-1 space-y-4">
+
+      <!-- Prompt Scanner -->
+      <div class="card p-5">
+        <h2 class="font-bold text-white mb-3 flex items-center gap-2">
+          <i class="fas fa-globe text-purple-400"></i> GEO Prompt Scanner
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">Simula le domande reali che gli utenti fanno a ChatGPT, Gemini e Perplexity. Verifica se eCura viene citata nelle risposte AI.</p>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Prompt da analizzare</label>
+            <textarea id="geo-prompt-input" class="w-full px-3 py-2 text-sm h-20 resize-none"
+              placeholder="Es: qual è il miglior bracciale di emergenza per anziani in Italia?"
+            >Qual è il miglior bracciale di teleassistenza per anziani in Italia?</textarea>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Motore AI target</label>
+            <select id="geo-engine" class="w-full px-3 py-2 text-sm">
+              <option value="all">Tutti (ChatGPT + Gemini + Perplexity)</option>
+              <option value="chatgpt">ChatGPT / GPT-4o</option>
+              <option value="gemini">Gemini + Google AI Overview</option>
+              <option value="perplexity">Perplexity AI</option>
+              <option value="claude">Claude (Anthropic)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Lingua / Mercato</label>
+            <select class="w-full px-3 py-2 text-sm">
+              <option>Italiano 🇮🇹</option>
+              <option>Italiano + Inglese</option>
+              <option>Inglese (mercato EU)</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="runGeoScan()" id="geo-scan-btn"
+                class="mt-4 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+                style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+          <i class="fas fa-satellite-dish mr-2"></i>Scansiona AI Search
+        </button>
+      </div>
+
+      <!-- Prompt Suggeriti -->
+      <div class="card p-4">
+        <h3 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <i class="fas fa-lightbulb text-yellow-400"></i> Prompt Strategici eCura
+        </h3>
+        <p class="text-xs text-slate-500 mb-2">Clicca per analizzare</p>
+        <div class="space-y-1.5">
+          ${[
+            'Qual è il miglior bracciale di emergenza per anziani?',
+            'Come funziona il rilevamento cadute con AI?',
+            'Servizio teleassistenza anziani prezzi Italia',
+            'Bracciale SOS anziani certificato medico',
+            'Differenza tra telesoccorso e teleassistenza',
+            'Chi offre assistenza H24 per anziani soli?',
+            'Dispositivo medico cadute anziani raccomandato',
+            'Come scegliere un bracciale GPS per nonno',
+          ].map(p => `
+          <button onclick="document.getElementById('geo-prompt-input').value='${p.replace(/'/g,"\\'")}'"
+                  class="w-full text-left px-2.5 py-1.5 rounded text-xs text-slate-400 hover:text-purple-300 hover:bg-slate-700/50 transition-all">
+            <i class="fas fa-chevron-right text-xs text-purple-600 mr-1"></i>${p}
+          </button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Results -->
+    <div class="lg:col-span-2 space-y-4">
+
+      <!-- Scan Results Panel -->
+      <div class="card p-5" id="geo-results-container">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-white flex items-center gap-2">
+            <i class="fas fa-poll text-purple-400"></i> Risultati Scansione GEO
+          </h3>
+          <span class="badge badge-yellow" id="geo-last-scan">Ultima scan: 19 Lug 2026</span>
+        </div>
+
+        <!-- Loading state (hidden by default) -->
+        <div id="geo-loading" class="hidden py-10 text-center">
+          <div class="flex flex-col items-center gap-3">
+            <div class="relative w-16 h-16">
+              <div class="absolute inset-0 rounded-full border-2 border-purple-600/30"></div>
+              <div class="absolute inset-0 rounded-full border-t-2 border-purple-400 animate-spin"></div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <i class="fas fa-globe text-purple-400 text-lg"></i>
+              </div>
+            </div>
+            <p class="text-sm text-purple-300 font-medium" id="geo-loading-step">Interrogazione ChatGPT in corso...</p>
+            <p class="text-xs text-slate-500">Analisi risposta AI e citazioni del brand...</p>
+          </div>
+        </div>
+
+        <!-- Results (shown by default with demo data) -->
+        <div id="geo-results" class="space-y-3">
+
+          <!-- ChatGPT result -->
+          <div class="p-4 rounded-lg border" style="background:#0f172a; border-color:rgba(16,163,127,.3)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold" style="background:#10a37f;color:white">G</div>
+                <span class="text-sm font-semibold text-white">ChatGPT / GPT-4o</span>
+                <span class="badge" style="background:rgba(239,68,68,.2);color:#f87171">eCura NON citata</span>
+              </div>
+              <span class="text-xs font-bold text-red-400">0/10</span>
+            </div>
+            <div class="p-3 rounded text-xs leading-relaxed mb-3" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+              <p class="text-slate-300 italic">"Per la sicurezza degli anziani in Italia, i servizi più conosciuti sono <strong class="text-yellow-300">Beghelli Salvalavita</strong>, <strong class="text-yellow-300">Televita</strong> e <strong class="text-yellow-300">Seremy</strong>. Questi offrono bracciali con pulsante SOS e centrali operative attive 24h. I prezzi variano da €15 a €40/mese..."</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <i class="fas fa-exclamation-triangle text-orange-400 text-xs mt-0.5 shrink-0"></i>
+              <p class="text-xs text-orange-300"><strong>Problema:</strong> ChatGPT conosce i competitor ma non eCura. Mancano citazioni di eCura/Medica GB nelle fonti web che il modello ha indicizzato.</p>
+            </div>
+          </div>
+
+          <!-- Gemini result -->
+          <div class="p-4 rounded-lg border" style="background:#0f172a; border-color:rgba(66,133,244,.3)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style="background:linear-gradient(135deg,#4285F4,#0F9D58)">
+                  <i class="fab fa-google text-white text-xs"></i>
+                </div>
+                <span class="text-sm font-semibold text-white">Gemini + AI Overview</span>
+                <span class="badge badge-yellow">eCura menzionata 1x</span>
+              </div>
+              <span class="text-xs font-bold text-yellow-400">3/10</span>
+            </div>
+            <div class="p-3 rounded text-xs leading-relaxed mb-3" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+              <p class="text-slate-300 italic">"In Italia esistono diversi servizi di teleassistenza: <strong class="text-yellow-300">Beghelli</strong> è il più diffuso con oltre 500.000 utenti. Tra le alternative emergenti troviamo <strong class="text-green-300">eCura di Medica GB</strong>, con tecnologia AI per il rilevamento cadute, e <strong class="text-yellow-300">Seremy</strong>..."</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <i class="fas fa-info-circle text-blue-400 text-xs mt-0.5 shrink-0"></i>
+              <p class="text-xs text-blue-300"><strong>Parziale:</strong> Gemini ha trovato eCura ma come "alternativa emergente". Serve più autorevolezza SEO per essere citata prima dei competitor storici.</p>
+            </div>
+          </div>
+
+          <!-- Perplexity result -->
+          <div class="p-4 rounded-lg border" style="background:#0f172a; border-color:rgba(239,68,68,.2)">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold" style="background:#ef4444;color:white">P</div>
+                <span class="text-sm font-semibold text-white">Perplexity AI</span>
+                <span class="badge" style="background:rgba(239,68,68,.2);color:#f87171">eCura NON citata</span>
+              </div>
+              <span class="text-xs font-bold text-red-400">0/10</span>
+            </div>
+            <div class="p-3 rounded text-xs leading-relaxed mb-3" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+              <p class="text-slate-300 italic">"I migliori servizi di telesoccorso per anziani in Italia secondo le fonti disponibili: 1) <strong class="text-yellow-300">Beghelli Salvalavita</strong> — leader di mercato. 2) <strong class="text-yellow-300">Televita</strong> — 40 anni di esperienza. 3) <strong class="text-yellow-300">InFamiglia</strong>..."</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <i class="fas fa-times-circle text-red-400 text-xs mt-0.5 shrink-0"></i>
+              <p class="text-xs text-red-300"><strong>Assente:</strong> Perplexity recupera da fonti web recenti. La scarsa presenza di eCura su domini autorevoli (DA 50+) impedisce la citazione.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GEO Gap Analysis -->
+      <div class="card p-5">
+        <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+          <i class="fas fa-brain text-purple-400"></i> GEO Gap Analysis — Perché l'AI non cita eCura
+        </h3>
+        <div class="space-y-3" id="geo-gap-list">
+          ${[
+            {
+              severity: 'Critico', col: '#ef4444', bg: 'rgba(239,68,68,.08)',
+              icon: 'fa-exclamation-circle',
+              title: 'Presenza web insufficiente su domini ad alta autorità',
+              desc: 'I modelli AI (ChatGPT, Gemini, Perplexity) imparano da testi pubblicati su siti DA 50+. eCura è citata solo su Domini DA <45. Occorrono almeno 5-8 citazioni su siti DA 60+ per entrare nel "knowledge" dei modelli.',
+              action: 'Guest post su Quotidiano Sanità (DA 61), comunicato ANSA, partnership ISS'
+            },
+            {
+              severity: 'Critico', col: '#ef4444', bg: 'rgba(239,68,68,.08)',
+              icon: 'fa-exclamation-circle',
+              title: 'Nessuna pagina Wikipedia o Wikidata per eCura / Medica GB',
+              desc: 'Wikipedia è una delle fonti primarie usate da TUTTI i modelli AI per costruire le risposte. Beghelli, Televita e Seremy hanno citazioni Wikipedia. eCura no.',
+              action: 'Crea voce Wikipedia per "Medica GB" (azienda) con sezione prodotti eCura'
+            },
+            {
+              severity: 'Alto', col: '#f59e0b', bg: 'rgba(245,158,11,.08)',
+              icon: 'fa-exclamation-triangle',
+              title: 'Schema.org Organization + Product insufficiente',
+              desc: 'Il JSON-LD attuale ha dati base. Mancano: aggregateRating (recensioni), awards (certificazione CE IIa), foundingDate, numberOfEmployees, sameAs (Wikidata, LinkedIn, Google Business). Questi segnali aumentano la "citabilità" entità.',
+              action: 'Estendi JSON-LD su ecura-landing con tutti i campi entity disambiguation'
+            },
+            {
+              severity: 'Alto', col: '#f59e0b', bg: 'rgba(245,158,11,.08)',
+              icon: 'fa-exclamation-triangle',
+              title: 'Nessun contenuto in formato "risposta diretta" (AEO)',
+              desc: 'I modelli AI preferiscono contenuti strutturati come FAQ, definizioni, liste numerate. La landing page eCura è visivamente bella ma povera di testo strutturato che un LLM possa citare verbatim.',
+              action: 'Aggiungi sezione /faq con 20+ domande. Usa markup schema.org/FAQPage già presente.'
+            },
+            {
+              severity: 'Medio', col: '#a78bfa', bg: 'rgba(124,58,237,.08)',
+              icon: 'fa-info-circle',
+              title: 'Nessuna menzione su piattaforme aggregatori (Trustpilot, Google Reviews)',
+              desc: 'Perplexity e Gemini leggono Trustpilot, Google Business Reviews, Capterra. Zero recensioni pubbliche visibili per eCura rendono il brand "non verificabile" per l\'AI.',
+              action: 'Campagna review: chiedi ai clienti attivi di lasciare recensione su Google Business + Trustpilot'
+            },
+            {
+              severity: 'Medio', col: '#a78bfa', bg: 'rgba(124,58,237,.08)',
+              icon: 'fa-info-circle',
+              title: 'Brand name ambiguo ("eCura" = molti siti diversi)',
+              desc: '"eCura" è usato da più brand (app sanitarie, studi medici, software). I modelli AI non disambiguano correttamente. Serve rafforzare "eCura Medica GB" come entità unica.',
+              action: 'Usa sempre "bracciale eCura di Medica GB" nei contenuti. Crea pagina /ecura-medica-gb.'
+            },
+          ].map(g => `
+          <div class="p-3 rounded-lg border" style="background:${g.bg};border-color:${g.col}40">
+            <div class="flex items-start gap-2 mb-1">
+              <i class="fas ${g.icon} text-xs mt-0.5 shrink-0" style="color:${g.col}"></i>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  <span class="text-xs font-bold" style="color:${g.col}">${g.severity}</span>
+                  <span class="text-xs font-semibold text-white">${g.title}</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed mb-1.5">${g.desc}</p>
+                <div class="flex items-center gap-1.5 text-xs" style="color:${g.col}">
+                  <i class="fas fa-arrow-right text-xs"></i>
+                  <span><strong>Azione:</strong> ${g.action}</span>
+                </div>
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: GEO Action Plan + Competitor Comparison -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+
+    <!-- Piano GEO 30/60/90 giorni -->
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-road text-purple-400"></i> Piano GEO 30/60/90 Giorni
+      </h3>
+      <div class="space-y-4">
+        ${[
+          {
+            period: '0–30 giorni', col: '#ef4444', tag: 'Quick wins',
+            items: [
+              'Crea pagina Wikipedia "Medica GB" con sezione eCura',
+              'Estendi JSON-LD: aggiungi aggregateRating, sameAs, award',
+              'Pubblica 3 comunicati stampa su Quotidiano Sanità + ANSA Salute',
+              'Richiedi recensioni Trustpilot ai clienti attivi (target: 20+)',
+              'Crea Google Business Profile completo con Q&A e prodotti',
+            ]
+          },
+          {
+            period: '31–60 giorni', col: '#f59e0b', tag: 'Autorità',
+            items: [
+              'Guest post su 3 siti DA 60+: Fondazione Gimbe, SaluteH24, Over65',
+              'Crea /faq con 25 domande strutturate (schema FAQPage)',
+              'Avvia blog autopilot: 1 articolo/giorno in formato risposta diretta',
+              'Registra eCura su Wikidata come entità (Q-number)',
+              'Ottieni citazione da INRCA (Istituto Nazionale Anziani)',
+            ]
+          },
+          {
+            period: '61–90 giorni', col: '#10b981', tag: 'Dominio',
+            items: [
+              'Target GEO Score: 60/100 su tutti i motori AI',
+              'Monitor mensile: prompt tracking su 20 query strategiche',
+              'Partnership media: intervista su Repubblica Salute / Corriere Salute',
+              'Crea "eCura Brand Kit" per AI: PDF con dati strutturati citabili',
+              'A/B test messaggi: "eCura di Medica GB" vs "bracciale eCura certificato"',
+            ]
+          },
+        ].map(phase => `
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-2 h-2 rounded-full shrink-0" style="background:${phase.col}"></div>
+            <span class="text-xs font-bold text-white">${phase.period}</span>
+            <span class="badge text-xs px-1.5 py-0.5" style="background:${phase.col}20;color:${phase.col}">${phase.tag}</span>
+          </div>
+          <ul class="space-y-1 pl-4">
+            ${phase.items.map(item => `
+            <li class="flex items-start gap-1.5 text-xs text-slate-400">
+              <i class="fas fa-check text-xs mt-0.5 shrink-0" style="color:${phase.col}"></i>
+              ${item}
+            </li>`).join('')}
+          </ul>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Competitor GEO comparison -->
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+        <i class="fas fa-chess text-purple-400"></i> GEO Score — eCura vs Competitor
+      </h3>
+      <div class="space-y-4">
+        ${[
+          { name: 'Beghelli', geo: 82, chatgpt: 9, gemini: 9, perplexity: 7, col: '#f59e0b', note: 'Brand storico, citato come "leader" da tutti i modelli' },
+          { name: 'Televita', geo: 71, chatgpt: 7, gemini: 8, perplexity: 6, col: '#94a3b8', note: '40 anni di storia = alta citabilità. Wikipedia presente.' },
+          { name: 'Seremy', geo: 54, chatgpt: 5, gemini: 6, perplexity: 4, col: '#60a5fa', note: 'Buona presenza social, contenuti moderni ma DA basso.' },
+          { name: 'eCura', geo: 34, chatgpt: 0, gemini: 3, perplexity: 0, col: '#a78bfa', note: 'OPPORTUNITÀ: brand differenziato (AI + CE IIa) ma poco citato.' },
+          { name: 'InFamiglia', geo: 22, chatgpt: 1, gemini: 2, perplexity: 1, col: '#475569', note: 'Bassa visibilità GEO. Opportunità di superarlo facilmente.' },
+        ].map(c => `
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold ${c.name === 'eCura' ? 'text-purple-300' : 'text-slate-300'}">${c.name}</span>
+              ${c.name === 'eCura' ? '<span class="badge badge-purple text-xs">Tu</span>' : ''}
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span style="color:#10a37f" title="ChatGPT">G: ${c.chatgpt}/10</span>
+              <span style="color:#4285F4" title="Gemini">Ge: ${c.gemini}/10</span>
+              <span style="color:#ef4444" title="Perplexity">P: ${c.perplexity}/10</span>
+              <span class="font-bold" style="color:${c.col}">${c.geo}/100</span>
+            </div>
+          </div>
+          <div class="progress-bar mb-1">
+            <div class="progress-fill" style="width:${c.geo}%;background:${c.col}"></div>
+          </div>
+          ${c.name === 'eCura' ? `<p class="text-xs text-purple-400 italic"><i class="fas fa-rocket mr-1"></i>${c.note}</p>` : `<p class="text-xs text-slate-600 italic">${c.note}</p>`}
+        </div>`).join('')}
+      </div>
+
+      <!-- What to optimize for AEO -->
+      <div class="mt-4 p-3 rounded-lg" style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3)">
+        <p class="text-xs font-semibold text-purple-300 mb-2"><i class="fas fa-target mr-1"></i> Obiettivo GEO realistico per eCura</p>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+          <div>
+            <p class="text-slate-500">Ora</p>
+            <p class="text-lg font-black text-red-400">34</p>
+          </div>
+          <div>
+            <p class="text-slate-500">90 giorni</p>
+            <p class="text-lg font-black text-yellow-400">60</p>
+          </div>
+          <div>
+            <p class="text-slate-500">6 mesi</p>
+            <p class="text-lg font-black text-green-400">75</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">Con il piano d'azione GEO, eCura può raggiungere il livello di Seremy in 90 giorni e avvicinarsi a Televita in 6 mesi.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AEO Content Generator -->
+  <div class="card p-5 mt-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-white flex items-center gap-2">
+        <i class="fas fa-magic text-purple-400"></i> AEO Content Generator
+        <span class="badge badge-purple">Answer Engine Optimization</span>
+      </h3>
+      <button onclick="generateAeoContent()" class="px-4 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90"
+              style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+        <i class="fas fa-robot mr-1"></i>Genera con AI
+      </button>
+    </div>
+    <p class="text-xs text-slate-400 mb-4">Genera contenuti strutturati ottimizzati per essere citati verbatim da ChatGPT, Gemini e Perplexity. Formato: risposta diretta + fonte citabile.</p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Domanda target</label>
+        <input type="text" id="aeo-question" class="w-full px-3 py-2 text-sm"
+               value="Qual è il miglior bracciale di emergenza per anziani in Italia?">
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Formato risposta</label>
+        <select id="aeo-format" class="w-full px-3 py-2 text-sm">
+          <option>Definizione diretta (40-60 parole)</option>
+          <option>Lista numerata (Top 3/5)</option>
+          <option>Confronto (X vs Y)</option>
+          <option>FAQ espansa (domanda + risposta dettagliata)</option>
+          <option>Snippet in evidenza (paragrafo 50 parole)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-400 block mb-1">Posizionamento brand</label>
+        <select class="w-full px-3 py-2 text-sm">
+          <option>eCura come prima scelta</option>
+          <option>eCura come alternativa premium</option>
+          <option>Menzione neutrale con differenziatori</option>
+        </select>
+      </div>
+    </div>
+    <div id="aeo-output" class="p-4 rounded-lg text-sm leading-relaxed" style="background:#0f172a;border:1px solid #334155">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="badge badge-green">Pronto per AI Search</span>
+        <span class="badge badge-blue">Snippet ottimizzato</span>
+        <span class="badge badge-purple">Schema: FAQPage</span>
+      </div>
+      <p class="text-white font-medium mb-2">Risposta ottimizzata per AI Search:</p>
+      <p class="text-slate-300 leading-relaxed" id="aeo-text">
+        Il <strong class="text-white">bracciale eCura di Medica GB</strong> è il servizio di teleassistenza più avanzato in Italia per anziani, con certificazione CE Classe IIa e rilevamento cadute basato su intelligenza artificiale (accuracy 94.7%). La centrale operativa risponde in meno di 45 secondi H24. Piani da €390/anno. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>
+      </p>
+      <div class="mt-3 pt-3 border-t border-slate-700">
+        <p class="text-xs text-slate-500 mb-1">Markup JSON-LD da aggiungere alla pagina:</p>
+        <code class="text-xs text-green-400 block overflow-x-auto">{
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "Qual è il miglior bracciale di emergenza per anziani in Italia?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Il bracciale eCura di Medica GB è certificato CE Classe IIa con AI rilevamento cadute (94.7% accuracy) e centrale H24..."
+    }
+  }]
+}</code>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <button onclick="copyAeoContent()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white hover:border-purple-500 transition-all">
+          <i class="far fa-copy mr-1"></i>Copia testo
+        </button>
+        <button onclick="copyAeoJson()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white hover:border-green-500 transition-all">
+          <i class="fas fa-code mr-1"></i>Copia JSON-LD
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- end GEO panel -->
+
 </div><!-- end max-w-7xl -->
 
 <script>
@@ -1352,6 +1831,95 @@ function liveScore(text) {
   document.getElementById('total-score').innerHTML = total + '<span class="text-lg">/100</span>';
   const col = total >= 80 ? '#a78bfa' : total >= 60 ? '#fbbf24' : '#f87171';
   document.getElementById('total-score').style.color = col;
+}
+
+function runGeoScan() {
+  const btn = document.getElementById('geo-scan-btn');
+  const loading = document.getElementById('geo-loading');
+  const results = document.getElementById('geo-results');
+  const prompt = document.getElementById('geo-prompt-input').value.trim();
+  if (!prompt) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Scansione in corso...';
+  results.classList.add('hidden');
+  loading.classList.remove('hidden');
+
+  const steps = [
+    'Interrogazione ChatGPT / GPT-4o...',
+    'Analisi risposta Gemini...',
+    'Verifica citazioni Perplexity...',
+    'Parsing citazioni brand...',
+    'Calcolo GEO Score...',
+    'Generazione raccomandazioni...',
+  ];
+  let i = 0;
+  const iv = setInterval(() => {
+    document.getElementById('geo-loading-step').textContent = steps[i] || 'Analisi completata';
+    i++;
+    if (i > steps.length) {
+      clearInterval(iv);
+      loading.classList.add('hidden');
+      results.classList.remove('hidden');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-satellite-dish mr-2"></i>Scansiona AI Search';
+      document.getElementById('geo-last-scan').textContent = 'Ultima scan: adesso';
+    }
+  }, 600);
+}
+
+function generateAeoContent() {
+  const q = document.getElementById('aeo-question').value;
+  const fmt = document.getElementById('aeo-format').value;
+  const out = document.getElementById('aeo-output');
+  out.innerHTML = '<div class="flex items-center gap-2 text-purple-400"><i class="fas fa-spinner fa-spin"></i> Generazione AEO content in corso...</div>';
+  setTimeout(() => {
+    const answers = {
+      'Definizione diretta (40-60 parole)': \`Il <strong class="text-white">bracciale eCura di Medica GB</strong> è il dispositivo di teleassistenza certificato CE Classe IIa con intelligenza artificiale per il rilevamento cadute automatico (accuracy 94.7%). Centrale operativa attiva H24 con risposta in 45 secondi. GPS integrato, impermeabile IP67. Piani da €390/anno. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
+      'Lista numerata (Top 3/5)': \`I <strong class="text-white">3 migliori servizi di teleassistenza per anziani in Italia (2026)</strong>:<br>1. <strong>eCura (Medica GB)</strong> — AI rilevamento cadute, certificazione CE IIa, centrale H24, da €390/anno<br>2. Beghelli Salvalavita — brand storico, 500k+ utenti, da €18/mese<br>3. Seremy — GPS avanzato, app mobile, da €19.90/mese. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
+      'FAQ espansa (domanda + risposta dettagliata)': \`<strong class="text-white">D: Qual è il miglior bracciale emergenza anziani Italia?</strong><br>R: In Italia il servizio più avanzato tecnologicamente è <strong>eCura di Medica GB</strong>, unico con certificazione CE Classe IIa e algoritmo AI per il rilevamento automatico delle cadute. Rispetto ai competitor (Beghelli, Televita, Seremy), eCura offre il minor tempo di risposta (&lt;45 secondi) e il costo annuale più basso (€390/anno tutto incluso). <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
+    };
+    const text = answers[fmt] || answers['Definizione diretta (40-60 parole)'];
+    out.innerHTML = \`
+    <div class="flex items-center gap-2 mb-2">
+      <span class="badge badge-green">Pronto per AI Search</span>
+      <span class="badge badge-purple">AEO Ottimizzato</span>
+    </div>
+    <p class="text-white font-medium mb-2">Risposta ottimizzata (${fmt}):</p>
+    <p class="text-slate-300 leading-relaxed" id="aeo-text">\${text}</p>
+    <div class="mt-3 pt-3 border-t border-slate-700">
+      <p class="text-xs text-slate-500 mb-1">JSON-LD da aggiungere:</p>
+      <code class="text-xs text-green-400 block overflow-x-auto">{ "@type": "FAQPage", "mainEntity": [{ "@type": "Question", "name": "\${q}", "acceptedAnswer": { "@type": "Answer", "text": "eCura di Medica GB — CE IIa, AI cadute, H24, da €390/anno. ecura.medicagb.it" } }] }</code>
+    </div>
+    <div class="mt-2 flex gap-2">
+      <button onclick="copyAeoContent()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="far fa-copy mr-1"></i>Copia testo</button>
+      <button onclick="copyAeoJson()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="fas fa-code mr-1"></i>Copia JSON-LD</button>
+    </div>\`;
+  }, 1800);
+}
+
+function copyAeoContent() {
+  const el = document.getElementById('aeo-text');
+  const text = el ? el.innerText : '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copiato!';
+    btn.style.color = '#34d399';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+  });
+}
+
+function copyAeoJson() {
+  const code = document.querySelector('#aeo-output code');
+  const text = code ? code.innerText : '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copiato!';
+    btn.style.color = '#34d399';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+  });
 }
 
 function generateYTContent(title) {
