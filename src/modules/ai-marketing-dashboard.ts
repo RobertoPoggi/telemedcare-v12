@@ -218,7 +218,7 @@ export function renderAiMarketingDashboard(): string {
             <button onclick="copyAiArticle()" class="px-3 py-1.5 text-xs rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-purple-500 transition-all">
               <i class="far fa-copy mr-1"></i>Copia
             </button>
-            <button class="px-3 py-1.5 text-xs rounded-lg text-white" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+            <button onclick="publishArticle(this)" class="px-3 py-1.5 text-xs rounded-lg text-white" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
               <i class="fas fa-paper-plane mr-1"></i>Pubblica
             </button>
           </div>
@@ -349,7 +349,7 @@ export function renderAiMarketingDashboard(): string {
       <div class="card p-5">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-white">Keyword Raccomandate dall'AI</h3>
-          <button class="px-3 py-1.5 text-xs rounded-lg text-white" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+          <button onclick="exportKeywordCSV()" class="px-3 py-1.5 text-xs rounded-lg text-white" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
             <i class="fas fa-download mr-1"></i>Esporta CSV
           </button>
         </div>
@@ -423,7 +423,7 @@ export function renderAiMarketingDashboard(): string {
             <option>Google.it — Local (Roma)</option>
           </select>
         </div>
-        <button class="mt-4 w-full py-2.5 rounded-lg text-sm font-semibold text-white hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+        <button onclick="runSerpAnalysis(this)" class="mt-4 w-full py-2.5 rounded-lg text-sm font-semibold text-white hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
           <i class="fas fa-bolt mr-2"></i>Analizza SERP
         </button>
       </div>
@@ -509,6 +509,14 @@ export function renderAiMarketingDashboard(): string {
 ══════════════════════════════════════════════════════════════ -->
 <div id="panel-competitor" class="tab-panel">
   <div class="space-y-5">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-bold text-white flex items-center gap-2">
+        <i class="fas fa-chess text-purple-400"></i> Analisi Competitor AI
+      </h2>
+      <button onclick="runCompetitorAnalysis(this)" class="px-4 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+        <i class="fas fa-sync-alt mr-1"></i>Aggiorna Analisi
+      </button>
+    </div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       ${[
         {name:'Beghelli',domain:'beghelli.com',da:68,traffic:'42K/mo',content:85,ads:'Alta',weakness:'Prezzo alto, no AI rilevamento'},
@@ -654,7 +662,7 @@ export function renderAiMarketingDashboard(): string {
             <p class="text-xs text-slate-400 leading-relaxed mb-2">${r.d}</p>
             <div class="flex items-center justify-between">
               <span class="text-xs text-purple-400 italic"><i class="fas fa-lightbulb mr-1"></i>${r.use}</span>
-              <button class="text-xs px-2 py-1 rounded border border-purple-600 text-purple-400 hover:bg-purple-600/20 transition-all">
+              <button onclick="useInContent(this)" class="text-xs px-2 py-1 rounded border border-purple-600 text-purple-400 hover:bg-purple-600/20 transition-all">
                 Usa nel contenuto
               </button>
             </div>
@@ -785,9 +793,14 @@ Caratteristiche principali del bracciale eCura:
 <div id="panel-internal" class="tab-panel">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="card p-5">
-      <h2 class="font-bold text-white mb-4 flex items-center gap-2">
-        <i class="fas fa-link text-purple-400"></i> Analisi Link Interni
-      </h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-white flex items-center gap-2">
+          <i class="fas fa-link text-purple-400"></i> Analisi Link Interni
+        </h2>
+        <button onclick="runInternalLinks(this)" class="px-4 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+          <i class="fas fa-search mr-1"></i>Analizza Struttura
+        </button>
+      </div>
       <p class="text-xs text-slate-400 mb-4">L'AI mappa la struttura dei link interni del sito eCura e suggerisce connessioni ottimali per migliorare il crawl budget e il Page Rank interno.</p>
       <div class="space-y-3">
         <div class="p-3 rounded-lg border border-slate-700" style="background:#0f172a">
@@ -854,9 +867,14 @@ Caratteristiche principali del bracciale eCura:
 <div id="panel-external" class="tab-panel">
   <div class="space-y-4">
     <div class="card p-5">
-      <h2 class="font-bold text-white mb-2 flex items-center gap-2">
-        <i class="fas fa-external-link-alt text-purple-400"></i> Link Esterni Autorevoli
-      </h2>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-bold text-white flex items-center gap-2">
+          <i class="fas fa-external-link-alt text-purple-400"></i> Link Esterni Autorevoli
+        </h2>
+        <button onclick="copyLinkList(this)" class="px-4 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+          <i class="fas fa-copy mr-1"></i>Copia Lista
+        </button>
+      </div>
       <p class="text-xs text-slate-400 mb-4">Citare fonti autorevoli migliora la credibilità E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) del contenuto agli occhi di Google.</p>
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
@@ -932,6 +950,14 @@ Caratteristiche principali del bracciale eCura:
 <!-- TAB 9: BACKLINK -->
 <div id="panel-backlink" class="tab-panel">
   <div class="space-y-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-bold text-white flex items-center gap-2">
+        <i class="fas fa-project-diagram text-purple-400"></i> Backlink Monitor
+      </h2>
+      <button onclick="refreshBacklinks(this)" class="px-4 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+        <i class="fas fa-sync-alt mr-1"></i>Aggiorna Dati
+      </button>
+    </div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="stat-card text-center">
         <p class="text-2xl font-black text-purple-400">47</p>
@@ -1037,7 +1063,7 @@ Caratteristiche principali del bracciale eCura:
           <h4 class="text-sm font-semibold text-white mb-1">${img.t}</h4>
           <span class="badge badge-purple mb-2">${img.cat}</span>
           <p class="text-xs text-slate-500 leading-relaxed mb-3">${img.prompt.substring(0,80)}...</p>
-          <button onclick="window.open('/admin/ai-marketing#images','_self')" 
+          <button onclick="generateAIImage(this)" 
                   class="w-full py-1.5 text-xs rounded-lg text-white hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
             <i class="fas fa-magic mr-1"></i>Genera con AI
           </button>
@@ -1123,7 +1149,12 @@ Caratteristiche principali del bracciale eCura:
         </div>
       </div>
       <div class="card p-4">
-        <h3 class="text-sm font-semibold text-white mb-3">AI Persona Builder</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-white">AI Persona Builder</h3>
+          <button onclick="generatePersona(this)" class="px-3 py-1.5 text-xs rounded-lg text-white font-medium hover:opacity-90" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
+            <i class="fas fa-magic mr-1"></i>Genera Nuova
+          </button>
+        </div>
         <div class="p-4 rounded-lg" style="background:#0f172a">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">👩</div>
@@ -1947,6 +1978,156 @@ function generateYTContent(title) {
       '<p class="text-slate-500 font-semibold mb-1">THUMBNAIL:</p>' +
       '<p class="text-white font-bold">&quot;SICURO SEMPRE&quot; + logo eCura + anziano sorridente</p>' +
       '</div>';
+  }, 1500);
+}
+// ── Helper: simulated loading feedback ────────────────────────────────────────
+function simLoad(btn, icon, loadingText, doneText, doneColor, ms) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + loadingText;
+  setTimeout(() => {
+    btn.innerHTML = '<i class="fas ' + icon + ' mr-2"></i>' + doneText;
+    btn.style.background = doneColor || '';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '';
+      btn.disabled = false;
+    }, 2200);
+  }, ms || 2000);
+}
+
+// ── Autopilot: Pubblica articolo ──────────────────────────────────────────────
+function publishArticle(btn) {
+  simLoad(btn, 'check', 'Pubblicazione in corso...', 'Articolo pubblicato!', 'linear-gradient(135deg,#059669,#10b981)', 2000);
+}
+
+// ── Keyword: Esporta CSV ──────────────────────────────────────────────────────
+function exportKeywordCSV() {
+  const rows = [
+    ['Keyword','Volume','Difficoltà','Intento','CPC'],
+    ['bracciale cadute anziani','1900','Alta','Commerciale','€1.20'],
+    ['teleassistenza anziani','3200','Alta','Informativo','€0.90'],
+    ['allarme caduta automatico','880','Media','Commerciale','€1.45'],
+    ['bracciale SOS anziani Italia','1400','Alta','Commerciale','€1.35'],
+    ['telesoccorso casa prezzo','720','Media','Transazionale','€1.80'],
+    ['miglior bracciale emergenza','590','Media','Commerciale','€1.60'],
+    ['cadute anziani prevenzione','2100','Bassa','Informativo','€0.55'],
+    ['bracciale GPS nonno','440','Bassa','Commerciale','€0.95'],
+  ];
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'keyword-ecura.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── SERP: Analizza SERP ───────────────────────────────────────────────────────
+function runSerpAnalysis(btn) {
+  simLoad(btn, 'check', 'Analisi SERP in corso...', 'SERP Analizzata!', 'linear-gradient(135deg,#059669,#10b981)', 2500);
+}
+
+// ── Competitor: Aggiorna Analisi ──────────────────────────────────────────────
+function runCompetitorAnalysis(btn) {
+  simLoad(btn, 'check', 'Aggiornamento competitor...', 'Analisi aggiornata!', 'linear-gradient(135deg,#059669,#10b981)', 2800);
+}
+
+// ── Deep Research: Usa nel contenuto ─────────────────────────────────────────
+function useInContent(btn) {
+  const card = btn.closest('.card') || btn.closest('div[class*="p-4"]');
+  const title = card ? (card.querySelector('.text-white.font-semibold') || card.querySelector('.text-sm')||{}).innerText || '' : '';
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-check mr-1"></i>Aggiunto!';
+  btn.style.background = 'rgba(16,185,129,.2)';
+  btn.style.borderColor = '#10b981';
+  btn.style.color = '#34d399';
+  setTimeout(() => { btn.innerHTML = orig; btn.style = ''; }, 2200);
+}
+
+// ── Link Interni: Analizza Struttura ─────────────────────────────────────────
+function runInternalLinks(btn) {
+  simLoad(btn, 'check', 'Analisi struttura in corso...', 'Struttura analizzata!', 'linear-gradient(135deg,#059669,#10b981)', 2200);
+}
+
+// ── Link Esterni: Copia Lista ─────────────────────────────────────────────────
+function copyLinkList(btn) {
+  const text = 'Fonti autorevoli eCura:\n' +
+    '1. ISTAT — istat.it/statistiche-anziani (DA 92)\n' +
+    '2. ISS — epicentro.iss.it (DA 89)\n' +
+    '3. Ministero Salute — salute.gov.it (DA 88)\n' +
+    '4. PubMed — pubmed.ncbi.nlm.nih.gov (DA 97)\n' +
+    '5. Wikipedia IT — it.wikipedia.org/Telesoccorso (DA 93)\n' +
+    '6. CE Marking EU — ec.europa.eu/MDR (DA 95)';
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copiata!';
+    btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
+  });
+}
+
+// ── Backlink: Aggiorna Dati ───────────────────────────────────────────────────
+function refreshBacklinks(btn) {
+  simLoad(btn, 'check', 'Aggiornamento backlink...', 'Dati aggiornati!', 'linear-gradient(135deg,#059669,#10b981)', 3000);
+}
+
+// ── Immagini AI: Genera con AI ────────────────────────────────────────────────
+function generateAIImage(btn) {
+  const card = btn.closest('.content-card');
+  const title = card ? card.querySelector('h4') : null;
+  const titleText = title ? title.innerText : 'immagine';
+  const img = card ? card.querySelector('.w-full.h-28') : null;
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Generazione...';
+  if (img) {
+    img.innerHTML = '<div class="flex flex-col items-center justify-center h-full gap-2">' +
+      '<div class="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>' +
+      '<span class="text-xs text-purple-400">AI in elaborazione...</span></div>';
+  }
+  setTimeout(() => {
+    if (img) {
+      img.innerHTML = '<div class="flex flex-col items-center justify-center h-full gap-1">' +
+        '<i class="fas fa-check-circle text-2xl text-green-400"></i>' +
+        '<span class="text-xs text-green-400 font-medium">Immagine pronta</span>' +
+        '<span class="text-xs text-slate-500">Visibile su Genspark AI</span></div>';
+      img.style.borderColor = 'rgba(16,185,129,.4)';
+    }
+    btn.innerHTML = '<i class="fas fa-download mr-1"></i>Scarica';
+    btn.disabled = false;
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; if(img){img.innerHTML='<i class="fas fa-image text-3xl text-purple-400 opacity-60"></i>'; img.style.borderColor='';} }, 4000);
+  }, 3000);
+}
+
+// ── Targeting Pubblico: Genera Nuova Persona ──────────────────────────────────
+const _personas = [
+  {emoji:'👩',name:'Laura, 48 anni · Milano',role:'Responsabile vendite, madre di 2, figlia unica',pain:'Mamma 78 anni vive sola a Brescia. Laura lavora 10h/giorno e non può controllarla.',trigger:'Mamma è caduta 2 settimane fa. Laura è in panico.',cerca:'"bracciale emergenza anziani" alle 22:30 dal telefono.',obiezioni:'"E se mamma non lo indossa?" "Costa troppo?"',msg:'"Tua madre è al sicuro. Anche mentre lavori."'},
+  {emoji:'👴',name:'Roberto, 72 anni · Bologna',role:'Pensionato, ex insegnante, vive solo',pain:'Vuole restare indipendente ma ha avuto 2 episodi di vertigini. I figli sono preoccupati.',trigger:'Il medico gli ha consigliato un dispositivo di sicurezza.',cerca:'"dispositivo sicurezza anziani" dal PC di mattina.',obiezioni:'"Non voglio sembrare invalido." "Sarò sempre monitorato?"',msg:'"La tua autonomia. Con la sicurezza che meriti."'},
+  {emoji:'👩‍⚕️',name:'Dr.ssa Martini, 52 anni · Roma',role:'Medico di Medicina Generale, 800 pazienti over 70',pain:'Molti pazienti over 75 che vivono soli. Teme chiamate d\'urgenza notturne.',trigger:'Un paziente è stato ricoverato per caduta non rilevata.',cerca:'"dispositivi medici certificati telesoccorso" da tablet in studio.',obiezioni:'"I miei pazienti non usano la tecnologia." "È affidabile?"',msg:'"Certificato CE IIa. Risposta garantita in 45 secondi."'},
+];
+let _personaIdx = 0;
+function generatePersona(btn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Genera...';
+  setTimeout(() => {
+    _personaIdx = (_personaIdx + 1) % _personas.length;
+    const p = _personas[_personaIdx];
+    const container = btn.closest('.card').querySelector('.p-4.rounded-lg');
+    if (container) {
+      container.innerHTML = '<div class="flex items-center gap-3 mb-3">' +
+        '<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">' + p.emoji + '</div>' +
+        '<div><p class="text-sm font-semibold text-white">' + p.name + '</p>' +
+        '<p class="text-xs text-slate-400">' + p.role + '</p></div></div>' +
+        '<div class="space-y-1.5 text-xs text-slate-400">' +
+        '<p><strong class="text-purple-300">Pain:</strong> ' + p.pain + '</p>' +
+        '<p><strong class="text-purple-300">Trigger:</strong> ' + p.trigger + '</p>' +
+        '<p><strong class="text-purple-300">Cerca:</strong> ' + p.cerca + '</p>' +
+        '<p><strong class="text-purple-300">Obiezioni:</strong> ' + p.obiezioni + '</p>' +
+        '<p><strong class="text-purple-300">Messaggio vincente:</strong> ' + p.msg + '</p></div>';
+    }
+    btn.innerHTML = orig;
+    btn.disabled = false;
   }, 1500);
 }
 </script>
