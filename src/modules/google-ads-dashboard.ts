@@ -47,7 +47,7 @@ export function renderGoogleAdsDashboard(): string {
 <div style="background:linear-gradient(135deg,#4285F4 0%,#34A853 50%,#FBBC05 100%)" class="text-white px-6 py-5 shadow-lg">
   <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
     <div class="flex items-center gap-4">
-      <a href="/admin" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
+      <a href="/dashboard" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 py-2 rounded-lg text-sm transition">
         <i class="fas fa-arrow-left mr-1"></i>Home
       </a>
       <div>

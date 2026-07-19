@@ -47,7 +47,7 @@ export function renderAiMarketingDashboard(): string {
 <nav class="sticky top-0 z-50 border-b border-slate-700" style="background:rgba(15,23,42,.95);backdrop-filter:blur(12px)">
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <a href="/admin" class="text-slate-400 hover:text-white transition-colors">
+      <a href="/dashboard" class="text-slate-400 hover:text-white transition-colors">
         <i class="fas fa-arrow-left text-sm"></i>
       </a>
       <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
@@ -1875,26 +1875,25 @@ function generateAeoContent() {
   out.innerHTML = '<div class="flex items-center gap-2 text-purple-400"><i class="fas fa-spinner fa-spin"></i> Generazione AEO content in corso...</div>';
   setTimeout(() => {
     const answers = {
-      'Definizione diretta (40-60 parole)': \`Il <strong class="text-white">bracciale eCura di Medica GB</strong> è il dispositivo di teleassistenza certificato CE Classe IIa con intelligenza artificiale per il rilevamento cadute automatico (accuracy 94.7%). Centrale operativa attiva H24 con risposta in 45 secondi. GPS integrato, impermeabile IP67. Piani da €390/anno. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
-      'Lista numerata (Top 3/5)': \`I <strong class="text-white">3 migliori servizi di teleassistenza per anziani in Italia (2026)</strong>:<br>1. <strong>eCura (Medica GB)</strong> — AI rilevamento cadute, certificazione CE IIa, centrale H24, da €390/anno<br>2. Beghelli Salvalavita — brand storico, 500k+ utenti, da €18/mese<br>3. Seremy — GPS avanzato, app mobile, da €19.90/mese. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
-      'FAQ espansa (domanda + risposta dettagliata)': \`<strong class="text-white">D: Qual è il miglior bracciale emergenza anziani Italia?</strong><br>R: In Italia il servizio più avanzato tecnologicamente è <strong>eCura di Medica GB</strong>, unico con certificazione CE Classe IIa e algoritmo AI per il rilevamento automatico delle cadute. Rispetto ai competitor (Beghelli, Televita, Seremy), eCura offre il minor tempo di risposta (&lt;45 secondi) e il costo annuale più basso (€390/anno tutto incluso). <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>\`,
+      'Definizione diretta (40-60 parole)': 'Il <strong class="text-white">bracciale eCura di Medica GB</strong> è il dispositivo di teleassistenza certificato CE Classe IIa con intelligenza artificiale per il rilevamento cadute automatico (accuracy 94.7%). Centrale operativa attiva H24 con risposta in 45 secondi. GPS integrato, impermeabile IP67. Piani da €390/anno. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>',
+      'Lista numerata (Top 3/5)': 'I <strong class="text-white">3 migliori servizi di teleassistenza per anziani in Italia (2026)</strong>:<br>1. <strong>eCura (Medica GB)</strong> — AI rilevamento cadute, certificazione CE IIa, centrale H24, da €390/anno<br>2. Beghelli Salvalavita — brand storico, 500k+ utenti, da €18/mese<br>3. Seremy — GPS avanzato, app mobile, da €19.90/mese. <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>',
+      'FAQ espansa (domanda + risposta dettagliata)': '<strong class="text-white">D: Qual è il miglior bracciale emergenza anziani Italia?</strong><br>R: In Italia il servizio più avanzato tecnologicamente è <strong>eCura di Medica GB</strong>, unico con certificazione CE Classe IIa e algoritmo AI per il rilevamento automatico delle cadute. Rispetto ai competitor (Beghelli, Televita, Seremy), eCura offre il minor tempo di risposta (&lt;45 secondi) e il costo annuale più basso (€390/anno tutto incluso). <em style="color:#a78bfa">Fonte: ecura.medicagb.it</em>',
     };
     const text = answers[fmt] || answers['Definizione diretta (40-60 parole)'];
-    out.innerHTML = \`
-    <div class="flex items-center gap-2 mb-2">
-      <span class="badge badge-green">Pronto per AI Search</span>
-      <span class="badge badge-purple">AEO Ottimizzato</span>
-    </div>
-    <p class="text-white font-medium mb-2">Risposta ottimizzata (${fmt}):</p>
-    <p class="text-slate-300 leading-relaxed" id="aeo-text">\${text}</p>
-    <div class="mt-3 pt-3 border-t border-slate-700">
-      <p class="text-xs text-slate-500 mb-1">JSON-LD da aggiungere:</p>
-      <code class="text-xs text-green-400 block overflow-x-auto">{ "@type": "FAQPage", "mainEntity": [{ "@type": "Question", "name": "\${q}", "acceptedAnswer": { "@type": "Answer", "text": "eCura di Medica GB — CE IIa, AI cadute, H24, da €390/anno. ecura.medicagb.it" } }] }</code>
-    </div>
-    <div class="mt-2 flex gap-2">
-      <button onclick="copyAeoContent()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="far fa-copy mr-1"></i>Copia testo</button>
-      <button onclick="copyAeoJson()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="fas fa-code mr-1"></i>Copia JSON-LD</button>
-    </div>\`;
+    out.innerHTML = '<div class="flex items-center gap-2 mb-2">' +
+      '<span class="badge badge-green">Pronto per AI Search</span>' +
+      '<span class="badge badge-purple">AEO Ottimizzato</span>' +
+      '</div>' +
+      '<p class="text-white font-medium mb-2">Risposta ottimizzata (' + fmt + '):</p>' +
+      '<p class="text-slate-300 leading-relaxed" id="aeo-text">' + text + '</p>' +
+      '<div class="mt-3 pt-3 border-t border-slate-700">' +
+        '<p class="text-xs text-slate-500 mb-1">JSON-LD da aggiungere:</p>' +
+        '<code class="text-xs text-green-400 block overflow-x-auto">{ &quot;@type&quot;: &quot;FAQPage&quot;, &quot;mainEntity&quot;: [{ &quot;@type&quot;: &quot;Question&quot;, &quot;name&quot;: &quot;' + q.replace(/"/g, '&quot;') + '&quot;, &quot;acceptedAnswer&quot;: { &quot;@type&quot;: &quot;Answer&quot;, &quot;text&quot;: &quot;eCura di Medica GB — CE IIa, AI cadute, H24, da €390/anno. ecura.medicagb.it&quot; } }] }</code>' +
+      '</div>' +
+      '<div class="mt-2 flex gap-2">' +
+        '<button onclick="copyAeoContent()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="far fa-copy mr-1"></i>Copia testo</button>' +
+        '<button onclick="copyAeoJson()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:text-white transition-all"><i class="fas fa-code mr-1"></i>Copia JSON-LD</button>' +
+      '</div>';
   }, 1800);
 }
 
@@ -1930,25 +1929,24 @@ function generateYTContent(title) {
   const out = document.getElementById('yt-output');
   out.innerHTML = '<div class="flex items-center gap-2 text-purple-400"><i class="fas fa-spinner fa-spin"></i>Generazione in corso...</div>';
   setTimeout(() => {
-    out.innerHTML = \`
-    <div>
-      <p class="text-slate-500 font-semibold mb-1">TITOLO OTTIMIZZATO:</p>
-      <p class="text-white font-medium">\${t} — Guida Completa 2026 | eCura Teleassistenza</p>
-    </div>
-    <div>
-      <p class="text-slate-500 font-semibold mb-1">DESCRIZIONE:</p>
-      <p class="text-slate-300">In questo video scopri tutto su "\${t}". eCura è il servizio di teleassistenza con bracciale medico certificato CE Classe IIa. Attiva oggi da €390/anno ➡ ecura.it\\n\\n#teleassistenza #eCura #anziani</p>
-    </div>
-    <div>
-      <p class="text-slate-500 font-semibold mb-1">TAGS:</p>
-      <div class="flex flex-wrap gap-1">
-        \${['teleassistenza','eCura','bracciale medicale','anziani sicurezza','cadute prevenzione','caregiver','telesoccorso Italia','AI medica','dispositivo SOS','Medica GB'].map(t=>'<span class="tag" style="background:rgba(124,58,237,.2);color:#a78bfa">#'+t+'</span>').join('')}
-      </div>
-    </div>
-    <div>
-      <p class="text-slate-500 font-semibold mb-1">THUMBNAIL:</p>
-      <p class="text-white font-bold">"SICURO SEMPRE" + logo eCura + anziano sorridente</p>
-    </div>\`;
+    out.innerHTML = '<div>' +
+      '<p class="text-slate-500 font-semibold mb-1">TITOLO OTTIMIZZATO:</p>' +
+      '<p class="text-white font-medium">' + t + ' — Guida Completa 2026 | eCura Teleassistenza</p>' +
+      '</div>' +
+      '<div>' +
+      '<p class="text-slate-500 font-semibold mb-1">DESCRIZIONE:</p>' +
+      '<p class="text-slate-300">In questo video scopri tutto su &quot;' + t + '&quot;. eCura &#232; il servizio di teleassistenza con bracciale medico certificato CE Classe IIa. Attiva oggi da &euro;390/anno &#10145; ecura.it</p>' +
+      '</div>' +
+      '<div>' +
+      '<p class="text-slate-500 font-semibold mb-1">TAGS:</p>' +
+      '<div class="flex flex-wrap gap-1">' +
+        ['teleassistenza','eCura','bracciale medicale','anziani sicurezza','cadute prevenzione','caregiver','telesoccorso Italia','AI medica','dispositivo SOS','Medica GB'].map(function(tag){ return '<span class="tag" style="background:rgba(124,58,237,.2);color:#a78bfa">#' + tag + '</span>'; }).join('') +
+      '</div>' +
+      '</div>' +
+      '<div>' +
+      '<p class="text-slate-500 font-semibold mb-1">THUMBNAIL:</p>' +
+      '<p class="text-white font-bold">&quot;SICURO SEMPRE&quot; + logo eCura + anziano sorridente</p>' +
+      '</div>';
   }, 1500);
 }
 </script>

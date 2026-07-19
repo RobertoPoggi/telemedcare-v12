@@ -28901,6 +28901,11 @@ function requireRole(roles: UserRole[]) {
 }
 
 // ========== DASHBOARD ROUTES (PROTETTE) ==========
+// /admin redirect -> /dashboard (back button from sub-dashboards)
+app.get('/admin', requireAuth, (c) => {
+  return c.redirect('/dashboard', 302)
+})
+
 // Dashboard Operativa - Centro di controllo staff con analytics e monitoring
 app.get('/dashboard', requireAuth, (c) => {
   // Usa SEMPRE il template TypeScript aggiornato (non file statici vecchi)
