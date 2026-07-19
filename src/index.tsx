@@ -10004,10 +10004,10 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge signed_at del contratto collegato (campo Riferimento — distinta dalla data DDT)
+    // Legge signed_at e servizio del contratto collegato (campo Riferimento — distinta dalla data DDT)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT signature_timestamp, signed_at, data_invio FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+          `SELECT signature_timestamp, signed_at, data_invio, servizio FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
     // Priorità data firma:
@@ -10067,10 +10067,16 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     // Descrizione completa dispositivo (da template reale)
     let descrizioneDispositivo: string
     const dispLower = dispositivo.toLowerCase()
+    // Determina il piano: priorità contratto → nome dispositivo nel DDT
+    const servizioContratto = (contractRow?.servizio || '').toLowerCase()
+    const isFamily = servizioContratto.includes('family') || dispLower.includes('family')
+    const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
     if (dispLower.includes('vital')) {
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+    } else if (isFamily) {
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. È inoltre integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else {
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     }
 
     // Contratto riferimento formattato — usa data_firma del contratto (NON data del DDT)

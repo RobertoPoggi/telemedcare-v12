@@ -438,7 +438,7 @@ export async function createDDTFromOrder(
   }
   
   const descrizioneMap: Record<string, string> = {
-    'FAMILY': 'Sistema di allarme mobile di piccole dimensioni ed indossabile. E\' progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull\'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. E\' inoltre integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute. E\' un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali e SN 868298061148715. E\' inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.',
+    'FAMILY': 'Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull\'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. È inoltre integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.',
     'PRO': 'Dispositivo medico Classe IIa con rilevamento cadute, GPS, parametri vitali',
     'PREMIUM': 'Dispositivo avanzato con monitoraggio continuo parametri vitali e telemedicina'
   }
