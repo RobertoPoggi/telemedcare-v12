@@ -3243,15 +3243,16 @@ ${370+t.length}
                                 AI
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-1 drop-shadow">AI Marketing</h3>
-                        <p class="text-violet-100 text-sm font-medium">Contenuti e automazione intelligente</p>
+                        <h3 class="text-2xl font-bold mb-1 drop-shadow">eCura AI Marketing</h3>
+                        <p class="text-violet-100 text-sm font-medium">Contenuti, GEO visibility &amp; AI Search</p>
                     </div>
                     <div class="p-6">
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Specifico per eCura · Medica GB</p>
                         <div class="space-y-3">
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Autopilot — 1 articolo/giorno</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Ricerca web profonda</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Generazione immagini AI</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Video YouTube &amp; targeting</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Autopilot — contenuti eCura-branded</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Immagini AI calibrate brand eCura</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Targeting: caregiver, anziani, MMG</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-star text-violet-500 mr-2"></i><strong>GEO — visibilità su ChatGPT &amp; Gemini</strong></div>
                         </div>
                         <div class="mt-6">
                             <button class="w-full text-white font-bold py-3 rounded-lg transition-all shadow-md" style="background:linear-gradient(135deg,#7C3AED,#4F46E5)">
@@ -3270,15 +3271,16 @@ ${370+t.length}
                                 SEO
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold mb-1 drop-shadow">SEO Manager</h3>
-                        <p class="text-emerald-100 text-sm font-medium">Posizionamento organico avanzato</p>
+                        <h3 class="text-2xl font-bold mb-1 drop-shadow">SEO Tecnico</h3>
+                        <p class="text-emerald-100 text-sm font-medium">Audit, analisi &amp; posizionamento organico</p>
                     </div>
                     <div class="p-6">
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Generico · Qualsiasi sito</p>
                         <div class="space-y-3">
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Ricerca keyword &amp; SERP</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Analisi competitor</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Content score &amp; linking</div>
-                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Backlink &amp; audience</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Keyword research &amp; SERP live</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Analisi competitor interattiva</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Content score (Flesch + heading + link)</div>
+                            <div class="flex items-center text-sm text-gray-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>Backlink monitor &amp; link building</div>
                         </div>
                         <div class="mt-6">
                             <button class="w-full text-white font-bold py-3 rounded-lg transition-all shadow-md" style="background:linear-gradient(135deg,#059669,#0D9488)">
@@ -13838,7 +13840,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Manager — TeleMedCare V12.0</title>
+<title>SEO Tecnico — TeleMedCare V12.0</title>
 <script src="https://cdn.tailwindcss.com"><\/script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -13882,10 +13884,10 @@ document.addEventListener('DOMContentLoaded', () => {
       <div>
         <div class="flex items-center gap-3">
           <i class="fas fa-search-plus text-3xl"></i>
-          <h1 class="text-2xl font-bold">SEO Manager</h1>
+          <h1 class="text-2xl font-bold">SEO Tecnico</h1>
           <span class="bg-white bg-opacity-20 text-xs px-2 py-1 rounded-full font-semibold">12 MODULI</span>
         </div>
-        <p class="text-emerald-100 text-sm mt-1">Posizionamento organico avanzato per eCura</p>
+        <p class="text-emerald-100 text-sm mt-1">Audit &amp; posizionamento organico · qualsiasi sito</p>
       </div>
     </div>
     <div class="flex gap-3 flex-wrap text-sm">
@@ -15147,7 +15149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Marketing — TeleMedCare Dashboard</title>
+<title>eCura AI Marketing — TeleMedCare Dashboard</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"><\/script>
 <style>
@@ -15197,8 +15199,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <i class="fas fa-robot text-white text-sm"></i>
       </div>
       <div>
-        <h1 class="font-bold text-white text-sm">AI Marketing Hub</h1>
-        <p class="text-xs text-slate-400">eCura · Powered by Artificial Intelligence</p>
+        <h1 class="font-bold text-white text-sm">eCura AI Marketing</h1>
+        <p class="text-xs text-slate-400">Contenuti brand · GEO · AI Search visibility</p>
       </div>
     </div>
     <div class="flex items-center gap-2">

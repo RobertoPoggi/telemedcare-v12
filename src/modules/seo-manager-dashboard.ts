@@ -13,7 +13,7 @@ export function renderSeoManagerDashboard(): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Manager — TeleMedCare V12.0</title>
+<title>SEO Tecnico — TeleMedCare V12.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -57,10 +57,10 @@ export function renderSeoManagerDashboard(): string {
       <div>
         <div class="flex items-center gap-3">
           <i class="fas fa-search-plus text-3xl"></i>
-          <h1 class="text-2xl font-bold">SEO Manager</h1>
+          <h1 class="text-2xl font-bold">SEO Tecnico</h1>
           <span class="bg-white bg-opacity-20 text-xs px-2 py-1 rounded-full font-semibold">12 MODULI</span>
         </div>
-        <p class="text-emerald-100 text-sm mt-1">Posizionamento organico avanzato per eCura</p>
+        <p class="text-emerald-100 text-sm mt-1">Audit &amp; posizionamento organico · qualsiasi sito</p>
       </div>
     </div>
     <div class="flex gap-3 flex-wrap text-sm">

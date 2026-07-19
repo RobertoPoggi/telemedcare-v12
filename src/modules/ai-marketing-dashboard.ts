@@ -4,7 +4,7 @@ export function renderAiMarketingDashboard(): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Marketing — TeleMedCare Dashboard</title>
+<title>eCura AI Marketing — TeleMedCare Dashboard</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -54,8 +54,8 @@ export function renderAiMarketingDashboard(): string {
         <i class="fas fa-robot text-white text-sm"></i>
       </div>
       <div>
-        <h1 class="font-bold text-white text-sm">AI Marketing Hub</h1>
-        <p class="text-xs text-slate-400">eCura · Powered by Artificial Intelligence</p>
+        <h1 class="font-bold text-white text-sm">eCura AI Marketing</h1>
+        <p class="text-xs text-slate-400">Contenuti brand · GEO · AI Search visibility</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
