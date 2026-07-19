@@ -19896,7 +19896,8 @@ app.post('/api/leads/public', async (c) => {
             gdprConsent, consensoMarketing,
             canale_acquisizione, hs_object_source_detail_1,
             dettaglio_fonte, utm_source, utm_medium, utm_campaign,
-            landing_variant, page_url } = body
+            landing_variant, page_url,
+            prezzo_anno, prezzo_rinnovo } = body
 
     // Validazione base
     if (!nomeRichiedente?.trim()) return c.json({ success: false, error: 'Nome obbligatorio' }, 422)
@@ -19958,9 +19959,10 @@ app.post('/api/leads/public', async (c) => {
         hs_object_source, hs_object_source_detail_1, dettaglio_fonte,
         canale_acquisizione,
         gdprConsent, consensoMarketing,
+        prezzo_anno, prezzo_rinnovo,
         vuoleContratto, vuoleBrochure, vuoleManuale,
         created_at, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).bind(
       leadId,
       nomeRichiedente.trim(),
@@ -19979,6 +19981,8 @@ app.post('/api/leads/public', async (c) => {
       canale_acquisizione || null,
       gdprConsent ? 1 : 0,
       consensoMarketing ? 1 : 0,
+      prezzo_anno || null,
+      prezzo_rinnovo || null,
       'No', 'No', 'No',
       new Date().toISOString(),
       new Date().toISOString()
