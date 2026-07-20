@@ -13840,7 +13840,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEO Tecnico — TeleMedCare V12.0</title>
+<title>SEO Tecnico — eCura V12.0</title>
 <script src="https://cdn.tailwindcss.com"><\/script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -13903,7 +13903,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div>
           <h1 class="text-2xl font-bold">SEO Tecnico</h1>
-          <p style="color:rgba(255,255,255,.8)" class="text-sm">Audit &amp; posizionamento organico · qualsiasi sito</p>
+          <p style="color:rgba(255,255,255,.8)" class="text-sm">Audit &amp; posizionamento organico · ecura.it</p>
         </div>
         <span style="background:rgba(255,255,255,.2);font-size:11px" class="px-3 py-1 rounded-full font-bold">12 MODULI</span>
       </div>
@@ -13948,7 +13948,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="flex items-center justify-between mb-4">
         <div>
           <div class="section-title"><i class="fas fa-robot text-emerald-600 mr-2"></i>Autopilot SEO</div>
-          <div class="section-sub">Generazione automatica di contenuti ottimizzati per qualsiasi sito</div>
+          <div class="section-sub">Generazione automatica di contenuti ottimizzati per ecura.it — teleassistenza anziani</div>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm font-semibold text-gray-600">Attiva Autopilot</span>
@@ -13987,16 +13987,16 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <label class="input-label">Sito / Dominio target</label>
-          <input type="text" id="apSite" placeholder="es. miosito.it" value="telemedcare.it">
+          <input type="text" id="apSite" placeholder="es. ecura.it" value="ecura.it">
           <label class="input-label mt-3">Parola chiave principale</label>
-          <input type="text" id="apKeyword" placeholder="es. specialista cardiologia online">
+          <input type="text" id="apKeyword" placeholder="es. bracciale cadute anziani">
           <label class="input-label mt-3">Tipo contenuto</label>
           <select id="apType">
             <option>Articolo Blog (1500-2000 parole)</option>
-            <option>Pagina Servizio (800-1200 parole)</option>
+            <option>Pagina Prodotto Dispositivo Medico (800-1200 parole)</option>
             <option>FAQ strutturata (10 domande)</option>
             <option>Pillar Page (2500-3500 parole)</option>
-            <option>Landing Page ottimizzata</option>
+            <option>Landing Page abbonamento eCura</option>
           </select>
           <label class="input-label mt-3">Tono editoriale</label>
           <select id="apTone">
@@ -14012,28 +14012,28 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex items-center justify-between p-3 rounded-lg" style="background:#f0fdf4;border:1px solid #bbf7d0">
               <div>
                 <div class="text-sm font-semibold">Lun 21 Lug</div>
-                <div class="text-xs text-gray-600">Guida alla telemedicina 2025</div>
+                <div class="text-xs text-gray-600">Bracciale cadute anziani: guida completa 2025</div>
               </div>
               <span class="badge-green">Programmato</span>
             </div>
             <div class="flex items-center justify-between p-3 rounded-lg" style="background:#eff6ff;border:1px solid #bfdbfe">
               <div>
                 <div class="text-sm font-semibold">Mer 23 Lug</div>
-                <div class="text-xs text-gray-600">Specialisti online vs in presenza</div>
+                <div class="text-xs text-gray-600">Dispositivo medico certificato classe IIA: cosa significa</div>
               </div>
               <span class="badge-blue">In revisione</span>
             </div>
             <div class="flex items-center justify-between p-3 rounded-lg" style="background:#fefce8;border:1px solid #fde68a">
               <div>
                 <div class="text-sm font-semibold">Ven 25 Lug</div>
-                <div class="text-xs text-gray-600">Come prenotare una visita cardiologica</div>
+                <div class="text-xs text-gray-600">Teleassistenza anziani: come funziona il piano eCura</div>
               </div>
               <span class="badge-yellow">In coda</span>
             </div>
             <div class="flex items-center justify-between p-3 rounded-lg" style="background:#f8fafc;border:1px solid #e2e8f0">
               <div>
                 <div class="text-sm font-semibold">Dom 27 Lug</div>
-                <div class="text-xs text-gray-600">Referto digitale: guida completa</div>
+                <div class="text-xs text-gray-600">GPS per anziani: SiDLY CARE vs concorrenza</div>
               </div>
               <span class="badge-gray">In attesa</span>
             </div>
@@ -14068,7 +14068,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div class="flex gap-3 mb-5 flex-wrap">
         <div class="flex-1 min-w-64">
-          <input type="text" id="kwInput" placeholder="Inserisci seed keyword (es. medico online)">
+          <input type="text" id="kwInput" placeholder="Inserisci seed keyword (es. bracciale cadute anziani)">
         </div>
         <select id="kwCountry" style="width:auto">
           <option>🇮🇹 Italia</option><option>🇬🇧 UK</option><option>🇺🇸 USA</option>
@@ -14091,18 +14091,18 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>
           </thead>
           <tbody id="kwTable">
-            <tr><td class="table-td font-semibold">medico online</td><td class="table-td">14,800</td><td class="table-td"><span class="badge-red">Alto 72</span></td><td class="table-td"><span class="badge-blue">Navigazionale</span></td><td class="table-td">€2.40</td><td class="table-td text-emerald-600">↑ +18%</td></tr>
+            <tr><td class="table-td font-semibold">bracciale cadute anziani</td><td class="table-td">9,600</td><td class="table-td"><span class="badge-yellow">Medio 51</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€1.80</td><td class="table-td text-emerald-600">↑ +34%</td></tr>
             <tr><td class="table-td font-semibold">visita cardiologica online</td><td class="table-td">5,400</td><td class="table-td"><span class="badge-yellow">Medio 54</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€3.80</td><td class="table-td text-emerald-600">↑ +24%</td></tr>
-            <tr><td class="table-td font-semibold">telemedicina specialista</td><td class="table-td">3,200</td><td class="table-td"><span class="badge-yellow">Medio 47</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€4.20</td><td class="table-td text-emerald-600">↑ +31%</td></tr>
-            <tr><td class="table-td font-semibold">consulto medico a distanza</td><td class="table-td">2,900</td><td class="table-td"><span class="badge-green">Basso 32</span></td><td class="table-td"><span class="badge-blue">Informazionale</span></td><td class="table-td">€1.90</td><td class="table-td text-gray-500">→ Stabile</td></tr>
-            <tr><td class="table-td font-semibold">dermatologo online</td><td class="table-td">8,100</td><td class="table-td"><span class="badge-yellow">Medio 58</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€3.10</td><td class="table-td text-emerald-600">↑ +12%</td></tr>
+            <tr><td class="table-td font-semibold">dispositivo medico anziani casa</td><td class="table-td">3,400</td><td class="table-td"><span class="badge-green">Basso 38</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€2.60</td><td class="table-td text-emerald-600">↑ +41%</td></tr>
+            <tr><td class="table-td font-semibold">GPS per anziani</td><td class="table-td">6,200</td><td class="table-td"><span class="badge-yellow">Medio 55</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€1.50</td><td class="table-td text-emerald-600">↑ +22%</td></tr>
+            <tr><td class="table-td font-semibold">allarme caduta anziani</td><td class="table-td">4,100</td><td class="table-td"><span class="badge-green">Basso 42</span></td><td class="table-td"><span class="badge-green">Transazionale</span></td><td class="table-td">€1.90</td><td class="table-td text-emerald-600">↑ +18%</td></tr>
             <tr><td class="table-td font-semibold">referto digitale come funziona</td><td class="table-td">1,600</td><td class="table-td"><span class="badge-green">Basso 28</span></td><td class="table-td"><span class="badge-blue">Informazionale</span></td><td class="table-td">€0.80</td><td class="table-td text-emerald-600">↑ +8%</td></tr>
             <tr><td class="table-td font-semibold">seconda opinione medica online</td><td class="table-td">2,100</td><td class="table-td"><span class="badge-green">Basso 35</span></td><td class="table-td"><span class="badge-green">Transazionale</span></td><td class="table-td">€5.20</td><td class="table-td text-emerald-600">↑ +45%</td></tr>
             <tr><td class="table-td font-semibold">prenotare visita online</td><td class="table-td">6,700</td><td class="table-td"><span class="badge-red">Alto 67</span></td><td class="table-td"><span class="badge-green">Transazionale</span></td><td class="table-td">€2.80</td><td class="table-td text-emerald-600">↑ +9%</td></tr>
-            <tr><td class="table-td font-semibold">neurologo online</td><td class="table-td">3,900</td><td class="table-td"><span class="badge-yellow">Medio 51</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€3.60</td><td class="table-td text-emerald-600">↑ +22%</td></tr>
+            <tr><td class="table-td font-semibold">teleassistenza anziani</td><td class="table-td">5,800</td><td class="table-td"><span class="badge-yellow">Medio 48</span></td><td class="table-td"><span class="badge-blue">Informazionale</span></td><td class="table-td">€2.10</td><td class="table-td text-emerald-600">↑ +28%</td></tr>
             <tr><td class="table-td font-semibold">psicologo online sessione</td><td class="table-td">12,400</td><td class="table-td"><span class="badge-red">Alto 71</span></td><td class="table-td"><span class="badge-green">Commerciale</span></td><td class="table-td">€4.50</td><td class="table-td text-emerald-600">↑ +38%</td></tr>
             <tr><td class="table-td font-semibold">telemedcina costo</td><td class="table-td">1,200</td><td class="table-td"><span class="badge-green">Basso 22</span></td><td class="table-td"><span class="badge-blue">Informazionale</span></td><td class="table-td">€1.40</td><td class="table-td text-gray-500">→ Stabile</td></tr>
-            <tr><td class="table-td font-semibold">visita medica online gratis</td><td class="table-td">4,300</td><td class="table-td"><span class="badge-yellow">Medio 48</span></td><td class="table-td"><span class="badge-blue">Informazionale</span></td><td class="table-td">€0.60</td><td class="table-td text-red-500">↓ -5%</td></tr>
+            <tr><td class="table-td font-semibold">braccialetto medico emergenza</td><td class="table-td">2,100</td><td class="table-td"><span class="badge-green">Basso 28</span></td><td class="table-td"><span class="badge-green">Transazionale</span></td><td class="table-td">€2.30</td><td class="table-td text-emerald-600">↑ +37%</td></tr>
           </tbody>
         </table>
       </div>
@@ -14112,27 +14112,27 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="kpi-card" style="border-top:4px solid #10b981">
           <div class="font-bold text-sm text-emerald-700 mb-2"><i class="fas fa-trophy mr-1"></i>Top Funnel — Awareness</div>
           <div class="space-y-1 text-sm">
-            <div class="flex justify-between"><span>cos'è la telemedicina</span><span class="badge-green">4.2k</span></div>
-            <div class="flex justify-between"><span>medico online come funziona</span><span class="badge-green">3.8k</span></div>
-            <div class="flex justify-between"><span>telemedicina benefici</span><span class="badge-green">2.1k</span></div>
+            <div class="flex justify-between"><span>cos'è la teleassistenza anziani</span><span class="badge-green">4.2k</span></div>
+            <div class="flex justify-between"><span>bracciale cadute come funziona</span><span class="badge-green">3.8k</span></div>
+            <div class="flex justify-between"><span>dispositivo medico anziani casa</span><span class="badge-green">2.1k</span></div>
           </div>
           <div class="mt-3 text-xs text-gray-500">💡 Crea guide informative long-form</div>
         </div>
         <div class="kpi-card" style="border-top:4px solid #3b82f6">
           <div class="font-bold text-sm text-blue-700 mb-2"><i class="fas fa-filter mr-1"></i>Mid Funnel — Consideration</div>
           <div class="space-y-1 text-sm">
-            <div class="flex justify-between"><span>miglior medico online</span><span class="badge-blue">6.1k</span></div>
-            <div class="flex justify-between"><span>visita specialistica online</span><span class="badge-blue">5.4k</span></div>
-            <div class="flex justify-between"><span>confronto piattaforme mediche</span><span class="badge-blue">1.9k</span></div>
+            <div class="flex justify-between"><span>miglior bracciale emergenza anziani</span><span class="badge-blue">6.1k</span></div>
+            <div class="flex justify-between"><span>GPS anziani confronto 2025</span><span class="badge-blue">5.4k</span></div>
+            <div class="flex justify-between"><span>teleassistenza costo mensile</span><span class="badge-blue">1.9k</span></div>
           </div>
           <div class="mt-3 text-xs text-gray-500">💡 Pagine comparazione & review</div>
         </div>
         <div class="kpi-card" style="border-top:4px solid #8b5cf6">
           <div class="font-bold text-sm text-violet-700 mb-2"><i class="fas fa-bullseye mr-1"></i>Bottom Funnel — Decision</div>
           <div class="space-y-1 text-sm">
-            <div class="flex justify-between"><span>prenota visita online</span><span class="badge-purple">8.7k</span></div>
-            <div class="flex justify-between"><span>seconda opinione prezzi</span><span class="badge-purple">2.3k</span></div>
-            <div class="flex justify-between"><span>medico specialista disponibile</span><span class="badge-purple">1.6k</span></div>
+            <div class="flex justify-between"><span>SiDLY CARE acquisto</span><span class="badge-purple">8.7k</span></div>
+            <div class="flex justify-between"><span>eCura abbonamento attiva</span><span class="badge-purple">2.3k</span></div>
+            <div class="flex justify-between"><span>bracciale cadute anziani prezzo</span><span class="badge-purple">1.6k</span></div>
           </div>
           <div class="mt-3 text-xs text-gray-500">💡 Landing page CTA dirette</div>
         </div>
@@ -14149,7 +14149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="section-sub">Analisi dettagliata dei primi 10 risultati Google per ogni keyword target</div>
 
       <div class="flex gap-3 mb-5 flex-wrap">
-        <div class="flex-1 min-w-64"><input type="text" id="serpQuery" placeholder="es. medico online prenotazione" value="medico online"></div>
+        <div class="flex-1 min-w-64"><input type="text" id="serpQuery" placeholder="es. bracciale cadute anziani" value="bracciale cadute anziani"></div>
         <select id="serpDevice" style="width:auto"><option>🖥️ Desktop</option><option>📱 Mobile</option></select>
         <button class="action-btn" onclick="runSerpSeo()"><i class="fas fa-search"></i>Analizza SERP</button>
       </div>
@@ -14183,9 +14183,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="serp-item">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1"><span class="badge-green">Pos. 1</span><span class="text-xs text-gray-500">pagina-nome.it</span></div>
-              <div class="font-semibold text-blue-700 text-sm">Prenota visita con un medico online — Servizio 24/7</div>
-              <div class="text-xs text-gray-600 mt-1">Prenota in pochi clic una visita con specialisti qualificati. Disponibile su smartphone, tablet e PC. Prima visita disponibile entro 24h...</div>
+              <div class="flex items-center gap-2 mb-1"><span class="badge-green">Pos. 1</span><span class="text-xs text-gray-500">amazon.it</span></div>
+              <div class="font-semibold text-blue-700 text-sm">Bracciale cadute anziani — Categoria dispositivi di sicurezza</div>
+              <div class="text-xs text-gray-600 mt-1">Listing prodotti bracciali emergenza e GPS per anziani. Prezzi da €29 a €349. Spedizione Prime 24h. Recensioni verificate...</div>
             </div>
             <div class="text-right min-w-fit">
               <div class="text-xs text-gray-500">DA 68 · Backlink: 4.2k</div>
@@ -14197,9 +14197,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="serp-item">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1"><span class="badge-blue">Pos. 2</span><span class="text-xs text-gray-500">salute24.it</span></div>
-              <div class="font-semibold text-blue-700 text-sm">Medico Online: visita specialistica in videochiamata</div>
-              <div class="text-xs text-gray-600 mt-1">Consulto medico online con specialisti certificati. Cardiologia, dermatologia, neurologia e molto altro. Prezzi chiari, nessun abbonamento...</div>
+              <div class="flex items-center gap-2 mb-1"><span class="badge-blue">Pos. 2</span><span class="text-xs text-gray-500">sicurezzaanziani.it</span></div>
+              <div class="font-semibold text-blue-700 text-sm">Bracciale cadute anziani: guida all’acquisto 2025</div>
+              <div class="text-xs text-gray-600 mt-1">Confronto tra i migliori dispositivi anti-caduta per anziani in Italia. GPS integrato, SOS, rilevamento automatico. Cosa scegliere...</div>
             </div>
             <div class="text-right min-w-fit">
               <div class="text-xs text-gray-500">DA 54 · Backlink: 2.8k</div>
@@ -14211,9 +14211,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="serp-item">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1"><span class="badge-yellow">Pos. 3</span><span class="text-xs text-gray-500">medicinadigitale.it</span></div>
-              <div class="font-semibold text-blue-700 text-sm">Come funziona il medico online? Guida 2025 completa</div>
-              <div class="text-xs text-gray-600 mt-1">Tutto quello che devi sapere sul servizio di telemedicina. Scopri vantaggi, costi e come prenotare la tua prima visita...</div>
+              <div class="flex items-center gap-2 mb-1"><span class="badge-yellow">Pos. 3</span><span class="text-xs text-gray-500">caregiver.it</span></div>
+              <div class="font-semibold text-blue-700 text-sm">Come scegliere il bracciale anti-caduta per genitori anziani</div>
+              <div class="text-xs text-gray-600 mt-1">Guida pratica per caregiver: funzioni GPS, SOS, rilevamento cadute. Differenza tra dispositivi consumer e certificati come dispositivi medici...</div>
             </div>
             <div class="text-right min-w-fit">
               <div class="text-xs text-gray-500">DA 47 · Backlink: 1.4k</div>
@@ -14225,9 +14225,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="serp-item">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1"><span class="badge-yellow">Pos. 4</span><span class="text-xs text-gray-500">healthtech-italia.it</span></div>
-              <div class="font-semibold text-blue-700 text-sm">Telemedicina 2025: le migliori piattaforme italiane</div>
-              <div class="text-xs text-gray-600 mt-1">Confronto tra le principali piattaforme di telemedicina disponibili in Italia. Prezzi, specializzazioni, qualità del servizio...</div>
+              <div class="flex items-center gap-2 mb-1"><span class="badge-yellow">Pos. 4</span><span class="text-xs text-gray-500">anzianisicuri.it</span></div>
+              <div class="font-semibold text-blue-700 text-sm">Teleassistenza anziani 2025: i migliori servizi in Italia</div>
+              <div class="text-xs text-gray-600 mt-1">Panoramica dei servizi di teleassistenza per anziani disponibili in Italia. Dispositivi certificati, centrali operative 24/7, piani tariffari...</div>
             </div>
             <div class="text-right min-w-fit">
               <div class="text-xs text-gray-500">DA 41 · Backlink: 980</div>
@@ -14240,8 +14240,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1"><span class="badge-gray">Pos. 5</span><span class="text-xs text-gray-500">quotidianosanita.it</span></div>
-              <div class="font-semibold text-blue-700 text-sm">Medico online: normativa, sicurezza e prospettive future</div>
-              <div class="text-xs text-gray-600 mt-1">Il quadro normativo della telemedicina in Italia. Regolamenti ministeriali, privacy GDPR, protocolli di sicurezza per consulti digitali...</div>
+              <div class="font-semibold text-blue-700 text-sm">Dispositivi medici classe IIA per anziani: normativa MDR 2017/745</div>
+              <div class="text-xs text-gray-600 mt-1">Il Regolamento europeo MDR 2017/745 e la classificazione dei dispositivi medici. Cosa significa certificazione CE classe IIA per bracciali emergenza...</div>
             </div>
             <div class="text-right min-w-fit">
               <div class="text-xs text-gray-500">DA 72 · Backlink: 6.1k</div>
@@ -14298,17 +14298,17 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="section-sub">Matrice comparativa completa — identifica gap e opportunità rispetto ai tuoi competitor</div>
 
       <div class="flex gap-3 mb-5 flex-wrap">
-        <div class="flex-1 min-w-64"><input type="text" id="compInput" placeholder="Dominio da analizzare (es. competitor.it)" value="telemedcare.it"></div>
+        <div class="flex-1 min-w-64"><input type="text" id="compInput" placeholder="Dominio da analizzare (es. ecura.it)" value="ecura.it"></div>
         <button class="action-btn" onclick="refreshCompSeo()"><i class="fas fa-sync-alt"></i>Aggiorna Analisi</button>
       </div>
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <div class="kpi-card text-center"><div class="text-2xl font-bold text-emerald-600">telemedcare.it</div><div class="text-xs text-gray-500 mt-1">Il tuo sito</div><div class="text-lg font-bold mt-2">DA 38</div><div class="text-xs text-emerald-600">↑ Crescita</div></div>
-        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">salute24.it</div><div class="text-xs text-gray-500 mt-1">Competitor 1</div><div class="text-lg font-bold mt-2">DA 54</div><div class="text-xs text-red-500">Leader</div></div>
-        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">medicinadigitale.it</div><div class="text-xs text-gray-500 mt-1">Competitor 2</div><div class="text-lg font-bold mt-2">DA 47</div><div class="text-xs text-yellow-600">Medio</div></div>
-        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">doctoronline.it</div><div class="text-xs text-gray-500 mt-1">Competitor 3</div><div class="text-lg font-bold mt-2">DA 61</div><div class="text-xs text-red-500">Forte</div></div>
-        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">telecura.it</div><div class="text-xs text-gray-500 mt-1">Competitor 4</div><div class="text-lg font-bold mt-2">DA 29</div><div class="text-xs text-emerald-600">Debole</div></div>
+        <div class="kpi-card text-center"><div class="text-2xl font-bold text-emerald-600">ecura.it</div><div class="text-xs text-gray-500 mt-1">Il tuo sito</div><div class="text-lg font-bold mt-2">DA 32</div><div class="text-xs text-emerald-600">↑ Crescita</div></div>
+        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">sicurezzaanziani.it</div><div class="text-xs text-gray-500 mt-1">Competitor 1</div><div class="text-lg font-bold mt-2">DA 54</div><div class="text-xs text-red-500">Leader</div></div>
+        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">caregiver.it</div><div class="text-xs text-gray-500 mt-1">Competitor 2</div><div class="text-lg font-bold mt-2">DA 47</div><div class="text-xs text-yellow-600">Medio</div></div>
+        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">seniorcare.it</div><div class="text-xs text-gray-500 mt-1">Competitor 3</div><div class="text-lg font-bold mt-2">DA 57</div><div class="text-xs text-red-500">Forte</div></div>
+        <div class="kpi-card text-center"><div class="text-sm font-bold text-gray-700">telesoccorso.it</div><div class="text-xs text-gray-500 mt-1">Competitor 4</div><div class="text-lg font-bold mt-2">DA 27</div><div class="text-xs text-emerald-600">Debole</div></div>
       </div>
 
       <!-- Matrice -->
@@ -14317,23 +14317,23 @@ document.addEventListener('DOMContentLoaded', () => {
           <thead>
             <tr>
               <th class="table-th">Fattore SEO</th>
-              <th class="table-th" style="color:#059669">telemedcare.it</th>
-              <th class="table-th">salute24.it</th>
-              <th class="table-th">medicinadigitale.it</th>
-              <th class="table-th">doctoronline.it</th>
-              <th class="table-th">telecura.it</th>
+              <th class="table-th" style="color:#059669">ecura.it</th>
+              <th class="table-th">sicurezzaanziani.it</th>
+              <th class="table-th">caregiver.it</th>
+              <th class="table-th">seniorcare.it</th>
+              <th class="table-th">telesoccorso.it</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="table-td font-semibold text-gray-700">Domain Authority</td><td class="table-td font-bold text-emerald-600">38</td><td class="table-td">54</td><td class="table-td">47</td><td class="table-td">61</td><td class="table-td">29</td></tr>
-            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Pagine indicizzate</td><td class="table-td font-bold text-emerald-600">142</td><td class="table-td">580</td><td class="table-td">340</td><td class="table-td">720</td><td class="table-td">95</td></tr>
-            <tr><td class="table-td font-semibold text-gray-700">Backlink totali</td><td class="table-td font-bold text-emerald-600">1.2k</td><td class="table-td">8.4k</td><td class="table-td">4.1k</td><td class="table-td">12k</td><td class="table-td">680</td></tr>
-            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Traffico organico/mese</td><td class="table-td font-bold text-emerald-600">4.8k</td><td class="table-td">28k</td><td class="table-td">14k</td><td class="table-td">42k</td><td class="table-td">2.1k</td></tr>
-            <tr><td class="table-td font-semibold text-gray-700">Keywords top-10</td><td class="table-td font-bold text-emerald-600">67</td><td class="table-td">320</td><td class="table-td">180</td><td class="table-td">510</td><td class="table-td">38</td></tr>
+            <tr><td class="table-td font-semibold text-gray-700">Domain Authority</td><td class="table-td font-bold text-emerald-600">32</td><td class="table-td">51</td><td class="table-td">43</td><td class="table-td">57</td><td class="table-td">27</td></tr>
+            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Pagine indicizzate</td><td class="table-td font-bold text-emerald-600">88</td><td class="table-td">420</td><td class="table-td">260</td><td class="table-td">580</td><td class="table-td">74</td></tr>
+            <tr><td class="table-td font-semibold text-gray-700">Backlink totali</td><td class="table-td font-bold text-emerald-600">940</td><td class="table-td">6.2k</td><td class="table-td">3.4k</td><td class="table-td">9.8k</td><td class="table-td">520</td></tr>
+            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Traffico organico/mese</td><td class="table-td font-bold text-emerald-600">3.2k</td><td class="table-td">19k</td><td class="table-td">11k</td><td class="table-td">31k</td><td class="table-td">1.4k</td></tr>
+            <tr><td class="table-td font-semibold text-gray-700">Keywords top-10</td><td class="table-td font-bold text-emerald-600">41</td><td class="table-td">210</td><td class="table-td">140</td><td class="table-td">370</td><td class="table-td">28</td></tr>
             <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Core Web Vitals</td><td class="table-td font-bold text-emerald-600"><span class="badge-green">Buono</span></td><td class="table-td"><span class="badge-yellow">Medio</span></td><td class="table-td"><span class="badge-green">Buono</span></td><td class="table-td"><span class="badge-red">Scarso</span></td><td class="table-td"><span class="badge-yellow">Medio</span></td></tr>
-            <tr><td class="table-td font-semibold text-gray-700">Contenuto strutturato</td><td class="table-td font-bold text-emerald-600"><span class="badge-yellow">Parziale</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-red">No</span></td></tr>
-            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Blog attivo</td><td class="table-td font-bold text-emerald-600"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-red">No</span></td></tr>
-            <tr><td class="table-td font-semibold text-gray-700">Featured Snippet</td><td class="table-td font-bold text-emerald-600"><span class="badge-red">0</span></td><td class="table-td"><span class="badge-green">12</span></td><td class="table-td"><span class="badge-yellow">5</span></td><td class="table-td"><span class="badge-green">18</span></td><td class="table-td"><span class="badge-red">0</span></td></tr>
+            <tr><td class="table-td font-semibold text-gray-700">Schema MedicalDevice</td><td class="table-td font-bold text-emerald-600"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-red">No</span></td><td class="table-td"><span class="badge-red">No</span></td><td class="table-td"><span class="badge-yellow">Parziale</span></td><td class="table-td"><span class="badge-red">No</span></td></tr>
+            <tr style="background:#f8fafc"><td class="table-td font-semibold text-gray-700">Blog / Guide anziani</td><td class="table-td font-bold text-emerald-600"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-green">Sì</span></td><td class="table-td"><span class="badge-red">No</span></td></tr>
+            <tr><td class="table-td font-semibold text-gray-700">Featured Snippet</td><td class="table-td font-bold text-emerald-600"><span class="badge-red">0</span></td><td class="table-td"><span class="badge-green">8</span></td><td class="table-td"><span class="badge-yellow">4</span></td><td class="table-td"><span class="badge-green">14</span></td><td class="table-td"><span class="badge-red">0</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -14343,17 +14343,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="opportunity-card">
           <div class="font-bold text-emerald-800 mb-2"><i class="fas fa-bullseye mr-2 text-emerald-600"></i>Gap da colmare — Priorità Alta</div>
           <ul class="text-sm space-y-1 text-gray-700">
-            <li>• Aumentare pagine indicizzate: da 142 → 400+ (+content plan)</li>
-            <li>• Acquisire 50+ backlink da fonti sanitarie autoritative</li>
-            <li>• Conquistare i primi 5 Featured Snippet target</li>
+            <li>• Aumentare pagine indicizzate: da 88 → 300+ con guide anziani e schede prodotto</li>
+            <li>• Acquisire 40+ backlink da associazioni anziani, portali caregiver e siti sanitari</li>
+            <li>• Conquistare i primi 5 Featured Snippet su keyword bracciale/GPS/cadute</li>
           </ul>
         </div>
         <div class="kpi-card" style="border-left:4px solid #3b82f6">
           <div class="font-bold text-blue-800 mb-2"><i class="fas fa-star mr-2 text-blue-500"></i>Vantaggi competitivi attuali</div>
           <ul class="text-sm space-y-1 text-gray-700">
+            <li>✓ Unico con schema markup MedicalDevice — vantaggio SEO certificazione</li>
             <li>✓ Core Web Vitals migliori di 3/4 competitor</li>
-            <li>✓ DA superiore a telecura.it — si può superare</li>
-            <li>✓ Blog attivo — base per crescita organica</li>
+            <li>✓ Dispositivo medico certificato classe IIA — autorità unica nel settore</li>
           </ul>
         </div>
       </div>
@@ -14369,7 +14369,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="section-sub">Fonti autorevoli pre-selezionate — dati ufficiali, studi scientifici, statistiche settore</div>
 
       <div class="flex gap-3 mb-5 flex-wrap">
-        <div class="flex-1 min-w-64"><input type="text" id="deepQuery" placeholder="Es. statistiche telemedicina Italia 2025" value="telemedicina trend Italia 2025"></div>
+        <div class="flex-1 min-w-64"><input type="text" id="deepQuery" placeholder="Es. statistiche cadute anziani Italia 2025" value="teleassistenza anziani trend Italia 2025"></div>
         <select id="deepType" style="width:auto">
           <option>Studi scientifici</option><option>Dati istituzionali</option><option>Report di settore</option><option>Notizie recenti</option>
         </select>
@@ -14381,55 +14381,55 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1"><span class="badge-blue">ISTAT</span><span class="badge-green">DA 92</span><span class="badge-gray">Istituzionale</span></div>
-              <div class="font-semibold text-sm text-gray-800">Utilizzo di internet e telemedicina in Italia — Rapporto Annuale 2024</div>
-              <div class="text-xs text-gray-500 mt-1">istat.it · Pubblicato: Feb 2025</div>
-              <div class="text-sm text-gray-600 mt-2">Il 68% degli italiani ha utilizzato servizi digitali sanitari nel 2024, +23% rispetto al 2022. Le fasce 35-54 anni rappresentano il segmento più attivo. Il Nord-Est guida l'adozione con il 74% di utilizzo...</div>
+              <div class="font-semibold text-sm text-gray-800">Cadute negli anziani in Italia — Rapporto Annuale 2024</div>
+              <div class="text-xs text-gray-500 mt-1">istat.it · Pubblicato: Mar 2025</div>
+              <div class="text-sm text-gray-600 mt-2">Il 68% degli italiani ha utilizzato servizi digitali sanitari nel 2024, +23% rispetto al 2022. Le fasce 35-54 anni rappresentano il segmento più attivo. Il Nord-Est guida l'adozione con il 68% degli over 65 a rischio caduta ogni anno...</div>
             </div>
-            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('ISTAT 2024: 68% italiani usa servizi digitali sanitari (+23% vs 2022)')"><i class="fas fa-plus"></i>Usa</button>
+            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('ISTAT 2024: cadute prima causa morte accidentale anziani — 3.200 decessi/anno, 30% over65 cade ogni 12 mesi')"><i class="fas fa-plus"></i>Usa</button>
           </div>
         </div>
         <div class="source-card">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1"><span class="badge-purple">ISS</span><span class="badge-green">DA 88</span><span class="badge-gray">Sanitario</span></div>
-              <div class="font-semibold text-sm text-gray-800">Linee Guida Telemedicina — Istituto Superiore di Sanità 2024</div>
-              <div class="text-xs text-gray-500 mt-1">iss.it · Pubblicato: Nov 2024</div>
-              <div class="text-sm text-gray-600 mt-2">Il documento ISS definisce i requisiti tecnici e clinici per la telemedicina in Italia. Include teleconsulto, telemonitoraggio, teleriabilitazione. Standard DPCM 2020 confermati e aggiornati...</div>
+              <div class="font-semibold text-sm text-gray-800">Telemonitoraggio domiciliare anziani — Istituto Superiore di Sanità 2024</div>
+              <div class="text-xs text-gray-500 mt-1">iss.it · Pubblicato: Ott 2024</div>
+              <div class="text-sm text-gray-600 mt-2">L’ISS raccomanda dispositivi certificati MDR 2017/745 per il monitoraggio domiciliare degli anziani. Il telemonitoraggio riduce i ricoveri ospedalieri del 28% e i tempi di intervento in emergenza del 42%...</div>
             </div>
-            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('ISS: Linee guida ufficiali telemedicina 2024 — teleconsulto e telemonitoraggio certificati')"><i class="fas fa-plus"></i>Usa</button>
+            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('ISS 2024: telemonitoraggio anziani certificato MDR — riduzione ricoveri 28%, tempi intervento -42%')"><i class="fas fa-plus"></i>Usa</button>
           </div>
         </div>
         <div class="source-card">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1"><span class="badge-yellow">Frost & Sullivan</span><span class="badge-green">DA 76</span><span class="badge-gray">Mercato</span></div>
-              <div class="font-semibold text-sm text-gray-800">European Digital Health Market Outlook 2025-2030</div>
-              <div class="text-xs text-gray-500 mt-1">frost.com · Pubblicato: Gen 2025</div>
-              <div class="text-sm text-gray-600 mt-2">Il mercato europeo della salute digitale raggiungerà €87 miliardi entro il 2028 (CAGR +18.4%). L'Italia è il 4° mercato per dimensioni con €4.2 miliardi previsti al 2027...</div>
+              <div class="font-semibold text-sm text-gray-800">European Remote Patient Monitoring Market 2025-2030</div>
+              <div class="text-xs text-gray-500 mt-1">frost.com · Pubblicato: Feb 2025</div>
+              <div class="text-sm text-gray-600 mt-2">Il mercato europeo del telemonitoraggio anziani raggiungerà €12.4 miliardi entro il 2028 (CAGR +22.1%). L'Italia conta 13.8M over-65 con crescita al 34% entro il 2050. Dispositivi classe IIA in forte espansione: €890M nel 2024 previsti al 2027...</div>
             </div>
-            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Frost & Sullivan: mercato health digitale Italia €4.2B al 2027, CAGR +18.4%')"><i class="fas fa-plus"></i>Usa</button>
+            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Frost & Sullivan: mercato telemonitoraggio anziani Europa €12.4B al 2028, CAGR +22.1%')"><i class="fas fa-plus"></i>Usa</button>
           </div>
         </div>
         <div class="source-card">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1"><span class="badge-red">Lancet Digital Health</span><span class="badge-green">DA 94</span><span class="badge-gray">Scientifico</span></div>
-              <div class="font-semibold text-sm text-gray-800">Efficacy of telemedicine consultations in primary care: systematic review</div>
-              <div class="text-xs text-gray-500 mt-1">lancet.com · Pubblicato: Ott 2024</div>
-              <div class="text-sm text-gray-600 mt-2">Meta-analisi su 142 studi (n=680.000 pazienti): il teleconsulto mostra efficacia equivalente alla visita in presenza per 78% delle condizioni. Soddisfazione pazienti: 92% vs 89% in presenza...</div>
+              <div class="flex items-center gap-2 mb-1"><span class="badge-red">Lancet Healthy Longevity</span><span class="badge-green">DA 94</span><span class="badge-gray">Scientifico</span></div>
+              <div class="font-semibold text-sm text-gray-800">Wearable fall detection devices in older adults: systematic review and meta-analysis</div>
+              <div class="text-xs text-gray-500 mt-1">lancet.com · Pubblicato: Set 2024</div>
+              <div class="text-sm text-gray-600 mt-2">Meta-analisi su 87 studi (n=142.000 anziani): i dispositivi certificati di rilevamento cadute riducono il tempo di soccorso del 67% e la mortalità post-caduta del 38%. Sensibilità media 94%, specificità 91%...</div>
             </div>
-            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Lancet Digital Health: teleconsulto efficace per 78% condizioni, soddisfazione 92% (meta-analisi 142 studi)')"><i class="fas fa-plus"></i>Usa</button>
+            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Lancet 2024: dispositivi rilevamento cadute certificati — soccorso -67%, mortalità -38% (87 studi, 142.000 anziani)')"><i class="fas fa-plus"></i>Usa</button>
           </div>
         </div>
         <div class="source-card">
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1"><span class="badge-gray">Censis</span><span class="badge-green">DA 71</span><span class="badge-gray">Sociologico</span></div>
-              <div class="font-semibold text-sm text-gray-800">Rapporto sulla situazione sociale del Paese — Salute Digitale 2024</div>
+              <div class="font-semibold text-sm text-gray-800">La condizione degli anziani in Italia — Salute e autonomia 2024</div>
               <div class="text-xs text-gray-500 mt-1">censis.it · Pubblicato: Dic 2024</div>
-              <div class="text-sm text-gray-600 mt-2">Il 41% degli italiani preferisce la telemedicina per controlli di routine. Barriere principali: diffidenza tecnologica (31%) e mancanza di contatto fisico (28%). Under 45: 67% preferisce il digitale...</div>
+              <div class="text-sm text-gray-600 mt-2">13,8 milioni di italiani over 65 (23% della popolazione). Il 74% dei caregiver familiari cerca soluzioni tecnologiche per la sicurezza dei genitori anziani. Il 61% non conosce la differenza tra dispositivi consumer e dispositivi medici certificati...</div>
             </div>
-            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Censis 2024: 41% italiani preferisce telemedicina per controlli routine; under 45: 67%')"><i class="fas fa-plus"></i>Usa</button>
+            <button class="action-btn-sm flex-shrink-0" onclick="useSeoSource('Censis 2024: 13,8M anziani in Italia — 74% caregiver cerca soluzioni tech, 61% non conosce certificazione medica dispositivi')"><i class="fas fa-plus"></i>Usa</button>
           </div>
         </div>
       </div>
@@ -14452,9 +14452,9 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
         <div class="md:col-span-2">
           <label class="input-label">Keyword target (focus)</label>
-          <input type="text" id="scoreKw" placeholder="es. medico online" class="mb-3" value="medico online">
+          <input type="text" id="scoreKw" placeholder="es. bracciale cadute anziani" class="mb-3" value="bracciale cadute anziani">
           <label class="input-label">Incolla il tuo contenuto qui</label>
-          <textarea id="scoreContent" rows="10" placeholder="Incolla il testo dell'articolo o della pagina che vuoi analizzare...">La telemedicina sta rivoluzionando l'accesso alle cure mediche in Italia. Con il servizio di medico online di TeleMedCare, puoi consultare specialisti qualificati direttamente dal tuo smartphone o computer. La nostra piattaforma garantisce consulti medici sicuri, certificati e conformi alle linee guida ISS. Prenota una visita con il medico online in pochi minuti: seleziona la specialità, scegli il professionista e avvia la videochiamata. Disponibile 24/7, senza code, dal comfort di casa tua.</textarea>
+          <textarea id="scoreContent" rows="10" placeholder="Incolla il testo dell'articolo o della pagina che vuoi analizzare...">La teleassistenza anziani sta rivoluzionando l'accesso alle cure mediche in Italia. Il bracciale SiDLY CARE di eCura rileva cadute in automatico, trasmette il GPS in tempo reale e attiva allarmi SOS verso caregiver e centrale operativa 24/7. Dispositivo medico certificato classe IIA, BD/RDM 2853300, CND V0399. Progettato per anziani autonomi e famiglie caregiver che vogliono sicurezza certificata MDR 2017/745. Piani abbonamento Base, Plus e Family. Consegna in 48 ore in tutta Italia, assistenza telefonica dedicata.</textarea>
           <div class="flex gap-3 mt-3">
             <button class="action-btn" onclick="analyzeScoreSeo()"><i class="fas fa-chart-line"></i>Analizza Score</button>
             <button class="action-btn-sm" onclick="liveScoreSeo()"><i class="fas fa-bolt"></i>Live Score</button>
@@ -14489,19 +14489,19 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-white p-3 rounded-lg border-l-4 border-red-400">
             <div class="text-sm font-bold text-red-700">🔴 Meta Description mancante (40/100)</div>
-            <div class="text-xs text-gray-600 mt-1">Aggiungi meta description 150-160 caratteri con keyword principale. Esempio: "Prenota una visita con il medico online su TeleMedCare. Specialisti certificati, disponibili 24/7 in videochiamata. Prima consulenza in 24h."</div>
+            <div class="text-xs text-gray-600 mt-1">Aggiungi meta description 150-160 caratteri. Esempio: "SiDLY CARE è il bracciale cadute anziani certificato dispositivo medico classe IIA. GPS + SOS + rilevamento automatico. Piano eCura da €29/mese."</div>
           </div>
           <div class="bg-white p-3 rounded-lg border-l-4 border-orange-400">
             <div class="text-sm font-bold text-orange-700">🟠 Testo troppo breve (45/100)</div>
-            <div class="text-xs text-gray-600 mt-1">Il contenuto ha ~120 parole. Per competere su questa SERP servono almeno 1.800 parole. Aggiungi sezioni: Come funziona, FAQ, Specializzazioni disponibili, Prezzi</div>
+            <div class="text-xs text-gray-600 mt-1">Il contenuto ha ~120 parole. Per competere su questa SERP servono almeno 2.000 parole. Aggiungi sezioni: Come funziona il rilevamento cadute, Certificazione MDR, GPS e SOS, Piani eCura, FAQ</div>
           </div>
           <div class="bg-white p-3 rounded-lg border-l-4 border-orange-400">
             <div class="text-sm font-bold text-orange-700">🟠 Headings non strutturati (65/100)</div>
-            <div class="text-xs text-gray-600 mt-1">Mancano H2 e H3 con la keyword. Struttura consigliata: H1 con keyword → H2 "Come funziona il medico online" → H2 "Specialità disponibili" → H3 per ogni specialità</div>
+            <div class="text-xs text-gray-600 mt-1">Struttura consigliata: H1 "Bracciale cadute anziani SiDLY CARE" → H2 "Dispositivo medico certificato classe IIA" → H2 "Come funziona il rilevamento cadute" → H2 "GPS e SOS: assistenza 24/7" → H3 per ogni funzione</div>
           </div>
           <div class="bg-white p-3 rounded-lg border-l-4 border-red-400">
             <div class="text-sm font-bold text-red-700">🔴 Schema markup assente (30/100)</div>
-            <div class="text-xs text-gray-600 mt-1">Aggiungi JSON-LD: MedicalOrganization, FAQPage, HowTo. Google mostra rich snippet per questi markup sanitari, aumentando il CTR del +35% in media</div>
+            <div class="text-xs text-gray-600 mt-1">Aggiungi JSON-LD: MedicalDevice (priorità assoluta — vantaggio competitivo unico), Product con aggregateRating, FAQPage. Il markup MedicalDevice è assente in tutti i competitor — +35% CTR stimato</div>
           </div>
         </div>
       </div>
@@ -14517,7 +14517,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="section-sub">Mappa della struttura interna del sito — identifica pagine orfane e opportunità di link</div>
 
       <div class="flex gap-3 mb-5 flex-wrap">
-        <div class="flex-1 min-w-64"><input type="text" id="intSite" placeholder="es. telemedcare.it" value="telemedcare.it"></div>
+        <div class="flex-1 min-w-64"><input type="text" id="intSite" placeholder="es. ecura.it" value="ecura.it"></div>
         <button class="action-btn" onclick="scanInternalSeo()"><i class="fas fa-spider"></i>Scansiona Sito</button>
         <button class="action-btn-sm" onclick="exportInternalMap()"><i class="fas fa-file-export"></i>Esporta Mappa</button>
       </div>
@@ -14562,18 +14562,18 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="font-bold text-emerald-800 mb-3"><i class="fas fa-project-diagram mr-2 text-emerald-600"></i>Struttura Hub & Spoke consigliata</div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="bg-white p-3 rounded-lg text-center" style="border:2px solid #059669">
-            <div class="font-bold text-emerald-700 text-sm">🏠 HUB: /telemedicina</div>
-            <div class="text-xs text-gray-500 mt-1">Pillar page principale — collega tutte le specialità</div>
+            <div class="font-bold text-emerald-700 text-sm">🏠 HUB: /teleassistenza-anziani</div>
+            <div class="text-xs text-gray-500 mt-1">Pillar page — collega prodotto, certificazione, piani, blog</div>
           </div>
           <div class="space-y-2">
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /specialisti/cardiologo</div>
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /specialisti/dermatologo</div>
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /specialisti/neurologo</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /prodotti/sidly-care-pro</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /certificazione/classe-iia</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /blog/cadute-anziani-guida</div>
           </div>
           <div class="space-y-2">
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /blog/categoria/cardiologia</div>
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /prezzi/specializzazioni</div>
-            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /faq/come-funziona</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /piani/ecura-base</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /piani/ecura-family</div>
+            <div class="bg-white p-2 rounded text-xs text-center" style="border:1px solid #bbf7d0"><span class="chip-int link-chip">SPOKE</span> /faq/dispositivo-medico</div>
           </div>
         </div>
       </div>
@@ -14607,8 +14607,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>
           </thead>
           <tbody>
-            <tr><td class="table-td font-semibold text-blue-700">Ministero della Salute</td><td class="table-td"><span class="badge-green">DA 91</span></td><td class="table-td"><span class="badge-blue">Istituzionale</span></td><td class="table-td text-sm">Normativa sanitaria, DPCM telemedicina</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:95%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('salute.gov.it')"><i class="fas fa-copy"></i></button></td></tr>
-            <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">ISS — Istituto Superiore Sanità</td><td class="table-td"><span class="badge-green">DA 88</span></td><td class="table-td"><span class="badge-green">Sanitario</span></td><td class="table-td text-sm">Linee guida cliniche, protocolli</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:92%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('iss.it')"><i class="fas fa-copy"></i></button></td></tr>
+            <tr><td class="table-td font-semibold text-blue-700">Ministero della Salute</td><td class="table-td"><span class="badge-green">DA 91</span></td><td class="table-td"><span class="badge-blue">Istituzionale</span></td><td class="table-td text-sm">MDR 2017/745, dispositivi medici classe IIA, normativa anziani</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:95%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('salute.gov.it')"><i class="fas fa-copy"></i></button></td></tr>
+            <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">ISS — Istituto Superiore Sanità</td><td class="table-td"><span class="badge-green">DA 88</span></td><td class="table-td"><span class="badge-green">Sanitario</span></td><td class="table-td text-sm">Linee guida telemonitoraggio, dispositivi medici certificati</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:92%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('iss.it')"><i class="fas fa-copy"></i></button></td></tr>
             <tr><td class="table-td font-semibold text-blue-700">AGENAS</td><td class="table-td"><span class="badge-green">DA 79</span></td><td class="table-td"><span class="badge-blue">Istituzionale</span></td><td class="table-td text-sm">Standard qualità, accreditamento</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:85%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('agenas.it')"><i class="fas fa-copy"></i></button></td></tr>
             <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">FNOMCeO (Ordine Medici)</td><td class="table-td"><span class="badge-green">DA 74</span></td><td class="table-td"><span class="badge-green">Sanitario</span></td><td class="table-td text-sm">Deontologia medica, etica digitale</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-green" style="width:88%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('fnomceo.it')"><i class="fas fa-copy"></i></button></td></tr>
             <tr><td class="table-td font-semibold text-blue-700">Quotidiano Sanità</td><td class="table-td"><span class="badge-green">DA 72</span></td><td class="table-td"><span class="badge-yellow">Media</span></td><td class="table-td text-sm">Notizie settore, innovazione sanità</td><td class="table-td"><div class="progress-bar" style="width:100px"><div class="progress-fill progress-fill-blue" style="width:75%"></div></div></td><td class="table-td"><button class="action-btn-sm" onclick="copyExtLink('quotidianosanita.it')"><i class="fas fa-copy"></i></button></td></tr>
@@ -14643,29 +14643,29 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="section-sub">Profilo backlink completo — qualità, anchor text, pagine più linkate, opportunità</div>
 
       <div class="flex gap-3 mb-5 flex-wrap">
-        <div class="flex-1 min-w-64"><input type="text" id="blDomain" placeholder="es. telemedcare.it" value="telemedcare.it"></div>
+        <div class="flex-1 min-w-64"><input type="text" id="blDomain" placeholder="es. ecura.it" value="ecura.it"></div>
         <button class="action-btn" onclick="refreshBacklinkSeo()"><i class="fas fa-sync-alt"></i>Aggiorna Analisi</button>
       </div>
 
       <!-- KPI Backlink -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <div class="kpi-card text-center">
-          <div class="text-3xl font-bold text-emerald-600">1,248</div>
+          <div class="text-3xl font-bold text-emerald-600">940</div>
           <div class="text-xs text-gray-500 mt-1 uppercase font-semibold">Backlink totali</div>
-          <div class="text-xs text-emerald-600 mt-1">↑ +87 (30 giorni)</div>
+          <div class="text-xs text-emerald-600 mt-1">↑ +54 (30 giorni)</div>
         </div>
         <div class="kpi-card text-center">
-          <div class="text-3xl font-bold text-blue-600">284</div>
+          <div class="text-3xl font-bold text-blue-600">198</div>
           <div class="text-xs text-gray-500 mt-1 uppercase font-semibold">Domini referenti</div>
           <div class="text-xs text-blue-600 mt-1">↑ +22 (30 giorni)</div>
         </div>
         <div class="kpi-card text-center">
-          <div class="text-3xl font-bold text-violet-600">DA 38</div>
+          <div class="text-3xl font-bold text-violet-600">DA 32</div>
           <div class="text-xs text-gray-500 mt-1 uppercase font-semibold">Domain Authority</div>
           <div class="text-xs text-violet-600 mt-1">↑ +2 (90 giorni)</div>
         </div>
         <div class="kpi-card text-center">
-          <div class="text-3xl font-bold text-orange-600">14</div>
+          <div class="text-3xl font-bold text-orange-600">8</div>
           <div class="text-xs text-gray-500 mt-1 uppercase font-semibold">Link tossici</div>
           <div class="text-xs text-red-500 mt-1">⚠ Disavow consigliato</div>
         </div>
@@ -14687,11 +14687,11 @@ document.addEventListener('DOMContentLoaded', () => {
               </tr>
             </thead>
             <tbody>
-              <tr><td class="table-td font-semibold text-blue-700">sanitanotizie.it</td><td class="table-td"><span class="badge-green">68</span></td><td class="table-td text-sm">telemedicina specialista</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Mar 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
-              <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">agenziadiretemedicale.it</td><td class="table-td"><span class="badge-green">61</span></td><td class="table-td text-sm">medico online certificato</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Feb 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
-              <tr><td class="table-td font-semibold text-blue-700">tecnologiasanitaria.it</td><td class="table-td"><span class="badge-green">57</span></td><td class="table-td text-sm">piattaforma telemedicina</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Gen 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
-              <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">medicinafutura.net</td><td class="table-td"><span class="badge-yellow">49</span></td><td class="table-td text-sm">consulto medico digitale</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Apr 2025</td><td class="table-td"><span class="badge-yellow">Media</span></td></tr>
-              <tr><td class="table-td font-semibold text-blue-700">healthinformatica.it</td><td class="table-td"><span class="badge-yellow">44</span></td><td class="table-td text-sm">TeleMedCare</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Mag 2025</td><td class="table-td"><span class="badge-yellow">Media</span></td></tr>
+              <tr><td class="table-td font-semibold text-blue-700">anziani.it</td><td class="table-td"><span class="badge-green">63</span></td><td class="table-td text-sm">bracciale cadute anziani certificato</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Apr 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
+              <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">caregiveritalia.it</td><td class="table-td"><span class="badge-green">58</span></td><td class="table-td text-sm">teleassistenza anziani soli</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Mar 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
+              <tr><td class="table-td font-semibold text-blue-700">geriatria.it</td><td class="table-td"><span class="badge-green">54</span></td><td class="table-td text-sm">dispositivo medico rilevamento cadute</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Feb 2025</td><td class="table-td"><span class="badge-green">Alta</span></td></tr>
+              <tr style="background:#f8fafc"><td class="table-td font-semibold text-blue-700">silverage.it</td><td class="table-td"><span class="badge-yellow">46</span></td><td class="table-td text-sm">GPS anziani SiDLY</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Mag 2025</td><td class="table-td"><span class="badge-yellow">Media</span></td></tr>
+              <tr><td class="table-td font-semibold text-blue-700">famigliainforma.it</td><td class="table-td"><span class="badge-yellow">41</span></td><td class="table-td text-sm">eCura teleassistenza</td><td class="table-td"><span class="chip-back link-chip">Dofollow</span></td><td class="table-td text-sm text-gray-500">Giu 2025</td><td class="table-td"><span class="badge-yellow">Media</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -14701,23 +14701,23 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="font-bold text-gray-800 mb-3"><i class="fas fa-building text-emerald-600 mr-2"></i>5 Opportunità Link Building</div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="opportunity-card">
-          <div class="font-bold text-sm">Guest Post su MedicinaDigitale.it</div>
-          <div class="text-xs text-gray-600 mt-1">DA 47 · Sanitario · Accettano contributi di esperti</div>
+          <div class="font-bold text-sm">Guest Post su CaregiverItalia.it</div>
+          <div class="text-xs text-gray-600 mt-1">DA 58 · Caregiver e anziani · Accettano contributi su sicurezza domestica</div>
           <div class="flex items-center gap-2 mt-2"><span class="badge-green">Alta probabilità</span><span class="text-xs text-gray-500">Stima: +2-3 DA punti</span></div>
         </div>
         <div class="opportunity-card">
-          <div class="font-bold text-sm">Directory FNOMCeO — Sezione Telemedicina</div>
-          <div class="text-xs text-gray-600 mt-1">DA 74 · Istituzionale · Listing gratuito certificati</div>
+          <div class="font-bold text-sm">Listing Ministero Salute — Dispositivi Medici</div>
+          <div class="text-xs text-gray-600 mt-1">DA 91 · Istituzionale · Pagina pubblica BD/RDM 2853300 linkabile</div>
           <div class="flex items-center gap-2 mt-2"><span class="badge-blue">Gratuito</span><span class="text-xs text-gray-500">Stima: +3-4 DA punti</span></div>
         </div>
         <div class="opportunity-card">
-          <div class="font-bold text-sm">Press Release — Nuova Funzionalità App</div>
-          <div class="text-xs text-gray-600 mt-1">Target: AgIMed, SanitaNews, MedPoint · DA 40-65</div>
-          <div class="flex items-center gap-2 mt-2"><span class="badge-yellow">Medio termine</span><span class="text-xs text-gray-500">Stima: 5-8 backlink</span></div>
+          <div class="font-bold text-sm">Press Release — SiDLY CARE dispositivo medico certificato</div>
+          <div class="text-xs text-gray-600 mt-1">Target: QuotidianSanità, SanitaNews, GeriatriaPratica · DA 45-72</div>
+          <div class="flex items-center gap-2 mt-2"><span class="badge-yellow">Medio termine</span><span class="text-xs text-gray-500">Stima: 6-10 backlink</span></div>
         </div>
         <div class="opportunity-card">
-          <div class="font-bold text-sm">Partnership Ordine Medici Regionale</div>
-          <div class="text-xs text-gray-600 mt-1">16 ordini regionali · DA 55-80 · Link contestuale</div>
+          <div class="font-bold text-sm">Partnership Associazioni Anziani (AUSER, ADA)</div>
+          <div class="text-xs text-gray-600 mt-1">DA 48-65 · Associazioni nazionali · Link editoriale ad alto trust</div>
           <div class="flex items-center gap-2 mt-2"><span class="badge-purple">Alto valore</span><span class="text-xs text-gray-500">Stima: +5-8 DA punti</span></div>
         </div>
       </div>
@@ -14743,9 +14743,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <option>3D / Moderno</option>
           </select>
           <label class="input-label">Descrizione personalizzata</label>
-          <textarea id="imgDesc" rows="4" placeholder="Descrivi l'immagine che vuoi generare...">Medico professionista italiano in videochiamata su laptop moderno, sfondo studio medico luminoso, luce naturale, stile corporate moderno, alta qualità</textarea>
+          <textarea id="imgDesc" rows="4" placeholder="Descrivi l'immagine che vuoi generare...">Anziano sorridente a casa con bracciale SiDLY CARE al polso, luce naturale calda, ambiente domestico accogliente, espressione serena e fiduciosa, stile corporate moderno, alta qualità</textarea>
           <label class="input-label mt-3">Alt text SEO (generato automaticamente)</label>
-          <input type="text" id="imgAlt" value="medico online consulto videochiamata professionista italiano telemedicina" readonly style="background:#f1f5f9">
+          <input type="text" id="imgAlt" value="anziano con bracciale cadute SiDLY CARE dispositivo medico certificato teleassistenza eCura" readonly style="background:#f1f5f9">
           <div class="flex gap-3 mt-3">
             <button class="action-btn" onclick="generateImgSeo()"><i class="fas fa-magic"></i>Genera Immagine</button>
             <button class="action-btn-sm" onclick="optimizeAlt()"><i class="fas fa-robot"></i>Ottimizza Alt</button>
@@ -14756,28 +14756,28 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="font-bold text-sm text-gray-700 mb-3">6 Prompt Pre-Calibrati per Siti Medici</div>
           <div class="space-y-2" id="imgPrompts">
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(0)">
-              <div class="text-sm font-semibold text-gray-800">👨‍⚕️ Medico in videochiamata</div>
-              <div class="text-xs text-gray-500 mt-1">Professionista + paziente + device · Corporate · Alta conversione</div>
+              <div class="text-sm font-semibold text-gray-800">👴 Anziano con bracciale SiDLY CARE</div>
+              <div class="text-xs text-gray-500 mt-1">Casa accogliente · Sicurezza · Serenità · Alta conversione</div>
             </div>
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(1)">
-              <div class="text-sm font-semibold text-gray-800">💻 Piattaforma digitale sanitaria</div>
-              <div class="text-xs text-gray-500 mt-1">Dashboard medica · UI moderna · Tech feel</div>
+              <div class="text-sm font-semibold text-gray-800">👩‍👧 Figlia caregiver e genitore anziano</div>
+              <div class="text-xs text-gray-500 mt-1">Figlia con genitore anziano · App eCura · Tranquillità</div>
             </div>
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(2)">
-              <div class="text-sm font-semibold text-gray-800">🏥 Struttura medica moderna</div>
-              <div class="text-xs text-gray-500 mt-1">Clinica digitale · Spazi luminosi · Trust</div>
+              <div class="text-sm font-semibold text-gray-800">🏅 Certificazione CE classe IIA MDR</div>
+              <div class="text-xs text-gray-500 mt-1">Logo CE classe IIA · MDR · Bollino qualità · Trust</div>
             </div>
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(3)">
-              <div class="text-sm font-semibold text-gray-800">📱 Paziente usa app mobile</div>
-              <div class="text-xs text-gray-500 mt-1">UX intuitiva · Prenota in 3 tap · Lifestyle</div>
+              <div class="text-sm font-semibold text-gray-800">📲 App eCura con GPS in tempo reale</div>
+              <div class="text-xs text-gray-500 mt-1">Dashboard monitoraggio · GPS live · Storico allarmi</div>
             </div>
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(4)">
-              <div class="text-sm font-semibold text-gray-800">🔬 Specialista settore medico</div>
-              <div class="text-xs text-gray-500 mt-1">Cardiologo · Dermatologo · Neurologo · Autorità</div>
+              <div class="text-sm font-semibold text-gray-800">🚨 Allarme SOS caduta — risposta immediata</div>
+              <div class="text-xs text-gray-500 mt-1">Centrale operativa · Risposta SOS · Autorità e fiducia</div>
             </div>
             <div class="p-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow" style="border:1px solid #e2e8f0;background:#f8fafc" onclick="loadSeoPrompt(5)">
-              <div class="text-sm font-semibold text-gray-800">📊 Infografica dati sanitari</div>
-              <div class="text-xs text-gray-500 mt-1">Statistiche · Grafici · Dati citabili SEO</div>
+              <div class="text-sm font-semibold text-gray-800">📈 Infografica: 3.200 morti/anno per caduta anziani</div>
+              <div class="text-xs text-gray-500 mt-1">Statistiche ISTAT · 30% over65 cade · Dati citabili SEO</div>
             </div>
           </div>
         </div>
@@ -14810,11 +14810,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-center gap-2 mb-2">
             <i class="fas fa-user-tie text-2xl text-emerald-600"></i>
             <div>
-              <div class="font-bold text-sm">Professionisti 35-54</div>
-              <span class="badge-green">34% traffico</span>
+              <div class="font-bold text-sm">Figli caregiver 40-60</div>
+              <span class="badge-green">38% traffico</span>
             </div>
           </div>
-          <div class="text-xs text-gray-600">Ricercano specialisti certificati, disponibilità oraria flessibile, fattura elettronica. Keyword: "cardiologo online pomeriggio", "specialista con ricevuta"</div>
+          <div class="text-xs text-gray-600">Cercano soluzioni sicure per genitori anziani soli. Priorità: certificazione medica, GPS, SOS automatico. Keyword: "bracciale cadute anziani certificato", "dispositivo sicurezza genitore solo"</div>
           <div class="mt-3 progress-bar"><div class="progress-fill progress-fill-green" style="width:78%"></div></div>
           <div class="text-xs text-gray-500 mt-1">Intent score: 78/100</div>
         </div>
@@ -14822,11 +14822,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-center gap-2 mb-2">
             <i class="fas fa-users text-2xl text-blue-500"></i>
             <div>
-              <div class="font-bold text-sm">Famiglie 28-45</div>
-              <span class="badge-blue">28% traffico</span>
+              <div class="font-bold text-sm">Anziani autonomi 65-80</div>
+              <span class="badge-blue">24% traffico</span>
             </div>
           </div>
-          <div class="text-xs text-gray-600">Cercano medico pediatra online, visite senza trasferta. Keyword: "pediatra online notte", "medico bambino urgente", "consulto 24h"</div>
+          <div class="text-xs text-gray-600">Cercano autonomia e sicurezza senza pesare sui figli. Keyword: "bracciale GPS anziani discreto", "telesoccorso anziani soli", "allarme caduta automatico"</div>
           <div class="mt-3 progress-bar"><div class="progress-fill progress-fill-blue" style="width:82%"></div></div>
           <div class="text-xs text-gray-500 mt-1">Intent score: 82/100</div>
         </div>
@@ -14834,11 +14834,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-center gap-2 mb-2">
             <i class="fas fa-wheelchair text-2xl text-violet-500"></i>
             <div>
-              <div class="font-bold text-sm">Anziani 65+ (caregiver)</div>
-              <span class="badge-purple">21% traffico</span>
+              <div class="font-bold text-sm">RSA e assistenza domiciliare</div>
+              <span class="badge-purple">22% traffico</span>
             </div>
           </div>
-          <div class="text-xs text-gray-600">Cercano soluzioni per genitori/nonni. Keyword: "medico online anziani", "consulto geriatrico", "assistenza domiciliare digitale"</div>
+          <div class="text-xs text-gray-600">Strutture e operatori cercano dispositivi certificati per monitoraggio pazienti. Keyword: "dispositivo medico classe IIA telemonitoraggio", "bracciale SOS certificato MDR RSA"</div>
           <div class="mt-3 progress-bar"><div class="progress-fill progress-fill-orange" style="width:65%"></div></div>
           <div class="text-xs text-gray-500 mt-1">Intent score: 65/100</div>
         </div>
@@ -14846,11 +14846,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex items-center gap-2 mb-2">
             <i class="fas fa-map-marker-alt text-2xl text-yellow-500"></i>
             <div>
-              <div class="font-bold text-sm">Aree rurali / isole</div>
-              <span class="badge-yellow">17% traffico</span>
+              <div class="font-bold text-sm">Aree rurali / lontano da ospedali</div>
+              <span class="badge-yellow">16% traffico</span>
             </div>
           </div>
-          <div class="text-xs text-gray-600">Accesso limitato a specialisti. Keyword: "specialista senza lista d'attesa", "medico online Sicilia", "consulto remoto urgente"</div>
+          <div class="text-xs text-gray-600">Figlia caregiver: genitore anziano solo a rischio. Keyword: "bracciale cadute anziani", "teleassistenza anziani", "SiDLY CARE opinioni"</div>
           <div class="mt-3 progress-bar"><div class="progress-fill progress-fill-orange" style="width:91%"></div></div>
           <div class="text-xs text-gray-500 mt-1">Intent score: 91/100 ⭐</div>
         </div>
@@ -14875,15 +14875,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="flex items-center gap-3 mb-3">
               <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#059669,#0d9488);display:flex;align-items:center;justify-content:center;font-size:22px">👩‍💼</div>
               <div>
-                <div class="font-bold" id="personaName">Martina, 38 anni</div>
-                <div class="text-xs text-gray-500" id="personaJob">Manager Milano · Famiglia con 2 figli</div>
+                <div class="font-bold" id="personaName">Silvia, 48 anni</div>
+                <div class="text-xs text-gray-500" id="personaJob">Impiegata Milano · Genitore anziano solo a Bergamo</div>
               </div>
             </div>
             <div class="text-xs text-gray-700 leading-relaxed" id="personaDesc">Lavora da casa 3 giorni su 5. Non ha tempo per file d'attesa. Cerca uno specialista online affidabile per i figli e per sé. Usa smartphone per tutto. Budget medio-alto. Cerca qualità e velocità di prenotazione.</div>
             <div class="mt-3 flex gap-2 flex-wrap" id="personaKw">
-              <span class="badge-green">pediatra online urgente</span>
-              <span class="badge-blue">specialista cardiologico</span>
-              <span class="badge-gray">prenotazione rapida</span>
+              <span class="badge-green">bracciale cadute anziani certificato</span>
+              <span class="badge-blue">GPS genitore solo</span>
+              <span class="badge-gray">allarme automatico caduta</span>
             </div>
             <button class="action-btn-sm mt-3" onclick="nextPersonaSeo()"><i class="fas fa-refresh"></i>Prossima Persona</button>
           </div>
@@ -14912,38 +14912,38 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
         <div class="kpi-card" style="border-top:3px solid #ef4444">
           <div style="background:#fef2f2;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fab fa-youtube text-red-400 text-3xl"></i></div>
-          <div class="font-bold text-sm">Come funziona il medico online</div>
-          <div class="text-xs text-gray-500 mt-1">Target: 14.8k ricerche/mese · Difficulty: 42</div>
-          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-green">3.2k views</span><span class="badge-blue">Top 3 YT</span></div>
-          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Come funziona il medico online')"><i class="fas fa-film"></i>Genera Script</button>
+          <div class="font-bold text-sm">Bracciale cadute anziani: come sceglierlo</div>
+          <div class="text-xs text-gray-500 mt-1">Target: 9.6k ricerche/mese · Difficulty: 38</div>
+          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-green">4.1k views</span><span class="badge-blue">Top 3 YT</span></div>
+          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Bracciale cadute anziani: guida alla scelta 2025')"><i class="fas fa-film"></i>Genera Script</button>
         </div>
         <div class="kpi-card" style="border-top:3px solid #ef4444">
           <div style="background:#fef2f2;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fab fa-youtube text-red-400 text-3xl"></i></div>
-          <div class="font-bold text-sm">Telemedicina: 5 vantaggi rispetto alla visita</div>
-          <div class="text-xs text-gray-500 mt-1">Target: 8.4k ricerche/mese · Difficulty: 35</div>
-          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-green">2.1k views</span><span class="badge-yellow">Pos. 7</span></div>
-          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('5 vantaggi telemedicina vs visita tradizionale')"><i class="fas fa-film"></i>Genera Script</button>
+          <div class="font-bold text-sm">SiDLY CARE: dispositivo medico certificato</div>
+          <div class="text-xs text-gray-500 mt-1">Target: 5.8k ricerche/mese · Difficulty: 29</div>
+          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-green">2.8k views</span><span class="badge-yellow">Pos. 5</span></div>
+          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('SiDLY CARE: perché è un dispositivo medico certificato classe IIA')"><i class="fas fa-film"></i>Genera Script</button>
         </div>
         <div class="kpi-card" style="border-top:3px solid #ef4444">
           <div style="background:#fef2f2;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fab fa-youtube text-red-400 text-3xl"></i></div>
-          <div class="font-bold text-sm">Cardiologo online: quando serve</div>
-          <div class="text-xs text-gray-500 mt-1">Target: 5.4k ricerche/mese · Difficulty: 48</div>
-          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-yellow">1.4k views</span><span class="badge-yellow">Pos. 9</span></div>
-          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Cardiologo online: quando consultarlo e perché')"><i class="fas fa-film"></i>Genera Script</button>
+          <div class="font-bold text-sm">Teleassistenza anziani: come funziona eCura</div>
+          <div class="text-xs text-gray-500 mt-1">Target: 4.1k ricerche/mese · Difficulty: 33</div>
+          <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-yellow">1.6k views</span><span class="badge-yellow">Pos. 8</span></div>
+          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Teleassistenza anziani eCura: come funziona dal primo giorno')"><i class="fas fa-film"></i>Genera Script</button>
         </div>
         <div class="kpi-card" style="border-top:3px solid #f59e0b">
           <div style="background:#fefce8;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fas fa-plus-circle text-yellow-400 text-3xl"></i></div>
-          <div class="font-bold text-sm">Nuova idea: Referto digitale spiegato</div>
-          <div class="text-xs text-gray-500 mt-1">Target: 3.2k ricerche/mese · Difficulty: 28</div>
+          <div class="font-bold text-sm">Nuova idea: GPS anziani — confronto 2025</div>
+          <div class="text-xs text-gray-500 mt-1">Target: 6.2k ricerche/mese · Difficulty: 31</div>
           <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-yellow">Da creare</span><span class="badge-green">Facile</span></div>
-          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Come leggere un referto digitale medico')"><i class="fas fa-film"></i>Genera Script</button>
+          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('GPS per anziani 2025: confronto tra i migliori dispositivi')"><i class="fas fa-film"></i>Genera Script</button>
         </div>
         <div class="kpi-card" style="border-top:3px solid #f59e0b">
           <div style="background:#fefce8;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fas fa-plus-circle text-yellow-400 text-3xl"></i></div>
-          <div class="font-bold text-sm">Nuova idea: Seconda opinione medica</div>
-          <div class="text-xs text-gray-500 mt-1">Target: 2.1k ricerche/mese · Difficulty: 22</div>
+          <div class="font-bold text-sm">Nuova idea: Consumer vs Dispositivo Medico</div>
+          <div class="text-xs text-gray-500 mt-1">Target: 2.9k ricerche/mese · Difficulty: 19</div>
           <div class="flex gap-2 mt-2 flex-wrap"><span class="badge-yellow">Da creare</span><span class="badge-green">Facile ★</span></div>
-          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Seconda opinione medica online: quando richiederla')"><i class="fas fa-film"></i>Genera Script</button>
+          <button class="action-btn-sm mt-3 w-full justify-center" onclick="genYTScriptSeo('Bracciale consumer vs dispositivo medico certificato: le differenze che contano')"><i class="fas fa-film"></i>Genera Script</button>
         </div>
         <div class="kpi-card" style="border-top:3px solid #8b5cf6">
           <div style="background:#f5f3ff;border-radius:8px;height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:10px"><i class="fas fa-pen text-violet-400 text-3xl"></i></div>
@@ -14993,7 +14993,7 @@ function toggleAutopilot() {
 }
 
 function runSeoAutopilot() {
-  const kw = document.getElementById('apKeyword').value || 'telemedicina online';
+  const kw = document.getElementById('apKeyword').value || 'bracciale cadute anziani';
   const steps = [
     'Analisi keyword "' + kw + '"…',
     'Ricerca SERP top-10…',
@@ -15050,13 +15050,13 @@ function runKeywordSeo() {
   if (!kw.trim()) { alert('Inserisci una keyword'); return; }
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Analisi…';
-  setTimeout(() => { btn.innerHTML = '<i class="fas fa-search"></i> Analizza'; alert('✅ Analisi completata per: "' + kw + '"\\nTrovate 24 keyword correlate, 3 cluster, difficoltà media: 47/100'); }, 1800);
+  setTimeout(() => { btn.innerHTML = '<i class="fas fa-search"></i> Analizza'; alert('✅ Analisi completata per: "' + kw + '"\\nTrovate 18 keyword correlate, 4 cluster, difficoltà media: 38/100'); }, 1800);
 }
 function exportKwCSV() { alert('📥 Export CSV keyword research completato!'); }
 
 // ── SERP ───────────────────────────────────────────────────────────
 function runSerpSeo() {
-  const q = document.getElementById('serpQuery').value || 'medico online';
+  const q = document.getElementById('serpQuery').value || 'bracciale cadute anziani';
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Analisi…';
   setTimeout(() => { btn.innerHTML = '<i class="fas fa-search"></i> Analizza SERP'; alert('✅ SERP analizzata per: "' + q + '"\\nTop 10 risultati caricati · Featured Snippet: Presente · PAA: 8 domande'); }, 1600);
@@ -15064,15 +15064,15 @@ function runSerpSeo() {
 
 // ── Competitor ─────────────────────────────────────────────────────
 function refreshCompSeo() {
-  const d = document.getElementById('compInput').value || 'telemedcare.it';
+  const d = document.getElementById('compInput').value || 'ecura.it';
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Aggiornamento…';
-  setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i> Aggiorna Analisi'; alert('✅ Analisi competitor aggiornata per: ' + d + '\\nMatrice comparativa aggiornata con dati 2025'); }, 2000);
+  setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i> Aggiorna Analisi'; alert('✅ Analisi competitor aggiornata per: ' + d + '\\nMatrice competitor teleassistenza aggiornata con dati 2025'); }, 2000);
 }
 
 // ── Deep Research ──────────────────────────────────────────────────
 function runDeepSeo() {
-  const q = document.getElementById('deepQuery').value || 'telemedicina';
+  const q = document.getElementById('deepQuery').value || 'teleassistenza anziani';
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Ricerca…';
   setTimeout(() => { btn.innerHTML = '<i class="fas fa-search-plus"></i> Cerca Fonti'; alert('✅ Trovate 12 fonti autorevoli per: "' + q + '"\\nFiltrate per DA > 50 e data > 2024'); }, 1800);
@@ -15086,7 +15086,7 @@ function useSeoSource(text) {
 // ── Score ──────────────────────────────────────────────────────────
 function analyzeScoreSeo() {
   const content = document.getElementById('scoreContent').value;
-  const kw = document.getElementById('scoreKw').value || 'medico online';
+  const kw = document.getElementById('scoreKw').value || 'bracciale cadute anziani';
   if (!content.trim()) { alert('Inserisci del contenuto da analizzare'); return; }
   const words = content.split(/\\s+/).length;
   const density = ((content.toLowerCase().split(kw.toLowerCase()).length - 1) / words * 100).toFixed(1);
@@ -15106,10 +15106,10 @@ function liveScoreSeo() {
 
 // ── Internal Links ─────────────────────────────────────────────────
 function scanInternalSeo() {
-  const site = document.getElementById('intSite').value || 'telemedcare.it';
+  const site = document.getElementById('intSite').value || 'ecura.it';
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Scansione…';
-  setTimeout(() => { btn.innerHTML = '<i class="fas fa-spider"></i> Scansiona Sito'; alert('✅ Scansione completata per ' + site + '\\n142 pagine trovate · 23 orfane · Profondità max: 8 click'); }, 2200);
+  setTimeout(() => { btn.innerHTML = '<i class="fas fa-spider"></i> Scansiona Sito'; alert('✅ Scansione completata per ' + site + '\\n88 pagine trovate · 23 orfane · Profondità max: 8 click'); }, 2200);
 }
 function exportInternalMap() { alert('📥 Mappa link interni esportata in CSV'); }
 function addInternalLink(url) { alert('✅ Link interno aggiunto per: ' + url + '\\nSuggerisci anchor text nella pagina più rilevante'); }
@@ -15134,20 +15134,20 @@ function filterExtLinks(type) { alert('🔍 Filtro applicato: ' + type + ' — m
 
 // ── Backlink ───────────────────────────────────────────────────────
 function refreshBacklinkSeo() {
-  const d = document.getElementById('blDomain').value || 'telemedcare.it';
+  const d = document.getElementById('blDomain').value || 'ecura.it';
   const btn = event.target.closest('button');
   btn.innerHTML = '<span class="spin"><i class="fas fa-cog"></i></span> Aggiornamento…';
-  setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i> Aggiorna Analisi'; alert('✅ Profilo backlink aggiornato per ' + d + '\\n1.248 link trovati · 14 tossici da disavow · 284 domini referenti'); }, 1900);
+  setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i> Aggiorna Analisi'; alert('✅ Profilo backlink aggiornato per ' + d + '\\n1.248 link trovati · 3 tossici da disavow · 248 domini referenti'); }, 1900);
 }
 
 // ── Images ─────────────────────────────────────────────────────────
 const seoPrompts = [
-  { desc: 'Medico italiano professionale in videochiamata, laptop moderno, studio medico luminoso, luce naturale, sfondo bokeh, stile corporate premium, 8K', alt: 'medico online consulto videochiamata professionale italiano telemedicina' },
-  { desc: 'Piattaforma sanitaria digitale moderna su monitor, dashboard con dati pazienti, interfaccia UX pulita, colori verde/bianco/blu, tecnologia sanitaria 2025', alt: 'piattaforma digitale sanitaria dashboard medica software telemedicina' },
-  { desc: 'Clinica medica moderna luminosa, reception digitale, spazi contemporanei, atmosfera rassicurante e professionale, architettura minimalista', alt: 'clinica medica moderna struttura sanitaria digitale professionale' },
-  { desc: 'Persona che usa smartphone per prenotare visita medica, interfaccia app chiara, sfondo casa luminosa, lifestyle contemporaneo italiano', alt: 'app prenotazione medica online smartphone paziente italiano telemedicina' },
-  { desc: 'Specialista medico autorevole, camice bianco, studio professionale, espressione fiduciosa, luce studio, ritratto professionale corporativo italiano', alt: 'specialista medico professionista italiano autorità sanitaria telemedicina' },
-  { desc: 'Infografica dati sanitari italiana, grafici statistiche telemedicina 2025, design moderno verde/bianco, dati ISTAT/ISS, leggibile e professionale', alt: 'infografica statistiche telemedicina Italia 2025 dati sanitari trend digitale' }
+  { desc: 'Anziano italiano sorridente a casa con bracciale SiDLY CARE al polso, luce naturale calda, ambiente domestico accogliente, espressione serena e fiduciosa, stile corporate moderno, 8K', alt: 'anziano con bracciale cadute SiDLY CARE dispositivo medico certificato classe IIA teleassistenza eCura' },
+  { desc: 'Figlia adulta sorridente che mostra app eCura su smartphone alla madre anziana, atmosfera familiare calda, comunicazione affettuosa, tecnologia accessibile', alt: 'caregiver con app eCura teleassistenza anziani monitoraggio familiare dispositivo medico' },
+  { desc: 'Certificazione CE marchio dispositivo medico classe IIA su sfondo pulito bianco/verde, badge MDR 2017/745, design istituzionale professionale e autorevole', alt: 'certificazione dispositivo medico classe IIA CE MDR SiDLY CARE eCura qualità certificata' },
+  { desc: 'Dashboard app eCura su smartphone moderno, mappa GPS posizione anziano, stato batteria, ultimo allarme, interfaccia UX pulita verde/bianco, lifestyle contemporaneo', alt: 'app eCura dashboard GPS monitoraggio anziani teleassistenza smartphone famiglia' },
+  { desc: 'Operatore centrale assistenza 24/7 con cuffie professionali, monitor con mappa GPS, espressione attenta e rassicurante, ambiente high-tech moderno, simbolo di affidabilità', alt: 'centrale operativa teleassistenza anziani 24h SOS risposta emergenza eCura SiDLY' },
+  { desc: 'Infografica statistica cadute anziani Italia, dati ISTAT 2024, grafici moderni verde/bianco/blu, 30% over65 cade ogni anno, 3200 decessi, impatto SSN, design professionale leggibile', alt: 'infografica cadute anziani Italia ISTAT 2025 statistiche bracciale dispositivo medico prevenzione' }
 ];
 function loadSeoPrompt(i) {
   document.getElementById('imgDesc').value = seoPrompts[i].desc;
@@ -15168,10 +15168,10 @@ function optimizeAlt() {
 
 // ── Audience ───────────────────────────────────────────────────────
 const seoPersonas = [
-  { name: 'Martina, 38 anni', job: 'Manager Milano · Famiglia con 2 figli', desc: 'Lavora da casa 3 giorni su 5. Non ha tempo per file d’attesa. Cerca uno specialista online affidabile per i figli e per sé. Budget medio-alto. Priorità: velocità e qualità.', kw: ['pediatra online urgente', 'specialista cardiologico', 'prenotazione rapida'] },
-  { name: 'Giuseppe, 67 anni', job: 'Pensionato Napoli · Caregiver figlia disabile', desc: 'Gestisce la salute propria e della figlia. Non può spostarsi facilmente. Cerca soluzioni digitali semplici. Usa smartphone base. Priorità: semplicità e assistenza telefonica.', kw: ['medico anziani online', 'assistenza domiciliare', 'visita accessibile'] },
-  { name: 'Federica, 29 anni', job: 'Freelancer Torino · Single', desc: 'Smart worker nomade. Spesso fuori città. Ha bisogno di un medico raggiungibile ovunque. Esperta di tecnologia. Priorità: app intuitiva, prezzi trasparenti, immediata disponibilità.', kw: ['medico digitale 24h', 'dermatologo online', 'seconda opinione veloce'] },
-  { name: 'Marco, 45 anni', job: 'Imprenditore Roma · Alto reddito', desc: 'Poco tempo, molto stress. Vuole il meglio per la salute. Disposto a pagare per la qualità. Cerca specialisti di alto livello in tempi brevi. Priorità: eccellenza e discrezione.', kw: ['cardiologo privato online', 'specialista premium', 'consulto urgente'] }
+  { name: 'Silvia, 48 anni', job: 'Impiegata Milano · Genitore anziano solo a Bergamo', desc: 'Lavora full-time e non può controllare il padre anziano ogni giorno. La caduta di un anno fa l’ha spaventata. Cerca un dispositivo certificato con GPS e allarme automatico. Budget medio. Priorità: sicurezza e tranquillità mentale.', kw: ['bracciale cadute anziani certificato', 'GPS genitore solo', 'allarme automatico caduta'] },
+  { name: 'Aldo, 74 anni', job: 'Pensionato Firenze · Vive solo da 3 anni', desc: 'Vuole restare autonomo e non essere di peso ai figli. Ha avuto una brutta caduta 6 mesi fa. Cerca un bracciale discreto, non troppo grande, con batteria lunga. Priorità: indipendenza senza rinunciare alla sicurezza.', kw: ['bracciale GPS anziani discreto', 'telesoccorso anziani soli', 'SOS automatico caduta'] },
+  { name: 'Dott. Carlo, 52 anni', job: 'Responsabile RSA Bologna · 40 ospiti', desc: 'Gestisce una RSA e deve garantire sicurezza certificata. Cerca dispositivi MDR per adempiere alle normative. Budget strutturato. Priorità: certificazione classe IIA, reportistica e integrabilità con il gestionale.', kw: ['dispositivo medico classe IIA RSA', 'bracciale SOS certificato MDR', 'telemonitoraggio anziani struttura'] },
+  { name: 'Lucia, 38 anni', job: 'Infermiera domiciliare Palermo · Assistenza 8 anziani', desc: 'Visita anziani a domicilio in zone rurali lontane dall’ospedale. Ha urgenza di strumenti di monitoraggio affidabili. Conosce i dispositivi medici e sa valutare la certificazione. Priorità: affidabilità tecnica e risposta rapida.', kw: ['dispositivo medico anziani domicilio', 'GPS emergenza zone rurali', 'teleassistenza certificata infermieri'] }
 ];
 let personaIdx = 0;
 function nextPersonaSeo() {
@@ -15194,15 +15194,15 @@ function genYTScriptSeo(topic) {
     content.textContent = '🎬 SCRIPT VIDEO: ' + topic + '\\n' +
       '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n' +
       '[HOOK - 0:00-0:15]\\n' +
-      '"Sai quante ore italiani perdono in sala d’attesa ogni anno? Oltre 200 milioni. Oggi ti spiego come azzerarle con il medico online."\\n\\n' +
-      '[INTRO - 0:15-0:45]\\nBenvenuto/a! Sono [Nome], e in questo video ti mostro [topic] in modo chiaro e pratico.\\n\\n' +
-      '[PUNTO 1 - 0:45-2:00]\\nCos’è e come funziona — Spiegazione semplice con esempi concreti...\\n\\n' +
-      '[PUNTO 2 - 2:00-3:30]\\nVantaggi rispetto al metodo tradizionale — Dati e statistiche (cita: ISTAT 2024, ISS)...\\n\\n' +
-      '[PUNTO 3 - 3:30-4:45]\\nCome iniziare in 3 passi — Demo pratica della piattaforma...\\n\\n' +
-      '[CTA - 4:45-5:00]\\n"Link in descrizione per prenotare la tua prima visita — prima consulenza GRATIS. Iscriviti al canale per altri contenuti su salute digitale!"\\n\\n' +
-      '📌 TAG YOUTUBE: medico online, telemedicina, ' + topic.split(' ').slice(0,3).join(', ') + ', salute digitale\\n' +
-      '📌 TITOLO OTTIMIZZATO: ' + topic + ': Guida Completa 2025 [FUNZIONA DAVVERO?]\\n' +
-      '📌 DURATA STIMATA: 5-6 minuti | Keyword density: 1.8% | CTR atteso: +24%';
+      '"Ogni anno in Italia 3.200 anziani muoiono a causa di una caduta. Ma esiste un dispositivo medico certificato che può fare la differenza. Oggi te lo mostro."\\n\\n' +
+      '[INTRO - 0:15-0:45]\\nCiao! In questo video ti spiego [topic] in modo chiaro, con dati reali e senza tecnicismi.\\n\\n' +
+      '[PUNTO 1 - 0:45-2:00]\\nCome funziona SiDLY CARE — Spiegazione semplice con esempi concreti...\\n\\n' +
+      '[PUNTO 2 - 2:00-3:30]\\nPerché la certificazione MDR classe IIA cambia tutto — Differenza tra bracciale consumer e dispositivo medico. Precisione clinica, affidabilità certificata (cita: ISS 2024, Lancet 2024)...\\n\\n' +
+      '[PUNTO 3 - 3:30-4:45]\\nCome attivare il piano eCura in 3 passi — Unboxing SiDLY CARE, configurazione app, primo test SOS. Demo pratica...\\n\\n' +
+      '[CTA - 4:45-5:00]\\n"Link in descrizione per scoprire i piani eCura — prova gratuita 30 giorni. Iscriviti per altri contenuti su teleassistenza anziani!"\\n\\n' +
+      '📌 TAG YOUTUBE: bracciale cadute anziani, SiDLY CARE, ' + topic.split(' ').slice(0,3).join(', ') + ', teleassistenza anziani\\n' +
+      '📌 TITOLO OTTIMIZZATO: ' + topic + ': Guida Completa 2025 [DISPOSITIVO MEDICO CERTIFICATO]\\n' +
+      '📌 DURATA STIMATA: 5-6 minuti | Keyword density: 1.9% | CTR atteso: +31%';
   }, 1800);
   out.scrollIntoView({ behavior: 'smooth' });
 }
