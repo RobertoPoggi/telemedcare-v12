@@ -349,15 +349,18 @@ export async function getTokensNeedingReminder(
   // ============================================
   // Regole:
   // 1. ❌ ESCLUDI lead con contratto già firmato (status = CONTRACT_SIGNED o ACTIVE)
-  // 2. ❌ ESCLUDI lead "NON INTERESSATI" (status = NOT_INTERESTED)
-  // 3. ✅ PRIORITÀ 1: status = "INTERESTED" (Interessati)
-  // 4. ✅ PRIORITÀ 2: status = "TO_RECONTACT" (Da ricontattare)
-  // 5. ✅ Più vecchi per primi (created_at ASC)
-  // 6. ⚠️ NOTA: Contratti firmati manualmente possono non essere nel DB
+  // 2. ❌ ESCLUDI lead non interessati (sia status che stato CRM)
+  // 3. ❌ ESCLUDI lead convertiti/con problemi economici/persi (campo stato CRM)
+  // 4. ✅ WHITELIST stati CRM: SOLO 'in_trattativa', 'interessato', 'da_ricontattare'
+  // 5. ✅ PRIORITÀ 1: stato = 'in_trattativa' (In Trattativa)
+  // 6. ✅ PRIORITÀ 2: stato = 'interessato' (Interessato)
+  // 7. ✅ PRIORITÀ 3: stato = 'da_ricontattare' (Da Ricontattare)
+  // 8. ✅ Più vecchi per primi (created_at ASC)
+  // 9. ⚠️ NOTA: Contratti firmati manualmente possono non essere nel DB
   //    (es. Margherita Delaude, Maria Grazia Ronca - lead Andrea D'Avella)
   
   const result = await db.prepare(`
-    SELECT t.*, l.status, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
+    SELECT t.*, l.status, l.stato, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
     FROM lead_completion_tokens t
     JOIN leads l ON t.lead_id = l.id
     WHERE t.completed = 0
@@ -370,20 +373,29 @@ export async function getTokensNeedingReminder(
           AND t.reminder_sent_at < ?
         )
       )
-      -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi)
+      -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi nel DB)
       AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE')
-      -- ❌ ESCLUDI lead non interessati
+      -- ❌ ESCLUDI lead non interessati (campo status formale)
       AND l.status != 'NOT_INTERESTED'
-      -- ✅ SOLO lead eCura (da Form eCura o IRBEMA)
+      -- ❌ ESCLUDI per campo stato CRM: convertito, non interessato, problemi economici, perso, numero non attivo
+      AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+      -- ✅ WHITELIST stati CRM: SOLO lead in lavorazione attiva
+      AND (
+        l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+        OR l.stato IS NULL  -- Lead senza stato CRM ancora assegnato
+        OR l.stato = ''
+      )
+      -- ✅ SOLO lead eCura (escludi B2B IRBEMA)
       AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
-      -- ✅ ORDINA PER PRIORITÀ
+      -- ✅ ORDINA PER PRIORITÀ STATO CRM
     ORDER BY 
-      CASE l.status
-        WHEN 'INTERESTED' THEN 1      -- Priorità 1: Interessati
-        WHEN 'TO_RECONTACT' THEN 2    -- Priorità 2: Da ricontattare
-        ELSE 3                         -- Priorità 3: Altri stati validi
+      CASE l.stato
+        WHEN 'in_trattativa' THEN 1   -- Priorità 1: In Trattativa
+        WHEN 'interessato' THEN 2     -- Priorità 2: Interessato
+        WHEN 'da_ricontattare' THEN 3 -- Priorità 3: Da Ricontattare
+        ELSE 4                         -- Priorità 4: Senza stato (nuovi)
       END,
-      l.created_at ASC                 -- Più vecchi per primi
+      l.created_at ASC                 -- Più vecchi per primi a parità di priorità
   `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
   
   return result.results as LeadCompletionToken[]
@@ -704,48 +716,38 @@ export async function processReminders(
   // ============================================
   // 🛡️ PROTEZIONE BUDGET: LIMITE GIORNALIERO
   // ============================================
-  const DAILY_LIMIT = 10 // 🔻 MODIFICATO: Max 10 reminder al giorno (budget totale 30 email condiviso con altri reminder)
+  const DAILY_LIMIT = 10 // Max 10 reminder al giorno (budget totale 30 email condiviso)
   
   // ============================================
-  // 🚫 BLACKLIST: Lead già attivi (clienti con dispositivo attivo)
+  // ✅ FILTRO STATO CRM GIÀ APPLICATO IN QUERY
+  // I lead con stato = convertito/non_interessato/problemi_economici/perso
+  // sono già esclusi dalla query getTokensNeedingReminder.
+  // La blacklist manuale sotto è mantenuta solo come fallback di sicurezza
+  // per lead la cui conversione potrebbe non essere ancora aggiornata nel DB.
   // ============================================
-  // IMPORTANTE: Questa lista contiene i NOMI DEI LEAD (richiedenti), NON degli assistiti!
-  // Lead con dispositivi attivi NON presenti nel DB contracts con status ACTIVE:
-  // Lista aggiornata manualmente da dashboard dispositivi attivi
-  // Mappatura Lead → Assistito confermata il 2026-03-02
-  const MANUAL_CONTRACTS_BLACKLIST = [
-    // Lead attivi (dispositivi CARE e VITAL CARE)
-    'Francesco Pepe',      // → Anna De Marco
-    'Claudio Macchi',      // → Claudio Macchi (stesso)
-    'Alberto Locatelli',   // → Giovanni Locatelli
-    'Paolo Macrì',         // → Giuliana Balzarotti
-    'Elisabetta Cattini',  // → Giuseppina Cozzi
-    'Giorgio Riela',       // → Maria Capone
-    'Caterina D\'Alterio', // → Rita Pennacchio
-    'Elena Saglia',        // → Eileen Elisabeth King
-    'Stefania Rocca',      // → Laura Calvi
-    'Margherita Delaude',  // → Margherita Delaude (stesso)
-    'Maria Grazia Ronca',  // → Maria Grazia Ronca (stesso)
-    'Andrea D\'Avella',    // → Maria Grazia Ronca
-    'Simona Pizzutto'      // → Gianni Paolo Pizzutto
+  const MANUAL_CONTRACTS_BLACKLIST: string[] = [
+    // Blacklist manuale di fallback (ridotta) - per sicurezza residua
+    // I casi principali sono ora gestiti dal filtro su l.stato nel DB
+    'Margherita Delaude',  // Contratto manuale → Margherita Delaude
+    'Maria Grazia Ronca',  // Contratto manuale → Maria Grazia Ronca
+    'Andrea D\'Avella',    // Contratto manuale → Maria Grazia Ronca
   ]
   
-  // Filtra blacklist (confronta nome richiedente)
+  // Fallback blacklist check (solo per sicurezza residua)
   const tokensFiltered = tokens.filter((token: any) => {
     const nomeCognome = `${token.nomeRichiedente || ''} ${token.cognomeRichiedente || ''}`.trim()
     const isBlacklisted = MANUAL_CONTRACTS_BLACKLIST.some(name => 
       nomeCognome.toLowerCase().includes(name.toLowerCase()) ||
       name.toLowerCase().includes(nomeCognome.toLowerCase())
     )
-    
     if (isBlacklisted) {
-      console.log(`🚫 [REMINDER] Skipped (blacklist): ${nomeCognome} (lead ${token.lead_id})`)
+      console.log(`🚫 [REMINDER] Skipped (blacklist fallback): ${nomeCognome} (lead ${token.lead_id})`)
     }
-    
     return !isBlacklisted
   })
   
-  console.log(`📊 [REMINDER] Dopo filtro blacklist: ${tokensFiltered.length}/${tokens.length} token validi (${tokens.length - tokensFiltered.length} clienti attivi saltati)`)
+  console.log(`📊 [REMINDER] Token dopo filtri: ${tokensFiltered.length}/${tokens.length} validi (${tokens.length - tokensFiltered.length} saltati)`)
+  // Nota: i lead con stato=convertito/non_interessato/problemi_economici sono già esclusi dalla query SQL
   
   const tokensToProcess = tokensFiltered.slice(0, DAILY_LIMIT)
   
@@ -811,13 +813,28 @@ export async function processReminders(
         AND l.email IS NOT NULL AND l.email != ''
         AND l.updated_at < ?
         AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        -- ✅ WHITELIST stati CRM attivi
+        AND (
+          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+          OR l.stato IS NULL
+          OR l.stato = ''
+        )
         AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
         AND COALESCE(l.reminder_firma_count, 0) < ?
         AND (
           l.reminder_firma_sent_at IS NULL
           OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)
         )
-      ORDER BY l.updated_at ASC
+      ORDER BY
+        CASE l.stato
+          WHEN 'in_trattativa' THEN 1
+          WHEN 'interessato' THEN 2
+          WHEN 'da_ricontattare' THEN 3
+          ELSE 4
+        END,
+        l.updated_at ASC
       LIMIT 5
     `).bind(
       firmaReminderDate.toISOString(),
@@ -878,13 +895,28 @@ export async function processReminders(
         AND p.status NOT IN ('paid', 'PAID')
         AND (l.email IS NOT NULL AND l.email != '' OR p.cliente_email IS NOT NULL AND p.cliente_email != '')
         AND l.updated_at < ?
+        -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        -- ✅ WHITELIST stati CRM attivi
+        AND (
+          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+          OR l.stato IS NULL
+          OR l.stato = ''
+        )
         AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
         AND COALESCE(l.reminder_proforma_count, 0) < ?
         AND (
           l.reminder_proforma_sent_at IS NULL
           OR (l.reminder_proforma_sent_at < ? AND l.reminder_proforma_sent_at < ?)
         )
-      ORDER BY l.updated_at ASC
+      ORDER BY
+        CASE l.stato
+          WHEN 'in_trattativa' THEN 1
+          WHEN 'interessato' THEN 2
+          WHEN 'da_ricontattare' THEN 3
+          ELSE 4
+        END,
+        l.updated_at ASC
       LIMIT 5
     `).bind(
       proformaReminderDate.toISOString(),
