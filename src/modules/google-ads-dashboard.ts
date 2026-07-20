@@ -940,7 +940,7 @@ function generateAds() {
         <span class="text-xs text-gray-400 w-4 text-right">\${i+1}</span>
         <span class="flex-1 text-sm">\${h}</span>
         <span class="\${cls} text-xs w-8 text-right">\${len}/30</span>
-        <button onclick="copyText(this.dataset.v,this)" data-v="${h}" class="copy-btn px-2 py-1 rounded text-xs text-gray-400 hover:text-blue-500 transition">
+        <button onclick="copyText(this.dataset.v,this)" data-v="\${h}" class="copy-btn px-2 py-1 rounded text-xs text-gray-400 hover:text-blue-500 transition">
           <i class="fas fa-copy"></i>
         </button>
       </div>
@@ -1019,7 +1019,7 @@ function renderFullMatrix(headlines, descriptions) {
       <td class="px-3 py-2 font-medium text-gray-800">\${h}</td>
       <td class="px-3 py-2 text-center \${charCls}">\${len}/30</td>
       <td class="px-3 py-2 text-center"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold">H</span></td>
-      <td class="px-3 py-2 text-center"><button onclick="copyText(this.dataset.v,this)" data-v="${h}" class="copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
+      <td class="px-3 py-2 text-center"><button onclick="copyText(this.dataset.v,this)" data-v="\${h}" class="copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
     </tr>\`;
   });
 
