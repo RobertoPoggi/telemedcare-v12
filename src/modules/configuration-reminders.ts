@@ -81,6 +81,8 @@ export async function getConfigurationsNeedingReminder(
       )
       AND datetime(c.signed_at, '+14 days') > datetime('now')
       AND l.status NOT IN ('NOT_INTERESTED')
+      -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
+      AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
     ORDER BY c.signed_at ASC
   `).bind(
     maxReminders, 

@@ -832,7 +832,7 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(f
     SET reminder_sent_at = ?, reminder_count = reminder_count + 1
     WHERE id = ?
   `).bind(t,a).run();const o=await e.prepare("SELECT lead_id, reminder_count FROM lead_completion_tokens WHERE id = ?").bind(a).first();o&&await _p(e,o.lead_id,a,"reminder_sent",`Reminder ${o.reminder_count} inviato`)}async function Nf(e,a,t){const o=new Date;o.setDate(o.getDate()-a);const i=new Date;return i.setHours(i.getHours()-23),(await e.prepare(`
-    SELECT t.*, l.status, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
+    SELECT t.*, l.status, l.stato, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
     FROM lead_completion_tokens t
     JOIN leads l ON t.lead_id = l.id
     WHERE t.completed = 0
@@ -845,20 +845,29 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(f
           AND t.reminder_sent_at < ?
         )
       )
-      -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi)
+      -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi nel DB)
       AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE')
-      -- ❌ ESCLUDI lead non interessati
+      -- ❌ ESCLUDI lead non interessati (campo status formale)
       AND l.status != 'NOT_INTERESTED'
-      -- ✅ SOLO lead eCura (da Form eCura o IRBEMA)
+      -- ❌ ESCLUDI per campo stato CRM: convertito, non interessato, problemi economici, perso, numero non attivo
+      AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+      -- ✅ WHITELIST stati CRM: SOLO lead in lavorazione attiva
+      AND (
+        l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+        OR l.stato IS NULL  -- Lead senza stato CRM ancora assegnato
+        OR l.stato = ''
+      )
+      -- ✅ SOLO lead eCura (escludi B2B IRBEMA)
       AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
-      -- ✅ ORDINA PER PRIORITÀ
+      -- ✅ ORDINA PER PRIORITÀ STATO CRM
     ORDER BY 
-      CASE l.status
-        WHEN 'INTERESTED' THEN 1      -- Priorità 1: Interessati
-        WHEN 'TO_RECONTACT' THEN 2    -- Priorità 2: Da ricontattare
-        ELSE 3                         -- Priorità 3: Altri stati validi
+      CASE l.stato
+        WHEN 'in_trattativa' THEN 1   -- Priorità 1: In Trattativa
+        WHEN 'interessato' THEN 2     -- Priorità 2: Interessato
+        WHEN 'da_ricontattare' THEN 3 -- Priorità 3: Da Ricontattare
+        ELSE 4                         -- Priorità 4: Senza stato (nuovi)
       END,
-      l.created_at ASC                 -- Più vecchi per primi
+      l.created_at ASC                 -- Più vecchi per primi a parità di priorità
   `).bind(t,o.toISOString(),i.toISOString()).all()).results}async function _p(e,a,t,o,i){const s=`LOG-${Date.now()}-${Math.random().toString(36).substring(2,9).toUpperCase()}`,n=new Date().toISOString();await e.prepare(`
     INSERT INTO lead_completion_log (id, lead_id, token_id, action, details, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -930,7 +939,7 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(f
     </p>
   </div>
 </body>
-</html>`,u=await s.sendEmail({to:t.email||o.cliente_email,subject:"⏰ Promemoria: Pagamento proforma eCura in attesa",html:p,tags:[{name:"tipo",value:"reminder_proforma"},{name:"lead_id",value:t.id},{name:"proforma_id",value:o.id}]});if(u.success){const g=new Date().toISOString();return await e.prepare("UPDATE leads SET reminder_proforma_sent_at = ?, reminder_proforma_count = COALESCE(reminder_proforma_count, 0) + 1, updated_at = ? WHERE id = ?").bind(g,g,t.id).run(),console.log(`✅ [REMINDER-PROFORMA] Email inviata a ${t.email||o.cliente_email} (lead ${t.id})`),!0}else return console.error("❌ [REMINDER-PROFORMA] Errore:",u.error),!1}catch(i){return console.error("❌ [REMINDER-PROFORMA] Eccezione:",i),!1}}async function Wb(e,a){const t=await zf(e);if(!t.cron_enabled)return console.log("⚠️ [REMINDER] Cron disabilitato dalla dashboard - nessuna azione eseguita"),{success:0,failed:0,total:0,disabled:!0};console.log("✅ [REMINDER] Cron abilitato - avvio processo reminder");const o=await Nf(e,t.auto_completion_reminder_days,t.auto_completion_max_reminders);console.log(`📧 [REMINDER] Trovati ${o.length} token che necessitano reminder`);const i=10,s=["Francesco Pepe","Claudio Macchi","Alberto Locatelli","Paolo Macrì","Elisabetta Cattini","Giorgio Riela","Caterina D'Alterio","Elena Saglia","Stefania Rocca","Margherita Delaude","Maria Grazia Ronca","Andrea D'Avella","Simona Pizzutto"],n=o.filter(f=>{const h=`${f.nomeRichiedente||""} ${f.cognomeRichiedente||""}`.trim(),v=s.some(x=>h.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(h.toLowerCase()));return v&&console.log(`🚫 [REMINDER] Skipped (blacklist): ${h} (lead ${f.lead_id})`),!v});console.log(`📊 [REMINDER] Dopo filtro blacklist: ${n.length}/${o.length} token validi (${o.length-n.length} clienti attivi saltati)`);const r=n.slice(0,i);n.length>i&&(console.log(`⚠️ [REMINDER] Budget limit: ${i} invii/giorno`),console.log(`📊 [REMINDER] Processando ${r.length}/${n.length} token (${n.length-i} in coda)`));let c=0,l=0;for(const f of r)try{const h=await e.prepare("SELECT * FROM leads WHERE id = ?").bind(f.lead_id).first();if(!h){console.warn(`⚠️ [REMINDER] Lead ${f.lead_id} non trovato`),l++;continue}await Mf(e,a,f,h)?c++:l++,await new Promise(x=>setTimeout(x,1e3))}catch(h){console.error(`❌ [REMINDER] Errore processando token ${f.id}:`,h),l++}const p=new Date;p.setDate(p.getDate()-t.auto_completion_reminder_days);const u=new Date;u.setHours(u.getHours()-23);try{const h=(await e.prepare(`
+</html>`,u=await s.sendEmail({to:t.email||o.cliente_email,subject:"⏰ Promemoria: Pagamento proforma eCura in attesa",html:p,tags:[{name:"tipo",value:"reminder_proforma"},{name:"lead_id",value:t.id},{name:"proforma_id",value:o.id}]});if(u.success){const g=new Date().toISOString();return await e.prepare("UPDATE leads SET reminder_proforma_sent_at = ?, reminder_proforma_count = COALESCE(reminder_proforma_count, 0) + 1, updated_at = ? WHERE id = ?").bind(g,g,t.id).run(),console.log(`✅ [REMINDER-PROFORMA] Email inviata a ${t.email||o.cliente_email} (lead ${t.id})`),!0}else return console.error("❌ [REMINDER-PROFORMA] Errore:",u.error),!1}catch(i){return console.error("❌ [REMINDER-PROFORMA] Eccezione:",i),!1}}async function Wb(e,a){const t=await zf(e);if(!t.cron_enabled)return console.log("⚠️ [REMINDER] Cron disabilitato dalla dashboard - nessuna azione eseguita"),{success:0,failed:0,total:0,disabled:!0};console.log("✅ [REMINDER] Cron abilitato - avvio processo reminder");const o=await Nf(e,t.auto_completion_reminder_days,t.auto_completion_max_reminders);console.log(`📧 [REMINDER] Trovati ${o.length} token che necessitano reminder`);const i=10,s=["Margherita Delaude","Maria Grazia Ronca","Andrea D'Avella"],n=o.filter(f=>{const h=`${f.nomeRichiedente||""} ${f.cognomeRichiedente||""}`.trim(),v=s.some(x=>h.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(h.toLowerCase()));return v&&console.log(`🚫 [REMINDER] Skipped (blacklist fallback): ${h} (lead ${f.lead_id})`),!v});console.log(`📊 [REMINDER] Token dopo filtri: ${n.length}/${o.length} validi (${o.length-n.length} saltati)`);const r=n.slice(0,i);n.length>i&&(console.log(`⚠️ [REMINDER] Budget limit: ${i} invii/giorno`),console.log(`📊 [REMINDER] Processando ${r.length}/${n.length} token (${n.length-i} in coda)`));let c=0,l=0;for(const f of r)try{const h=await e.prepare("SELECT * FROM leads WHERE id = ?").bind(f.lead_id).first();if(!h){console.warn(`⚠️ [REMINDER] Lead ${f.lead_id} non trovato`),l++;continue}await Mf(e,a,f,h)?c++:l++,await new Promise(x=>setTimeout(x,1e3))}catch(h){console.error(`❌ [REMINDER] Errore processando token ${f.id}:`,h),l++}const p=new Date;p.setDate(p.getDate()-t.auto_completion_reminder_days);const u=new Date;u.setHours(u.getHours()-23);try{const h=(await e.prepare(`
       SELECT l.*, 
              c.id as contract_id, c.codice_contratto, c.pdf_url, c.status as contract_status
       FROM leads l
@@ -940,13 +949,28 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(f
         AND l.email IS NOT NULL AND l.email != ''
         AND l.updated_at < ?
         AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        -- ✅ WHITELIST stati CRM attivi
+        AND (
+          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+          OR l.stato IS NULL
+          OR l.stato = ''
+        )
         AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
         AND COALESCE(l.reminder_firma_count, 0) < ?
         AND (
           l.reminder_firma_sent_at IS NULL
           OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)
         )
-      ORDER BY l.updated_at ASC
+      ORDER BY
+        CASE l.stato
+          WHEN 'in_trattativa' THEN 1
+          WHEN 'interessato' THEN 2
+          WHEN 'da_ricontattare' THEN 3
+          ELSE 4
+        END,
+        l.updated_at ASC
       LIMIT 5
     `).bind(p.toISOString(),t.auto_completion_max_reminders,p.toISOString(),u.toISOString()).all()).results||[];console.log(`✍️ [REMINDER-FIRMA] Trovati ${h.length} lead con contratto da firmare`);for(const v of h){const x=`${v.nomeRichiedente||""} ${v.cognomeRichiedente||""}`.trim();if(s.some(C=>x.toLowerCase().includes(C.toLowerCase())||C.toLowerCase().includes(x.toLowerCase()))){console.log(`🚫 [REMINDER-FIRMA] Skipped (blacklist): ${x}`);continue}const E={id:v.contract_id,codice_contratto:v.codice_contratto,pdf_url:v.pdf_url};await Pf(e,a,v,E)?c++:l++,await new Promise(C=>setTimeout(C,1e3))}}catch(f){console.error("❌ [REMINDER-FIRMA] Errore query:",f)}const g=new Date;g.setDate(g.getDate()-t.auto_completion_reminder_days);const m=new Date;m.setHours(m.getHours()-23);try{const h=(await e.prepare(`
       SELECT l.*,
@@ -958,13 +982,28 @@ Lead ID: ${e}`});console.log("✅ [NOTIFICATION] Email result:",JSON.stringify(f
         AND p.status NOT IN ('paid', 'PAID')
         AND (l.email IS NOT NULL AND l.email != '' OR p.cliente_email IS NOT NULL AND p.cliente_email != '')
         AND l.updated_at < ?
+        -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        -- ✅ WHITELIST stati CRM attivi
+        AND (
+          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+          OR l.stato IS NULL
+          OR l.stato = ''
+        )
         AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
         AND COALESCE(l.reminder_proforma_count, 0) < ?
         AND (
           l.reminder_proforma_sent_at IS NULL
           OR (l.reminder_proforma_sent_at < ? AND l.reminder_proforma_sent_at < ?)
         )
-      ORDER BY l.updated_at ASC
+      ORDER BY
+        CASE l.stato
+          WHEN 'in_trattativa' THEN 1
+          WHEN 'interessato' THEN 2
+          WHEN 'da_ricontattare' THEN 3
+          ELSE 4
+        END,
+        l.updated_at ASC
       LIMIT 5
     `).bind(g.toISOString(),t.auto_completion_max_reminders,g.toISOString(),m.toISOString()).all()).results||[];console.log(`💳 [REMINDER-PROFORMA] Trovati ${h.length} lead con proforma da pagare`);for(const v of h){const x=`${v.nomeRichiedente||""} ${v.cognomeRichiedente||""}`.trim();if(s.some(C=>x.toLowerCase().includes(C.toLowerCase())||C.toLowerCase().includes(x.toLowerCase()))){console.log(`🚫 [REMINDER-PROFORMA] Skipped (blacklist): ${x}`);continue}const E={id:v.proforma_id,numero_proforma:v.numero_proforma,prezzo_totale:v.prezzo_totale,payment_url:v.payment_url,cliente_email:v.cliente_email,proforma_status:v.proforma_status};await Bf(e,a,v,E)?c++:l++,await new Promise(C=>setTimeout(C,1e3))}}catch(f){console.error("❌ [REMINDER-PROFORMA] Errore query:",f)}return{success:c,failed:l,total:r.length,queued:n.length-r.length,blacklisted:o.length-n.length}}const rt=Object.freeze(Object.defineProperty({__proto__:null,calculateExpiryDate:Df,createCompletionToken:Hb,generateSecureToken:Of,getMissingFields:Cp,getSystemConfig:zf,getTokensNeedingReminder:Nf,isLeadComplete:Ub,logCompletionAction:_p,markTokenAsCompleted:Vb,processReminders:Wb,recordReminderSent:Lf,sendReminderEmail:Mf,sendReminderFirma:Pf,sendReminderProforma:Bf,updateSystemConfig:jb,validateCompletionToken:Gb},Symbol.toStringTag,{value:"Module"}));function Kb(){const e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";let a="";for(let t=0;t<32;t++)a+=e.charAt(Math.floor(Math.random()*e.length));return a}function Rp(e,a,t,o=!1){if(!e||e.length===0)return"";const i=Math.round(a*100),s=e.reduce((x,I)=>x+(Number(I.importo)||0),0),n=Math.round(s*a*100)/100,r=Math.round((s+n)*100)/100,c=x=>x.toFixed(2).replace(".",","),l=x=>{try{return new Date(x).toLocaleDateString("it-IT")}catch{return x||"—"}},p="#6366f1",u="#e0e7ff",g="#f5f3ff",m="#3730a3",f="#4338ca",h=e.map((x,I)=>{const E=Number(x.importo)||0,b=Math.round(E*a*100)/100,C=Math.round((E+b)*100)/100;return`<tr style="background:${I%2===0?"#ffffff":g};">
       <td style="padding:9px 12px;border-bottom:1px solid #ddd6fe;font-weight:600;color:#374151;">Rata&nbsp;${x.numero_rata}</td>
