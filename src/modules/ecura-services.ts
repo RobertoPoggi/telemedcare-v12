@@ -12,8 +12,9 @@
  *
  * PIANI (ortogonali al servizio):
  *   BASE     → allarmi/notifiche ai familiari/caregiver direttamente
- *   AVANZATO → + Centrale Operativa H24/7: intervento immediato,
- *               coordinamento emergenze (118), chiamata mensile cortesia
+ *   AVANZATO → familiari + Centrale Operativa H24/7: intervento immediato,
+ *               coordinamento emergenze (118), chiamata mensile cortesia.
+ *               La CO si aggiunge ai familiari, NON li sostituisce.
  */
 
 export type ServizioeCura = 'FAMILY' | 'PRO' | 'PREMIUM'
@@ -235,12 +236,29 @@ export function getCaratteristicheComplete(servizio: ServizioeCura, piano: Piano
  * "Oggetto del Contratto", differenziato per servizio (FAMILY/PRO/PREMIUM)
  * e per piano (BASE/AVANZATO).
  *
- * FAMILY BASE:      SOS→familiari, cadute→familiari, voce→familiari, GPS base — NO geofencing, NO farmaci
- * FAMILY AVANZATO:  SOS→CO, cadute→CO, voce→CO, GPS base — NO geofencing, NO farmaci
- * PRO BASE:         come FAMILY BASE + AI cadute avanzata, GPS multi-tech, freq.card/SpO2, geofencing avanzato, farmaci vocali
- * PRO AVANZATO:     come FAMILY AVANZATO + AI cadute avanzata, GPS multi-tech, freq.card/SpO2 (notifica CO), geofencing avanzato, farmaci vocali
- * PREMIUM BASE:     come PRO BASE + sonno, AI predittiva, dashboard clinica, telemedicina
- * PREMIUM AVANZATO: come PRO AVANZATO + sonno, AI predittiva, dashboard clinica, telemedicina
+ * ┌─────────────────┬──────────────────────────────────────────────────────────────────────┐
+ * │                 │  DESTINATARI ALLARMI/NOTIFICHE                                       │
+ * │  Combinazione   │  (CO = Centrale Operativa H24/7)                                     │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ FAMILY BASE     │ SOS→familiari, cadute→familiari, voce↔familiari                      │
+ * │                 │ GPS base. NO geofencing, NO farmaci vocali                            │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ FAMILY AVANZATO │ SOS→familiari+CO, cadute→familiari+CO, voce↔familiari+CO             │
+ * │                 │ GPS base. NO geofencing, NO farmaci vocali                            │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ PRO BASE        │ come FAMILY BASE + AI cadute avanzata, GPS multi-tech,               │
+ * │                 │ freq.cardiaca+SpO2→familiari, geofencing avanzato, farmaci vocali     │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ PRO AVANZATO    │ come FAMILY AVANZATO + AI cadute avanzata, GPS multi-tech,           │
+ * │                 │ freq.cardiaca+SpO2→familiari+CO, geofencing avanzato, farmaci vocali  │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ PREMIUM BASE    │ come PRO BASE + analisi sonno, AI predittiva,                        │
+ * │                 │ dashboard clinica, telemedicina integrata                             │
+ * ├─────────────────┼──────────────────────────────────────────────────────────────────────┤
+ * │ PREMIUM AVANZATO│ come PRO AVANZATO + analisi sonno, AI predittiva,                   │
+ * │                 │ dashboard clinica, telemedicina integrata                             │
+ * └─────────────────┴──────────────────────────────────────────────────────────────────────┘
+ * REGOLA: piano AVANZATO aggiunge la CO ai familiari — non li sostituisce mai.
  */
 export function getDescrizioneFunzioniDispositivo(
   servizio: ServizioeCura,
@@ -250,7 +268,8 @@ export function getDescrizioneFunzioniDispositivo(
   const isPro     = servizio === 'PRO'
   const isPremium = servizio === 'PREMIUM'
   const isProOrPremium = isPro || isPremium
-  const dest = isAvanzato ? 'alla Centrale Operativa' : 'ai familiari'
+  // Piano AVANZATO: allarmi vanno sia ai familiari SIA alla Centrale Operativa (CO non sostituisce i familiari)
+  const dest = isAvanzato ? 'ai familiari e alla Centrale Operativa' : 'ai familiari'
 
   // ── Rilevatore caduta ─────────────────────────────────────────────────────
   const cadutaAI = isProOrPremium
@@ -259,17 +278,23 @@ export function getDescrizioneFunzioniDispositivo(
   const sezioneCADUTA = `<p><strong>Rilevatore automatico di caduta:</strong> effettua una chiamata vocale di allarme, in caso di caduta${cadutaAI}, e invia una notifica tramite sms ${dest}. Nell'sms arriverà sia il link per individuare la posizione dell'assistito (geolocalizzazione) che i valori dei parametri fisiologici rilevati.</p>`
 
   // ── Pulsante SOS ──────────────────────────────────────────────────────────
+  // AVANZATO: la chiamata SOS arriva alla Centrale Operativa H24; la notifica SMS va anche ai familiari
   const sosDestinatario = isAvanzato
     ? '(Centrale Operativa disponibile H24/7 giorni su 7)'
     : '(in caso di mancata risposta, in cascata, ai successivi contatti di emergenza configurati)'
-  const sosDest2 = isAvanzato ? 'alla Centrale Operativa' : 'ai familiari configurati in Piattaforma'
+  const sosDest2 = isAvanzato
+    ? 'ai familiari e alla Centrale Operativa'
+    : 'ai familiari configurati in Piattaforma'
   const sezioneSOS = `<p><strong>Pulsante SOS:</strong> premendo il pulsante SOS è possibile effettuare una chiamata vocale al primo contatto di emergenza ${sosDestinatario} ed inviare una notifica di emergenza (SMS geolocalizzato) ${sosDest2}.</p>`
 
   // ── Comunicazione vocale bidirezionale ───────────────────────────────────
-  const voceDest = isAvanzato ? 'della Centrale Operativa' : 'dei familiari'
-  const voceRiceve = isAvanzato ? 'la Centrale Operativa riceve' : 'i familiari (configurati in Piattaforma) ricevono'
+  // AVANZATO: la piattaforma gestisce sia i familiari sia la CO; dopo l'allarme entrambi vengono allertati
+  const voceDest = isAvanzato ? 'dei familiari e della Centrale Operativa' : 'dei familiari'
+  const voceRiceve = isAvanzato
+    ? 'i familiari e la Centrale Operativa ricevono'
+    : 'i familiari (configurati in Piattaforma) ricevono'
   const vocePuoContattare = isAvanzato
-    ? 'la Centrale Operativa (configurata in Piattaforma) può contattare'
+    ? 'i familiari e la Centrale Operativa possono contattare'
     : 'i familiari (configurati in Piattaforma) possono contattare'
   const sezioneVOCE = `<p><strong>Comunicazione vocale bidirezionale:</strong> è possibile configurare sulla Piattaforma i contatti ${voceDest}; dopo l'invio dell'allarme ${voceRiceve} una chiamata dal bracciale e possono parlare con l'assistito; inoltre, in qualsiasi momento, ${vocePuoContattare} l'assistito tramite il bracciale.</p>`
 
@@ -281,7 +306,8 @@ export function getDescrizioneFunzioniDispositivo(
   const sezioneGPS = `<p><strong>Posizione gps e gps-assistito:</strong> consente di geolocalizzare l'assistito quando viene inviato l'allarme oppure, in ogni momento, tramite l'APP${gpsMultitech}.${gpsGeofencing}</p>`
 
   // ── Parametri vitali (solo PRO e PREMIUM) ────────────────────────────────
-  const vitaliDest = isAvanzato ? 'alla Centrale Operativa' : 'ai familiari'
+  // AVANZATO: le notifiche di allarme parametri vitali vanno sia ai familiari sia alla CO
+  const vitaliDest = isAvanzato ? 'ai familiari e alla Centrale Operativa' : 'ai familiari'
   const sezioneVITALI = isProOrPremium
     ? `<p><strong>Monitoraggio frequenza cardiaca${isPremium ? ' e saturazione ossigeno (SpO2)' : ' e ossimetria'}:</strong> misurazioni continue con accuratezza clinica. È possibile impostare soglie personalizzabili (comunicate dal proprio Medico di Base) con invio di notifica di allarme ${vitaliDest} tramite APP quando i valori rilevati superano le soglie programmate.</p>`
     : ''
