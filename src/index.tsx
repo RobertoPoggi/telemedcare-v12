@@ -10004,11 +10004,16 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge signed_at, servizio e piano del contratto collegato
-    // NOTA: nella tabella contracts il piano è nella colonna 'piano' (BASE/AVANZATO)
+    // Legge contratto + lead collegato per avere piano con massima affidabilità
+    // (campo piano in contracts può essere NULL in contratti storici → fallback su lead.pacchetto)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT signature_timestamp, signed_at, data_invio, servizio, piano FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+          `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
+                  l.pacchetto AS lead_pacchetto
+           FROM contracts c
+           LEFT JOIN leads l ON l.id = c.lead_id
+           WHERE c.codice_contratto = ? OR c.id = ?
+           LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
     // Priorità data firma:
@@ -10071,9 +10076,25 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     let descrizioneDispositivo: string
     const dispLower = dispositivo.toLowerCase()
     const servizioContratto = (contractRow?.servizio || '').toUpperCase()
-    const pianoContratto = (contractRow?.piano || '').toUpperCase()
+
+    // Determina piano con fallback multipli (il campo piano può essere NULL in contratti storici):
+    // 1. contractRow.piano          → colonna dedicata della tabella contracts
+    // 2. contractRow.lead_pacchetto → campo pacchetto del lead (es. "eCura Premium Avanzato")
+    // 3. contractRow.servizio       → nome servizio del contratto (es. "eCura PREMIUM Avanzato")
+    // 4. noteRaw del DDT            → note operative (es. "Piano:AVANZATO")
+    // 5. ddt.contract_code          → raramente, ma può contenere "AVANZAT"
+    const pianoEsplicito      = (contractRow?.piano         || '').toUpperCase()
+    const pianoInLeadPacchetto = (contractRow?.lead_pacchetto || '').toUpperCase().includes('AVANZAT')
+    const pianoInServizio     = servizioContratto.includes('AVANZAT')
+    const pianoInNote         = (noteRaw || '').toUpperCase().includes('AVANZAT')
+    const pianoInContractCode = (ddt.contract_code || '').toUpperCase().includes('AVANZAT')
+    const isAvanzatoDDT = pianoEsplicito === 'AVANZATO'
+      || pianoInLeadPacchetto
+      || pianoInServizio
+      || pianoInNote
+      || pianoInContractCode
+
     const isFamily = servizioContratto.includes('FAMILY') || dispLower.includes('family')
-    const isAvanzatoDDT = pianoContratto === 'AVANZATO'
     const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
     // Destinatari voce/allarmi: AVANZATO → familiari e CO; BASE → solo familiari/care giver
     const destVoce = isAvanzatoDDT
