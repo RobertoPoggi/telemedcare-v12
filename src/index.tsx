@@ -10096,9 +10096,9 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
 
     const isFamily = servizioContratto.includes('FAMILY') || dispLower.includes('family')
     const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
-    // Destinatari voce/allarmi: AVANZATO → familiari e CO; BASE → solo familiari/care giver
+    // Destinatari voce/allarmi: AVANZATO → CO + familiari/care giver; BASE → solo familiari/care giver
     const destVoce = isAvanzatoDDT
-      ? 'i familiari, i care giver e la Centrale Operativa H24'
+      ? 'la Centrale Operativa e con i familiari / care giver configurati in Piattaforma'
       : 'i familiari e i care giver configurati in Piattaforma'
     const destAllarmi = isAvanzatoDDT
       ? 'ai familiari e alla Centrale Operativa'
