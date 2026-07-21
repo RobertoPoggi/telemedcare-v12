@@ -10007,6 +10007,8 @@ app.get('/api/ddts/:id/debug', async (c) => {
     `SELECT id, numero_ddt, contract_code, note, dispositivo FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
   ).bind(id, id).first() as any
   if (!ddt) return c.json({ error: 'DDT non trovata' }, 404)
+
+  // Cerca contratto per codice (come fa pdf-print)
   const contractRow = ddt.contract_code
     ? await c.env.DB.prepare(
         `SELECT c.codice_contratto, c.id AS contract_id, c.piano, c.servizio, c.leadId,
@@ -10017,6 +10019,16 @@ app.get('/api/ddts/:id/debug', async (c) => {
          LIMIT 1`
       ).bind(ddt.contract_code, ddt.contract_code).first() as any
     : null
+
+  // Cerca contratto per leadId estratto dalla nota (fallback diagnostico)
+  const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
+  const contractViaLead = leadIdFromNote
+    ? await c.env.DB.prepare(
+        `SELECT codice_contratto, id AS contract_id, piano, servizio, leadId
+         FROM contracts WHERE leadId = ? LIMIT 1`
+      ).bind(leadIdFromNote).first() as any
+    : null
+
   const noteRaw = ddt.note || ''
   const servizioContratto = (contractRow?.servizio || '').toUpperCase()
   const pianoEsplicito     = (contractRow?.piano        || '').toUpperCase()
@@ -10030,7 +10042,9 @@ app.get('/api/ddts/:id/debug', async (c) => {
     ddt_contract_code: ddt.contract_code,
     ddt_note: ddt.note,
     ddt_dispositivo: ddt.dispositivo,
-    contract: contractRow,
+    contract_via_contract_code: contractRow,
+    lead_id_from_note: leadIdFromNote,
+    contract_via_lead_id: contractViaLead,
     fallback: { pianoEsplicito, pianoInLeadPiano, pianoInLeadServizio, pianoInServizio, pianoInNote },
     isAvanzatoDDT
   })
