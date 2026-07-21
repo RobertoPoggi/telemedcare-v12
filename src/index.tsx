@@ -33558,44 +33558,45 @@ app.post('/api/oneshot-fix-ddt-vismara-contract-code-8pz5r', async (c) => {
 })
 
 // POST /api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q
-// Collega la DDT di Sig.ra Gavazzi al contratto CTR-GAVAZZI-2026
-// (contract_code era NULL → piano AVANZATO non rilevato → CO assente nel PDF)
+// La DDT di Gavazzi ha contract_code = 'CTR-LEAD-IRBEMA-00551' (formato lead ID)
+// Il contratto firmato ha codice_contratto = 'CTR-GAVAZZI-2026' (piano AVANZATO)
+// Fix: aggiorna contract_code sulla DDT con il codice contratto corretto
 app.post('/api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
-    const ddtId = 'DDT-LEAD-IRBEMA-00551-1784655627465'
+    const vecchioCodice = 'CTR-LEAD-IRBEMA-00551'
     const nuovoCodice = 'CTR-GAVAZZI-2026'
 
-    // Verifica stato prima
+    // Trova la DDT tramite il contract_code attuale (non l'id che potrebbe differire)
     const before = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
-    ).bind(ddtId).first() as any
-    if (!before) return c.json({ success: false, error: 'DDT non trovata' }, 404)
+      `SELECT id, numero_ddt, contract_code FROM ddts WHERE contract_code = ? LIMIT 1`
+    ).bind(vecchioCodice).first() as any
+    if (!before) return c.json({ success: false, error: `DDT con contract_code=${vecchioCodice} non trovata` }, 404)
 
-    // Verifica che il contratto esista
+    // Verifica che il contratto di destinazione esista
     const contratto = await c.env.DB.prepare(
       `SELECT codice_contratto, piano, servizio, signature_timestamp, signed_at FROM contracts WHERE codice_contratto = ? LIMIT 1`
     ).bind(nuovoCodice).first() as any
     if (!contratto) return c.json({ success: false, error: `Contratto ${nuovoCodice} non trovato in DB` }, 404)
 
-    // Aggiorna contract_code sul DDT
+    // Aggiorna contract_code sulla DDT
     await c.env.DB.prepare(
       `UPDATE ddts SET contract_code = ?, updated_at = ? WHERE id = ?`
-    ).bind(nuovoCodice, new Date().toISOString(), ddtId).run()
+    ).bind(nuovoCodice, new Date().toISOString(), before.id).run()
 
     const after = await c.env.DB.prepare(
       `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
-    ).bind(ddtId).first()
+    ).bind(before.id).first()
 
     return c.json({
       success: true,
-      prima: before.contract_code,
+      ddt_id: before.id,
+      prima: vecchioCodice,
       dopo: nuovoCodice,
       contratto_trovato: {
         codice_contratto: contratto.codice_contratto,
         piano: contratto.piano,
         servizio: contratto.servizio,
-        signature_timestamp: contratto.signature_timestamp,
         signed_at: contratto.signed_at
       },
       ddt_after: after
