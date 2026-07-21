@@ -9994,6 +9994,43 @@ app.delete('/api/ddts/:id', async (c) => {
   }
 })
 
+// GET /api/ddts/:id/debug - Debug endpoint temporaneo per ispezionare valori DDT
+app.get('/api/ddts/:id/debug', async (c) => {
+  const id = c.req.param('id')
+  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+  const ddt = await c.env.DB.prepare(
+    `SELECT id, numero_ddt, contract_code, note, dispositivo FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
+  ).bind(id, id).first() as any
+  if (!ddt) return c.json({ error: 'DDT non trovata' }, 404)
+  const contractRow = ddt.contract_code
+    ? await c.env.DB.prepare(
+        `SELECT c.codice_contratto, c.id AS contract_id, c.piano, c.servizio, c.leadId,
+                l.id AS lead_id, l.piano AS lead_piano, l.servizio AS lead_servizio
+         FROM contracts c
+         LEFT JOIN leads l ON l.id = c.leadId
+         WHERE c.codice_contratto = ? OR c.id = ?
+         LIMIT 1`
+      ).bind(ddt.contract_code, ddt.contract_code).first() as any
+    : null
+  const noteRaw = ddt.note || ''
+  const servizioContratto = (contractRow?.servizio || '').toUpperCase()
+  const pianoEsplicito     = (contractRow?.piano        || '').toUpperCase()
+  const pianoInLeadPiano   = (contractRow?.lead_piano   || '').toUpperCase().includes('AVANZAT')
+  const pianoInLeadServizio = (contractRow?.lead_servizio || '').toUpperCase().includes('AVANZAT')
+  const pianoInServizio    = servizioContratto.includes('AVANZAT')
+  const pianoInNote        = noteRaw.toUpperCase().includes('AVANZAT')
+  const isAvanzatoDDT = pianoEsplicito === 'AVANZATO' || pianoInLeadPiano || pianoInLeadServizio || pianoInServizio || pianoInNote
+  return c.json({
+    ddt_id: ddt.id,
+    ddt_contract_code: ddt.contract_code,
+    ddt_note: ddt.note,
+    ddt_dispositivo: ddt.dispositivo,
+    contract: contractRow,
+    fallback: { pianoEsplicito, pianoInLeadPiano, pianoInLeadServizio, pianoInServizio, pianoInNote },
+    isAvanzatoDDT
+  })
+})
+
 // GET /api/ddts/:id/pdf-print - Genera pagina HTML stampabile DDT (layout fedele al template Medica GB)
 app.get('/api/ddts/:id/pdf-print', async (c) => {
   const id = c.req.param('id')
