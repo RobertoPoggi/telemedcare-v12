@@ -10060,9 +10060,11 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge contratto + lead collegato per avere piano con massima affidabilità
-    // (campo piano in contracts può essere NULL in contratti storici → fallback su leads.piano)
-    const contractRow = ddt.contract_code
+    // Legge contratto collegato alla DDT.
+    // Prima cerca per codice_contratto = ddt.contract_code.
+    // Se non trova (es. contract_code contiene un vecchio ID lead anziché il codice contratto),
+    // cerca il contratto tramite leadId estratto dalla nota DDT (formato "LeadID:LEAD-IRBEMA-XXXXX").
+    let contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
           `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
                   l.piano AS lead_piano, l.servizio AS lead_servizio
@@ -10072,6 +10074,20 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
            LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
+    // Fallback: cerca per leadId estratto dalla nota se il codice non ha trovato nulla
+    if (!contractRow) {
+      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
+      if (leadIdFromNote) {
+        contractRow = await c.env.DB.prepare(
+          `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
+                  l.piano AS lead_piano, l.servizio AS lead_servizio
+           FROM contracts c
+           LEFT JOIN leads l ON l.id = c.leadId
+           WHERE c.leadId = ?
+           LIMIT 1`
+        ).bind(leadIdFromNote).first() as any
+      }
+    }
     // Priorità data firma:
     // 1. signature_timestamp → firma elettronica (timestamp preciso)
     // 2. signed_at           → firma elettronica/manuale
