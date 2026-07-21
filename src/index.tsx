@@ -10011,7 +10011,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
           `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
                   l.pacchetto AS lead_pacchetto
            FROM contracts c
-           LEFT JOIN leads l ON l.id = c.lead_id
+           LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.codice_contratto = ? OR c.id = ?
            LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
