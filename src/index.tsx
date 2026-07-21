@@ -1500,6 +1500,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Fix contract_code DDT Gavazzi → CTR-GAVAZZI-2026 (one-shot)
+  if (path === '/api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q' && method === 'POST') {
+    return next()
+  }
+
   // Diagnostica fonte lead - mostra quali fonti ricevevano reminder (one-shot lettura)
   if (path === '/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v' && method === 'GET') {
     return next()
@@ -33542,6 +33547,54 @@ app.post('/api/oneshot-fix-ddt-vismara-contract-code-8pz5r', async (c) => {
       dopo: nuovoCodice,
       contratto_trovato: {
         codice_contratto: contratto.codice_contratto,
+        signature_timestamp: contratto.signature_timestamp,
+        signed_at: contratto.signed_at
+      },
+      ddt_after: after
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// POST /api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q
+// Collega la DDT di Sig.ra Gavazzi al contratto CTR-GAVAZZI-2026
+// (contract_code era NULL → piano AVANZATO non rilevato → CO assente nel PDF)
+app.post('/api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const ddtId = 'DDT-LEAD-IRBEMA-00551-1784655627465'
+    const nuovoCodice = 'CTR-GAVAZZI-2026'
+
+    // Verifica stato prima
+    const before = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
+    ).bind(ddtId).first() as any
+    if (!before) return c.json({ success: false, error: 'DDT non trovata' }, 404)
+
+    // Verifica che il contratto esista
+    const contratto = await c.env.DB.prepare(
+      `SELECT codice_contratto, piano, servizio, signature_timestamp, signed_at FROM contracts WHERE codice_contratto = ? LIMIT 1`
+    ).bind(nuovoCodice).first() as any
+    if (!contratto) return c.json({ success: false, error: `Contratto ${nuovoCodice} non trovato in DB` }, 404)
+
+    // Aggiorna contract_code sul DDT
+    await c.env.DB.prepare(
+      `UPDATE ddts SET contract_code = ?, updated_at = ? WHERE id = ?`
+    ).bind(nuovoCodice, new Date().toISOString(), ddtId).run()
+
+    const after = await c.env.DB.prepare(
+      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
+    ).bind(ddtId).first()
+
+    return c.json({
+      success: true,
+      prima: before.contract_code,
+      dopo: nuovoCodice,
+      contratto_trovato: {
+        codice_contratto: contratto.codice_contratto,
+        piano: contratto.piano,
+        servizio: contratto.servizio,
         signature_timestamp: contratto.signature_timestamp,
         signed_at: contratto.signed_at
       },
