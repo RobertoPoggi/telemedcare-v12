@@ -10172,18 +10172,21 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     const destVoce = isAvanzatoDDT
       ? 'la Centrale Operativa e con i familiari / care giver configurati in Piattaforma'
       : 'i familiari e i care giver configurati in Piattaforma'
-    const destAllarmi = isAvanzatoDDT
-      ? 'ai familiari e alla Centrale Operativa'
+    const destCadute = isAvanzatoDDT
+      ? 'alla Centrale Operativa e ai familiari'
+      : 'ai familiari e ai care giver'
+    const destVitali = isAvanzatoDDT
+      ? 'alla Centrale Operativa e ai familiari'
       : 'ai familiari e ai care giver'
     if (dispLower.includes('vital')) {
       // PREMIUM (SiDLY Vital Care) — con SpO2, analisi sonno, AI predittiva
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destAllarmi : ''}, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destAllarmi : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destVitali : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else if (isFamily) {
       // FAMILY (SiDLY Care PRO, piano BASE o AVANZATO) — no SpO2/farmaci
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute${isAvanzatoDDT ? ' con notifica ' + destAllarmi : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else {
       // PRO (SiDLY Care PRO, piano BASE o AVANZATO) — con FC/SpO2, geofencing, farmaci
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destAllarmi : ''}, il reminder dei farmaci e il monitoraggio dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destAllarmi : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}, il reminder dei farmaci e il monitoraggio dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destVitali : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Installazione e collaudo inclusi.`
     }
 
     // Contratto riferimento formattato — usa data_firma del contratto (NON data del DDT)
@@ -10332,7 +10335,6 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
         <td class="cod">${dispositivo}</td>
         <td>
           ${descrizioneDispositivo}
-          <div class="sn-inline"><strong>SN ${serialNumber}</strong></div>
         </td>
         <td class="um">NR</td>
         <td class="qty">1</td>
