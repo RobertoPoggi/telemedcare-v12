@@ -10005,11 +10005,11 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
     // Legge contratto + lead collegato per avere piano con massima affidabilità
-    // (campo piano in contracts può essere NULL in contratti storici → fallback su lead.pacchetto)
+    // (campo piano in contracts può essere NULL in contratti storici → fallback su leads.piano)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
           `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
-                  l.pacchetto AS lead_pacchetto
+                  l.piano AS lead_piano, l.servizio AS lead_servizio
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.codice_contratto = ? OR c.id = ?
@@ -10079,20 +10079,20 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
 
     // Determina piano con fallback multipli (il campo piano può essere NULL in contratti storici):
     // 1. contractRow.piano          → colonna dedicata della tabella contracts
-    // 2. contractRow.lead_pacchetto → campo pacchetto del lead (es. "eCura Premium Avanzato")
-    // 3. contractRow.servizio       → nome servizio del contratto (es. "eCura PREMIUM Avanzato")
-    // 4. noteRaw del DDT            → note operative (es. "Piano:AVANZATO")
-    // 5. ddt.contract_code          → raramente, ma può contenere "AVANZAT"
-    const pianoEsplicito      = (contractRow?.piano         || '').toUpperCase()
-    const pianoInLeadPacchetto = (contractRow?.lead_pacchetto || '').toUpperCase().includes('AVANZAT')
-    const pianoInServizio     = servizioContratto.includes('AVANZAT')
-    const pianoInNote         = (noteRaw || '').toUpperCase().includes('AVANZAT')
-    const pianoInContractCode = (ddt.contract_code || '').toUpperCase().includes('AVANZAT')
+    // 2. leads.piano            → piano del lead collegato (BASE/AVANZATO)
+    // 3. leads.servizio          → servizio del lead (es. "eCura PREMIUM Avanzato")
+    // 4. contractRow.servizio    → nome servizio del contratto (es. "eCura PREMIUM Avanzato")
+    // 5. noteRaw del DDT         → note operative (es. "Piano:AVANZATO")
+    const pianoEsplicito     = (contractRow?.piano        || '').toUpperCase()
+    const pianoInLeadPiano   = (contractRow?.lead_piano   || '').toUpperCase().includes('AVANZAT')
+    const pianoInLeadServizio = (contractRow?.lead_servizio || '').toUpperCase().includes('AVANZAT')
+    const pianoInServizio    = servizioContratto.includes('AVANZAT')
+    const pianoInNote        = (noteRaw || '').toUpperCase().includes('AVANZAT')
     const isAvanzatoDDT = pianoEsplicito === 'AVANZATO'
-      || pianoInLeadPacchetto
+      || pianoInLeadPiano
+      || pianoInLeadServizio
       || pianoInServizio
       || pianoInNote
-      || pianoInContractCode
 
     const isFamily = servizioContratto.includes('FAMILY') || dispLower.includes('family')
     const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
