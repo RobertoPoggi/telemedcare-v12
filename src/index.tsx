@@ -10004,10 +10004,11 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge signed_at, servizio e tipo_servizio (piano) del contratto collegato
+    // Legge signed_at, servizio e piano del contratto collegato
+    // NOTA: nella tabella contracts il piano è nella colonna 'piano' (BASE/AVANZATO)
     const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT signature_timestamp, signed_at, data_invio, servizio, tipo_servizio FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
+          `SELECT signature_timestamp, signed_at, data_invio, servizio, piano FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
     // Priorità data firma:
@@ -10070,7 +10071,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     let descrizioneDispositivo: string
     const dispLower = dispositivo.toLowerCase()
     const servizioContratto = (contractRow?.servizio || '').toUpperCase()
-    const pianoContratto = (contractRow?.tipo_servizio || '').toUpperCase()
+    const pianoContratto = (contractRow?.piano || '').toUpperCase()
     const isFamily = servizioContratto.includes('FAMILY') || dispLower.includes('family')
     const isAvanzatoDDT = pianoContratto === 'AVANZATO'
     const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
