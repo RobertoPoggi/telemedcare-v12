@@ -11258,8 +11258,12 @@ ${370+t.length}
                     // done=true → verde chiaro (già fatto, ma ri-cliccabile)
                     // done=false → colore pieno
 
-                    var proformaUrl = contract.proforma_rinnovo_id
-                        ? '/api/proforma/' + encodeURIComponent(contract.proforma_rinnovo_id) + '/pay'
+                    // proforma_rinnovo_id può arrivare come float (es. 39.0) da SQLite — sempre integerizzare
+                    var proformaIdInt = contract.proforma_rinnovo_id
+                        ? parseInt(String(contract.proforma_rinnovo_id), 10)
+                        : null;
+                    var proformaUrl = proformaIdInt
+                        ? '/pagamento.html?proformaId=' + proformaIdInt
                         : '#';
                     var dataComp = contract.rinnovo_data_completamento
                         ? new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT') : '';
@@ -11301,11 +11305,15 @@ ${370+t.length}
                         ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0891b2;color:#fff;cursor:pointer;" title="Anteprima email proforma" data-action="rinnovo-anteprima-proforma" ' + dId + ' ' + dCodiceR + '>🔍</button>'
                         : '';
                     var btn5  = rinnovoMkBtn('📤', 'Invia proforma al cliente', 'rinnovo-invia-proforma', d5, '#7c3aed', dId + ' ' + dCodiceR);
-                    var btn6  = rinnovoMkLink('💰', 'Paga proforma online',     proformaUrl,             d6, '#16a34a');
-                    // btn6b: segna completato — sempre visibile se rinnovo esiste, diventa badge se già completato
+                    // btn6: Segna pagamento bonifico ricevuto — pulsante (non link Stripe)
+                    // Usa stesso endpoint di segna-completato (PATCH /api/contracts/:id/rinnovo-completato)
+                    var btn6 = rinnovoCompletato
+                        ? ''  // già completato: non mostrare btn6 (btn6b mostra il badge)
+                        : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#16a34a;color:#fff;cursor:pointer;" title="💳 Segna pagamento ricevuto (bonifico)" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>💳</button>';
+                    // btn6b: badge completato — visibile SOLO se già pagato
                     var btn6b = rinnovoCompletato
-                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">✅</span>'
-                        : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna rinnovo completato" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>✅</button>';
+                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Pagato e completato ' + dataComp + '">✅</span>'
+                        : '';  // non mostrare btn6b se non ancora completato (btn6 è il pulsante attivo)
 
                     // 👁️ Vedi contratto — sempre visibile su righe rinnovo
                     // Rigenera silenziosamente l'HTML (dati aggiornati) poi apre la tab
