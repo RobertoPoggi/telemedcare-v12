@@ -525,7 +525,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> ${pianoNome === 'BASE' ? '(47€/mese)' : '(70€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € inclusa iva</span>) e include:</p>
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
-        <li>Configurazione del Dispositivo e del Processo di Comunicazione con uno o più familiari e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
+        <li>Configurazione del Dispositivo e del Processo di Comunicazione con ${pianoNome === 'AVANZATO' ? 'la Centrale Operativa e uno o più familiari' : 'uno o più familiari'} e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> ${pianoNome === 'BASE' ? '(25€/mese)' : '(62.50€/mese)'} + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € inclusa iva</span>) con inclusi:</p>
@@ -1708,22 +1708,28 @@ export async function inviaEmailBenvenuto(
       // ❌ CODICE_CLIENTE rimosso (non disponibile)
       DATA_ATTIVAZIONE: new Date().toLocaleDateString('it-IT'),
       LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/completa-dati?leadId=${clientData.id}`,
-      // Servizi inclusi: variano per tipo servizio (FAMILY non ha telemonitoraggio FC/SpO2)
+      // Servizi inclusi: variano per servizio (FAMILY/PRO/PREMIUM) × piano (BASE/AVANZATO)
+      // REGOLA: piano AVANZATO aggiunge la CO ai familiari, non li sostituisce
       SERVIZI_INCLUSI: (() => {
-        const base = `<li>Dispositivo ${dispositivo}</li><li>Chiamate bidirezionali</li><li>Centrale Operativa H24</li>`
+        const isAvanzato = pianoType === 'AVANZATO'
+        // Elementi comuni a tutti i servizi/piani
+        const baseItems = `<li>Dispositivo ${dispositivo}</li><li>Notifiche e chiamate bidirezionali ai familiari</li>`
+        // Centrale Operativa H24: SOLO piano AVANZATO (si aggiunge ai familiari)
+        const coItem = isAvanzato ? `<li>Centrale Operativa H24/7 (in aggiunta ai familiari)</li>` : ''
+
         if (servizioType === 'FAMILY') {
-          // Family: NO telemonitoraggio FC/SpO2 (non incluso nel servizio)
-          return pianoType === 'AVANZATO'
-            ? `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute automatico</li><li>Geolocalizzazione GPS</li></ul>`
-            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Rilevamento cadute</li></ul>`
+          // FAMILY: NO telemonitoraggio FC/SpO2, NO promemoria farmaci
+          return isAvanzato
+            ? `<ul style="margin:4px 0; padding-left:20px;">${baseItems}${coItem}<li>Rilevamento cadute automatico</li><li>Geolocalizzazione GPS</li></ul>`
+            : `<ul style="margin:4px 0; padding-left:20px;">${baseItems}<li>Rilevamento cadute</li><li>Geolocalizzazione GPS</li></ul>`
         } else if (servizioType === 'PREMIUM') {
-          // Premium: telemonitoraggio completo incluso
-          return `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Analisi del sonno</li><li>Geolocalizzazione GPS avanzata</li></ul>`
+          // PREMIUM: telemonitoraggio completo + analisi sonno + AI predittiva
+          return `<ul style="margin:4px 0; padding-left:20px;">${baseItems}${coItem}<li>Telemonitoraggio FC e SpO2 continuo</li><li>Analisi del sonno</li><li>AI predittiva prevenzione rischi</li><li>Geolocalizzazione GPS avanzata</li><li>Promemoria farmaci vocali</li></ul>`
         } else {
-          // PRO BASE e AVANZATO: telemonitoraggio FC/SpO2 sempre incluso
-          return pianoType === 'AVANZATO'
-            ? `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Geolocalizzazione GPS</li></ul>`
-            : `<ul style="margin:4px 0; padding-left:20px;">${base}<li>Telemonitoraggio parametri fisiologici (FC e SpO2)</li><li>Rilevamento cadute</li></ul>`
+          // PRO: telemonitoraggio FC/SpO2 sempre incluso + promemoria farmaci
+          return isAvanzato
+            ? `<ul style="margin:4px 0; padding-left:20px;">${baseItems}${coItem}<li>Telemonitoraggio FC e SpO2</li><li>Geolocalizzazione GPS multi-tech</li><li>Promemoria farmaci vocali</li></ul>`
+            : `<ul style="margin:4px 0; padding-left:20px;">${baseItems}<li>Telemonitoraggio FC e SpO2</li><li>Rilevamento cadute con AI avanzata</li><li>Promemoria farmaci vocali</li></ul>`
         }
       })(),
       PREZZO_PIANO: prezzoBase
