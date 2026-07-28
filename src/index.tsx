@@ -8972,17 +8972,24 @@ app.post('/api/contracts/send', async (c) => {
     }
     
     // Prepara dati contratto per la funzione
-    // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+    // ✅ FIX: Usa getPricing dalla pricing matrix per ottenere setupBase (IVA ESCLUSA)
+    // contract.prezzo_totale contiene setupTotale (IVA INCLUSA 22%) — NON usarlo come prezzoBase
     const ivaRateContr8931 = (lead as any).iva_agevolata ? 0.04 : 0.22
-    const prezzoBaseContr8931 = contract.prezzo_totale || 480
+    const servizioContr = ((contract as any).servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
+    const pianoContr = ((contract as any).tipo_contratto || (contract as any).piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
+    const pricingContr = getPricing(servizioContr, pianoContr)
+    // Usa setupBase dalla pricing matrix (IVA ESCLUSA). Fallback: prezzo_mensile*12 se salvato, altrimenti 480
+    const prezzoBaseContr8931 = pricingContr
+      ? pricingContr.setupBase
+      : (Math.round(((contract as any).prezzo_mensile || 40) * 12 * 100) / 100)
     const contractData = {
       contractId: contract.id,
       contractCode: contract.codice_contratto,
       contractPdfUrl: contract.pdf_url || '',
       tipoServizio: contract.tipo_contratto || contract.piano,
       servizio: contract.servizio,
-      prezzoBase: prezzoBaseContr8931,
-      prezzoIvaInclusa: Math.round(prezzoBaseContr8931 * (1 + ivaRateContr8931) * 100) / 100  // ✅ IVA corretta
+      prezzoBase: prezzoBaseContr8931,                                                          // ✅ IVA ESCLUSA (setupBase)
+      prezzoIvaInclusa: Math.round(prezzoBaseContr8931 * (1 + ivaRateContr8931) * 100) / 100   // ✅ IVA corretta del lead
     }
     
     // NON passare documentUrls - workflow usa brochure-manager automaticamente
