@@ -10074,9 +10074,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     let contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
           `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
-                  l.piano AS lead_piano, l.servizio AS lead_servizio,
-                  l.cfAssistito AS lead_cf_assistito, l.cfIntestatario AS lead_cf_intestatario,
-                  l.intestatarioContratto AS lead_intestatario_contratto
+                  l.piano AS lead_piano, l.servizio AS lead_servizio
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.codice_contratto = ? OR c.id = ?
@@ -10089,9 +10087,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
       if (leadIdFromNote) {
         contractRow = await c.env.DB.prepare(
           `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
-                  l.piano AS lead_piano, l.servizio AS lead_servizio,
-                  l.cfAssistito AS lead_cf_assistito, l.cfIntestatario AS lead_cf_intestatario,
-                  l.intestatarioContratto AS lead_intestatario_contratto
+                  l.piano AS lead_piano, l.servizio AS lead_servizio
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -10136,13 +10132,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     const destinatario = ddt.destinatario_nome || '—'
     const indirizzoRiga1 = ddt.destinatario_indirizzo || ''
     const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
-    // CF intestatario del contratto:
-    // Se intestatarioContratto === 'assistito' → usa cfAssistito, altrimenti cfIntestatario
-    // (logica identica a quella usata nella generazione del contratto)
-    const leadIntestSync = contractRow?.lead_intestatario_contratto || 'richiedente'
-    const cfIntestatario = leadIntestSync === 'assistito'
-      ? (contractRow?.lead_cf_assistito || contractRow?.lead_cf_intestatario || '')
-      : (contractRow?.lead_cf_intestatario || contractRow?.lead_cf_assistito || '')
+
     const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
     const contratto = ddt.contract_code || '—'
@@ -10310,7 +10300,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
       <div class="dest-nome">${destinatario}</div>
       <div class="dest-addr">
         ${indirizzoRiga1}<br>
-        ${indirizzoRiga2}${cfIntestatario ? `<br>C.F.: ${cfIntestatario}` : ''}
+        ${indirizzoRiga2}
       </div>
     </div>
   </div>
