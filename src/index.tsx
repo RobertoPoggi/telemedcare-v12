@@ -10976,7 +10976,8 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     return c.html(htmlPF)
   } catch (error) {
     console.error('❌ [PREFATTURA-HTML]', error)
-    return c.html(`<h1>Errore generazione pre-fattura</h1><pre>${String(error)}</pre>`, 500)
+    // Mostra errore dettagliato per debug (non esporre in produzione dopo il fix)
+    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Errore Pre-Fattura</title></head><body style="font-family:Arial;padding:20px;"><h2 style="color:red">Errore generazione pre-fattura</h2><pre style="background:#f5f5f5;padding:15px;border-radius:5px;overflow:auto;">${String(error)}\n\n${error instanceof Error ? error.stack || '' : ''}</pre></body></html>`, 500)
   }
 })
 

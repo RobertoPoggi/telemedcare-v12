@@ -21902,7 +21902,9 @@ loadDDTs();
 
 </div>
 </body>
-</html>`;return e.html(fe)}catch(s){return console.error("❌ [PREFATTURA-HTML]",s),e.html(`<h1>Errore generazione pre-fattura</h1><pre>${String(s)}</pre>`,500)}});A.post("/api/ddts/:id/prefattura",async e=>{var t,o,i,s;const a=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non configurato"},500);const n=await e.env.DB.prepare("SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1").bind(a,a).first();if(!n)return e.json({success:!1,error:"DDT non trovato"},404);let r=null;if(n.contract_code&&(r=await e.env.DB.prepare(`SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
+</html>`;return e.html(fe)}catch(s){return console.error("❌ [PREFATTURA-HTML]",s),e.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Errore Pre-Fattura</title></head><body style="font-family:Arial;padding:20px;"><h2 style="color:red">Errore generazione pre-fattura</h2><pre style="background:#f5f5f5;padding:15px;border-radius:5px;overflow:auto;">${String(s)}
+
+${s instanceof Error&&s.stack||""}</pre></body></html>`,500)}});A.post("/api/ddts/:id/prefattura",async e=>{var t,o,i,s;const a=e.req.param("id");try{if(!((t=e.env)!=null&&t.DB))return e.json({success:!1,error:"Database non configurato"},500);const n=await e.env.DB.prepare("SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1").bind(a,a).first();if(!n)return e.json({success:!1,error:"DDT non trovato"},404);let r=null;if(n.contract_code&&(r=await e.env.DB.prepare(`SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
                 c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                 c.leadId,
                 l.intestatarioContratto,
