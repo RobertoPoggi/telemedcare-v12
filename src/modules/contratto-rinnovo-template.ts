@@ -549,6 +549,9 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111; 
   <div style="margin-top:6px;"><strong>Causale:</strong> {{CAUSALE_BONIFICO}}</div>
 </div>
 
+{{RATE_BLOCK}}
+{{RISERVA_DOMINIO_BLOCK}}
+
 <div class="nota-legale">
   Il presente documento non costituisce fattura che verrà emessa all'atto del pagamento ai sensi dell'art. 6 DPR 26.10.1972 n. 633.
 </div>

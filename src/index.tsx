@@ -10618,7 +10618,9 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata
+                l.iva_agevolata,
+                l.rateizzazione_attiva AS lead_rateizzazione_attiva,
+                l.riserva_dominio AS lead_riserva_dominio
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -10639,7 +10641,9 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata
+                  l.iva_agevolata,
+                  l.rateizzazione_attiva AS lead_rateizzazione_attiva,
+                  l.riserva_dominio AS lead_riserva_dominio
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -10648,14 +10652,18 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
       }
     }
 
-    // ── Rate da rate_pagamento (se rateizzazione_attiva) ──────────────
+    // ── Rate da rate_pagamento (contratto O lead come fonte) ──────────
+    // Fallback: usa leads.rateizzazione_attiva se contracts ha 0 (dato non sempre sincronizzato)
+    const isRateizzatoGET = !!(contractRow?.rateizzazione_attiva || contractRow?.lead_rateizzazione_attiva)
+    const leadIdForRate   = contractRow?.leadId
+      || (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
     let ratePagamentoRows: any[] = []
-    if (contractRow?.rateizzazione_attiva && contractRow?.leadId) {
+    if (leadIdForRate) {
       try {
         const rateRes = await c.env.DB.prepare(
           `SELECT numero_rata, importo, data_scadenza, status, note
            FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-        ).bind(contractRow.leadId).all()
+        ).bind(leadIdForRate).all()
         ratePagamentoRows = rateRes.results || []
       } catch (_) {}
     }
@@ -10724,9 +10732,10 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     }
 
     // ── Rate ──────────────────────────────────────────────────────────
-    const rateizzazioneAttiva = !!(contractRow?.rateizzazione_attiva)
+    // rateizzazione attiva se: contracts.rateizzazione_attiva=1 OPPURE leads.rateizzazione_attiva=1 OPPURE esistono righe in rate_pagamento
+    const rateizzazioneAttiva = isRateizzatoGET || ratePagamentoRows.length > 0
     let rateRows = ''
-    if (rateizzazioneAttiva && ratePagamentoRows.length > 0) {
+    if (ratePagamentoRows.length > 0) {
       rateRows = ratePagamentoRows.map((r: any, i: number) => `
             <tr>
               <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero_rata ?? i + 1}</td>
@@ -10737,7 +10746,8 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     }
 
     // ── Riserva di dominio ────────────────────────────────────────────
-    const riservaDominio = !!(contractRow?.riserva_dominio)
+    // Fallback su leads.riserva_dominio se contracts non è sincronizzato
+    const riservaDominio = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
 
     // ── Data e numero documento ───────────────────────────────────────
     const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -11007,7 +11017,9 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata
+                l.iva_agevolata,
+                l.rateizzazione_attiva AS lead_rateizzazione_attiva,
+                l.riserva_dominio AS lead_riserva_dominio
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -11027,7 +11039,9 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata
+                  l.iva_agevolata,
+                  l.rateizzazione_attiva AS lead_rateizzazione_attiva,
+                  l.riserva_dominio AS lead_riserva_dominio
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -11063,17 +11077,23 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const ivaAmtP      = Math.round(imponibileP * ivaPct / 100 * 100) / 100
     const totaleP      = Math.round((imponibileP + ivaAmtP) * 100) / 100
 
-    // ── Rate da rate_pagamento ────────────────────────────────────────
+    // ── Rate da rate_pagamento ────────────────────────────────────────────
+    // Fallback: usa leads.rateizzazione_attiva se contracts non è sincronizzato
+    const isRateizzatoP  = !!(contractRow?.rateizzazione_attiva || contractRow?.lead_rateizzazione_attiva)
+    const leadIdForRateP = contractRow?.leadId
+      || (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
     let ratePagamentoRowsP: any[] = []
-    if (contractRow?.rateizzazione_attiva && contractRow?.leadId) {
+    if (leadIdForRateP) {
       try {
         const rateResP = await c.env.DB.prepare(
           `SELECT numero_rata, importo, data_scadenza, status, note
            FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-        ).bind(contractRow.leadId).all()
+        ).bind(leadIdForRateP).all()
         ratePagamentoRowsP = rateResP.results || []
       } catch (_) {}
     }
+    const rateizzazioneAttivaP = isRateizzatoP || ratePagamentoRowsP.length > 0
+    const riservaDominioP = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
 
     // ── Intestatario ─────────────────────────────────────────────────
     const intestatario = contractRow?.intestatarioContratto || 'richiedente'
@@ -11128,9 +11148,9 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
       ddt.dispositivo || null, ddt.serial_number || null,
       (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
       imponibileP, ivaPct, ivaAmtP, totaleP,
-      contractRow?.rateizzazione_attiva ? 1 : 0,
+      rateizzazioneAttivaP ? 1 : 0,
       ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
-      contractRow?.riserva_dominio ? 1 : 0,
+      riservaDominioP ? 1 : 0,
       bodyData.note || null
     ).run()
 
@@ -15779,7 +15799,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
               indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario,
               indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
               iva_agevolata,
-              imei_dispositivo, numero_sim, sn_dispositivo
+              rateizzazione_attiva, riserva_dominio
        FROM leads WHERE id = ?`
     ).bind(contract.leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
@@ -15814,14 +15834,78 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
     const totale       = Math.round((netto + ivaAmt) * 100) / 100
     const fmt          = (n: number) => n.toFixed(2).replace('.', ',')
 
-    // Dispositivo
+    // Dispositivo — SIM/SN: cerca prima nel DDT collegato, poi usa placeholder
     const servizio   = contract.servizio || ''
     const piano      = contract.piano    || 'BASE'
     const dispositivo= servizio.includes('PREMIUM') || servizio.toLowerCase().includes('vital')
       ? 'SiDLY VITAL CARE' : 'SiDLY Care PRO'
     const bdRdm      = dispositivo.includes('VITAL') ? '2853300' : '2853576'
-    const snDev      = lead.sn_dispositivo || '—'
-    const sim        = lead.numero_sim     || '—'
+
+    // Cerca DDT collegato per avere SIM e S/N
+    let snDev = '—'
+    let sim   = '—'
+    try {
+      const ddtRow = await c.env.DB.prepare(
+        `SELECT sim_number, serial_number FROM ddts WHERE contract_code = ? OR contract_code = ? LIMIT 1`
+      ).bind(contract.codice_contratto || '', contractId).first() as any
+      if (ddtRow) {
+        snDev = ddtRow.serial_number || '—'
+        sim   = ddtRow.sim_number   || '—'
+      }
+    } catch (_) {}
+
+    // Rate da rate_pagamento (fallback su leads.rateizzazione_attiva)
+    const isRateizzatoPI = !!(lead.rateizzazione_attiva)
+    let ratePagamentoRowsPI: any[] = []
+    if (contract.leadId) {
+      try {
+        const rateResPI = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status, note
+           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(contract.leadId).all()
+        ratePagamentoRowsPI = rateResPI.results || []
+      } catch (_) {}
+    }
+    const hasRatePI   = isRateizzatoPI || ratePagamentoRowsPI.length > 0
+    const riservaDominioPI = !!(lead.riserva_dominio)
+
+    // Blocco rate HTML (inserito nel template come {{RATE_BLOCK}})
+    const fmtPI = (n: number) => n.toFixed(2).replace('.', ',')
+    let rateBlockPI = ''
+    if (hasRatePI && ratePagamentoRowsPI.length > 0) {
+      const righe = ratePagamentoRowsPI.map((r: any, i: number) => `
+        <tr>
+          <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.numero_rata ?? i+1}</td>
+          <td style="border:1px solid #aaa;padding:4px 8px;text-align:right;">€ ${fmtPI(Number(r.importo ?? 0))}</td>
+          <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
+          <td style="border:1px solid #aaa;padding:4px 8px;">${r.note ?? ''}</td>
+        </tr>`).join('')
+      rateBlockPI = `
+<div style="margin-top:14px;">
+  <div style="font-size:10.5pt;font-weight:bold;border-bottom:1px solid #555;margin-bottom:6px;padding-bottom:2px;">PIANO DI RATEIZZAZIONE</div>
+  <table style="width:100%;border-collapse:collapse;font-size:9.5pt;">
+    <thead>
+      <tr style="background:#eef2ff;">
+        <th style="border:1px solid #aaa;padding:4px 8px;">Rata N°</th>
+        <th style="border:1px solid #aaa;padding:4px 8px;">Importo</th>
+        <th style="border:1px solid #aaa;padding:4px 8px;">Scadenza</th>
+        <th style="border:1px solid #aaa;padding:4px 8px;">Note</th>
+      </tr>
+    </thead>
+    <tbody>${righe}</tbody>
+  </table>
+</div>`
+    }
+
+    // Clausola riserva di dominio (art. 1523 c.c.)
+    const riservaDominioBlockPI = riservaDominioPI ? `
+<div style="border:1px solid #b8860b;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-top:14px;font-size:9pt;">
+  <strong>CLAUSOLA DI RISERVA DI PROPRIETÀ (art. 1523 c.c.)</strong><br>
+  Il dispositivo consegnato rimane di proprietà di Medica GB S.r.l. fino al completo pagamento del
+  prezzo convenuto. Fino a tale momento, il Cliente non potrà cedere, dare in pegno o comunque
+  alienare il dispositivo a terzi. Al verificarsi dell'inadempimento nel pagamento di una o più rate,
+  Medica GB S.r.l. avrà diritto di richiedere la restituzione immediata del dispositivo.
+</div>` : ''
 
     // Data doc
     const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -15876,6 +15960,8 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
       TITOLO_PRESTAZIONE: titoloPrestatazione,
       BADGE_RINNOVO: badgeRinnovo,
       CAUSALE_BONIFICO: causale,
+      RATE_BLOCK: rateBlockPI,
+      RISERVA_DOMINIO_BLOCK: riservaDominioBlockPI,
     }
     const html = PROFORMA_INTERNA_TEMPLATE.replace(/\{\{([A-Z_]+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`)
 
