@@ -11129,30 +11129,67 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
       `).run()
     } catch (_) { /* tabella già esiste */ }
 
-    // ── Salva in DB ──────────────────────────────────────────────────
-    await c.env.DB.prepare(`
-      INSERT INTO prefatture (
-        id, numero_prefattura, ddt_id, contract_code,
-        destinatario_nome, destinatario_indirizzo, destinatario_cap,
-        destinatario_citta, destinatario_provincia, cf_intestatario,
-        dispositivo, serial_number, sim_number,
-        imponibile, iva_pct, iva_amt, totale,
-        rateizzazione_attiva, rate_json, riserva_dominio,
-        note, created_at, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-    `).bind(
-      pfId, numPF, ddt.id, ddt.contract_code || null,
-      ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null, ddt.destinatario_cap || null,
-      ddt.destinatario_citta || null, ddt.destinatario_provincia || null,
-      (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
-      ddt.dispositivo || null, ddt.serial_number || null,
-      (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
-      imponibileP, ivaPct, ivaAmtP, totaleP,
-      rateizzazioneAttivaP ? 1 : 0,
-      ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
-      riservaDominioP ? 1 : 0,
-      bodyData.note || null
-    ).run()
+    // ── Salva in DB (idempotente: se esiste già per questo DDT, aggiorna) ──
+    // Cerca se esiste già una prefattura per questo ddt_id
+    const existingPF = await c.env.DB.prepare(
+      `SELECT id, numero_prefattura FROM prefatture WHERE ddt_id = ? LIMIT 1`
+    ).bind(ddt.id).first() as any
+
+    const finalPfId    = existingPF?.id || pfId
+    const finalNumPF   = existingPF?.numero_prefattura || numPF
+
+    if (existingPF) {
+      // UPDATE: rigenera con dati aggiornati
+      await c.env.DB.prepare(`
+        UPDATE prefatture SET
+          contract_code = ?, destinatario_nome = ?, destinatario_indirizzo = ?,
+          destinatario_cap = ?, destinatario_citta = ?, destinatario_provincia = ?,
+          cf_intestatario = ?, dispositivo = ?, serial_number = ?, sim_number = ?,
+          imponibile = ?, iva_pct = ?, iva_amt = ?, totale = ?,
+          rateizzazione_attiva = ?, rate_json = ?, riserva_dominio = ?,
+          note = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE ddt_id = ?
+      `).bind(
+        ddt.contract_code || null,
+        ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null,
+        ddt.destinatario_cap || null, ddt.destinatario_citta || null,
+        ddt.destinatario_provincia || null,
+        (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
+        ddt.dispositivo || null, ddt.serial_number || null,
+        (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
+        imponibileP, ivaPct, ivaAmtP, totaleP,
+        rateizzazioneAttivaP ? 1 : 0,
+        ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
+        riservaDominioP ? 1 : 0,
+        bodyData.note || null,
+        ddt.id
+      ).run()
+    } else {
+      // INSERT nuovo
+      await c.env.DB.prepare(`
+        INSERT INTO prefatture (
+          id, numero_prefattura, ddt_id, contract_code,
+          destinatario_nome, destinatario_indirizzo, destinatario_cap,
+          destinatario_citta, destinatario_provincia, cf_intestatario,
+          dispositivo, serial_number, sim_number,
+          imponibile, iva_pct, iva_amt, totale,
+          rateizzazione_attiva, rate_json, riserva_dominio,
+          note, created_at, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+      `).bind(
+        finalPfId, finalNumPF, ddt.id, ddt.contract_code || null,
+        ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null, ddt.destinatario_cap || null,
+        ddt.destinatario_citta || null, ddt.destinatario_provincia || null,
+        (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
+        ddt.dispositivo || null, ddt.serial_number || null,
+        (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
+        imponibileP, ivaPct, ivaAmtP, totaleP,
+        rateizzazioneAttivaP ? 1 : 0,
+        ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
+        riservaDominioP ? 1 : 0,
+        bodyData.note || null
+      ).run()
+    }
 
     // ── Invia email al commercialista (se configurato) ─────────────────
     let emailInviata = false
@@ -11167,11 +11204,11 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
 <div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;max-width:600px;">
   <div style="background:#6b21a8;color:white;padding:12px 18px;border-radius:4px 4px 0 0;">
     <strong>eCura – Medica GB S.r.l.</strong><br>
-    <span style="font-size:9pt;opacity:.9;">Pre-Fattura ${numPF} – ${oggi}</span>
+    <span style="font-size:9pt;opacity:.9;">Pre-Fattura ${finalNumPF} – ${oggi}</span>
   </div>
   <div style="border:1px solid #ddd;border-top:none;padding:16px 18px;">
     <p>Buongiorno,</p>
-    <p>si trasmette in allegato (visualizzabile al link sotto) la <strong>pre-fattura ${numPF}</strong>
+    <p>si trasmette in allegato (visualizzabile al link sotto) la <strong>pre-fattura ${finalNumPF}</strong>
        relativa alla fornitura per il cliente <strong>${nomeIntP} ${cognomeIntP}</strong>.</p>
     <table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:9.5pt;">
       <tr style="background:#f3e8ff;">
@@ -11221,9 +11258,9 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
         const result = await emailService.sendEmail({
           to: emailCommercialista,
           from: c.env?.RESEND_FROM || 'info@ecura.it',
-          subject: `Pre-Fattura ${numPF} – ${nomeIntP} ${cognomeIntP} – eCura Medica GB`,
+          subject: `Pre-Fattura ${finalNumPF} – ${nomeIntP} ${cognomeIntP} – eCura Medica GB`,
           html: emailHtml,
-          text: `Pre-Fattura ${numPF} - ${nomeIntP} ${cognomeIntP} - Imponibile: €${fmtE(imponibileP)} IVA ${ivaPct}%: €${fmtE(ivaAmtP)} Totale: €${fmtE(totaleP)}\nLink: ${prefatturaUrl}`
+          text: `Pre-Fattura ${finalNumPF} - ${nomeIntP} ${cognomeIntP} - Imponibile: €${fmtE(imponibileP)} IVA ${ivaPct}%: €${fmtE(ivaAmtP)} Totale: €${fmtE(totaleP)}\nLink: ${prefatturaUrl}`
         })
         emailInviata = result.success
         if (!result.success) emailError = result.error || 'Invio fallito'
@@ -11242,7 +11279,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     return c.json({
       success: true,
       prefattura_id: pfId,
-      numero_prefattura: numPF,
+      numero_prefattura: finalNumPF,
       imponibile: imponibileP,
       iva_pct: ivaPct,
       iva_amt: ivaAmtP,
