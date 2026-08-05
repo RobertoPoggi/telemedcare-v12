@@ -11094,6 +11094,24 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const pfId       = `pf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
     const oggi       = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
 
+    // ── Assicura che la tabella prefatture esista (robustness) ──────────
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS prefatture (
+          id TEXT PRIMARY KEY, numero_prefattura TEXT UNIQUE NOT NULL,
+          ddt_id TEXT, contract_code TEXT,
+          destinatario_nome TEXT, destinatario_indirizzo TEXT, destinatario_cap TEXT,
+          destinatario_citta TEXT, destinatario_provincia TEXT, cf_intestatario TEXT,
+          dispositivo TEXT, serial_number TEXT, sim_number TEXT,
+          imponibile REAL, iva_pct INTEGER DEFAULT 22, iva_amt REAL, totale REAL,
+          rateizzazione_attiva INTEGER DEFAULT 0, rate_json TEXT, riserva_dominio INTEGER DEFAULT 0,
+          inviata_commercialista INTEGER DEFAULT 0, data_invio_commercialista DATETIME,
+          email_commercialista TEXT, note TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run()
+    } catch (_) { /* tabella già esiste */ }
+
     // ── Salva in DB ──────────────────────────────────────────────────
     await c.env.DB.prepare(`
       INSERT INTO prefatture (

@@ -21931,7 +21931,20 @@ ${s instanceof Error&&s.stack||""}</pre></body></html>`,500)}});A.post("/api/ddt
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
            LIMIT 1`).bind(O).first())}let c={};try{c=await e.req.json()}catch{}let l=c.email_commercialista||"";if(!l)try{const O=await e.env.DB.prepare("SELECT value FROM system_settings WHERE key = 'email_commercialista' LIMIT 1").first();l=(O==null?void 0:O.value)||""}catch{}l||(l="info@ecura.it");const p=!!(r!=null&&r.iva_agevolata),u=p?4:22,g=((r==null?void 0:r.servizio)||"PRO").replace(/^eCura\s+/i,"").trim().toUpperCase(),m=((r==null?void 0:r.piano)||"BASE").toUpperCase(),h=Yo(g,m),f=h?h.setupBase:parseFloat(r==null?void 0:r.prezzo_totale)||0,v=Math.round(f*u/100*100)/100,x=Math.round((f+v)*100)/100;let T=[];if(r!=null&&r.rateizzazione_attiva&&(r!=null&&r.leadId))try{T=(await e.env.DB.prepare(`SELECT numero_rata, importo, data_scadenza, status, note
-           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`).bind(r.leadId).all()).results||[]}catch{}const E=(r==null?void 0:r.intestatarioContratto)||"richiedente";let b,w;E==="assistito"?(b=(r==null?void 0:r.nomeAssistito)||(r==null?void 0:r.nomeRichiedente)||n.destinatario_nome||"—",w=(r==null?void 0:r.cognomeAssistito)||(r==null?void 0:r.cognomeRichiedente)||""):(b=(r==null?void 0:r.nomeRichiedente)||n.destinatario_nome||"—",w=(r==null?void 0:r.cognomeRichiedente)||"");const S=`PF-${n.numero_ddt||n.id}`,_=`pf_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,D=new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"long",year:"numeric"});await e.env.DB.prepare(`
+           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`).bind(r.leadId).all()).results||[]}catch{}const E=(r==null?void 0:r.intestatarioContratto)||"richiedente";let b,w;E==="assistito"?(b=(r==null?void 0:r.nomeAssistito)||(r==null?void 0:r.nomeRichiedente)||n.destinatario_nome||"—",w=(r==null?void 0:r.cognomeAssistito)||(r==null?void 0:r.cognomeRichiedente)||""):(b=(r==null?void 0:r.nomeRichiedente)||n.destinatario_nome||"—",w=(r==null?void 0:r.cognomeRichiedente)||"");const S=`PF-${n.numero_ddt||n.id}`,_=`pf_${Date.now()}_${Math.random().toString(36).substring(2,7)}`,D=new Date().toLocaleDateString("it-IT",{day:"2-digit",month:"long",year:"numeric"});try{await e.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS prefatture (
+          id TEXT PRIMARY KEY, numero_prefattura TEXT UNIQUE NOT NULL,
+          ddt_id TEXT, contract_code TEXT,
+          destinatario_nome TEXT, destinatario_indirizzo TEXT, destinatario_cap TEXT,
+          destinatario_citta TEXT, destinatario_provincia TEXT, cf_intestatario TEXT,
+          dispositivo TEXT, serial_number TEXT, sim_number TEXT,
+          imponibile REAL, iva_pct INTEGER DEFAULT 22, iva_amt REAL, totale REAL,
+          rateizzazione_attiva INTEGER DEFAULT 0, rate_json TEXT, riserva_dominio INTEGER DEFAULT 0,
+          inviata_commercialista INTEGER DEFAULT 0, data_invio_commercialista DATETIME,
+          email_commercialista TEXT, note TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run()}catch{}await e.env.DB.prepare(`
       INSERT INTO prefatture (
         id, numero_prefattura, ddt_id, contract_code,
         destinatario_nome, destinatario_indirizzo, destinatario_cap,
