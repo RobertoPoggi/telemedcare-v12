@@ -10781,7 +10781,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
-    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
+    .page { width: 210mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
     .btn-print { display: block; margin: 10px auto 0; background: #6d28d9; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 13px; }
     @media print { .btn-print { display: none !important; } @page { size: A4; margin: 10mm 15mm; } }
 
@@ -10800,8 +10800,8 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     .meta-grid .val { font-weight: bold; }
     .dest-label { font-size: 7.5pt; font-weight: bold; color: #6b21a8; margin-bottom: 3px; }
     .dest-nome  { font-size: 10pt; font-weight: bold; margin-bottom: 2px; }
-    .dest-cf    { font-size: 8pt; color: #333; margin-bottom: 2px; font-family: 'Courier New', monospace; }
-    .dest-addr  { font-size: 8.5pt; line-height: 1.5; }
+    .dest-addr  { font-size: 8.5pt; line-height: 1.5; color: #000; }
+    .dest-cf    { font-size: 8.5pt; color: #000; margin-top: 1px; }
 
     /* ── SEZIONI ── */
     .section-title { font-size: 9.5pt; font-weight: bold; color: #6b21a8; border-bottom: 1.5px solid #6b21a8;
@@ -10877,11 +10877,11 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     <div class="meta-dest-right">
       <div class="dest-label">Spettabile:</div>
       <div class="dest-nome">${nomeInt.toUpperCase()} ${cognomeInt.toUpperCase()}</div>
-      ${cfInt ? `<div class="dest-cf">C.F.: ${cfInt.toUpperCase()}</div>` : ''}
       <div class="dest-addr">
         ${indrInt}<br>
         ${capCittaProv}
       </div>
+      ${cfInt ? `<div class="dest-cf">C.F.: ${cfInt.toUpperCase()}</div>` : ''}
     </div>
   </div>
 
