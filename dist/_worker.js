@@ -21707,7 +21707,7 @@ loadDDTs();
     body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
     .page { width: 210mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
     .btn-print { display: block; margin: 10px auto 0; background: #6d28d9; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 13px; }
-    @media print { .btn-print { display: none !important; } @page { size: A4; margin: 10mm 15mm; } }
+    @media print { .btn-print { display: none !important; } @page { size: A4; margin: 10mm 15mm; } .page { width: 100%; margin: 0; padding: 0; } }
 
     /* ── HEADER ── */
     .header { display: table; width: 100%; margin-bottom: 0; }
