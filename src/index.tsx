@@ -1225,6 +1225,46 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore creazione tabella ddts:', e.message)
       }
 
+      // ── PREFATTURE ──────────────────────────────────────────────────
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS prefatture (
+            id TEXT PRIMARY KEY,
+            numero_prefattura TEXT UNIQUE NOT NULL,
+            ddt_id TEXT,
+            contract_code TEXT,
+            destinatario_nome TEXT,
+            destinatario_indirizzo TEXT,
+            destinatario_cap TEXT,
+            destinatario_citta TEXT,
+            destinatario_provincia TEXT,
+            cf_intestatario TEXT,
+            dispositivo TEXT,
+            serial_number TEXT,
+            sim_number TEXT,
+            imponibile REAL,
+            iva_pct INTEGER DEFAULT 22,
+            iva_amt REAL,
+            totale REAL,
+            rateizzazione_attiva INTEGER DEFAULT 0,
+            rate_json TEXT,
+            riserva_dominio INTEGER DEFAULT 0,
+            inviata_commercialista INTEGER DEFAULT 0,
+            data_invio_commercialista DATETIME,
+            email_commercialista TEXT,
+            note TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `).run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_ddt ON prefatture(ddt_id)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_contract ON prefatture(contract_code)').run()
+        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_numero ON prefatture(numero_prefattura)').run()
+        console.log('✅ Tabella prefatture verificata/creata')
+      } catch (e: any) {
+        console.warn('⚠️ Errore creazione tabella prefatture:', e.message)
+      }
+
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
@@ -3527,6 +3567,21 @@ const _adminDdtHtml = String.raw`<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- TABS DDT / PRE-FATTURE -->
+  <div class="flex gap-1 mb-4 border-b border-gray-200">
+    <button id="tabDdt" onclick="showTab('ddt')"
+      class="px-5 py-2 text-sm font-semibold border-b-2 border-teal-600 text-teal-700 bg-white -mb-px rounded-t">
+      <i class="fas fa-truck mr-1"></i>DDT
+    </button>
+    <button id="tabPf" onclick="showTab('pf')"
+      class="px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-purple-700 hover:border-purple-400 bg-white -mb-px rounded-t transition-colors">
+      <i class="fas fa-file-invoice mr-1"></i>Pre-Fatture
+    </button>
+  </div>
+
+  <!-- SEZIONE DDT -->
+  <div id="sectionDdt">
+
   <!-- FILTRI -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3620,7 +3675,47 @@ const _adminDdtHtml = String.raw`<!DOCTYPE html>
       <span class="text-xs text-gray-500" id="tableFooter">—</span>
     </div>
   </div>
-</div>
+
+  </div><!-- /sectionDdt -->
+
+  <!-- SEZIONE PRE-FATTURE -->
+  <div id="sectionPf" class="hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-purple-700"><i class="fas fa-file-invoice mr-2"></i>Pre-Fatture emesse</h2>
+        <button onclick="loadPrefatture()" class="text-xs text-purple-600 hover:text-purple-800 border border-purple-200 rounded px-3 py-1">
+          <i class="fas fa-sync mr-1"></i>Aggiorna
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">N° Pre-Fattura</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Data</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cliente</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">DDT Rif.</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Imponibile</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">IVA</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Totale</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Email</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="pfTableBody">
+            <tr><td colspan="9" class="px-4 py-10 text-center text-gray-400">
+              <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Caricamento…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
+        <span class="text-xs text-gray-500" id="pfTableFooter">—</span>
+      </div>
+    </div>
+  </div><!-- /sectionPf -->
+
+</div><!-- /max-w-7xl -->
 
 <!-- MODAL DETTAGLIO -->
 <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
@@ -3641,6 +3736,67 @@ var allDDTs = [];
 var filteredDDTs = [];
 var sortField = 'created_at';
 var sortDir = -1;
+
+// ── Gestione tabs DDT / Pre-Fatture ─────────────────────────────────
+function showTab(tab) {
+  var isDdt = tab === 'ddt';
+  document.getElementById('sectionDdt').classList.toggle('hidden', !isDdt);
+  document.getElementById('sectionPf').classList.toggle('hidden', isDdt);
+  document.getElementById('tabDdt').className = isDdt
+    ? 'px-5 py-2 text-sm font-semibold border-b-2 border-teal-600 text-teal-700 bg-white -mb-px rounded-t'
+    : 'px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-teal-600 hover:border-teal-400 bg-white -mb-px rounded-t transition-colors';
+  document.getElementById('tabPf').className = !isDdt
+    ? 'px-5 py-2 text-sm font-semibold border-b-2 border-purple-600 text-purple-700 bg-white -mb-px rounded-t'
+    : 'px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-purple-700 hover:border-purple-400 bg-white -mb-px rounded-t transition-colors';
+  if (!isDdt) loadPrefatture();
+}
+
+// ── Pre-Fatture ──────────────────────────────────────────────────────
+function fmtEur(v) {
+  var n = parseFloat(v) || 0;
+  return '€ ' + n.toFixed(2).replace('.', ',');
+}
+
+async function loadPrefatture() {
+  var tbody = document.getElementById('pfTableBody');
+  tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Caricamento…</td></tr>';
+  try {
+    var res = await fetch('/api/prefatture');
+    var data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Errore API');
+    var pfs = data.prefatture || [];
+    if (!pfs.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Nessuna pre-fattura generata.</td></tr>';
+      document.getElementById('pfTableFooter').textContent = '0 pre-fatture';
+      return;
+    }
+    var html = '';
+    pfs.forEach(function(p) {
+      var emailBadge = p.inviata_commercialista
+        ? '<span class="text-green-600" title="Inviata a ' + esc(p.email_commercialista || '') + '"><i class="fas fa-check-circle"></i></span>'
+        : '<span class="text-gray-300" title="Non inviata"><i class="fas fa-minus-circle"></i></span>';
+      var ivaBadge = p.iva_pct === 4
+        ? '<span class="text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-1">' + p.iva_pct + '%</span>'
+        : '<span class="text-xs text-gray-500">' + p.iva_pct + '%</span>';
+      html += '<tr class="hover:bg-purple-50">';
+      html += '<td class="px-4 py-3 font-mono text-xs text-purple-800 font-bold whitespace-nowrap">' + esc(p.numero_prefattura || '—') + '</td>';
+      html += '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + fmtDate(p.created_at) + '</td>';
+      html += '<td class="px-4 py-3 text-sm text-gray-900">' + esc(p.destinatario_nome || '—') + '</td>';
+      html += '<td class="px-4 py-3 font-mono text-xs text-gray-500">' + esc(p.ddt_id || '—') + '</td>';
+      html += '<td class="px-4 py-3 text-right text-xs font-mono">' + fmtEur(p.imponibile) + '</td>';
+      html += '<td class="px-4 py-3 text-right text-xs">' + fmtEur(p.iva_amt) + ' ' + ivaBadge + '</td>';
+      html += '<td class="px-4 py-3 text-right font-bold text-sm">' + fmtEur(p.totale) + '</td>';
+      html += '<td class="px-4 py-3 text-center">' + emailBadge + '</td>';
+      html += '<td class="px-4 py-3 text-center whitespace-nowrap">';
+      html += '<a href="/api/ddts/' + encodeURIComponent(p.ddt_id || '') + '/prefattura-html" target="_blank" class="text-purple-600 hover:text-purple-900 mr-2" title="Stampa Pre-Fattura"><i class="fas fa-print"></i></a>';
+      html += '</td></tr>';
+    });
+    tbody.innerHTML = html;
+    document.getElementById('pfTableFooter').textContent = pfs.length + ' pre-fatture';
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-6 text-center text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>' + esc(e.message) + '</td></tr>';
+  }
+}
 
 async function loadDDTs() {
   try {
@@ -3766,6 +3922,7 @@ function renderTable() {
       : '';
     var ddtPrintId = encodeURIComponent(d.id || d.numero_ddt);
     var viewBtn = '<a href="/api/ddts/' + ddtPrintId + '/pdf-print" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Stampa DDT"><i class="fas fa-print"></i></a>';
+    var pfBtn = '<button onclick="generaPrefattura(' + "'" + esc(d.id || d.numero_ddt) + "'" + ')" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>';
     var rowId = esc(d.id || d.numero_ddt);
 
     html += '<tr>';
@@ -3777,7 +3934,7 @@ function renderTable() {
     html += '<td class="px-4 py-3 font-mono text-xs text-gray-500" title="' + esc(sn) + '">' + esc(snShort) + '</td>';
     html += '<td class="px-4 py-3">' + contractLink + '</td>';
     html += '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>';
-    html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn;
+    html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn + pfBtn;
     html += '<button onclick="showDetail(' + "'" + rowId + "'" + ')" class="text-gray-400 hover:text-teal-600" title="Dettaglio"><i class="fas fa-info-circle"></i></button>';
     html += '</td></tr>';
   });
@@ -3829,6 +3986,7 @@ function showDetail(id) {
     btns += '<a href="' + esc(d.pdf_url) + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"><i class="fas fa-file-pdf mr-1"></i>PDF</a>';
   }
   btns += '<a href="/api/ddts/' + encodeURIComponent(d.id || d.numero_ddt) + '/pdf-print" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg"><i class="fas fa-print mr-1"></i>Stampa / PDF</a>';
+  btns += '<button onclick="generaPrefattura(' + "'" + rowId + "'" + ')" class="px-4 py-2 text-sm bg-purple-700 hover:bg-purple-800 text-white rounded-lg"><i class="fas fa-file-invoice mr-1"></i>Pre-Fattura</button>';
   btns += '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Chiudi</button>';
   document.getElementById('modalFooter').innerHTML = btns;
 
@@ -3837,6 +3995,41 @@ function showDetail(id) {
 
 function closeModal() {
   document.getElementById('detailModal').classList.add('hidden');
+}
+
+// ── Genera Pre-Fattura ─────────────────────────────────────────────
+function generaPrefattura(id) {
+  var note = prompt('Note aggiuntive per la pre-fattura (opzionale):') || '';
+  var confirm = window.confirm('Generare la pre-fattura per il DDT ' + id + ' e inviarla al commercialista?');
+  if (!confirm) return;
+
+  fetch('/api/ddts/' + encodeURIComponent(id) + '/prefattura', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note: note })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      var msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\n' +
+        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\n' +
+        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\n' +
+        'Totale: €' + (data.totale || 0).toFixed(2) + '\n\n';
+      if (data.email_inviata) {
+        msg += '📧 Email inviata a: ' + data.email_commercialista;
+      } else if (data.email_commercialista) {
+        msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
+      } else {
+        msg += 'ℹ️ Nessun commercialista configurato (impostare in Impostazioni → email_commercialista).';
+      }
+      alert(msg);
+      // Apri anteprima pre-fattura in una nuova tab
+      window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
+    } else {
+      alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+    }
+  })
+  .catch(function(e) { alert('❌ Errore di rete: ' + e.message); });
 }
 
 document.getElementById('detailModal').addEventListener('click', function(e) {
@@ -10391,6 +10584,642 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
   } catch (error) {
     console.error('❌ [DDT-PDF-PRINT]', error)
     return c.html(`<h1>Errore generazione DDT</h1><pre>${String(error)}</pre>`, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// PRE-FATTURA — generazione HTML stampabile
+// GET /api/ddts/:id/prefattura-html
+// Restituisce il documento pre-fattura pronto per la stampa/PDF.
+// ═══════════════════════════════════════════════════════════════════
+app.get('/api/ddts/:id/prefattura-html', async (c) => {
+  const id = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.html('<h1>Database non configurato</h1>', 500)
+
+    // ── Carica DDT ──────────────────────────────────────────────────
+    const ddt = await c.env.DB.prepare(
+      `SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
+    ).bind(id, id).first() as any
+    if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
+
+    // ── Carica contratto + lead collegati ────────────────────────────
+    let contractRow: any = null
+    let leadRow: any = null
+
+    if (ddt.contract_code) {
+      contractRow = await c.env.DB.prepare(
+        `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
+                c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                c.leadId,
+                l.nomeRichiedente, l.cognomeRichiedente,
+                l.nomeAssistito, l.cognomeAssistito,
+                l.intestatarioContratto,
+                l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
+                l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
+                l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+                l.iva_agevolata,
+                l.imei_dispositivo, l.numero_sim, l.sn_dispositivo
+         FROM contracts c
+         LEFT JOIN leads l ON l.id = c.leadId
+         WHERE c.codice_contratto = ? OR c.id = ?
+         LIMIT 1`
+      ).bind(ddt.contract_code, ddt.contract_code).first() as any
+    }
+    // Fallback: cerca tramite leadId nella nota DDT
+    if (!contractRow) {
+      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
+      if (leadIdFromNote) {
+        contractRow = await c.env.DB.prepare(
+          `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
+                  c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                  c.leadId,
+                  l.nomeRichiedente, l.cognomeRichiedente,
+                  l.nomeAssistito, l.cognomeAssistito,
+                  l.intestatarioContratto,
+                  l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
+                  l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
+                  l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+                  l.iva_agevolata,
+                  l.imei_dispositivo, l.numero_sim, l.sn_dispositivo
+           FROM contracts c
+           LEFT JOIN leads l ON l.id = c.leadId
+           WHERE c.leadId = ?
+           LIMIT 1`
+        ).bind(leadIdFromNote).first() as any
+      }
+    }
+
+    // ── Intestatario ─────────────────────────────────────────────────
+    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
+    let nomeInt: string, cognomeInt: string, cfInt: string, indrInt: string, cittaInt: string, capInt: string, provInt: string
+    if (intestatario === 'assistito') {
+      nomeInt    = contractRow?.nomeAssistito     || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeInt = contractRow?.cognomeAssistito  || contractRow?.cognomeRichiedente || ''
+      cfInt      = contractRow?.cfAssistito       || contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || ''
+      indrInt    = contractRow?.indirizzoAssistito|| contractRow?.indirizzoIntestatario || ddt.destinatario_indirizzo || ''
+      cittaInt   = contractRow?.cittaAssistito    || contractRow?.cittaIntestatario   || ddt.destinatario_citta || ''
+      capInt     = contractRow?.capAssistito      || contractRow?.capIntestatario     || ddt.destinatario_cap || ''
+      provInt    = contractRow?.provinciaAssistito|| contractRow?.provinciaIntestatario || ddt.destinatario_provincia || ''
+    } else {
+      nomeInt    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeInt = contractRow?.cognomeRichiedente || ''
+      cfInt      = contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || ''
+      indrInt    = contractRow?.indirizzoIntestatario || contractRow?.indirizzoAssistito || ddt.destinatario_indirizzo || ''
+      cittaInt   = contractRow?.cittaIntestatario  || contractRow?.cittaAssistito     || ddt.destinatario_citta || ''
+      capInt     = contractRow?.capIntestatario    || contractRow?.capAssistito       || ddt.destinatario_cap || ''
+      provInt    = contractRow?.provinciaIntestatario || contractRow?.provinciaAssistito || ddt.destinatario_provincia || ''
+    }
+    const capCittaProv = [capInt, cittaInt, provInt ? `(${provInt})` : ''].filter(Boolean).join(' ')
+
+    // ── Prezzi ────────────────────────────────────────────────────────
+    const ivaAgevolata = !!(contractRow?.iva_agevolata)
+    const ivaPct       = ivaAgevolata ? 4 : 22
+
+    // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
+    const servizioRaw = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
+    const pianoRaw    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
+    const pricingPF   = getPricing(servizioRaw, pianoRaw)
+    const imponibile  = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
+    const ivaAmt      = Math.round(imponibile * ivaPct / 100 * 100) / 100
+    const totale      = Math.round((imponibile + ivaAmt) * 100) / 100
+    const fmt         = (n: number) => n.toFixed(2).replace('.', ',')
+
+    // ── Dispositivo ───────────────────────────────────────────────────
+    const dispositivo  = ddt.dispositivo || 'SiDLY Care PRO'
+    const serialNumber = ddt.serial_number || '—'
+    const simNumberPF  = ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || contractRow?.numero_sim || '—'
+    const dispLowerPF  = dispositivo.toLowerCase()
+    const servizioContrPF = (contractRow?.servizio || '').toUpperCase()
+    const isAvanzatoPF = (contractRow?.piano || '').toUpperCase() === 'AVANZATO'
+      || servizioContrPF.includes('AVANZAT')
+      || (ddt.note || '').toUpperCase().includes('AVANZAT')
+    const isFamilyPF   = servizioContrPF.includes('FAMILY') || dispLowerPF.includes('family')
+    const bdRdm        = dispLowerPF.includes('vital') ? '2853300' : '2853576'
+    const snLabel      = serialNumber !== '—' ? ` S/N ${serialNumber}` : ''
+
+    const destVocePF   = isAvanzatoPF
+      ? 'la Centrale Operativa e con i familiari / care giver configurati in Piattaforma'
+      : 'i familiari e i care giver configurati in Piattaforma'
+    const destCadutePF = isAvanzatoPF ? 'alla Centrale Operativa e ai familiari' : 'ai familiari e ai care giver'
+    const destVitaliPF = isAvanzatoPF ? 'alla Centrale Operativa e ai familiari' : 'ai familiari e ai care giver'
+
+    let descDispositivoPF: string
+    if (dispLowerPF.includes('vital')) {
+      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2)${isAvanzatoPF ? ' con alert automatici ' + destVitaliPF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
+    } else if (isFamilyPF) {
+      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
+    } else {
+      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}, il reminder dei farmaci e il monitoraggio dei parametri vitali (FC e SpO2)${isAvanzatoPF ? ' con alert automatici ' + destVitaliPF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
+    }
+
+    // ── Rate ──────────────────────────────────────────────────────────
+    const rateizzazioneAttiva = !!(contractRow?.rateizzazione_attiva)
+    let rateRows = ''
+    if (rateizzazioneAttiva && contractRow?.rate) {
+      try {
+        const rateArr: Array<{ numero?: number; importo?: number; scadenza?: string; desc?: string }> =
+          typeof contractRow.rate === 'string' ? JSON.parse(contractRow.rate) : contractRow.rate
+        if (Array.isArray(rateArr) && rateArr.length > 0) {
+          rateRows = rateArr.map((r, i) => `
+            <tr>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero ?? i + 1}</td>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:right;">€ ${fmt(Number(r.importo ?? 0))}</td>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.scadenza ?? '—'}</td>
+              <td style="border:1px solid #999;padding:4px 8px;">${r.desc ?? ''}</td>
+            </tr>`).join('')
+        }
+      } catch (_) { /* ignora errori JSON */ }
+    }
+
+    // ── Riserva di dominio ────────────────────────────────────────────
+    const riservaDominio = !!(contractRow?.riserva_dominio)
+
+    // ── Data e numero documento ───────────────────────────────────────
+    const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+    const numDdtRaw = ddt.numero_ddt || id
+    const numMatch  = numDdtRaw.match(/DDT-0*(\d+)-(\d{4})/i)
+    const numProgressivoPF = numMatch ? numMatch[1] : numDdtRaw
+    const numPrefattura    = `PF-${numDdtRaw}`
+    const codiceContratto  = ddt.contract_code || contractRow?.codice_contratto || '—'
+
+    // ── Numero DDT formattato (gg/mm/aa) ─────────────────────────────
+    const formatDataItPF = (d: string) => {
+      if (!d) return '—'
+      const dt = new Date(d)
+      if (isNaN(dt.getTime())) return d
+      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getFullYear()).slice(-2)}`
+    }
+    const dataDDT = formatDataItPF(ddt.data_consegna || ddt.data_spedizione || ddt.created_at || new Date().toISOString())
+
+    // ── SVG logo eCura ────────────────────────────────────────────────
+    const logoSvgPF = `<svg width="220" height="50" viewBox="0 0 220 50" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0ea5e9">e</text>
+      <text x="20" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0f172a">Cura</text>
+      <polyline points="85,25 95,25 100,10 107,40 113,15 119,35 125,25 220,25" stroke="#0ea5e9" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`
+
+    const htmlPF = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Pre-Fattura ${numPrefattura}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
+    .btn-print { display: block; margin: 10px auto 0; background: #6d28d9; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+    @media print { .btn-print { display: none !important; } @page { size: A4; margin: 10mm 15mm; } }
+
+    /* ── HEADER ── */
+    .header { display: table; width: 100%; margin-bottom: 0; }
+    .header-left  { display: table-cell; vertical-align: middle; width: 55%; }
+    .header-right { display: table-cell; vertical-align: top; width: 45%; text-align: right; padding-top: 4px; }
+
+    /* ── BLOCCO META + DESTINATARIO ── */
+    .meta-dest { display: table; width: 100%; border: 1.5px solid #6b21a8; border-collapse: collapse; margin-top: 6mm; }
+    .meta-dest-left  { display: table-cell; width: 50%; vertical-align: top; border-right: 1.5px solid #6b21a8; padding: 0; }
+    .meta-dest-right { display: table-cell; width: 50%; vertical-align: top; padding: 6px 10px; }
+    .meta-grid { width: 100%; border-collapse: collapse; }
+    .meta-grid td { border: 1px solid #6b21a8; padding: 3px 6px; font-size: 8.5pt; }
+    .meta-grid .lbl { background: #f3e8ff; font-weight: bold; color: #6b21a8; width: 40%; }
+    .meta-grid .val { font-weight: bold; }
+    .dest-label { font-size: 7.5pt; font-weight: bold; color: #6b21a8; margin-bottom: 3px; }
+    .dest-nome  { font-size: 10pt; font-weight: bold; margin-bottom: 2px; }
+    .dest-cf    { font-size: 8pt; color: #333; margin-bottom: 2px; font-family: 'Courier New', monospace; }
+    .dest-addr  { font-size: 8.5pt; line-height: 1.5; }
+
+    /* ── SEZIONI ── */
+    .section-title { font-size: 9.5pt; font-weight: bold; color: #6b21a8; border-bottom: 1.5px solid #6b21a8;
+                     padding: 3px 0 2px; margin-top: 5mm; margin-bottom: 3mm; letter-spacing: 0.3px; }
+
+    /* ── TABELLA ARTICOLI (stile DDT) ── */
+    .articoli { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+    .articoli th { background: #6b21a8; color: white; border: 1px solid #6b21a8; padding: 4px 6px; font-size: 8pt; font-weight: bold; text-align: left; }
+    .articoli td { border: 1px solid #6b21a8; padding: 5px 6px; font-size: 8pt; vertical-align: top; }
+    .articoli td.cod { font-weight: bold; font-size: 8pt; text-align: center; vertical-align: middle; }
+    .articoli td.um  { text-align: center; vertical-align: middle; }
+    .articoli td.qty { text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; }
+    .articoli tr:nth-child(even) td { background: #faf5ff; }
+
+    /* ── IMPORTO BOX ── */
+    .importo-table { width: 100%; border-collapse: collapse; margin-top: 4mm; }
+    .importo-table td { padding: 3px 10px; font-size: 9pt; border: 1px solid #ddd; }
+    .importo-table .lbl { width: 60%; text-align: right; color: #555; }
+    .importo-table .val { width: 40%; text-align: right; font-weight: bold; }
+    .importo-table .totale-row td { background: #6b21a8; color: #fff; font-weight: bold; font-size: 11pt; }
+    .iva-badge { display: inline-block; background: #fef9c3; border: 1px solid #ca8a04; border-radius: 3px;
+                 padding: 1px 6px; font-size: 7.5pt; color: #92400e; margin-left: 4px; }
+
+    /* ── RATE ── */
+    .rate-table { width: 100%; border-collapse: collapse; margin-top: 2mm; font-size: 8.5pt; }
+    .rate-table th { background: #f3e8ff; color: #6b21a8; border: 1px solid #999; padding: 3px 8px; text-align: center; font-weight: bold; }
+
+    /* ── RISERVA DOMINIO ── */
+    .riserva-box { border: 1px solid #f97316; background: #fff7ed; border-radius: 3px; padding: 6px 10px;
+                   font-size: 8pt; color: #7c2d12; margin-top: 3mm; line-height: 1.5; }
+    .riserva-title { font-weight: bold; color: #c2410c; margin-bottom: 3px; }
+
+    /* ── NOTE LEGALI ── */
+    .nota-legale { font-size: 8pt; color: #666; font-style: italic; margin-top: 4mm;
+                   border-top: 1px solid #ccc; padding-top: 3mm; }
+
+    /* ── FOOTER ── */
+    .footer-azienda { font-size: 7pt; color: #555; text-align: center; margin-top: 6mm;
+                      border-top: 1px solid #ccc; padding-top: 3px; }
+  </style>
+</head>
+<body>
+<button class="btn-print" onclick="window.print()">Stampa / Salva PDF</button>
+<div class="page">
+
+  <!-- ══ HEADER ══ -->
+  <div class="header">
+    <div class="header-left">
+      ${logoSvgPF}
+      <div style="font-size:7.5pt; color:#555; margin-top:3px;">
+        eCura by Medica GB S.r.l. &nbsp;|&nbsp; Corso Garibaldi, 34 – 20121 Milano (MI)<br>
+        PEC: medicagbsrl@pecimprese.it &nbsp;|&nbsp; P.IVA: 12435130963 &nbsp;|&nbsp; info@ecura.it
+      </div>
+    </div>
+    <div class="header-right">
+      <div style="font-size:16pt; font-weight:bold; color:#6b21a8; letter-spacing:1px;">PRE-FATTURA</div>
+      <div style="font-size:8pt; color:#333; margin-top:2px;">${numPrefattura}</div>
+      <div style="font-size:8pt; color:#555;">Milano, ${oggi}</div>
+    </div>
+  </div>
+
+  <!-- ══ META + DESTINATARIO ══ -->
+  <div class="meta-dest">
+    <div class="meta-dest-left">
+      <table class="meta-grid">
+        <tr><td class="lbl">N° Pre-Fattura</td><td class="val">${numPrefattura}</td></tr>
+        <tr><td class="lbl">Data</td><td class="val">${oggi}</td></tr>
+        <tr><td class="lbl">Rif. DDT N°</td><td class="val">${numProgressivoPF} del ${dataDDT}</td></tr>
+        <tr><td class="lbl">Contratto</td><td class="val">${codiceContratto}</td></tr>
+        <tr><td class="lbl">IVA applicata</td><td class="val">${ivaPct}%${ivaAgevolata ? ' (agevolata Legge 104)' : ''}</td></tr>
+      </table>
+    </div>
+    <div class="meta-dest-right">
+      <div class="dest-label">Spettabile:</div>
+      <div class="dest-nome">${nomeInt.toUpperCase()} ${cognomeInt.toUpperCase()}</div>
+      ${cfInt ? `<div class="dest-cf">C.F.: ${cfInt.toUpperCase()}</div>` : ''}
+      <div class="dest-addr">
+        ${indrInt}<br>
+        ${capCittaProv}
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ARTICOLI (contenuto DDT) ══ -->
+  <div class="section-title">FORNITURA</div>
+  <table class="articoli">
+    <thead>
+      <tr>
+        <th style="width:22%">COD. ARTICOLO</th>
+        <th style="width:62%">DESCRIZIONE</th>
+        <th style="width:8%">U.M.</th>
+        <th style="width:8%">Q.tà</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cod">${dispositivo}</td>
+        <td>${descDispositivoPF}</td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
+      </tr>
+      <tr>
+        <td class="cod">SIM SiDLY per ${dispositivo}</td>
+        <td>SIM SiDLY per ${dispositivo} (numero SIM ${simNumberPF}), per comunicazione e trasmissione dati.</td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
+      </tr>
+      <tr>
+        <td class="cod">APP e Piattaforma SiDLYCARE</td>
+        <td>APP e Piattaforma SiDLYCARE (Dispositivo medicale in classe I)</td>
+        <td class="um">NR</td>
+        <td class="qty">1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ══ IMPORTO E IVA ══ -->
+  <div class="section-title">IMPORTO FORNITURA</div>
+  <table class="importo-table">
+    <tr>
+      <td class="lbl">Imponibile:</td>
+      <td class="val">€ ${fmt(imponibile)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">IVA ${ivaPct}%${ivaAgevolata ? ' <span class="iva-badge">Legge 104</span>' : ''}:</td>
+      <td class="val">€ ${fmt(ivaAmt)}</td>
+    </tr>
+    <tr class="totale-row">
+      <td class="lbl" style="color:#fff;">TOTALE IVA INCLUSA:</td>
+      <td class="val" style="color:#fff;">€ ${fmt(totale)}</td>
+    </tr>
+  </table>
+
+  ${rateizzazioneAttiva && rateRows ? `
+  <!-- ══ PIANO DI RATEIZZAZIONE ══ -->
+  <div class="section-title">PIANO DI RATEIZZAZIONE</div>
+  <table class="rate-table">
+    <thead>
+      <tr>
+        <th style="width:10%">Rata N°</th>
+        <th style="width:25%">Importo</th>
+        <th style="width:25%">Scadenza</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rateRows}
+    </tbody>
+  </table>
+  ` : ''}
+
+  ${riservaDominio ? `
+  <!-- ══ CLAUSOLA RISERVA DI DOMINIO ══ -->
+  <div class="riserva-box">
+    <div class="riserva-title">⚠ CLAUSOLA DI RISERVA DI DOMINIO (art. 1523 c.c.)</div>
+    Il dispositivo venduto rimane di proprietà di Medica GB S.r.l. fino all'integrale pagamento del prezzo.
+    Il compratore acquista la proprietà del bene al momento del pagamento dell'ultima rata.
+    In caso di inadempimento, Medica GB S.r.l. ha il diritto di richiedere la restituzione del bene.
+    Il rischio del perimento del bene è a carico del compratore dal momento della consegna.
+  </div>
+  ` : ''}
+
+  <!-- ══ NOTA LEGALE ══ -->
+  <div class="nota-legale">
+    Il presente documento non costituisce fattura fiscale, che verrà emessa all'atto del pagamento
+    ai sensi dell'art. 6 DPR 26.10.1972 n. 633. Medica GB S.r.l. è soggetto IVA ordinario;
+    l'aliquota agevolata 4% si applica ai sensi della Tabella A, Parte II, n. 31 allegata al DPR 633/72,
+    in presenza di certificazione di invalidità al 100% (Legge 104/92).
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer-azienda">
+    Medica GB S.r.l. – Corso Garibaldi, 34 – 20121 Milano (MI) – P.IVA 12435130963 – REA: MI-2661409 – PEC: medicagbsrl@pecimprese.it
+  </div>
+
+</div>
+</body>
+</html>`
+
+    return c.html(htmlPF)
+  } catch (error) {
+    console.error('❌ [PREFATTURA-HTML]', error)
+    return c.html(`<h1>Errore generazione pre-fattura</h1><pre>${String(error)}</pre>`, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// POST /api/ddts/:id/prefattura
+// Crea il record prefattura e invia email al commercialista.
+// Body opzionale: { email_commercialista?: string, note?: string }
+// ═══════════════════════════════════════════════════════════════════
+app.post('/api/ddts/:id/prefattura', async (c) => {
+  const id = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // ── DDT ─────────────────────────────────────────────────────────
+    const ddt = await c.env.DB.prepare(
+      `SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
+    ).bind(id, id).first() as any
+    if (!ddt) return c.json({ success: false, error: 'DDT non trovato' }, 404)
+
+    // ── Contratto + lead ─────────────────────────────────────────────
+    let contractRow: any = null
+    if (ddt.contract_code) {
+      contractRow = await c.env.DB.prepare(
+        `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
+                c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                c.leadId,
+                l.intestatarioContratto,
+                l.nomeRichiedente, l.cognomeRichiedente,
+                l.nomeAssistito, l.cognomeAssistito,
+                l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
+                l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
+                l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+                l.iva_agevolata, l.numero_sim, l.sn_dispositivo
+         FROM contracts c
+         LEFT JOIN leads l ON l.id = c.leadId
+         WHERE c.codice_contratto = ? OR c.id = ?
+         LIMIT 1`
+      ).bind(ddt.contract_code, ddt.contract_code).first() as any
+    }
+    if (!contractRow) {
+      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
+      if (leadIdFromNote) {
+        contractRow = await c.env.DB.prepare(
+          `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
+                  c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                  c.leadId,
+                  l.intestatarioContratto,
+                  l.nomeRichiedente, l.cognomeRichiedente,
+                  l.nomeAssistito, l.cognomeAssistito,
+                  l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
+                  l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
+                  l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+                  l.iva_agevolata, l.numero_sim, l.sn_dispositivo
+           FROM contracts c
+           LEFT JOIN leads l ON l.id = c.leadId
+           WHERE c.leadId = ?
+           LIMIT 1`
+        ).bind(leadIdFromNote).first() as any
+      }
+    }
+
+    // ── Body request ─────────────────────────────────────────────────
+    let bodyData: any = {}
+    try { bodyData = await c.req.json() } catch (_) {}
+
+    // ── Email commercialista (body → system_settings fallback) ────────
+    let emailCommercialista = bodyData.email_commercialista || ''
+    if (!emailCommercialista) {
+      const settingRow = await c.env.DB.prepare(
+        `SELECT value FROM system_settings WHERE key = 'email_commercialista' LIMIT 1`
+      ).first() as any
+      emailCommercialista = settingRow?.value || ''
+    }
+
+    // ── Prezzi ────────────────────────────────────────────────────────
+    const ivaAgevolata = !!(contractRow?.iva_agevolata)
+    const ivaPct       = ivaAgevolata ? 4 : 22
+    const servizioRawP = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
+    const pianoRawP    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
+    const pricingP     = getPricing(servizioRawP, pianoRawP)
+    const imponibileP  = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
+    const ivaAmtP      = Math.round(imponibileP * ivaPct / 100 * 100) / 100
+    const totaleP      = Math.round((imponibileP + ivaAmtP) * 100) / 100
+
+    // ── Intestatario ─────────────────────────────────────────────────
+    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
+    let nomeIntP: string, cognomeIntP: string
+    if (intestatario === 'assistito') {
+      nomeIntP    = contractRow?.nomeAssistito    || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeIntP = contractRow?.cognomeAssistito || contractRow?.cognomeRichiedente || ''
+    } else {
+      nomeIntP    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeIntP = contractRow?.cognomeRichiedente || ''
+    }
+
+    // ── Numero pre-fattura ────────────────────────────────────────────
+    const numPF      = `PF-${ddt.numero_ddt || ddt.id}`
+    const pfId       = `pf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+    const oggi       = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    // ── Salva in DB ──────────────────────────────────────────────────
+    await c.env.DB.prepare(`
+      INSERT INTO prefatture (
+        id, numero_prefattura, ddt_id, contract_code,
+        destinatario_nome, destinatario_indirizzo, destinatario_cap,
+        destinatario_citta, destinatario_provincia, cf_intestatario,
+        dispositivo, serial_number, sim_number,
+        imponibile, iva_pct, iva_amt, totale,
+        rateizzazione_attiva, rate_json, riserva_dominio,
+        note, created_at, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+    `).bind(
+      pfId, numPF, ddt.id, ddt.contract_code || null,
+      ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null, ddt.destinatario_cap || null,
+      ddt.destinatario_citta || null, ddt.destinatario_provincia || null,
+      (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
+      ddt.dispositivo || null, ddt.serial_number || null,
+      (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
+      imponibileP, ivaPct, ivaAmtP, totaleP,
+      contractRow?.rateizzazione_attiva ? 1 : 0,
+      contractRow?.rate || null,
+      contractRow?.riserva_dominio ? 1 : 0,
+      bodyData.note || null
+    ).run()
+
+    // ── Invia email al commercialista (se configurato) ─────────────────
+    let emailInviata = false
+    let emailError   = ''
+    if (emailCommercialista) {
+      try {
+        const baseUrl = new URL(c.req.url).origin
+        const prefatturaUrl = `${baseUrl}/api/ddts/${encodeURIComponent(ddt.id || ddt.numero_ddt)}/prefattura-html`
+        const fmtE = (n: number) => n.toFixed(2).replace('.', ',')
+
+        const emailHtml = `
+<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;max-width:600px;">
+  <div style="background:#6b21a8;color:white;padding:12px 18px;border-radius:4px 4px 0 0;">
+    <strong>eCura – Medica GB S.r.l.</strong><br>
+    <span style="font-size:9pt;opacity:.9;">Pre-Fattura ${numPF} – ${oggi}</span>
+  </div>
+  <div style="border:1px solid #ddd;border-top:none;padding:16px 18px;">
+    <p>Buongiorno,</p>
+    <p>si trasmette in allegato (visualizzabile al link sotto) la <strong>pre-fattura ${numPF}</strong>
+       relativa alla fornitura per il cliente <strong>${nomeIntP} ${cognomeIntP}</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:9.5pt;">
+      <tr style="background:#f3e8ff;">
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">DDT</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.numero_ddt || ddt.id}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Contratto</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.contract_code || '—'}</td>
+      </tr>
+      <tr style="background:#f3e8ff;">
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Cliente</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">${nomeIntP} ${cognomeIntP}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Dispositivo</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.dispositivo || '—'}</td>
+      </tr>
+      <tr style="background:#f3e8ff;">
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Imponibile</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(imponibileP)}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">IVA ${ivaPct}%${ivaAgevolata ? ' (agevolata)' : ''}</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(ivaAmtP)}</td>
+      </tr>
+      <tr style="background:#6b21a8;color:white;">
+        <td style="padding:6px 8px;font-weight:bold;border:1px solid #6b21a8;">TOTALE</td>
+        <td style="padding:6px 8px;font-weight:bold;font-size:11pt;border:1px solid #6b21a8;">€ ${fmtE(totaleP)}</td>
+      </tr>
+    </table>
+    <p style="margin:10px 0;">
+      <a href="${prefatturaUrl}" style="background:#6b21a8;color:white;padding:8px 16px;border-radius:4px;text-decoration:none;font-weight:bold;">
+        📄 Visualizza / Stampa Pre-Fattura
+      </a>
+    </p>
+    ${bodyData.note ? `<p style="background:#fff7ed;border:1px solid #f97316;border-radius:3px;padding:8px 12px;font-size:9pt;"><strong>Note:</strong> ${bodyData.note}</p>` : ''}
+    <hr style="margin:16px 0;border:none;border-top:1px solid #eee;">
+    <p style="font-size:8.5pt;color:#555;">
+      Medica GB S.r.l. – Corso Garibaldi, 34 – 20121 Milano<br>
+      P.IVA 12435130963 – PEC: medicagbsrl@pecimprese.it
+    </p>
+  </div>
+</div>`
+
+        const emailService = new EmailService(c.env)
+        const result = await emailService.sendEmail({
+          to: emailCommercialista,
+          from: c.env?.RESEND_FROM || 'info@ecura.it',
+          subject: `Pre-Fattura ${numPF} – ${nomeIntP} ${cognomeIntP} – eCura Medica GB`,
+          html: emailHtml,
+          text: `Pre-Fattura ${numPF} - ${nomeIntP} ${cognomeIntP} - Imponibile: €${fmtE(imponibileP)} IVA ${ivaPct}%: €${fmtE(ivaAmtP)} Totale: €${fmtE(totaleP)}\nLink: ${prefatturaUrl}`
+        })
+        emailInviata = result.success
+        if (!result.success) emailError = result.error || 'Invio fallito'
+
+        if (emailInviata) {
+          await c.env.DB.prepare(
+            `UPDATE prefatture SET inviata_commercialista=1, data_invio_commercialista=CURRENT_TIMESTAMP, email_commercialista=? WHERE id=?`
+          ).bind(emailCommercialista, pfId).run()
+        }
+      } catch (emailErr: any) {
+        emailError = emailErr.message || String(emailErr)
+        console.error('❌ [PREFATTURA] Errore invio email commercialista:', emailErr)
+      }
+    }
+
+    return c.json({
+      success: true,
+      prefattura_id: pfId,
+      numero_prefattura: numPF,
+      imponibile: imponibileP,
+      iva_pct: ivaPct,
+      iva_amt: ivaAmtP,
+      totale: totaleP,
+      email_inviata: emailInviata,
+      email_commercialista: emailCommercialista || null,
+      email_error: emailError || null,
+      prefattura_url: `/api/ddts/${encodeURIComponent(ddt.id || ddt.numero_ddt)}/prefattura-html`
+    })
+  } catch (error: any) {
+    console.error('❌ [PREFATTURA POST]', error)
+    return c.json({ success: false, error: error.message || String(error) }, 500)
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// GET /api/prefatture — Lista pre-fatture (con filtro opzionale ?ddt_id=)
+// ═══════════════════════════════════════════════════════════════════
+app.get('/api/prefatture', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+    const ddtId = c.req.query('ddt_id')
+    let rows: any
+    if (ddtId) {
+      rows = await c.env.DB.prepare(
+        `SELECT * FROM prefatture WHERE ddt_id = ? ORDER BY created_at DESC`
+      ).bind(ddtId).all()
+    } else {
+      rows = await c.env.DB.prepare(
+        `SELECT * FROM prefatture ORDER BY created_at DESC LIMIT 200`
+      ).all()
+    }
+    return c.json({ success: true, prefatture: rows.results || [] })
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message || String(error) }, 500)
   }
 })
 
