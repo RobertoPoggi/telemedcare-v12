@@ -10618,8 +10618,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata,
-                l.imei_dispositivo, l.numero_sim, l.sn_dispositivo
+                l.iva_agevolata
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -10640,8 +10639,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata,
-                  l.imei_dispositivo, l.numero_sim, l.sn_dispositivo
+                  l.iva_agevolata
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -10700,7 +10698,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     // ── Dispositivo ───────────────────────────────────────────────────
     const dispositivo  = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
-    const simNumberPF  = ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || contractRow?.numero_sim || '—'
+    const simNumberPF  = ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || '—'
     const dispLowerPF  = dispositivo.toLowerCase()
     const servizioContrPF = (contractRow?.servizio || '').toUpperCase()
     const isAvanzatoPF = (contractRow?.piano || '').toUpperCase() === 'AVANZATO'
@@ -10976,8 +10974,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     return c.html(htmlPF)
   } catch (error) {
     console.error('❌ [PREFATTURA-HTML]', error)
-    // Mostra errore dettagliato per debug (non esporre in produzione dopo il fix)
-    return c.html(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Errore Pre-Fattura</title></head><body style="font-family:Arial;padding:20px;"><h2 style="color:red">Errore generazione pre-fattura</h2><pre style="background:#f5f5f5;padding:15px;border-radius:5px;overflow:auto;">${String(error)}\n\n${error instanceof Error ? error.stack || '' : ''}</pre></body></html>`, 500)
+    return c.html(`<h1>Errore generazione pre-fattura</h1><p>Si è verificato un errore interno. Riprovare o contattare il supporto.</p>`, 500)
   }
 })
 
@@ -11010,7 +11007,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata, l.numero_sim, l.sn_dispositivo
+                l.iva_agevolata
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -11030,7 +11027,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata, l.numero_sim, l.sn_dispositivo
+                  l.iva_agevolata
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
