@@ -4020,7 +4020,7 @@ function generaPrefattura(id) {
       } else if (data.email_commercialista) {
         msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
       } else {
-        msg += 'ℹ️ Nessun commercialista configurato (impostare in Impostazioni → email_commercialista).';
+        msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
       }
       alert(msg);
       // Apri anteprima pre-fattura in una nuova tab
@@ -10610,7 +10610,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     if (ddt.contract_code) {
       contractRow = await c.env.DB.prepare(
         `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                 c.leadId,
                 l.nomeRichiedente, l.cognomeRichiedente,
                 l.nomeAssistito, l.cognomeAssistito,
@@ -10632,7 +10632,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
       if (leadIdFromNote) {
         contractRow = await c.env.DB.prepare(
           `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                  c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                  c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                   c.leadId,
                   l.nomeRichiedente, l.cognomeRichiedente,
                   l.nomeAssistito, l.cognomeAssistito,
@@ -10648,6 +10648,18 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
            LIMIT 1`
         ).bind(leadIdFromNote).first() as any
       }
+    }
+
+    // ── Rate da rate_pagamento (se rateizzazione_attiva) ──────────────
+    let ratePagamentoRows: any[] = []
+    if (contractRow?.rateizzazione_attiva && contractRow?.leadId) {
+      try {
+        const rateRes = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status, note
+           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(contractRow.leadId).all()
+        ratePagamentoRows = rateRes.results || []
+      } catch (_) {}
     }
 
     // ── Intestatario ─────────────────────────────────────────────────
@@ -10716,20 +10728,14 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     // ── Rate ──────────────────────────────────────────────────────────
     const rateizzazioneAttiva = !!(contractRow?.rateizzazione_attiva)
     let rateRows = ''
-    if (rateizzazioneAttiva && contractRow?.rate) {
-      try {
-        const rateArr: Array<{ numero?: number; importo?: number; scadenza?: string; desc?: string }> =
-          typeof contractRow.rate === 'string' ? JSON.parse(contractRow.rate) : contractRow.rate
-        if (Array.isArray(rateArr) && rateArr.length > 0) {
-          rateRows = rateArr.map((r, i) => `
+    if (rateizzazioneAttiva && ratePagamentoRows.length > 0) {
+      rateRows = ratePagamentoRows.map((r: any, i: number) => `
             <tr>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero ?? i + 1}</td>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero_rata ?? i + 1}</td>
               <td style="border:1px solid #999;padding:4px 8px;text-align:right;">€ ${fmt(Number(r.importo ?? 0))}</td>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.scadenza ?? '—'}</td>
-              <td style="border:1px solid #999;padding:4px 8px;">${r.desc ?? ''}</td>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
+              <td style="border:1px solid #999;padding:4px 8px;">${r.note ?? ''}</td>
             </tr>`).join('')
-        }
-      } catch (_) { /* ignora errori JSON */ }
     }
 
     // ── Riserva di dominio ────────────────────────────────────────────
@@ -10995,7 +11001,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     if (ddt.contract_code) {
       contractRow = await c.env.DB.prepare(
         `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                 c.leadId,
                 l.intestatarioContratto,
                 l.nomeRichiedente, l.cognomeRichiedente,
@@ -11015,7 +11021,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
       if (leadIdFromNote) {
         contractRow = await c.env.DB.prepare(
           `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                  c.prezzo_totale, c.rateizzazione_attiva, c.rate, c.riserva_dominio,
+                  c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                   c.leadId,
                   l.intestatarioContratto,
                   l.nomeRichiedente, l.cognomeRichiedente,
@@ -11036,14 +11042,18 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     let bodyData: any = {}
     try { bodyData = await c.req.json() } catch (_) {}
 
-    // ── Email commercialista (body → system_settings fallback) ────────
+    // ── Email commercialista (body → system_settings → default info@ecura.it) ──
     let emailCommercialista = bodyData.email_commercialista || ''
     if (!emailCommercialista) {
-      const settingRow = await c.env.DB.prepare(
-        `SELECT value FROM system_settings WHERE key = 'email_commercialista' LIMIT 1`
-      ).first() as any
-      emailCommercialista = settingRow?.value || ''
+      try {
+        const settingRow = await c.env.DB.prepare(
+          `SELECT value FROM system_settings WHERE key = 'email_commercialista' LIMIT 1`
+        ).first() as any
+        emailCommercialista = settingRow?.value || ''
+      } catch (_) {}
     }
+    // Default: info@ecura.it se non configurato
+    if (!emailCommercialista) emailCommercialista = 'info@ecura.it'
 
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
@@ -11054,6 +11064,18 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const imponibileP  = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
     const ivaAmtP      = Math.round(imponibileP * ivaPct / 100 * 100) / 100
     const totaleP      = Math.round((imponibileP + ivaAmtP) * 100) / 100
+
+    // ── Rate da rate_pagamento ────────────────────────────────────────
+    let ratePagamentoRowsP: any[] = []
+    if (contractRow?.rateizzazione_attiva && contractRow?.leadId) {
+      try {
+        const rateResP = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status, note
+           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
+        ).bind(contractRow.leadId).all()
+        ratePagamentoRowsP = rateResP.results || []
+      } catch (_) {}
+    }
 
     // ── Intestatario ─────────────────────────────────────────────────
     const intestatario = contractRow?.intestatarioContratto || 'richiedente'
@@ -11091,7 +11113,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
       (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
       imponibileP, ivaPct, ivaAmtP, totaleP,
       contractRow?.rateizzazione_attiva ? 1 : 0,
-      contractRow?.rate || null,
+      ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
       contractRow?.riserva_dominio ? 1 : 0,
       bodyData.note || null
     ).run()
