@@ -4151,6 +4151,47 @@ export const leads_dashboard = `<!DOCTYPE html>
         // Carica dati
         loadLeadsData();
 
+        // ── Polling: banner verde quando arriva un nuovo lead ─────────────
+        let _lastLeadId = null;
+
+        async function checkForNewLeads() {
+            try {
+                const res = await fetch('/api/leads?limit=1&_=' + Date.now());
+                const data = await res.json();
+                const latest = (data.leads || [])[0];
+                if (!latest) return;
+                if (_lastLeadId === null) {
+                    // Prima chiamata: inizializza senza mostrare toast
+                    _lastLeadId = latest.id;
+                    return;
+                }
+                if (latest.id !== _lastLeadId) {
+                    _lastLeadId = latest.id;
+                    showNewLeadToast(latest);
+                    loadLeadsData(); // ricarica la tabella
+                }
+            } catch(e) { /* rete non disponibile — riprova al prossimo ciclo */ }
+        }
+
+        function showNewLeadToast(lead) {
+            const existing = document.getElementById('newLeadToast');
+            if (existing) existing.remove();
+            const nome = (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '');
+            const servizio = lead.servizio ? (' — ' + lead.servizio) : '';
+            const toast = document.createElement('div');
+            toast.id = 'newLeadToast';
+            toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-white text-sm font-semibold bg-green-600 cursor-pointer';
+            toast.innerHTML = '<i class="fas fa-user-plus"></i><span>🆕 Nuovo lead: <strong>' + escapeHtml(nome.trim()) + '</strong>' + escapeHtml(servizio) + '</span><span class="ml-2 opacity-70 text-xs">×</span>';
+            toast.onclick = () => toast.remove();
+            document.body.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+        }
+
+        // Avvia polling ogni 20 secondi
+        checkForNewLeads(); // subito per inizializzare _lastLeadId
+        setInterval(checkForNewLeads, 20000);
+        // ──────────────────────────────────────────────────────────────────
+
         async function loadLeadsData() {
             try {
                 // Carica statistiche

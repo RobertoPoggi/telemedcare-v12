@@ -728,32 +728,25 @@ export async function executeGSheetImport(
       result.imported++
       console.log(`✅ [GSHEET-IMPORT] INSERT: ${leadId} (${emailEffettiva})`)
 
-      // 📧 Invia email di benvenuto (stesso flusso del form diretto)
-      // Solo se l'email è reale (non placeholder) e non è dryRun
+      // 📧 Notifica admin (info@ecura.it) — stesso flusso del form diretto
+      // Solo se l'email è reale (non placeholder)
       if (env && emailEffettiva && !emailEffettiva.includes('@placeholder.ecura.it')) {
         try {
-          const { inviaEmailBenvenuto } = await import('./workflow-email-manager')
-          const leadRow = {
-            id: leadId,
+          const { sendNewLeadNotification } = await import('../utils/lead-notifications')
+          await sendNewLeadNotification(leadId, {
             nomeRichiedente: nome || 'N/A',
             cognomeRichiedente: cognome || '',
             email: emailEffettiva,
             telefono: telefono || '',
             servizio,
             piano,
-            tipoServizio: piano === 'BASE' ? 'BASE' : 'AVANZATO',
-            canale_acquisizione: canale,
-            gdprConsent: gdprConsent ? 1 : 0,
-          }
-          const emailResult = await inviaEmailBenvenuto(leadRow as any, env)
-          if (emailResult.success) {
-            console.log(`📧 [GSHEET-IMPORT] Email benvenuto inviata a ${emailEffettiva}`)
-          } else {
-            console.warn(`⚠️  [GSHEET-IMPORT] Email benvenuto fallita per ${emailEffettiva}:`, emailResult.errors)
-          }
+            fonte: 'GSheet Import',
+            note: noteRaw || undefined,
+            created_at: createdAt,
+          }, env)
+          console.log(`📧 [GSHEET-IMPORT] Notifica admin inviata per ${leadId}`)
         } catch (emailErr) {
-          // L'errore email non blocca l'import
-          console.error(`❌ [GSHEET-IMPORT] Errore invio email benvenuto per ${emailEffettiva}:`, emailErr)
+          console.error(`❌ [GSHEET-IMPORT] Errore notifica admin per ${leadId}:`, emailErr)
         }
       }
 
@@ -778,6 +771,23 @@ export async function executeGSheetImport(
   result.message = dryRun
     ? `Dry run: ${result.imported} nuovi, ${result.updated} aggiornati, ${result.skipped} skippati`
     : `Import completato: ${result.imported} nuovi lead, ${result.updated} aggiornati`
+
+  // 💰 Fix prezzi automatico per i nuovi lead importati
+  if (!dryRun && result.imported > 0 && env?.PUBLIC_URL) {
+    try {
+      const baseUrl = env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+      const fixRes = await fetch(`${baseUrl}/api/leads/fix-prices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      if (fixRes.ok) {
+        const fixData = await fixRes.json() as { corrected?: number }
+        console.log(`💰 [GSHEET-IMPORT] Fix prezzi: ${fixData.corrected ?? 0} lead corretti`)
+      }
+    } catch (fixErr) {
+      console.error(`⚠️ [GSHEET-IMPORT] Errore fix prezzi:`, fixErr)
+    }
+  }
 
   return result
 }
