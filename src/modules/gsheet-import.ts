@@ -728,6 +728,35 @@ export async function executeGSheetImport(
       result.imported++
       console.log(`✅ [GSHEET-IMPORT] INSERT: ${leadId} (${emailEffettiva})`)
 
+      // 📧 Invia email di benvenuto (stesso flusso del form diretto)
+      // Solo se l'email è reale (non placeholder) e non è dryRun
+      if (env && emailEffettiva && !emailEffettiva.includes('@placeholder.ecura.it')) {
+        try {
+          const { inviaEmailBenvenuto } = await import('./workflow-email-manager')
+          const leadRow = {
+            id: leadId,
+            nomeRichiedente: nome || 'N/A',
+            cognomeRichiedente: cognome || '',
+            email: emailEffettiva,
+            telefono: telefono || '',
+            servizio,
+            piano,
+            tipoServizio: piano === 'BASE' ? 'BASE' : 'AVANZATO',
+            canale_acquisizione: canale,
+            gdprConsent: gdprConsent ? 1 : 0,
+          }
+          const emailResult = await inviaEmailBenvenuto(leadRow as any, env)
+          if (emailResult.success) {
+            console.log(`📧 [GSHEET-IMPORT] Email benvenuto inviata a ${emailEffettiva}`)
+          } else {
+            console.warn(`⚠️  [GSHEET-IMPORT] Email benvenuto fallita per ${emailEffettiva}:`, emailResult.errors)
+          }
+        } catch (emailErr) {
+          // L'errore email non blocca l'import
+          console.error(`❌ [GSHEET-IMPORT] Errore invio email benvenuto per ${emailEffettiva}:`, emailErr)
+        }
+      }
+
       // 🏷️ Cerca codice sconto nelle note
       if (noteRaw) {
         const discountRes = await applyDiscountFromNotes(db, leadId, noteRaw)
