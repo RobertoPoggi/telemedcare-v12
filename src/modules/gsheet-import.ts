@@ -671,6 +671,14 @@ export async function executeGSheetImport(
             console.log(`🏷️  [GSHEET-IMPORT] UPDATE sconto applicato: ${discountRes.message}`)
           }
         }
+
+        // 💰 Fix prezzi dopo UPDATE
+        if (!dryRun && env?.PUBLIC_URL) {
+          try {
+            const baseUrl = env.PUBLIC_URL || 'https://telemedcare-v12.pages.dev'
+            await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+          } catch (_) {}
+        }
         continue
       }
 

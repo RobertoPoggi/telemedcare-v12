@@ -2765,13 +2765,14 @@ export const dashboard = `<!DOCTYPE html>
                 // Priorità 1: landing proprietaria (dettaglio_fonte = 'ecura_landing')
                 var dettaglio = (assistito.dettaglio_fonte || '').trim();
                 if (dettaglio === 'ecura_landing') {
-                    if (canale === 'META')    etichetta = 'eCura — Landing (Meta)';
-                    else if (canale === 'GOOGLE')  etichetta = 'eCura — Landing (Google)';
-                    else if (canale === 'DIRETTO') etichetta = 'eCura — Landing (Diretto)';
-                    else if (canale === 'ALTRO')   etichetta = 'eCura — Landing (Altro)';
-                    else                           etichetta = 'eCura — Landing';
+                    if (canale === 'META')      etichetta = 'eCura — Landing (Meta)';
+                    else if (canale === 'GOOGLE')   etichetta = 'eCura — Landing (Google)';
+                    else if (canale === 'DIRETTO')  etichetta = 'eCura — Landing (Diretto)';
+                    else if (canale === 'ALTRO')    etichetta = 'eCura — Landing (Altro)';
+                    else if (canale === 'ORGANICO') etichetta = 'eCura — Landing (Organico)';
+                    else                            etichetta = 'eCura — Landing';
                 }
-                // Priorità 2: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — Form eCura classico
+                // Priorità 2: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO/ORGANICO) — Form eCura classico
                 else if (canale === 'GOOGLE') {
                     etichetta = 'eCura — Google';
                 } else if (canale === 'META') {
@@ -2780,6 +2781,8 @@ export const dashboard = `<!DOCTYPE html>
                     etichetta = 'eCura — Diretto';
                 } else if (canale === 'ALTRO') {
                     etichetta = 'eCura — Altro';
+                } else if (canale === 'ORGANICO') {
+                    etichetta = 'eCura — Organico (SEO)';
                 }
                 // Priorità 3: campo fonte dal lead
                 else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || fonte === 'Privati Irbema' || leadId.includes('IRBEMA')) {
@@ -4216,12 +4219,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const fonteSelect = document.getElementById('filterFonte');
                     // Sezione 1: canali eCura (META/GOOGLE/DIRETTO/ALTRO) da canale_acquisizione
                     const canaleIcons = {
-                        'META':    '📘 eCura — Meta (FB/IG)',
-                        'GOOGLE':  '🔍 eCura — Google',
-                        'DIRETTO': '🔗 eCura — Diretto',
-                        'ALTRO':   '📎 eCura — Altro'
+                        'META':     '📘 eCura — Meta (FB/IG)',
+                        'GOOGLE':   '🔍 eCura — Google',
+                        'DIRETTO':  '🔗 eCura — Diretto',
+                        'ALTRO':    '📎 eCura — Altro',
+                        'ORGANICO': '🌿 eCura — Organico (SEO)'
                     };
-                    const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO'];
+                    const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO', 'ORGANICO'];
                     fonteSelect.innerHTML = '<option value="">Tutte le Fonti</option>';
                     // Sezione 1: Form eCura (tutti i canali)
                     fonteSelect.innerHTML += '<option value="__ECURA_ALL__">— Form eCura (tutti i canali) —</option>';
@@ -5029,8 +5033,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 //   '__ECURA_ALL__'     → tutti i lead Form eCura (qualunque canale)
                 //   '__CANALE__META'    → lead eCura con canale_acquisizione = 'META'
                 //   '__CANALE__GOOGLE'  → lead eCura con canale_acquisizione = 'GOOGLE'
-                //   '__CANALE__DIRETTO' → lead eCura con canale_acquisizione = 'DIRETTO'
-                //   '__CANALE__ALTRO'   → lead eCura con canale_acquisizione = 'ALTRO'
+                //   '__CANALE__DIRETTO'  → lead eCura con canale_acquisizione = 'DIRETTO'
+                //   '__CANALE__ALTRO'    → lead eCura con canale_acquisizione = 'ALTRO'
+                //   '__CANALE__ORGANICO' → lead eCura con canale_acquisizione = 'ORGANICO'
                 //   '__FONTE__Privati IRBEMA' → lead con fonte = 'Privati IRBEMA'
                 //   '__FONTE__Form eCura x Test' → lead di test
                 // ═══════════════════════════════════════════════════════════

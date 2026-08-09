@@ -21096,6 +21096,11 @@ app.post('/api/leads/public', async (c) => {
         new Date().toISOString(),
         (existing as any).id
       ).run()
+      // Fix prezzi dopo UPDATE duplicato
+      try {
+        const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+        await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      } catch (_) {}
       return c.json({ success: true, id: (existing as any).id, duplicate: true })
     }
 
@@ -21148,6 +21153,12 @@ app.post('/api/leads/public', async (c) => {
     ).run()
 
     console.log(`✅ [LANDING] Nuovo lead: ${leadId} (${email})`)
+
+    // Fix prezzi dopo INSERT
+    try {
+      const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+      await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    } catch (_) {}
 
     // ── 1. Notifica admin (mail a info@ecura.it) ──────────────
     try {
