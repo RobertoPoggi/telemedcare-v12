@@ -21099,16 +21099,16 @@ app.post('/api/leads/public', async (c) => {
       return c.json({ success: true, id: (existing as any).id, duplicate: true })
     }
 
-    // Genera ID lead LEAD-LANDING-XXXXX
+    // Genera ID lead LEAD-eCura-XXXXX
     const lastLead = await c.env.DB.prepare(
-      `SELECT id FROM leads WHERE id LIKE 'LEAD-LANDING-%' ORDER BY id DESC LIMIT 1`
+      `SELECT id FROM leads WHERE id LIKE 'LEAD-eCura-%' ORDER BY id DESC LIMIT 1`
     ).first()
     let nextNum = 1
     if (lastLead?.id) {
-      const m = (lastLead.id as string).match(/LEAD-LANDING-(\d+)/)
+      const m = (lastLead.id as string).match(/LEAD-eCura-(\d+)/)
       if (m) nextNum = parseInt(m[1]) + 1
     }
-    const leadId = `LEAD-LANDING-${nextNum.toString().padStart(5, '0')}`
+    const leadId = `LEAD-eCura-${nextNum.toString().padStart(5, '0')}`
 
     await c.env.DB.prepare(`
       INSERT INTO leads (
