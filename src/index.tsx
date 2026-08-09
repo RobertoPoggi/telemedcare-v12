@@ -14418,6 +14418,7 @@ app.put('/api/leads/:id', async (c) => {
       piano: 'piano',
       canale: 'fonte',  // Il form invia 'canale' ma il DB ha 'fonte'
       fonte: 'fonte',
+      canale_acquisizione: 'canale_acquisizione',
       
       // Preferenze
       vuoleBrochure: 'vuoleBrochure',

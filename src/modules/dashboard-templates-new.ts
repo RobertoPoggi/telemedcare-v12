@@ -6611,6 +6611,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                 piano: document.getElementById('newPiano').value,
                 canale: document.getElementById('newCanale').value,
                 fonte: document.getElementById('newCanale').value,
+                // Mappa fonte → canale_acquisizione per lead ORGANICO e altri canali eCura
+                canale_acquisizione: (function() {
+                    const f = document.getElementById('newCanale').value.toUpperCase();
+                    if (f === 'ORGANICO') return 'ORGANICO';
+                    if (f === 'META' || f.includes('META')) return 'META';
+                    if (f === 'GOOGLE' || f.includes('GOOGLE')) return 'GOOGLE';
+                    if (f === 'DIRETTO' || f.includes('DIRETTO') || f === 'SITO WWW.ECURA.IT') return 'DIRETTO';
+                    if (f === 'ALTRO') return 'ALTRO';
+                    return null;
+                })(),
                 
                 // Preferenze
                 vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
@@ -7089,13 +7099,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <select id="newCanale" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona fonte...</option>
-                                    <option value="Sito www.eCura.it">Sito www.eCura.it</option>
+                                    <option value="Form eCura">📋 Form eCura</option>
+                                    <option value="ORGANICO">🌿 Organico (SEO)</option>
+                                    <option value="Sito www.eCura.it">🔗 Sito www.eCura.it</option>
+                                    <option value="NETWORKING">🤝 NETWORKING</option>
                                     <option value="Privati IRBEMA">Privati IRBEMA</option>
-                                    <option value="Form eCura">Form eCura</option>
-                                    <option value="Form eCura x Test">Form eCura x Test</option>
                                     <option value="B2B IRBEMA">B2B IRBEMA</option>
                                     <option value="Sito web Medica GB">Sito web Medica GB</option>
-                                    <option value="NETWORKING">NETWORKING</option>
+                                    <option value="Form eCura x Test">Form eCura x Test</option>
                                 </select>
                             </div>
                         </div>
