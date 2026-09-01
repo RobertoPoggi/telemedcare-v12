@@ -7246,14 +7246,13 @@ app.get('/api/leads/filters', async (c) => {
 
 // GET /api/leads/channel-stats — Statistiche canali Form eCura (Meta / Google / Altro / Diretto)
 //
-// LOGICA CORRETTA (due query separate):
-// 1. totalEcura  = COUNT leads con fonte = 'Form eCura' (campo affidabile per TUTTI i lead storici)
-// 2. META/GOOGLE/ALTRO = COUNT da hs_object_source_detail_1 per i lead che hanno il suffisso canale
-//    (presenti solo nei lead importati dopo il 12-13/05/2026 con CONTAINS_TOKEN)
-// 3. diretto = totalEcura - meta - google - altro (lead vecchi senza suffisso canale)
-//
-// Nota: i lead storici hanno hs_object_source_detail_1 = 'Form eCura' (vecchio valore esatto)
-// oppure NULL; solo i nuovi hanno 'Form eCura_ META' / 'Form eCura_ GOOGLE' / 'Form eCura_ ALTRO'
+// LOGICA CORRETTA:
+// Il criterio "è un lead Form eCura" = (fonte = 'Form eCura') OR (dettaglio_fonte = 'ecura_landing')
+// I lead dalla nuova landing (post lug-2026) arrivano con fonte='Form eCura' AND dettaglio_fonte='ecura_landing'.
+// I lead storici HubSpot hanno fonte='Form eCura' e dettaglio_fonte=NULL.
+// La condizione OR garantisce che nessun lead venga perso in caso di disallineamento futuro.
+// I contatori Meta/Google/Diretto/Altro usano canale_acquisizione (campo normalizzato).
+// nonTracciato = totalEcura - meta - google - diretto - altro (lead senza canale_acquisizione)
 app.get('/api/leads/channel-stats', async (c) => {
   try {
     if (!c.env.DB) {
@@ -7267,14 +7266,16 @@ app.get('/api/leads/channel-stats', async (c) => {
     // Lead eCura = fonte = 'Form eCura' (esclude test, IRBEMA, ecc.)
     // =====================================================================
 
-    // Query 1 — totale lead eCura (fonte = 'Form eCura', esclude test)
-    // Usa COUNT(*) — stesso criterio del filtro tabella (conta record, non email univoche)
+    // Query 1 — totale lead eCura
+    // Criterio: fonte='Form eCura' OR dettaglio_fonte='ecura_landing'
+    // Questo include tutti i lead della landing proprietaria (nuovi e storici).
     let totalEcura = 0
     try {
       const r = await c.env.DB.prepare(`
         SELECT COUNT(*) as count
         FROM leads
         WHERE fonte = 'Form eCura'
+           OR dettaglio_fonte = 'ecura_landing'
       `).first() as any
       totalEcura = Number(r?.count) || 0
     } catch (err) {
@@ -7292,7 +7293,7 @@ app.get('/api/leads/channel-stats', async (c) => {
       const result = await c.env.DB.prepare(`
         SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
-        WHERE fonte = 'Form eCura'
+        WHERE (fonte = 'Form eCura' OR dettaglio_fonte = 'ecura_landing')
           AND canale_acquisizione IS NOT NULL
           AND canale_acquisizione != ''
         GROUP BY canale_acquisizione
@@ -7362,7 +7363,7 @@ app.get('/api/leads/channel-stats', async (c) => {
           ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio_totale,
           ROUND(AVG(CASE WHEN l.codice_sconto IS NOT NULL AND l.codice_sconto != '' THEN l.sconto_percentuale ELSE NULL END), 1) AS pct_media
         FROM leads l
-        WHERE l.fonte = 'Form eCura'
+        WHERE (l.fonte = 'Form eCura' OR l.dettaglio_fonte = 'ecura_landing')
         GROUP BY COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__')
       `).all()
 

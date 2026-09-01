@@ -21199,10 +21199,11 @@ loadDDTs();
         SELECT COUNT(*) as count
         FROM leads
         WHERE fonte = 'Form eCura'
+           OR dettaglio_fonte = 'ecura_landing'
       `).first();a=Number(x==null?void 0:x.count)||0}catch(x){console.warn("⚠️ channel-stats: errore query totalEcura",x)}let t=0,o=0,i=0,s=0,n=[];try{((await e.env.DB.prepare(`
         SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
-        WHERE fonte = 'Form eCura'
+        WHERE (fonte = 'Form eCura' OR dettaglio_fonte = 'ecura_landing')
           AND canale_acquisizione IS NOT NULL
           AND canale_acquisizione != ''
         GROUP BY canale_acquisizione
@@ -21220,7 +21221,7 @@ loadDDTs();
           ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio_totale,
           ROUND(AVG(CASE WHEN l.codice_sconto IS NOT NULL AND l.codice_sconto != '' THEN l.sconto_percentuale ELSE NULL END), 1) AS pct_media
         FROM leads l
-        WHERE l.fonte = 'Form eCura'
+        WHERE (l.fonte = 'Form eCura' OR l.dettaglio_fonte = 'ecura_landing')
         GROUP BY COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__')
       `).all();for(const b of x.results||[])f[b.canale]={count:Number(b.leads_scontati)||0,leads:Number(b.leads_totali)||0,risparmio:Number(b.risparmio_totale)||0,pct_media:Number(b.pct_media)||0};const T=await e.env.DB.prepare(`
         SELECT
