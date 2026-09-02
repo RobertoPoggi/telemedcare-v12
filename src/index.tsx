@@ -7304,12 +7304,14 @@ app.get('/api/leads/channel-stats', async (c) => {
       rows.forEach((row: any) => {
         // Supporta sia il formato normalizzato ('META') sia quello vecchio ('Form eCura_ META')
         // presenti in DB storici (TEST) popolati con versioni precedenti del codice.
+        // Tutti i canali non-META/GOOGLE/DIRETTO confluiscono in 'altro':
+        // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL, ecc.
         const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
-        if (val === 'META'      || val.includes('META'))    meta    += cnt
+        if      (val === 'META'    || val.includes('META'))    meta    += cnt
         else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  google  += cnt
         else if (val === 'DIRETTO' || val.includes('DIRETTO')) diretto += cnt
-        else if (val === 'ALTRO'   || val.includes('ALTRO'))   altro   += cnt
+        else                                                    altro   += cnt  // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL...
         breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
@@ -7338,11 +7340,11 @@ app.get('/api/leads/channel-stats', async (c) => {
         const cnt = Number(row.count) || 0
         landingTotal += cnt
         const val = (row.canale_acquisizione || '').toUpperCase()
-        if (val === 'META'      || val.includes('META'))    landingMeta    += cnt
+        if      (val === 'META'    || val.includes('META'))    landingMeta    += cnt
         else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  landingGoogle  += cnt
         else if (val === 'DIRETTO' || val.includes('DIRETTO')) landingDiretto += cnt
-        else if (val === 'ALTRO'   || val.includes('ALTRO'))   landingAltro   += cnt
-        else landingNonTracciato += cnt
+        else if (val !== '')                                    landingAltro   += cnt  // ALTRO, ORGANICO, REFERRAL...
+        else                                                    landingNonTracciato += cnt  // solo NULL/vuoto
       }
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query landing', err)

@@ -21208,12 +21208,12 @@ loadDDTs();
           AND canale_acquisizione != ''
         GROUP BY canale_acquisizione
         ORDER BY count DESC
-      `).all()).results||[]).forEach(E=>{const b=(E.canale_acquisizione||"").toUpperCase(),_=Number(E.count)||0;b==="META"||b.includes("META")?t+=_:b==="GOOGLE"||b.includes("GOOGLE")?o+=_:b==="DIRETTO"||b.includes("DIRETTO")?i+=_:(b==="ALTRO"||b.includes("ALTRO"))&&(s+=_),n.push({label:E.canale_acquisizione,count:_})})}catch(x){console.warn("⚠️ channel-stats: errore query canale_acquisizione",x)}const r=Math.max(0,a-t-o-i-s);let c=0,l=0,p=0,u=0,g=0,m=0;try{const x=await e.env.DB.prepare(`
+      `).all()).results||[]).forEach(E=>{const b=(E.canale_acquisizione||"").toUpperCase(),_=Number(E.count)||0;b==="META"||b.includes("META")?t+=_:b==="GOOGLE"||b.includes("GOOGLE")?o+=_:b==="DIRETTO"||b.includes("DIRETTO")?i+=_:s+=_,n.push({label:E.canale_acquisizione,count:_})})}catch(x){console.warn("⚠️ channel-stats: errore query canale_acquisizione",x)}const r=Math.max(0,a-t-o-i-s);let c=0,l=0,p=0,u=0,g=0,m=0;try{const x=await e.env.DB.prepare(`
         SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
         WHERE dettaglio_fonte = 'ecura_landing'
         GROUP BY canale_acquisizione
-      `).all();for(const T of x.results||[]){const E=Number(T.count)||0;c+=E;const b=(T.canale_acquisizione||"").toUpperCase();b==="META"||b.includes("META")?l+=E:b==="GOOGLE"||b.includes("GOOGLE")?p+=E:b==="DIRETTO"||b.includes("DIRETTO")?u+=E:b==="ALTRO"||b.includes("ALTRO")?g+=E:m+=E}}catch(x){console.warn("⚠️ channel-stats: errore query landing",x)}let f={},h={leads:0,risparmio:0,pct_media:0},v=[];try{const x=await e.env.DB.prepare(`
+      `).all();for(const T of x.results||[]){const E=Number(T.count)||0;c+=E;const b=(T.canale_acquisizione||"").toUpperCase();b==="META"||b.includes("META")?l+=E:b==="GOOGLE"||b.includes("GOOGLE")?p+=E:b==="DIRETTO"||b.includes("DIRETTO")?u+=E:b!==""?g+=E:m+=E}}catch(x){console.warn("⚠️ channel-stats: errore query landing",x)}let f={},h={leads:0,risparmio:0,pct_media:0},v=[];try{const x=await e.env.DB.prepare(`
         SELECT
           COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__') AS canale,
           COUNT(l.id)                                            AS leads_totali,
