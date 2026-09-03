@@ -34785,8 +34785,14 @@ app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
     if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
     const db = c.env.DB
 
-    // 1. system_config corrente
+    // 1. system_config + settings correnti
     const sysConfig = await db.prepare(`SELECT key, value FROM system_config ORDER BY key`).all()
+    // Leggi anche tabella settings (contiene lead_email_notifications_enabled)
+    let settingsMap: Record<string, string> = {}
+    try {
+      const settingsRes = await db.prepare(`SELECT key, value FROM settings ORDER BY key`).all()
+      ;(settingsRes.results as any[]).forEach(r => { settingsMap[r.key] = r.value })
+    } catch (_) {}
 
     // 2. Lead arrivati negli ultimi 15 giorni con il loro token
     const leadsRecenti = await db.prepare(`
@@ -34862,6 +34868,8 @@ app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
     return c.json({
       ora_server: new Date().toISOString(),
       system_config: configMap,
+      settings: settingsMap,
+      lead_email_notifications_enabled: settingsMap['lead_email_notifications_enabled'] || 'NOT_SET',
       cron_enabled: cronEnabled,
       reminder_days: reminderDays,
       max_reminders: maxReminders,
