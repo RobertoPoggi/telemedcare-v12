@@ -24507,7 +24507,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await pe.sendEmail({to:((r=e.env)==nul
         p.tipo_servizio AS piano
       FROM rate_pagamento r
       JOIN leads l ON l.id = r.lead_id
-      LEFT JOIN proforma p ON p.lead_id = r.lead_id
+      LEFT JOIN proforma p ON p.leadId = r.lead_id
       WHERE r.status NOT IN ('PAGATA', 'paid', 'ANNULLATA')
         AND r.data_scadenza BETWEEN ? AND ?
         AND (r.reminder_sent_at IS NULL OR date(r.reminder_sent_at) < ?)
