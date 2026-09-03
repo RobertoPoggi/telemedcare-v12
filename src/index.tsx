@@ -1550,6 +1550,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica reminder recenti - lead ultimi 15gg, token, config (one-shot lettura)
+  if (path === '/api/oneshot-diagnosi-reminder-recenti-7x2q9' && method === 'GET') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -34766,6 +34771,114 @@ app.get('/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v', async (c) => {
       lead_non_ecura: leadNonEcura.results,
       lead_fonte_null: leadFonteNull.results,
       nota: 'I lead in lead_non_ecura e lead_fonte_null NON ricevono più reminder grazie al filtro fonte IN (Form eCura, IRBEMA)'
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// GET /api/oneshot-diagnosi-reminder-recenti-7x2q9
+// Diagnostica: mostra lead recenti (ultimi 15 giorni), i loro token e system_config
+// Permette di capire perché alcuni lead non ricevono reminder
+app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+
+    // 1. system_config corrente
+    const sysConfig = await db.prepare(`SELECT key, value FROM system_config ORDER BY key`).all()
+
+    // 2. Lead arrivati negli ultimi 15 giorni con il loro token
+    const leadsRecenti = await db.prepare(`
+      SELECT
+        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
+        t.id as token_id,
+        t.created_at as token_created_at,
+        t.reminder_count,
+        t.reminder_sent_at,
+        t.completed,
+        t.expires_at
+      FROM leads l
+      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
+      WHERE l.created_at >= datetime('now', '-15 days')
+      ORDER BY l.created_at DESC
+      LIMIT 50
+    `).all()
+
+    // 3. Token che la query getTokensNeedingReminder restituirebbe ADESSO
+    // (replica esatta della query, con i valori di config dal DB)
+    const configMap: Record<string, string> = {}
+    ;(sysConfig.results as any[]).forEach(r => { configMap[r.key] = r.value })
+    const reminderDays = parseInt(configMap['auto_completion_reminder_days'] || '7', 10)
+    const maxReminders = parseInt(configMap['auto_completion_max_reminders'] || '2', 10)
+    const cronEnabled = configMap['cron_enabled'] === 'true'
+
+    const reminderDate = new Date()
+    reminderDate.setDate(reminderDate.getDate() - reminderDays)
+    const minTimeBetweenReminders = new Date()
+    minTimeBetweenReminders.setHours(minTimeBetweenReminders.getHours() - 23)
+
+    const tokensPronti = await db.prepare(`
+      SELECT t.id, t.lead_id, t.reminder_count, t.reminder_sent_at, t.created_at,
+             l.nomeRichiedente, l.cognomeRichiedente, l.stato, l.status, l.fonte
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0
+        AND t.expires_at > datetime('now')
+        AND t.reminder_count < ?
+        AND (
+          t.reminder_sent_at IS NULL
+          OR (t.reminder_sent_at < ? AND t.reminder_sent_at < ?)
+        )
+        AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        AND (
+          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
+          OR l.stato IS NULL OR l.stato = ''
+        )
+        AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
+      ORDER BY l.created_at ASC
+    `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
+
+    // 4. Token bloccati per waiting period (creati meno di reminderDays giorni fa)
+    const tokensInAttesa = await db.prepare(`
+      SELECT t.id, t.lead_id, t.reminder_count, t.created_at,
+             l.nomeRichiedente, l.cognomeRichiedente, l.stato, l.fonte,
+             CAST((julianday('now') - julianday(t.created_at)) AS INTEGER) as giorni_token
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.completed = 0
+        AND t.expires_at > datetime('now')
+        AND t.reminder_count < ?
+        AND (t.reminder_sent_at IS NULL OR t.reminder_sent_at < ?)
+        AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
+        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
+        AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
+        AND t.created_at > ?
+      ORDER BY t.created_at ASC
+    `).bind(maxReminders, minTimeBetweenReminders.toISOString(), reminderDate.toISOString()).all()
+
+    return c.json({
+      ora_server: new Date().toISOString(),
+      system_config: configMap,
+      cron_enabled: cronEnabled,
+      reminder_days: reminderDays,
+      max_reminders: maxReminders,
+      reminder_threshold: reminderDate.toISOString(),
+      tokens_pronti_ora: {
+        count: (tokensPronti.results || []).length,
+        tokens: tokensPronti.results
+      },
+      tokens_in_attesa_periodo: {
+        count: (tokensInAttesa.results || []).length,
+        nota: `Token creati meno di ${reminderDays} giorni fa — il cron non li invia ancora`,
+        tokens: tokensInAttesa.results
+      },
+      leads_recenti_15gg: {
+        count: (leadsRecenti.results || []).length,
+        leads: leadsRecenti.results
+      }
     })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
