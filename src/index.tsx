@@ -1560,6 +1560,16 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Report lead per periodo e fonte (GA4 report)
+  if (path === '/api/oneshot-report-leads-ga4-9v2k5' && method === 'GET') {
+    return next()
+  }
+
+  // Test invio reale Resend con log errore esatto (one-shot POST — invia una mail di test a info@ecura.it)
+  if (path === '/api/oneshot-test-resend-raw-7p3k1' && method === 'POST') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -35069,6 +35079,117 @@ app.get('/api/oneshot-diagnosi-email-provider-4k8m2', async (c) => {
     })
   } catch (e: any) {
     return c.json({ error: e.message, stack: e.stack }, 500)
+  }
+})
+
+// GET /api/oneshot-report-leads-ga4-9v2k5
+// Report lead per periodo (nuovo: 9ago-3set, vecchio: 1feb-28lug) con dettaglio fonte
+app.get('/api/oneshot-report-leads-ga4-9v2k5', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+    const db = c.env.DB
+
+    // Lead periodo NUOVO: 9 ago - 3 set 2026
+    const leadsNuovi = await db.prepare(`
+      SELECT
+        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
+        l.provincia, l.servizio,
+        CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
+      FROM leads l
+      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
+      WHERE l.created_at >= '2026-08-09T00:00:00.000Z'
+        AND l.created_at <= '2026-09-03T23:59:59.999Z'
+      ORDER BY l.created_at DESC
+    `).all()
+
+    // Lead periodo VECCHIO: 1 feb - 28 lug 2026
+    const leadsVecchi = await db.prepare(`
+      SELECT
+        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
+        l.provincia, l.servizio,
+        CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
+      FROM leads l
+      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
+      WHERE l.created_at >= '2026-02-01T00:00:00.000Z'
+        AND l.created_at <= '2026-07-28T23:59:59.999Z'
+      ORDER BY l.created_at DESC
+    `).all()
+
+    // Aggregazione per fonte - NUOVO
+    const aggNew: Record<string, number> = {}
+    const aggNewDettaglio: Record<string, number> = {}
+    for (const l of (leadsNuovi.results as any[])) {
+      const f = l.fonte || 'non_specificata'
+      aggNew[f] = (aggNew[f] || 0) + 1
+      const d = l.dettaglio_fonte || l.fonte || 'non_specificata'
+      aggNewDettaglio[d] = (aggNewDettaglio[d] || 0) + 1
+    }
+
+    // Aggregazione per fonte - VECCHIO
+    const aggOld: Record<string, number> = {}
+    const aggOldDettaglio: Record<string, number> = {}
+    for (const l of (leadsVecchi.results as any[])) {
+      const f = l.fonte || 'non_specificata'
+      aggOld[f] = (aggOld[f] || 0) + 1
+      const d = l.dettaglio_fonte || l.fonte || 'non_specificata'
+      aggOldDettaglio[d] = (aggOldDettaglio[d] || 0) + 1
+    }
+
+    // Lead per giorno - NUOVO (per grafico trend)
+    const leadsByDayNew: Record<string, number> = {}
+    for (const l of (leadsNuovi.results as any[])) {
+      const day = (l.created_at || '').substring(0, 10)
+      leadsByDayNew[day] = (leadsByDayNew[day] || 0) + 1
+    }
+
+    // Lead per giorno - VECCHIO
+    const leadsByDayOld: Record<string, number> = {}
+    for (const l of (leadsVecchi.results as any[])) {
+      const day = (l.created_at || '').substring(0, 10)
+      leadsByDayOld[day] = (leadsByDayOld[day] || 0) + 1
+    }
+
+    // Lead convertiti (stato = convertito / CONTRACT_SIGNED / ACTIVE)
+    const convertitiNew = (leadsNuovi.results as any[]).filter(l =>
+      ['convertito','CONTRACT_SIGNED','ACTIVE'].includes(l.stato || l.status || '')).length
+    const convertitiOld = (leadsVecchi.results as any[]).filter(l =>
+      ['convertito','CONTRACT_SIGNED','ACTIVE'].includes(l.stato || l.status || '')).length
+
+    return c.json({
+      ora_server: new Date().toISOString(),
+      periodo_nuovo: { da: '2026-08-09', a: '2026-09-03', giorni: 26 },
+      periodo_vecchio: { da: '2026-02-01', a: '2026-07-28', giorni: 178 },
+      riepilogo: {
+        nuovo: {
+          totale_leads: (leadsNuovi.results as any[]).length,
+          convertiti: convertitiNew,
+          tasso_conv_pct: (leadsNuovi.results as any[]).length > 0
+            ? ((convertitiNew / (leadsNuovi.results as any[]).length) * 100).toFixed(1)
+            : '0',
+          leads_per_giorno_media: ((leadsNuovi.results as any[]).length / 26).toFixed(1)
+        },
+        vecchio: {
+          totale_leads: (leadsVecchi.results as any[]).length,
+          convertiti: convertitiOld,
+          tasso_conv_pct: (leadsVecchi.results as any[]).length > 0
+            ? ((convertitiOld / (leadsVecchi.results as any[]).length) * 100).toFixed(1)
+            : '0',
+          leads_per_giorno_media: ((leadsVecchi.results as any[]).length / 178).toFixed(1)
+        }
+      },
+      per_fonte_nuovo: aggNew,
+      per_dettaglio_fonte_nuovo: aggNewDettaglio,
+      per_fonte_vecchio: aggOld,
+      per_dettaglio_fonte_vecchio: aggOldDettaglio,
+      trend_giornaliero_nuovo: leadsByDayNew,
+      trend_giornaliero_vecchio: leadsByDayOld,
+      leads_nuovo: leadsNuovi.results,
+      leads_vecchio: leadsVecchi.results
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
   }
 })
 
