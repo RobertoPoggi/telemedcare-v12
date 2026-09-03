@@ -22430,8 +22430,8 @@ app.post('/api/cron/rata-reminders', async (c) => {
         COALESCE(l.iva_agevolata, 0) AS iva_agevolata,
         p.id           AS proforma_id,
         p.numero_proforma,
-        p.servizio,
-        p.piano
+        p.tipo_servizio AS servizio,
+        p.tipo_servizio AS piano
       FROM rate_pagamento r
       JOIN leads l ON l.id = r.lead_id
       LEFT JOIN proforma p ON p.lead_id = r.lead_id
