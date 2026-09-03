@@ -4470,12 +4470,23 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
-            // I lead landing (dettaglio_fonte='ecura_landing') sono già contati sopra → saltiamo
+            // Escludi TUTTI i lead già contati dal Passo 1 (channel-stats):
+            //   - fonte='Form eCura' o startsWith('Form eCura_')  → già in Meta/Google/Diretto/Altro
+            //   - canale_acquisizione non-NULL                     → già classificato in channel-stats
+            //   - dettaglio_fonte='ecura_landing'                  → già nei box Landing
             (leads || []).forEach(l => {
-                const fonteDB = l.fonte || '';
+                const fonteDB  = l.fonte || '';
+                const canale   = l.canale_acquisizione || '';
+                const dettaglio = l.dettaglio_fonte || '';
+                // Salta tutti i lead Form eCura (già contati dal Passo 1)
                 if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
-                if ((l.dettaglio_fonte || '') === 'ecura_landing') return; // già nei box Landing
-                const etichetta = fonteDB || 'Non specificato';
+                // Salta lead con canale_acquisizione popolato (META/GOOGLE/DIRETTO/ALTRO/ORGANICO/REFERRAL…)
+                // → già inclusi in channel-stats (Passo 1)
+                if (canale !== '') return;
+                // Salta lead dalla landing proprietaria → già nei box Landing
+                if (dettaglio === 'ecura_landing') return;
+                // Mappa etichette note per fonti non-eCura
+                let etichetta = fonteDB || 'Non specificato';
                 sources[etichetta] = (sources[etichetta] || 0) + 1;
             });
 
