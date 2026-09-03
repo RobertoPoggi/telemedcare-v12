@@ -35094,7 +35094,6 @@ app.get('/api/oneshot-report-leads-ga4-9v2k5', async (c) => {
       SELECT
         l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
         l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
-        l.provincia, l.servizio,
         CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
       FROM leads l
       LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
@@ -35108,7 +35107,6 @@ app.get('/api/oneshot-report-leads-ga4-9v2k5', async (c) => {
       SELECT
         l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
         l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
-        l.provincia, l.servizio,
         CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
       FROM leads l
       LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
