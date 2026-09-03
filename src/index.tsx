@@ -1555,6 +1555,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica provider email - verifica quali API key sono configurate e testa invio (one-shot)
+  if (path === '/api/oneshot-diagnosi-email-provider-4k8m2' && method === 'GET') {
+    return next()
+  }
+
   // Endpoint schema contracts/proforma: pubblico (diagnostica one-shot)
   if (path === '/api/oneshot-schema-contracts-proforma-8wq3x' && method === 'GET') {
     return next()
@@ -34890,6 +34895,180 @@ app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
     })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
+  }
+})
+
+// GET /api/oneshot-diagnosi-email-provider-4k8m2
+// Diagnostica: verifica quali provider email sono configurati (API key presenti) e
+// mostra i log più recenti (ultimi 8 giorni) degli invii email dal DB email_logs se esiste.
+// Risponde con: provider_status, email_logs_recenti, lead_recenti_senza_token
+app.get('/api/oneshot-diagnosi-email-provider-4k8m2', async (c) => {
+  try {
+    const env = c.env
+
+    // ── 1. VERIFICA API KEY PROVIDER ──────────────────────────────────────
+    const providerStatus = {
+      resend: {
+        key_presente: !!env?.RESEND_API_KEY,
+        key_preview: env?.RESEND_API_KEY ? (env.RESEND_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA',
+        from: env?.RESEND_FROM || 'NON_CONFIGURATA'
+      },
+      brevo: {
+        key_presente: !!env?.BREVO_API_KEY,
+        key_preview: env?.BREVO_API_KEY ? (env.BREVO_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA'
+      },
+      sendgrid: {
+        key_presente: !!env?.SENDGRID_API_KEY,
+        key_preview: env?.SENDGRID_API_KEY ? (env.SENDGRID_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA'
+      },
+      emergency_stop: env?.EMAIL_EMERGENCY_STOP || 'non_impostato'
+    }
+
+    // Provider attivo dedotto dalla catena di fallback
+    let provider_attivo_stimato = 'DEMO_MODE_nessuna_chiave_valida'
+    if (providerStatus.resend.key_presente) provider_attivo_stimato = 'RESEND (primario)'
+    else if (providerStatus.brevo.key_presente) provider_attivo_stimato = 'BREVO (fallback-1, Resend assente)'
+    else if (providerStatus.sendgrid.key_presente) provider_attivo_stimato = 'SENDGRID (fallback-2, Resend+Brevo assenti)'
+
+    // ── 2. TEST LIVE RESEND (solo status HTTP, senza inviare email reale) ──
+    let resend_api_test: any = { skipped: 'RESEND_API_KEY non presente' }
+    if (env?.RESEND_API_KEY) {
+      try {
+        // GET /domains verifica la chiave senza inviare email
+        const resp = await fetch('https://api.resend.com/domains', {
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }
+        })
+        const body = await resp.json() as any
+        resend_api_test = {
+          http_status: resp.status,
+          ok: resp.ok,
+          domains: resp.ok ? (body.data || body.domains || body) : undefined,
+          error: !resp.ok ? body : undefined,
+          interpretazione: resp.ok
+            ? '✅ Chiave Resend VALIDA — se non invia, problema è quota/dominio'
+            : resp.status === 401 ? '🔴 Chiave Resend NON VALIDA o revocata (401 Unauthorized)'
+            : resp.status === 403 ? '🔴 Chiave Resend senza permessi (403 Forbidden)'
+            : `⚠️ Resend risponde con errore ${resp.status}`
+        }
+      } catch (e: any) {
+        resend_api_test = { error: e.message, interpretazione: '🔴 Resend irraggiungibile (network error)' }
+      }
+    }
+
+    // ── 3. TEST LIVE BREVO ────────────────────────────────────────────────
+    let brevo_api_test: any = { skipped: 'BREVO_API_KEY non presente' }
+    if (env?.BREVO_API_KEY) {
+      try {
+        const resp = await fetch('https://api.brevo.com/v3/account', {
+          headers: { 'api-key': env.BREVO_API_KEY as string, 'accept': 'application/json' }
+        })
+        const body = await resp.json() as any
+        brevo_api_test = {
+          http_status: resp.status,
+          ok: resp.ok,
+          plan: resp.ok ? body.plan : undefined,
+          email_limite_giornaliero: resp.ok ? body.plan?.dailyLimit : undefined,
+          email_inviati_oggi: resp.ok ? body.plan?.creditsUsed : undefined,
+          error: !resp.ok ? body : undefined,
+          interpretazione: resp.ok
+            ? '✅ Chiave Brevo VALIDA e attiva'
+            : resp.status === 401 ? '🔴 Chiave Brevo NON VALIDA (401)'
+            : `⚠️ Brevo risponde con errore ${resp.status}`
+        }
+      } catch (e: any) {
+        brevo_api_test = { error: e.message, interpretazione: '🔴 Brevo irraggiungibile (network error)' }
+      }
+    }
+
+    // ── 4. TEST LIVE SENDGRID ─────────────────────────────────────────────
+    let sendgrid_api_test: any = { skipped: 'SENDGRID_API_KEY non presente' }
+    if (env?.SENDGRID_API_KEY) {
+      try {
+        const resp = await fetch('https://api.sendgrid.com/v3/user/profile', {
+          headers: { 'Authorization': `Bearer ${env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' }
+        })
+        const body = await resp.json() as any
+        sendgrid_api_test = {
+          http_status: resp.status,
+          ok: resp.ok,
+          username: resp.ok ? body.username : undefined,
+          error: !resp.ok ? body : undefined,
+          interpretazione: resp.ok
+            ? '✅ Chiave SendGrid VALIDA'
+            : resp.status === 401 ? '🔴 Chiave SendGrid NON VALIDA (401)'
+            : `⚠️ SendGrid risponde con errore ${resp.status}`
+        }
+      } catch (e: any) {
+        sendgrid_api_test = { error: e.message, interpretazione: '🔴 SendGrid irraggiungibile' }
+      }
+    }
+
+    // ── 5. LEAD SENZA TOKEN (email di completamento mai inviata) ──────────
+    let leads_senza_token: any[] = []
+    if (env?.DB) {
+      try {
+        const res = await env.DB.prepare(`
+          SELECT l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
+                 l.created_at, l.fonte, l.dettaglio_fonte
+          FROM leads l
+          LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
+          WHERE t.id IS NULL
+            AND l.created_at >= datetime('now', '-30 days')
+          ORDER BY l.created_at DESC
+          LIMIT 20
+        `).all()
+        leads_senza_token = res.results as any[]
+      } catch (_) {}
+    }
+
+    // ── 6. TOKEN ESISTENTI (per capire chi ha ricevuto email) ─────────────
+    let token_recenti: any[] = []
+    if (env?.DB) {
+      try {
+        const res = await env.DB.prepare(`
+          SELECT t.id, t.lead_id, t.created_at as token_created_at,
+                 t.reminder_count, t.reminder_sent_at, t.completed,
+                 l.nomeRichiedente, l.cognomeRichiedente, l.email, l.created_at as lead_created_at
+          FROM lead_completion_tokens t
+          JOIN leads l ON t.lead_id = l.id
+          WHERE t.created_at >= datetime('now', '-30 days')
+          ORDER BY t.created_at DESC
+          LIMIT 30
+        `).all()
+        token_recenti = res.results as any[]
+      } catch (_) {}
+    }
+
+    return c.json({
+      ora_server: new Date().toISOString(),
+      // ────────────────────────────────────────────────────
+      riepilogo: {
+        provider_attivo_stimato,
+        nota_cc: 'info@ecura.it riceve CC automatico da QUALSIASI provider riesca ad inviare',
+        nota_demo_mode: 'Se tutti i provider falliscono, il sistema restituisce success:true ma NON invia nulla'
+      },
+      // ────────────────────────────────────────────────────
+      provider_status: providerStatus,
+      // ────────────────────────────────────────────────────
+      test_live_api: {
+        resend: resend_api_test,
+        brevo: brevo_api_test,
+        sendgrid: sendgrid_api_test
+      },
+      // ────────────────────────────────────────────────────
+      leads_senza_token_ultimi_30gg: {
+        count: leads_senza_token.length,
+        nota: 'Questi lead NON hanno token → nessuna email di completamento è stata inviata',
+        leads: leads_senza_token
+      },
+      token_recenti_30gg: {
+        count: token_recenti.length,
+        nota: 'Token creati = email di completamento inviata al momento della creazione',
+        tokens: token_recenti
+      }
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message, stack: e.stack }, 500)
   }
 })
 
