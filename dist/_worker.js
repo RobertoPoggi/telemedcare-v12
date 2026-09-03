@@ -24698,6 +24698,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await pe.sendEmail({to:((r=e.env)==nul
         c.status as contratto_status,
         COALESCE(a.fonte_override, l.fonte) as fonte,
         l.canale_acquisizione as canale_acquisizione,
+        l.dettaglio_fonte as dettaglio_fonte,
         l.iva_agevolata as iva_agevolata
       FROM assistiti a
       LEFT JOIN contracts c ON c.id = (
