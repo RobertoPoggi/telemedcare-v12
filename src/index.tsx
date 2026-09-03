@@ -34807,7 +34807,7 @@ app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
         t.expires_at
       FROM leads l
       LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
-      WHERE l.created_at >= datetime('now', '-15 days')
+      WHERE l.created_at >= datetime('now', '-35 days')
       ORDER BY l.created_at DESC
       LIMIT 50
     `).all()

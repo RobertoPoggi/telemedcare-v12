@@ -27103,7 +27103,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await pe.sendEmail({to:((r=e.env)==nul
         t.expires_at
       FROM leads l
       LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
-      WHERE l.created_at >= datetime('now', '-15 days')
+      WHERE l.created_at >= datetime('now', '-35 days')
       ORDER BY l.created_at DESC
       LIMIT 50
     `).all(),n={};o.results.forEach(f=>{n[f.key]=f.value});const r=parseInt(n.auto_completion_reminder_days||"7",10),c=parseInt(n.auto_completion_max_reminders||"2",10),l=n.cron_enabled==="true",p=new Date;p.setDate(p.getDate()-r);const u=new Date;u.setHours(u.getHours()-23);const g=await t.prepare(`
