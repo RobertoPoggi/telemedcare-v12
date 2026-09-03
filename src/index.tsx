@@ -7321,13 +7321,15 @@ app.get('/api/leads/channel-stats', async (c) => {
     // nonTracciato = lead eCura senza canale_acquisizione
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
-    // ─── Query landing: lead dalla landing proprietaria ecura.it ──────────
+    // ─── Query landing: lead dalla nuova landing Cloudflare (dal 8/8/2026) ──────────
     // Identificati da dettaglio_fonte = 'ecura_landing', con breakdown per canale
+    // NB: Organico (SEO) è separato da Altro per allineamento col filtro dropdown
     let landingTotal = 0
     let landingMeta = 0
     let landingGoogle = 0
     let landingDiretto = 0
     let landingAltro = 0
+    let landingOrganico = 0
     let landingNonTracciato = 0
     try {
       const landingRes = await c.env.DB.prepare(`
@@ -7340,14 +7342,48 @@ app.get('/api/leads/channel-stats', async (c) => {
         const cnt = Number(row.count) || 0
         landingTotal += cnt
         const val = (row.canale_acquisizione || '').toUpperCase()
-        if      (val === 'META'    || val.includes('META'))    landingMeta    += cnt
-        else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  landingGoogle  += cnt
-        else if (val === 'DIRETTO' || val.includes('DIRETTO')) landingDiretto += cnt
-        else if (val !== '')                                    landingAltro   += cnt  // ALTRO, ORGANICO, REFERRAL...
-        else                                                    landingNonTracciato += cnt  // solo NULL/vuoto
+        if      (val === 'META'     || val.includes('META'))     landingMeta     += cnt
+        else if (val === 'GOOGLE'   || val.includes('GOOGLE'))   landingGoogle   += cnt
+        else if (val === 'DIRETTO'  || val.includes('DIRETTO'))  landingDiretto  += cnt
+        else if (val === 'ORGANICO' || val.includes('ORGANICO')) landingOrganico += cnt
+        else if (val !== '')                                      landingAltro    += cnt  // ALTRO, REFERRAL...
+        else                                                      landingNonTracciato += cnt  // solo NULL/vuoto
       }
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query landing', err)
+    }
+
+    // ─── Query oldForm: lead dal vecchio Form eCura gestione Nur (fino al 29/7/2026) ──────────
+    // Criterio: fonte='Form eCura' AND dettaglio_fonte != 'ecura_landing' (esclude la nuova landing)
+    // NB: Organico (SEO) è separato da Altro per allineamento col filtro dropdown
+    let oldFormTotal = 0
+    let oldFormMeta = 0
+    let oldFormGoogle = 0
+    let oldFormDiretto = 0
+    let oldFormAltro = 0
+    let oldFormOrganico = 0
+    let oldFormNonTracciato = 0
+    try {
+      const oldFormRes = await c.env.DB.prepare(`
+        SELECT canale_acquisizione, COUNT(*) as count
+        FROM leads
+        WHERE fonte = 'Form eCura'
+          AND (dettaglio_fonte IS NULL OR dettaglio_fonte != 'ecura_landing')
+        GROUP BY canale_acquisizione
+      `).all()
+      for (const row of (oldFormRes.results || []) as any[]) {
+        const cnt = Number(row.count) || 0
+        oldFormTotal += cnt
+        const val = (row.canale_acquisizione || '').toUpperCase()
+        if      (val === 'META'     || val.includes('META'))     oldFormMeta     += cnt
+        else if (val === 'GOOGLE'   || val.includes('GOOGLE'))   oldFormGoogle   += cnt
+        else if (val === 'DIRETTO'  || val.includes('DIRETTO'))  oldFormDiretto  += cnt
+        else if (val === 'ORGANICO' || val.includes('ORGANICO')) oldFormOrganico += cnt
+        else if (val !== '')                                      oldFormAltro    += cnt  // ALTRO, REFERRAL...
+        else                                                      oldFormNonTracciato += cnt  // NULL/vuoto
+      }
+    } catch (err) {
+      console.warn('⚠️ channel-stats: errore query oldForm', err)
     }
 
     // ─── Query 3: statistiche sconto per canale ────────────────────────────
@@ -7426,14 +7462,25 @@ app.get('/api/leads/channel-stats', async (c) => {
       altro,
       nonTracciato,
       breakdown,
-      // Landing proprietaria ecura.it (dettaglio_fonte = 'ecura_landing')
+      // Nuova landing Cloudflare ecura.it (dettaglio_fonte = 'ecura_landing', dal 8/8/2026)
       landing: {
-        total:       landingTotal,
-        meta:        landingMeta,
-        google:      landingGoogle,
-        diretto:     landingDiretto,
-        altro:       landingAltro,
+        total:        landingTotal,
+        meta:         landingMeta,
+        google:       landingGoogle,
+        diretto:      landingDiretto,
+        organico:     landingOrganico,
+        altro:        landingAltro,
         nonTracciato: landingNonTracciato
+      },
+      // Vecchio Form eCura gestione Nur (fonte='Form eCura' senza dettaglio_fonte='ecura_landing', fino al 29/7/2026)
+      oldForm: {
+        total:        oldFormTotal,
+        meta:         oldFormMeta,
+        google:       oldFormGoogle,
+        diretto:      oldFormDiretto,
+        organico:     oldFormOrganico,
+        altro:        oldFormAltro,
+        nonTracciato: oldFormNonTracciato
       },
       // Statistiche sconto
       discountByCanale,

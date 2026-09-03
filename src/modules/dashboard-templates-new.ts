@@ -4423,45 +4423,68 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('🔍 updateChannelsBreakdown — usa API channel-stats per i canali eCura');
 
             const fonteColors = {
-                'Sito www.eCura.it':           'bg-cyan-500',
-                'Privati IRBEMA':              'bg-blue-500',
-                'eCura — Meta (FB/IG)':        'bg-indigo-500',
-                'eCura — Google':              'bg-red-500',
-                'eCura — Diretto':             'bg-green-500',
-                'eCura — Altro':               'bg-yellow-500',
-                'eCura — Non tracciato':       'bg-gray-400',
-                'eCura — Landing':             'bg-emerald-500',
-                'eCura — Landing (Meta)':      'bg-emerald-600',
-                'eCura — Landing (Google)':    'bg-emerald-400',
-                'eCura — Landing (Diretto)':   'bg-teal-500',
-                'eCura — Landing (Altro)':     'bg-teal-400',
-                'Form eCura x Test':           'bg-yellow-300',
-                'B2B IRBEMA':                  'bg-purple-500',
-                'Sito web Medica GB':          'bg-pink-500',
-                'NETWORKING':                  'bg-teal-500',
-                'Form Contattaci':             'bg-orange-400'
+                // ── Form eCura (vecchio, gestione Nur, fino al 29/7/2026) ──────────────
+                'Form eCura — Meta (FB/IG)':          'bg-indigo-600',
+                'Form eCura — Google':                'bg-red-500',
+                'Form eCura — Diretto':               'bg-green-600',
+                'Form eCura — Organico (SEO)':        'bg-lime-600',
+                'Form eCura — Altro':                 'bg-yellow-500',
+                'Form eCura — Non tracciato':         'bg-gray-400',
+                // ── Landing Cloudflare (nuova, gestione Roberto, dal 8/8/2026) ──────────
+                'Landing — Meta (FB/IG)':             'bg-emerald-700',
+                'Landing — Google':                   'bg-emerald-500',
+                'Landing — Diretto':                  'bg-teal-600',
+                'Landing — Organico (SEO)':           'bg-teal-400',
+                'Landing — Altro':                    'bg-cyan-500',
+                'Landing — Non tracciato':            'bg-cyan-300',
+                // ── Legacy / backward-compat ────────────────────────────────────────────
+                'eCura — Meta (FB/IG)':               'bg-indigo-500',
+                'eCura — Google':                     'bg-red-500',
+                'eCura — Diretto':                    'bg-green-500',
+                'eCura — Altro':                      'bg-yellow-500',
+                'eCura — Non tracciato':              'bg-gray-400',
+                'eCura — Landing':                    'bg-emerald-500',
+                'eCura — Landing (Meta)':             'bg-emerald-600',
+                'eCura — Landing (Google)':           'bg-emerald-400',
+                'eCura — Landing (Diretto)':          'bg-teal-500',
+                'eCura — Landing (Altro)':            'bg-teal-400',
+                // ── Altre fonti ──────────────────────────────────────────────────────────
+                'Sito www.eCura.it':                  'bg-cyan-500',
+                'Privati IRBEMA':                     'bg-blue-500',
+                'Form eCura x Test':                  'bg-yellow-300',
+                'B2B IRBEMA':                         'bg-purple-500',
+                'Sito web Medica GB':                 'bg-pink-500',
+                'NETWORKING':                         'bg-teal-500',
+                'Form Contattaci':                    'bg-orange-400'
             };
 
             // Passo 1: canali eCura dall'API (stessa sorgente dei box → numeri identici)
+            // La struttura rispecchia esattamente il filtro dropdown:
+            //   Sezione 1 → Form eCura (vecchio form Nur, fino al 29/7/2026)
+            //   Sezione 2 → Landing Cloudflare (nuova landing, dal 8/8/2026)
             const sources = {};
             let discountByCanale = {};
             try {
                 const res = await fetch('/api/leads/channel-stats');
                 const data = await res.json();
                 if (data.success) {
-                    if (data.meta    > 0) sources['eCura — Meta (FB/IG)'] = data.meta;
-                    if (data.google  > 0) sources['eCura — Google']       = data.google;
-                    if (data.diretto > 0) sources['eCura — Diretto']      = data.diretto;
-                    if (data.altro   > 0) sources['eCura — Altro']        = data.altro;
-                    if (data.nonTracciato > 0) sources['eCura — Non tracciato'] = data.nonTracciato;
-                    // Landing proprietaria ecura.it — dettagliata per canale se disponibile
+                    // ── Sezione 1: Form eCura (vecchio Nur) ─────────────────────────────
+                    const f = data.oldForm || {};
+                    if (f.meta     > 0) sources['Form eCura — Meta (FB/IG)']    = f.meta;
+                    if (f.google   > 0) sources['Form eCura — Google']           = f.google;
+                    if (f.diretto  > 0) sources['Form eCura — Diretto']          = f.diretto;
+                    if (f.organico > 0) sources['Form eCura — Organico (SEO)']   = f.organico;
+                    if (f.altro    > 0) sources['Form eCura — Altro']            = f.altro;
+                    if (f.nonTracciato > 0) sources['Form eCura — Non tracciato'] = f.nonTracciato;
+                    // ── Sezione 2: Landing Cloudflare (nuova) ───────────────────────────
                     const l = data.landing || {};
                     if (l.total > 0) {
-                        if (l.meta    > 0) sources['eCura — Landing (Meta)']    = l.meta;
-                        if (l.google  > 0) sources['eCura — Landing (Google)']  = l.google;
-                        if (l.diretto > 0) sources['eCura — Landing (Diretto)'] = l.diretto;
-                        if (l.altro   > 0) sources['eCura — Landing (Altro)']   = l.altro;
-                        if (l.nonTracciato > 0) sources['eCura — Landing'] = l.nonTracciato;
+                        if (l.meta     > 0) sources['Landing — Meta (FB/IG)']    = l.meta;
+                        if (l.google   > 0) sources['Landing — Google']           = l.google;
+                        if (l.diretto  > 0) sources['Landing — Diretto']          = l.diretto;
+                        if (l.organico > 0) sources['Landing — Organico (SEO)']   = l.organico;
+                        if (l.altro    > 0) sources['Landing — Altro']            = l.altro;
+                        if (l.nonTracciato > 0) sources['Landing — Non tracciato'] = l.nonTracciato;
                     }
                     discountByCanale = data.discountByCanale || {};
                 }
@@ -4471,21 +4494,24 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
             // Escludi TUTTI i lead già contati dal Passo 1 (channel-stats):
-            //   - fonte='Form eCura' o startsWith('Form eCura_')  → già in Meta/Google/Diretto/Altro
+            //   - fonte='Form eCura' o startsWith('Form eCura_')  → già in oldForm
             //   - canale_acquisizione non-NULL                     → già classificato in channel-stats
             //   - dettaglio_fonte='ecura_landing'                  → già nei box Landing
+            // Caso speciale: lead con dettaglio_fonte='ecura_landing' ma fonte raw (es. 'ORGANICO')
+            //   → già contati nel query landing (filtro dettaglio_fonte='ecura_landing')
+            //   → NON aggiungere di nuovo, saltali qui
             (leads || []).forEach(l => {
-                const fonteDB  = l.fonte || '';
-                const canale   = l.canale_acquisizione || '';
+                const fonteDB   = l.fonte || '';
+                const canale    = l.canale_acquisizione || '';
                 const dettaglio = l.dettaglio_fonte || '';
                 // Salta tutti i lead Form eCura (già contati dal Passo 1)
                 if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
                 // Salta lead con canale_acquisizione popolato (META/GOOGLE/DIRETTO/ALTRO/ORGANICO/REFERRAL…)
                 // → già inclusi in channel-stats (Passo 1)
                 if (canale !== '') return;
-                // Salta lead dalla landing proprietaria → già nei box Landing
+                // Salta lead dalla landing proprietaria → già nei contatori Landing del Passo 1
                 if (dettaglio === 'ecura_landing') return;
-                // Mappa etichette note per fonti non-eCura
+                // Mappa etichette note per fonti non-eCura (raw fonti: IRBEMA, B2B, Test, ecc.)
                 let etichetta = fonteDB || 'Non specificato';
                 sources[etichetta] = (sources[etichetta] || 0) + 1;
             });
