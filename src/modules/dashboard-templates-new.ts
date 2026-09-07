@@ -6368,7 +6368,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const tempAuto = calcolaTemperaturaJS(stato);
                     const cfg = TEMP_CONFIG[tempAuto] || TEMP_CONFIG.freddo;
                     // Trova la cella temperatura associata a questo lead
-                    const tempSelect = document.querySelector(\`.temp-select[data-lead-id="\\${leadId}"]\`);
+                    const tempSelect = document.querySelector('.temp-select[data-lead-id="' + leadId + '"]');
                     if (tempSelect) {
                         tempSelect.value = tempAuto;
                         tempSelect.style.background = cfg.bg;
