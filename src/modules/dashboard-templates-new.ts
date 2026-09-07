@@ -4063,6 +4063,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="inps">🏛️ INPS</option>
                         <option value="problemi_economici">💰 Problemi Economici</option>
                     </select>
+                    <select id="filterTemperatura" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()" title="Filtra per temperatura">
+                        <option value="">🌡️ Tutte le Temperature</option>
+                        <option value="caldo">🔥 Caldo</option>
+                        <option value="tiepido">🌡️ Tiepido</option>
+                        <option value="freddo">❄️ Freddo</option>
+                    </select>
                 </div>
             </div>
 
@@ -4082,13 +4088,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 11%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 23%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">🌡️ Temp.</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 20%;">Azioni</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="11" class="py-8 text-center text-gray-400">
+                            <td colspan="12" class="py-8 text-center text-gray-400">
                                 <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
                                 <p>Caricamento lead...</p>
                             </td>
@@ -4113,6 +4120,26 @@ export const leads_dashboard = `<!DOCTYPE html>
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
+        // ─── TEMPERATURA LEAD ─────────────────────────────────────────────────
+        const TEMP_CONFIG = {
+            caldo:   { emoji: '🔥', label: 'Caldo',   color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+            tiepido: { emoji: '🌡️', label: 'Tiepido', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
+            freddo:  { emoji: '❄️', label: 'Freddo',  color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
+        };
+
+        function calcolaTemperaturaJS(stato) {
+            if (!stato) return 'freddo';
+            switch (stato) {
+                case 'interessato': case 'in_trattativa': case 'convertito':
+                case 'CONTRACT_SENT': case 'CONTRACT_SIGNED': case 'ACTIVE':
+                    return 'caldo';
+                case 'contattato': case 'da_ricontattare': case 'nuovo': case 'inps':
+                    return 'tiepido';
+                default:
+                    return 'freddo';
+            }
+        }
+
         let allLeads = [];
 
         // ─── Persistenza filtri via localStorage ─────────────────────────────
@@ -4124,6 +4151,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 piano:    document.getElementById('filterPiano')?.value || '',
                 cm:       document.getElementById('filterCM')?.value || '',
                 stato:    document.getElementById('filterStato')?.value || '',
+                temperatura: document.getElementById('filterTemperatura')?.value || '',
                 cognome:  document.getElementById('searchCognome')?.value || ''
             };
             localStorage.setItem('leadsFilters', JSON.stringify(filters));
@@ -4138,13 +4166,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                 if (saved.piano    !== undefined) { const el = document.getElementById('filterPiano');    if (el) el.value = saved.piano; }
                 if (saved.cm       !== undefined) { const el = document.getElementById('filterCM');       if (el) el.value = saved.cm; }
                 if (saved.stato    !== undefined) { const el = document.getElementById('filterStato');    if (el) el.value = saved.stato; }
+                if (saved.temperatura !== undefined) { const el = document.getElementById('filterTemperatura'); if (el) el.value = saved.temperatura; }
                 if (saved.cognome  !== undefined) { const el = document.getElementById('searchCognome');  if (el) el.value = saved.cognome; }
             } catch(e) { /* ignora JSON malformato */ }
         }
 
         // Aggancia saveFilters a ogni cambiamento dei filtri
         document.addEventListener('DOMContentLoaded', () => {
-            ['filterFonte','filterServizio','filterPiano','filterCM','filterStato'].forEach(id => {
+            ['filterFonte','filterServizio','filterPiano','filterCM','filterStato','filterTemperatura'].forEach(id => {
                 document.getElementById(id)?.addEventListener('change', saveFilters);
             });
             document.getElementById('searchCognome')?.addEventListener('input', saveFilters);
@@ -4863,6 +4892,25 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="problemi_economici" \${lead.stato === 'problemi_economici' ? 'selected' : ''} class="bg-pink-50">💰 Problemi Economici</option>
                             </select>
                         </td>
+                        <td class="py-2 px-1 text-center">
+                            \${(function() {
+                                const t = lead.temperatura || calcolaTemperaturaJS(lead.stato);
+                                const cfg = TEMP_CONFIG[t] || TEMP_CONFIG.freddo;
+                                const selStyle = 'min-width:70px;background:' + cfg.bg + ';color:' + cfg.color + ';border-color:' + cfg.border + ';';
+                                const optC = t==='caldo'   ? ' selected' : '';
+                                const optT = t==='tiepido' ? ' selected' : '';
+                                const optF = t==='freddo'  ? ' selected' : '';
+                                return '<div class="flex flex-col items-center gap-1">'
+                                     + '<span class="text-lg leading-none" title="' + cfg.label + '">' + cfg.emoji + '</span>'
+                                     + '<select data-lead-id="' + lead.id + '" class="temp-select text-xs border rounded px-1 py-0.5 font-semibold cursor-pointer" style="' + selStyle + '" title="Modifica temperatura">'
+                                     + '<option value="caldo"' + optC + ' style="background:#fef2f2;color:#dc2626;">🔥 Caldo</option>'
+                                     + '<option value="tiepido"' + optT + ' style="background:#fffbeb;color:#d97706;">🌡️ Tiepido</option>'
+                                     + '<option value="freddo"' + optF + ' style="background:#eff6ff;color:#2563eb;">❄️ Freddo</option>'
+                                     + '</select>'
+                                     + '<button data-lead-id="' + lead.id + '" class="temp-auto-btn text-xs text-gray-400 hover:text-gray-600 underline cursor-pointer leading-none" title="Ricalcola da stato">↺ auto</button>'
+                                     + '</div>';
+                            })()}
+                        </td>
                         <td class="py-3 text-sm">
                             <div class="flex space-x-1">
                                 <button 
@@ -5046,6 +5094,73 @@ export const leads_dashboard = `<!DOCTYPE html>
                         updateLeadStatus(leadId, value);
                     });
                 });
+
+                // ─── Temperatura: cambio manuale dal dropdown ─────────────
+                document.querySelectorAll('.temp-select').forEach(select => {
+                    select.addEventListener('change', async function() {
+                        const leadId = this.getAttribute('data-lead-id');
+                        const nuovaTemp = this.value;
+                        try {
+                            const res = await fetch('/api/leads/' + leadId + '/temperatura', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ temperatura: nuovaTemp })
+                            });
+                            const json = await res.json();
+                            if (json.success) {
+                                // Aggiorna emoji e colori inline senza ricaricare
+                                const cfg = TEMP_CONFIG[nuovaTemp] || TEMP_CONFIG.freddo;
+                                this.style.background = cfg.bg;
+                                this.style.color = cfg.color;
+                                this.style.borderColor = cfg.border;
+                                const emojiEl = this.closest('div.flex')?.querySelector('span.text-lg');
+                                if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
+                                // Aggiorna dato nel cache allLeads
+                                const lead = allLeads.find(l => l.id === leadId);
+                                if (lead) lead.temperatura = nuovaTemp;
+                            } else {
+                                alert('Errore aggiornamento temperatura: ' + (json.error || 'sconosciuto'));
+                            }
+                        } catch(e) {
+                            console.error('Errore PATCH temperatura:', e);
+                        }
+                    });
+                });
+
+                // ─── Temperatura: pulsante ↺ auto (ricalcola da stato) ────
+                document.querySelectorAll('.temp-auto-btn').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const leadId = this.getAttribute('data-lead-id');
+                        try {
+                            const res = await fetch('/api/leads/' + leadId + '/temperatura', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ temperatura: 'auto' })
+                            });
+                            const json = await res.json();
+                            if (json.success) {
+                                const nuovaTemp = json.temperatura;
+                                const cfg = TEMP_CONFIG[nuovaTemp] || TEMP_CONFIG.freddo;
+                                const container = this.closest('div.flex');
+                                if (container) {
+                                    const emojiEl = container.querySelector('span.text-lg');
+                                    if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
+                                    const sel = container.querySelector('select.temp-select');
+                                    if (sel) {
+                                        sel.value = nuovaTemp;
+                                        sel.style.background = cfg.bg;
+                                        sel.style.color = cfg.color;
+                                        sel.style.borderColor = cfg.border;
+                                    }
+                                }
+                                const lead = allLeads.find(l => l.id === leadId);
+                                if (lead) lead.temperatura = nuovaTemp;
+                            }
+                        } catch(e) {
+                            console.error('Errore reset temperatura:', e);
+                        }
+                    });
+                });
             }, 0);
         }
 
@@ -5057,6 +5172,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             const pianoFilter = document.getElementById('filterPiano').value;
             const cmFilter = document.getElementById('filterCM').value;
             const statoFilter = document.getElementById('filterStato').value;
+            const temperaturaFilter = (document.getElementById('filterTemperatura')?.value || '').toLowerCase();
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
@@ -5136,6 +5252,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Filtro Stato: confronta con il campo stato del lead
                 const leadStato = (lead.stato || '').toLowerCase();
                 const matchStato = !statoFilter || leadStato === statoFilter.toLowerCase();
+
+                // Filtro Temperatura: confronta temperatura salvata o calcolata dallo stato
+                const leadTemp = (lead.temperatura || calcolaTemperaturaJS(lead.stato)).toLowerCase();
+                const matchTemperatura = !temperaturaFilter || leadTemp === temperaturaFilter;
                 
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
                 const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
@@ -5144,7 +5264,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchTemperatura && matchCognome;
             });
 
             renderLeadsTable(filtered);
@@ -6241,6 +6361,22 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const lead = allLeads.find(l => l.id === leadId);
                     if (lead) {
                         lead.stato = stato || null;
+                    }
+
+                    // 🌡️ Ricalcola temperatura automaticamente nella UI
+                    // (solo se la temperatura non è stata sovrascritta manualmente dall'utente)
+                    const tempAuto = calcolaTemperaturaJS(stato);
+                    const cfg = TEMP_CONFIG[tempAuto] || TEMP_CONFIG.freddo;
+                    // Trova la cella temperatura associata a questo lead
+                    const tempSelect = document.querySelector(\`.temp-select[data-lead-id="\\${leadId}"]\`);
+                    if (tempSelect) {
+                        tempSelect.value = tempAuto;
+                        tempSelect.style.background = cfg.bg;
+                        tempSelect.style.color = cfg.color;
+                        tempSelect.style.borderColor = cfg.border;
+                        const emojiEl = tempSelect.closest('div.flex')?.querySelector('span.text-lg');
+                        if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
+                        if (lead) lead.temperatura = tempAuto;
                     }
                     
                     // Aggiorna il colore dello sfondo del select

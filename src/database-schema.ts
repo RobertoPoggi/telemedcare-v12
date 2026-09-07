@@ -29,6 +29,7 @@ export interface Lead {
   consensoTerze: number           // 0 o 1
   status: string                  // nuovo, CONTRACT_SENT, CONTRACT_SIGNED, etc.
   note: string | null             // Note libere
+  temperatura: string | null      // 'caldo' | 'tiepido' | 'freddo' — calcolata o manuale
   external_source_id: string | null
   external_data: string | null
   created_at: string              // ISO timestamp
@@ -56,7 +57,8 @@ export const LEAD_EDITABLE_FIELDS = [
   'consensoMarketing',
   'consensoTerze',
   'status',
-  'note'
+  'note',
+  'temperatura'
 ] as const
 
 /**

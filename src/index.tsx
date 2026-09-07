@@ -93,6 +93,58 @@ type Bindings = {
   USER_OPERATOR_PASSWORD?: string
 }
 
+// ============================================================================
+// TEMPERATURA LEAD — Logica calcolo automatico da stato CRM
+// ============================================================================
+// Regola: la temperatura viene CALCOLATA automaticamente dallo stato
+// ma può essere SOVRASCRITTA manualmente dall'operatore.
+// Valori: 'freddo' | 'tiepido' | 'caldo'
+
+export type TemperaturaLead = 'freddo' | 'tiepido' | 'caldo'
+
+/**
+ * Calcola la temperatura di un lead in base al suo stato CRM.
+ * Se viene passata una temperatura manuale sovrascritta, quella ha priorità.
+ */
+export function calcolaTemperatura(stato: string | null | undefined): TemperaturaLead {
+  if (!stato) return 'freddo'
+  switch (stato) {
+    // 🔥 CALDO — bisogno definito, vicino all'acquisto
+    case 'interessato':
+    case 'in_trattativa':
+    case 'convertito':
+    case 'CONTRACT_SENT':
+    case 'CONTRACT_SIGNED':
+    case 'ACTIVE':
+      return 'caldo'
+
+    // 🌡️ TIEPIDO — ha interagito, curioso, da tenere caldo
+    case 'contattato':
+    case 'da_ricontattare':
+    case 'nuovo':
+    case 'inps':
+      return 'tiepido'
+
+    // ❄️ FREDDO — nessun interesse o irraggiungibile
+    case 'non_risponde':
+    case 'non_interessato':
+    case 'perso':
+    case 'numero_non_attivo':
+    case 'problemi_economici':
+    default:
+      return 'freddo'
+  }
+}
+
+/**
+ * Emoji e label per la temperatura
+ */
+export const TEMPERATURA_CONFIG = {
+  caldo:   { emoji: '🔥', label: 'Caldo',   color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+  tiepido: { emoji: '🌡️', label: 'Tiepido', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
+  freddo:  { emoji: '❄️', label: 'Freddo',  color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
+}
+
 // Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
   EMAIL_FROM: 'info@ecura.it',
@@ -1562,6 +1614,11 @@ app.use('/api/*', async (c, next) => {
 
   // Report lead per periodo e fonte (GA4 report)
   if (path === '/api/oneshot-report-leads-ga4-9v2k5' && method === 'GET') {
+    return next()
+  }
+
+  // Migrazione D1: aggiunta colonna temperatura a leads (one-shot)
+  if (path === '/api/oneshot-migrate-temperatura-8z4xk' && method === 'POST') {
     return next()
   }
 
@@ -14506,6 +14563,9 @@ app.put('/api/leads/:id', async (c) => {
       // Stato lead
       stato: 'stato',
       
+      // Temperatura lead (calcolata da stato o sovrascritta manualmente)
+      temperatura: 'temperatura',
+      
       // HubSpot integration
       external_source_id: 'external_source_id',
       
@@ -14551,6 +14611,18 @@ app.put('/api/leads/:id', async (c) => {
       if (data[frontendKey] !== undefined) {
         updateFields.push(`${dbKey} = ?`)
         binds.push(data[frontendKey])
+      }
+    }
+
+    // 🌡️ RICALCOLA TEMPERATURA automaticamente se lo stato è cambiato
+    // (solo se temperatura non è stata esplicitamente sovrascritta nel payload)
+    if (data.stato !== undefined && data.temperatura === undefined) {
+      const tempAuto = calcolaTemperatura(data.stato)
+      // Aggiorna solo se non è già nel payload (evita duplicati)
+      const tempIdx = updateFields.findIndex(f => f.startsWith('temperatura'))
+      if (tempIdx === -1) {
+        updateFields.push('temperatura = ?')
+        binds.push(tempAuto)
       }
     }
     
@@ -14823,6 +14895,42 @@ app.put('/api/leads/:id/cm', async (c) => {
   } catch (error) {
     console.error('❌ Errore aggiornamento CM:', error)
     return c.json({ error: 'Errore aggiornamento Contact Manager' }, 500)
+  }
+})
+
+// ============================================================================
+// PATCH /api/leads/:id/temperatura — Aggiorna temperatura (manuale o reset auto)
+// Body: { temperatura: 'caldo'|'tiepido'|'freddo'|'auto' }
+// Se temperatura='auto', ricalcola dallo stato corrente del lead
+// ============================================================================
+app.patch('/api/leads/:id/temperatura', async (c) => {
+  const id = c.req.param('id')
+  try {
+    const body = await c.req.json() as { temperatura?: string }
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
+
+    let nuovaTemperatura: string
+
+    if (body.temperatura === 'auto') {
+      // Ricalcola automaticamente dallo stato corrente
+      const lead = await c.env.DB.prepare('SELECT stato FROM leads WHERE id = ?').bind(id).first() as any
+      if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+      nuovaTemperatura = calcolaTemperatura(lead.stato)
+    } else if (['caldo', 'tiepido', 'freddo'].includes(body.temperatura || '')) {
+      nuovaTemperatura = body.temperatura!
+    } else {
+      return c.json({ success: false, error: 'Valore temperatura non valido. Usare: caldo, tiepido, freddo, auto' }, 400)
+    }
+
+    await c.env.DB.prepare(
+      'UPDATE leads SET temperatura = ?, updated_at = ? WHERE id = ?'
+    ).bind(nuovaTemperatura, new Date().toISOString(), id).run()
+
+    console.log(`🌡️ Temperatura lead ${id} aggiornata → ${nuovaTemperatura}`)
+    return c.json({ success: true, id, temperatura: nuovaTemperatura })
+  } catch (err: any) {
+    console.error('Errore PATCH temperatura:', err)
+    return c.json({ success: false, error: err.message }, 500)
   }
 })
 
@@ -36112,6 +36220,69 @@ app.post('/api/oneshot-set-intestatario-lead-4vr2k', async (c) => {
     ).bind(contract.leadId).first()
     return c.json({ success: true, message: `✅ intestatarioContratto = '${intestatario}' aggiornato`, updated })
   } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================================================
+// POST /api/oneshot-migrate-temperatura-8z4xk
+// Migrazione one-shot: aggiunge colonna temperatura + popola valori esistenti
+// DA ESEGUIRE UNA SOLA VOLTA dopo il deploy
+// ============================================================================
+app.post('/api/oneshot-migrate-temperatura-8z4xk', async (c) => {
+  if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
+  try {
+    const results: string[] = []
+
+    // Step 1: Aggiungi colonna (ignora errore se esiste già)
+    try {
+      await c.env.DB.prepare('ALTER TABLE leads ADD COLUMN temperatura TEXT DEFAULT NULL').run()
+      results.push('✅ Colonna temperatura aggiunta')
+    } catch (e: any) {
+      if (e.message?.includes('duplicate column')) {
+        results.push('ℹ️ Colonna temperatura già esistente — skip')
+      } else {
+        throw e
+      }
+    }
+
+    // Step 2: Popola temperatura per tutti i lead esistenti senza valore
+    const leadsToUpdate = await c.env.DB.prepare(
+      `SELECT id, stato FROM leads WHERE temperatura IS NULL OR temperatura = ''`
+    ).all()
+
+    const rows = (leadsToUpdate.results || []) as any[]
+    let updated = 0
+
+    // Batch update in gruppi da 50
+    const batchSize = 50
+    for (let i = 0; i < rows.length; i += batchSize) {
+      const batch = rows.slice(i, i + batchSize)
+      const stmts = batch.map((row: any) => {
+        const temp = calcolaTemperatura(row.stato)
+        return c.env.DB.prepare(
+          'UPDATE leads SET temperatura = ? WHERE id = ?'
+        ).bind(temp, row.id)
+      })
+      await c.env.DB.batch(stmts)
+      updated += batch.length
+    }
+
+    results.push(`✅ ${updated} leads aggiornati con temperatura calcolata dallo stato`)
+
+    // Step 3: Report distribuzione
+    const stats = await c.env.DB.prepare(
+      `SELECT temperatura, COUNT(*) as cnt FROM leads GROUP BY temperatura ORDER BY cnt DESC`
+    ).all()
+
+    return c.json({
+      success: true,
+      steps: results,
+      distribuzione: stats.results,
+      message: `Migrazione completata. ${updated} leads aggiornati.`
+    })
+  } catch (e: any) {
+    console.error('Errore migrazione temperatura:', e)
     return c.json({ success: false, error: e.message }, 500)
   }
 })
