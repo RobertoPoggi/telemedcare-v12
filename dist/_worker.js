@@ -6935,24 +6935,24 @@ ${370+t.length}
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full table-fixed">
+                <table style="width:100%; min-width:1100px; table-layout:fixed;">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 2%;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 12%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Contatti</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:22px;">#</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:11%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:12%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:7%;">Servizio</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:5%;">Piano</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:5%;">Prezzo</th>
                             <!-- Nascoste: Brochure e Manuale non servono per ora -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th> -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th> -->
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 11%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">🌡️ Temp.</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 20%;">Azioni</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:6%;">Data</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:4%;">CM</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:10%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:6%;">🌡️ Temp.</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:24%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:9%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -7773,8 +7773,8 @@ ${370+t.length}
                                      + '</div>';
                             })()}
                         </td>
-                        <td class="py-3 text-sm">
-                            <div class="flex space-x-1">
+                        <td class="py-2 text-sm" style="white-space:nowrap;">
+                            <div class="flex flex-wrap gap-0.5">
                                 <button 
                                     data-action="interactions"
                                     data-lead-id="\${lead.id}"
@@ -7879,8 +7879,8 @@ ${370+t.length}
 
                             </div>
                         </td>
-                        <td class="py-3 pl-3">
-                            <div class="flex space-x-1">
+                        <td class="py-2 pl-2" style="white-space:nowrap;">
+                            <div class="flex gap-0.5 flex-wrap">
                                 <button data-action="view" data-lead-id="\${lead.id}" 
                                         class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
                                         title="Visualizza">
