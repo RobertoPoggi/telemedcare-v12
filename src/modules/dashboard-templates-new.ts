@@ -2765,14 +2765,13 @@ export const dashboard = `<!DOCTYPE html>
                 // Priorità 1: landing proprietaria (dettaglio_fonte = 'ecura_landing')
                 var dettaglio = (assistito.dettaglio_fonte || '').trim();
                 if (dettaglio === 'ecura_landing') {
-                    if (canale === 'META')      etichetta = 'eCura — Landing (Meta)';
-                    else if (canale === 'GOOGLE')   etichetta = 'eCura — Landing (Google)';
-                    else if (canale === 'DIRETTO')  etichetta = 'eCura — Landing (Diretto)';
-                    else if (canale === 'ALTRO')    etichetta = 'eCura — Landing (Altro)';
-                    else if (canale === 'ORGANICO') etichetta = 'eCura — Landing (Organico)';
-                    else                            etichetta = 'eCura — Landing';
+                    if (canale === 'META')    etichetta = 'eCura — Landing (Meta)';
+                    else if (canale === 'GOOGLE')  etichetta = 'eCura — Landing (Google)';
+                    else if (canale === 'DIRETTO') etichetta = 'eCura — Landing (Diretto)';
+                    else if (canale === 'ALTRO')   etichetta = 'eCura — Landing (Altro)';
+                    else                           etichetta = 'eCura — Landing';
                 }
-                // Priorità 2: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO/ORGANICO) — Form eCura classico
+                // Priorità 2: canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — Form eCura classico
                 else if (canale === 'GOOGLE') {
                     etichetta = 'eCura — Google';
                 } else if (canale === 'META') {
@@ -2781,8 +2780,6 @@ export const dashboard = `<!DOCTYPE html>
                     etichetta = 'eCura — Diretto';
                 } else if (canale === 'ALTRO') {
                     etichetta = 'eCura — Altro';
-                } else if (canale === 'ORGANICO') {
-                    etichetta = 'eCura — Organico (SEO)';
                 }
                 // Priorità 3: campo fonte dal lead
                 else if (fonte === 'Privati IRBEMA' || fonte === 'B2B IRBEMA' || fonte === 'Privati Irbema' || leadId.includes('IRBEMA')) {
@@ -4048,6 +4045,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="OC">OC - Operatore Commerciale</option>
                         <option value="RP">RP - Roberto Poggi</option>
                     </select>
+                    <select id="filterTemp" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
+                        <option value="">🌡️ Tutte le Temp.</option>
+                        <option value="caldo">🔥 Caldo</option>
+                        <option value="tiepido">🌡️ Tiepido</option>
+                        <option value="freddo">❄️ Freddo</option>
+                        <option value="nessuna">— Nessuna</option>
+                    </select>
                     <select id="filterStato" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()">
                         <option value="">Tutti gli Stati</option>
                         <option value="nuovo">🆕 Nuovo</option>
@@ -4063,34 +4067,28 @@ export const leads_dashboard = `<!DOCTYPE html>
                         <option value="inps">🏛️ INPS</option>
                         <option value="problemi_economici">💰 Problemi Economici</option>
                     </select>
-                    <select id="filterTemperatura" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" onchange="applyFilters()" title="Filtra per temperatura">
-                        <option value="">🌡️ Tutte le Temperature</option>
-                        <option value="caldo">🔥 Caldo</option>
-                        <option value="tiepido">🌡️ Tiepido</option>
-                        <option value="freddo">❄️ Freddo</option>
-                    </select>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table style="width:100%; min-width:1100px; table-layout:fixed;">
+                <table class="w-full table-fixed">
                     <thead>
                         <tr class="border-b-2 border-gray-200 text-left">
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:22px;">#</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:11%;">Cliente</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:12%;">Contatti</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:7%;">Servizio</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:5%;">Piano</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:5%;">Prezzo</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 2%;">#</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 12%;">Cliente</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 13%;">Contatti</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">Servizio</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">Piano</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Prezzo</th>
                             <!-- Nascoste: Brochure e Manuale non servono per ora -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📄</th> -->
                             <!-- <th class="pb-3 text-xs font-semibold text-gray-600 text-center" style="width: 4%;">📖</th> -->
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:6%;">Data</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:4%;">CM</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:10%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:6%;">🌡️ Temp.</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:24%;">Azioni</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width:9%;">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Temp.</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 11%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 23%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -4120,26 +4118,6 @@ export const leads_dashboard = `<!DOCTYPE html>
             return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
-        // ─── TEMPERATURA LEAD ─────────────────────────────────────────────────
-        const TEMP_CONFIG = {
-            caldo:   { emoji: '🔥', label: 'Caldo',   color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
-            tiepido: { emoji: '🌡️', label: 'Tiepido', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
-            freddo:  { emoji: '❄️', label: 'Freddo',  color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
-        };
-
-        function calcolaTemperaturaJS(stato) {
-            if (!stato) return 'freddo';
-            switch (stato) {
-                case 'interessato': case 'in_trattativa': case 'convertito':
-                case 'CONTRACT_SENT': case 'CONTRACT_SIGNED': case 'ACTIVE':
-                    return 'caldo';
-                case 'contattato': case 'da_ricontattare': case 'nuovo': case 'inps':
-                    return 'tiepido';
-                default:
-                    return 'freddo';
-            }
-        }
-
         let allLeads = [];
 
         // ─── Persistenza filtri via localStorage ─────────────────────────────
@@ -4150,8 +4128,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 servizio: document.getElementById('filterServizio')?.value || '',
                 piano:    document.getElementById('filterPiano')?.value || '',
                 cm:       document.getElementById('filterCM')?.value || '',
+                temp:     document.getElementById('filterTemp')?.value || '',
                 stato:    document.getElementById('filterStato')?.value || '',
-                temperatura: document.getElementById('filterTemperatura')?.value || '',
                 cognome:  document.getElementById('searchCognome')?.value || ''
             };
             localStorage.setItem('leadsFilters', JSON.stringify(filters));
@@ -4165,15 +4143,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 if (saved.servizio !== undefined) { const el = document.getElementById('filterServizio'); if (el) el.value = saved.servizio; }
                 if (saved.piano    !== undefined) { const el = document.getElementById('filterPiano');    if (el) el.value = saved.piano; }
                 if (saved.cm       !== undefined) { const el = document.getElementById('filterCM');       if (el) el.value = saved.cm; }
+                if (saved.temp     !== undefined) { const el = document.getElementById('filterTemp');     if (el) el.value = saved.temp; }
                 if (saved.stato    !== undefined) { const el = document.getElementById('filterStato');    if (el) el.value = saved.stato; }
-                if (saved.temperatura !== undefined) { const el = document.getElementById('filterTemperatura'); if (el) el.value = saved.temperatura; }
                 if (saved.cognome  !== undefined) { const el = document.getElementById('searchCognome');  if (el) el.value = saved.cognome; }
             } catch(e) { /* ignora JSON malformato */ }
         }
 
         // Aggancia saveFilters a ogni cambiamento dei filtri
         document.addEventListener('DOMContentLoaded', () => {
-            ['filterFonte','filterServizio','filterPiano','filterCM','filterStato','filterTemperatura'].forEach(id => {
+            ['filterFonte','filterServizio','filterPiano','filterCM','filterTemp','filterStato'].forEach(id => {
                 document.getElementById(id)?.addEventListener('change', saveFilters);
             });
             document.getElementById('searchCognome')?.addEventListener('input', saveFilters);
@@ -4182,47 +4160,6 @@ export const leads_dashboard = `<!DOCTYPE html>
 
         // Carica dati
         loadLeadsData();
-
-        // ── Polling: banner verde quando arriva un nuovo lead ─────────────
-        let _lastLeadId = null;
-
-        async function checkForNewLeads() {
-            try {
-                const res = await fetch('/api/leads?limit=1&_=' + Date.now());
-                const data = await res.json();
-                const latest = (data.leads || [])[0];
-                if (!latest) return;
-                if (_lastLeadId === null) {
-                    // Prima chiamata: inizializza senza mostrare toast
-                    _lastLeadId = latest.id;
-                    return;
-                }
-                if (latest.id !== _lastLeadId) {
-                    _lastLeadId = latest.id;
-                    showNewLeadToast(latest);
-                    loadLeadsData(); // ricarica la tabella
-                }
-            } catch(e) { /* rete non disponibile — riprova al prossimo ciclo */ }
-        }
-
-        function showNewLeadToast(lead) {
-            const existing = document.getElementById('newLeadToast');
-            if (existing) existing.remove();
-            const nome = (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '');
-            const servizio = lead.servizio ? (' — ' + lead.servizio) : '';
-            const toast = document.createElement('div');
-            toast.id = 'newLeadToast';
-            toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-white text-sm font-semibold bg-green-600 cursor-pointer';
-            toast.innerHTML = '<i class="fas fa-user-plus"></i><span>🆕 Nuovo lead: <strong>' + escapeHtml(nome.trim()) + '</strong>' + escapeHtml(servizio) + '</span><span class="ml-2 opacity-70 text-xs">×</span>';
-            toast.onclick = () => toast.remove();
-            document.body.appendChild(toast);
-            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
-        }
-
-        // Avvia polling ogni 20 secondi
-        checkForNewLeads(); // subito per inizializzare _lastLeadId
-        setInterval(checkForNewLeads, 20000);
-        // ──────────────────────────────────────────────────────────────────
 
         async function loadLeadsData() {
             try {
@@ -4248,13 +4185,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const fonteSelect = document.getElementById('filterFonte');
                     // Sezione 1: canali eCura (META/GOOGLE/DIRETTO/ALTRO) da canale_acquisizione
                     const canaleIcons = {
-                        'META':     '📘 eCura — Meta (FB/IG)',
-                        'GOOGLE':   '🔍 eCura — Google',
-                        'DIRETTO':  '🔗 eCura — Diretto',
-                        'ALTRO':    '📎 eCura — Altro',
-                        'ORGANICO': '🌿 eCura — Organico (SEO)'
+                        'META':    '📘 eCura — Meta (FB/IG)',
+                        'GOOGLE':  '🔍 eCura — Google',
+                        'DIRETTO': '🔗 eCura — Diretto',
+                        'ALTRO':   '📎 eCura — Altro'
                     };
-                    const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO', 'ORGANICO'];
+                    const canaliOrdinati = ['META', 'GOOGLE', 'DIRETTO', 'ALTRO'];
                     fonteSelect.innerHTML = '<option value="">Tutte le Fonti</option>';
                     // Sezione 1: Form eCura (tutti i canali)
                     fonteSelect.innerHTML += '<option value="__ECURA_ALL__">— Form eCura (tutti i canali) —</option>';
@@ -4452,68 +4388,45 @@ export const leads_dashboard = `<!DOCTYPE html>
             console.log('🔍 updateChannelsBreakdown — usa API channel-stats per i canali eCura');
 
             const fonteColors = {
-                // ── Form eCura (vecchio, gestione Nur, fino al 29/7/2026) ──────────────
-                'Form eCura — Meta (FB/IG)':          'bg-indigo-600',
-                'Form eCura — Google':                'bg-red-500',
-                'Form eCura — Diretto':               'bg-green-600',
-                'Form eCura — Organico (SEO)':        'bg-lime-600',
-                'Form eCura — Altro':                 'bg-yellow-500',
-                'Form eCura — Non tracciato':         'bg-gray-400',
-                // ── Landing Cloudflare (nuova, gestione Roberto, dal 8/8/2026) ──────────
-                'Landing — Meta (FB/IG)':             'bg-emerald-700',
-                'Landing — Google':                   'bg-emerald-500',
-                'Landing — Diretto':                  'bg-teal-600',
-                'Landing — Organico (SEO)':           'bg-teal-400',
-                'Landing — Altro':                    'bg-cyan-500',
-                'Landing — Non tracciato':            'bg-cyan-300',
-                // ── Legacy / backward-compat ────────────────────────────────────────────
-                'eCura — Meta (FB/IG)':               'bg-indigo-500',
-                'eCura — Google':                     'bg-red-500',
-                'eCura — Diretto':                    'bg-green-500',
-                'eCura — Altro':                      'bg-yellow-500',
-                'eCura — Non tracciato':              'bg-gray-400',
-                'eCura — Landing':                    'bg-emerald-500',
-                'eCura — Landing (Meta)':             'bg-emerald-600',
-                'eCura — Landing (Google)':           'bg-emerald-400',
-                'eCura — Landing (Diretto)':          'bg-teal-500',
-                'eCura — Landing (Altro)':            'bg-teal-400',
-                // ── Altre fonti ──────────────────────────────────────────────────────────
-                'Sito www.eCura.it':                  'bg-cyan-500',
-                'Privati IRBEMA':                     'bg-blue-500',
-                'Form eCura x Test':                  'bg-yellow-300',
-                'B2B IRBEMA':                         'bg-purple-500',
-                'Sito web Medica GB':                 'bg-pink-500',
-                'NETWORKING':                         'bg-teal-500',
-                'Form Contattaci':                    'bg-orange-400'
+                'Sito www.eCura.it':           'bg-cyan-500',
+                'Privati IRBEMA':              'bg-blue-500',
+                'eCura — Meta (FB/IG)':        'bg-indigo-500',
+                'eCura — Google':              'bg-red-500',
+                'eCura — Diretto':             'bg-green-500',
+                'eCura — Altro':               'bg-yellow-500',
+                'eCura — Non tracciato':       'bg-gray-400',
+                'eCura — Landing':             'bg-emerald-500',
+                'eCura — Landing (Meta)':      'bg-emerald-600',
+                'eCura — Landing (Google)':    'bg-emerald-400',
+                'eCura — Landing (Diretto)':   'bg-teal-500',
+                'eCura — Landing (Altro)':     'bg-teal-400',
+                'Form eCura x Test':           'bg-yellow-300',
+                'B2B IRBEMA':                  'bg-purple-500',
+                'Sito web Medica GB':          'bg-pink-500',
+                'NETWORKING':                  'bg-teal-500',
+                'Form Contattaci':             'bg-orange-400'
             };
 
             // Passo 1: canali eCura dall'API (stessa sorgente dei box → numeri identici)
-            // La struttura rispecchia esattamente il filtro dropdown:
-            //   Sezione 1 → Form eCura (vecchio form Nur, fino al 29/7/2026)
-            //   Sezione 2 → Landing Cloudflare (nuova landing, dal 8/8/2026)
             const sources = {};
             let discountByCanale = {};
             try {
                 const res = await fetch('/api/leads/channel-stats');
                 const data = await res.json();
                 if (data.success) {
-                    // ── Sezione 1: Form eCura (vecchio Nur) ─────────────────────────────
-                    const f = data.oldForm || {};
-                    if (f.meta     > 0) sources['Form eCura — Meta (FB/IG)']    = f.meta;
-                    if (f.google   > 0) sources['Form eCura — Google']           = f.google;
-                    if (f.diretto  > 0) sources['Form eCura — Diretto']          = f.diretto;
-                    if (f.organico > 0) sources['Form eCura — Organico (SEO)']   = f.organico;
-                    if (f.altro    > 0) sources['Form eCura — Altro']            = f.altro;
-                    if (f.nonTracciato > 0) sources['Form eCura — Non tracciato'] = f.nonTracciato;
-                    // ── Sezione 2: Landing Cloudflare (nuova) ───────────────────────────
+                    if (data.meta    > 0) sources['eCura — Meta (FB/IG)'] = data.meta;
+                    if (data.google  > 0) sources['eCura — Google']       = data.google;
+                    if (data.diretto > 0) sources['eCura — Diretto']      = data.diretto;
+                    if (data.altro   > 0) sources['eCura — Altro']        = data.altro;
+                    if (data.nonTracciato > 0) sources['eCura — Non tracciato'] = data.nonTracciato;
+                    // Landing proprietaria ecura.it — dettagliata per canale se disponibile
                     const l = data.landing || {};
                     if (l.total > 0) {
-                        if (l.meta     > 0) sources['Landing — Meta (FB/IG)']    = l.meta;
-                        if (l.google   > 0) sources['Landing — Google']           = l.google;
-                        if (l.diretto  > 0) sources['Landing — Diretto']          = l.diretto;
-                        if (l.organico > 0) sources['Landing — Organico (SEO)']   = l.organico;
-                        if (l.altro    > 0) sources['Landing — Altro']            = l.altro;
-                        if (l.nonTracciato > 0) sources['Landing — Non tracciato'] = l.nonTracciato;
+                        if (l.meta    > 0) sources['eCura — Landing (Meta)']    = l.meta;
+                        if (l.google  > 0) sources['eCura — Landing (Google)']  = l.google;
+                        if (l.diretto > 0) sources['eCura — Landing (Diretto)'] = l.diretto;
+                        if (l.altro   > 0) sources['eCura — Landing (Altro)']   = l.altro;
+                        if (l.nonTracciato > 0) sources['eCura — Landing'] = l.nonTracciato;
                     }
                     discountByCanale = data.discountByCanale || {};
                 }
@@ -4522,26 +4435,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
 
             // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
-            // Escludi TUTTI i lead già contati dal Passo 1 (channel-stats):
-            //   - fonte='Form eCura' o startsWith('Form eCura_')  → già in oldForm
-            //   - canale_acquisizione non-NULL                     → già classificato in channel-stats
-            //   - dettaglio_fonte='ecura_landing'                  → già nei box Landing
-            // Caso speciale: lead con dettaglio_fonte='ecura_landing' ma fonte raw (es. 'ORGANICO')
-            //   → già contati nel query landing (filtro dettaglio_fonte='ecura_landing')
-            //   → NON aggiungere di nuovo, saltali qui
+            // I lead landing (dettaglio_fonte='ecura_landing') sono già contati sopra → saltiamo
             (leads || []).forEach(l => {
-                const fonteDB   = l.fonte || '';
-                const canale    = l.canale_acquisizione || '';
-                const dettaglio = l.dettaglio_fonte || '';
-                // Salta tutti i lead Form eCura (già contati dal Passo 1)
+                const fonteDB = l.fonte || '';
                 if (fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_')) return;
-                // Salta lead con canale_acquisizione popolato (META/GOOGLE/DIRETTO/ALTRO/ORGANICO/REFERRAL…)
-                // → già inclusi in channel-stats (Passo 1)
-                if (canale !== '') return;
-                // Salta lead dalla landing proprietaria → già nei contatori Landing del Passo 1
-                if (dettaglio === 'ecura_landing') return;
-                // Mappa etichette note per fonti non-eCura (raw fonti: IRBEMA, B2B, Test, ecc.)
-                let etichetta = fonteDB || 'Non specificato';
+                if ((l.dettaglio_fonte || '') === 'ecura_landing') return; // già nei box Landing
+                const etichetta = fonteDB || 'Non specificato';
                 sources[etichetta] = (sources[etichetta] || 0) + 1;
             });
 
@@ -4872,6 +4771,23 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="RP" \${lead.cm === 'RP' ? 'selected' : ''}>RP</option>
                             </select>
                         </td>
+                        <td class="py-2 text-xs">
+                            <select
+                                data-lead-id="\${lead.id}"
+                                class="temp-select text-xs px-1 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-400 \${lead.temperatura === 'caldo' ? 'bg-red-50 font-bold' : lead.temperatura === 'tiepido' ? 'bg-yellow-50 font-medium' : lead.temperatura === 'freddo' ? 'bg-blue-50' : 'bg-white'}"
+                                style="min-width: 72px;">
+                                <option value="" \${!lead.temperatura ? 'selected' : ''}>—</option>
+                                <option value="caldo"   \${lead.temperatura === 'caldo'   ? 'selected' : ''}>🔥 Caldo</option>
+                                <option value="tiepido" \${lead.temperatura === 'tiepido' ? 'selected' : ''}>🌡️ Tiepido</option>
+                                <option value="freddo"  \${lead.temperatura === 'freddo'  ? 'selected' : ''}>❄️ Freddo</option>
+                            </select>
+                            <a href="#" 
+                               class="auto-temp-btn"
+                               data-lead-id="\${lead.id}"
+                               data-stato="\${lead.stato || ''}"
+                               style="font-size:.68rem;color:#9ca3af;display:block;text-align:center;line-height:1.2;margin-top:2px;text-decoration:none;cursor:pointer;"
+                               title="Calcola temperatura automatica in base allo stato">e.auto</a>
+                        </td>
                         <td class="py-3 text-sm">
                             <select 
                                 data-lead-id="\${lead.id}"
@@ -4892,27 +4808,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="problemi_economici" \${lead.stato === 'problemi_economici' ? 'selected' : ''} class="bg-pink-50">💰 Problemi Economici</option>
                             </select>
                         </td>
-                        <td class="py-2 px-1 text-center">
-                            \${(function() {
-                                const t = lead.temperatura || calcolaTemperaturaJS(lead.stato);
-                                const cfg = TEMP_CONFIG[t] || TEMP_CONFIG.freddo;
-                                const selStyle = 'min-width:70px;background:' + cfg.bg + ';color:' + cfg.color + ';border-color:' + cfg.border + ';';
-                                const optC = t==='caldo'   ? ' selected' : '';
-                                const optT = t==='tiepido' ? ' selected' : '';
-                                const optF = t==='freddo'  ? ' selected' : '';
-                                return '<div class="flex flex-col items-center gap-1">'
-                                     + '<span class="text-lg leading-none" title="' + cfg.label + '">' + cfg.emoji + '</span>'
-                                     + '<select data-lead-id="' + lead.id + '" class="temp-select text-xs border rounded px-1 py-0.5 font-semibold cursor-pointer" style="' + selStyle + '" title="Modifica temperatura">'
-                                     + '<option value="caldo"' + optC + ' style="background:#fef2f2;color:#dc2626;">🔥 Caldo</option>'
-                                     + '<option value="tiepido"' + optT + ' style="background:#fffbeb;color:#d97706;">🌡️ Tiepido</option>'
-                                     + '<option value="freddo"' + optF + ' style="background:#eff6ff;color:#2563eb;">❄️ Freddo</option>'
-                                     + '</select>'
-                                     + '<button data-lead-id="' + lead.id + '" class="temp-auto-btn text-xs text-gray-400 hover:text-gray-600 underline cursor-pointer leading-none" title="Ricalcola da stato">↺ auto</button>'
-                                     + '</div>';
-                            })()}
-                        </td>
-                        <td class="py-2 text-sm" style="white-space:nowrap;">
-                            <div class="flex flex-wrap gap-0.5">
+                        <td class="py-3 text-sm">
+                            <div class="flex space-x-1">
                                 <button 
                                     data-action="interactions"
                                     data-lead-id="\${lead.id}"
@@ -4971,6 +4868,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <button 
                                     data-action="manual-payment"
                                     data-lead-id="\${lead.id}"
+                                    data-rateizzato="\${lead.rateizzazione_attiva ? '1' : '0'}"
                                     class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors action-btn"
                                     title="Pagamento OK">
                                     ✅
@@ -5017,8 +4915,8 @@ export const leads_dashboard = `<!DOCTYPE html>
 
                             </div>
                         </td>
-                        <td class="py-2 pl-2" style="white-space:nowrap;">
-                            <div class="flex gap-0.5 flex-wrap">
+                        <td class="py-3 pl-3">
+                            <div class="flex space-x-1">
                                 <button data-action="view" data-lead-id="\${lead.id}" 
                                         class="text-blue-600 hover:text-blue-800 px-1 crud-btn" 
                                         title="Visualizza">
@@ -5056,7 +4954,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'completion') requestCompletion(leadId);
                         else if (action === 'manual-sign') manualSign(leadId);
                         else if (action === 'send-proforma') sendProforma(leadId);
-                        else if (action === 'manual-payment') manualPayment(leadId);
+                        else if (action === 'manual-payment') manualPayment(leadId, this.getAttribute('data-rateizzato') === '1');
                         else if (action === 'send-configuration') sendConfiguration(leadId);
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
@@ -5085,6 +4983,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                         updateContactManager(leadId, value);
                     });
                 });
+
+                // Temperatura select dropdowns
+                document.querySelectorAll('.temp-select').forEach(select => {
+                    select.addEventListener('change', function() {
+                        const leadId = this.getAttribute('data-lead-id');
+                        const value = this.value;
+                        updateTemperatura(leadId, value);
+                    });
+                });
                 
                 // Status select dropdowns
                 document.querySelectorAll('.status-select').forEach(select => {
@@ -5092,73 +4999,19 @@ export const leads_dashboard = `<!DOCTYPE html>
                         const leadId = this.getAttribute('data-lead-id');
                         const value = this.value;
                         updateLeadStatus(leadId, value);
+                        // Aggiorna il data-stato del pulsante e.auto corrispondente
+                        const autoBtn = document.querySelector('.auto-temp-btn[data-lead-id="' + leadId + '"]');
+                        if (autoBtn) autoBtn.setAttribute('data-stato', value || '');
                     });
                 });
 
-                // ─── Temperatura: cambio manuale dal dropdown ─────────────
-                document.querySelectorAll('.temp-select').forEach(select => {
-                    select.addEventListener('change', async function() {
+                // Auto-temperatura buttons (e.auto)
+                document.querySelectorAll('.auto-temp-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         const leadId = this.getAttribute('data-lead-id');
-                        const nuovaTemp = this.value;
-                        try {
-                            const res = await fetch('/api/leads/' + leadId + '/temperatura', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ temperatura: nuovaTemp })
-                            });
-                            const json = await res.json();
-                            if (json.success) {
-                                // Aggiorna emoji e colori inline senza ricaricare
-                                const cfg = TEMP_CONFIG[nuovaTemp] || TEMP_CONFIG.freddo;
-                                this.style.background = cfg.bg;
-                                this.style.color = cfg.color;
-                                this.style.borderColor = cfg.border;
-                                const emojiEl = this.closest('div.flex')?.querySelector('span.text-lg');
-                                if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
-                                // Aggiorna dato nel cache allLeads
-                                const lead = allLeads.find(l => l.id === leadId);
-                                if (lead) lead.temperatura = nuovaTemp;
-                            } else {
-                                alert('Errore aggiornamento temperatura: ' + (json.error || 'sconosciuto'));
-                            }
-                        } catch(e) {
-                            console.error('Errore PATCH temperatura:', e);
-                        }
-                    });
-                });
-
-                // ─── Temperatura: pulsante ↺ auto (ricalcola da stato) ────
-                document.querySelectorAll('.temp-auto-btn').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        const leadId = this.getAttribute('data-lead-id');
-                        try {
-                            const res = await fetch('/api/leads/' + leadId + '/temperatura', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ temperatura: 'auto' })
-                            });
-                            const json = await res.json();
-                            if (json.success) {
-                                const nuovaTemp = json.temperatura;
-                                const cfg = TEMP_CONFIG[nuovaTemp] || TEMP_CONFIG.freddo;
-                                const container = this.closest('div.flex');
-                                if (container) {
-                                    const emojiEl = container.querySelector('span.text-lg');
-                                    if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
-                                    const sel = container.querySelector('select.temp-select');
-                                    if (sel) {
-                                        sel.value = nuovaTemp;
-                                        sel.style.background = cfg.bg;
-                                        sel.style.color = cfg.color;
-                                        sel.style.borderColor = cfg.border;
-                                    }
-                                }
-                                const lead = allLeads.find(l => l.id === leadId);
-                                if (lead) lead.temperatura = nuovaTemp;
-                            }
-                        } catch(e) {
-                            console.error('Errore reset temperatura:', e);
-                        }
+                        const stato = this.getAttribute('data-stato') || '';
+                        calcTemperaturaAuto(leadId, stato);
                     });
                 });
             }, 0);
@@ -5171,8 +5024,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             const servizioFilter = document.getElementById('filterServizio').value;
             const pianoFilter = document.getElementById('filterPiano').value;
             const cmFilter = document.getElementById('filterCM').value;
+            const tempFilter = document.getElementById('filterTemp').value;
             const statoFilter = document.getElementById('filterStato').value;
-            const temperaturaFilter = (document.getElementById('filterTemperatura')?.value || '').toLowerCase();
             const searchCognome = document.getElementById('searchCognome').value.toLowerCase().trim();
 
             const filtered = allLeads.filter(lead => {
@@ -5186,9 +5039,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 //   '__ECURA_ALL__'     → tutti i lead Form eCura (qualunque canale)
                 //   '__CANALE__META'    → lead eCura con canale_acquisizione = 'META'
                 //   '__CANALE__GOOGLE'  → lead eCura con canale_acquisizione = 'GOOGLE'
-                //   '__CANALE__DIRETTO'  → lead eCura con canale_acquisizione = 'DIRETTO'
-                //   '__CANALE__ALTRO'    → lead eCura con canale_acquisizione = 'ALTRO'
-                //   '__CANALE__ORGANICO' → lead eCura con canale_acquisizione = 'ORGANICO'
+                //   '__CANALE__DIRETTO' → lead eCura con canale_acquisizione = 'DIRETTO'
+                //   '__CANALE__ALTRO'   → lead eCura con canale_acquisizione = 'ALTRO'
                 //   '__FONTE__Privati IRBEMA' → lead con fonte = 'Privati IRBEMA'
                 //   '__FONTE__Form eCura x Test' → lead di test
                 // ═══════════════════════════════════════════════════════════
@@ -5248,14 +5100,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const matchCM = !cmFilter || 
                     (cmFilter === 'nessuno' && !leadCM) || 
                     (cmFilter !== 'nessuno' && leadCM === cmFilter);
+
+                // Filtro Temperatura: caldo / tiepido / freddo / nessuna
+                const leadTemp = (lead.temperatura || '').toLowerCase();
+                const matchTemp = !tempFilter ||
+                    (tempFilter === 'nessuna' && !leadTemp) ||
+                    (tempFilter !== 'nessuna' && leadTemp === tempFilter);
                 
                 // Filtro Stato: confronta con il campo stato del lead
                 const leadStato = (lead.stato || '').toLowerCase();
                 const matchStato = !statoFilter || leadStato === statoFilter.toLowerCase();
-
-                // Filtro Temperatura: confronta temperatura salvata o calcolata dallo stato
-                const leadTemp = (lead.temperatura || calcolaTemperaturaJS(lead.stato)).toLowerCase();
-                const matchTemperatura = !temperaturaFilter || leadTemp === temperaturaFilter;
                 
                 // Filtro cognome: cerca in cognomeRichiedente o cognomeAssistito
                 const cognomeRichiedente = (lead.cognomeRichiedente || '').toLowerCase();
@@ -5264,7 +5118,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     cognomeRichiedente.includes(searchCognome) || 
                     cognomeAssistito.includes(searchCognome);
                 
-                return matchFonte && matchServizio && matchPiano && matchCM && matchStato && matchTemperatura && matchCognome;
+                return matchFonte && matchServizio && matchPiano && matchCM && matchTemp && matchStato && matchCognome;
             });
 
             renderLeadsTable(filtered);
@@ -5437,20 +5291,161 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
         }
 
-        async function manualPayment(leadId) {
+        async function manualPayment(leadId, isRateizzato) {
+            // ── LEAD RATEIZZATO: mostra modale rate ──────────────────────────────
+            if (isRateizzato) {
+                // Crea modale se non esiste (struttura fissa, contenuto dinamico)
+                if (!document.getElementById('rataPaymentModal')) {
+                    const m = document.createElement('div');
+                    m.id = 'rataPaymentModal';
+                    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px;';
+                    // Click fuori chiude
+                    m.addEventListener('click', function(e){ if(e.target===m) m.style.display='none'; });
+                    m.innerHTML = \`
+                        <div style="background:#fff;border-radius:16px;width:min(560px,96vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.25);overflow:hidden;">
+                            <!-- Header fisso -->
+                            <div style="padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                                    <h3 style="font-size:1.1rem;font-weight:700;color:#1f2937;margin:0;">💳 Registra pagamento rata</h3>
+                                    <button onclick="document.getElementById('rataPaymentModal').style.display='none'"
+                                            style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#9ca3af;line-height:1;padding:0 2px;">✕</button>
+                                </div>
+                                <p id="rataPaymentSubtitle" style="font-size:.84rem;color:#6b7280;margin:0;"></p>
+                            </div>
+                            <!-- Lista rate — scrollabile -->
+                            <div id="rataPaymentList" style="flex:1;overflow-y:auto;padding:12px 24px;">
+                                <p style="color:#6b7280;font-size:.88rem;">Caricamento rate...</p>
+                            </div>
+                            <!-- Footer fisso -->
+                            <div style="padding:14px 24px;border-top:1px solid #e5e7eb;flex-shrink:0;display:flex;justify-content:flex-end;">
+                                <button onclick="document.getElementById('rataPaymentModal').style.display='none'"
+                                        style="padding:9px 22px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:.9rem;font-weight:600;cursor:pointer;">
+                                    Chiudi
+                                </button>
+                            </div>
+                        </div>\`;
+                    document.body.appendChild(m);
+                }
+
+                // Stato interno modale
+                window._rataPayLeadId = leadId;
+
+                // Reset lista
+                document.getElementById('rataPaymentList').innerHTML =
+                    '<p style="color:#6b7280;font-size:.88rem;padding:8px 0;">Caricamento rate...</p>';
+                document.getElementById('rataPaymentSubtitle').textContent = '';
+
+                const modal = document.getElementById('rataPaymentModal');
+                modal.style.display = 'flex';
+
+                // Carica rate dal server
+                try {
+                    const res = await fetch(\`/api/leads/\${leadId}/rateizzazione\`, { credentials: 'include' });
+                    const data = await res.json();
+                    if (!data.success || !data.rate || data.rate.length === 0) {
+                        document.getElementById('rataPaymentList').innerHTML =
+                            '<p style="color:#dc2626;font-size:.88rem;">Nessuna rata trovata per questo lead.</p>';
+                        return;
+                    }
+
+                    document.getElementById('rataPaymentSubtitle').textContent =
+                        \`\${data.rate_pagate}/\${data.rate_totali} rate pagate · €\${data.totale_pagato.toFixed(2)} di €\${data.totale_rate.toFixed(2)} incassati\`;
+
+                    const statusColors = { PAGATA:'#16a34a', ATTESA:'#d97706', SCADUTA:'#dc2626', ANNULLATA:'#6b7280' };
+                    const statusLabels = { PAGATA:'✅ Pagata', ATTESA:'⏳ In attesa', SCADUTA:'⚠️ Scaduta', ANNULLATA:'🚫 Annullata' };
+                    const todayIso = new Date().toISOString().slice(0,10);
+
+                    const cards = data.rate.map(r => {
+                        const color  = statusColors[r.status] || '#6b7280';
+                        const label  = statusLabels[r.status] || r.status;
+                        const canPay = r.status !== 'PAGATA' && r.status !== 'ANNULLATA';
+                        const rowBg  = r.status === 'PAGATA' ? '#f0fdf4' : r.status === 'SCADUTA' ? '#fff5f5' : '#fff';
+                        const border = r.status === 'PAGATA' ? '#bbf7d0' : r.status === 'SCADUTA' ? '#fecaca' : '#e5e7eb';
+
+                        const formHtml = canPay ? \`
+                            <div id="rataForm_\${r.id}" style="display:none;margin-top:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+                                <p style="font-size:.82rem;font-weight:600;color:#374151;margin:0 0 10px;">
+                                    Segna come <span style="color:#16a34a;">PAGATA</span>: Rata \${r.numero_rata} — €\${Number(r.importo).toFixed(2)}
+                                </p>
+                                <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+                                    <div style="flex:1;min-width:140px;">
+                                        <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Metodo pagamento</label>
+                                        <select id="rataMetodo_\${r.id}" style="width:100%;padding:7px 9px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.85rem;background:#fff;">
+                                            <option value="BONIFICO">Bonifico</option>
+                                            <option value="STRIPE">Carta / Stripe</option>
+                                            <option value="CONTANTI">Contanti</option>
+                                            <option value="PAYPAL">PayPal</option>
+                                            <option value="altro">Altro</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex:1;min-width:130px;">
+                                        <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Data pagamento</label>
+                                        <input type="date" id="rataData_\${r.id}" value="\${todayIso}"
+                                               style="width:100%;padding:7px 9px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.85rem;background:#fff;">
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:12px;">
+                                    <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">
+                                        Riferimento / Causale <span style="font-weight:400;color:#9ca3af;">(facoltativo)</span>
+                                    </label>
+                                    <input type="text" id="rataRif_\${r.id}" placeholder="es. CRO12345, causale bonifico..."
+                                           style="width:100%;padding:7px 9px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.85rem;background:#fff;box-sizing:border-box;">
+                                </div>
+                                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                                    <button onclick="document.getElementById('rataForm_\${r.id}').style.display='none'"
+                                            style="padding:7px 16px;border:1.5px solid #d1d5db;border-radius:7px;background:#fff;color:#6b7280;font-size:.85rem;cursor:pointer;">
+                                        Annulla
+                                    </button>
+                                    <button id="rataConfirm_\${r.id}" onclick="confirmRataPayment(\${r.id})"
+                                            style="padding:7px 18px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:.85rem;font-weight:700;cursor:pointer;">
+                                        ✅ Conferma pagamento
+                                    </button>
+                                </div>
+                            </div>\` : '';
+
+                        return \`
+                            <div style="border:1px solid \${border};border-radius:10px;padding:14px 16px;margin-bottom:10px;background:\${rowBg};">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                                    <div style="flex:1;min-width:160px;">
+                                        <div style="font-size:.95rem;font-weight:700;color:#1f2937;margin-bottom:2px;">
+                                            Rata \${r.numero_rata}
+                                        </div>
+                                        <div style="font-size:.82rem;color:#6b7280;">
+                                            €\${Number(r.importo).toFixed(2)} · scad. \${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                                        <span style="font-size:.85rem;font-weight:700;color:\${color};">\${label}</span>
+                                        \${canPay ? \`<button
+                                            onclick="openRataForm(\${r.id})"
+                                            style="padding:7px 16px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:.84rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+                                            Segna pagata
+                                        </button>\` : ''}
+                                    </div>
+                                </div>
+                                \${formHtml}
+                            </div>\`;
+                    }).join('');
+
+                    document.getElementById('rataPaymentList').innerHTML = cards;
+                } catch(e) {
+                    document.getElementById('rataPaymentList').innerHTML =
+                        '<p style="color:#dc2626;font-size:.88rem;">Errore caricamento rate: ' + e.message + '</p>';
+                }
+                return;
+            }
+
+            // ── LEAD NON RATEIZZATO: comportamento originale ─────────────────────
             if (!confirm('✅ Confermare pagamento per questo lead?\\n\\nVerrà inviata la email con il form di configurazione.')) {
                 return;
             }
-            
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
                 });
-                
                 const result = await response.json();
-                
                 if (result.success) {
                     alert('✅ Pagamento confermato!\\n\\nEmail di configurazione inviata al cliente: ' + (result.email || 'N/A'));
                     loadLeadsData();
@@ -5459,6 +5454,57 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        // selectRataForPayment non più usata (form inline per rata)
+        function selectRataForPayment(_rataId, _label, _btn) { /* legacy no-op */ }
+
+        // Apre il form inline della rata selezionata, chiude gli altri
+        function openRataForm(rataId) {
+            document.querySelectorAll('[id^="rataForm_"]').forEach(function(f) {
+                f.style.display = 'none';
+            });
+            var form = document.getElementById('rataForm_' + rataId);
+            if (form) form.style.display = 'block';
+        }
+
+        async function confirmRataPayment(rataId) {
+            var leadId  = window._rataPayLeadId;
+            var metodoEl  = document.getElementById('rataMetodo_' + rataId);
+            var dataEl    = document.getElementById('rataData_'   + rataId);
+            var rifEl     = document.getElementById('rataRif_'    + rataId);
+            var metodo  = metodoEl  ? metodoEl.value  : 'BONIFICO';
+            var dataPag = dataEl    ? dataEl.value    : new Date().toISOString().slice(0,10);
+            var rif     = rifEl     ? rifEl.value.trim() : '';
+
+            var btn = document.getElementById('rataConfirm_' + rataId);
+            if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio...'; }
+
+            try {
+                const res = await fetch(\`/api/leads/\${leadId}/rate/\${rataId}\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        status: 'PAGATA',
+                        metodo_pagamento: metodo,
+                        data_pagamento: dataPag || new Date().toISOString().slice(0,10),
+                        riferimento: rif || null
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    document.getElementById('rataPaymentModal').style.display = 'none';
+                    alert('✅ Rata segnata come PAGATA con successo!');
+                    loadLeadsData();
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    if (btn) { btn.disabled = false; btn.textContent = '✅ Conferma pagamento'; }
+                }
+            } catch(e) {
+                alert('❌ Errore di comunicazione: ' + e.message);
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Conferma pagamento'; }
             }
         }
 
@@ -6343,7 +6389,53 @@ export const leads_dashboard = `<!DOCTYPE html>
                 loadLeadsData(); // Ricarica per ripristinare il valore precedente
             }
         }
-        
+
+        async function updateTemperatura(leadId, temperatura) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/temperatura\`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ temperatura: temperatura || null })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) lead.temperatura = temperatura || null;
+                    console.log(\`✅ Temperatura aggiornata: \${leadId} → \${temperatura || '—'}\`);
+                } else {
+                    alert('❌ Errore aggiornamento temperatura: ' + result.error);
+                    loadLeadsData();
+                }
+            } catch (error) {
+                console.error('❌ Errore aggiornamento temperatura:', error);
+                loadLeadsData();
+            }
+        }
+
+        // Calcola e salva la temperatura automatica in base allo stato del lead
+        async function calcTemperaturaAuto(leadId, stato) {
+            const statoLower = (stato || '').toLowerCase();
+            let temp = null;
+            if (['interessato','in_trattativa','contattato'].includes(statoLower)) {
+                temp = 'caldo';
+            } else if (['nuovo','da_ricontattare'].includes(statoLower)) {
+                temp = 'tiepido';
+            } else if (['non_risponde','non_interessato','numero_non_attivo','problemi_economici','inps'].includes(statoLower)) {
+                temp = 'freddo';
+            } else if (['perso','convertito','annullato'].includes(statoLower)) {
+                // perso/convertito/annullato → nessuna temperatura (neutro)
+                temp = null;
+            } else {
+                // stato sconosciuto o vuoto → nessuna temperatura
+                temp = null;
+            }
+            await updateTemperatura(leadId, temp);
+            // Aggiorna visivamente il select senza ricaricare tutta la tabella
+            const selects = document.querySelectorAll('.temp-select[data-lead-id="' + leadId + '"]');
+            selects.forEach(function(s) { s.value = temp || ''; });
+        }
+
         async function updateLeadStatus(leadId, stato) {
             try {
                 const response = await fetch(\`/api/leads/\${leadId}\`, {
@@ -6361,22 +6453,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const lead = allLeads.find(l => l.id === leadId);
                     if (lead) {
                         lead.stato = stato || null;
-                    }
-
-                    // 🌡️ Ricalcola temperatura automaticamente nella UI
-                    // (solo se la temperatura non è stata sovrascritta manualmente dall'utente)
-                    const tempAuto = calcolaTemperaturaJS(stato);
-                    const cfg = TEMP_CONFIG[tempAuto] || TEMP_CONFIG.freddo;
-                    // Trova la cella temperatura associata a questo lead
-                    const tempSelect = document.querySelector('.temp-select[data-lead-id="' + leadId + '"]');
-                    if (tempSelect) {
-                        tempSelect.value = tempAuto;
-                        tempSelect.style.background = cfg.bg;
-                        tempSelect.style.color = cfg.color;
-                        tempSelect.style.borderColor = cfg.border;
-                        const emojiEl = tempSelect.closest('div.flex')?.querySelector('span.text-lg');
-                        if (emojiEl) { emojiEl.textContent = cfg.emoji; emojiEl.title = cfg.label; }
-                        if (lead) lead.temperatura = tempAuto;
                     }
                     
                     // Aggiorna il colore dello sfondo del select
@@ -6784,16 +6860,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                 piano: document.getElementById('newPiano').value,
                 canale: document.getElementById('newCanale').value,
                 fonte: document.getElementById('newCanale').value,
-                // Mappa fonte → canale_acquisizione per lead ORGANICO e altri canali eCura
-                canale_acquisizione: (function() {
-                    const f = document.getElementById('newCanale').value.toUpperCase();
-                    if (f === 'ORGANICO') return 'ORGANICO';
-                    if (f === 'META' || f.includes('META')) return 'META';
-                    if (f === 'GOOGLE' || f.includes('GOOGLE')) return 'GOOGLE';
-                    if (f === 'DIRETTO' || f.includes('DIRETTO') || f === 'SITO WWW.ECURA.IT') return 'DIRETTO';
-                    if (f === 'ALTRO') return 'ALTRO';
-                    return null;
-                })(),
                 
                 // Preferenze
                 vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
@@ -7272,14 +7338,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <select id="newCanale" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona fonte...</option>
-                                    <option value="Form eCura">📋 Form eCura</option>
-                                    <option value="ORGANICO">🌿 Organico (SEO)</option>
-                                    <option value="Sito www.eCura.it">🔗 Sito www.eCura.it</option>
-                                    <option value="NETWORKING">🤝 NETWORKING</option>
+                                    <option value="Sito www.eCura.it">Sito www.eCura.it</option>
                                     <option value="Privati IRBEMA">Privati IRBEMA</option>
+                                    <option value="Form eCura">Form eCura</option>
+                                    <option value="Form eCura x Test">Form eCura x Test</option>
                                     <option value="B2B IRBEMA">B2B IRBEMA</option>
                                     <option value="Sito web Medica GB">Sito web Medica GB</option>
-                                    <option value="Form eCura x Test">Form eCura x Test</option>
+                                    <option value="NETWORKING">NETWORKING</option>
                                 </select>
                             </div>
                         </div>
@@ -8631,12 +8696,8 @@ export const data_dashboard = `<!DOCTYPE html>
                     // done=true → verde chiaro (già fatto, ma ri-cliccabile)
                     // done=false → colore pieno
 
-                    // proforma_rinnovo_id può arrivare come float (es. 39.0) da SQLite — sempre integerizzare
-                    var proformaIdInt = contract.proforma_rinnovo_id
-                        ? parseInt(String(contract.proforma_rinnovo_id), 10)
-                        : null;
-                    var proformaUrl = proformaIdInt
-                        ? '/pagamento.html?proformaId=' + proformaIdInt
+                    var proformaUrl = contract.proforma_rinnovo_id
+                        ? '/api/proforma/' + encodeURIComponent(contract.proforma_rinnovo_id) + '/pay'
                         : '#';
                     var dataComp = contract.rinnovo_data_completamento
                         ? new Date(contract.rinnovo_data_completamento).toLocaleDateString('it-IT') : '';
@@ -8678,15 +8739,11 @@ export const data_dashboard = `<!DOCTYPE html>
                         ? '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#0891b2;color:#fff;cursor:pointer;" title="Anteprima email proforma" data-action="rinnovo-anteprima-proforma" ' + dId + ' ' + dCodiceR + '>\uD83D\uDD0D</button>'
                         : '';
                     var btn5  = rinnovoMkBtn('\uD83D\uDCE4', 'Invia proforma al cliente', 'rinnovo-invia-proforma', d5, '#7c3aed', dId + ' ' + dCodiceR);
-                    // btn6: Segna pagamento bonifico ricevuto — pulsante (non link Stripe)
-                    // Usa stesso endpoint di segna-completato (PATCH /api/contracts/:id/rinnovo-completato)
-                    var btn6 = rinnovoCompletato
-                        ? ''  // già completato: non mostrare btn6 (btn6b mostra il badge)
-                        : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#16a34a;color:#fff;cursor:pointer;" title="💳 Segna pagamento ricevuto (bonifico)" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\uD83D\uDCB3</button>';
-                    // btn6b: badge completato — visibile SOLO se già pagato
+                    var btn6  = rinnovoMkLink('\uD83D\uDCB0', 'Paga proforma online',     proformaUrl,             d6, '#16a34a');
+                    // btn6b: segna completato — sempre visibile se rinnovo esiste, diventa badge se già completato
                     var btn6b = rinnovoCompletato
-                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Pagato e completato ' + dataComp + '">\u2705</span>'
-                        : '';  // non mostrare btn6b se non ancora completato (btn6 è il pulsante attivo)
+                        ? '<span style="color:#059669;font-size:11px;font-weight:600;margin-left:2px;" title="Completato ' + dataComp + '">\u2705</span>'
+                        : '<button class="rinnovo-btn" style="' + _IC_BASE + 'background:#d1fae5;color:#065f46;cursor:pointer;" title="Segna rinnovo completato" data-action="rinnovo-segna-completato" ' + dIdSafe + ' ' + dCodice + '>\u2705</button>';
 
                     // 👁️ Vedi contratto — sempre visibile su righe rinnovo
                     // Rigenera silenziosamente l'HTML (dati aggiornati) poi apre la tab
