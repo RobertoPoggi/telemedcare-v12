@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuale Operativo — Marketing Hub eCura</title>
+<style>
+  :root {
+    --viola: #7C3AED;
+    --verde: #068D86;
+    --rosso: #DC2626;
+    --arancio: #EA580C;
+    --giallo: #D97706;
+    --blu-scuro: #080E49;
+    --grigio-chiaro: #F8F7F5;
+    --grigio-testo: #555;
+    --bordo: #E5E7EB;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f9f9f9; color: #222; line-height: 1.65; }
+
+  /* COPERTINA */
+  .cover {
+    background: linear-gradient(135deg, var(--blu-scuro) 0%, #1a2080 50%, var(--viola) 100%);
+    color: #fff; padding: 80px 40px 60px; text-align: center;
+  }
+  .cover .badge { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: 20px; padding: 6px 18px; font-size: .85rem; letter-spacing: .08em; margin-bottom: 24px; }
+  .cover h1 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; margin-bottom: 12px; }
+  .cover p { font-size: 1.1rem; opacity: .85; max-width: 600px; margin: 0 auto 32px; }
+  .cover .meta { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; font-size: .88rem; opacity: .7; }
+
+  /* LAYOUT */
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  /* INDICE */
+  .toc { background: #fff; border: 1px solid var(--bordo); border-radius: 12px; padding: 32px; margin: 40px auto; max-width: 900px; }
+  .toc h2 { font-size: 1.1rem; color: var(--blu-scuro); margin-bottom: 20px; }
+  .toc ol { padding-left: 1.4rem; }
+  .toc li { margin-bottom: 10px; }
+  .toc a { color: var(--viola); text-decoration: none; font-size: .97rem; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .sub { list-style: none; padding-left: 1.2rem; margin-top: 6px; }
+  .toc .sub li::before { content: "→ "; color: var(--verde); font-weight: 700; }
+  .toc .sub a { color: var(--grigio-testo); font-size: .9rem; }
+
+  /* SEZIONI */
+  .section { background: #fff; border-radius: 12px; border: 1px solid var(--bordo); padding: 40px; margin: 24px auto; max-width: 900px; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--bordo); }
+  .section-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+  .icon-viola { background: rgba(124,58,237,.12); }
+  .icon-verde { background: rgba(6,141,134,.12); }
+  .icon-arancio { background: rgba(234,88,12,.12); }
+  .icon-giallo { background: rgba(217,119,6,.12); }
+  .section h2 { font-size: 1.4rem; color: var(--blu-scuro); }
+  .section h2 small { display: block; font-size: .82rem; font-weight: 400; color: var(--grigio-testo); margin-top: 2px; }
+
+  h3 { font-size: 1.1rem; color: var(--blu-scuro); margin: 28px 0 12px; }
+  h4 { font-size: .97rem; color: #333; margin: 20px 0 8px; font-weight: 600; }
+  p { margin-bottom: 14px; color: var(--grigio-testo); font-size: .97rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 14px; }
+  li { color: var(--grigio-testo); font-size: .97rem; margin-bottom: 6px; }
+  strong { color: #222; }
+
+  /* CALLOUT */
+  .callout { border-radius: 10px; padding: 18px 20px; margin: 20px 0; font-size: .93rem; }
+  .callout-verde { background: rgba(6,141,134,.08); border-left: 4px solid var(--verde); }
+  .callout-viola { background: rgba(124,58,237,.08); border-left: 4px solid var(--viola); }
+  .callout-rosso { background: rgba(220,38,38,.08); border-left: 4px solid var(--rosso); }
+  .callout-giallo { background: rgba(217,119,6,.08); border-left: 4px solid var(--giallo); }
+  .callout strong { display: block; margin-bottom: 6px; }
+
+  /* STEP NUMERATI */
+  .steps { counter-reset: step; margin: 20px 0; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
+  .step-num { counter-increment: step; background: var(--viola); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; flex-shrink: 0; margin-top: 2px; }
+  .step-num::before { content: counter(step); }
+  .step-body { flex: 1; }
+  .step-body strong { display: block; font-size: .97rem; color: #222; margin-bottom: 4px; }
+  .step-body p { margin: 0; font-size: .93rem; }
+
+  /* TABELLE */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: .9rem; }
+  th { background: var(--blu-scuro); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--bordo); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--grigio-chiaro); }
+
+  /* BADGE STATO */
+  .badge-s { display: inline-block; border-radius: 12px; padding: 2px 10px; font-size: .78rem; font-weight: 600; }
+  .badge-verde { background: #D1FAE5; color: #065F46; }
+  .badge-giallo { background: #FEF3C7; color: #92400E; }
+  .badge-rosso { background: #FEE2E2; color: #991B1B; }
+  .badge-viola { background: rgba(124,58,237,.15); color: var(--viola); }
+  .badge-grigio { background: #F3F4F6; color: #6B7280; }
+
+  /* MODULO CARD */
+  .module-card { border: 1px solid var(--bordo); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .module-card h4 { margin: 0 0 8px; color: var(--blu-scuro); font-size: 1rem; }
+  .module-card p { margin: 0 0 8px; font-size: .9rem; }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 8px 0; border-bottom: 1px solid var(--bordo); font-size: .93rem; color: var(--grigio-testo); display: flex; align-items: flex-start; gap: 10px; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before { content: "☐"; font-size: 1.1rem; flex-shrink: 0; color: var(--viola); }
+
+  /* KPI GRID */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 20px 0; }
+  .kpi-card { background: var(--grigio-chiaro); border-radius: 10px; padding: 18px; text-align: center; border: 1px solid var(--bordo); }
+  .kpi-card .num { display: block; font-size: 1.8rem; font-weight: 800; color: var(--blu-scuro); }
+  .kpi-card .label { display: block; font-size: .78rem; color: var(--grigio-testo); margin-top: 4px; }
+
+  /* WORKFLOW */
+  .workflow { display: flex; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+  .wf-step { flex: 1; min-width: 130px; text-align: center; position: relative; padding: 16px 12px; background: var(--grigio-chiaro); border: 1px solid var(--bordo); }
+  .wf-step:not(:last-child)::after { content: "→"; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; color: var(--viola); z-index: 1; }
+  .wf-step .wf-num { display: block; background: var(--viola); color: #fff; width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 8px; font-size: .85rem; font-weight: 700; line-height: 28px; }
+  .wf-step .wf-label { font-size: .82rem; color: var(--grigio-testo); font-weight: 600; }
+
+  /* FOOTER */
+  footer { text-align: center; padding: 40px 24px; color: var(--grigio-testo); font-size: .85rem; background: var(--grigio-chiaro); margin-top: 40px; border-top: 1px solid var(--bordo); }
+
+  /* PRINT */
+  @media print {
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section { break-inside: avoid; }
+  }
+  @media (max-width: 600px) {
+    .cover { padding: 48px 20px 40px; }
+    .section { padding: 24px 18px; }
+    .workflow { flex-direction: column; }
+    .wf-step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -14px; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COPERTINA -->
+<div class="cover">
+  <div class="badge">DOCUMENTO INTERNO — USO OPERATIVO</div>
+  <h1>Manuale Operativo<br>Marketing Hub eCura</h1>
+  <p>Guida completa all'uso delle dashboard AI Marketing, GEO Visibility, SEO Tecnico e Google Ads</p>
+  <div class="meta">
+    <span>📅 Luglio 2026</span>
+    <span>🎯 Target: eCura · Medica GB Srl</span>
+    <span>✍️ Versione 1.0</span>
+  </div>
+</div>
+
+<!-- INDICE -->
+<div class="toc container">
+  <h2>📋 Indice</h2>
+  <ol>
+    <li><a href="#panoramica">Panoramica del Marketing Hub</a>
+      <ul class="sub">
+        <li><a href="#panoramica">Cos'è e a cosa serve</a></li>
+        <li><a href="#panoramica">I 4 strumenti disponibili</a></li>
+      </ul>
+    </li>
+    <li><a href="#ai-marketing">eCura AI Marketing — Contenuti & GEO</a>
+      <ul class="sub">
+        <li><a href="#autopilot">Autopilot Contenuti: generare articoli in un click</a></li>
+        <li><a href="#piano-editoriale">Piano Editoriale: gestire la settimana</a></li>
+        <li><a href="#geo">GEO: visibilità su ChatGPT, Gemini, Perplexity</a></li>
+        <li><a href="#geo-gap">GEO Gap Analysis: capire perché non vieni citato</a></li>
+        <li><a href="#aeo">AEO Content Generator: risposte per AI Search</a></li>
+        <li><a href="#altri-moduli">Gli altri moduli: Keyword, SERP, Competitor...</a></li>
+      </ul>
+    </li>
+    <li><a href="#seo-tecnico">SEO Tecnico — Posizionamento Organico</a>
+      <ul class="sub">
+        <li><a href="#seo-score">Leggere lo Score SEO</a></li>
+        <li><a href="#seo-autopilot">Autopilot SEO: come usarlo</a></li>
+        <li><a href="#seo-piano">Piano editoriale SEO e stati</a></li>
+      </ul>
+    </li>
+    <li><a href="#google-ads">Google Ads — Campagne e Annunci</a></li>
+    <li><a href="#routine">Routine Operativa Settimanale</a></li>
+    <li><a href="#metriche">Metriche Chiave: cosa guardare ogni giorno</a></li>
+    <li><a href="#faq">Domande frequenti (FAQ)</a></li>
+  </ol>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 1. PANORAMICA -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="panoramica">
+  <div class="section-header">
+    <div class="section-icon icon-viola">🏠</div>
+    <h2>1. Panoramica del Marketing Hub<small>Il punto di partenza — apri sempre da qui</small></h2>
+  </div>
+
+  <p>Il <strong>Marketing Hub</strong> è la schermata principale dalla quale accedi a tutti gli strumenti. Puoi pensarlo come il cruscotto di un'auto: ti mostra tutto quello che hai a disposizione e ti permette di scegliere cosa fare.</p>
+
+  <h3>I 4 strumenti disponibili</h3>
+
+  <div class="module-card" style="border-left: 4px solid var(--arancio)">
+    <h4>🟠 Google Ads <span class="badge-s badge-verde">ATTIVO</span></h4>
+    <p>Genera annunci pubblicitari, liste di keyword e file CSV pronti per Google Ads Editor. Usalo quando vuoi avviare o ottimizzare campagne a pagamento.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid #6366F1">
+    <h4>🔵 META Ads <span class="badge-s badge-grigio">IN SVILUPPO</span></h4>
+    <p>Ancora non disponibile. Gestirà campagne Facebook e Instagram. Per ora non cliccabile.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--viola)">
+    <h4>🟣 eCura AI Marketing <span class="badge-s badge-viola">SPECIFICO eCURA</span></h4>
+    <p>Lo strumento più importante per la produzione di contenuti. Genera articoli blog, ottimizza la visibilità su ChatGPT e Gemini, gestisce il piano editoriale. È calibrato esattamente sul brand eCura e Medica GB.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--verde)">
+    <h4>🟢 SEO Tecnico <span class="badge-s badge-verde">GENERICO</span></h4>
+    <p>Analisi e ottimizzazione del posizionamento organico di ecura.it. Monitora lo score SEO, analizza i competitor, controlla i backlink. Usabile per qualsiasi sito.</p>
+  </div>
+
+  <div class="callout callout-verde">
+    <strong>💡 Come scegliere quale strumento aprire</strong>
+    Vuoi scrivere un articolo? → <strong>eCura AI Marketing</strong><br>
+    Vuoi capire come va il sito su Google? → <strong>SEO Tecnico</strong><br>
+    Vuoi fare pubblicità a pagamento? → <strong>Google Ads</strong><br>
+    Vuoi sapere se eCura compare su ChatGPT? → <strong>eCura AI Marketing → tab GEO</strong>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 2. eCURA AI MARKETING -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="ai-marketing">
+  <div class="section-header">
+    <div class="section-icon icon-viola">🤖</div>
+    <h2>2. eCura AI Marketing<small>Contenuti brand · GEO visibility · AI Search</small></h2>
+  </div>
+
+  <p>È lo strumento più ricco: ha <strong>13 moduli</strong> accessibili dai tab in alto. Ogni tab è uno strumento indipendente. Puoi passare da uno all'altro senza perdere il lavoro fatto.</p>
+
+  <h3>I tab disponibili (barra di navigazione)</h3>
+  <table>
+    <tr><th>Tab</th><th>Cosa fa</th><th>Frequenza d'uso</th></tr>
+    <tr><td><strong>🚀 Autopilot</strong></td><td>Genera articoli SEO in automatico</td><td><span class="badge-s badge-verde">Quotidiana</span></td></tr>
+    <tr><td><strong>🔑 Keyword</strong></td><td>Ricerca parole chiave per eCura</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>📊 SERP</strong></td><td>Analisi risultati Google per una keyword</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>🏆 Competitor</strong></td><td>Monitora Seremy, Beghelli, Televita</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>🔬 Deep Research</strong></td><td>Ricerca approfondita su un tema</td><td><span class="badge-s badge-grigio">Mensile</span></td></tr>
+    <tr><td><strong>⭐ Content Score</strong></td><td>Valuta qualità di un articolo</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>🔗 Link Interni</strong></td><td>Suggerisce link interni tra articoli</td><td><span class="badge-s badge-grigio">Mensile</span></td></tr>
+    <tr><td><strong>🔗 Link Esterni</strong></td><td>Trova fonti autorevoli da citare</td><td><span class="badge-s badge-grigio">Mensile</span></td></tr>
+    <tr><td><strong>🔙 Backlink</strong></td><td>Monitora i siti che linkano eCura</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>🖼️ Immagini AI</strong></td><td>Genera immagini brand-consistent</td><td><span class="badge-s badge-giallo">Settimanale</span></td></tr>
+    <tr><td><strong>👥 Targeting</strong></td><td>Profili audience (caregiver, MMG...)</td><td><span class="badge-s badge-grigio">Mensile</span></td></tr>
+    <tr><td><strong>▶️ YouTube</strong></td><td>Ottimizzazione video YouTube</td><td><span class="badge-s badge-grigio">Mensile</span></td></tr>
+    <tr><td><strong>🌍 GEO ★</strong></td><td>Visibilità su ChatGPT, Gemini, Perplexity</td><td><span class="badge-s badge-verde">Quotidiana</span></td></tr>
+  </table>
+</div>
+
+<!-- AUTOPILOT -->
+<div class="section container" id="autopilot">
+  <div class="section-header">
+    <div class="section-icon icon-viola">✍️</div>
+    <h2>2a. Autopilot Contenuti<small>Genera un articolo SEO in 4 passaggi</small></h2>
+  </div>
+
+  <p>L'Autopilot è il generatore di articoli. Imposti i parametri e l'AI scrive un articolo completo, ottimizzato per SEO, nel tono di voce eCura. <strong>Non devi scrivere nulla tu</strong> — devi solo configurare correttamente i parametri.</p>
+
+  <h3>Come funziona — passo per passo</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Scegli il tipo di contenuto</strong>
+        <p>Dal menu a discesa <em>"Tipo contenuto"</em> scegli cosa vuoi generare. Per il blog eCura usa sempre <strong>Articolo blog SEO (1.500–2.000 parole)</strong>. Se devi aggiornare la landing page usa "Landing Page".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Inserisci la keyword target</strong>
+        <p>Nel campo <em>"Keyword target"</em> scrivi la parola chiave principale dell'articolo. Esempi: <code>bracciale cadute anziani</code>, <code>teleassistenza anziani costi</code>, <code>dispositivo medico certificato anziani</code>. Usa esattamente come cercherebbe un familiare su Google.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Imposta il tono di voce</strong>
+        <p>Lascia sempre <strong>"Empatico e rassicurante (default eCura)"</strong> — è calibrato sul brand. Cambia solo se stai scrivendo un articolo tecnico per medici (MMG): in quel caso scegli "Professionale/Tecnico".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Seleziona le sezioni obbligatorie</strong>
+        <p>Spunta le sezioni che vuoi includere nell'articolo:</p>
+        <ul>
+          <li><strong>Statistiche ISTAT/ISS</strong> — include dati reali su cadute anziani in Italia. <em>Attivala quasi sempre.</em></li>
+          <li><strong>Vantaggi eCura vs competitor</strong> — include un confronto con Seremy/Beghelli. <em>Attivala negli articoli comparativi.</em></li>
+          <li><strong>CTA acquisto con prezzo €390/anno</strong> — inserisce la call-to-action finale. <em>Attivala sempre per articoli blog.</em></li>
+          <li><strong>Schema FAQ JSON-LD</strong> — aggiunge il codice JSON-LD per la detraibilità su Google. <em>Attivala per articoli informativi/FAQ.</em></li>
+        </ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Clicca "Genera contenuto AI"</strong>
+        <p>L'articolo appare nel pannello di destra <em>"Output generato"</em>. Leggilo, correggilo se necessario, poi copia il testo e incollalo nel CMS del sito (o invialo allo sviluppatore per pubblicazione).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-giallo">
+    <strong>⚠️ Attenzione prima di pubblicare</strong>
+    L'AI genera contenuto di alta qualità ma <strong>leggilo sempre</strong> prima di pubblicare. Verifica: (1) che i prezzi siano corretti (Family Base €390, Family Avanzato €690, Premium Avanzato €990), (2) che non compaia la parola "SiDLY" nel testo, (3) che il numero BD/RDM 2853300 sia corretto se citato.
+  </div>
+</div>
+
+<!-- PIANO EDITORIALE -->
+<div class="section container" id="piano-editoriale">
+  <div class="section-header">
+    <div class="section-icon icon-viola">📅</div>
+    <h2>2b. Piano Editoriale Automatico<small>La programmazione dei contenuti per i prossimi 7 giorni</small></h2>
+  </div>
+
+  <p>Sotto il pannello Autopilot trovi il <strong>Piano Editoriale</strong>: una griglia con gli articoli programmati per i prossimi 7 giorni. Il sistema suggerisce automaticamente le keyword più opportune basandosi sulle ricerche correnti.</p>
+
+  <h3>Leggere gli stati dei contenuti</h3>
+  <table>
+    <tr><th>Stato</th><th>Significato</th><th>Cosa fare</th></tr>
+    <tr>
+      <td><span class="badge-s badge-verde">✓ Pronto</span></td>
+      <td>Articolo generato e pronto per pubblicazione</td>
+      <td>Leggi, approva e pubblica sul sito</td>
+    </tr>
+    <tr>
+      <td><span class="badge-s badge-giallo">In attesa</span></td>
+      <td>Non ancora generato — in coda</td>
+      <td>Clicca sulla card e usa l'Autopilot per generarlo</td>
+    </tr>
+    <tr>
+      <td><span class="badge-s badge-viola">In revisione</span></td>
+      <td>Generato ma da controllare/modificare</td>
+      <td>Apri, leggi e approva o richiedi rigenerazione</td>
+    </tr>
+    <tr>
+      <td><span class="badge-s badge-grigio">In coda</span></td>
+      <td>Programmato per data futura</td>
+      <td>Nessuna azione necessaria ora</td>
+    </tr>
+  </table>
+
+  <h3>Tipi di contenuto nel piano</h3>
+  <ul>
+    <li><strong>Blog SEO</strong> — articolo informativo per posizionarsi su Google</li>
+    <li><strong>Landing Page</strong> — pagina di atterraggio ottimizzata per conversioni</li>
+    <li><strong>Confronto</strong> — articolo comparativo eCura vs competitor</li>
+    <li><strong>Tecnico</strong> — articolo specialistico (es. certificazioni CE IIa)</li>
+  </ul>
+
+  <div class="callout callout-verde">
+    <strong>✅ Routine consigliata sul piano editoriale</strong>
+    Ogni lunedì mattina: guarda il piano dei 7 giorni, verifica quanti sono in stato "Pronto" e quanti "In attesa". Per quelli "In attesa" ad alta priorità, genera subito il contenuto con l'Autopilot.
+  </div>
+</div>
+
+<!-- GEO -->
+<div class="section container" id="geo">
+  <div class="section-header">
+    <div class="section-icon icon-viola">🌍</div>
+    <h2>2c. Modulo GEO<small>Generative Engine Optimization — la visibilità su ChatGPT, Gemini, Perplexity</small></h2>
+  </div>
+
+  <p>Il modulo GEO è il più strategico e innovativo. Risponde a una domanda fondamentale: <strong>"Quando un utente chiede a ChatGPT o Gemini qual è il miglior bracciale per anziani, eCura viene nominata?"</strong></p>
+  <p>Oggi sempre più persone non cercano su Google ma chiedono direttamente a un'AI. Se eCura non compare in quelle risposte, stai perdendo clienti potenziali invisibili.</p>
+
+  <h3>I 4 score di visibilità (in cima alla pagina)</h3>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="num" style="color:#10B981">34<small style="font-size:.9rem">/100</small></span>
+      <span class="label">ChatGPT Score</span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:#3B82F6">41<small style="font-size:.9rem">/100</small></span>
+      <span class="label">Gemini Score</span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:#F59E0B">28<small style="font-size:.9rem">/100</small></span>
+      <span class="label">Perplexity Score</span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:var(--viola)">34<small style="font-size:.9rem">/100</small></span>
+      <span class="label">GEO Score medio</span>
+    </div>
+  </div>
+
+  <p>Questi score indicano <strong>quante volte eCura viene citata</strong> quando un'AI risponde a domande sul tema telesoccorso anziani. Lo score attuale (34/100) significa che eCura è citata raramente — l'obiettivo è portarlo sopra 55/100 entro 90 giorni.</p>
+
+  <h3>Come usare il GEO Prompt Scanner</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Scegli o scrivi una query</strong>
+        <p>Nel campo di testo scrivi la domanda come la scriverebbe un familiare che cerca aiuto. Oppure clicca uno dei <em>prompt predefiniti</em> (tag colorati sotto il campo): "bracciale emergenza anziani", "teleassistenza domiciliare italia", "migliore telesoccorso 2026", ecc.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Seleziona i motori AI da testare</strong>
+        <p>Spunta i motori che vuoi testare: ChatGPT (GPT-4o), Google Gemini 2.0, Perplexity AI. Puoi testarli tutti insieme. Claude 3.5 (Anthropic) è opzionale.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Clicca "Scansiona AI Search"</strong>
+        <p>Il sistema interroga i motori AI e mostra i risultati: se eCura è citata, con quale frequenza, e cosa citano i competitor al posto nostro.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Leggi i risultati per ogni motore</strong>
+        <p>Ogni box mostra: stato (<span class="badge-s badge-verde">Citato</span> o <span class="badge-s badge-rosso">Non citato</span>), score da 0 a 10, e un'<strong>Azione consigliata</strong> specifica da implementare.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Interpretare i risultati della scansione</h3>
+  <table>
+    <tr><th>Risultato</th><th>Significato</th><th>Urgenza</th></tr>
+    <tr>
+      <td><span class="badge-s badge-rosso">Non citato — 0/10</span></td>
+      <td>L'AI ignora completamente eCura su questa query</td>
+      <td><span class="badge-s badge-rosso">Alta</span></td>
+    </tr>
+    <tr>
+      <td><span class="badge-s badge-giallo">Citato — 3/10</span></td>
+      <td>eCura appare raramente come "alternativa emergente"</td>
+      <td><span class="badge-s badge-giallo">Media</span></td>
+    </tr>
+    <tr>
+      <td><span class="badge-s badge-verde">Citato — 7+/10</span></td>
+      <td>eCura è una fonte primaria per l'AI su questa query</td>
+      <td><span class="badge-s badge-verde">Ottimo</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- GEO GAP ANALYSIS -->
+<div class="section container" id="geo-gap">
+  <div class="section-header">
+    <div class="section-icon icon-rosso" style="background:rgba(220,38,38,.1)">🔍</div>
+    <h2>2d. GEO Gap Analysis<small>Perché eCura non viene citata — e cosa fare</small></h2>
+  </div>
+
+  <p>La sezione <strong>GEO Gap Analysis</strong> mostra i 6 motivi principali per cui le AI non citano eCura, con priorità di intervento e azioni concrete.</p>
+
+  <h3>I 6 gap identificati — stato attuale</h3>
+
+  <div class="module-card" style="border-left: 4px solid var(--rosso)">
+    <h4>🔴 CRITICO — Nessuna pagina "citabile" da AI</h4>
+    <p><strong>Problema:</strong> Gli LLM preferiscono citare pagine con dati statistici, studi e fonti primarie. eCura non ha articoli data-rich con dati ISTAT/ISS.</p>
+    <p><strong>Soluzione:</strong> Pubblicare 3 articoli con dati ISTAT/ISS entro 30 giorni. Usa l'Autopilot spuntando "Statistiche ISTAT/ISS".</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--rosso)">
+    <h4>🔴 CRITICO — Schema markup mancante</h4>
+    <p><strong>Problema:</strong> Nessun structured data (FAQPage, Product, MedicalDevice) sul sito eCura. Le AI faticano a identificare il tipo di prodotto.</p>
+    <p><strong>Soluzione:</strong> Implementare JSON-LD su tutte le pagine principali. Già in corso — spunta "Schema FAQ JSON-LD" nell'Autopilot.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--giallo)">
+    <h4>🟡 ALTO — Backlink DA medio troppo basso (38)</h4>
+    <p><strong>Problema:</strong> Beghelli ha DA 68, Perplexity e ChatGPT pesano l'autorità delle fonti. eCura ha DA 38 — troppo basso per essere considerata fonte primaria.</p>
+    <p><strong>Soluzione:</strong> Ottenere 5 backlink da siti con DA 50+. Portali salute, testate mediche, ISS, Quotidiano Sanità.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--giallo)">
+    <h4>🟡 ALTO — Poca presenza su forum e Q&A</h4>
+    <p><strong>Problema:</strong> Le AI includono spesso citazioni da Reddit, Quora e forum specializzati. eCura non è presente.</p>
+    <p><strong>Soluzione:</strong> 20 risposte autentiche su forum anziani/caregiver in 30 giorni. Non spam — risposte utili che menzionano eCura come soluzione.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--verde)">
+    <h4>🟢 MEDIO — Brand name troppo generico</h4>
+    <p><strong>Problema:</strong> "eCura" non è riconosciuto dagli LLM come brand specifico — viene confuso con termini generici.</p>
+    <p><strong>Soluzione:</strong> Usare sempre "eCura di Medica GB" nelle comunicazioni esterne e nei testi del sito.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--verde)">
+    <h4>🟢 MEDIO — Nessun comunicato stampa indicizzato</h4>
+    <p><strong>Problema:</strong> Gli LLM citano spesso articoli di testate giornalistiche. eCura non ha PR indicizzate su Ansa, Corriere Salute, ecc.</p>
+    <p><strong>Soluzione:</strong> 2 comunicati stampa al mese su Quotidiano Sanità e portali salute.</p>
+  </div>
+
+  <h3>Piano d'azione GEO a 90 giorni</h3>
+  <table>
+    <tr><th>Periodo</th><th>Azioni prioritarie</th><th>Obiettivo</th></tr>
+    <tr>
+      <td><strong>Giorni 1–30</strong><br><span class="badge-s badge-rosso">Urgente</span></td>
+      <td>
+        1. 3 articoli data-rich (ISTAT/ISS, 2.000+ parole)<br>
+        2. FAQ JSON-LD su tutte le pagine<br>
+        3. 20 risposte su forum anziani/caregiver<br>
+        4. 1° comunicato stampa su Quotidiano Sanità
+      </td>
+      <td>GEO Score: 38/100</td>
+    </tr>
+    <tr>
+      <td><strong>Giorni 31–60</strong><br><span class="badge-s badge-giallo">Consolidamento</span></td>
+      <td>
+        1. 5 backlink da portali salute (DA 50+)<br>
+        2. Guest post su ISTUD Sanità<br>
+        3. Pagina Wikipedia "eCura" o contributo<br>
+        4. Schema Product + MedicalDevice su tutto il sito
+      </td>
+      <td>GEO Score: 47/100</td>
+    </tr>
+    <tr>
+      <td><strong>Giorni 61–90</strong><br><span class="badge-s badge-verde">Crescita</span></td>
+      <td>
+        1. Audit GEO score (target 55/100)<br>
+        2. Landing page "eCura vs AI Search" ottimizzata<br>
+        3. Campagna PR 2 comunicati/mese<br>
+        4. 20 recensioni Google da clienti verificati
+      </td>
+      <td>GEO Score: 55/100</td>
+    </tr>
+  </table>
+</div>
+
+<!-- AEO -->
+<div class="section container" id="aeo">
+  <div class="section-header">
+    <div class="section-icon icon-viola">💬</div>
+    <h2>2e. AEO Content Generator<small>Genera risposte ottimizzate per le AI</small></h2>
+  </div>
+
+  <p>L'<strong>AEO (Answer Engine Optimization)</strong> è lo strumento per creare risposte brevi e precise che le AI come ChatGPT citano direttamente quando rispondono agli utenti.</p>
+
+  <h3>Come usarlo</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Scrivi la domanda target</strong>
+        <p>Nel campo principale scrivi la domanda esatta che un utente potrebbe fare a ChatGPT. Es: <em>"Qual è il miglior bracciale emergenza per anziani in Italia?"</em></p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Scegli il formato della risposta</strong>
+        <p>Dal menu a discesa seleziona la lunghezza/formato:</p>
+        <ul>
+          <li><strong>Definizione diretta (40–60 parole)</strong> — risposta breve e diretta, ideale per FAQ</li>
+          <li>Risposta estesa — per argomenti complessi</li>
+          <li>Lista comparativa — per confronti</li>
+        </ul>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Clicca "Genera risposta AEO"</strong>
+        <p>Copia la risposta generata e aggiungila come sezione FAQ nel file HTML corrispondente del sito, con il markup JSON-LD <code>FAQPage</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-viola">
+    <strong>🎯 Perché è importante</strong>
+    Una risposta AEO ben strutturata, pubblicata sul sito con il markup corretto, aumenta significativamente la probabilità che ChatGPT e Gemini la citino letteralmente quando rispondono agli utenti. È il modo più diretto per migliorare il GEO Score.
+  </div>
+</div>
+
+<!-- ALTRI MODULI -->
+<div class="section container" id="altri-moduli">
+  <div class="section-header">
+    <div class="section-icon icon-viola">🔧</div>
+    <h2>2f. Gli altri moduli<small>Keyword, SERP, Competitor, Content Score, Backlink...</small></h2>
+  </div>
+
+  <div class="module-card">
+    <h4>🔑 Keyword Research</h4>
+    <p><strong>Cosa fa:</strong> Trova le parole chiave che i caregiver e familiari cercano su Google in relazione a bracciali anziani e teleassistenza.<br>
+    <strong>Come usarlo:</strong> Inserisci un termine seed (es. "bracciale anziani") e ottieni una lista di keyword con volume di ricerca e difficoltà. Usa queste keyword per il piano editoriale.</p>
+  </div>
+
+  <div class="module-card">
+    <h4>📊 SERP Analysis</h4>
+    <p><strong>Cosa fa:</strong> Mostra i risultati attuali di Google per una keyword specifica — chi è in prima pagina, con quale tipo di contenuto.<br>
+    <strong>Come usarlo:</strong> Inserisci la keyword target prima di scrivere un articolo. Se i competitor hanno articoli da 3.000 parole, devi fare lo stesso o meglio.</p>
+  </div>
+
+  <div class="module-card">
+    <h4>🏆 Competitor Monitor</h4>
+    <p><strong>Cosa fa:</strong> Monitora le attività online di Seremy, Beghelli e Televita — nuovi articoli, nuove keyword, variazioni di ranking.<br>
+    <strong>Come usarlo:</strong> Controlla una volta a settimana. Se un competitor pubblica un articolo su una keyword importante, rispondi con un articolo migliore entro 48 ore.</p>
+  </div>
+
+  <div class="module-card">
+    <h4>⭐ Content Score</h4>
+    <p><strong>Cosa fa:</strong> Valuta la qualità SEO di un articolo esistente — leggibilità Flesch, struttura heading, link interni/esterni, lunghezza.<br>
+    <strong>Come usarlo:</strong> Incolla il testo di un articolo e ottieni uno score. Se sotto 70/100, segui i suggerimenti per migliorarlo prima di pubblicare.</p>
+  </div>
+
+  <div class="module-card">
+    <h4>🔙 Backlink Monitor</h4>
+    <p><strong>Cosa fa:</strong> Mostra i siti che linkano ecura.it, il loro Domain Authority, e i nuovi backlink acquisiti.<br>
+    <strong>Come usarlo:</strong> Controlla una volta a settimana. Un backlink nuovo da un sito autorevole (DA 50+) è un ottimo segnale. Backlink da siti spam vanno disavowed.</p>
+  </div>
+
+  <div class="module-card">
+    <h4>🖼️ Immagini AI</h4>
+    <p><strong>Cosa fa:</strong> Genera immagini ottimizzate per il blog eCura — calibrate sul brand (colori, stile, soggetti coerenti).<br>
+    <strong>Come usarlo:</strong> Scrivi una descrizione dell'immagine e seleziona il formato (16:9 per blog hero). Usale per illustrare gli articoli generati dall'Autopilot.</p>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 3. SEO TECNICO -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="seo-tecnico">
+  <div class="section-header">
+    <div class="section-icon icon-verde">🔍</div>
+    <h2>3. SEO Tecnico<small>Audit & posizionamento organico · ecura.it · 12 moduli</small></h2>
+  </div>
+
+  <p>Il <strong>SEO Tecnico</strong> è lo strumento per monitorare e migliorare il posizionamento organico di ecura.it su Google. A differenza di eCura AI Marketing (specifico per il brand), questo strumento è generico e si concentra sugli aspetti tecnici e di posizionamento.</p>
+
+  <h3 id="seo-score">Lo Score SEO: come leggerlo</h3>
+
+  <p>In alto a destra nella dashboard trovi lo <strong>Score SEO: 72/100</strong>. È un indicatore aggregato che misura la salute complessiva del sito per il posizionamento organico.</p>
+
+  <table>
+    <tr><th>Score</th><th>Significato</th><th>Azione</th></tr>
+    <tr><td><span class="badge-s badge-rosso">0–49</span></td><td>SEO critico — problemi gravi</td><td>Intervento immediato richiesto</td></tr>
+    <tr><td><span class="badge-s badge-giallo">50–69</span></td><td>SEO debole — migliorabile</td><td>Piano di miglioramento attivo</td></tr>
+    <tr><td><span class="badge-s badge-verde">70–84</span></td><td>SEO buono — mantenere e crescere</td><td>Routine settimanale standard</td></tr>
+    <tr><td style="color:#065F46;font-weight:700">85–100</td><td>SEO eccellente</td><td>Focus su GEO e contenuti avanzati</td></tr>
+  </table>
+
+  <p><strong>Score attuale: 72/100</strong> → Buono. Con la strategia dei contenuti in corso si può raggiungere 80+ entro 60 giorni.</p>
+
+  <h3>I KPI principali del pannello Autopilot SEO</h3>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="num" style="color:var(--verde)">14</span>
+      <span class="label">Articoli generati<br><small>+3 questa settimana</small></span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:#3B82F6">87%</span>
+      <span class="label">Score medio articoli<br><small>+4% vs mese scorso</small></span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:var(--viola)">2.4k</span>
+      <span class="label">Parole/articolo<br><small>Long-form ottimizzato</small></span>
+    </div>
+    <div class="kpi-card">
+      <span class="num" style="color:var(--arancio)">6</span>
+      <span class="label">Articoli in coda<br><small>Prossimi 7 giorni</small></span>
+    </div>
+  </div>
+
+  <h3 id="seo-autopilot">Come usare l'Autopilot SEO</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Verifica il dominio target</strong>
+        <p>Il campo "Sito / Dominio target" dovrebbe essere sempre <code>ecura.it</code>. Non modificarlo.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Inserisci la parola chiave principale</strong>
+        <p>Scrivi la keyword per cui vuoi posizionarti. Differenza dall'eCura AI Marketing: qui l'AI ottimizza anche gli aspetti tecnici (title tag, meta description, heading structure).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Scegli tipo di contenuto e tono</strong>
+        <p>Per ecura.it usa sempre "Articolo Blog (1500–2000 parole)" e tono "Professionale / Autorevole".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <strong>Clicca "Genera Contenuto SEO"</strong>
+        <p>Alternativa ai 3 pulsanti disponibili:</p>
+        <ul>
+          <li><strong>Esporta Piano CSV</strong> — scarica il piano editoriale in formato Excel/Google Sheets</li>
+          <li><strong>Pianifica Tutti</strong> — schedula automaticamente tutti gli articoli in coda</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3 id="seo-piano">Gli stati del piano editoriale SEO</h3>
+  <table>
+    <tr><th>Stato</th><th>Colore</th><th>Significato</th></tr>
+    <tr><td><span class="badge-s badge-verde">Programmato</span></td><td>Verde</td><td>Pronto, data e ora fissata per la pubblicazione</td></tr>
+    <tr><td><span class="badge-s badge-viola">In revisione</span></td><td>Blu</td><td>Generato, in attesa di approvazione</td></tr>
+    <tr><td><span class="badge-s badge-giallo">In coda</span></td><td>Giallo</td><td>Schedulato ma non ancora generato</td></tr>
+    <tr><td><span class="badge-s badge-grigio">In attesa</span></td><td>Grigio</td><td>Non ancora pianificato</td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 4. GOOGLE ADS -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="google-ads">
+  <div class="section-header">
+    <div class="section-icon icon-arancio">🟠</div>
+    <h2>4. Google Ads<small>Generatore di campagne e annunci a pagamento</small></h2>
+  </div>
+
+  <p>Il modulo Google Ads ti permette di <strong>generare annunci ottimizzati</strong> pronti per essere importati direttamente in Google Ads Editor, senza dover scrivere manualmente i testi.</p>
+
+  <h3>Le 4 funzionalità principali</h3>
+
+  <div class="module-card" style="border-left: 4px solid var(--arancio)">
+    <h4>✍️ Generatore annunci ottimizzati</h4>
+    <p>L'AI genera titoli e descrizioni per le campagne Search di Google, rispettando i limiti di caratteri (30 per titolo, 90 per descrizione) e ottimizzati per la keyword target.</p>
+    <p><strong>Quando usarlo:</strong> Ogni volta che crei una nuova campagna o vuoi testare nuove varianti di annunci.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--arancio)">
+    <h4>🔑 Keyword + Negative keyword</h4>
+    <p>Genera liste di keyword pertinenti (con match type: broad, phrase, exact) e soprattutto le <strong>negative keyword</strong> — le parole chiave per cui NON vuoi apparire (es. "bracciale sport", "smartwatch bambini").</p>
+    <p><strong>Quando usarlo:</strong> Prima di lanciare una nuova campagna o periodicamente per ottimizzare quella esistente.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--arancio)">
+    <h4>📤 Export CSV Google Ads Editor</h4>
+    <p>Esporta tutto (annunci, keyword, negative keyword) in un file CSV compatibile con Google Ads Editor per l'import diretto, senza dover inserire manualmente ogni annuncio.</p>
+    <p><strong>Quando usarlo:</strong> Dopo aver generato annunci e keyword, prima di andare in Google Ads.</p>
+  </div>
+
+  <div class="module-card" style="border-left: 4px solid var(--arancio)">
+    <h4>📊 Analisi UTM dai lead in DB</h4>
+    <p>Analizza i parametri UTM dei lead nel database per capire quali campagne, annunci e keyword generano effettivamente conversioni (non solo click).</p>
+    <p><strong>Quando usarlo:</strong> Mensilmente per ottimizzare il budget — spostarlo verso le campagne che convertono.</p>
+  </div>
+
+  <div class="callout callout-giallo">
+    <strong>⚠️ Importante: il ciclo corretto</strong>
+    <strong>1.</strong> Genera annunci e keyword con lo strumento → <strong>2.</strong> Esporta CSV → <strong>3.</strong> Importa in Google Ads Editor → <strong>4.</strong> Rivedi manualmente prima di pubblicare → <strong>5.</strong> Dopo 30 giorni analizza UTM per vedere cosa converte.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 5. ROUTINE OPERATIVA -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="routine">
+  <div class="section-header">
+    <div class="section-icon icon-verde">⏰</div>
+    <h2>5. Routine Operativa Settimanale<small>Cosa fare, quando e quanto tempo ci vuole</small></h2>
+  </div>
+
+  <h3>🟢 Ogni mattina (5–10 minuti)</h3>
+  <ul class="checklist">
+    <li>Apri eCura AI Marketing → tab <strong>GEO</strong>: controlla se lo score è variato rispetto a ieri</li>
+    <li>Controlla il <strong>Piano Editoriale</strong>: ci sono articoli "Pronto" da pubblicare?</li>
+    <li>Se ci sono articoli "Pronto": leggi, approva e invia per pubblicazione</li>
+  </ul>
+
+  <h3>🔵 Ogni lunedì (30–45 minuti)</h3>
+  <ul class="checklist">
+    <li>Apri <strong>eCura AI Marketing → Autopilot</strong>: genera i contenuti "In attesa" della settimana</li>
+    <li>Controlla <strong>Competitor Monitor</strong>: nuovi articoli di Seremy/Beghelli?</li>
+    <li>Esegui una scansione <strong>GEO Prompt Scanner</strong> con le 3 query principali</li>
+    <li>Leggi le <strong>Azioni consigliate</strong> dei motori AI e aggiornale nel piano operativo</li>
+  </ul>
+
+  <h3>🟡 Ogni venerdì (20–30 minuti)</h3>
+  <ul class="checklist">
+    <li>Apri <strong>SEO Tecnico</strong>: controlla lo Score SEO — è cresciuto o calato?</li>
+    <li>Controlla il <strong>Backlink Monitor</strong>: nuovi link acquisiti questa settimana?</li>
+    <li>Rivedi il <strong>Content Score</strong> degli articoli pubblicati questa settimana</li>
+    <li>Pianifica gli articoli della settimana successiva con <strong>"Pianifica Tutti"</strong></li>
+  </ul>
+
+  <h3>🔴 Una volta al mese (60–90 minuti)</h3>
+  <ul class="checklist">
+    <li>Analisi UTM da <strong>Google Ads</strong>: quali campagne convertono?</li>
+    <li><strong>Deep Research</strong>: approfondisci un topic nuovo (es. nuova normativa MDR, dati ISTAT aggiornati)</li>
+    <li>Aggiorna il <strong>Piano d'azione GEO</strong>: siamo in linea con gli obiettivi 30/60/90 giorni?</li>
+    <li>Rivedi le keyword con <strong>Keyword Research</strong>: nuove opportunità?</li>
+    <li>Aggiorna negative keyword in <strong>Google Ads</strong> in base ai dati UTM</li>
+  </ul>
+
+  <h3>Flusso operativo visivo — come si collegano gli strumenti</h3>
+  <div style="margin:20px 0">
+    <p style="font-size:.88rem;color:#888;margin-bottom:12px">Dal piano alla pubblicazione:</p>
+    <div class="workflow">
+      <div class="wf-step"><span class="wf-num">1</span><span class="wf-label">Keyword Research</span></div>
+      <div class="wf-step"><span class="wf-num">2</span><span class="wf-label">Piano Editoriale</span></div>
+      <div class="wf-step"><span class="wf-num">3</span><span class="wf-label">Autopilot Genera</span></div>
+      <div class="wf-step"><span class="wf-num">4</span><span class="wf-label">Content Score</span></div>
+      <div class="wf-step"><span class="wf-num">5</span><span class="wf-label">Pubblica sul sito</span></div>
+      <div class="wf-step"><span class="wf-num">6</span><span class="wf-label">GEO Scanner</span></div>
+    </div>
+    <p style="font-size:.88rem;color:#888;margin-top:12px">Per le campagne paid:</p>
+    <div class="workflow">
+      <div class="wf-step"><span class="wf-num">1</span><span class="wf-label">Keyword + Negative</span></div>
+      <div class="wf-step"><span class="wf-num">2</span><span class="wf-label">Genera Annunci</span></div>
+      <div class="wf-step"><span class="wf-num">3</span><span class="wf-label">Export CSV</span></div>
+      <div class="wf-step"><span class="wf-num">4</span><span class="wf-label">Import Ads Editor</span></div>
+      <div class="wf-step"><span class="wf-num">5</span><span class="wf-label">Analisi UTM</span></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 6. METRICHE CHIAVE -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="metriche">
+  <div class="section-header">
+    <div class="section-icon icon-verde">📈</div>
+    <h2>6. Metriche Chiave<small>Cosa guardare, dove trovarlo, cosa significa</small></h2>
+  </div>
+
+  <h3>Le 8 metriche più importanti per eCura</h3>
+  <table>
+    <tr><th>Metrica</th><th>Dove trovarla</th><th>Obiettivo</th><th>Frequenza</th></tr>
+    <tr>
+      <td><strong>GEO Score complessivo</strong></td>
+      <td>AI Marketing → GEO</td>
+      <td>≥ 55/100 entro 90gg</td>
+      <td>Quotidiana</td>
+    </tr>
+    <tr>
+      <td><strong>ChatGPT Score</strong></td>
+      <td>AI Marketing → GEO</td>
+      <td>≥ 5/10 entro 90gg</td>
+      <td>Settimanale</td>
+    </tr>
+    <tr>
+      <td><strong>Gemini Score</strong></td>
+      <td>AI Marketing → GEO</td>
+      <td>≥ 6/10 entro 90gg</td>
+      <td>Settimanale</td>
+    </tr>
+    <tr>
+      <td><strong>Score SEO sito</strong></td>
+      <td>SEO Tecnico → header</td>
+      <td>≥ 80/100</td>
+      <td>Settimanale</td>
+    </tr>
+    <tr>
+      <td><strong>Score medio articoli</strong></td>
+      <td>SEO Tecnico → KPI</td>
+      <td>≥ 87%</td>
+      <td>Settimanale</td>
+    </tr>
+    <tr>
+      <td><strong>Articoli pubblicati/mese</strong></td>
+      <td>SEO Tecnico → KPI</td>
+      <td>≥ 8/mese</td>
+      <td>Mensile</td>
+    </tr>
+    <tr>
+      <td><strong>Nuovi backlink DA 50+</strong></td>
+      <td>AI Marketing → Backlink</td>
+      <td>≥ 2/mese</td>
+      <td>Settimanale</td>
+    </tr>
+    <tr>
+      <td><strong>Lead UTM da Ads</strong></td>
+      <td>Google Ads → Analisi UTM</td>
+      <td>CPA decrescente</td>
+      <td>Mensile</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-verde">
+    <strong>📊 La metrica più importante in assoluto: il GEO Score</strong>
+    Il traffico da AI Search (ChatGPT, Gemini, Perplexity) cresce del 40% l'anno e sta sostituendo le ricerche Google tradizionali. Portare il GEO Score da 34 a 55+ è la priorità numero uno per acquisire clienti nei prossimi 12 mesi.
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- 7. FAQ -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="section container" id="faq">
+  <div class="section-header">
+    <div class="section-icon icon-giallo">❓</div>
+    <h2>7. Domande Frequenti<small>Risposte rapide ai dubbi più comuni</small></h2>
+  </div>
+
+  <h3>Devo usare tutti gli strumenti ogni giorno?</h3>
+  <p>No. Gli strumenti quotidiani sono solo due: <strong>GEO Scanner</strong> (5 minuti) e <strong>Piano Editoriale</strong> (5 minuti per vedere cosa c'è da pubblicare). Gli altri si usano settimanalmente o mensilmente.</p>
+
+  <h3>L'articolo generato dall'Autopilot è pronto per pubblicare?</h3>
+  <p>Quasi sempre sì, ma <strong>leggerlo è obbligatorio</strong>. Verifica sempre: prezzi corretti, nessuna menzione di "SiDLY", tono coerente con il brand. Il 5–10% degli articoli richiede piccole correzioni manuali.</p>
+
+  <h3>Cosa significa che eCura "non è citata" da ChatGPT?</h3>
+  <p>Significa che quando un utente chiede a ChatGPT quale bracciale per anziani comprare, ChatGPT risponde citando Seremy, Beghelli o Televita — ma non eCura. Ogni giorno che passa senza migliorare il GEO Score sono clienti potenziali persi.</p>
+
+  <h3>Quanto tempo ci vuole per migliorare il GEO Score?</h3>
+  <p>Le prime variazioni si vedono in 30–45 giorni, dopo la pubblicazione di articoli data-rich e l'aggiunta dei JSON-LD mancanti. Il target di 55/100 è raggiungibile in 90 giorni seguendo il piano.</p>
+
+  <h3>Posso usare lo stesso articolo per SEO Tecnico e eCura AI Marketing?</h3>
+  <p>Sì. L'Autopilot di eCura AI Marketing genera articoli già ottimizzati per SEO. Non serve ripassarli attraverso il SEO Tecnico, a meno che tu non voglia fare un audit aggiuntivo con il Content Score.</p>
+
+  <h3>Come faccio a sapere se una campagna Google Ads sta funzionando?</h3>
+  <p>Vai in <strong>Google Ads → Analisi UTM</strong>. Mostra da quali campagne, annunci e keyword arrivano i lead nel database. Se una campagna genera click ma zero lead, va ottimizzata o sospesa.</p>
+
+  <h3>META Ads quando sarà disponibile?</h3>
+  <p>È indicato come "In sviluppo" — probabile disponibilità nei prossimi mesi. Gestirà campagne Facebook e Instagram, inclusa l'audience dei caregiver e lookalike dai lead esistenti.</p>
+
+  <div class="callout callout-viola">
+    <strong>📞 Per assistenza tecnica sulle dashboard</strong>
+    Per qualsiasi problema tecnico, anomalia negli score o richieste di nuove funzionalità, contatta il team di sviluppo fornendo: nome del modulo, descrizione del problema, screenshot se possibile.
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p><strong>Manuale Operativo Marketing Hub eCura</strong> — Versione 1.0 — Luglio 2026</p>
+  <p style="margin-top:8px">eCura by Medica GB Srl · Corso Giuseppe Garibaldi 34, 20121 Milano · <a href="mailto:info@ecura.it" style="color:var(--verde)">info@ecura.it</a></p>
+</footer>
+
+</body>
+</html>

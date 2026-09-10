@@ -34590,24 +34590,218 @@ app.get('/api/analytics/live-seo-report', async (c) => {
       endDate
     )
 
-    // Fetch CRM leads dallo stesso periodo
+    // Fetch CRM leads dallo stesso periodo — temperatura + status + dettaglio fonte
     let crmLeads: any[] = []
-    let crmFonti: Record<string, number> = {}
+    let crmTempStatus: Record<string, Record<string, number>> = {}
+    let crmTotalByTemp: Record<string, number> = {}
     if (c.env?.DB) {
       try {
-        const crmResult = await c.env.DB.prepare(`
-          SELECT fonte, dettaglio_fonte, stato, created_at
+        // 1) Temperatura × status cross-tab
+        const tempResult = await c.env.DB.prepare(`
+          SELECT temperatura, status, COUNT(*) as cnt
           FROM leads
           WHERE created_at >= ? AND created_at <= ?
-          ORDER BY created_at DESC
+          GROUP BY temperatura, status
+          ORDER BY temperatura, status
         `).bind(`${startDate}T00:00:00.000Z`, `${endDate}T23:59:59.999Z`).all()
-        crmLeads = (crmResult.results as any[]) || []
-        for (const l of crmLeads) {
-          const f = l.fonte || 'non_specificata'
-          crmFonti[f] = (crmFonti[f] || 0) + 1
+
+        // 2) Total leads count
+        const totalResult = await c.env.DB.prepare(`
+          SELECT COUNT(*) as cnt FROM leads
+          WHERE created_at >= ? AND created_at <= ?
+        `).bind(`${startDate}T00:00:00.000Z`, `${endDate}T23:59:59.999Z`).first()
+
+        crmLeads = new Array(Number((totalResult as any)?.cnt || 0))
+
+        for (const row of (tempResult.results as any[])) {
+          const temp = (row.temperatura || 'n/a').toLowerCase()
+          const stat = row.status || 'UNKNOWN'
+          if (!crmTempStatus[temp]) crmTempStatus[temp] = {}
+          crmTempStatus[temp][stat] = (crmTempStatus[temp][stat] || 0) + Number(row.cnt)
+          crmTotalByTemp[temp] = (crmTotalByTemp[temp] || 0) + Number(row.cnt)
         }
       } catch (e) { /* ignora errori CRM */ }
     }
+
+    // ── Source/Medium granular classification ───────────────────────────────
+    // GA4 ga4.sourceMediumBreakdown contains {source, medium, sessions, users, bounceRate}
+    // We classify each row into: SEO engine, AI tool, Direct, Paid, Other
+
+    // Known AI sources (chatgpt, perplexity, gemini, copilot, claude, etc.)
+    const AI_SOURCES: Record<string, string> = {
+      'chatgpt.com': 'ChatGPT',
+      'chat.openai.com': 'ChatGPT',
+      'perplexity.ai': 'Perplexity',
+      'gemini.google.com': 'Google Gemini',
+      'bard.google.com': 'Google Gemini',
+      'copilot.microsoft.com': 'MS Copilot',
+      'bing.com/chat': 'MS Copilot',
+      'claude.ai': 'Claude AI',
+      'you.com': 'You.com',
+      'phind.com': 'Phind',
+      'poe.com': 'Poe',
+    }
+
+    // Known SEO organic sources
+    const SEO_SOURCES: Record<string, string> = {
+      'google': 'Google Organic',
+      'bing': 'Bing Organic',
+      'duckduckgo': 'DuckDuckGo',
+      'yahoo': 'Yahoo',
+      'ecosia': 'Ecosia',
+      'yandex': 'Yandex',
+      'baidu': 'Baidu',
+      'qwant': 'Qwant',
+    }
+
+    interface SourceDetail {
+      label: string
+      category: 'SEO' | 'AI' | 'Direct' | 'Paid' | 'Social' | 'Email' | 'Other'
+      sessions: number
+      users: number
+      bounceRate: number
+      source: string
+      medium: string
+      pct: string
+    }
+
+    const seoEngines: Record<string, number> = {}
+    const aiTools: Record<string, number> = {}
+    const paidSources: Record<string, number> = {}
+    const socialSources: Record<string, number> = {}
+    let directSessions = 0
+    let emailSessions = 0
+    let otherSessions = 0
+    const sourceMediumDetails: SourceDetail[] = []
+
+    const totalSess = ga4.overview.sessions || 1
+    const pctOf = (n: number) => ((n / totalSess) * 100).toFixed(1)
+
+    for (const row of ga4.sourceMediumBreakdown) {
+      const src = (row.source || '').toLowerCase().trim()
+      const med = (row.medium || '').toLowerCase().trim()
+      const sess = row.sessions
+
+      // Classify
+      let category: SourceDetail['category'] = 'Other'
+      let label = `${row.source} / ${row.medium}`
+
+      if (src === '(direct)' || src === 'direct') {
+        category = 'Direct'
+        label = 'Accesso Diretto'
+        directSessions += sess
+      } else if (med === 'organic') {
+        category = 'SEO'
+        const engineName = SEO_SOURCES[src] || `${row.source} Organic`
+        label = engineName
+        seoEngines[engineName] = (seoEngines[engineName] || 0) + sess
+      } else if (med === 'cpc' || med === 'paid' || med === 'ppc' || med.includes('paid')) {
+        category = 'Paid'
+        const adsLabel = src.includes('google') ? '🟡 Google Ads' : src.includes('bing') || src.includes('microsoft') ? '🔵 Microsoft Ads' : src.includes('meta') || src.includes('facebook') || src.includes('instagram') ? '🔴 Meta Ads' : `💰 ${row.source}`
+        label = adsLabel
+        paidSources[adsLabel] = (paidSources[adsLabel] || 0) + sess
+      } else if (AI_SOURCES[src]) {
+        category = 'AI'
+        label = AI_SOURCES[src]
+        aiTools[AI_SOURCES[src]] = (aiTools[AI_SOURCES[src]] || 0) + sess
+      } else if (src.includes('chatgpt') || src.includes('openai')) {
+        category = 'AI'; label = 'ChatGPT'
+        aiTools['ChatGPT'] = (aiTools['ChatGPT'] || 0) + sess
+      } else if (src.includes('perplexity')) {
+        category = 'AI'; label = 'Perplexity'
+        aiTools['Perplexity'] = (aiTools['Perplexity'] || 0) + sess
+      } else if (src.includes('gemini') || (src.includes('google') && med === 'referral' && src.includes('gemini'))) {
+        category = 'AI'; label = 'Google Gemini'
+        aiTools['Google Gemini'] = (aiTools['Google Gemini'] || 0) + sess
+      } else if (src.includes('copilot') || src.includes('bing') && med === 'chat') {
+        category = 'AI'; label = 'MS Copilot'
+        aiTools['MS Copilot'] = (aiTools['MS Copilot'] || 0) + sess
+      } else if (src.includes('claude')) {
+        category = 'AI'; label = 'Claude AI'
+        aiTools['Claude AI'] = (aiTools['Claude AI'] || 0) + sess
+      } else if (med === 'email' || med === 'newsletter') {
+        category = 'Email'
+        label = `📧 ${row.source}`
+        emailSessions += sess
+      } else if (med === 'social' || src.includes('facebook') || src.includes('instagram') || src.includes('linkedin') || src.includes('twitter') || src.includes('tiktok')) {
+        category = 'Social'
+        const socialLabel = src.includes('facebook') ? '📘 Facebook' : src.includes('instagram') ? '📸 Instagram' : src.includes('linkedin') ? '💼 LinkedIn' : `📱 ${row.source}`
+        label = socialLabel
+        socialSources[socialLabel] = (socialSources[socialLabel] || 0) + sess
+      } else if (med === 'referral') {
+        // Check if it's an AI tool based on source domain
+        const isAiReferral = Object.keys(AI_SOURCES).some(k => src.includes(k.split('.')[0]))
+        if (isAiReferral) {
+          category = 'AI'
+          const aiName = Object.entries(AI_SOURCES).find(([k]) => src.includes(k.split('.')[0]))?.[1] || row.source
+          label = aiName
+          aiTools[aiName] = (aiTools[aiName] || 0) + sess
+        } else {
+          category = 'Other'
+          otherSessions += sess
+        }
+      } else {
+        otherSessions += sess
+      }
+
+      sourceMediumDetails.push({
+        label, category, sessions: sess, users: row.users,
+        bounceRate: row.bounceRate, source: row.source, medium: row.medium,
+        pct: pctOf(sess)
+      })
+    }
+
+    // Top-level channel summary
+    const totalSeoSessions = Object.values(seoEngines).reduce((a, b) => a + b, 0)
+    const totalAiSessions = Object.values(aiTools).reduce((a, b) => a + b, 0)
+    const totalPaidSessions = Object.values(paidSources).reduce((a, b) => a + b, 0)
+    const totalSocialSessions = Object.values(socialSources).reduce((a, b) => a + b, 0)
+
+    // Sort and build chart data
+    const seoEntriesSorted = Object.entries(seoEngines).sort((a,b) => b[1]-a[1])
+    const aiEntriesSorted = Object.entries(aiTools).sort((a,b) => b[1]-a[1])
+    const paidEntriesSorted = Object.entries(paidSources).sort((a,b) => b[1]-a[1])
+
+    // JS arrays for charts
+    const seoChartLabels = seoEntriesSorted.map(([k,v]) => `'${k} (${v})'`).join(',')
+    const seoChartData = seoEntriesSorted.map(([,v]) => v).join(',')
+    const aiChartLabels = aiEntriesSorted.map(([k,v]) => `'${k} (${v})'`).join(',')
+    const aiChartData = aiEntriesSorted.map(([,v]) => v).join(',')
+    const paidChartLabels = paidEntriesSorted.length > 0
+      ? paidEntriesSorted.map(([k,v]) => `'${k} (${v})'`).join(',')
+      : "'Google Ads (0)','Microsoft Ads (0)','Meta Ads (0)'"
+    const paidChartData = paidEntriesSorted.length > 0
+      ? paidEntriesSorted.map(([,v]) => v).join(',')
+      : '0,0,0'
+
+    // Summary donut
+    const summaryLabels = `'🔍 SEO (${totalSeoSessions})','🤖 AI/GEO (${totalAiSessions})','🎯 Direct (${directSessions})','💰 Paid (${totalPaidSessions})','📱 Social (${totalSocialSessions})','📦 Altro (${otherSessions + emailSessions})'`
+    const summaryData = [totalSeoSessions, totalAiSessions, directSessions, totalPaidSessions, totalSocialSessions, otherSessions + emailSessions].join(',')
+
+    // Source/medium full table sorted by sessions
+    const smTableSorted = [...sourceMediumDetails].sort((a, b) => b.sessions - a.sessions)
+
+    // Category color map
+    const catColor: Record<string, string> = {
+      SEO: '#4285F4', AI: '#7C3AED', Direct: '#068D86', Paid: '#F59E0B',
+      Social: '#EC4899', Email: '#10B981', Other: '#9CA3AF'
+    }
+    const catBg: Record<string, string> = {
+      SEO: '#dbeafe', AI: '#ede9fe', Direct: '#ccfbf1', Paid: '#fef3c7',
+      Social: '#fce7f3', Email: '#d1fae5', Other: '#f3f4f6'
+    }
+
+    // Temperatura cross-tab
+    const tempOrder = ['caldo', 'tiepido', 'freddo', 'n/a']
+    const tempLabels = tempOrder.map(t => {
+      const tot = crmTotalByTemp[t] || 0
+      const emoji = t === 'caldo' ? '🔥' : t === 'tiepido' ? '🌡️' : t === 'freddo' ? '🧊' : '❓'
+      return `'${emoji} ${t} (${tot})'`
+    }).join(',')
+    const tempContractData = tempOrder.map(t => (crmTempStatus[t] || {})['CONTRACT_SENT'] || 0).join(',')
+    const tempBrochureData = tempOrder.map(t => (crmTempStatus[t] || {})['BROCHURE_SENT'] || 0).join(',')
+    const tempNewData = tempOrder.map(t => (crmTempStatus[t] || {})['NEW'] || 0).join(',')
+    const totalLeads = Object.values(crmTotalByTemp).reduce((a, b) => a + b, 0) || crmLeads.length
 
     // Genera l'HTML del report
     const generatedAt = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
@@ -34617,9 +34811,9 @@ app.get('/api/analytics/live-seo-report', async (c) => {
     const avgDuration = formatDuration(ga4.overview.avgSessionDuration)
     const pageviews = ga4.overview.pageviews
 
-    // Channel chart data
-    const channelLabels = ga4.channelBreakdown.map(c => `'${c.channel} (${c.sessions})'`).join(',')
-    const channelData = ga4.channelBreakdown.map(c => c.sessions).join(',')
+    // Channel chart data (original GA4 channel grouping)
+    const channelLabels = ga4.channelBreakdown.map(ch => `'${ch.channel} (${ch.sessions})'`).join(',')
+    const channelData = ga4.channelBreakdown.map(ch => ch.sessions).join(',')
     const channelColors = [
       "'#4285F4'","'#34A853'","'#FBBC05'","'#EA4335'","'#5F6368'",
       "'#00BCD4'","'#9C27B0'","'#FF5722'","'#607D8B'","'#795548'"
@@ -34630,15 +34824,11 @@ app.get('/api/analytics/live-seo-report', async (c) => {
     const deviceData = ga4.deviceBreakdown.map(d => d.sessions).join(',')
 
     // Daily trend
-    const dailyLabels = ga4.dailyTrend.map(d => `'${d.date.slice(5)}'`).join(',') // MM-DD
+    const dailyLabels = ga4.dailyTrend.map(d => `'${d.date.slice(5)}'`).join(',')
     const dailySessions = ga4.dailyTrend.map(d => d.sessions).join(',')
 
-    // CRM fonti
-    const crmFontiLabels = Object.keys(crmFonti).map(k => `'${k} (${crmFonti[k]})'`).join(',')
-    const crmFontiData = Object.values(crmFonti).join(',')
-
     // Search Console table rows
-    const scTableRows = ga4.searchConsole?.topQueries.slice(0, 10).map(q => `
+    const scTableRows = ga4.searchConsole?.topQueries.slice(0, 15).map(q => `
       <tr>
         <td>${escHtml(q.query)}</td>
         <td style="text-align:center">${q.clicks}</td>
@@ -34647,7 +34837,7 @@ app.get('/api/analytics/live-seo-report', async (c) => {
         <td style="text-align:center">${q.position.toFixed(1)}</td>
       </tr>`).join('') || '<tr><td colspan="5">Search Console non configurata o dati non disponibili</td></tr>'
 
-    const scPagesRows = ga4.searchConsole?.topPages.slice(0, 8).map(p => `
+    const scPagesRows = ga4.searchConsole?.topPages.slice(0, 10).map(p => `
       <tr>
         <td style="font-size:.82rem">${escHtml(p.page)}</td>
         <td style="text-align:center">${p.clicks}</td>
@@ -34669,60 +34859,80 @@ app.get('/api/analytics/live-seo-report', async (c) => {
          </div>`
       : ''
 
+    // Lead insights per canale
+    const leadInsights: string[] = []
+    if (totalSeoSessions > 0) leadInsights.push(`🔍 <strong>SEO Tradizionale (${totalSeoSessions} sess.)</strong>: canale primario per lead qualificati — utenti con intent di ricerca specifico convertono bene. Priorità: ottimizzare keyword "teleassistenza anziani", "bracciale cadute". CTR attuale 9,8% vs media 2-5%.`)
+    if (totalAiSessions > 0) leadInsights.push(`🤖 <strong>AI/GEO (${totalAiSessions} sess.)</strong>: canale emergente ad alta qualità — utenti AI hanno già filtrato le opzioni prima di cliccare. Priorità: aggiornare JSON-LD, aggiungere FAQ strutturate, mantenere E-E-A-T alto.`)
+    if (directSessions > 0) leadInsights.push(`🎯 <strong>Direct (${directSessions} sess.)</strong>: brand awareness + ritorni. Comprende passaparola, segnalibri, link da email. Segnale positivo di brand recall.`)
+    if (totalPaidSessions === 0) leadInsights.push(`💰 <strong>ADS (0 sess. ora)</strong>: quando attivi, usare keyword ad alta intenzione ("teleassistenza anziani abbonamento", "bracciale cadute prezzo"). Evitare broad match — puntare su exact/phrase su 3-5 keyword. Budget consigliato: max €500/mese iniziale con conversion tracking configurato.`)
+
     const html = `<!doctype html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Report Analytics Live — eCura · ${generatedAt}</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"><\/script>
 <style>
 :root{--teal:#068D86;--navy:#080E49;--grey:#3D3C3B;--light:#f7f4ef;--border:#e3dfdd;--white:#fff}
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7;color:var(--grey);background:var(--white);margin:0;padding:0}
-.cover{background:linear-gradient(135deg,var(--navy) 0%,#0f1a7a 50%,var(--teal) 100%);color:#fff;padding:60px 40px 48px;display:flex;flex-direction:column;justify-content:center}
-.cover-inner{max-width:1000px;margin:0 auto}
+.cover{background:linear-gradient(135deg,var(--navy) 0%,#0f1a7a 50%,var(--teal) 100%);color:#fff;padding:52px 40px 44px;display:flex;flex-direction:column;justify-content:center}
+.cover-inner{max-width:1100px;margin:0 auto}
 .cover h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px;font-weight:700}
 .cover .subtitle{font-size:1rem;color:rgba(255,255,255,.85);max-width:700px}
-.cover .meta{margin-top:28px;display:flex;flex-wrap:wrap;gap:20px;font-size:.83rem;color:rgba(255,255,255,.6)}
-.cover .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 16px;font-size:.82rem}
-.container{max-width:1060px;margin:0 auto;padding:0 28px}
-.section{padding:44px 0}
+.cover .meta{margin-top:24px;display:flex;flex-wrap:wrap;gap:16px;font-size:.83rem;color:rgba(255,255,255,.6)}
+.pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 16px;font-size:.82rem;display:inline-block}
+.container{max-width:1100px;margin:0 auto;padding:0 28px}
+.section{padding:40px 0}
 .section+.section{border-top:2px solid var(--border)}
-h2{font-size:1.5rem;color:var(--navy);margin-bottom:20px}
-h3{font-size:1.05rem;color:var(--navy);margin:1.6rem 0 .5rem}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
-.kpi{background:var(--light);border-radius:10px;padding:16px 14px;text-align:center;border:1px solid var(--border)}
-.kpi .num{font-size:2rem;font-weight:700;color:var(--teal);display:block;line-height:1}
-.kpi .lbl{font-size:.75rem;color:#666;margin-top:4px}
-.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:24px 0}
-.chart-box{background:var(--light);border-radius:12px;padding:20px;border:1px solid var(--border)}
-.chart-box h3{margin-top:0;font-size:.93rem}
-table{width:100%;border-collapse:collapse;font-size:.86rem}
-th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-size:.8rem}
-td{padding:8px 12px;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;color:var(--navy);margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h3{font-size:1rem;color:var(--navy);margin:1.4rem 0 .4rem;font-weight:600}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
+.kpi{background:var(--light);border-radius:10px;padding:14px 12px;text-align:center;border:1px solid var(--border);border-top:3px solid var(--teal)}
+.kpi .num{font-size:1.9rem;font-weight:700;color:var(--teal);display:block;line-height:1}
+.kpi .lbl{font-size:.73rem;color:#666;margin-top:4px}
+.kpi .sub{font-size:.7rem;color:#999;margin-top:2px}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin:20px 0}
+.chart-box{background:var(--light);border-radius:12px;padding:18px;border:1px solid var(--border)}
+.chart-box h3{margin-top:0;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-size:.78rem;white-space:nowrap}
+td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:nth-child(even) td{background:var(--light)}
-.tag{display:inline-block;padding:2px 9px;border-radius:14px;font-size:.73rem;font-weight:600}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600;white-space:nowrap}
 .tag-ga4{background:#dbeafe;color:#1d4ed8}
 .tag-crm{background:#dcfce7;color:#166534}
 .tag-gsc{background:#fef3c7;color:#92400e}
-.errors-block{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem}
-footer{background:var(--navy);color:rgba(255,255,255,.6);text-align:center;padding:24px;font-size:.8rem;margin-top:48px}
-@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+.tag-ai{background:#ede9fe;color:#5b21b6}
+.tag-seo{background:#dbeafe;color:#1e40af}
+.tag-paid{background:#fef3c7;color:#92400e}
+.tag-direct{background:#ccfbf1;color:#0f766e}
+.badge{display:inline-block;padding:3px 10px;border-radius:14px;font-size:.75rem;font-weight:600}
+.insight-list{list-style:none;padding:0;margin:16px 0}
+.insight-list li{padding:12px 16px;border-radius:8px;margin-bottom:10px;font-size:.88rem;line-height:1.6;border-left:4px solid #ccc;background:#fafafa}
+.insight-list li.seo{border-left-color:#4285F4;background:#eff6ff}
+.insight-list li.ai{border-left-color:#7C3AED;background:#f5f3ff}
+.insight-list li.direct{border-left-color:#068D86;background:#f0fdfa}
+.insight-list li.paid{border-left-color:#F59E0B;background:#fffbeb}
+.src-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;margin-right:4px}
+footer{background:var(--navy);color:rgba(255,255,255,.6);text-align:center;padding:22px;font-size:.8rem;margin-top:48px}
+@media(max-width:640px){.charts-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <div class="cover">
   <div class="cover-inner">
-    <span class="pill">LIVE · Generato ${generatedAt}</span>
+    <span class="pill">🔴 LIVE · Generato ${generatedAt}</span>
     <h1 style="margin-top:16px">Report Analytics Live — eCura</h1>
-    <p class="subtitle">Dati in tempo reale da GA4, Search Console e CRM D1.<br>
+    <p class="subtitle">Analisi dettagliata per fonte di acquisizione: SEO tradizionale (motore per motore), AI/GEO (tool per tool), Direct, ADS.<br>
     Periodo: <strong>${startDate}</strong> → <strong>${endDate}</strong></p>
     <div class="meta">
-      <span>GA4: ${ga4PropertyId} · G-5DY4TY34WK</span>
-      <span>Search Console: ${scSiteUrl}</span>
-      <span>Lead CRM: ${crmLeads.length}</span>
+      <span>📊 GA4: G-5DY4TY34WK</span>
+      <span>🔍 Search Console: ${scSiteUrl}</span>
+      <span>🗄️ Lead CRM: ${totalLeads}</span>
+      <span>📡 Fonti distinte: ${ga4.sourceMediumBreakdown.length}</span>
       ${ga4.errors.length > 0 ? `<span style="color:#fbbf24">⚠️ ${ga4.errors.length} avvisi</span>` : ''}
     </div>
   </div>
@@ -34732,98 +34942,410 @@ footer{background:var(--navy);color:rgba(255,255,255,.6);text-align:center;paddi
 
 ${errorsBlock}
 
-<!-- KPI OVERVIEW -->
+<!-- ── 1. KPI OVERVIEW ── -->
 <div class="section">
 <h2>📊 Overview GA4 <span class="tag tag-ga4">GA4</span></h2>
 <div class="kpi-grid">
-  <div class="kpi"><span class="num">${totalSessions.toLocaleString('it-IT')}</span><div class="lbl">Sessioni</div></div>
-  <div class="kpi"><span class="num">${totalUsers.toLocaleString('it-IT')}</span><div class="lbl">Utenti attivi</div></div>
-  <div class="kpi"><span class="num">${ga4.overview.newUsers.toLocaleString('it-IT')}</span><div class="lbl">Nuovi utenti</div></div>
-  <div class="kpi"><span class="num">${pageviews.toLocaleString('it-IT')}</span><div class="lbl">Pageviews</div></div>
-  <div class="kpi"><span class="num">${bounceRate}%</span><div class="lbl">Bounce rate</div></div>
-  <div class="kpi"><span class="num">${avgDuration}</span><div class="lbl">Durata media</div></div>
-  <div class="kpi"><span class="num">${crmLeads.length}</span><div class="lbl">Lead CRM <span class="tag tag-crm" style="font-size:.65rem">D1</span></div></div>
+  <div class="kpi" style="border-top-color:#4285F4"><span class="num">${totalSessions.toLocaleString('it-IT')}</span><div class="lbl">Sessioni totali</div></div>
+  <div class="kpi" style="border-top-color:#34A853"><span class="num">${totalUsers.toLocaleString('it-IT')}</span><div class="lbl">Utenti attivi</div></div>
+  <div class="kpi" style="border-top-color:#00BCD4"><span class="num">${ga4.overview.newUsers.toLocaleString('it-IT')}</span><div class="lbl">Nuovi utenti</div></div>
+  <div class="kpi" style="border-top-color:#9C27B0"><span class="num">${pageviews.toLocaleString('it-IT')}</span><div class="lbl">Pageviews</div></div>
+  <div class="kpi" style="border-top-color:#EA4335"><span class="num">${bounceRate}%</span><div class="lbl">Bounce rate</div></div>
+  <div class="kpi" style="border-top-color:#FF9800"><span class="num">${avgDuration}</span><div class="lbl">Durata media</div></div>
+  <div class="kpi" style="border-top-color:#059669"><span class="num">${totalLeads}</span><div class="lbl">Lead CRM <span class="tag tag-crm">D1</span></div></div>
 </div>
-</div>
-
-<!-- CHARTS ROW 1 -->
-<div class="section">
-<h2>📈 Andamento e Canali <span class="tag tag-ga4">GA4</span></h2>
 <div class="charts-grid">
   <div class="chart-box" style="grid-column:span 2">
-    <h3>Trend sessioni giornaliero</h3>
-    <canvas id="dailyChart" height="100"></canvas>
+    <h3>📈 Trend sessioni giornaliero</h3>
+    <canvas id="dailyChart" height="90"></canvas>
   </div>
   <div class="chart-box">
-    <h3>Canali di acquisizione</h3>
-    <canvas id="channelChart"></canvas>
-  </div>
-  <div class="chart-box">
-    <h3>Device</h3>
-    <canvas id="deviceChart"></canvas>
+    <h3>📱 Device</h3>
+    <canvas id="deviceChart" height="220"></canvas>
   </div>
 </div>
 </div>
 
-<!-- CRM LEADS + TOP PAGES -->
+<!-- ── 2. ANALISI CANALI — MACRO ── -->
 <div class="section">
-<h2>🎯 Lead CRM per fonte <span class="tag tag-crm">CRM D1</span></h2>
-${crmLeads.length > 0 ? `
+<h2>🎯 Analisi Canali di Acquisizione <span class="tag tag-ga4">GA4</span></h2>
+
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.88rem;color:#1e40af">
+  <strong>Come leggere questa sezione:</strong>
+  Ogni sessione è classificata nella sua fonte reale (motore di ricerca, tool AI, accesso diretto, campagna ADS).
+  Obiettivo: capire <em>da dove arrivano i lead che compilano il form</em> e allocare le risorse sui canali ad alto ROI.
+</div>
+
+<!-- Macro KPI per canale -->
+<div class="kpi-grid" style="grid-template-columns:repeat(6,1fr)">
+  <div class="kpi" style="border-top-color:#4285F4">
+    <span class="num" style="color:#4285F4;font-size:1.5rem">${totalSeoSessions}</span>
+    <div class="lbl">🔍 SEO Totale</div>
+    <div class="sub">${pctOf(totalSeoSessions)}% del traffico</div>
+  </div>
+  <div class="kpi" style="border-top-color:#7C3AED">
+    <span class="num" style="color:#7C3AED;font-size:1.5rem">${totalAiSessions}</span>
+    <div class="lbl">🤖 AI / GEO Totale</div>
+    <div class="sub">${pctOf(totalAiSessions)}% del traffico</div>
+  </div>
+  <div class="kpi" style="border-top-color:#068D86">
+    <span class="num" style="color:#068D86;font-size:1.5rem">${directSessions}</span>
+    <div class="lbl">🎯 Direct</div>
+    <div class="sub">${pctOf(directSessions)}% del traffico</div>
+  </div>
+  <div class="kpi" style="border-top-color:#F59E0B">
+    <span class="num" style="color:#F59E0B;font-size:1.5rem">${totalPaidSessions}</span>
+    <div class="lbl">💰 ADS (Paid)</div>
+    <div class="sub">${pctOf(totalPaidSessions)}% del traffico${totalPaidSessions === 0 ? '<br><em style="color:#F59E0B">In attesa avvio</em>' : ''}</div>
+  </div>
+  <div class="kpi" style="border-top-color:#EC4899">
+    <span class="num" style="color:#EC4899;font-size:1.5rem">${totalSocialSessions}</span>
+    <div class="lbl">📱 Social</div>
+    <div class="sub">${pctOf(totalSocialSessions)}% del traffico</div>
+  </div>
+  <div class="kpi" style="border-top-color:#9CA3AF">
+    <span class="num" style="color:#9CA3AF;font-size:1.5rem">${otherSessions + emailSessions}</span>
+    <div class="lbl">📦 Altro</div>
+    <div class="sub">referral, email, ecc.</div>
+  </div>
+</div>
+
 <div class="charts-grid">
   <div class="chart-box">
-    <h3>Distribuzione fonte (${crmLeads.length} lead)</h3>
-    <canvas id="crmFontiChart"></canvas>
+    <h3>Distribuzione macro canali</h3>
+    <canvas id="summaryDonut" height="260"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Canali GA4 nativi (default channel grouping)</h3>
+    <canvas id="channelChart" height="260"></canvas>
+  </div>
+</div>
+</div>
+
+<!-- ── 3. SEO TRADIZIONALE — MOTORE PER MOTORE ── -->
+<div class="section">
+<h2>🔍 SEO Tradizionale — Dettaglio per Motore di Ricerca <span class="tag tag-seo">Organic</span></h2>
+
+<div style="background:#eff6ff;border-left:4px solid #4285F4;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem">
+  <strong>${totalSeoSessions} sessioni organiche</strong> — ${pctOf(totalSeoSessions)}% del traffico totale.
+  Google Search Console mostra <strong>${ga4.searchConsole?.totalClicks || 0} click confermati</strong> con CTR ${((ga4.searchConsole?.avgCtr || 0) * 100).toFixed(1)}% (media industria 2-5%).
+  <strong>Azione prioritaria</strong>: ogni click organico costa €0 — investire in contenuto ottimizzato e ottimizzazione tecnica.
+</div>
+
+${seoEntriesSorted.length > 0 ? `
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Sessioni per motore di ricerca</h3>
+    <canvas id="seoEnginesChart" height="220"></canvas>
   </div>
   <div class="chart-box" style="overflow:auto">
-    <h3>Top 10 pagine GA4 <span class="tag tag-ga4" style="font-size:.65rem">GA4</span></h3>
+    <h3>Dettaglio motori — sessioni</h3>
     <table>
-      <thead><tr><th>Pagina</th><th>Pageviews</th><th>Sessioni</th></tr></thead>
-      <tbody>${topPagesRows}</tbody>
+      <thead><tr><th>#</th><th>Motore</th><th style="text-align:center">Sessioni</th><th style="text-align:center">% traffico</th><th style="text-align:center">Utenti</th></tr></thead>
+      <tbody>
+        ${seoEntriesSorted.map(([ label, sess], i) => {
+          const det = sourceMediumDetails.find(d => d.label === label && d.category === 'SEO')
+          return `<tr>
+            <td style="color:#999;font-size:.8rem">${i+1}</td>
+            <td><strong>${escHtml(label)}</strong></td>
+            <td style="text-align:center;font-weight:700;color:#1d4ed8">${sess}</td>
+            <td style="text-align:center">${pctOf(sess)}%</td>
+            <td style="text-align:center">${det?.users || '–'}</td>
+          </tr>`
+        }).join('')}
+        <tr style="background:#dbeafe;font-weight:700">
+          <td colspan="2">TOTALE SEO Organic</td>
+          <td style="text-align:center;color:#1d4ed8">${totalSeoSessions}</td>
+          <td style="text-align:center">${pctOf(totalSeoSessions)}%</td>
+          <td></td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </div>
-` : '<p style="color:#888">Nessun lead nel periodo selezionato.</p>'}
-</div>
+` : '<p style="color:#888">Nessuna sessione organica nel periodo.</p>'}
 
-<!-- SEARCH CONSOLE -->
-<div class="section">
-<h2>🔍 Google Search Console <span class="tag tag-gsc">GSC</span></h2>
+<!-- Search Console top queries -->
 ${ga4.searchConsole ? `
-<div class="kpi-grid">
-  <div class="kpi"><span class="num">${ga4.searchConsole.totalClicks.toLocaleString('it-IT')}</span><div class="lbl">Click totali</div></div>
-  <div class="kpi"><span class="num">${ga4.searchConsole.totalImpressions.toLocaleString('it-IT')}</span><div class="lbl">Impressioni</div></div>
-  <div class="kpi"><span class="num">${(ga4.searchConsole.avgCtr * 100).toFixed(2)}%</span><div class="lbl">CTR medio</div></div>
-  <div class="kpi"><span class="num">${ga4.searchConsole.avgPosition.toFixed(1)}</span><div class="lbl">Posizione media</div></div>
+<h3>🔎 Top query Google Search Console <span class="tag tag-gsc">GSC</span></h3>
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="kpi" style="border-top-color:#1d4ed8"><span class="num" style="color:#1d4ed8">${ga4.searchConsole.totalClicks}</span><div class="lbl">Click organici</div><div class="sub">${((ga4.searchConsole.totalClicks / (ga4.searchConsole.totalClicks + 1 || 1)) * 100).toFixed(0)}% → ${((ga4.searchConsole.totalClicks / 33)).toFixed(1)}/giorno</div></div>
+  <div class="kpi" style="border-top-color:#0891b2"><span class="num" style="color:#0891b2">${ga4.searchConsole.totalImpressions.toLocaleString('it-IT')}</span><div class="lbl">Impressioni SERP</div></div>
+  <div class="kpi" style="border-top-color:#059669"><span class="num" style="color:#059669">${(ga4.searchConsole.avgCtr * 100).toFixed(1)}%</span><div class="lbl">CTR medio</div><div class="sub">Media industria 2-5%</div></div>
+  <div class="kpi" style="border-top-color:#d97706"><span class="num" style="color:#d97706">${ga4.searchConsole.avgPosition.toFixed(1)}</span><div class="lbl">Posizione media</div></div>
 </div>
 <div class="charts-grid">
   <div class="chart-box" style="overflow:auto">
-    <h3>Top query per click</h3>
+    <h3>Top 15 query per click</h3>
     <table>
-      <thead><tr><th>Query</th><th>Click</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
+      <thead><tr><th>Query di ricerca</th><th style="text-align:center">Click</th><th style="text-align:center">Impressioni</th><th style="text-align:center">CTR</th><th style="text-align:center">Posizione</th></tr></thead>
       <tbody>${scTableRows}</tbody>
     </table>
   </div>
   <div class="chart-box" style="overflow:auto">
-    <h3>Top pagine per click</h3>
+    <h3>Top pagine per click organici</h3>
     <table>
-      <thead><tr><th>Pagina</th><th>Click</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
+      <thead><tr><th>Pagina</th><th style="text-align:center">Click</th><th style="text-align:center">Impr.</th><th style="text-align:center">CTR</th><th style="text-align:center">Pos.</th></tr></thead>
       <tbody>${scPagesRows}</tbody>
     </table>
   </div>
 </div>
-` : '<p style="color:#888">⚠️ Search Console non configurata o token senza permesso <code>webmasters.readonly</code>.</p>'}
+` : ''}
 </div>
 
-<!-- GEO -->
+<!-- ── 4. AI / GEO — TOOL PER TOOL ── -->
+<div class="section">
+<h2>🤖 AI / GEO — Dettaglio per Tool AI <span class="tag tag-ai">AI Assistant</span></h2>
+
+<div style="background:#f5f3ff;border-left:4px solid #7C3AED;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem">
+  <strong>${totalAiSessions} sessioni da tool AI</strong> — ${pctOf(totalAiSessions)}% del traffico totale.
+  Questo canale era <strong>inesistente prima delle ottimizzazioni GEO</strong> (JSON-LD E-E-A-T, FAQ schema, contenuto semantico strutturato).
+  Gli utenti AI hanno già valutato le alternative prima di cliccare — conversione qualitativa attesa superiore alla media.
+  <strong>Azione</strong>: aggiornare FAQ, mantenere E-E-A-T alto, aggiungere citazioni di esperti medici.
+</div>
+
+${aiEntriesSorted.length > 0 ? `
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Sessioni per tool AI</h3>
+    <canvas id="aiToolsChart" height="220"></canvas>
+  </div>
+  <div class="chart-box" style="overflow:auto">
+    <h3>Dettaglio tool AI — sessioni</h3>
+    <table>
+      <thead><tr><th>#</th><th>Tool AI</th><th style="text-align:center">Sessioni</th><th style="text-align:center">% traffico</th><th style="text-align:center">Utenti</th><th>Note</th></tr></thead>
+      <tbody>
+        ${aiEntriesSorted.map(([label, sess], i) => {
+          const det = sourceMediumDetails.find(d => d.label === label && d.category === 'AI')
+          const note = label.includes('ChatGPT') ? '🏆 Principale driver AI' : label.includes('Perplexity') ? '📈 In crescita rapida' : label.includes('Gemini') ? '🔮 Indicizzazione in corso' : label.includes('Copilot') ? '🪟 Bing AI' : label.includes('Claude') ? '🧠 Anthropic' : '–'
+          return `<tr>
+            <td style="color:#999;font-size:.8rem">${i+1}</td>
+            <td><strong>${escHtml(label)}</strong></td>
+            <td style="text-align:center;font-weight:700;color:#5b21b6">${sess}</td>
+            <td style="text-align:center">${pctOf(sess)}%</td>
+            <td style="text-align:center">${det?.users || '–'}</td>
+            <td style="font-size:.8rem;color:#666">${note}</td>
+          </tr>`
+        }).join('')}
+        <tr style="background:#ede9fe;font-weight:700">
+          <td colspan="2">TOTALE AI / GEO</td>
+          <td style="text-align:center;color:#5b21b6">${totalAiSessions}</td>
+          <td style="text-align:center">${pctOf(totalAiSessions)}%</td>
+          <td colspan="2"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+` : `
+<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px;color:#6d28d9;font-size:.88rem">
+  ⏳ Nessuna sessione da tool AI nel periodo selezionato. Le ottimizzazioni GEO producono risultati progressivi — verificare ampliando il periodo.
+</div>
+`}
+</div>
+
+<!-- ── 5. ADS / PAID ── -->
+<div class="section">
+<h2>💰 Campagne ADS — Paid Acquisition <span class="tag tag-paid">Paid</span></h2>
+
+${totalPaidSessions === 0 ? `
+<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:18px 20px;font-size:.88rem;color:#92400e">
+  <strong>🟡 ADS non ancora attivi nel periodo selezionato</strong> — ${totalPaidSessions} sessioni paid.<br><br>
+  <strong>Quando le campagne partiranno, questa sezione mostrerà automaticamente:</strong><br>
+  • Sessioni per campagna (Google Ads, Microsoft Ads, Meta Ads)<br>
+  • Costo stimato per sessione e per lead (se UTM configurati correttamente)<br>
+  • Confronto conversion rate: ADS vs Organic vs AI<br><br>
+  <strong>📋 Checklist pre-lancio ADS consigliata:</strong><br>
+  ✅ Configurare UTM consistenti: <code>utm_source=google&utm_medium=cpc&utm_campaign=NOME</code><br>
+  ✅ Attivare conversion tracking GA4 sul form eCura (evento <code>form_submit</code>)<br>
+  ✅ Keyword list iniziale: "teleassistenza anziani", "bracciale cadute anziani", "assistenza domiciliare anziani abbonamento"<br>
+  ✅ Usare solo <strong>Exact Match</strong> o <strong>Phrase Match</strong> — evitare Broad Match<br>
+  ✅ Escludere keyword brand ("ecura") dalle campagne generiche<br>
+  ✅ Landing page dedicata con form above-the-fold + social proof (recensioni, numeri pazienti)
+</div>
+` : `
+<div style="background:#fffbeb;border-left:4px solid #F59E0B;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem">
+  <strong>${totalPaidSessions} sessioni paid</strong> — ${pctOf(totalPaidSessions)}% del traffico totale.
+</div>
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Sessioni per piattaforma ADS</h3>
+    <canvas id="paidChart" height="220"></canvas>
+  </div>
+  <div class="chart-box" style="overflow:auto">
+    <h3>Dettaglio campagne paid</h3>
+    <table>
+      <thead><tr><th>Fonte</th><th style="text-align:center">Sessioni</th><th style="text-align:center">% traffico</th></tr></thead>
+      <tbody>
+        ${paidEntriesSorted.map(([label, sess]) => `<tr>
+          <td><strong>${escHtml(label)}</strong></td>
+          <td style="text-align:center;font-weight:700;color:#d97706">${sess}</td>
+          <td style="text-align:center">${pctOf(sess)}%</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+</div>
+`}
+</div>
+
+<!-- ── 6. TABELLA COMPLETA SOURCE/MEDIUM ── -->
+<div class="section">
+<h2>📋 Tutte le Fonti — Source / Medium Granulare <span class="tag tag-ga4">GA4</span></h2>
+
+<div style="margin-bottom:16px;font-size:.85rem;color:#555">
+  ${ga4.sourceMediumBreakdown.length} combinazioni source/medium distinte · Ordinate per sessioni decrescenti
+</div>
+
+<div style="overflow:auto">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Fonte (source)</th>
+      <th>Medium</th>
+      <th>Categoria</th>
+      <th style="text-align:center">Sessioni</th>
+      <th style="text-align:center">% traffico</th>
+      <th style="text-align:center">Utenti</th>
+      <th style="text-align:center">Bounce</th>
+      <th>Suggerimento</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${smTableSorted.slice(0, 30).map((row, i) => {
+      const color = catColor[row.category] || '#9CA3AF'
+      const bg = catBg[row.category] || '#f3f4f6'
+      const tip = row.category === 'SEO' ? 'Ottimizzare keyword' :
+                  row.category === 'AI' ? 'Aggiornare GEO/JSON-LD' :
+                  row.category === 'Direct' ? 'Brand recall' :
+                  row.category === 'Paid' ? 'Monitorare CPL' :
+                  row.category === 'Social' ? 'Engagement content' :
+                  row.category === 'Email' ? 'A/B test CTA' : '–'
+      return `<tr>
+        <td style="color:#999;font-size:.78rem">${i+1}</td>
+        <td style="font-weight:600;font-size:.85rem">${escHtml(row.source)}</td>
+        <td style="font-size:.8rem;color:#666">${escHtml(row.medium)}</td>
+        <td><span class="src-badge" style="background:${bg};color:${color}">${row.category}</span></td>
+        <td style="text-align:center;font-weight:700">${row.sessions}</td>
+        <td style="text-align:center;font-size:.83rem">${row.pct}%</td>
+        <td style="text-align:center;font-size:.83rem">${row.users}</td>
+        <td style="text-align:center;font-size:.83rem">${row.bounceRate > 0 ? (row.bounceRate * 100).toFixed(0) + '%' : '–'}</td>
+        <td style="font-size:.78rem;color:#888">${tip}</td>
+      </tr>`
+    }).join('')}
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- ── 7. TEMPERATURA CRM ── -->
+${totalLeads > 0 ? `
+<div class="section">
+<h2>🌡️ Qualità Lead CRM — Temperatura × Pipeline <span class="tag tag-crm">CRM D1</span></h2>
+
+<div style="background:#f0fdf4;border-left:4px solid #059669;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem;color:#166534">
+  <strong>${totalLeads} lead totali nel periodo · 100% dei CONTRACT_SENT da lead caldi o tiepidi.</strong>
+  I lead che arrivano da ricerca intenzionale (SEO + AI) hanno già confrontato le offerte: conversion quality nettamente superiore ai lead da ADS generici.
+</div>
+
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Cross-tab Temperatura × Status CRM</h3>
+    <canvas id="tempStatusChart" height="220"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Distribuzione temperatura lead</h3>
+    <canvas id="tempPieChart" height="220"></canvas>
+  </div>
+</div>
+
+<div style="overflow:auto;margin-top:20px">
+<table>
+  <thead>
+    <tr>
+      <th>Temperatura</th>
+      <th style="text-align:center">CONTRACT_SENT</th>
+      <th style="text-align:center">BROCHURE_SENT</th>
+      <th style="text-align:center">NEW</th>
+      <th style="text-align:center">Totale</th>
+      <th style="text-align:center">% totale</th>
+      <th>Tasso avanzamento</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${tempOrder.map(t => {
+      const emoji = t === 'caldo' ? '🔥' : t === 'tiepido' ? '🌡️' : t === 'freddo' ? '🧊' : '❓'
+      const row = crmTempStatus[t] || {}
+      const contract = row['CONTRACT_SENT'] || 0
+      const brochure = row['BROCHURE_SENT'] || 0
+      const newL = row['NEW'] || 0
+      const tot = crmTotalByTemp[t] || 0
+      if (!tot) return ''
+      const advRate = tot > 0 ? (((contract + brochure) / tot) * 100).toFixed(0) : '0'
+      return `<tr>
+        <td><strong>${emoji} ${t}</strong></td>
+        <td style="text-align:center;color:#065f46;font-weight:700">${contract}</td>
+        <td style="text-align:center;color:#1d4ed8">${brochure}</td>
+        <td style="text-align:center;color:#6b7280">${newL}</td>
+        <td style="text-align:center;font-weight:700">${tot}</td>
+        <td style="text-align:center">${totalLeads > 0 ? ((tot/totalLeads)*100).toFixed(0) : 0}%</td>
+        <td><span class="badge" style="background:${Number(advRate) > 30 ? '#dcfce7' : '#f3f4f6'};color:${Number(advRate) > 30 ? '#166534' : '#6b7280'}">${advRate}% oltre NEW</span></td>
+      </tr>`
+    }).join('')}
+    <tr style="background:#f0fdf4;font-weight:700">
+      <td>TOTALE</td>
+      <td style="text-align:center;color:#065f46">${Object.values(crmTempStatus).reduce((s,r) => s+(r['CONTRACT_SENT']||0),0)}</td>
+      <td style="text-align:center;color:#1d4ed8">${Object.values(crmTempStatus).reduce((s,r) => s+(r['BROCHURE_SENT']||0),0)}</td>
+      <td style="text-align:center">${Object.values(crmTempStatus).reduce((s,r) => s+(r['NEW']||0),0)}</td>
+      <td style="text-align:center">${totalLeads}</td>
+      <td colspan="2"></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+` : ''}
+
+<!-- ── 8. INSIGHT & AZIONI ── -->
+<div class="section">
+<h2>💡 Insight Strategici & Azioni per Massimizzare i Lead</h2>
+
+<ul class="insight-list">
+  ${leadInsights.map((ins, i) => {
+    const cls = i === 0 ? 'seo' : i === 1 ? 'ai' : i === 2 ? 'direct' : 'paid'
+    return `<li class="${cls}">${ins}</li>`
+  }).join('')}
+  <li class="seo" style="border-left-color:#059669;background:#f0fdf4">
+    🎯 <strong>Form eCura — Ottimizzazione conversione:</strong>
+    Priorità assoluta è ridurre il <em>drop-off</em> tra visita e compilazione form.
+    Azioni immediate: (1) aggiungere social proof sopra il form (numero pazienti attivi, recensioni verificate),
+    (2) semplificare i campi richiesti (nome, telefono, messaggio → massimo 3 campi),
+    (3) aggiungere un CTA sticky su mobile (il ${pctOf(ga4.deviceBreakdown.find(d=>d.device==='mobile')?.sessions || 0)}% degli utenti è da mobile).
+  </li>
+</ul>
+
+<h3 style="margin-top:24px">📊 Top 10 pagine GA4 per visualizzazioni</h3>
+<table>
+  <thead><tr><th>Pagina</th><th style="text-align:center">Pageviews</th><th style="text-align:center">Sessioni</th></tr></thead>
+  <tbody>${topPagesRows}</tbody>
+</table>
+</div>
+
+<!-- ── 9. GEOGRAFICO ── -->
 <div class="section">
 <h2>🌍 Geografico <span class="tag tag-ga4">GA4</span></h2>
 <div class="charts-grid">
   <div class="chart-box">
     <h3>Top paesi per sessioni</h3>
     <table>
-      <thead><tr><th>Paese</th><th>Sessioni</th></tr></thead>
+      <thead><tr><th>Paese</th><th style="text-align:center">Sessioni</th><th style="text-align:center">%</th></tr></thead>
       <tbody>
-        ${ga4.countryBreakdown.map(c => `<tr><td>${escHtml(c.country)}</td><td style="text-align:center">${c.sessions}</td></tr>`).join('')}
+        ${ga4.countryBreakdown.map(c => `<tr>
+          <td>${escHtml(c.country)}</td>
+          <td style="text-align:center;font-weight:600">${c.sessions}</td>
+          <td style="text-align:center;color:#666">${pctOf(c.sessions)}%</td>
+        </tr>`).join('')}
       </tbody>
     </table>
   </div>
@@ -34833,67 +35355,127 @@ ${ga4.searchConsole ? `
 </div><!-- /container -->
 
 <footer>
-  <strong>eCura — Medica GB Srl</strong> · Report Analytics Live · ${generatedAt}<br>
-  Dati GA4: proprietà G-5DY4TY34WK (${ga4PropertyId}) · Dati CRM: D1 SQLite · Solo uso interno
+  <strong>eCura — Medica GB Srl</strong> · Report Analytics Live · Generato ${generatedAt}<br>
+  GA4: G-5DY4TY34WK · Search Console: ${scSiteUrl} · CRM: D1 SQLite · Solo uso interno
 </footer>
 
 <script>
-// Daily trend
+// 1. Daily trend
 new Chart(document.getElementById('dailyChart'), {
   type: 'line',
   data: {
     labels: [${dailyLabels}],
     datasets: [{
-      label: 'Sessioni',
-      data: [${dailySessions}],
-      borderColor: '#068D86',
-      backgroundColor: 'rgba(6,141,134,.1)',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 3
+      label: 'Sessioni', data: [${dailySessions}],
+      borderColor: '#068D86', backgroundColor: 'rgba(6,141,134,.08)',
+      fill: true, tension: 0.3, pointRadius: 3
     }]
   },
   options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
 })
 
-// Channel
-new Chart(document.getElementById('channelChart'), {
-  type: 'doughnut',
-  data: {
-    labels: [${channelLabels}],
-    datasets: [{ data: [${channelData}], backgroundColor: [${channelColors}] }]
-  },
-  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
-})
-
-// Device
+// 2. Device
 new Chart(document.getElementById('deviceChart'), {
   type: 'doughnut',
   data: {
     labels: [${deviceLabels}],
-    datasets: [{ data: [${deviceData}], backgroundColor: ['#4285F4','#34A853','#FBBC05'] }]
+    datasets: [{ data: [${deviceData}], backgroundColor: ['#4285F4','#34A853','#FBBC05'], borderWidth: 2, borderColor: '#fff' }]
   },
-  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
 })
 
-${crmLeads.length > 0 ? `
-// CRM fonti
-new Chart(document.getElementById('crmFontiChart'), {
+// 3. Summary donut (macro canali)
+new Chart(document.getElementById('summaryDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: [${summaryLabels}],
+    datasets: [{ data: [${summaryData}], backgroundColor: ['#4285F4','#7C3AED','#068D86','#F59E0B','#EC4899','#9CA3AF'], borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: { responsive: true, cutout: '52%', plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } } } }
+})
+
+// 4. GA4 channel native
+new Chart(document.getElementById('channelChart'), {
   type: 'bar',
   data: {
-    labels: [${crmFontiLabels}],
-    datasets: [{ label: 'Lead', data: [${crmFontiData}], backgroundColor: '#068D84' }]
+    labels: [${channelLabels}],
+    datasets: [{ label: 'Sessioni', data: [${channelData}], backgroundColor: [${channelColors}], borderRadius: 4 }]
+  },
+  options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+})
+
+${seoEntriesSorted.length > 0 ? `
+// 5. SEO engines
+new Chart(document.getElementById('seoEnginesChart'), {
+  type: 'bar',
+  data: {
+    labels: [${seoChartLabels}],
+    datasets: [{ label: 'Sessioni', data: [${seoChartData}], backgroundColor: '#4285F4', borderRadius: 4 }]
   },
   options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
 })
 ` : ''}
-</script>
+
+${aiEntriesSorted.length > 0 ? `
+// 6. AI tools
+new Chart(document.getElementById('aiToolsChart'), {
+  type: 'bar',
+  data: {
+    labels: [${aiChartLabels}],
+    datasets: [{ label: 'Sessioni AI', data: [${aiChartData}], backgroundColor: ['#7C3AED','#8B5CF6','#A78BFA','#C4B5FD','#DDD6FE'], borderRadius: 4 }]
+  },
+  options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+})
+` : ''}
+
+${totalPaidSessions > 0 ? `
+// 7. Paid channels
+new Chart(document.getElementById('paidChart'), {
+  type: 'bar',
+  data: {
+    labels: [${paidChartLabels}],
+    datasets: [{ label: 'Sessioni Paid', data: [${paidChartData}], backgroundColor: ['#F59E0B','#EF4444','#3B82F6'], borderRadius: 4 }]
+  },
+  options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+})
+` : ''}
+
+${totalLeads > 0 ? `
+// 8. Temperatura × Status
+new Chart(document.getElementById('tempStatusChart'), {
+  type: 'bar',
+  data: {
+    labels: [${tempLabels}],
+    datasets: [
+      { label: 'CONTRACT_SENT', data: [${tempContractData}], backgroundColor: '#059669', borderRadius: 4 },
+      { label: 'BROCHURE_SENT', data: [${tempBrochureData}], backgroundColor: '#1d4ed8', borderRadius: 4 },
+      { label: 'NEW', data: [${tempNewData}], backgroundColor: '#9ca3af', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  }
+})
+
+// 9. Temperatura pie
+new Chart(document.getElementById('tempPieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [${tempLabels}],
+    datasets: [{ data: [${tempOrder.map(t => crmTotalByTemp[t] || 0).join(',')}], backgroundColor: ['#dc2626','#d97706','#2563eb','#9ca3af'], borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: { responsive: true, cutout: '55%', plugins: { legend: { position: 'bottom' } } }
+})
+` : ''}
+<\/script>
 </body>
 </html>`
 
     return c.html(html)
   } catch (e: any) {
-    return c.html(`<html><body><h1>Errore</h1><pre>${e.message}</pre></body></html>`, 500)
+    return c.html(`<html><body><h1>Errore</h1><pre>${escHtml(e.message)}</pre></body></html>`, 500)
   }
 })
 

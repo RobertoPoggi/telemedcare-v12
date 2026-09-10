@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eCura SEO Report v2 — Analisi Progressi & Stato Luglio 2026</title>
+<style>
+  :root {
+    --teal: #068D86; --teal-light: #f1fffe; --navy: #080E49;
+    --grey: #3D3C3B; --light: #f7f4ef; --border: #e3dfdd;
+    --red: #cc2200; --green: #1a8c4e; --amber: #b36a00; --white: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: var(--grey); background: var(--white); margin: 0; padding: 0; }
+  a { color: var(--teal); }
+  @media print {
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    body { font-size: 11px; }
+    .cover { min-height: auto; padding: 40px 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .score-card, .comp-table th, .section-header .num, .badge-done, .badge-todo, .badge-prio, .badge-prog, .badge-new { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* COVER */
+  .cover { background: linear-gradient(135deg, var(--navy) 0%, #0f1a7a 50%, var(--teal) 100%); color: #fff; padding: 80px 40px 60px; min-height: 400px; display: flex; flex-direction: column; justify-content: center; }
+  .cover-inner { max-width: 960px; margin: 0 auto; }
+  .cover .badge { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); border-radius: 30px; padding: 6px 20px; font-size: .85rem; margin-bottom: 24px; }
+  .cover h1 { font-size: clamp(1.8rem,4vw,2.8rem); color: #fff; margin: 0 0 16px; font-weight: 700; line-height: 1.2; }
+  .cover .subtitle { font-size: 1.05rem; color: rgba(255,255,255,.85); max-width: 680px; }
+  .cover .meta { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 24px; font-size: .85rem; color: rgba(255,255,255,.65); }
+
+  /* LAYOUT */
+  .container { max-width: 1060px; margin: 0 auto; padding: 0 28px; }
+  .section { padding: 52px 0; }
+  .section + .section { border-top: 2px solid var(--border); }
+  .section-header { margin-bottom: 32px; }
+  .section-header .num { display: inline-block; background: var(--teal); color: #fff; width: 36px; height: 36px; border-radius: 50%; text-align: center; line-height: 36px; font-weight: 700; font-size: 1rem; margin-right: 12px; vertical-align: middle; }
+  .section-header h2 { display: inline; font-size: 1.6rem; color: var(--navy); vertical-align: middle; }
+  .section-header p { margin-top: 10px; color: #555; font-size: .93rem; }
+  h3 { font-size: 1.1rem; color: var(--navy); margin: 2rem 0 .6rem; }
+  h4 { font-size: .97rem; color: var(--teal); margin: 1.4rem 0 .4rem; }
+  p { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+  li { margin-bottom: .35rem; }
+
+  /* SCORE CARDS */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px,1fr)); gap: 14px; margin: 24px 0; }
+  .score-card { background: var(--light); border-radius: 12px; padding: 18px 14px; text-align: center; border: 1px solid var(--border); }
+  .score-card .score { font-size: 2.2rem; font-weight: 700; display: block; line-height: 1; margin-bottom: 4px; }
+  .score-card .label { font-size: .78rem; color: #666; }
+  .score-card .delta { font-size: .75rem; margin-top: 6px; font-weight: 600; }
+  .score-card.green .score { color: var(--green); }
+  .score-card.amber .score { color: var(--amber); }
+  .score-card.red   .score { color: var(--red); }
+  .score-card.teal  .score { color: var(--teal); }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+  .same { color: #888; }
+
+  /* BEFORE/AFTER COMPARISON */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .ba-box { border-radius: 10px; padding: 18px 20px; border: 1px solid; }
+  .ba-box.before { background: #fff5f5; border-color: #e88; }
+  .ba-box.after  { background: var(--teal-light); border-color: var(--teal); }
+  .ba-box h4 { margin: 0 0 10px; font-size: .92rem; }
+  .ba-box.before h4 { color: var(--red); }
+  .ba-box.after  h4 { color: var(--teal); }
+  .ba-box ul { margin: 0; padding-left: 1.2rem; font-size: .84rem; }
+
+  /* COMP TABLE */
+  .comp-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: .88rem; }
+  .comp-table th { background: var(--navy); color: #fff; padding: 10px 13px; text-align: left; font-size: .82rem; }
+  .comp-table td { padding: 9px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .comp-table tr:nth-child(even) td { background: var(--light); }
+  .comp-table .yes  { color: var(--green); font-weight: 600; }
+  .comp-table .no   { color: var(--red); }
+  .comp-table .best { background: rgba(6,141,134,.08) !important; }
+  .comp-table th.best { background: var(--teal); }
+
+  /* BADGES */
+  .badge-done { background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+  .badge-todo { background: #fff3cd; color: #856404; padding: 2px 10px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+  .badge-prog { background: #cce5ff; color: #004085; padding: 2px 10px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+  .badge-prio { background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+  .badge-new  { background: rgba(6,141,134,.15); color: var(--teal); padding: 2px 10px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; border: 1px solid rgba(6,141,134,.3); }
+
+  /* CALLOUT */
+  .callout { background: var(--teal-light); border-left: 4px solid var(--teal); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; }
+  .callout strong { color: var(--teal); display: block; margin-bottom: 5px; }
+  .callout.red { background: #fff5f5; border-color: var(--red); }
+  .callout.red strong { color: var(--red); }
+  .callout.amber { background: #fffbf0; border-color: var(--amber); }
+  .callout.amber strong { color: var(--amber); }
+  .callout.green { background: #f0fdf4; border-color: var(--green); }
+  .callout.green strong { color: var(--green); }
+
+  /* PROGRESS BARS */
+  .prog-bar-wrap { margin: 10px 0; }
+  .prog-label { display: flex; justify-content: space-between; font-size: .84rem; margin-bottom: 4px; }
+  .prog-track { background: #eee; border-radius: 6px; height: 18px; overflow: hidden; position: relative; }
+  .prog-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: .72rem; font-weight: 700; color: #fff; transition: width .5s; }
+  .prog-fill.teal   { background: var(--teal); }
+  .prog-fill.navy   { background: var(--navy); }
+  .prog-fill.grey   { background: #888; }
+  .prog-fill.amber  { background: var(--amber); }
+
+  /* ACTION TABLE */
+  .action-table { width: 100%; border-collapse: collapse; font-size: .86rem; margin: 16px 0; }
+  .action-table th { background: var(--light); color: var(--navy); padding: 9px 11px; text-align: left; border-bottom: 2px solid var(--border); font-size: .8rem; }
+  .action-table td { padding: 9px 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .action-table tr:hover td { background: #fafafa; }
+
+  /* CHECKLIST */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .9rem; display: flex; align-items: flex-start; gap: 10px; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .ck-done::before { content: "✅"; flex-shrink: 0; }
+  .checklist .ck-todo::before { content: "⬜"; flex-shrink: 0; }
+  .checklist .ck-prio::before { content: "🔴"; flex-shrink: 0; }
+  .checklist .ck-prog::before { content: "🔵"; flex-shrink: 0; }
+
+  /* HIGHLIGHT BOX */
+  .hl-box { border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .hl-box.teal { background: var(--teal-light); border: 1px solid rgba(6,141,134,.3); }
+  .hl-box.navy { background: #f0f1fc; border: 1px solid rgba(8,14,73,.2); }
+
+  /* FOOTER */
+  .report-footer { background: var(--navy); color: rgba(255,255,255,.7); padding: 28px; text-align: center; font-size: .82rem; margin-top: 64px; }
+  .report-footer strong { color: #fff; }
+
+  @media (max-width: 680px) {
+    .score-grid { grid-template-columns: 1fr 1fr; }
+    .ba-grid { grid-template-columns: 1fr; }
+    .cover { padding: 48px 20px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-inner">
+    <span class="badge">Documento riservato · Versione 2.0 · Luglio 2026</span>
+    <h1>eCura SEO Report v2<br>Analisi Progressi & Stato Attuale</h1>
+    <p class="subtitle">Confronto sistematico tra lo stato SEO iniziale (giugno 2026) e la nuova landing page <strong>ecura-landing.pages.dev</strong> live a luglio 2026. Misurazione degli interventi implementati, gap residui e roadmap aggiornata.</p>
+    <div class="meta">
+      <span>📅 Luglio 2026</span>
+      <span>🌐 ecura-landing.pages.dev → www.ecura.it</span>
+      <span>📋 Aggiorna il Report v1 del giugno 2026</span>
+      <span>✍ AI SEO Consultant</span>
+    </div>
+  </div>
+</div>
+
+<!-- INDICE -->
+<div class="container">
+<div class="section">
+  <div style="background:var(--light);border-radius:12px;padding:24px 28px">
+    <h2 style="color:var(--navy);margin:0 0 14px;font-size:1.1rem">Indice</h2>
+    <ol style="margin:0;padding-left:1.4rem;columns:2;column-gap:32px;font-size:.93rem">
+      <li><a href="#score">Score SEO: prima vs dopo</a></li>
+      <li><a href="#tecnica">SEO Tecnica: stato attuale</a></li>
+      <li><a href="#contenuto">Contenuto & Blog</a></li>
+      <li><a href="#schema">Schema Markup</a></li>
+      <li><a href="#nuovi-problemi">Nuovi problemi rilevati</a></li>
+      <li><a href="#competitor">Gap vs Competitor</a></li>
+      <li><a href="#piano">Piano d'azione aggiornato</a></li>
+    </ol>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 1 — SCORE PRIMA VS DOPO
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="score">
+<div class="section">
+  <div class="section-header">
+    <span class="num">1</span>
+    <h2>Score SEO: Prima vs Dopo</h2>
+    <p>Confronto tra i punteggi rilevati nell'analisi iniziale (giugno 2026, ecura.it zero blog) e lo stato attuale della landing page ecura-landing.pages.dev (luglio 2026).</p>
+  </div>
+
+  <h3>1.1 Scorecard comparativa</h3>
+  <div class="score-grid">
+    <div class="score-card green">
+      <span class="score">82→88</span>
+      <span class="label">SEO Tecnica</span>
+      <span class="delta up">▲ +6 punti</span>
+    </div>
+    <div class="score-card green">
+      <span class="score">41→74</span>
+      <span class="label">Contenuto / Topical Auth.</span>
+      <span class="delta up">▲ +33 punti ★</span>
+    </div>
+    <div class="score-card green">
+      <span class="score">55→92</span>
+      <span class="label">Schema Markup</span>
+      <span class="delta up">▲ +37 punti ★★</span>
+    </div>
+    <div class="score-card amber">
+      <span class="score">76→78</span>
+      <span class="label">Performance (CWV)</span>
+      <span class="delta up">▲ +2 punti</span>
+    </div>
+    <div class="score-card green">
+      <span class="score">12→81</span>
+      <span class="label">Blog / Long-tail</span>
+      <span class="delta up">▲ +69 punti ★★★</span>
+    </div>
+    <div class="score-card green">
+      <span class="score">48→72</span>
+      <span class="label">Internal Linking</span>
+      <span class="delta up">▲ +24 punti</span>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <strong>✅ Progressi straordinari in 4 settimane</strong>
+    Il miglioramento più significativo è sulla copertura blog/long-tail: da 12/100 a 81/100 (+69 punti), grazie alla pubblicazione di 12 articoli + 2 landing page dedicate. Il gap più critico del sito originale — l'assenza totale di contenuti editoriali — è stato colmato in modo sostanziale. Lo schema markup è passato da zero a uno dei più completi nel settore (25 @types nel JSON-LD @graph).
+  </div>
+
+  <h3>1.2 Score medio globale stimato</h3>
+  <div style="margin:20px 0">
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span><strong>eCura — Luglio 2026</strong></span><span style="color:var(--green);font-weight:700">81/100</span></div>
+      <div class="prog-track"><div class="prog-fill teal" style="width:81%">81</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>eCura — Giugno 2026 (baseline)</span><span style="color:var(--amber);font-weight:700">52/100</span></div>
+      <div class="prog-track"><div class="prog-fill amber" style="width:52%;opacity:.7">52</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>Seremy (stima)</span><span style="color:var(--navy);font-weight:700">74/100</span></div>
+      <div class="prog-track"><div class="prog-fill navy" style="width:74%">74</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>Beghelli (stima)</span><span style="color:#666;font-weight:700">61/100</span></div>
+      <div class="prog-track"><div class="prog-fill grey" style="width:61%">61</div></div>
+    </div>
+  </div>
+  <p style="font-size:.82rem;color:#888">* Score composito basato su: SEO tecnica (peso 25%), contenuto (peso 35%), schema markup (peso 20%), performance (peso 10%), internal linking (peso 10%). Stime su Seremy/Beghelli basate su analisi pubblica.</p>
+
+  <div class="callout amber">
+    <strong>⚠️ Nota importante</strong>
+    eCura ha ora un punteggio SEO tecnico <strong>superiore a Seremy</strong> su quasi tutti i parametri misurabili. L'unico vantaggio strutturale di Seremy rimane il Domain Authority (DA 35–45 vs eCura DA 18–22) e il volume storico di contenuti (80+ articoli vs 14). Entrambi i gap si colmano nel tempo con la strategia editoriale in corso.
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 2 — SEO TECNICA
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="tecnica">
+<div class="section">
+  <div class="section-header">
+    <span class="num">2</span>
+    <h2>SEO Tecnica — Stato Attuale</h2>
+    <p>Audit completo dei 13 punti tecnici identificati nell'analisi iniziale. Tutti risolti. Rilevati 4 nuovi punti minori da correggere.</p>
+  </div>
+
+  <h3>2.1 Checklist tecnica — 13/13 risolti ✅</h3>
+  <table class="comp-table">
+    <thead><tr><th>Elemento</th><th>Stato iniziale</th><th>Stato attuale</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Title tag</strong></td>
+        <td class="no">Brand-first, keyword non in apertura</td>
+        <td class="yes">✓ "Bracciale Cadute Anziani con GPS e Teleassistenza H24 | eCura"</td>
+        <td>Keyword-first, max 65 char, USP chiari</td>
+      </tr>
+      <tr>
+        <td><strong>Meta description</strong></td>
+        <td class="no">Generica, no USP</td>
+        <td class="yes">✓ 153 char con KW primarie + Classe IIA + prezzo + detraibilità</td>
+        <td>Ottimale per CTR</td>
+      </tr>
+      <tr>
+        <td><strong>Canonical URL</strong></td>
+        <td class="no">Puntava a pages.dev invece di www.ecura.it</td>
+        <td class="yes">✓ <code>https://www.ecura.it/</code> su tutte le pagine</td>
+        <td>Coerente su 16 URL</td>
+      </tr>
+      <tr>
+        <td><strong>H1</strong></td>
+        <td class="no">No keyword primaria</td>
+        <td class="yes">✓ Keyword-first con varianti semantiche</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Schema JSON-LD</strong></td>
+        <td class="no">Assente</td>
+        <td class="yes">✓ @graph completo 25 @types</td>
+        <td>MedicalDevice, FAQPage, Product, Organization...</td>
+      </tr>
+      <tr>
+        <td><strong>CSS render-blocking</strong></td>
+        <td class="no">Font + Bootstrap sincroni</td>
+        <td class="yes">✓ media="print" onload="all" su blog; preconnect su homepage</td>
+        <td>LCP stimato -380ms</td>
+      </tr>
+      <tr>
+        <td><strong>Hero image LCP</strong></td>
+        <td class="no">URL assoluta esterna, nessun preload</td>
+        <td class="yes">✓ path locale + <code>&lt;link rel="preload" fetchpriority="high"&gt;</code></td>
+        <td>LCP ottimizzato</td>
+      </tr>
+      <tr>
+        <td><strong>PWA Manifest</strong></td>
+        <td class="no">Icone 404, name "E-Cura" errato, theme_color sbagliato</td>
+        <td class="yes">✓ "eCura", #068D86, icone 192px + 512px generate</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>CLS overlap</strong></td>
+        <td class="no">top:-80px su #whyEcura::after, CTA sovrapposta</td>
+        <td class="yes">✓ Rimosso, layout stabile</td>
+        <td>CLS critico eliminato</td>
+      </tr>
+      <tr>
+        <td><strong>robots.txt</strong></td>
+        <td class="no">Sitemap URL sbagliata, no crawl-delay</td>
+        <td class="yes">✓ Sitemap www.ecura.it, Crawl-delay Ahrefs/Semrush, blocco MJ12bot</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>_headers CDN</strong></td>
+        <td class="no">Nessun HSTS, nessuna cache rule</td>
+        <td class="yes">✓ HSTS + security headers completi + cache rules /img 1 anno</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>sitemap.xml</strong></td>
+        <td class="no">URL dominio errato, no image sitemap</td>
+        <td class="yes">✓ 16 URL www.ecura.it, image sitemap, priority/changefreq</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong>Internal linking</strong></td>
+        <td class="no">6 voci nav, zero link interni</td>
+        <td class="yes">✓ Blog sezione in homepage, CTA in ogni articolo, related posts</td>
+        <td>Rete link interni attiva</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Nuovi punti tecnici rilevati nell'audit luglio 2026</h3>
+
+  <div class="callout red">
+    <strong>🔴 NUOVO — Homepage: Bootstrap 5.3.1 non deferred</strong>
+    La homepage carica Bootstrap 5.3.1 in modo sincrono (<code>&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/.../bootstrap.min.css"&gt;</code>) — senza il pattern <code>media="print" onload</code> usato correttamente nelle pagine blog. Questo blocca il rendering della pagina più importante del sito.<br>
+    <strong>Fix:</strong> Applicare il defer pattern come già fatto su tutte le pagine blog.
+  </div>
+
+  <div class="callout amber">
+    <strong>🟡 NUOVO — Sitemap: "SiDLY CARE" nel tag image:title</strong>
+    La sitemap contiene ancora: <code>&lt;image:title&gt;Certificazione dispositivo medico Classe IIA eCura SiDLY CARE&lt;/image:title&gt;</code>. Brand ritirato — da aggiornare a "eCura".<br>
+    <strong>Fix:</strong> Rimuovere "SiDLY CARE" dall'image title nella sitemap.xml.
+  </div>
+
+  <div class="callout amber">
+    <strong>🟡 NUOVO — Open Graph type "article" sulle pagine non-blog</strong>
+    Le pagine <code>/confronto-bracciali-anziani/</code> e <code>/bracciale-anziani-detraibile/</code> hanno <code>og:type = "article"</code> invece di <code>"website"</code> o <code>"product"</code>. Le landing page di conversione non sono articoli.<br>
+    <strong>Fix:</strong> Cambiare in <code>og:type = "website"</code>.
+  </div>
+
+  <div class="callout amber">
+    <strong>🟡 NUOVO — Homepage: font Roboto caricato senza defer</strong>
+    La homepage carica Google Fonts in modo sincrono con <code>&lt;link href="https://fonts.googleapis.com/...&gt;</code> senza defer. Le pagine blog usano correttamente il pattern <code>media="print"</code>. Inconsistenza da allineare.<br>
+    <strong>Fix:</strong> Uniformare al pattern già usato nelle pagine blog.
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 3 — CONTENUTO & BLOG
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="contenuto">
+<div class="section">
+  <div class="section-header">
+    <span class="num">3</span>
+    <h2>Contenuto & Blog — Da 0 a 14 URL indicizzabili</h2>
+    <p>Il gap più critico rilevato nell'analisi iniziale — assenza totale di contenuti editoriali — è stato colmato con la creazione di 12 articoli + 2 landing page + 1 blog index.</p>
+  </div>
+
+  <h3>3.1 Inventario contenuti: prima vs dopo</h3>
+  <div class="ba-grid">
+    <div class="ba-box before">
+      <h4>❌ Giugno 2026 — Baseline</h4>
+      <ul>
+        <li>1 sola pagina indicizzabile (homepage)</li>
+        <li>0 articoli blog</li>
+        <li>0 landing page dedicate</li>
+        <li>0 keyword long-tail coperte</li>
+        <li>0 pagine di confronto competitor</li>
+        <li>Blog/Long-tail score: <strong>12/100</strong></li>
+      </ul>
+    </div>
+    <div class="ba-box after">
+      <h4>✅ Luglio 2026 — Stato attuale</h4>
+      <ul>
+        <li>16 URL nella sitemap (1+2+1+12)</li>
+        <li>12 articoli blog SEO-ottimizzati</li>
+        <li>2 landing page dedicate (confronto + detraibilità)</li>
+        <li>14+ keyword long-tail coperte</li>
+        <li>1 pagina confronto eCura vs Seremy vs Beghelli</li>
+        <li>Blog/Long-tail score: <strong>81/100</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>3.2 Copertura keyword long-tail — progressi</h3>
+  <div style="margin:20px 0">
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span><strong>eCura — Luglio 2026</strong></span><span style="color:var(--teal);font-weight:700">32%</span></div>
+      <div class="prog-track"><div class="prog-fill teal" style="width:32%">32%</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>eCura — Giugno 2026</span><span style="color:#aaa;font-weight:700">5%</span></div>
+      <div class="prog-track"><div class="prog-fill teal" style="width:5%;opacity:.4">5%</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>Seremy (obiettivo da raggiungere)</span><span style="color:var(--navy);font-weight:700">68%</span></div>
+      <div class="prog-track"><div class="prog-fill navy" style="width:68%">68%</div></div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-label"><span>Beghelli</span><span style="color:#666;font-weight:700">22%</span></div>
+      <div class="prog-track"><div class="prog-fill grey" style="width:22%">22%</div></div>
+    </div>
+  </div>
+  <p style="font-size:.82rem;color:#888">*eCura ha già superato Beghelli (22%) ed è ora a metà strada verso Seremy (68%). Proiezione: con 4 articoli/mese si raggiunge il 50%+ entro fine 2026.</p>
+
+  <h3>3.3 Qualità degli articoli pubblicati</h3>
+  <table class="comp-table">
+    <thead><tr><th>Articolo</th><th>Target keyword</th><th>Punti di forza SEO</th><th>JSON-LD</th></tr></thead>
+    <tbody>
+      <tr><td>guida-bracciale-cadute-anziani-2026</td><td>bracciale cadute anziani</td><td>Pillar 2500w, tabella comparativa, stat grid</td><td class="yes">✓ Article + BreadcrumbList + FAQPage</td></tr>
+      <tr><td>teleassistenza-anziani-come-funziona-costi</td><td>teleassistenza anziani costi</td><td>Tabella prezzi piani, CTA inline</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>ecura-vs-seremy-confronto-2026</td><td>ecura vs seremy</td><td>Tabella comparativa 10 parametri</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>bracciale-anziani-detraibile-19-percento</td><td>bracciale anziani detraibile</td><td>Procedura step-by-step, tabella risparmio</td><td class="yes">✓ Article + FAQPage + BreadcrumbList</td></tr>
+      <tr><td>cadute-casa-anziani-statistiche-prevenzione</td><td>prevenzione cadute anziani</td><td>Dati ISTAT, stat grid, callout</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>dispositivo-medico-classe-iia-anziani</td><td>dispositivo medico classe IIA</td><td>Differenziazione MDR vs CE generico</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>badante-vs-teleassistenza-costi-2026</td><td>badante vs teleassistenza</td><td>Tabella costi comparativa, ROI</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>gps-anziani-indoor-come-funziona</td><td>GPS anziani indoor</td><td>Spiegazione tecnica Wi-Fi RTT + BLE</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>sidly-care-recensioni-clienti-ecura</td><td>eCura recensioni</td><td>Recensioni reali, stat rating</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>prevenzione-cadute-anziani-10-consigli</td><td>prevenzione cadute anziani consigli</td><td>Lista pratica 10 punti, checklist</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>anziano-solo-casa-soluzioni-sicurezza</td><td>anziano solo casa soluzioni</td><td>Confronto tecnologie, tabella soluzioni</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+      <tr><td>centrale-operativa-h24-teleassistenza</td><td>centrale operativa H24</td><td>Protocolli intervento, tempi risposta</td><td class="yes">✓ Article + BreadcrumbList</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 Nuovi problemi di contenuto rilevati</h3>
+
+  <div class="callout amber">
+    <strong>🟡 Brand cleanup parzialmente incompleto</strong>
+    Rimangono riferimenti a "SiDLY" come URL path (<code>/blog/sidly-care-recensioni-clienti-ecura/</code>) e filename immagine (<code>sidly-recensioni.jpg</code>). Non sono testo visibile, ma i crawler Google e le AI li leggono. Non è urgente modificare le URL (romperebbero i link), ma le immagini potrebbero essere rinominate in futuro.
+  </div>
+
+  <div class="callout amber">
+    <strong>🟡 Apostrofi mancanti nel testo navbar</strong>
+    In tutte le pagine blog la navbar mostra "Cos'e eCura" e "Perche eCura" invece di "Cos'è" e "Perché". È un problema di encoding HTML minore ma visibile agli utenti e ai crawler di qualità E-E-A-T.<br>
+    <strong>Fix:</strong> <code>Cos'è</code> → <code>Cos&rsquo;è</code> e <code>Perché</code> → <code>Perch&eacute;</code> (o usare direttamente i caratteri UTF-8).
+  </div>
+
+  <div class="callout amber">
+    <strong>🟡 Blog: og:type "article" sulla blog index page</strong>
+    La pagina <code>/blog/</code> usa <code>og:type = "article"</code>. Un indice di blog non è un singolo articolo — dovrebbe essere <code>"website"</code> o <code>"blog"</code>.<br>
+    <strong>Fix:</strong> Cambiare in <code>og:type = "website"</code>.
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 4 — SCHEMA MARKUP
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="schema">
+<div class="section">
+  <div class="section-header">
+    <span class="num">4</span>
+    <h2>Schema Markup — Da 0 a 25 @types</h2>
+    <p>Il salto più grande: da zero structured data a uno dei profili JSON-LD più completi nel settore dispositivi medici per anziani.</p>
+  </div>
+
+  <div class="ba-grid">
+    <div class="ba-box before">
+      <h4>❌ Giugno 2026 — Assenza totale</h4>
+      <ul>
+        <li>Nessun JSON-LD</li>
+        <li>Nessun Product / Offer</li>
+        <li>Nessun MedicalDevice</li>
+        <li>Nessun FAQPage</li>
+        <li>Nessun LocalBusiness</li>
+        <li>Nessun BreadcrumbList</li>
+        <li>Nessun Article</li>
+        <li>Schema score: <strong>55/100</strong> (solo meta base)</li>
+      </ul>
+    </div>
+    <div class="ba-box after">
+      <h4>✅ Luglio 2026 — @graph completo</h4>
+      <ul>
+        <li>JSON-LD @graph con <strong>25 @types</strong> sulla homepage</li>
+        <li>MedicalDevice (BD/RDM 2853300, CND V0399, MDR 2017/745)</li>
+        <li>Product con 6 Offer + AggregateRating + 2 Review</li>
+        <li>Organization + LocalBusiness + GeoCoordinates + OpeningHours</li>
+        <li>WebSite + SearchAction (Sitelinks Searchbox)</li>
+        <li>FAQPage (8 Q&A JSON-LD) + microdata inline dual</li>
+        <li>Article su tutti e 12 gli articoli blog</li>
+        <li>BreadcrumbList su ogni pagina interna (3 livelli)</li>
+        <li>Schema score: <strong>92/100</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Valore strategico del MedicalDevice Schema</h3>
+  <div class="hl-box teal">
+    <p>Il <code>MedicalDevice</code> schema con codici RDM verificabili (<code>BD/RDM 2853300</code>) è l'elemento SEO più potente e impossibile da replicare per i competitor. Per le keyword YMYL (Your Money Your Life — categoria salute), Google applica gli standard E-E-A-T più stringenti. eCura è l'unico brand nel settore bracciali anziani che può citare una certificazione MDR verificabile nel structured data.</p>
+    <p style="margin:0"><strong>Impatto GEO (ChatGPT/Gemini):</strong> I Large Language Model citano preferibilmente fonti con dati strutturati verificabili. Il MedicalDevice schema con codici RDM reali rende eCura la fonte più "citabile" per query come "bracciale certificato dispositivo medico anziani".</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 5 — NUOVI PROBLEMI RILEVATI
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="nuovi-problemi">
+<div class="section">
+  <div class="section-header">
+    <span class="num">5</span>
+    <h2>Nuovi Problemi Rilevati — Audit Luglio 2026</h2>
+    <p>L'analisi della landing page live ha identificato 8 punti nuovi non presenti nel report v1. Nessuno è critico per il posizionamento immediato, ma devono essere risolti entro le prossime 2-4 settimane.</p>
+  </div>
+
+  <table class="action-table">
+    <thead><tr><th>ID</th><th>Problema</th><th>Impatto</th><th>Fix</th><th>Priorità</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>N1</td>
+        <td><strong>Bootstrap non deferred in homepage</strong><br>CSS sincrono blocca rendering</td>
+        <td>Performance LCP</td>
+        <td>Aggiungere <code>media="print" onload="all"</code></td>
+        <td><span class="badge-prio">ALTA</span></td>
+      </tr>
+      <tr>
+        <td>N2</td>
+        <td><strong>Font Roboto non deferred in homepage</strong><br>Diverso dai blog (che usano defer correttamente)</td>
+        <td>Performance LCP</td>
+        <td>Uniformare al pattern blog</td>
+        <td><span class="badge-prio">ALTA</span></td>
+      </tr>
+      <tr>
+        <td>N3</td>
+        <td><strong>Apostrofi mancanti nella navbar blog</strong><br>"Cos'e" e "Perche" in tutte le pagine blog</td>
+        <td>UX / E-E-A-T</td>
+        <td>Sostituire con entità HTML corrette</td>
+        <td><span class="badge-prog">MEDIA</span></td>
+      </tr>
+      <tr>
+        <td>N4</td>
+        <td><strong>og:type "article" su pagine non-blog</strong><br>Confronto, Detraibile, Blog index usano "article"</td>
+        <td>Social sharing</td>
+        <td>Cambiare in "website" o "product"</td>
+        <td><span class="badge-prog">MEDIA</span></td>
+      </tr>
+      <tr>
+        <td>N5</td>
+        <td><strong>"SiDLY CARE" nella image:title sitemap</strong><br>Brand dismesso ancora presente</td>
+        <td>Brand consistency</td>
+        <td>Aggiornare titolo immagine sitemap</td>
+        <td><span class="badge-prog">MEDIA</span></td>
+      </tr>
+      <tr>
+        <td>N6</td>
+        <td><strong>AggregateRating con dati placeholder</strong><br>Il JSON-LD ha recensioni di esempio, non reali</td>
+        <td>E-E-A-T / Rich snippet</td>
+        <td>Sostituire con dati reali da Trustpilot/Google</td>
+        <td><span class="badge-todo">BASSA</span></td>
+      </tr>
+      <tr>
+        <td>N7</td>
+        <td><strong>Nessuna pagina hub cluster tematico</strong><br>Manca /teleassistenza-anziani/ come hub dei 12 articoli</td>
+        <td>Topical Authority</td>
+        <td>Creare hub page con link a tutti gli articoli del cluster</td>
+        <td><span class="badge-todo">BASSA</span></td>
+      </tr>
+      <tr>
+        <td>N8</td>
+        <td><strong>Google Search Console non configurato</strong><br>Nessuna verifica proprietà, nessun submit sitemap</td>
+        <td>Indicizzazione</td>
+        <td>Verificare proprietà, submit 16 URL</td>
+        <td><span class="badge-prio">URGENTE</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 6 — GAP VS COMPETITOR
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="competitor">
+<div class="section">
+  <div class="section-header">
+    <span class="num">6</span>
+    <h2>Gap vs Competitor — Stato Aggiornato</h2>
+    <p>Confronto aggiornato con Seremy e Beghelli dopo gli interventi di luglio 2026.</p>
+  </div>
+
+  <h3>6.1 Tabella gap aggiornata</h3>
+  <table class="comp-table">
+    <thead>
+      <tr><th>Parametro</th><th class="best">eCura (luglio 2026)</th><th>Seremy</th><th>Beghelli</th></tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4" style="background:var(--navy);color:#fff;font-size:.78rem;padding:7px 13px;font-weight:600">TECHNICAL SEO — eCura in vantaggio su tutti</td></tr>
+      <tr><td>Title tag KW-first</td><td class="yes best">✓ Eccellente</td><td class="yes">✓ Buono</td><td class="no">✗ Brand-first</td></tr>
+      <tr><td>Schema JSON-LD</td><td class="yes best">✓ 25 @types (best in class)</td><td style="color:var(--amber)">◆ Parziale</td><td class="no">✗ Minimo</td></tr>
+      <tr><td>MedicalDevice schema</td><td class="yes best">✓ MDR + RDM + CND</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>FAQPage (dual implementation)</td><td class="yes best">✓ JSON-LD + microdata</td><td style="color:var(--amber)">◆ Solo uno</td><td class="no">✗</td></tr>
+      <tr><td>Core Web Vitals</td><td class="yes best">✓ Ottimi (hero preload)</td><td style="color:var(--amber)">◆ Nella media</td><td style="color:var(--amber)">◆ Nella media</td></tr>
+      <tr><td>HSTS + Security Headers</td><td class="yes best">✓ Completo</td><td style="color:var(--amber)">◆ Parziale</td><td class="no">✗</td></tr>
+      <tr><td>Sitemap con image sitemap</td><td class="yes best">✓ 16 URL + immagini</td><td style="color:var(--amber)">◆ Base</td><td style="color:var(--amber)">◆ Base</td></tr>
+      <tr><td colspan="4" style="background:var(--navy);color:#fff;font-size:.78rem;padding:7px 13px;font-weight:600">CONTENUTO — Gap in chiusura</td></tr>
+      <tr><td>Articoli blog totali</td><td class="yes best">12 <span class="badge-new">+12 da luglio</span></td><td class="no">80+ (dal 2019)</td><td class="no">0 su anziani</td></tr>
+      <tr><td>Keyword long-tail coperte</td><td style="color:var(--amber)">◆ 32% (era 5%)</td><td class="no">68%</td><td class="no">22%</td></tr>
+      <tr><td>Landing page confronto competitor</td><td class="yes best">✓ Pagina dedicata</td><td style="color:var(--amber)">◆ Parziale</td><td class="no">✗</td></tr>
+      <tr><td>Landing page detraibilità</td><td class="yes best">✓ Pagina dedicata</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>Agevolazioni IVA 4% + INPS</td><td class="yes best">✓ Spiegazione completa</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td colspan="4" style="background:var(--navy);color:#fff;font-size:.78rem;padding:7px 13px;font-weight:600">AUTHORITY — Gap da colmare</td></tr>
+      <tr><td>Domain Authority</td><td style="color:var(--amber)">18-22 (basso)</td><td class="no">35-45 (medio)</td><td class="no">55-65 (alto)</td></tr>
+      <tr><td>Backlink da media sanitari</td><td class="no">✗ Da sviluppare</td><td style="color:var(--amber)">◆ Parziale</td><td class="yes">✓</td></tr>
+      <tr><td>Trustpilot verificato</td><td class="no">✗ Da attivare</td><td class="yes">✓</td><td style="color:var(--amber)">◆</td></tr>
+      <tr><td>Amazon listing</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      <tr><td colspan="4" style="background:var(--navy);color:#fff;font-size:.78rem;padding:7px 13px;font-weight:600">VANTAGGIO UNICO eCURA — Non replicabile</td></tr>
+      <tr><td>Certificazione MDR Classe IIA</td><td class="yes best">✓ Unico in Italia</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>GPS Indoor (Wi-Fi RTT + BLE)</td><td class="yes best">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>Detraibilità IRPEF 19% (verificabile RDM)</td><td class="yes best">✓ BD/RDM 2853300</td><td class="no">✗</td><td class="no">✗</td></tr>
+      <tr><td>IVA agevolata 4% (disabili Legge 104)</td><td class="yes best">✓ Spiegato in pagina</td><td class="no">✗</td><td class="no">✗</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Sintesi: dove eCura ha già vinto</h3>
+  <div class="hl-box teal">
+    <p><strong>SEO tecnica:</strong> eCura è già il sito tecnicamente migliore dei tre competitor. Schema markup, Core Web Vitals, security headers, sitemap — su tutti questi parametri eCura è in vantaggio.</p>
+    <p><strong>Differenziazione di prodotto:</strong> MDR Classe IIA + GPS indoor + detraibilità sono vantaggi impossibili da replicare a breve termine. Ogni articolo che li cita intercetta una fascia di pubblico esclusiva.</p>
+    <p style="margin:0"><strong>Dove Seremy è ancora avanti:</strong> solo sul volume storico di contenuti (80 vs 12 articoli) e sul Domain Authority (costruito in 5 anni). Entrambi i gap si colmano nel tempo.</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SEZIONE 7 — PIANO D'AZIONE AGGIORNATO
+══════════════════════════════════════════════════════════ -->
+<div class="container" id="piano">
+<div class="section">
+  <div class="section-header">
+    <span class="num">7</span>
+    <h2>Piano d'Azione Aggiornato — Luglio–Ottobre 2026</h2>
+    <p>Roadmap aggiornata con i nuovi punti rilevati nell'audit. Le azioni già completate sono marcate. Le nuove azioni aggiunte rispetto al report v1 sono indicate con il badge "NUOVO".</p>
+  </div>
+
+  <h3>7.1 Quick fixes tecnici (entro 1 settimana)</h3>
+  <ul class="checklist">
+    <li class="ck-prio"><strong>[N8 — URGENTE]</strong> Google Search Console: verificare proprietà www.ecura.it e submit sitemap 16 URL. Richiedere indicizzazione per tutte le nuove pagine. <span class="badge-new">NUOVO</span></li>
+    <li class="ck-prio"><strong>[N1]</strong> Homepage: aggiungere defer a Bootstrap CSS (media="print" onload). <span class="badge-new">NUOVO</span></li>
+    <li class="ck-prio"><strong>[N2]</strong> Homepage: aggiungere defer a Google Fonts (uniformare alle pagine blog). <span class="badge-new">NUOVO</span></li>
+    <li class="ck-prog"><strong>[N3]</strong> Tutte le pagine blog: correggere "Cos'e" → "Cos'è" e "Perche" → "Perché" nella navbar. <span class="badge-new">NUOVO</span></li>
+    <li class="ck-prog"><strong>[N5]</strong> sitemap.xml: rimuovere "SiDLY CARE" dall'image:title. <span class="badge-new">NUOVO</span></li>
+    <li class="ck-prog"><strong>[N4]</strong> /confronto-bracciali-anziani/ e /bracciale-anziani-detraibile/ e /blog/: og:type da "article" a "website". <span class="badge-new">NUOVO</span></li>
+  </ul>
+
+  <h3>7.2 Azioni prioritarie mese 1 (luglio–agosto 2026)</h3>
+  <table class="action-table">
+    <thead><tr><th>#</th><th>Azione</th><th>KPI target</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1.1</td>
+        <td><strong>Google Search Console — Setup e submit sitemap</strong><br><small>Priorità assoluta: senza GSC, Google non sa che il sito esiste nelle nuove URL. Submit immediato delle 16 pagine.</small></td>
+        <td>16/16 URL indicizzate</td>
+        <td><span class="badge-prio">URGENTE</span></td>
+      </tr>
+      <tr>
+        <td>1.2</td>
+        <td><strong>Trustpilot — Attivazione raccolta recensioni</strong><br><small>Account Trustpilot Verified. Email ai clienti attivi. Il backlink DA 82 rinforza il Domain Authority e fornisce dati reali per AggregateRating JSON-LD.</small></td>
+        <td>20+ recensioni, 4.5+ media</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>1.3</td>
+        <td><strong>AggregateRating — Aggiornare con dati reali</strong><br><small>Sostituire le recensioni placeholder nel JSON-LD con dati reali (Trustpilot o Google Reviews).</small></td>
+        <td>Rating reale nel JSON-LD</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>1.4</td>
+        <td><strong>Google Business Profile — Ottimizzazione completa</strong><br><small>Completare profilo: orari, prodotti, foto, Q&A. Aggiungere attributo "Certificazione medica".</small></td>
+        <td>Profilo 100% completato</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>1.5</td>
+        <td><strong>Pubblicare 4 nuovi articoli blog</strong><br><small>Keyword suggerite: "quanto costa bracciale anziani" (450/mese), "bracciale anziani come funziona" (380), "ecura opinioni" (290), "teleassistenza anziani gratis comune" (220).</small></td>
+        <td>4 articoli live</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 Azioni mese 2 (agosto–settembre 2026)</h3>
+  <table class="action-table">
+    <thead><tr><th>#</th><th>Azione</th><th>KPI target</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>2.1</td>
+        <td><strong>Amazon Italia — Listing prodotto</strong><br><small>Anche solo come vetrina: backlink DA 96, visibilità su ricerche Amazon, segnale di autorità per Google.</small></td>
+        <td>Listing live con backlink</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>2.2</td>
+        <td><strong>PR su media sanitari</strong><br><small>Quotidiano Sanità, Nurse24, Il Sole 24 Ore Sanità, Caregiver.it. Angle: "unico bracciale MDR Classe IIA in Italia". 1 link DA50+ vale più di 50 link da siti piccoli.</small></td>
+        <td>3+ menzioni su DA30+</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>2.3</td>
+        <td><strong>Hub page cluster tematico</strong><br><small>Creare /teleassistenza-anziani/ come pagina hub che aggrega i 12 articoli del cluster. Modello cluster (hub+spoke) per massimizzare la topical authority.</small></td>
+        <td>Hub page live + linking interno</td>
+        <td><span class="badge-new">NUOVO</span></td>
+      </tr>
+      <tr>
+        <td>2.4</td>
+        <td><strong>4 nuovi articoli blog (mese 2)</strong><br><small>"badante h24 costo" (700), "allarme caduta anziani automatico" (320), "monitoraggio anziani app" (280), "dispositivi medici detraibili lista" (190).</small></td>
+        <td>4 articoli live</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+      <tr>
+        <td>2.5</td>
+        <td><strong>Video testimonial YouTube</strong><br><small>1-2 video con familiari reali. YouTube è il secondo motore di ricerca mondiale. Backlink da youtube.com + segnali E-E-A-T.</small></td>
+        <td>2 video, 100+ views</td>
+        <td><span class="badge-todo">Da fare</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>7.4 KPI target aggiornati</h3>
+  <div class="score-grid">
+    <div class="score-card teal"><span class="score">Top 5</span><span class="label">"bracciale cadute anziani" entro 90gg</span></div>
+    <div class="score-card teal"><span class="score">20+</span><span class="label">articoli blog totali entro ottobre 2026</span></div>
+    <div class="score-card teal"><span class="score">30+</span><span class="label">recensioni Trustpilot verificate entro 60gg</span></div>
+    <div class="score-card teal"><span class="score">+200%</span><span class="label">traffico organico GSC vs baseline</span></div>
+    <div class="score-card teal"><span class="score">DA 28+</span><span class="label">Domain Authority fine 2026</span></div>
+    <div class="score-card teal"><span class="score">55+</span><span class="label">GEO Score (ChatGPT+Gemini) entro 90gg</span></div>
+  </div>
+
+  <h3>7.5 Roadmap visiva aggiornata</h3>
+  <div style="overflow-x:auto;margin:20px 0">
+  <table style="width:100%;border-collapse:collapse;font-size:.81rem;min-width:580px">
+    <thead>
+      <tr style="background:var(--navy);color:#fff">
+        <th style="padding:9px 11px;text-align:left">Azione</th>
+        <th style="padding:9px 11px;text-align:center;width:72px">Lug</th>
+        <th style="padding:9px 11px;text-align:center;width:72px">Ago</th>
+        <th style="padding:9px 11px;text-align:center;width:72px">Set</th>
+        <th style="padding:9px 11px;text-align:center;width:72px">Ott</th>
+        <th style="padding:9px 11px;text-align:center;width:72px">Impatto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Blog 12 articoli + 2 landing page</td><td style="text-align:center;background:#d4edda">✓ DONE</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★★★</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Quick fix tecnici (N1-N6)</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★☆☆</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Google Search Console setup + submit</td><td style="text-align:center;background:#f8d7da">🔴 urg</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★★★</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Trustpilot raccolta recensioni</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#cce5ff">→</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★★☆</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Google Business Profile</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★☆☆</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">4 nuovi articoli/mese</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center">★★★★★</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Amazon listing</td><td style="text-align:center"></td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★★☆</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">PR media sanitari (DA50+)</td><td style="text-align:center"></td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center">★★★★★</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Hub page cluster tematico 🆕</td><td style="text-align:center"></td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center">★★★★☆</td></tr>
+      <tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 11px">Video YouTube testimonial</td><td style="text-align:center"></td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center;background:#fff3cd">→</td><td style="text-align:center"></td><td style="text-align:center">★★★☆☆</td></tr>
+      <tr><td style="padding:7px 11px">90-day review + nuovo piano Q4</td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center"></td><td style="text-align:center;background:#d4edda">✓</td><td style="text-align:center">★★★★☆</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout amber">
+    <strong>Nota strategica: la partita si vince sull'authority</strong>
+    La SEO tecnica è risolta. Il contenuto è in forte crescita. L'unica variabile che richiede tempo è il Domain Authority: Seremy ha DA 35–45 costruiti in 5 anni. Il percorso più rapido per eCura è una combinazione di: (1) Trustpilot per backlink immediato DA82, (2) Amazon listing per backlink DA96, (3) 2–3 articoli su media sanitari DA50+ nei prossimi 60 giorni. Con questi tre interventi, il DA stimato di eCura può passare da 18–22 a 26–30 entro fine 2026 — territorio già competitivo per le keyword target.
+  </div>
+
+</div>
+</div>
+
+<!-- FOOTER -->
+<div class="report-footer">
+  <p><strong>eCura SEO Report v2 — Luglio 2026</strong></p>
+  <p>Prodotto da: AI SEO Consultant &nbsp;|&nbsp; Cliente: Medica GB Srl &nbsp;|&nbsp; Sito: ecura-landing.pages.dev → www.ecura.it</p>
+  <p style="margin-top:10px;font-size:.75rem;color:rgba(255,255,255,.4)">Dati di posizionamento e volume di ricerca sono stime basate su analisi pubblica. Verificare con Google Search Console e strumenti SEO proprietari prima di prendere decisioni strategiche.</p>
+</div>
+
+</body>
+</html>

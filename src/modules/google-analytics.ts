@@ -177,6 +177,8 @@ export interface FullAnalyticsReport {
     conversions: number
   }
   channelBreakdown: { channel: string; sessions: number; users: number }[]
+  /** Granular: sessionSource + sessionMedium — es. "google / organic", "chatgpt.com / referral" */
+  sourceMediumBreakdown: { source: string; medium: string; sessions: number; users: number; bounceRate: number }[]
   topPages: { page: string; pageviews: number; sessions: number }[]
   deviceBreakdown: { device: string; sessions: number }[]
   countryBreakdown: { country: string; sessions: number }[]
@@ -248,6 +250,23 @@ export async function fetchFullAnalyticsReport(
     channel: r.dimensions[0],
     sessions: parseInt(r.metrics[0]),
     users: parseInt(r.metrics[1])
+  }))
+
+  // 2b. Source / Medium granular breakdown (es. google/organic, chatgpt.com/referral, bing/organic)
+  const sourceMediumRaw = await safeRun(() => ga4RunReport(config, {
+    dateRanges,
+    dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+    metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'bounceRate' }],
+    orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+    limit: 50
+  }), 'GA4 source/medium')
+
+  const sourceMediumBreakdown = (sourceMediumRaw?.rows || []).map(r => ({
+    source: r.dimensions[0],
+    medium: r.dimensions[1],
+    sessions: parseInt(r.metrics[0]),
+    users: parseInt(r.metrics[1]),
+    bounceRate: parseFloat(r.metrics[2] || '0')
   }))
 
   // 3. Top pages
@@ -356,6 +375,7 @@ export async function fetchFullAnalyticsReport(
     ga4PropertyId: config.ga4PropertyId,
     overview,
     channelBreakdown,
+    sourceMediumBreakdown,
     topPages,
     deviceBreakdown,
     countryBreakdown,

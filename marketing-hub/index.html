@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eCura Marketing Hub</title>
+<style>
+  :root {
+    --teal: #068D86;
+    --teal-dark: #045f5a;
+    --teal-light: #e6f7f6;
+    --teal-mid: #0aada5;
+    --orange: #f97316;
+    --orange-light: #fff7ed;
+    --bg: #f0f4f8;
+    --sidebar-bg: #0d2d2b;
+    --sidebar-hover: #1a4440;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #eab308;
+    --info: #3b82f6;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+  /* ══ SIDEBAR ══ */
+  .sidebar {
+    width: 240px; min-width: 240px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
+    transition: width .3s;
+  }
+  .sidebar-logo {
+    padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .sidebar-logo .brand { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: -.5px; }
+  .sidebar-logo .sub { font-size: .72rem; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: 1px; }
+  .nav-section { padding: 16px 12px 4px; font-size: .65rem; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: 1.5px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px; margin: 2px 8px; border-radius: 8px;
+    cursor: pointer; color: rgba(255,255,255,.65); font-size: .84rem; transition: all .2s;
+    text-decoration: none; position: relative;
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+  .nav-item.active { background: var(--teal); color: #fff; }
+  .nav-item .icon { font-size: 1rem; width: 18px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--orange); color: #fff;
+    font-size: .62rem; padding: 2px 6px; border-radius: 20px; font-weight: 600;
+  }
+  .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,.08); }
+  .user-pill { display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: .8rem; }
+  .user-info .name { color: #fff; font-size: .8rem; font-weight: 600; }
+  .user-info .role { color: rgba(255,255,255,.4); font-size: .7rem; }
+
+  /* ══ MAIN ══ */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0 28px; height: 60px; display: flex; align-items: center; gap: 16px;
+    flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .topbar-title { font-size: 1rem; font-weight: 600; flex: 1; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: .83rem; font-weight: 600; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+  .btn-orange { background: var(--orange); color: #fff; }
+  .btn-orange:hover { background: #ea6c0a; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: none; }
+  .btn-ghost:hover { background: var(--bg); }
+  .btn-sm { padding: 5px 12px; font-size: .78rem; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+
+  .content { flex: 1; overflow-y: auto; padding: 28px; }
+
+  /* ══ VIEWS ══ */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ══ STATS ROW ══ */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border-left: 4px solid transparent;
+  }
+  .stat-card.teal { border-color: var(--teal); }
+  .stat-card.orange { border-color: var(--orange); }
+  .stat-card.blue { border-color: var(--info); }
+  .stat-card.green { border-color: var(--success); }
+  .stat-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: .75rem; color: var(--text-muted); margin-top: 4px; }
+  .stat-trend { font-size: .75rem; margin-top: 6px; }
+  .stat-trend.up { color: var(--success); }
+  .stat-trend.down { color: var(--danger); }
+
+  /* ══ CARDS ══ */
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-size: .9rem; font-weight: 700; }
+  .card-body { padding: 20px; }
+  .card-sub { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+
+  /* ══ ARTICLE BUILDER ══ */
+  .builder-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+  .wizard-steps {
+    display: flex; gap: 0; margin-bottom: 24px; background: var(--bg);
+    border-radius: var(--radius); padding: 4px; overflow: hidden;
+  }
+  .step-tab {
+    flex: 1; padding: 10px 8px; text-align: center; border-radius: 8px;
+    font-size: .78rem; font-weight: 600; cursor: pointer; color: var(--text-muted);
+    transition: all .2s;
+  }
+  .step-tab.active { background: var(--card); color: var(--teal); box-shadow: var(--shadow); }
+  .step-tab.done { color: var(--success); }
+  .step-tab .step-num {
+    display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+    background: currentColor; color: #fff; font-size: .65rem; line-height: 18px;
+    margin-right: 5px; opacity: .2;
+  }
+  .step-tab.active .step-num, .step-tab.done .step-num { opacity: 1; }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .form-label span { color: var(--text-muted); font-weight: 400; }
+  .form-control {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: .84rem; color: var(--text);
+    transition: border-color .2s; background: #fff; resize: vertical;
+  }
+  .form-control:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(6,141,134,.1); }
+  textarea.form-control { min-height: 90px; }
+  .form-hint { font-size: .72rem; color: var(--text-muted); margin-top: 4px; }
+
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tag {
+    background: var(--teal-light); color: var(--teal-dark); padding: 4px 10px;
+    border-radius: 20px; font-size: .75rem; font-weight: 600; cursor: pointer;
+    border: 1.5px solid transparent; transition: all .2s;
+  }
+  .tag:hover { border-color: var(--teal); }
+  .tag.selected { background: var(--teal); color: #fff; }
+
+  .tone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tone-btn {
+    padding: 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    text-align: center; cursor: pointer; transition: all .2s; background: #fff;
+  }
+  .tone-btn:hover { border-color: var(--teal); }
+  .tone-btn.selected { border-color: var(--teal); background: var(--teal-light); }
+  .tone-btn .tone-icon { font-size: 1.4rem; display: block; }
+  .tone-btn .tone-label { font-size: .72rem; font-weight: 600; margin-top: 4px; color: var(--text); }
+
+  /* ══ ARTICLE PREVIEW ══ */
+  .article-preview {
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    background: #fff; padding: 24px; min-height: 400px; font-size: .88rem;
+    line-height: 1.7; color: var(--text);
+  }
+  .article-preview h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+  .article-preview h2 { font-size: 1.1rem; font-weight: 700; margin: 20px 0 8px; color: var(--teal-dark); }
+  .article-preview p { margin-bottom: 12px; }
+  .article-preview .meta-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--teal-light); color: var(--teal-dark); padding: 4px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; margin-right: 6px; margin-bottom: 12px; }
+  .placeholder-lines { display: flex; flex-direction: column; gap: 10px; }
+  .ph-line { height: 12px; background: var(--border); border-radius: 4px; }
+  .ph-line.w80 { width: 80%; }
+  .ph-line.w60 { width: 60%; }
+  .ph-line.w90 { width: 90%; }
+  .ph-line.w40 { width: 40%; }
+  .ph-line.title { height: 20px; width: 70%; margin-bottom: 8px; }
+
+  /* ══ SIDEBAR PANEL (right) ══ */
+  .side-panel { position: sticky; top: 0; }
+  .seo-score-ring {
+    width: 80px; height: 80px; margin: 0 auto 12px;
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .seo-score-ring svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .seo-score-ring .score-num { font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .seo-checklist { list-style: none; }
+  .seo-checklist li {
+    display: flex; align-items: center; gap: 8px; padding: 7px 0;
+    font-size: .78rem; border-bottom: 1px solid var(--border); color: var(--text);
+  }
+  .seo-checklist li:last-child { border: none; }
+  .check-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .65rem; flex-shrink: 0; }
+  .check-icon.ok { background: #dcfce7; color: var(--success); }
+  .check-icon.warn { background: #fef9c3; color: var(--warning); }
+  .check-icon.fail { background: #fee2e2; color: var(--danger); }
+
+  /* ══ IMAGE REPO ══ */
+  .image-toolbar {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1; min-width: 200px; display: flex; align-items: center;
+    border: 1.5px solid var(--border); border-radius: 8px; background: #fff; overflow: hidden;
+  }
+  .search-box input {
+    flex: 1; padding: 9px 14px; border: none; outline: none; font-size: .84rem;
+  }
+  .search-box button { padding: 9px 14px; background: var(--teal); color: #fff; border: none; cursor: pointer; font-size: .85rem; }
+  .search-box button:hover { background: var(--teal-dark); }
+
+  .filter-tabs { display: flex; gap: 4px; }
+  .filter-tab {
+    padding: 7px 14px; border-radius: 6px; border: 1.5px solid var(--border);
+    background: #fff; cursor: pointer; font-size: .78rem; font-weight: 600; color: var(--text-muted); transition: all .2s;
+  }
+  .filter-tab.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+  .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .image-card {
+    border-radius: 10px; overflow: hidden; border: 2px solid transparent;
+    cursor: pointer; transition: all .2s; position: relative; background: var(--bg);
+  }
+  .image-card:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .image-card.selected { border-color: var(--teal); }
+  .image-card.selected::after {
+    content: '✓'; position: absolute; top: 6px; right: 6px;
+    width: 22px; height: 22px; background: var(--teal); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700;
+  }
+  .image-card img { width: 100%; height: 120px; object-fit: cover; display: block; }
+  .image-card .img-meta { padding: 8px; }
+  .image-card .img-name { font-size: .72rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .image-card .img-tag { font-size: .65rem; color: var(--text-muted); }
+  .image-card .img-actions {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(6,141,134,.85); display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+  }
+  .image-card:hover .img-actions { display: flex; }
+  .img-action-btn {
+    padding: 6px 14px; background: #fff; border-radius: 6px; border: none;
+    font-size: .75rem; font-weight: 700; cursor: pointer; color: var(--teal-dark);
+    transition: all .2s;
+  }
+  .img-action-btn:hover { background: var(--teal-dark); color: #fff; }
+
+  /* ══ UPLOAD ZONE ══ */
+  .upload-zone {
+    border: 2.5px dashed var(--border); border-radius: var(--radius);
+    padding: 32px; text-align: center; cursor: pointer; transition: all .2s;
+    background: var(--bg); margin-bottom: 20px;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--teal); background: var(--teal-light); }
+  .upload-zone .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .upload-zone p { font-size: .84rem; color: var(--text-muted); }
+  .upload-zone strong { color: var(--teal); }
+  #fileInput { display: none; }
+
+  /* ══ QUEUE TABLE ══ */
+  .queue-table { width: 100%; border-collapse: collapse; }
+  .queue-table th { font-size: .72rem; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); padding: 10px 12px; border-bottom: 2px solid var(--border); text-align: left; }
+  .queue-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: .82rem; vertical-align: middle; }
+  .queue-table tr:hover td { background: var(--bg); }
+  .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+  .status-pill.draft { background: #f1f5f9; color: #64748b; }
+  .status-pill.ready { background: #dcfce7; color: #166534; }
+  .status-pill.generating { background: #fef9c3; color: #854d0e; }
+  .status-pill.published { background: #dbeafe; color: #1e40af; }
+  .status-pill.review { background: #fde8d8; color: #9a3412; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ══ PROGRESS ══ */
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 1s ease; }
+  .progress-fill.orange { background: var(--orange); }
+
+  /* ══ GENERATION MODAL ══ */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 16px; width: 680px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);
+  }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted); }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ══ GENERATING ANIMATION ══ */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+  .generating-indicator { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 20px; }
+  .gen-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); animation: pulse 1.4s infinite; }
+  .gen-dot:nth-child(2) { animation-delay: .2s; }
+  .gen-dot:nth-child(3) { animation-delay: .4s; }
+  .gen-step {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    border-radius: 8px; margin-bottom: 8px; font-size: .84rem;
+  }
+  .gen-step.done { background: #dcfce7; color: #166534; }
+  .gen-step.active { background: var(--teal-light); color: var(--teal-dark); }
+  .gen-step.pending { background: var(--bg); color: var(--text-muted); }
+  .gen-step-icon { font-size: 1.1rem; }
+
+  /* ══ IMAGE SEARCH RESULTS ══ */
+  .img-search-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 320px; overflow-y: auto; }
+  .img-search-item { border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: all .2s; position: relative; }
+  .img-search-item:hover, .img-search-item.sel { border-color: var(--teal); }
+  .img-search-item.sel::after { content: '✓'; position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: var(--teal); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; }
+  .img-search-item img { width: 100%; height: 100px; object-fit: cover; display: block; }
+  .img-search-label { padding: 5px 7px; font-size: .68rem; color: var(--text-muted); background: #fff; }
+
+  /* ══ TOPBAR TABS ══ */
+  .topbar-tabs { display: flex; gap: 2px; background: var(--bg); border-radius: 8px; padding: 3px; }
+  .topbar-tab {
+    padding: 6px 14px; border-radius: 6px; font-size: .78rem; font-weight: 600;
+    cursor: pointer; color: var(--text-muted); transition: all .2s; border: none; background: none;
+  }
+  .topbar-tab.active { background: #fff; color: var(--teal); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* ══ GEO SCORES ══ */
+  .geo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .geo-card { background: var(--bg); border-radius: 10px; padding: 16px; text-align: center; }
+  .geo-card .geo-logo { font-size: 1.6rem; margin-bottom: 6px; }
+  .geo-card .geo-score { font-size: 2rem; font-weight: 700; }
+  .geo-card .geo-label { font-size: .72rem; color: var(--text-muted); }
+  .geo-bar { height: 8px; background: var(--border); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  .geo-bar-fill { height: 100%; border-radius: 4px; }
+  .geo-bar-fill.low { background: var(--danger); }
+  .geo-bar-fill.mid { background: var(--warning); }
+  .geo-bar-fill.good { background: var(--success); }
+
+  /* ══ TOAST ══ */
+  .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: #1e293b; color: #fff; padding: 12px 18px; border-radius: 10px;
+    font-size: .82rem; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
+    animation: slideIn .3s ease; max-width: 320px;
+  }
+  .toast.success { border-left: 4px solid var(--success); }
+  .toast.error { border-left: 4px solid var(--danger); }
+  .toast.info { border-left: 4px solid var(--info); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ══ RESPONSIVE ══ */
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; min-width: 60px; }
+    .nav-item span, .sidebar-logo .sub, .sidebar-logo .brand-text, .user-info { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .builder-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ══ SCROLLBAR ══ */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* ══ KEYWORD CHIPS ══ */
+  .kw-chip { display: inline-flex; align-items: center; gap: 5px; background: #eff6ff; color: #1d4ed8; padding: 4px 10px; border-radius: 20px; font-size: .73rem; font-weight: 600; margin: 3px; }
+  .kw-chip .vol { color: #60a5fa; font-weight: 400; }
+
+  /* ══ SEPARATOR ══ */
+  .sep { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ══ EMPTY STATE ══ */
+  .empty-state { text-align: center; padding: 48px 20px; }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: .4; }
+  .empty-state p { color: var(--text-muted); font-size: .84rem; }
+
+  .col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .col-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .label-row .label { font-size: .78rem; font-weight: 600; }
+  .label-row .val { font-size: .78rem; color: var(--text-muted); }
+
+  .img-preview-selected { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 60px; }
+  .img-preview-thumb { position: relative; width: 70px; height: 70px; border-radius: 6px; overflow: hidden; }
+  .img-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .img-preview-thumb .remove-thumb { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: rgba(0,0,0,.6); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .65rem; cursor: pointer; }
+
+  .export-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .inline-tag { display: inline-block; background: var(--teal-light); color: var(--teal-dark); padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 600; margin-left: 4px; }
+
+  .article-content-area {
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 20px; min-height: 450px; font-size: .9rem; line-height: 1.8;
+    outline: none; background: #fff;
+  }
+  .article-content-area:focus { border-color: var(--teal); }
+
+  .rich-toolbar {
+    display: flex; gap: 4px; padding: 8px; border: 1.5px solid var(--border);
+    border-bottom: none; border-radius: 10px 10px 0 0; background: var(--bg); flex-wrap: wrap;
+  }
+  .rich-btn {
+    padding: 5px 10px; border-radius: 5px; border: none; background: #fff; cursor: pointer;
+    font-size: .8rem; color: var(--text); border: 1px solid var(--border);
+  }
+  .rich-btn:hover { background: var(--teal-light); border-color: var(--teal); }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">🩺 eCura</div>
+    <div class="sub">Marketing Hub</div>
+  </div>
+
+  <div class="nav-section">Principale</div>
+  <a class="nav-item active" onclick="switchView('dashboard')" href="#">
+    <span class="icon">📊</span><span>Dashboard</span>
+  </a>
+  <a class="nav-item" onclick="switchView('article-builder')" href="#">
+    <span class="icon">✍️</span><span>Crea Articolo</span>
+    <span class="nav-badge">AI</span>
+  </a>
+  <a class="nav-item" onclick="switchView('queue')" href="#">
+    <span class="icon">📋</span><span>Coda Editoriale</span>
+    <span class="nav-badge" id="queue-badge">5</span>
+  </a>
+  <a class="nav-item" onclick="switchView('image-repo')" href="#">
+    <span class="icon">🖼️</span><span>Repo Immagini</span>
+  </a>
+
+  <div class="nav-section">SEO & GEO</div>
+  <a class="nav-item" onclick="switchView('seo')" href="#">
+    <span class="icon">🔍</span><span>SEO Tecnico</span>
+  </a>
+  <a class="nav-item" onclick="switchView('geo')" href="#">
+    <span class="icon">🤖</span><span>GEO / AI Search</span>
+  </a>
+  <a class="nav-item" onclick="switchView('keywords')" href="#">
+    <span class="icon">🎯</span><span>Keyword Planner</span>
+  </a>
+
+  <div class="nav-section">Ads</div>
+  <a class="nav-item" onclick="switchView('google-ads')" href="#">
+    <span class="icon">🅖</span><span>Google Ads</span>
+  </a>
+  <a class="nav-item" onclick="switchView('meta-ads')" href="#">
+    <span class="icon">📘</span><span>Meta Ads</span>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="user-avatar">MG</div>
+      <div class="user-info">
+        <div class="name">Medica GB Srl</div>
+        <div class="role">Admin</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-actions" id="topbar-actions">
+      <button class="btn btn-outline btn-sm" onclick="switchView('article-builder')">✍️ Nuovo Articolo</button>
+      <button class="btn btn-primary btn-sm" onclick="showToast('Sync completata!', 'success')">🔄 Sync</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ VIEW: DASHBOARD ══ -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card teal">
+          <div class="stat-label">Score SEO Globale</div>
+          <div class="stat-value">81</div>
+          <div class="stat-sub">su 100 — ↑ da 52</div>
+          <div class="stat-trend up">▲ +29 pts questo ciclo</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Articoli Pubblicati</div>
+          <div class="stat-value">14</div>
+          <div class="stat-sub">87% indicizzati</div>
+          <div class="stat-trend up">▲ +2 in coda questa settimana</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Traffico Organico</div>
+          <div class="stat-value">2.4k</div>
+          <div class="stat-sub">visite/mese stimate</div>
+          <div class="stat-trend up">▲ +340 vs mese scorso</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">GEO Visibility Avg</div>
+          <div class="stat-value">34</div>
+          <div class="stat-sub">ChatGPT/Gemini/Perplexity</div>
+          <div class="stat-trend down">▼ Target: 60+ entro Q3</div>
+        </div>
+      </div>
+
+      <div class="col-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📋 Coda Editoriale</div>
+              <div class="card-sub">Articoli in lavorazione questa settimana</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="switchView('queue')">Vedi tutto</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="queue-table">
+              <tr><th>Titolo</th><th>Stato</th><th>Data</th></tr>
+              <tr>
+                <td><strong>Bracciale GPS anziani soli: guida 2026</strong></td>
+                <td><span class="status-pill ready"><span class="dot"></span>Pronto</span></td>
+                <td style="color:var(--text-muted);font-size:.75rem">23 lug</td>
+              </tr>
+              <tr>
+                <td><strong>Detrazione 730 dispositivi medici anziani</strong></td>
+                <td><span class="status-pill generating"><span class="dot"></span>Generando</span></td>
+                <td style="color:var(--text-muted);font-size:.75rem">24 lug</td>
+              </tr>
+              <tr>
+                <td><strong>Cos'è la teleassistenza Classe IIA</strong></td>
+                <td><span class="status-pill draft"><span class="dot"></span>Bozza</span></td>
+                <td style="color:var(--text-muted);font-size:.75rem">25 lug</td>
+              </tr>
+              <tr>
+                <td><strong>Confronto piani teleassistenza 2026</strong></td>
+                <td><span class="status-pill review"><span class="dot"></span>Revisione</span></td>
+                <td style="color:var(--text-muted);font-size:.75rem">26 lug</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔍 SEO Score per Area</div>
+          </div>
+          <div class="card-body">
+            <div class="label-row"><span class="label">SEO Tecnica</span><span class="val">88/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
+            <br>
+            <div class="label-row"><span class="label">Schema Markup</span><span class="val">92/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:92%"></div></div>
+            <br>
+            <div class="label-row"><span class="label">Blog / Long-tail</span><span class="val">81/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:81%"></div></div>
+            <br>
+            <div class="label-row"><span class="label">Contenuto / E-E-A-T</span><span class="val">74/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:74%"></div></div>
+            <br>
+            <div class="label-row"><span class="label">Internal Linking</span><span class="val">72/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+            <br>
+            <div class="label-row"><span class="label">Performance (CWV)</span><span class="val">78/100</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:78%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚠️ Azioni Prioritarie</div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:8px;background:#fee2e2">
+                <span style="font-size:1.1rem">🔴</span>
+                <div><strong style="font-size:.82rem">N8 — Google Search Console</strong><p style="font-size:.75rem;color:var(--text-muted);margin-top:2px">Non configurato. Submit sitemap.xml urgente per indexing.</p></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:8px;background:#fef9c3">
+                <span style="font-size:1.1rem">🟡</span>
+                <div><strong style="font-size:.82rem">N6 — AggregateRating</strong><p style="font-size:.75rem;color:var(--text-muted);margin-top:2px">Dati placeholder nel JSON-LD. Da aggiornare con recensioni reali.</p></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:8px;background:#fef9c3">
+                <span style="font-size:1.1rem">🟡</span>
+                <div><strong style="font-size:.82rem">N7 — Hub Page</strong><p style="font-size:.75rem;color:var(--text-muted);margin-top:2px">Manca pagina hub per topic cluster. Creare /blog/ index.</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🤖 GEO Visibility</div>
+          </div>
+          <div class="card-body">
+            <div class="geo-grid">
+              <div class="geo-card">
+                <div class="geo-logo">💬</div>
+                <div class="geo-score" style="color:#10a37f">34</div>
+                <div class="geo-label">ChatGPT</div>
+                <div class="geo-bar"><div class="geo-bar-fill low" style="width:34%"></div></div>
+              </div>
+              <div class="geo-card">
+                <div class="geo-logo">🔷</div>
+                <div class="geo-score" style="color:#4285f4">41</div>
+                <div class="geo-label">Gemini</div>
+                <div class="geo-bar"><div class="geo-bar-fill mid" style="width:41%"></div></div>
+              </div>
+              <div class="geo-card">
+                <div class="geo-logo">🔮</div>
+                <div class="geo-score" style="color:#6b21a8">28</div>
+                <div class="geo-label">Perplexity</div>
+                <div class="geo-bar"><div class="geo-bar-fill low" style="width:28%"></div></div>
+              </div>
+            </div>
+            <div style="font-size:.75rem;color:var(--text-muted);text-align:center">Target Q3: 60+ su tutti i motori AI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: ARTICLE BUILDER ══ -->
+    <div class="view" id="view-article-builder">
+      <div class="wizard-steps" id="wizard-steps">
+        <div class="step-tab active" onclick="goStep(1)" id="step-tab-1"><span class="step-num">1</span>Keyword & Argomento</div>
+        <div class="step-tab" onclick="goStep(2)" id="step-tab-2"><span class="step-num">2</span>Struttura</div>
+        <div class="step-tab" onclick="goStep(3)" id="step-tab-3"><span class="step-num">3</span>Immagini</div>
+        <div class="step-tab" onclick="goStep(4)" id="step-tab-4"><span class="step-num">4</span>Revisione</div>
+        <div class="step-tab" onclick="goStep(5)" id="step-tab-5"><span class="step-num">5</span>Pubblica</div>
+      </div>
+
+      <div class="builder-grid">
+        <div>
+          <!-- STEP 1 -->
+          <div class="step-panel active" id="step-1">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🎯 Keyword & Argomento dell'Articolo</div></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Keyword principale <span>(target SEO primario)</span></label>
+                  <input type="text" class="form-control" id="kw-main" placeholder="es. bracciale cadute anziani GPS" value="bracciale cadute anziani GPS">
+                  <div class="form-hint">Usa la keyword principale come apparirebbe in una ricerca Google</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Keyword secondarie / LSI <span>(suggerite)</span></label>
+                  <div class="tag-list" id="kw-suggestions">
+                    <div class="tag selected" onclick="toggleTag(this)">teleassistenza anziani</div>
+                    <div class="tag selected" onclick="toggleTag(this)">dispositivo medico Classe IIA</div>
+                    <div class="tag" onclick="toggleTag(this)">rilevamento cadute automatico</div>
+                    <div class="tag" onclick="toggleTag(this)">detraibile 19%</div>
+                    <div class="tag" onclick="toggleTag(this)">GPS indoor anziani</div>
+                    <div class="tag selected" onclick="toggleTag(this)">centrale operativa H24</div>
+                    <div class="tag" onclick="toggleTag(this)">SOS automatico</div>
+                    <div class="tag" onclick="toggleTag(this)">anziani soli casa</div>
+                  </div>
+                </div>
+                <div class="sep"></div>
+                <div class="form-group">
+                  <label class="form-label">Intento di ricerca</label>
+                  <div class="tone-grid">
+                    <div class="tone-btn selected" onclick="selectTone(this,'informativo')"><span class="tone-icon">📖</span><span class="tone-label">Informativo</span></div>
+                    <div class="tone-btn" onclick="selectTone(this,'acquisto')"><span class="tone-icon">🛒</span><span class="tone-label">Acquisto</span></div>
+                    <div class="tone-btn" onclick="selectTone(this,'confronto')"><span class="tone-icon">⚖️</span><span class="tone-label">Confronto</span></div>
+                    <div class="tone-btn" onclick="selectTone(this,'guida')"><span class="tone-icon">🗺️</span><span class="tone-label">Guida How-to</span></div>
+                    <div class="tone-btn" onclick="selectTone(this,'locale')"><span class="tone-icon">📍</span><span class="tone-label">Locale</span></div>
+                    <div class="tone-btn" onclick="selectTone(this,'news')"><span class="tone-icon">📰</span><span class="tone-label">News/Aggiornamento</span></div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Target audience</label>
+                  <select class="form-control" id="audience">
+                    <option>Figli adulti di genitori anziani (35-55 anni)</option>
+                    <option>Medici di medicina generale</option>
+                    <option>Badanti e assistenti familiari</option>
+                    <option>Anziani autonomi (65-80 anni)</option>
+                    <option>RSA / Case di cura</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Note aggiuntive / punti da includere <span>(opzionale)</span></label>
+                  <textarea class="form-control" id="extra-notes" placeholder="es. Menziona la certificazione BD/RDM 2853300, includi una FAQ sulla detrazione fiscale..."></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+                  <button class="btn btn-primary" onclick="goStep(2)">Avanti: Struttura →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="step-panel" id="step-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📐 Struttura Articolo</div>
+                <button class="btn btn-outline btn-sm" onclick="generateOutline()">✨ Genera con AI</button>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Titolo SEO <span>(H1)</span></label>
+                  <input type="text" class="form-control" id="article-title" placeholder="es. Bracciale Cadute Anziani con GPS: Guida Completa 2026" value="Bracciale Cadute Anziani con GPS: Come Funziona e Quale Scegliere (2026)">
+                  <div class="form-hint" id="title-char-count" style="color:var(--success)">✓ 71 caratteri — ottimale per SEO</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Meta Description</label>
+                  <textarea class="form-control" id="article-meta" style="min-height:70px">Guida completa 2026 al bracciale cadute anziani con GPS indoor. Scopri come funziona il rilevamento automatico, perché eCura è certificato Classe IIA e detraibile al 19%. Da €390/anno.</textarea>
+                  <div class="form-hint" id="meta-char-count" style="color:var(--success)">✓ 154 caratteri — ottimale</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Struttura H2/H3 proposta</label>
+                  <div id="outline-container">
+                    <div style="background:var(--bg);border-radius:8px;padding:12px;font-size:.83rem;line-height:2">
+                      <div>📌 <strong>Intro</strong> — Il problema delle cadute in casa (dati ISTAT)</div>
+                      <div style="margin-left:16px">H2: Cos'è un bracciale cadute anziani con GPS?</div>
+                      <div style="margin-left:32px;color:var(--text-muted)">H3: Come funziona il rilevamento automatico</div>
+                      <div style="margin-left:32px;color:var(--text-muted)">H3: GPS indoor vs outdoor</div>
+                      <div style="margin-left:16px">H2: Perché scegliere un dispositivo Classe IIA</div>
+                      <div style="margin-left:32px;color:var(--text-muted)">H3: Differenza tra gadget e dispositivo medico</div>
+                      <div style="margin-left:16px">H2: eCura: il bracciale che fa la differenza</div>
+                      <div style="margin-left:32px;color:var(--text-muted)">H3: Centrale operativa H24</div>
+                      <div style="margin-left:32px;color:var(--text-muted)">H3: Detraibile al 19%: come funziona</div>
+                      <div style="margin-left:16px">H2: Confronto piani eCura 2026</div>
+                      <div style="margin-left:16px">H2: FAQ: le 5 domande più frequenti</div>
+                      <div>📌 <strong>CTA</strong> — Richiedi info / Prova gratuita</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lunghezza target</label>
+                  <div class="tag-list">
+                    <div class="tag" onclick="toggleSingle(this,'len')">Breve (800 parole)</div>
+                    <div class="tag selected" onclick="toggleSingle(this,'len')">Standard (1.500 parole)</div>
+                    <div class="tag" onclick="toggleSingle(this,'len')">Approfondito (2.500 parole)</div>
+                    <div class="tag" onclick="toggleSingle(this,'len')">Pillar (4.000+ parole)</div>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:8px">
+                  <button class="btn btn-outline" onclick="goStep(1)">← Indietro</button>
+                  <button class="btn btn-primary" onclick="goStep(3)">Avanti: Immagini →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="step-panel" id="step-3">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">🖼️ Seleziona Immagini</div>
+                <button class="btn btn-outline btn-sm" onclick="switchTab('img-tab','search')">🔍 Cerca online</button>
+              </div>
+              <div class="card-body">
+                <div class="topbar-tabs" style="margin-bottom:16px" id="img-tab">
+                  <button class="topbar-tab active" onclick="switchImgTab('repo')">📁 Dal Repo</button>
+                  <button class="topbar-tab" onclick="switchImgTab('search')">🔍 Cerca online</button>
+                  <button class="topbar-tab" onclick="switchImgTab('upload')">⬆️ Carica nuova</button>
+                  <button class="topbar-tab" onclick="switchImgTab('ai')">✨ Genera AI</button>
+                </div>
+
+                <!-- Repo tab -->
+                <div id="imgtab-repo">
+                  <div class="search-box" style="margin-bottom:12px">
+                    <input type="text" placeholder="Cerca nel repo immagini..." id="repo-search-input" oninput="filterRepoImages(this.value)">
+                    <button>🔍</button>
+                  </div>
+                  <div class="image-grid" id="repo-images-grid">
+                    <!-- populated by JS -->
+                  </div>
+                </div>
+
+                <!-- Search tab -->
+                <div id="imgtab-search" style="display:none">
+                  <div class="search-box" style="margin-bottom:12px">
+                    <input type="text" placeholder="es. anziano con bracciale medico..." id="online-search-input" value="anziano bracciale dispositivo medico">
+                    <button onclick="searchOnlineImages()">🔍 Cerca</button>
+                  </div>
+                  <div id="online-results">
+                    <div class="empty-state"><div class="empty-icon">🔍</div><p>Digita una query e premi Cerca</p></div>
+                  </div>
+                </div>
+
+                <!-- Upload tab -->
+                <div id="imgtab-upload" style="display:none">
+                  <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="upload-zone-step3">
+                    <div class="upload-icon">📤</div>
+                    <p><strong>Clicca per caricare</strong> o trascina qui le immagini</p>
+                    <p style="margin-top:6px;font-size:.72rem">PNG, JPG, WebP — max 5MB per file</p>
+                  </div>
+                  <input type="file" id="fileInput" multiple accept="image/*" onchange="handleUpload(this.files,'step3')">
+                </div>
+
+                <!-- AI Generate tab -->
+                <div id="imgtab-ai" style="display:none">
+                  <div class="form-group">
+                    <label class="form-label">Descrivi l'immagine da generare</label>
+                    <textarea class="form-control" id="ai-img-prompt" style="min-height:80px">Anziano felice al sicuro in casa con bracciale medicale al polso, stile editoriale professionale, sfondo luminoso, colori caldi</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Stile</label>
+                    <div class="tag-list">
+                      <div class="tag selected" onclick="toggleSingle(this,'ai-style')">Fotografico realistico</div>
+                      <div class="tag" onclick="toggleSingle(this,'ai-style')">Illustrazione</div>
+                      <div class="tag" onclick="toggleSingle(this,'ai-style')">Infografica</div>
+                      <div class="tag" onclick="toggleSingle(this,'ai-style')">Icone flat</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary" onclick="simulateAIImage()">✨ Genera immagine AI</button>
+                  <div id="ai-img-result" style="margin-top:12px"></div>
+                </div>
+
+                <div class="sep"></div>
+                <div>
+                  <div class="form-label" style="margin-bottom:8px">Immagini selezionate per l'articolo</div>
+                  <div class="img-preview-selected" id="selected-images">
+                    <div style="color:var(--text-muted);font-size:.78rem;padding:8px">Nessuna immagine selezionata</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;margin-top:16px">
+                  <button class="btn btn-outline" onclick="goStep(2)">← Indietro</button>
+                  <button class="btn btn-primary" onclick="goStep(4);generateArticle()">Genera Articolo →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4 -->
+          <div class="step-panel" id="step-4">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">✏️ Revisione & Editing</div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-outline btn-sm" onclick="regenArticle()">🔄 Rigenera</button>
+                  <button class="btn btn-outline btn-sm" onclick="copyArticle()">📋 Copia HTML</button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="generation-status"></div>
+                <div id="article-editor" style="display:none">
+                  <div class="rich-toolbar">
+                    <button class="rich-btn" onclick="execCmd('bold')"><strong>B</strong></button>
+                    <button class="rich-btn" onclick="execCmd('italic')"><em>I</em></button>
+                    <button class="rich-btn" onclick="execCmd('underline')"><u>U</u></button>
+                    <button class="rich-btn" onclick="execCmd('insertUnorderedList')">≡</button>
+                    <button class="rich-btn" onclick="execCmd('insertOrderedList')">1.</button>
+                    <button class="rich-btn" onclick="insertHeading('h2')">H2</button>
+                    <button class="rich-btn" onclick="insertHeading('h3')">H3</button>
+                    <button class="rich-btn" onclick="execCmd('removeFormat')">✕ Format</button>
+                  </div>
+                  <div class="article-content-area" id="article-content" contenteditable="true"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px">
+                  <button class="btn btn-outline" onclick="goStep(3)">← Indietro</button>
+                  <button class="btn btn-primary" onclick="goStep(5)" id="btn-to-publish">Avanti: Pubblica →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 5 -->
+          <div class="step-panel" id="step-5">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🚀 Pubblica Articolo</div></div>
+              <div class="card-body">
+                <div class="col-2">
+                  <div>
+                    <div class="form-group">
+                      <label class="form-label">Slug URL</label>
+                      <input type="text" class="form-control" id="article-slug" value="bracciale-cadute-anziani-gps-guida-2026">
+                      <div class="form-hint">ecura.it/blog/<strong>bracciale-cadute-anziani-gps-guida-2026</strong>/</div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Data pubblicazione</label>
+                      <input type="date" class="form-control" id="pub-date" value="2026-07-25">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Categoria</label>
+                      <select class="form-control">
+                        <option>Guida</option>
+                        <option>Confronto</option>
+                        <option>News</option>
+                        <option>Fiscale</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Schema markup</label>
+                      <div class="tag-list">
+                        <div class="tag selected">Article</div>
+                        <div class="tag selected">FAQPage</div>
+                        <div class="tag selected">BreadcrumbList</div>
+                        <div class="tag" onclick="toggleTag(this)">HowTo</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="form-group">
+                      <label class="form-label">Internal links suggeriti</label>
+                      <div style="background:var(--bg);border-radius:8px;padding:12px;font-size:.78rem;display:flex;flex-direction:column;gap:8px">
+                        <div>→ <a href="#" style="color:var(--teal)">/confronto-bracciali-anziani/</a><br><span style="color:var(--text-muted)">Ancora: "miglior bracciale anziani"</span></div>
+                        <div>→ <a href="#" style="color:var(--teal)">/bracciale-anziani-detraibile/</a><br><span style="color:var(--text-muted)">Ancora: "bracciale detraibile 19%"</span></div>
+                        <div>→ <a href="#" style="color:var(--teal)">/blog/dispositivo-medico-classe-iia-anziani/</a><br><span style="color:var(--text-muted)">Ancora: "certificato Classe IIA"</span></div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Esporta articolo</label>
+                      <div class="export-row">
+                        <button class="btn btn-outline btn-sm" onclick="exportArticle('html')">💾 HTML</button>
+                        <button class="btn btn-outline btn-sm" onclick="exportArticle('md')">📝 Markdown</button>
+                        <button class="btn btn-outline btn-sm" onclick="exportArticle('json')">🔧 JSON-LD</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="sep"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <button class="btn btn-outline" onclick="goStep(4)">← Indietro</button>
+                  <div style="display:flex;gap:10px">
+                    <button class="btn btn-outline" onclick="saveToQueue()">💾 Salva in coda</button>
+                    <button class="btn btn-primary" onclick="publishArticle()">🚀 Pubblica ora</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="side-panel">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🎯 SEO Score Live</div></div>
+            <div class="card-body" style="text-align:center">
+              <div class="seo-score-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#068D86" stroke-width="8"
+                    stroke-dasharray="213.6" stroke-dashoffset="53" stroke-linecap="round" id="seo-ring"/>
+                </svg>
+                <div class="score-num" id="live-seo-score">75</div>
+              </div>
+              <ul class="seo-checklist">
+                <li><div class="check-icon ok">✓</div>Keyword nel titolo H1</li>
+                <li><div class="check-icon ok">✓</div>Meta description ≤155 char</li>
+                <li><div class="check-icon ok">✓</div>Keyword secondarie presenti</li>
+                <li><div class="check-icon warn">!</div>Immagine hero senza alt text</li>
+                <li><div class="check-icon ok">✓</div>Schema Article + FAQPage</li>
+                <li><div class="check-icon warn">!</div>Internal link (min 3)</li>
+                <li><div class="check-icon fail">✕</div>Nessuna immagine selezionata</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">💡 Suggerimenti AI</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:.78rem">
+                <div style="padding:8px;background:var(--teal-light);border-radius:8px;border-left:3px solid var(--teal)">
+                  <strong>Aggiungi una statistica ISTAT</strong> nella prima sezione per aumentare l'E-E-A-T. Es: "ogni anno 3 milioni di anziani cadono in casa"
+                </div>
+                <div style="padding:8px;background:#fef9c3;border-radius:8px;border-left:3px solid var(--warning)">
+                  <strong>FAQ mancante:</strong> "È detraibile con la dichiarazione 730?" — alta volume di ricerca (480/mese)
+                </div>
+                <div style="padding:8px;background:var(--orange-light);border-radius:8px;border-left:3px solid var(--orange)">
+                  <strong>CTA più forte:</strong> Posiziona la CTA anche dopo il secondo H2, non solo in fondo.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 Keyword Volume</div></div>
+            <div class="card-body">
+              <div class="kw-chip">bracciale cadute anziani <span class="vol">2.4k/m</span></div>
+              <div class="kw-chip">GPS anziani <span class="vol">1.8k/m</span></div>
+              <div class="kw-chip">teleassistenza anziani <span class="vol">3.2k/m</span></div>
+              <div class="kw-chip">dispositivo medico classe IIA <span class="vol">590/m</span></div>
+              <div class="kw-chip">bracciale detraibile <span class="vol">480/m</span></div>
+              <div class="kw-chip">centrale H24 anziani <span class="vol">320/m</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: QUEUE ══ -->
+    <div class="view" id="view-queue">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📋 Coda Editoriale</div>
+            <div class="card-sub">Tutti gli articoli in lavorazione e pubblicati</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="switchView('article-builder')">+ Nuovo</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="queue-table">
+            <tr>
+              <th>Titolo</th><th>Keyword</th><th>Stato</th><th>SEO</th><th>Data</th><th>Azioni</th>
+            </tr>
+            <tr>
+              <td><strong>Bracciale GPS anziani soli: guida 2026</strong></td>
+              <td><span class="inline-tag">GPS anziani</span></td>
+              <td><span class="status-pill ready"><span class="dot"></span>Pronto</span></td>
+              <td><strong style="color:var(--success)">82</strong></td>
+              <td style="color:var(--text-muted);font-size:.75rem">23 lug</td>
+              <td><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm">🚀</button></td>
+            </tr>
+            <tr>
+              <td><strong>Detrazione 730 dispositivi medici anziani</strong></td>
+              <td><span class="inline-tag">detrazione 730</span></td>
+              <td><span class="status-pill generating"><span class="dot"></span>Generando</span></td>
+              <td>—</td>
+              <td style="color:var(--text-muted);font-size:.75rem">24 lug</td>
+              <td><button class="btn btn-ghost btn-sm">👁️</button></td>
+            </tr>
+            <tr>
+              <td><strong>Cos'è la teleassistenza Classe IIA</strong></td>
+              <td><span class="inline-tag">teleassistenza IIA</span></td>
+              <td><span class="status-pill draft"><span class="dot"></span>Bozza</span></td>
+              <td><strong style="color:var(--warning)">61</strong></td>
+              <td style="color:var(--text-muted);font-size:.75rem">25 lug</td>
+              <td><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm">🗑️</button></td>
+            </tr>
+            <tr>
+              <td><strong>Confronto piani teleassistenza 2026</strong></td>
+              <td><span class="inline-tag">confronto piani</span></td>
+              <td><span class="status-pill review"><span class="dot"></span>Revisione</span></td>
+              <td><strong style="color:var(--warning)">74</strong></td>
+              <td style="color:var(--text-muted);font-size:.75rem">26 lug</td>
+              <td><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm">✅</button></td>
+            </tr>
+            <tr>
+              <td><strong>Badante vs teleassistenza: confronto 2026</strong></td>
+              <td><span class="inline-tag">badante vs teleassistenza</span></td>
+              <td><span class="status-pill published"><span class="dot"></span>Pubblicato</span></td>
+              <td><strong style="color:var(--success)">88</strong></td>
+              <td style="color:var(--text-muted);font-size:.75rem">15 lug</td>
+              <td><button class="btn btn-ghost btn-sm">👁️</button><button class="btn btn-ghost btn-sm">📊</button></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: IMAGE REPO ══ -->
+    <div class="view" id="view-image-repo">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body" style="padding:12px 20px">
+          <div class="image-toolbar">
+            <div class="search-box">
+              <input type="text" placeholder="Cerca immagini nel repo..." id="main-repo-search" oninput="filterRepoImages(this.value, 'main')">
+              <button>🔍</button>
+            </div>
+            <div class="filter-tabs" id="repo-filter-tabs">
+              <div class="filter-tab active" onclick="filterByTag('tutti',this)">Tutti</div>
+              <div class="filter-tab" onclick="filterByTag('hero',this)">Hero</div>
+              <div class="filter-tab" onclick="filterByTag('blog',this)">Blog</div>
+              <div class="filter-tab" onclick="filterByTag('prodotto',this)">Prodotto</div>
+              <div class="filter-tab" onclick="filterByTag('certificazione',this)">Certificazione</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('mainFileInput').click()">⬆️ Carica</button>
+            <input type="file" id="mainFileInput" multiple accept="image/*" style="display:none" onchange="handleUpload(this.files,'main')">
+          </div>
+        </div>
+      </div>
+      <div class="upload-zone" id="main-upload-zone" style="margin-bottom:16px">
+        <div class="upload-icon">📤</div>
+        <p><strong>Trascina immagini qui</strong> per caricarle nel repo</p>
+        <p style="margin-top:4px;font-size:.72rem">PNG, JPG, WebP — Alt text automatico via AI</p>
+      </div>
+      <div class="image-grid" id="main-repo-grid"></div>
+    </div>
+
+    <!-- ══ VIEW: SEO ══ -->
+    <div class="view" id="view-seo">
+      <div class="stats-grid">
+        <div class="stat-card teal"><div class="stat-label">Score Tecnico</div><div class="stat-value">88</div><div class="stat-sub">su 100 — ↑ da 82</div></div>
+        <div class="stat-card orange"><div class="stat-label">Pagine indicizzate</div><div class="stat-value">22</div><div class="stat-sub">di 24 totali</div></div>
+        <div class="stat-card blue"><div class="stat-label">Core Web Vitals</div><div class="stat-value">78</div><div class="stat-sub">LCP 2.1s / CLS 0.04</div></div>
+        <div class="stat-card green"><div class="stat-label">Backlink</div><div class="stat-value">14</div><div class="stat-sub">DA medio: 32</div></div>
+      </div>
+      <div class="col-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">✅ Fix SEO Applicati</div></div>
+          <div class="card-body">
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:.82rem">
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--success)">✓</span> N1: Bootstrap defer (render-blocking eliminato)</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--success)">✓</span> N2: Google Fonts defer (non-blocking)</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--success)">✓</span> N3: Apostrofi corretti in tutti i 12 blog post</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--success)">✓</span> N4: og:type "website" su pagine non-blog</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--success)">✓</span> N5: SiDLY rimosso da sitemap.xml image:title</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--danger)">✕</span> N8: Google Search Console — da configurare (manuale)</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--warning)">!</span> N6: AggregateRating — aggiornare con dati reali</li>
+              <li style="display:flex;gap:8px;align-items:center"><span style="color:var(--warning)">!</span> N7: Hub page blog — da creare</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🗺️ Sitemap & Robots</div></div>
+          <div class="card-body">
+            <div style="font-size:.82rem;display:flex;flex-direction:column;gap:10px">
+              <div style="background:var(--bg);border-radius:8px;padding:12px">
+                <strong>sitemap.xml</strong><br>
+                <span style="color:var(--text-muted)">22 URL — ultima modifica: oggi</span><br>
+                <span style="color:var(--success)">✓ SiDLY rimosso da image:title</span>
+              </div>
+              <div style="background:var(--bg);border-radius:8px;padding:12px">
+                <strong>robots.txt</strong><br>
+                <span style="color:var(--success)">✓ Disallow: /css/, /js/ impostato</span><br>
+                <span style="color:var(--text-muted)">Sitemap: https://www.ecura.it/sitemap.xml</span>
+              </div>
+              <div style="background:#fee2e2;border-radius:8px;padding:12px">
+                <strong>Google Search Console</strong><br>
+                <span style="color:var(--danger)">✕ Non configurato — Submit urgente!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: GEO ══ -->
+    <div class="view" id="view-geo">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🤖 GEO — Visibilità su AI Search Engine</div></div>
+        <div class="card-body">
+          <div class="geo-grid" style="grid-template-columns:repeat(3,1fr)">
+            <div class="geo-card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+              <div class="geo-logo">💬</div>
+              <div class="geo-score" style="color:#15803d">34<span style="font-size:1rem">/100</span></div>
+              <div class="geo-label" style="font-weight:700">ChatGPT</div>
+              <div class="geo-bar" style="margin-top:8px"><div class="geo-bar-fill low" style="width:34%"></div></div>
+              <div style="margin-top:8px;font-size:.72rem;color:var(--text-muted)">eCura citata in 3/10 query test</div>
+            </div>
+            <div class="geo-card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+              <div class="geo-logo">🔷</div>
+              <div class="geo-score" style="color:#1d4ed8">41<span style="font-size:1rem">/100</span></div>
+              <div class="geo-label" style="font-weight:700">Gemini</div>
+              <div class="geo-bar" style="margin-top:8px"><div class="geo-bar-fill mid" style="width:41%"></div></div>
+              <div style="margin-top:8px;font-size:.72rem;color:var(--text-muted)">Menzione in 4/10 query test</div>
+            </div>
+            <div class="geo-card" style="background:linear-gradient(135deg,#faf5ff,#ede9fe)">
+              <div class="geo-logo">🔮</div>
+              <div class="geo-score" style="color:#7c3aed">28<span style="font-size:1rem">/100</span></div>
+              <div class="geo-label" style="font-weight:700">Perplexity</div>
+              <div class="geo-bar" style="margin-top:8px"><div class="geo-bar-fill low" style="width:28%"></div></div>
+              <div style="margin-top:8px;font-size:.72rem;color:var(--text-muted)">Citazione in 2/10 query test</div>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="card-title" style="margin-bottom:12px">🎯 GEO Gap Analysis — Piano 90 giorni</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:.82rem">
+            <div style="padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--teal)">
+              <strong>Gap 1 — Mancanza di citazioni autorevoli</strong>
+              <p style="color:var(--text-muted);margin-top:4px">Azione: 3 comunicati stampa su riviste mediche italiane. Target: PR Medico, Quotidiano Sanità.</p>
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--orange)">
+              <strong>Gap 2 — Wikipedia / Wikidata entity</strong>
+              <p style="color:var(--text-muted);margin-top:4px">Azione: Creare entity KG per eCura e BD/RDM 2853300. Fondamentale per citazioni AI.</p>
+            </div>
+            <div style="padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--info)">
+              <strong>Gap 3 — Dati strutturati AEO mancanti</strong>
+              <p style="color:var(--text-muted);margin-top:4px">Azione: 15 nuove FAQ JSON-LD sui topic: cadute, detrazione, GPS, certificazione.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: KEYWORDS ══ -->
+    <div class="view" id="view-keywords">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎯 Keyword Planner eCura</div></div>
+        <div class="card-body">
+          <div class="search-box" style="margin-bottom:16px;max-width:500px">
+            <input type="text" placeholder="Aggiungi keyword da analizzare..." id="kw-input">
+            <button onclick="addKeyword()">+ Aggiungi</button>
+          </div>
+          <table class="queue-table">
+            <tr><th>Keyword</th><th>Volume</th><th>Difficoltà</th><th>Intento</th><th>Articolo</th><th>Priorità</th></tr>
+            <tr>
+              <td><strong>teleassistenza anziani</strong></td><td>3.2k/m</td>
+              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:45%"></div></div><span style="font-size:.72rem;color:var(--text-muted)">45/100</span></td>
+              <td>Informativo</td><td><a href="#" style="color:var(--teal);font-size:.78rem">come-funziona...</a></td>
+              <td><span class="status-pill ready">Alta</span></td>
+            </tr>
+            <tr>
+              <td><strong>bracciale cadute anziani</strong></td><td>2.4k/m</td>
+              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:52%"></div></div><span style="font-size:.72rem;color:var(--text-muted)">52/100</span></td>
+              <td>Acquisto</td><td><a href="#" style="color:var(--teal);font-size:.78rem">guida-bracciale...</a></td>
+              <td><span class="status-pill ready">Alta</span></td>
+            </tr>
+            <tr>
+              <td><strong>GPS anziani indoor</strong></td><td>1.8k/m</td>
+              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:38%"></div></div><span style="font-size:.72rem;color:var(--text-muted)">38/100</span></td>
+              <td>Informativo</td><td><a href="#" style="color:var(--teal);font-size:.78rem">gps-anziani-indoor...</a></td>
+              <td><span class="status-pill ready">Alta</span></td>
+            </tr>
+            <tr>
+              <td><strong>dispositivo medico detraibile</strong></td><td>980/m</td>
+              <td><div class="progress-bar" style="width:80px"><div class="progress-fill orange" style="width:61%"></div></div><span style="font-size:.72rem;color:var(--text-muted)">61/100</span></td>
+              <td>Acquisto</td><td><span style="color:var(--text-muted);font-size:.78rem">— da creare</span></td>
+              <td><span class="status-pill review">Media</span></td>
+            </tr>
+            <tr>
+              <td><strong>badante vs teleassistenza</strong></td><td>720/m</td>
+              <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:29%"></div></div><span style="font-size:.72rem;color:var(--text-muted)">29/100</span></td>
+              <td>Confronto</td><td><a href="#" style="color:var(--teal);font-size:.78rem">badante-vs-...</a></td>
+              <td><span class="status-pill ready">Alta</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: GOOGLE ADS ══ -->
+    <div class="view" id="view-google-ads">
+      <div class="stats-grid">
+        <div class="stat-card teal"><div class="stat-label">Click (mese)</div><div class="stat-value">—</div><div class="stat-sub">Campagna non attiva</div></div>
+        <div class="stat-card orange"><div class="stat-label">CPC medio</div><div class="stat-value">—</div></div>
+        <div class="stat-card blue"><div class="stat-label">CTR</div><div class="stat-value">—</div></div>
+        <div class="stat-card green"><div class="stat-label">Conv. Rate</div><div class="stat-value">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🅖 Google Ads — Configurazione</div></div>
+        <div class="card-body">
+          <div class="empty-state">
+            <div class="empty-icon">📡</div>
+            <p>Collega il tuo account Google Ads per visualizzare le campagne</p>
+            <button class="btn btn-primary" style="margin-top:16px" onclick="showToast('Funzione disponibile nella versione connessa', 'info')">Connetti Google Ads</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VIEW: META ADS ══ -->
+    <div class="view" id="view-meta-ads">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📘 Meta Ads — Configurazione</div></div>
+        <div class="card-body">
+          <div class="empty-state">
+            <div class="empty-icon">📘</div>
+            <p>Collega il tuo Business Manager Meta per visualizzare le campagne</p>
+            <button class="btn btn-primary" style="margin-top:16px" onclick="showToast('Funzione disponibile nella versione connessa', 'info')">Connetti Meta Ads</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══ MODAL: GENERATION ══ -->
+<div class="modal-overlay" id="gen-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✨ Generazione Articolo AI in corso...</h3>
+      <button class="modal-close" onclick="closeGenModal()">✕</button>
+    </div>
+    <div class="modal-body" id="gen-modal-body">
+      <div class="gen-step done" id="gs1"><span class="gen-step-icon">✅</span> Analisi keyword e intento completata</div>
+      <div class="gen-step active" id="gs2"><span class="gen-step-icon">🔄</span> Generazione outline e struttura H2/H3...</div>
+      <div class="gen-step pending" id="gs3"><span class="gen-step-icon">⏳</span> Scrittura testo ottimizzato SEO</div>
+      <div class="gen-step pending" id="gs4"><span class="gen-step-icon">⏳</span> Inserimento immagini e alt text</div>
+      <div class="gen-step pending" id="gs5"><span class="gen-step-icon">⏳</span> Generazione JSON-LD Schema</div>
+      <div class="gen-step pending" id="gs6"><span class="gen-step-icon">⏳</span> Ottimizzazione SEO finale</div>
+      <div class="generating-indicator" id="gen-spinner">
+        <div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: IMAGE DETAIL ══ -->
+<div class="modal-overlay" id="img-detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="img-detail-title">Dettaglio Immagine</h3>
+      <button class="modal-close" onclick="document.getElementById('img-detail-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <img id="img-detail-src" src="" style="width:100%;border-radius:10px;margin-bottom:16px;object-fit:cover;max-height:300px">
+      <div class="form-group"><label class="form-label">Alt text</label><input type="text" class="form-control" id="img-detail-alt"></div>
+      <div class="form-group"><label class="form-label">Nome file</label><input type="text" class="form-control" id="img-detail-name"></div>
+      <div class="form-group"><label class="form-label">Tag / Categoria</label>
+        <div class="tag-list">
+          <div class="tag" onclick="toggleTag(this)">hero</div>
+          <div class="tag" onclick="toggleTag(this)">blog</div>
+          <div class="tag" onclick="toggleTag(this)">prodotto</div>
+          <div class="tag" onclick="toggleTag(this)">certificazione</div>
+          <div class="tag" onclick="toggleTag(this)">logo</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteImage()">🗑️ Elimina</button>
+      <button class="btn btn-primary" onclick="saveImageMeta()">💾 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST CONTAINER ══ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const repoImages = [
+  { id:1, name:'hero-lg.jpg', alt:'Bracciale eCura per teleassistenza anziani', tag:'hero', src:'https://via.placeholder.com/320x200/068D86/ffffff?text=hero-lg.jpg' },
+  { id:2, name:'hero-mobile.jpg', alt:'eCura bracciale cadute anziani mobile', tag:'hero', src:'https://via.placeholder.com/320x200/0aada5/ffffff?text=hero-mobile.jpg' },
+  { id:3, name:'certification-full.png', alt:'Certificazione dispositivo medico Classe IIA eCura', tag:'certificazione', src:'https://via.placeholder.com/320x200/f97316/ffffff?text=certification.png' },
+  { id:4, name:'sidly-recensioni.jpg', alt:'Recensioni clienti eCura', tag:'blog', src:'https://via.placeholder.com/320x200/3b82f6/ffffff?text=recensioni.jpg' },
+  { id:5, name:'logo.png', alt:'eCura by Medica GB Srl — Logo', tag:'logo', src:'https://via.placeholder.com/320x200/1e293b/ffffff?text=logo.png' },
+  { id:6, name:'SidLy.gif', alt:'Animazione bracciale eCura', tag:'prodotto', src:'https://via.placeholder.com/320x200/22c55e/ffffff?text=SidLy.gif' },
+  { id:7, name:'product-front.jpg', alt:'Bracciale eCura vista frontale', tag:'prodotto', src:'https://via.placeholder.com/320x200/8b5cf6/ffffff?text=product-front.jpg' },
+  { id:8, name:'app-screenshot.png', alt:'App eCura schermata', tag:'blog', src:'https://via.placeholder.com/320x200/ec4899/ffffff?text=app-screenshot.png' },
+];
+
+let currentView = 'dashboard';
+let currentStep = 1;
+let selectedImages = [];
+let currentImgTab = 'repo';
+let repoFilter = 'tutti';
+
+const ARTICLE_CONTENT = `<h1>Bracciale Cadute Anziani con GPS: Come Funziona e Quale Scegliere (2026)</h1>
+<p><span class="meta-badge">📅 Luglio 2026</span><span class="meta-badge">⏱️ 8 min di lettura</span><span class="meta-badge">🏥 Dispositivo Medico IIA</span></p>
+<p>Ogni anno in Italia <strong>oltre 3 milioni di anziani cadono in casa</strong> (fonte: ISTAT 2025). Il 30% di chi cade non riesce a rialzarsi autonomamente e rischia conseguenze gravissime per la mancanza di soccorso tempestivo. Un bracciale cadute anziani con GPS rappresenta oggi la soluzione più efficace per proteggere i tuoi cari.</p>
+
+<h2>Cos'è un Bracciale Cadute Anziani con GPS?</h2>
+<p>Un bracciale cadute anziani con GPS è un <strong>dispositivo indossabile al polso</strong> che combina tre tecnologie fondamentali:</p>
+<ul style="margin-left:20px;margin-bottom:12px">
+  <li><strong>Rilevamento cadute automatico</strong> tramite accelerometro e giroscopio</li>
+  <li><strong>GPS indoor e outdoor</strong> per localizzare l'anziano ovunque</li>
+  <li><strong>Pulsante SOS</strong> con connessione diretta a una Centrale Operativa H24</li>
+</ul>
+
+<h2>Perché Scegliere un Dispositivo Medico Classe IIA?</h2>
+<p>Non tutti i bracciali sono uguali. Solo un <strong>dispositivo medico certificato Classe IIA</strong> (secondo il Regolamento MDR 2017/745) offre garanzie cliniche verificate. eCura è registrato al Ministero della Salute con codice <strong>BD/RDM 2853300</strong>.</p>
+
+<h2>eCura: Il Bracciale che fa la Differenza</h2>
+<p>Il bracciale eCura è l'unico dispositivo sul mercato italiano che combina certificazione Classe IIA, GPS indoor con tecnologia Wi-Fi + BLE, Centrale Operativa H24 con operatori qualificati e <strong>detraibilità al 19% come spesa sanitaria</strong>.</p>
+
+<h2>Confronto Piani eCura 2026</h2>
+<ul style="margin-left:20px;margin-bottom:12px">
+  <li><strong>Piano Family Base</strong> — €390/anno → €315,90 dopo detrazione</li>
+  <li><strong>Piano Family Avanzato</strong> — €690/anno → €558,90 dopo detrazione</li>
+  <li><strong>Piano Premium Avanzato</strong> — €990/anno → €801,90 dopo detrazione</li>
+</ul>
+
+<h2>FAQ: Le Domande Più Frequenti</h2>
+<p><strong>È detraibile con il 730?</strong> Sì, eCura è detraibile al 19% nella sezione spese sanitarie della dichiarazione dei redditi, grazie alla certificazione BD/RDM 2853300.</p>
+<p><strong>Funziona in casa senza segnale GPS?</strong> Sì, eCura usa una tecnologia ibrida GPS + Wi-Fi + BLE che garantisce localizzazione anche all'interno delle abitazioni.</p>`;
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  const el = document.getElementById('view-' + view);
+  if (el) el.classList.add('active');
+  
+  const navMap = {
+    'dashboard': 0, 'article-builder': 1, 'queue': 2, 'image-repo': 3,
+    'seo': 4, 'geo': 5, 'keywords': 6, 'google-ads': 7, 'meta-ads': 8
+  };
+  
+  document.querySelectorAll('.nav-item')[navMap[view]]?.classList.add('active');
+  
+  const titles = {
+    'dashboard': 'Dashboard', 'article-builder': '✍️ Crea Articolo AI',
+    'queue': 'Coda Editoriale', 'image-repo': '🖼️ Repo Immagini',
+    'seo': '🔍 SEO Tecnico', 'geo': '🤖 GEO / AI Search',
+    'keywords': '🎯 Keyword Planner', 'google-ads': '🅖 Google Ads', 'meta-ads': '📘 Meta Ads'
+  };
+  document.getElementById('page-title').textContent = titles[view] || view;
+  currentView = view;
+  
+  if (view === 'image-repo') renderRepoGrid('main-repo-grid');
+  if (view === 'article-builder' && currentStep === 3) renderRepoGrid('repo-images-grid');
+}
+
+// ══════════════════════════════════════════════
+// WIZARD STEPS
+// ══════════════════════════════════════════════
+function goStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('step-' + i)?.classList.remove('active');
+    const tab = document.getElementById('step-tab-' + i);
+    if (tab) {
+      tab.classList.remove('active', 'done');
+      if (i < n) tab.classList.add('done');
+      else if (i === n) tab.classList.add('active');
+    }
+  }
+  document.getElementById('step-' + n)?.classList.add('active');
+  currentStep = n;
+  if (n === 3) renderRepoGrid('repo-images-grid');
+  updateSEOScore();
+}
+
+// ══════════════════════════════════════════════
+// IMAGE REPO RENDER
+// ══════════════════════════════════════════════
+function renderRepoGrid(gridId, filter = '') {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  let imgs = repoImages;
+  if (repoFilter !== 'tutti') imgs = imgs.filter(i => i.tag === repoFilter);
+  if (filter) imgs = imgs.filter(i => i.name.toLowerCase().includes(filter.toLowerCase()) || i.alt.toLowerCase().includes(filter.toLowerCase()));
+  
+  grid.innerHTML = imgs.map(img => `
+    <div class="image-card ${selectedImages.includes(img.id) ? 'selected' : ''}" data-id="${img.id}" onclick="toggleImageSelect(${img.id},'${gridId}')">
+      <img src="${img.src}" alt="${img.alt}" loading="lazy">
+      <div class="img-meta">
+        <div class="img-name">${img.name}</div>
+        <div class="img-tag">${img.tag}</div>
+      </div>
+      <div class="img-actions">
+        <button class="img-action-btn" onclick="event.stopPropagation();selectAndClose(${img.id},'${gridId}')">✓ Seleziona</button>
+        <button class="img-action-btn" onclick="event.stopPropagation();openImgDetail(${img.id})">✏️ Modifica</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleImageSelect(id, gridId) {
+  const idx = selectedImages.indexOf(id);
+  if (idx > -1) selectedImages.splice(idx, 1);
+  else selectedImages.push(id);
+  renderRepoGrid(gridId);
+  renderSelectedImages();
+  updateSEOScore();
+}
+
+function selectAndClose(id, gridId) {
+  if (!selectedImages.includes(id)) selectedImages.push(id);
+  renderRepoGrid(gridId);
+  renderSelectedImages();
+  updateSEOScore();
+  showToast('Immagine aggiunta all\'articolo', 'success');
+}
+
+function renderSelectedImages() {
+  const container = document.getElementById('selected-images');
+  if (!container) return;
+  if (selectedImages.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:.78rem;padding:8px">Nessuna immagine selezionata</div>';
+    return;
+  }
+  container.innerHTML = selectedImages.map(id => {
+    const img = repoImages.find(i => i.id === id);
+    if (!img) return '';
+    return `<div class="img-preview-thumb">
+      <img src="${img.src}" alt="${img.alt}">
+      <div class="remove-thumb" onclick="removeSelectedImg(${id})">✕</div>
+    </div>`;
+  }).join('');
+}
+
+function removeSelectedImg(id) {
+  selectedImages = selectedImages.filter(i => i !== id);
+  renderSelectedImages();
+  renderRepoGrid('repo-images-grid');
+  updateSEOScore();
+}
+
+function filterRepoImages(q, context = 'step3') {
+  const gridId = context === 'main' ? 'main-repo-grid' : 'repo-images-grid';
+  renderRepoGrid(gridId, q);
+}
+
+function filterByTag(tag, btn) {
+  document.querySelectorAll('#repo-filter-tabs .filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  repoFilter = tag;
+  renderRepoGrid('main-repo-grid');
+}
+
+// ══════════════════════════════════════════════
+// IMAGE TABS (within builder)
+// ══════════════════════════════════════════════
+function switchImgTab(tab) {
+  ['repo','search','upload','ai'].forEach(t => {
+    const el = document.getElementById('imgtab-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('#img-tab .topbar-tab').forEach((b, i) => {
+    b.classList.toggle('active', ['repo','search','upload','ai'][i] === tab);
+  });
+  currentImgTab = tab;
+  if (tab === 'repo') renderRepoGrid('repo-images-grid');
+}
+
+function searchOnlineImages() {
+  const q = document.getElementById('online-search-input').value;
+  const container = document.getElementById('online-results');
+  container.innerHTML = '<div class="generating-indicator"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div></div>';
+  
+  setTimeout(() => {
+    const mockResults = [
+      { src: 'https://via.placeholder.com/300x200/4ade80/1e293b?text=Anziano+Casa', label: 'Anziano sicuro in casa' },
+      { src: 'https://via.placeholder.com/300x200/60a5fa/ffffff?text=Bracciale+Med', label: 'Bracciale dispositivo medico' },
+      { src: 'https://via.placeholder.com/300x200/f472b6/ffffff?text=GPS+Device', label: 'Dispositivo GPS smartwatch' },
+      { src: 'https://via.placeholder.com/300x200/fb923c/ffffff?text=Caregiver', label: 'Caregiver con anziano' },
+      { src: 'https://via.placeholder.com/300x200/a78bfa/ffffff?text=Hospital', label: 'Struttura ospedaliera' },
+      { src: 'https://via.placeholder.com/300x200/34d399/1e293b?text=Family', label: 'Famiglia con anziani' },
+    ];
+    container.innerHTML = `<div class="img-search-grid">${mockResults.map((r, i) => `
+      <div class="img-search-item" onclick="addOnlineImage(${i},'${r.src}','${r.label}')">
+        <img src="${r.src}" alt="${r.label}">
+        <div class="img-search-label">${r.label}</div>
+      </div>`).join('')}</div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:10px">⚠️ Verifica le licenze prima di usare immagini esterne</p>`;
+  }, 1500);
+}
+
+function addOnlineImage(id, src, label) {
+  const newImg = { id: 100 + id, name: `online-${id}.jpg`, alt: label, tag: 'blog', src };
+  if (!repoImages.find(i => i.id === newImg.id)) repoImages.push(newImg);
+  selectedImages.push(newImg.id);
+  renderSelectedImages();
+  showToast(`"${label}" aggiunta all'articolo`, 'success');
+  document.querySelectorAll('.img-search-item')[id]?.classList.add('sel');
+}
+
+function simulateAIImage() {
+  const prompt = document.getElementById('ai-img-prompt').value;
+  const result = document.getElementById('ai-img-result');
+  result.innerHTML = '<div class="generating-indicator"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div><span style="font-size:.8rem;color:var(--text-muted);margin-left:8px">Generazione in corso...</span></div>';
+  setTimeout(() => {
+    const newImg = { id: 999, name: 'ai-generated.jpg', alt: prompt.substring(0, 60), tag: 'blog', src: 'https://via.placeholder.com/400x250/068D86/ffffff?text=AI+Generated+Image' };
+    repoImages.push(newImg);
+    result.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:2px solid var(--teal)"><img src="${newImg.src}" style="width:100%;display:block"><div style="padding:8px;background:var(--teal-light);font-size:.75rem;color:var(--teal-dark)">✓ Generata e salvata nel repo</div></div>`;
+    showToast('Immagine AI generata e salvata nel repo!', 'success');
+  }, 2000);
+}
+
+// ══════════════════════════════════════════════
+// UPLOAD
+// ══════════════════════════════════════════════
+function handleUpload(files, context) {
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const newImg = {
+        id: Date.now() + Math.random(),
+        name: file.name,
+        alt: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+        tag: 'blog',
+        src: e.target.result
+      };
+      repoImages.push(newImg);
+      if (context !== 'main') { selectedImages.push(newImg.id); renderSelectedImages(); }
+      renderRepoGrid(context === 'main' ? 'main-repo-grid' : 'repo-images-grid');
+      showToast(`"${file.name}" caricata nel repo`, 'success');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Drag & drop
+document.addEventListener('DOMContentLoaded', () => {
+  ['main-upload-zone','upload-zone-step3'].forEach(id => {
+    const zone = document.getElementById(id);
+    if (!zone) return;
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      handleUpload(e.dataTransfer.files, id.includes('main') ? 'main' : 'step3');
+    });
+  });
+  renderRepoGrid('main-repo-grid');
+});
+
+// ══════════════════════════════════════════════
+// IMAGE DETAIL MODAL
+// ══════════════════════════════════════════════
+let currentDetailImgId = null;
+function openImgDetail(id) {
+  const img = repoImages.find(i => i.id === id);
+  if (!img) return;
+  currentDetailImgId = id;
+  document.getElementById('img-detail-src').src = img.src;
+  document.getElementById('img-detail-title').textContent = img.name;
+  document.getElementById('img-detail-alt').value = img.alt;
+  document.getElementById('img-detail-name').value = img.name;
+  document.getElementById('img-detail-modal').classList.add('open');
+}
+
+function saveImageMeta() {
+  const img = repoImages.find(i => i.id === currentDetailImgId);
+  if (img) {
+    img.alt = document.getElementById('img-detail-alt').value;
+    img.name = document.getElementById('img-detail-name').value;
+  }
+  document.getElementById('img-detail-modal').classList.remove('open');
+  showToast('Metadati immagine salvati', 'success');
+  renderRepoGrid('main-repo-grid');
+}
+
+function deleteImage() {
+  const idx = repoImages.findIndex(i => i.id === currentDetailImgId);
+  if (idx > -1) repoImages.splice(idx, 1);
+  document.getElementById('img-detail-modal').classList.remove('open');
+  showToast('Immagine eliminata dal repo', 'success');
+  renderRepoGrid('main-repo-grid');
+}
+
+// ══════════════════════════════════════════════
+// ARTICLE GENERATION
+// ══════════════════════════════════════════════
+function generateArticle() {
+  document.getElementById('generation-status').innerHTML = `
+    <div id="gen-steps-inline">
+      <div class="gen-step done"><span class="gen-step-icon">✅</span> Keyword e struttura analizzate</div>
+      <div class="gen-step active" id="gsi2"><span class="gen-step-icon">⏳</span> Scrittura testo SEO-ottimizzato...</div>
+      <div class="gen-step pending" id="gsi3"><span class="gen-step-icon">⏳</span> Inserimento immagini e alt text</div>
+      <div class="gen-step pending" id="gsi4"><span class="gen-step-icon">⏳</span> Schema JSON-LD generazione</div>
+      <div class="generating-indicator"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div></div>
+    </div>`;
+  document.getElementById('article-editor').style.display = 'none';
+
+  setTimeout(() => {
+    const s2 = document.getElementById('gsi2');
+    if (s2) { s2.className = 'gen-step done'; s2.querySelector('.gen-step-icon').textContent = '✅'; }
+    const s3 = document.getElementById('gsi3');
+    if (s3) { s3.className = 'gen-step active'; s3.querySelector('.gen-step-icon').textContent = '🔄'; }
+  }, 1200);
+  setTimeout(() => {
+    const s3 = document.getElementById('gsi3');
+    if (s3) { s3.className = 'gen-step done'; s3.querySelector('.gen-step-icon').textContent = '✅'; }
+    const s4 = document.getElementById('gsi4');
+    if (s4) { s4.className = 'gen-step active'; s4.querySelector('.gen-step-icon').textContent = '🔄'; }
+  }, 2400);
+  setTimeout(() => {
+    document.getElementById('gen-steps-inline').innerHTML = '<div class="gen-step done" style="justify-content:center;font-size:.9rem"><span class="gen-step-icon">🎉</span> Articolo generato con successo!</div>';
+    document.getElementById('article-content').innerHTML = ARTICLE_CONTENT;
+    document.getElementById('article-editor').style.display = 'block';
+    showToast('Articolo generato! Ora puoi revisionarlo.', 'success');
+    updateSEOScore();
+  }, 3600);
+}
+
+function regenArticle() {
+  document.getElementById('article-editor').style.display = 'none';
+  generateArticle();
+}
+
+function generateOutline() {
+  showToast('Outline generato con AI!', 'success');
+}
+
+function copyArticle() {
+  const content = document.getElementById('article-content')?.innerHTML || '';
+  navigator.clipboard.writeText(content).then(() => showToast('HTML copiato negli appunti!', 'success'));
+}
+
+function exportArticle(format) {
+  showToast(`Esportazione ${format.toUpperCase()} avviata`, 'info');
+}
+
+function saveToQueue() {
+  document.getElementById('queue-badge').textContent = '6';
+  showToast('Articolo salvato in coda editoriale', 'success');
+  switchView('queue');
+}
+
+function publishArticle() {
+  showToast('🚀 Articolo pubblicato su ecura.it/blog/!', 'success');
+  document.getElementById('queue-badge').textContent = '4';
+  switchView('queue');
+}
+
+// ══════════════════════════════════════════════
+// GENERATION MODAL (full-screen)
+// ══════════════════════════════════════════════
+function closeGenModal() { document.getElementById('gen-modal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// SEO SCORE LIVE
+// ══════════════════════════════════════════════
+function updateSEOScore() {
+  let score = 30;
+  const title = document.getElementById('article-title')?.value || '';
+  const meta = document.getElementById('article-meta')?.value || '';
+  const kw = document.getElementById('kw-main')?.value || '';
+  if (title.length > 30) score += 15;
+  if (meta.length > 50 && meta.length < 160) score += 15;
+  if (kw.length > 3) score += 10;
+  if (selectedImages.length > 0) score += 15;
+  if (selectedImages.length > 1) score += 5;
+  const selTags = document.querySelectorAll('#kw-suggestions .tag.selected');
+  score += Math.min(selTags.length * 2, 10);
+  score = Math.min(score, 98);
+  
+  const ring = document.getElementById('seo-ring');
+  const num = document.getElementById('live-seo-score');
+  if (ring && num) {
+    num.textContent = score;
+    const offset = 213.6 - (213.6 * score / 100);
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = score >= 80 ? '#22c55e' : score >= 60 ? '#eab308' : '#ef4444';
+  }
+  
+  // Update checklist
+  const checks = document.querySelectorAll('.seo-checklist li .check-icon');
+  if (checks.length >= 7) {
+    checks[0].className = `check-icon ${kw && title.toLowerCase().includes(kw.split(' ')[0].toLowerCase()) ? 'ok' : 'warn'}`;
+    checks[1].className = `check-icon ${meta.length > 50 && meta.length <= 155 ? 'ok' : 'warn'}`;
+    checks[2].className = `check-icon ${selTags.length >= 2 ? 'ok' : 'warn'}`;
+    checks[6].className = `check-icon ${selectedImages.length > 0 ? 'ok' : 'fail'}`;
+  }
+}
+
+// ══════════════════════════════════════════════
+// RICH EDITOR
+// ══════════════════════════════════════════════
+function execCmd(cmd) { document.execCommand(cmd, false, null); }
+function insertHeading(tag) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const node = document.createElement(tag);
+  node.textContent = sel.toString() || 'Titolo';
+  range.deleteContents();
+  range.insertNode(node);
+}
+
+// ══════════════════════════════════════════════
+// MISC HELPERS
+// ══════════════════════════════════════════════
+function toggleTag(el) { el.classList.toggle('selected'); updateSEOScore(); }
+
+function toggleSingle(el, group) {
+  document.querySelectorAll(`[onclick*="${group}"]`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectTone(el, tone) {
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addKeyword() {
+  const input = document.getElementById('kw-input');
+  if (input.value.trim()) {
+    showToast(`Keyword "${input.value}" aggiunta`, 'success');
+    input.value = '';
+  }
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// Live char count for title/meta
+document.addEventListener('DOMContentLoaded', () => {
+  const titleInput = document.getElementById('article-title');
+  const metaInput = document.getElementById('article-meta');
+  if (titleInput) titleInput.addEventListener('input', () => {
+    const l = titleInput.value.length;
+    const el = document.getElementById('title-char-count');
+    if (el) { el.textContent = `${l > 60 ? '⚠️' : '✓'} ${l} caratteri — ${l <= 60 ? 'ottimale per SEO' : 'troppo lungo!'}`; el.style.color = l <= 60 ? 'var(--success)' : 'var(--danger)'; }
+    updateSEOScore();
+  });
+  if (metaInput) metaInput.addEventListener('input', () => {
+    const l = metaInput.value.length;
+    const el = document.getElementById('meta-char-count');
+    if (el) { el.textContent = `${l > 155 ? '⚠️' : '✓'} ${l} caratteri — ${l <= 155 ? 'ottimale' : 'troppo lunga!'}`; el.style.color = l <= 155 ? 'var(--success)' : 'var(--danger)'; }
+    updateSEOScore();
+  });
+  updateSEOScore();
+});
+</script>
+</body>
+</html>
