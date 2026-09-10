@@ -7643,12 +7643,7 @@ ${370+t.length}
                                 <option value="tiepido" \${lead.temperatura === 'tiepido' ? 'selected' : ''}>🌡️ Tiepido</option>
                                 <option value="freddo"  \${lead.temperatura === 'freddo'  ? 'selected' : ''}>❄️ Freddo</option>
                             </select>
-                            <a href="#" 
-                               class="auto-temp-btn"
-                               data-lead-id="\${lead.id}"
-                               data-stato="\${lead.stato || ''}"
-                               style="font-size:.68rem;color:#9ca3af;display:block;text-align:center;line-height:1.2;margin-top:2px;text-decoration:none;cursor:pointer;"
-                               title="Calcola temperatura automatica in base allo stato">e.auto</a>
+
                         </td>
                         <td class="py-3 text-sm">
                             <select 
@@ -7861,20 +7856,18 @@ ${370+t.length}
                         const leadId = this.getAttribute('data-lead-id');
                         const value = this.value;
                         updateLeadStatus(leadId, value);
-                        // Aggiorna il data-stato del pulsante e.auto corrispondente
-                        const autoBtn = document.querySelector('.auto-temp-btn[data-lead-id="' + leadId + '"]');
-                        if (autoBtn) autoBtn.setAttribute('data-stato', value || '');
+                        // Ricalcola temperatura automaticamente al cambio stato
+                        calcTemperaturaAuto(leadId, value);
                     });
                 });
 
-                // Auto-temperatura buttons (e.auto)
-                document.querySelectorAll('.auto-temp-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const leadId = this.getAttribute('data-lead-id');
-                        const stato = this.getAttribute('data-stato') || '';
-                        calcTemperaturaAuto(leadId, stato);
-                    });
+                // Ricalcola temperatura automaticamente al render per i lead che non ce l'hanno
+                document.querySelectorAll('.status-select').forEach(select => {
+                    const leadId = select.getAttribute('data-lead-id');
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead && !lead.temperatura && lead.stato) {
+                        calcTemperaturaAuto(leadId, lead.stato);
+                    }
                 });
             }, 0);
         }
