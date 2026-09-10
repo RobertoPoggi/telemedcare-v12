@@ -2292,7 +2292,14 @@ export async function sendRataReminderEmail(
     const template = await loadEmailTemplate('email_reminder_rata', db, env)
     const htmlContent = TemplateEngine.render(template, templateData)
 
-    const oggetto = `⏰ Reminder Rata ${rataData.numero_rata}/${rataData.totale_rate} — scadenza ${scadenzaFmt} — eCura`
+    const oggi = new Date()
+    const dataScadenza = new Date(rataData.data_scadenza)
+    const giorniAllaScadenza = Math.ceil((dataScadenza.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24))
+    const isScaduta = giorniAllaScadenza < 0
+
+    const oggetto = isScaduta
+      ? `⚠️ Rata ${rataData.numero_rata}/${rataData.totale_rate} SCADUTA il ${scadenzaFmt} — pagamento in sospeso eCura`
+      : `⏰ Reminder Rata ${rataData.numero_rata}/${rataData.totale_rate} — scadenza ${scadenzaFmt} — eCura`
 
     const sendResult = await emailService.sendEmail({
       to: leadData.email,

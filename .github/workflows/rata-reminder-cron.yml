@@ -1,8 +1,11 @@
 name: Rata Reminder Automatico (Cron Giornaliero)
 # 📅 REMINDER AUTOMATICI RATE IN SCADENZA
 # ⏰ Esecuzione: Ogni giorno alle 09:30 Italia (07:30 UTC ora legale)
-# 🎯 Logica: invia email per rate con scadenza entro 7 giorni, non ancora pagate,
-#            e per cui non è già stato inviato un reminder oggi.
+# 🎯 Logica:
+#   • Rate con scadenza entro i prossimi 7 giorni (pre-scadenza) → oggetto "Reminder"
+#   • Rate già scadute da ≤30 giorni e non pagate (post-scadenza) → oggetto "SCADUTA – pagamento in sospeso"
+#   • In entrambi i casi: solo rate non pagate (status ≠ PAGATA/paid/ANNULLATA)
+#   • Non più di 1 reminder al giorno per rata (reminder_sent_at)
 
 on:
   schedule:
@@ -126,7 +129,8 @@ jobs:
           echo "📅 Prossima esecuzione schedulata: domani alle 07:30 UTC (09:30 IT)"
           echo ""
           echo "ℹ️  Logica reminder:"
-          echo "   • Rate con scadenza entro 7 giorni da oggi"
+          echo "   • Rate con scadenza entro 7 giorni da oggi (pre-scadenza)"
+          echo "   • Rate già scadute da ≤30 giorni e non pagate (post-scadenza / sollecito)"
           echo "   • Solo rate non pagate (status ≠ PAGATA/paid/ANNULLATA)"
           echo "   • Non più di 1 reminder al giorno per rata (reminder_sent_at)"
           echo "   • Colonna reminder_sent_at aggiunta automaticamente se mancante"

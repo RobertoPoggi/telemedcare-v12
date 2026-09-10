@@ -93,58 +93,6 @@ type Bindings = {
   USER_OPERATOR_PASSWORD?: string
 }
 
-// ============================================================================
-// TEMPERATURA LEAD — Logica calcolo automatico da stato CRM
-// ============================================================================
-// Regola: la temperatura viene CALCOLATA automaticamente dallo stato
-// ma può essere SOVRASCRITTA manualmente dall'operatore.
-// Valori: 'freddo' | 'tiepido' | 'caldo'
-
-export type TemperaturaLead = 'freddo' | 'tiepido' | 'caldo'
-
-/**
- * Calcola la temperatura di un lead in base al suo stato CRM.
- * Se viene passata una temperatura manuale sovrascritta, quella ha priorità.
- */
-export function calcolaTemperatura(stato: string | null | undefined): TemperaturaLead {
-  if (!stato) return 'freddo'
-  switch (stato) {
-    // 🔥 CALDO — bisogno definito, vicino all'acquisto
-    case 'interessato':
-    case 'in_trattativa':
-    case 'convertito':
-    case 'CONTRACT_SENT':
-    case 'CONTRACT_SIGNED':
-    case 'ACTIVE':
-      return 'caldo'
-
-    // 🌡️ TIEPIDO — ha interagito, curioso, da tenere caldo
-    case 'contattato':
-    case 'da_ricontattare':
-    case 'nuovo':
-    case 'inps':
-      return 'tiepido'
-
-    // ❄️ FREDDO — nessun interesse o irraggiungibile
-    case 'non_risponde':
-    case 'non_interessato':
-    case 'perso':
-    case 'numero_non_attivo':
-    case 'problemi_economici':
-    default:
-      return 'freddo'
-  }
-}
-
-/**
- * Emoji e label per la temperatura
- */
-export const TEMPERATURA_CONFIG = {
-  caldo:   { emoji: '🔥', label: 'Caldo',   color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
-  tiepido: { emoji: '🌡️', label: 'Tiepido', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
-  freddo:  { emoji: '❄️', label: 'Freddo',  color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
-}
-
 // Configurazione TeleMedCare V12.0 Modular Enterprise
 const CONFIG = {
   EMAIL_FROM: 'info@ecura.it',
@@ -697,6 +645,8 @@ app.use('*', async (c, next) => {
         { name: 'reminder_proforma_count', def: `INTEGER DEFAULT 0` },
         // IVA agevolata 4% per assistiti con disabilità 100% (Legge 104)
         { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
+        // Temperatura lead: caldo / tiepido / freddo
+        { name: 'temperatura', def: `TEXT DEFAULT NULL` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -1277,46 +1227,6 @@ app.use('*', async (c, next) => {
         console.warn('⚠️ Errore creazione tabella ddts:', e.message)
       }
 
-      // ── PREFATTURE ──────────────────────────────────────────────────
-      try {
-        await c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS prefatture (
-            id TEXT PRIMARY KEY,
-            numero_prefattura TEXT UNIQUE NOT NULL,
-            ddt_id TEXT,
-            contract_code TEXT,
-            destinatario_nome TEXT,
-            destinatario_indirizzo TEXT,
-            destinatario_cap TEXT,
-            destinatario_citta TEXT,
-            destinatario_provincia TEXT,
-            cf_intestatario TEXT,
-            dispositivo TEXT,
-            serial_number TEXT,
-            sim_number TEXT,
-            imponibile REAL,
-            iva_pct INTEGER DEFAULT 22,
-            iva_amt REAL,
-            totale REAL,
-            rateizzazione_attiva INTEGER DEFAULT 0,
-            rate_json TEXT,
-            riserva_dominio INTEGER DEFAULT 0,
-            inviata_commercialista INTEGER DEFAULT 0,
-            data_invio_commercialista DATETIME,
-            email_commercialista TEXT,
-            note TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `).run()
-        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_ddt ON prefatture(ddt_id)').run()
-        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_contract ON prefatture(contract_code)').run()
-        await c.env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_prefatture_numero ON prefatture(numero_prefattura)').run()
-        console.log('✅ Tabella prefatture verificata/creata')
-      } catch (e: any) {
-        console.warn('⚠️ Errore creazione tabella prefatture:', e.message)
-      }
-
       migrationCompleted = true
       console.log('✅ Migrazione automatica completata')
     } catch (error) {
@@ -1592,38 +1502,8 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
-  // Fix contract_code DDT Gavazzi → CTR-GAVAZZI-2026 (one-shot)
-  if (path === '/api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q' && method === 'POST') {
-    return next()
-  }
-
   // Diagnostica fonte lead - mostra quali fonti ricevevano reminder (one-shot lettura)
   if (path === '/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v' && method === 'GET') {
-    return next()
-  }
-
-  // Diagnostica reminder recenti - lead ultimi 15gg, token, config (one-shot lettura)
-  if (path === '/api/oneshot-diagnosi-reminder-recenti-7x2q9' && method === 'GET') {
-    return next()
-  }
-
-  // Diagnostica provider email - verifica quali API key sono configurate e testa invio (one-shot)
-  if (path === '/api/oneshot-diagnosi-email-provider-4k8m2' && method === 'GET') {
-    return next()
-  }
-
-  // Report lead per periodo e fonte (GA4 report)
-  if (path === '/api/oneshot-report-leads-ga4-9v2k5' && method === 'GET') {
-    return next()
-  }
-
-  // Migrazione D1: aggiunta colonna temperatura a leads (one-shot)
-  if (path === '/api/oneshot-migrate-temperatura-8z4xk' && method === 'POST') {
-    return next()
-  }
-
-  // Test invio reale Resend con log errore esatto (one-shot POST — invia una mail di test a info@ecura.it)
-  if (path === '/api/oneshot-test-resend-raw-7p3k1' && method === 'POST') {
     return next()
   }
 
@@ -3644,21 +3524,6 @@ const _adminDdtHtml = String.raw`<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- TABS DDT / PRE-FATTURE -->
-  <div class="flex gap-1 mb-4 border-b border-gray-200">
-    <button id="tabDdt" onclick="showTab('ddt')"
-      class="px-5 py-2 text-sm font-semibold border-b-2 border-teal-600 text-teal-700 bg-white -mb-px rounded-t">
-      <i class="fas fa-truck mr-1"></i>DDT
-    </button>
-    <button id="tabPf" onclick="showTab('pf')"
-      class="px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-purple-700 hover:border-purple-400 bg-white -mb-px rounded-t transition-colors">
-      <i class="fas fa-file-invoice mr-1"></i>Pre-Fatture
-    </button>
-  </div>
-
-  <!-- SEZIONE DDT -->
-  <div id="sectionDdt">
-
   <!-- FILTRI -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3752,47 +3617,7 @@ const _adminDdtHtml = String.raw`<!DOCTYPE html>
       <span class="text-xs text-gray-500" id="tableFooter">—</span>
     </div>
   </div>
-
-  </div><!-- /sectionDdt -->
-
-  <!-- SEZIONE PRE-FATTURE -->
-  <div id="sectionPf" class="hidden">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-purple-700"><i class="fas fa-file-invoice mr-2"></i>Pre-Fatture emesse</h2>
-        <button onclick="loadPrefatture()" class="text-xs text-purple-600 hover:text-purple-800 border border-purple-200 rounded px-3 py-1">
-          <i class="fas fa-sync mr-1"></i>Aggiorna
-        </button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">N° Pre-Fattura</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Data</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cliente</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">DDT Rif.</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Imponibile</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">IVA</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Totale</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Email</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Azioni</th>
-            </tr>
-          </thead>
-          <tbody id="pfTableBody">
-            <tr><td colspan="9" class="px-4 py-10 text-center text-gray-400">
-              <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Caricamento…
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">
-        <span class="text-xs text-gray-500" id="pfTableFooter">—</span>
-      </div>
-    </div>
-  </div><!-- /sectionPf -->
-
-</div><!-- /max-w-7xl -->
+</div>
 
 <!-- MODAL DETTAGLIO -->
 <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex items-center justify-center p-4">
@@ -3813,67 +3638,6 @@ var allDDTs = [];
 var filteredDDTs = [];
 var sortField = 'created_at';
 var sortDir = -1;
-
-// ── Gestione tabs DDT / Pre-Fatture ─────────────────────────────────
-function showTab(tab) {
-  var isDdt = tab === 'ddt';
-  document.getElementById('sectionDdt').classList.toggle('hidden', !isDdt);
-  document.getElementById('sectionPf').classList.toggle('hidden', isDdt);
-  document.getElementById('tabDdt').className = isDdt
-    ? 'px-5 py-2 text-sm font-semibold border-b-2 border-teal-600 text-teal-700 bg-white -mb-px rounded-t'
-    : 'px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-teal-600 hover:border-teal-400 bg-white -mb-px rounded-t transition-colors';
-  document.getElementById('tabPf').className = !isDdt
-    ? 'px-5 py-2 text-sm font-semibold border-b-2 border-purple-600 text-purple-700 bg-white -mb-px rounded-t'
-    : 'px-5 py-2 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-purple-700 hover:border-purple-400 bg-white -mb-px rounded-t transition-colors';
-  if (!isDdt) loadPrefatture();
-}
-
-// ── Pre-Fatture ──────────────────────────────────────────────────────
-function fmtEur(v) {
-  var n = parseFloat(v) || 0;
-  return '€ ' + n.toFixed(2).replace('.', ',');
-}
-
-async function loadPrefatture() {
-  var tbody = document.getElementById('pfTableBody');
-  tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>Caricamento…</td></tr>';
-  try {
-    var res = await fetch('/api/prefatture');
-    var data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Errore API');
-    var pfs = data.prefatture || [];
-    if (!pfs.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Nessuna pre-fattura generata.</td></tr>';
-      document.getElementById('pfTableFooter').textContent = '0 pre-fatture';
-      return;
-    }
-    var html = '';
-    pfs.forEach(function(p) {
-      var emailBadge = p.inviata_commercialista
-        ? '<span class="text-green-600" title="Inviata a ' + esc(p.email_commercialista || '') + '"><i class="fas fa-check-circle"></i></span>'
-        : '<span class="text-gray-300" title="Non inviata"><i class="fas fa-minus-circle"></i></span>';
-      var ivaBadge = p.iva_pct === 4
-        ? '<span class="text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-1">' + p.iva_pct + '%</span>'
-        : '<span class="text-xs text-gray-500">' + p.iva_pct + '%</span>';
-      html += '<tr class="hover:bg-purple-50">';
-      html += '<td class="px-4 py-3 font-mono text-xs text-purple-800 font-bold whitespace-nowrap">' + esc(p.numero_prefattura || '—') + '</td>';
-      html += '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + fmtDate(p.created_at) + '</td>';
-      html += '<td class="px-4 py-3 text-sm text-gray-900">' + esc(p.destinatario_nome || '—') + '</td>';
-      html += '<td class="px-4 py-3 font-mono text-xs text-gray-500">' + esc(p.ddt_id || '—') + '</td>';
-      html += '<td class="px-4 py-3 text-right text-xs font-mono">' + fmtEur(p.imponibile) + '</td>';
-      html += '<td class="px-4 py-3 text-right text-xs">' + fmtEur(p.iva_amt) + ' ' + ivaBadge + '</td>';
-      html += '<td class="px-4 py-3 text-right font-bold text-sm">' + fmtEur(p.totale) + '</td>';
-      html += '<td class="px-4 py-3 text-center">' + emailBadge + '</td>';
-      html += '<td class="px-4 py-3 text-center whitespace-nowrap">';
-      html += '<a href="/api/ddts/' + encodeURIComponent(p.ddt_id || '') + '/prefattura-html" target="_blank" class="text-purple-600 hover:text-purple-900 mr-2" title="Stampa Pre-Fattura"><i class="fas fa-print"></i></a>';
-      html += '</td></tr>';
-    });
-    tbody.innerHTML = html;
-    document.getElementById('pfTableFooter').textContent = pfs.length + ' pre-fatture';
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-6 text-center text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>' + esc(e.message) + '</td></tr>';
-  }
-}
 
 async function loadDDTs() {
   try {
@@ -3999,7 +3763,6 @@ function renderTable() {
       : '';
     var ddtPrintId = encodeURIComponent(d.id || d.numero_ddt);
     var viewBtn = '<a href="/api/ddts/' + ddtPrintId + '/pdf-print" target="_blank" class="text-gray-500 hover:text-gray-700 mr-2" title="Stampa DDT"><i class="fas fa-print"></i></a>';
-    var pfBtn = '<button onclick="generaPrefattura(' + "'" + esc(d.id || d.numero_ddt) + "'" + ')" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>';
     var rowId = esc(d.id || d.numero_ddt);
 
     html += '<tr>';
@@ -4011,7 +3774,7 @@ function renderTable() {
     html += '<td class="px-4 py-3 font-mono text-xs text-gray-500" title="' + esc(sn) + '">' + esc(snShort) + '</td>';
     html += '<td class="px-4 py-3">' + contractLink + '</td>';
     html += '<td class="px-4 py-3">' + statusBadge(d.status) + '</td>';
-    html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn + pfBtn;
+    html += '<td class="px-4 py-3 text-center whitespace-nowrap">' + pdfBtn + viewBtn;
     html += '<button onclick="showDetail(' + "'" + rowId + "'" + ')" class="text-gray-400 hover:text-teal-600" title="Dettaglio"><i class="fas fa-info-circle"></i></button>';
     html += '</td></tr>';
   });
@@ -4063,7 +3826,6 @@ function showDetail(id) {
     btns += '<a href="' + esc(d.pdf_url) + '" target="_blank" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"><i class="fas fa-file-pdf mr-1"></i>PDF</a>';
   }
   btns += '<a href="/api/ddts/' + encodeURIComponent(d.id || d.numero_ddt) + '/pdf-print" target="_blank" class="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg"><i class="fas fa-print mr-1"></i>Stampa / PDF</a>';
-  btns += '<button onclick="generaPrefattura(' + "'" + rowId + "'" + ')" class="px-4 py-2 text-sm bg-purple-700 hover:bg-purple-800 text-white rounded-lg"><i class="fas fa-file-invoice mr-1"></i>Pre-Fattura</button>';
   btns += '<button onclick="closeModal()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Chiudi</button>';
   document.getElementById('modalFooter').innerHTML = btns;
 
@@ -4072,41 +3834,6 @@ function showDetail(id) {
 
 function closeModal() {
   document.getElementById('detailModal').classList.add('hidden');
-}
-
-// ── Genera Pre-Fattura ─────────────────────────────────────────────
-function generaPrefattura(id) {
-  var note = prompt('Note aggiuntive per la pre-fattura (opzionale):') || '';
-  var confirm = window.confirm('Generare la pre-fattura per il DDT ' + id + ' e inviarla al commercialista?');
-  if (!confirm) return;
-
-  fetch('/api/ddts/' + encodeURIComponent(id) + '/prefattura', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ note: note })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      var msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\n' +
-        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\n' +
-        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\n' +
-        'Totale: €' + (data.totale || 0).toFixed(2) + '\n\n';
-      if (data.email_inviata) {
-        msg += '📧 Email inviata a: ' + data.email_commercialista;
-      } else if (data.email_commercialista) {
-        msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
-      } else {
-        msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
-      }
-      alert(msg);
-      // Apri anteprima pre-fattura in una nuova tab
-      window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
-    } else {
-      alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
-    }
-  })
-  .catch(function(e) { alert('❌ Errore di rete: ' + e.message); });
 }
 
 document.getElementById('detailModal').addEventListener('click', function(e) {
@@ -7323,13 +7050,14 @@ app.get('/api/leads/filters', async (c) => {
 
 // GET /api/leads/channel-stats — Statistiche canali Form eCura (Meta / Google / Altro / Diretto)
 //
-// LOGICA CORRETTA:
-// Il criterio "è un lead Form eCura" = (fonte = 'Form eCura') OR (dettaglio_fonte = 'ecura_landing')
-// I lead dalla nuova landing (post lug-2026) arrivano con fonte='Form eCura' AND dettaglio_fonte='ecura_landing'.
-// I lead storici HubSpot hanno fonte='Form eCura' e dettaglio_fonte=NULL.
-// La condizione OR garantisce che nessun lead venga perso in caso di disallineamento futuro.
-// I contatori Meta/Google/Diretto/Altro usano canale_acquisizione (campo normalizzato).
-// nonTracciato = totalEcura - meta - google - diretto - altro (lead senza canale_acquisizione)
+// LOGICA CORRETTA (due query separate):
+// 1. totalEcura  = COUNT leads con fonte = 'Form eCura' (campo affidabile per TUTTI i lead storici)
+// 2. META/GOOGLE/ALTRO = COUNT da hs_object_source_detail_1 per i lead che hanno il suffisso canale
+//    (presenti solo nei lead importati dopo il 12-13/05/2026 con CONTAINS_TOKEN)
+// 3. diretto = totalEcura - meta - google - altro (lead vecchi senza suffisso canale)
+//
+// Nota: i lead storici hanno hs_object_source_detail_1 = 'Form eCura' (vecchio valore esatto)
+// oppure NULL; solo i nuovi hanno 'Form eCura_ META' / 'Form eCura_ GOOGLE' / 'Form eCura_ ALTRO'
 app.get('/api/leads/channel-stats', async (c) => {
   try {
     if (!c.env.DB) {
@@ -7343,16 +7071,14 @@ app.get('/api/leads/channel-stats', async (c) => {
     // Lead eCura = fonte = 'Form eCura' (esclude test, IRBEMA, ecc.)
     // =====================================================================
 
-    // Query 1 — totale lead eCura
-    // Criterio: fonte='Form eCura' OR dettaglio_fonte='ecura_landing'
-    // Questo include tutti i lead della landing proprietaria (nuovi e storici).
+    // Query 1 — totale lead eCura (fonte = 'Form eCura', esclude test)
+    // Usa COUNT(*) — stesso criterio del filtro tabella (conta record, non email univoche)
     let totalEcura = 0
     try {
       const r = await c.env.DB.prepare(`
         SELECT COUNT(*) as count
         FROM leads
         WHERE fonte = 'Form eCura'
-           OR dettaglio_fonte = 'ecura_landing'
       `).first() as any
       totalEcura = Number(r?.count) || 0
     } catch (err) {
@@ -7370,7 +7096,7 @@ app.get('/api/leads/channel-stats', async (c) => {
       const result = await c.env.DB.prepare(`
         SELECT canale_acquisizione, COUNT(*) as count
         FROM leads
-        WHERE (fonte = 'Form eCura' OR dettaglio_fonte = 'ecura_landing')
+        WHERE fonte = 'Form eCura'
           AND canale_acquisizione IS NOT NULL
           AND canale_acquisizione != ''
         GROUP BY canale_acquisizione
@@ -7381,14 +7107,12 @@ app.get('/api/leads/channel-stats', async (c) => {
       rows.forEach((row: any) => {
         // Supporta sia il formato normalizzato ('META') sia quello vecchio ('Form eCura_ META')
         // presenti in DB storici (TEST) popolati con versioni precedenti del codice.
-        // Tutti i canali non-META/GOOGLE/DIRETTO confluiscono in 'altro':
-        // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL, ecc.
         const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
-        if      (val === 'META'    || val.includes('META'))    meta    += cnt
+        if (val === 'META'      || val.includes('META'))    meta    += cnt
         else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  google  += cnt
         else if (val === 'DIRETTO' || val.includes('DIRETTO')) diretto += cnt
-        else                                                    altro   += cnt  // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL...
+        else if (val === 'ALTRO'   || val.includes('ALTRO'))   altro   += cnt
         breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
@@ -7398,15 +7122,13 @@ app.get('/api/leads/channel-stats', async (c) => {
     // nonTracciato = lead eCura senza canale_acquisizione
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
-    // ─── Query landing: lead dalla nuova landing Cloudflare (dal 8/8/2026) ──────────
+    // ─── Query landing: lead dalla landing proprietaria ecura.it ──────────
     // Identificati da dettaglio_fonte = 'ecura_landing', con breakdown per canale
-    // NB: Organico (SEO) è separato da Altro per allineamento col filtro dropdown
     let landingTotal = 0
     let landingMeta = 0
     let landingGoogle = 0
     let landingDiretto = 0
     let landingAltro = 0
-    let landingOrganico = 0
     let landingNonTracciato = 0
     try {
       const landingRes = await c.env.DB.prepare(`
@@ -7419,48 +7141,14 @@ app.get('/api/leads/channel-stats', async (c) => {
         const cnt = Number(row.count) || 0
         landingTotal += cnt
         const val = (row.canale_acquisizione || '').toUpperCase()
-        if      (val === 'META'     || val.includes('META'))     landingMeta     += cnt
-        else if (val === 'GOOGLE'   || val.includes('GOOGLE'))   landingGoogle   += cnt
-        else if (val === 'DIRETTO'  || val.includes('DIRETTO'))  landingDiretto  += cnt
-        else if (val === 'ORGANICO' || val.includes('ORGANICO')) landingOrganico += cnt
-        else if (val !== '')                                      landingAltro    += cnt  // ALTRO, REFERRAL...
-        else                                                      landingNonTracciato += cnt  // solo NULL/vuoto
+        if (val === 'META'      || val.includes('META'))    landingMeta    += cnt
+        else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  landingGoogle  += cnt
+        else if (val === 'DIRETTO' || val.includes('DIRETTO')) landingDiretto += cnt
+        else if (val === 'ALTRO'   || val.includes('ALTRO'))   landingAltro   += cnt
+        else landingNonTracciato += cnt
       }
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query landing', err)
-    }
-
-    // ─── Query oldForm: lead dal vecchio Form eCura gestione Nur (fino al 29/7/2026) ──────────
-    // Criterio: fonte='Form eCura' AND dettaglio_fonte != 'ecura_landing' (esclude la nuova landing)
-    // NB: Organico (SEO) è separato da Altro per allineamento col filtro dropdown
-    let oldFormTotal = 0
-    let oldFormMeta = 0
-    let oldFormGoogle = 0
-    let oldFormDiretto = 0
-    let oldFormAltro = 0
-    let oldFormOrganico = 0
-    let oldFormNonTracciato = 0
-    try {
-      const oldFormRes = await c.env.DB.prepare(`
-        SELECT canale_acquisizione, COUNT(*) as count
-        FROM leads
-        WHERE fonte = 'Form eCura'
-          AND (dettaglio_fonte IS NULL OR dettaglio_fonte != 'ecura_landing')
-        GROUP BY canale_acquisizione
-      `).all()
-      for (const row of (oldFormRes.results || []) as any[]) {
-        const cnt = Number(row.count) || 0
-        oldFormTotal += cnt
-        const val = (row.canale_acquisizione || '').toUpperCase()
-        if      (val === 'META'     || val.includes('META'))     oldFormMeta     += cnt
-        else if (val === 'GOOGLE'   || val.includes('GOOGLE'))   oldFormGoogle   += cnt
-        else if (val === 'DIRETTO'  || val.includes('DIRETTO'))  oldFormDiretto  += cnt
-        else if (val === 'ORGANICO' || val.includes('ORGANICO')) oldFormOrganico += cnt
-        else if (val !== '')                                      oldFormAltro    += cnt  // ALTRO, REFERRAL...
-        else                                                      oldFormNonTracciato += cnt  // NULL/vuoto
-      }
-    } catch (err) {
-      console.warn('⚠️ channel-stats: errore query oldForm', err)
     }
 
     // ─── Query 3: statistiche sconto per canale ────────────────────────────
@@ -7478,7 +7166,7 @@ app.get('/api/leads/channel-stats', async (c) => {
           ROUND(SUM(COALESCE(l.prezzo_anno, 0) - COALESCE(l.prezzo_scontato, COALESCE(l.prezzo_anno, 0))), 2) AS risparmio_totale,
           ROUND(AVG(CASE WHEN l.codice_sconto IS NOT NULL AND l.codice_sconto != '' THEN l.sconto_percentuale ELSE NULL END), 1) AS pct_media
         FROM leads l
-        WHERE (l.fonte = 'Form eCura' OR l.dettaglio_fonte = 'ecura_landing')
+        WHERE l.fonte = 'Form eCura'
         GROUP BY COALESCE(l.canale_acquisizione, '__NON_TRACCIATO__')
       `).all()
 
@@ -7539,25 +7227,14 @@ app.get('/api/leads/channel-stats', async (c) => {
       altro,
       nonTracciato,
       breakdown,
-      // Nuova landing Cloudflare ecura.it (dettaglio_fonte = 'ecura_landing', dal 8/8/2026)
+      // Landing proprietaria ecura.it (dettaglio_fonte = 'ecura_landing')
       landing: {
-        total:        landingTotal,
-        meta:         landingMeta,
-        google:       landingGoogle,
-        diretto:      landingDiretto,
-        organico:     landingOrganico,
-        altro:        landingAltro,
+        total:       landingTotal,
+        meta:        landingMeta,
+        google:      landingGoogle,
+        diretto:     landingDiretto,
+        altro:       landingAltro,
         nonTracciato: landingNonTracciato
-      },
-      // Vecchio Form eCura gestione Nur (fonte='Form eCura' senza dettaglio_fonte='ecura_landing', fino al 29/7/2026)
-      oldForm: {
-        total:        oldFormTotal,
-        meta:         oldFormMeta,
-        google:       oldFormGoogle,
-        diretto:      oldFormDiretto,
-        organico:     oldFormOrganico,
-        altro:        oldFormAltro,
-        nonTracciato: oldFormNonTracciato
       },
       // Statistiche sconto
       discountByCanale,
@@ -9292,24 +8969,17 @@ app.post('/api/contracts/send', async (c) => {
     }
     
     // Prepara dati contratto per la funzione
-    // ✅ FIX: Usa getPricing dalla pricing matrix per ottenere setupBase (IVA ESCLUSA)
-    // contract.prezzo_totale contiene setupTotale (IVA INCLUSA 22%) — NON usarlo come prezzoBase
+    // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
     const ivaRateContr8931 = (lead as any).iva_agevolata ? 0.04 : 0.22
-    const servizioContr = ((contract as any).servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
-    const pianoContr = ((contract as any).tipo_contratto || (contract as any).piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
-    const pricingContr = getPricing(servizioContr, pianoContr)
-    // Usa setupBase dalla pricing matrix (IVA ESCLUSA). Fallback: prezzo_mensile*12 se salvato, altrimenti 480
-    const prezzoBaseContr8931 = pricingContr
-      ? pricingContr.setupBase
-      : (Math.round(((contract as any).prezzo_mensile || 40) * 12 * 100) / 100)
+    const prezzoBaseContr8931 = contract.prezzo_totale || 480
     const contractData = {
       contractId: contract.id,
       contractCode: contract.codice_contratto,
       contractPdfUrl: contract.pdf_url || '',
       tipoServizio: contract.tipo_contratto || contract.piano,
       servizio: contract.servizio,
-      prezzoBase: prezzoBaseContr8931,                                                          // ✅ IVA ESCLUSA (setupBase)
-      prezzoIvaInclusa: Math.round(prezzoBaseContr8931 * (1 + ivaRateContr8931) * 100) / 100   // ✅ IVA corretta del lead
+      prezzoBase: prezzoBaseContr8931,
+      prezzoIvaInclusa: Math.round(prezzoBaseContr8931 * (1 + ivaRateContr8931) * 100) / 100  // ✅ IVA corretta
     }
     
     // NON passare documentUrls - workflow usa brochure-manager automaticamente
@@ -10326,57 +9996,6 @@ app.delete('/api/ddts/:id', async (c) => {
   }
 })
 
-// GET /api/ddts/:id/debug - Debug endpoint temporaneo per ispezionare valori DDT
-app.get('/api/ddts/:id/debug', async (c) => {
-  const id = c.req.param('id')
-  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-  const ddt = await c.env.DB.prepare(
-    `SELECT id, numero_ddt, contract_code, note, dispositivo FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
-  ).bind(id, id).first() as any
-  if (!ddt) return c.json({ error: 'DDT non trovata' }, 404)
-
-  // Cerca contratto per codice (come fa pdf-print)
-  const contractRow = ddt.contract_code
-    ? await c.env.DB.prepare(
-        `SELECT c.codice_contratto, c.id AS contract_id, c.piano, c.servizio, c.leadId,
-                l.id AS lead_id, l.piano AS lead_piano, l.servizio AS lead_servizio
-         FROM contracts c
-         LEFT JOIN leads l ON l.id = c.leadId
-         WHERE c.codice_contratto = ? OR c.id = ?
-         LIMIT 1`
-      ).bind(ddt.contract_code, ddt.contract_code).first() as any
-    : null
-
-  // Cerca contratto per leadId estratto dalla nota (fallback diagnostico)
-  const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-  const contractViaLead = leadIdFromNote
-    ? await c.env.DB.prepare(
-        `SELECT codice_contratto, id AS contract_id, piano, servizio, leadId
-         FROM contracts WHERE leadId = ? LIMIT 1`
-      ).bind(leadIdFromNote).first() as any
-    : null
-
-  const noteRaw = ddt.note || ''
-  const servizioContratto = (contractRow?.servizio || '').toUpperCase()
-  const pianoEsplicito     = (contractRow?.piano        || '').toUpperCase()
-  const pianoInLeadPiano   = (contractRow?.lead_piano   || '').toUpperCase().includes('AVANZAT')
-  const pianoInLeadServizio = (contractRow?.lead_servizio || '').toUpperCase().includes('AVANZAT')
-  const pianoInServizio    = servizioContratto.includes('AVANZAT')
-  const pianoInNote        = noteRaw.toUpperCase().includes('AVANZAT')
-  const isAvanzatoDDT = pianoEsplicito === 'AVANZATO' || pianoInLeadPiano || pianoInLeadServizio || pianoInServizio || pianoInNote
-  return c.json({
-    ddt_id: ddt.id,
-    ddt_contract_code: ddt.contract_code,
-    ddt_note: ddt.note,
-    ddt_dispositivo: ddt.dispositivo,
-    contract_via_contract_code: contractRow,
-    lead_id_from_note: leadIdFromNote,
-    contract_via_lead_id: contractViaLead,
-    fallback: { pianoEsplicito, pianoInLeadPiano, pianoInLeadServizio, pianoInServizio, pianoInNote },
-    isAvanzatoDDT
-  })
-})
-
 // GET /api/ddts/:id/pdf-print - Genera pagina HTML stampabile DDT (layout fedele al template Medica GB)
 app.get('/api/ddts/:id/pdf-print', async (c) => {
   const id = c.req.param('id')
@@ -10387,34 +10006,12 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     ).bind(id, id).first() as any
     if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
 
-    // Legge contratto collegato alla DDT.
-    // Prima cerca per codice_contratto = ddt.contract_code.
-    // Se non trova (es. contract_code contiene un vecchio ID lead anziché il codice contratto),
-    // cerca il contratto tramite leadId estratto dalla nota DDT (formato "LeadID:LEAD-IRBEMA-XXXXX").
-    let contractRow = ddt.contract_code
+    // Legge signed_at e servizio del contratto collegato (campo Riferimento — distinta dalla data DDT)
+    const contractRow = ddt.contract_code
       ? await c.env.DB.prepare(
-          `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
-                  l.piano AS lead_piano, l.servizio AS lead_servizio
-           FROM contracts c
-           LEFT JOIN leads l ON l.id = c.leadId
-           WHERE c.codice_contratto = ? OR c.id = ?
-           LIMIT 1`
+          `SELECT signature_timestamp, signed_at, data_invio, servizio FROM contracts WHERE codice_contratto = ? OR id = ? LIMIT 1`
         ).bind(ddt.contract_code, ddt.contract_code).first() as any
       : null
-    // Fallback: cerca per leadId estratto dalla nota se il codice non ha trovato nulla
-    if (!contractRow) {
-      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-      if (leadIdFromNote) {
-        contractRow = await c.env.DB.prepare(
-          `SELECT c.signature_timestamp, c.signed_at, c.data_invio, c.servizio, c.piano,
-                  l.piano AS lead_piano, l.servizio AS lead_servizio
-           FROM contracts c
-           LEFT JOIN leads l ON l.id = c.leadId
-           WHERE c.leadId = ?
-           LIMIT 1`
-        ).bind(leadIdFromNote).first() as any
-      }
-    }
     // Priorità data firma:
     // 1. signature_timestamp → firma elettronica (timestamp preciso)
     // 2. signed_at           → firma elettronica/manuale
@@ -10452,7 +10049,6 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     const destinatario = ddt.destinatario_nome || '—'
     const indirizzoRiga1 = ddt.destinatario_indirizzo || ''
     const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
-
     const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
     const contratto = ddt.contract_code || '—'
@@ -10470,51 +10066,19 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
     const simNome = `SIM SiDLY per ${dispositivo}`
     const simDescrizione = `SIM SiDLY per ${dispositivo} (numero SIM ${simNumber}), per comunicazione e trasmissione dati.`
 
-    // Descrizione completa dispositivo per proforma DDT
-    // Differenziata per servizio (FAMILY/PRO/PREMIUM) × piano (BASE/AVANZATO)
-    // REGOLA: piano AVANZATO → CO + familiari; piano BASE → solo familiari
+    // Descrizione completa dispositivo (da template reale)
     let descrizioneDispositivo: string
     const dispLower = dispositivo.toLowerCase()
-    const servizioContratto = (contractRow?.servizio || '').toUpperCase()
-
-    // Determina piano con fallback multipli (il campo piano può essere NULL in contratti storici):
-    // 1. contractRow.piano          → colonna dedicata della tabella contracts
-    // 2. leads.piano            → piano del lead collegato (BASE/AVANZATO)
-    // 3. leads.servizio          → servizio del lead (es. "eCura PREMIUM Avanzato")
-    // 4. contractRow.servizio    → nome servizio del contratto (es. "eCura PREMIUM Avanzato")
-    // 5. noteRaw del DDT         → note operative (es. "Piano:AVANZATO")
-    const pianoEsplicito     = (contractRow?.piano        || '').toUpperCase()
-    const pianoInLeadPiano   = (contractRow?.lead_piano   || '').toUpperCase().includes('AVANZAT')
-    const pianoInLeadServizio = (contractRow?.lead_servizio || '').toUpperCase().includes('AVANZAT')
-    const pianoInServizio    = servizioContratto.includes('AVANZAT')
-    const pianoInNote        = (noteRaw || '').toUpperCase().includes('AVANZAT')
-    const isAvanzatoDDT = pianoEsplicito === 'AVANZATO'
-      || pianoInLeadPiano
-      || pianoInLeadServizio
-      || pianoInServizio
-      || pianoInNote
-
-    const isFamily = servizioContratto.includes('FAMILY') || dispLower.includes('family')
+    // Determina il piano: priorità contratto → nome dispositivo nel DDT
+    const servizioContratto = (contractRow?.servizio || '').toLowerCase()
+    const isFamily = servizioContratto.includes('family') || dispLower.includes('family')
     const snLabel = serialNumber && serialNumber !== '—' ? ` e SN ${serialNumber}` : ''
-    // Destinatari voce/allarmi: AVANZATO → CO + familiari/care giver; BASE → solo familiari/care giver
-    const destVoce = isAvanzatoDDT
-      ? 'la Centrale Operativa e con i familiari / care giver configurati in Piattaforma'
-      : 'i familiari e i care giver configurati in Piattaforma'
-    const destCadute = isAvanzatoDDT
-      ? 'alla Centrale Operativa e ai familiari'
-      : 'ai familiari e ai care giver'
-    const destVitali = isAvanzatoDDT
-      ? 'alla Centrale Operativa e ai familiari'
-      : 'ai familiari e ai care giver'
     if (dispLower.includes('vital')) {
-      // PREMIUM (SiDLY Vital Care) — con SpO2, analisi sonno, AI predittiva
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destVitali : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa (ove prevista). È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else if (isFamily) {
-      // FAMILY (SiDLY Care PRO, piano BASE o AVANZATO) — no SpO2/farmaci
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. È inoltre integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}. È inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     } else {
-      // PRO (SiDLY Care PRO, piano BASE o AVANZATO) — con FC/SpO2, geofencing, farmaci
-      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVoce}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoDDT ? ' con notifica ' + destCadute : ''}, il reminder dei farmaci e il monitoraggio dei parametri vitali (FC e SpO2)${isAvanzatoDDT ? ' con alert automatici ' + destVitali : ''}. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Installazione e collaudo inclusi.`
+      descrizioneDispositivo = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con la Centrale Operativa. Come prevista, è integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e la gestione dell'alimentazione. È un Dispositivo Medico certificato in classe IIA con codice CND V0399 (DISPOSITIVI CON FUNZIONI DI MISURA ALTRI) e codice BD/RDM 2853300 del repertorio dispositivi medicali${snLabel}, come tale, consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi.`
     }
 
     // Contratto riferimento formattato — usa data_firma del contratto (NON data del DDT)
@@ -10663,6 +10227,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
         <td class="cod">${dispositivo}</td>
         <td>
           ${descrizioneDispositivo}
+          <div class="sn-inline"><strong>SN ${serialNumber}</strong></div>
         </td>
         <td class="um">NR</td>
         <td class="qty">1</td>
@@ -10711,742 +10276,6 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
   } catch (error) {
     console.error('❌ [DDT-PDF-PRINT]', error)
     return c.html(`<h1>Errore generazione DDT</h1><pre>${String(error)}</pre>`, 500)
-  }
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// PRE-FATTURA — generazione HTML stampabile
-// GET /api/ddts/:id/prefattura-html
-// Restituisce il documento pre-fattura pronto per la stampa/PDF.
-// ═══════════════════════════════════════════════════════════════════
-app.get('/api/ddts/:id/prefattura-html', async (c) => {
-  const id = c.req.param('id')
-  try {
-    if (!c.env?.DB) return c.html('<h1>Database non configurato</h1>', 500)
-
-    // ── Carica DDT ──────────────────────────────────────────────────
-    const ddt = await c.env.DB.prepare(
-      `SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
-    ).bind(id, id).first() as any
-    if (!ddt) return c.html('<h1>DDT non trovato</h1>', 404)
-
-    // ── Carica contratto + lead collegati ────────────────────────────
-    let contractRow: any = null
-    let leadRow: any = null
-
-    if (ddt.contract_code) {
-      contractRow = await c.env.DB.prepare(
-        `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
-                c.leadId,
-                l.nomeRichiedente, l.cognomeRichiedente,
-                l.nomeAssistito, l.cognomeAssistito,
-                l.intestatarioContratto,
-                l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
-                l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
-                l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata,
-                l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                l.riserva_dominio AS lead_riserva_dominio
-         FROM contracts c
-         LEFT JOIN leads l ON l.id = c.leadId
-         WHERE c.codice_contratto = ? OR c.id = ?
-         LIMIT 1`
-      ).bind(ddt.contract_code, ddt.contract_code).first() as any
-    }
-    // Fallback: cerca tramite leadId nella nota DDT
-    if (!contractRow) {
-      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-      if (leadIdFromNote) {
-        contractRow = await c.env.DB.prepare(
-          `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                  c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
-                  c.leadId,
-                  l.nomeRichiedente, l.cognomeRichiedente,
-                  l.nomeAssistito, l.cognomeAssistito,
-                  l.intestatarioContratto,
-                  l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
-                  l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
-                  l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata,
-                  l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                  l.riserva_dominio AS lead_riserva_dominio
-           FROM contracts c
-           LEFT JOIN leads l ON l.id = c.leadId
-           WHERE c.leadId = ?
-           LIMIT 1`
-        ).bind(leadIdFromNote).first() as any
-      }
-    }
-
-    // ── Rate da rate_pagamento (contratto O lead come fonte) ──────────
-    // Fallback: usa leads.rateizzazione_attiva se contracts ha 0 (dato non sempre sincronizzato)
-    const isRateizzatoGET = !!(contractRow?.rateizzazione_attiva || contractRow?.lead_rateizzazione_attiva)
-    const leadIdForRate   = contractRow?.leadId
-      || (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-    let ratePagamentoRows: any[] = []
-    if (leadIdForRate) {
-      try {
-        const rateRes = await c.env.DB.prepare(
-          `SELECT numero_rata, importo, data_scadenza, status, note
-           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-        ).bind(leadIdForRate).all()
-        ratePagamentoRows = rateRes.results || []
-      } catch (_) {}
-    }
-
-    // ── Intestatario ─────────────────────────────────────────────────
-    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
-    let nomeInt: string, cognomeInt: string, cfInt: string, indrInt: string, cittaInt: string, capInt: string, provInt: string
-    if (intestatario === 'assistito') {
-      nomeInt    = contractRow?.nomeAssistito     || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeInt = contractRow?.cognomeAssistito  || contractRow?.cognomeRichiedente || ''
-      cfInt      = contractRow?.cfAssistito       || contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || ''
-      indrInt    = contractRow?.indirizzoAssistito|| contractRow?.indirizzoIntestatario || ddt.destinatario_indirizzo || ''
-      cittaInt   = contractRow?.cittaAssistito    || contractRow?.cittaIntestatario   || ddt.destinatario_citta || ''
-      capInt     = contractRow?.capAssistito      || contractRow?.capIntestatario     || ddt.destinatario_cap || ''
-      provInt    = contractRow?.provinciaAssistito|| contractRow?.provinciaIntestatario || ddt.destinatario_provincia || ''
-    } else {
-      nomeInt    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeInt = contractRow?.cognomeRichiedente || ''
-      cfInt      = contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || ''
-      indrInt    = contractRow?.indirizzoIntestatario || contractRow?.indirizzoAssistito || ddt.destinatario_indirizzo || ''
-      cittaInt   = contractRow?.cittaIntestatario  || contractRow?.cittaAssistito     || ddt.destinatario_citta || ''
-      capInt     = contractRow?.capIntestatario    || contractRow?.capAssistito       || ddt.destinatario_cap || ''
-      provInt    = contractRow?.provinciaIntestatario || contractRow?.provinciaAssistito || ddt.destinatario_provincia || ''
-    }
-    const capCittaProv = [capInt, cittaInt, provInt ? `(${provInt})` : ''].filter(Boolean).join(' ')
-
-    // ── Prezzi ────────────────────────────────────────────────────────
-    const ivaAgevolata = !!(contractRow?.iva_agevolata)
-    const ivaPct       = ivaAgevolata ? 4 : 22
-
-    // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
-    const servizioRaw = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
-    const pianoRaw    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
-    const pricingPF   = getPricing(servizioRaw, pianoRaw)
-    const imponibile  = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
-    const ivaAmt      = Math.round(imponibile * ivaPct / 100 * 100) / 100
-    const totale      = Math.round((imponibile + ivaAmt) * 100) / 100
-    const fmt         = (n: number) => n.toFixed(2).replace('.', ',')
-
-    // ── Dispositivo ───────────────────────────────────────────────────
-    const dispositivo  = ddt.dispositivo || 'SiDLY Care PRO'
-    const serialNumber = ddt.serial_number || '—'
-    const simNumberPF  = ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || '—'
-    const dispLowerPF  = dispositivo.toLowerCase()
-    const servizioContrPF = (contractRow?.servizio || '').toUpperCase()
-    const isAvanzatoPF = (contractRow?.piano || '').toUpperCase() === 'AVANZATO'
-      || servizioContrPF.includes('AVANZAT')
-      || (ddt.note || '').toUpperCase().includes('AVANZAT')
-    const isFamilyPF   = servizioContrPF.includes('FAMILY') || dispLowerPF.includes('family')
-    const bdRdm        = dispLowerPF.includes('vital') ? '2853300' : '2853576'
-    const snLabel      = serialNumber !== '—' ? ` S/N ${serialNumber}` : ''
-
-    const destVocePF   = isAvanzatoPF
-      ? 'la Centrale Operativa e con i familiari / care giver configurati in Piattaforma'
-      : 'i familiari e i care giver configurati in Piattaforma'
-    const destCadutePF = isAvanzatoPF ? 'alla Centrale Operativa e ai familiari' : 'ai familiari e ai care giver'
-    const destVitaliPF = isAvanzatoPF ? 'alla Centrale Operativa e ai familiari' : 'ai familiari e ai care giver'
-
-    let descDispositivoPF: string
-    if (dispLowerPF.includes('vital')) {
-      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2)${isAvanzatoPF ? ' con alert automatici ' + destVitaliPF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
-    } else if (isFamilyPF) {
-      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile. È progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione e il rilevamento delle cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
-    } else {
-      descDispositivoPF = `Sistema di allarme mobile di piccole dimensioni ed indossabile progettato per monitorare e proteggere le persone anziane o fragili. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS e la funzione di comunicazione vocale bidirezionale consente di parlare con ${destVocePF}. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute${isAvanzatoPF ? ' con notifica ' + destCadutePF : ''}, il reminder dei farmaci e il monitoraggio dei parametri vitali (FC e SpO2)${isAvanzatoPF ? ' con alert automatici ' + destVitaliPF : ''}. Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm}${snLabel}. Consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF}) per comunicazione e trasmissione dati.`
-    }
-
-    // ── Rate ──────────────────────────────────────────────────────────
-    // rateizzazione attiva se: contracts.rateizzazione_attiva=1 OPPURE leads.rateizzazione_attiva=1 OPPURE esistono righe in rate_pagamento
-    const rateizzazioneAttiva = isRateizzatoGET || ratePagamentoRows.length > 0
-    let rateRows = ''
-    if (ratePagamentoRows.length > 0) {
-      rateRows = ratePagamentoRows.map((r: any, i: number) => `
-            <tr>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero_rata ?? i + 1}</td>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:right;">€ ${fmt(Number(r.importo ?? 0))}</td>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
-              <td style="border:1px solid #999;padding:4px 8px;">${r.note ?? ''}</td>
-            </tr>`).join('')
-    }
-
-    // ── Riserva di dominio ────────────────────────────────────────────
-    // Fallback su leads.riserva_dominio se contracts non è sincronizzato
-    const riservaDominio = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
-
-    // ── Data e numero documento ───────────────────────────────────────
-    const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-    const numDdtRaw = ddt.numero_ddt || id
-    const numMatch  = numDdtRaw.match(/DDT-0*(\d+)-(\d{4})/i)
-    const numProgressivoPF = numMatch ? numMatch[1] : numDdtRaw
-    const numPrefattura    = `PF-${numDdtRaw}`
-    const codiceContratto  = ddt.contract_code || contractRow?.codice_contratto || '—'
-
-    // ── Numero DDT formattato (gg/mm/aa) ─────────────────────────────
-    const formatDataItPF = (d: string) => {
-      if (!d) return '—'
-      const dt = new Date(d)
-      if (isNaN(dt.getTime())) return d
-      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getFullYear()).slice(-2)}`
-    }
-    const dataDDT = formatDataItPF(ddt.data_consegna || ddt.data_spedizione || ddt.created_at || new Date().toISOString())
-
-    // ── SVG logo eCura ────────────────────────────────────────────────
-    const logoSvgPF = `<svg width="220" height="50" viewBox="0 0 220 50" xmlns="http://www.w3.org/2000/svg">
-      <text x="0" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0ea5e9">e</text>
-      <text x="20" y="34" font-family="Arial Black, Arial" font-weight="900" font-size="28" fill="#0f172a">Cura</text>
-      <polyline points="85,25 95,25 100,10 107,40 113,15 119,35 125,25 220,25" stroke="#0ea5e9" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`
-
-    const htmlPF = `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <title>Pre-Fattura ${numPrefattura}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
-    .page { width: 210mm; margin: 0 auto; padding: 12mm 15mm 10mm 15mm; }
-    .btn-print { display: block; margin: 10px auto 0; background: #6d28d9; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 13px; }
-    @media print {
-      html, body { margin: 0 !important; padding: 0 !important; height: auto !important; overflow: hidden !important; }
-      .btn-print { display: none !important; }
-      @page { size: A4; margin: 10mm 15mm; }
-      .page { width: 100%; margin: 0; padding: 0; page-break-after: avoid; }
-    }
-
-    /* ── HEADER ── */
-    .header { display: table; width: 100%; margin-bottom: 0; }
-    .header-left  { display: table-cell; vertical-align: middle; width: 55%; }
-    .header-right { display: table-cell; vertical-align: top; width: 45%; text-align: right; padding-top: 4px; }
-
-    /* ── BLOCCO META + DESTINATARIO ── */
-    .meta-dest { display: table; width: 100%; border: 1.5px solid #6b21a8; border-collapse: collapse; margin-top: 6mm; }
-    .meta-dest-left  { display: table-cell; width: 50%; vertical-align: top; border-right: 1.5px solid #6b21a8; padding: 0; }
-    .meta-dest-right { display: table-cell; width: 50%; vertical-align: top; padding: 6px 10px; }
-    .meta-grid { width: 100%; border-collapse: collapse; }
-    .meta-grid td { border: 1px solid #6b21a8; padding: 3px 6px; font-size: 8.5pt; }
-    .meta-grid .lbl { background: #f3e8ff; font-weight: bold; color: #6b21a8; width: 40%; }
-    .meta-grid .val { font-weight: bold; }
-    .dest-label { font-size: 7.5pt; font-weight: bold; color: #6b21a8; margin-bottom: 3px; }
-    .dest-nome  { font-size: 10pt; font-weight: bold; margin-bottom: 2px; }
-    .dest-addr  { font-size: 8.5pt; line-height: 1.5; color: #000; }
-    .dest-cf    { font-size: 8.5pt; color: #000; margin-top: 1px; }
-
-    /* ── SEZIONI ── */
-    .section-title { font-size: 9.5pt; font-weight: bold; color: #6b21a8; border-bottom: 1.5px solid #6b21a8;
-                     padding: 3px 0 2px; margin-top: 5mm; margin-bottom: 3mm; letter-spacing: 0.3px; }
-
-    /* ── TABELLA ARTICOLI (stile DDT) ── */
-    .articoli { width: 100%; border-collapse: collapse; margin-top: 2mm; }
-    .articoli th { background: #6b21a8; color: white; border: 1px solid #6b21a8; padding: 4px 6px; font-size: 8pt; font-weight: bold; text-align: left; }
-    .articoli td { border: 1px solid #6b21a8; padding: 5px 6px; font-size: 8pt; vertical-align: top; }
-    .articoli td.cod { font-weight: bold; font-size: 8pt; text-align: center; vertical-align: middle; }
-    .articoli td.um  { text-align: center; vertical-align: middle; }
-    .articoli td.qty { text-align: center; vertical-align: middle; font-weight: bold; font-size: 9pt; }
-    .articoli tr:nth-child(even) td { background: #faf5ff; }
-
-    /* ── IMPORTO BOX ── */
-    .importo-table { width: 100%; border-collapse: collapse; margin-top: 4mm; }
-    .importo-table td { padding: 3px 10px; font-size: 9pt; border: 1px solid #ddd; }
-    .importo-table .lbl { width: 60%; text-align: right; color: #555; }
-    .importo-table .val { width: 40%; text-align: right; font-weight: bold; }
-    .importo-table .totale-row td { background: #6b21a8; color: #fff; font-weight: bold; font-size: 11pt; }
-    .iva-badge { display: inline-block; background: #fef9c3; border: 1px solid #ca8a04; border-radius: 3px;
-                 padding: 1px 6px; font-size: 7.5pt; color: #92400e; margin-left: 4px; }
-
-    /* ── RATE ── */
-    .rate-table { width: 100%; border-collapse: collapse; margin-top: 2mm; font-size: 8.5pt; }
-    .rate-table th { background: #f3e8ff; color: #6b21a8; border: 1px solid #999; padding: 3px 8px; text-align: center; font-weight: bold; }
-
-    /* ── RISERVA DOMINIO ── */
-    .riserva-box { border: 1px solid #f97316; background: #fff7ed; border-radius: 3px; padding: 6px 10px;
-                   font-size: 8pt; color: #7c2d12; margin-top: 3mm; line-height: 1.5; }
-    .riserva-title { font-weight: bold; color: #c2410c; margin-bottom: 3px; }
-
-    /* ── NOTE LEGALI ── */
-    .nota-legale { font-size: 8pt; color: #666; font-style: italic; margin-top: 4mm;
-                   border-top: 1px solid #ccc; padding-top: 3mm; }
-
-    /* ── FOOTER ── */
-    .footer-azienda { font-size: 7pt; color: #555; text-align: center; margin-top: 6mm;
-                      border-top: 1px solid #ccc; padding-top: 3px; }
-  </style>
-</head>
-<body>
-<button class="btn-print" onclick="window.print()">Stampa / Salva PDF</button>
-<div class="page">
-
-  <!-- ══ HEADER ══ -->
-  <div class="header">
-    <div class="header-left">
-      ${logoSvgPF}
-      <div style="font-size:7.5pt; color:#555; margin-top:3px;">
-        eCura by Medica GB S.r.l. &nbsp;|&nbsp; Corso Garibaldi, 34 – 20121 Milano (MI)<br>
-        PEC: medicagbsrl@pecimprese.it &nbsp;|&nbsp; P.IVA: 12435130963 &nbsp;|&nbsp; info@ecura.it
-      </div>
-    </div>
-    <div class="header-right">
-      <div style="font-size:16pt; font-weight:bold; color:#6b21a8; letter-spacing:1px;">PRE-FATTURA</div>
-      <div style="font-size:8pt; color:#333; margin-top:2px;">${numPrefattura}</div>
-      <div style="font-size:8pt; color:#555;">Milano, ${oggi}</div>
-    </div>
-  </div>
-
-  <!-- ══ META + DESTINATARIO ══ -->
-  <div class="meta-dest">
-    <div class="meta-dest-left">
-      <table class="meta-grid">
-        <tr><td class="lbl">N° Pre-Fattura</td><td class="val">${numPrefattura}</td></tr>
-        <tr><td class="lbl">Data</td><td class="val">${oggi}</td></tr>
-        <tr><td class="lbl">Rif. DDT N°</td><td class="val">${numProgressivoPF} del ${dataDDT}</td></tr>
-        <tr><td class="lbl">Contratto</td><td class="val">${codiceContratto}</td></tr>
-        <tr><td class="lbl">IVA applicata</td><td class="val">${ivaPct}%${ivaAgevolata ? ' (agevolata Legge 104)' : ''}</td></tr>
-      </table>
-    </div>
-    <div class="meta-dest-right">
-      <div class="dest-label">Spettabile:</div>
-      <div class="dest-nome">${nomeInt.toUpperCase()} ${cognomeInt.toUpperCase()}</div>
-      <div class="dest-addr">
-        ${indrInt}<br>
-        ${capCittaProv}
-      </div>
-      ${cfInt ? `<div class="dest-cf">C.F.: ${cfInt.toUpperCase()}</div>` : ''}
-    </div>
-  </div>
-
-  <!-- ══ ARTICOLI (contenuto DDT) ══ -->
-  <div class="section-title">FORNITURA</div>
-  <table class="articoli">
-    <thead>
-      <tr>
-        <th style="width:22%">COD. ARTICOLO</th>
-        <th style="width:62%">DESCRIZIONE</th>
-        <th style="width:8%">U.M.</th>
-        <th style="width:8%">Q.tà</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="cod">${dispositivo}</td>
-        <td>${descDispositivoPF}</td>
-        <td class="um">NR</td>
-        <td class="qty">1</td>
-      </tr>
-      <tr>
-        <td class="cod">SIM SiDLY per ${dispositivo}</td>
-        <td>SIM SiDLY per ${dispositivo} (numero SIM ${simNumberPF}), per comunicazione e trasmissione dati.</td>
-        <td class="um">NR</td>
-        <td class="qty">1</td>
-      </tr>
-      <tr>
-        <td class="cod">APP e Piattaforma SiDLYCARE</td>
-        <td>APP e Piattaforma SiDLYCARE (Dispositivo medicale in classe I)</td>
-        <td class="um">NR</td>
-        <td class="qty">1</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- ══ IMPORTO E IVA ══ -->
-  <div class="section-title">IMPORTO FORNITURA</div>
-  <table class="importo-table">
-    <tr>
-      <td class="lbl">Imponibile:</td>
-      <td class="val">€ ${fmt(imponibile)}</td>
-    </tr>
-    <tr>
-      <td class="lbl">IVA ${ivaPct}%${ivaAgevolata ? ' <span class="iva-badge">Legge 104</span>' : ''}:</td>
-      <td class="val">€ ${fmt(ivaAmt)}</td>
-    </tr>
-    <tr class="totale-row">
-      <td class="lbl" style="color:#fff;">TOTALE IVA INCLUSA:</td>
-      <td class="val" style="color:#fff;">€ ${fmt(totale)}</td>
-    </tr>
-  </table>
-
-  ${rateizzazioneAttiva && rateRows ? `
-  <!-- ══ PIANO DI RATEIZZAZIONE ══ -->
-  <div class="section-title">PIANO DI RATEIZZAZIONE</div>
-  <table class="rate-table">
-    <thead>
-      <tr>
-        <th style="width:10%">Rata N°</th>
-        <th style="width:25%">Importo</th>
-        <th style="width:25%">Scadenza</th>
-        <th>Note</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rateRows}
-    </tbody>
-  </table>
-  ` : ''}
-
-  ${riservaDominio ? `
-  <!-- ══ CLAUSOLA RISERVA DI DOMINIO ══ -->
-  <div class="riserva-box">
-    <div class="riserva-title">⚠ CLAUSOLA DI RISERVA DI DOMINIO (art. 1523 c.c.)</div>
-    Il dispositivo venduto rimane di proprietà di Medica GB S.r.l. fino all'integrale pagamento del prezzo.
-    Il compratore acquista la proprietà del bene al momento del pagamento dell'ultima rata.
-    In caso di inadempimento, Medica GB S.r.l. ha il diritto di richiedere la restituzione del bene.
-    Il rischio del perimento del bene è a carico del compratore dal momento della consegna.
-  </div>
-  ` : ''}
-
-  <!-- ══ NOTA LEGALE ══ -->
-  <div class="nota-legale">
-    Il presente documento non costituisce fattura fiscale, che verrà emessa all'atto del pagamento
-    ai sensi dell'art. 6 DPR 26.10.1972 n. 633. Medica GB S.r.l. è soggetto IVA ordinario;
-    l'aliquota agevolata 4% si applica ai sensi della Tabella A, Parte II, n. 31 allegata al DPR 633/72,
-    in presenza di certificazione di invalidità al 100% (Legge 104/92).
-  </div>
-
-  <!-- ══ FOOTER ══ -->
-  <div class="footer-azienda">
-    Medica GB S.r.l. – Corso Garibaldi, 34 – 20121 Milano (MI) – P.IVA 12435130963 – REA: MI-2661409 – PEC: medicagbsrl@pecimprese.it
-  </div>
-
-</div>
-</body>
-</html>`
-
-    return c.html(htmlPF)
-  } catch (error) {
-    console.error('❌ [PREFATTURA-HTML]', error)
-    return c.html(`<h1>Errore generazione pre-fattura</h1><p>Si è verificato un errore interno. Riprovare o contattare il supporto.</p>`, 500)
-  }
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// POST /api/ddts/:id/prefattura
-// Crea il record prefattura e invia email al commercialista.
-// Body opzionale: { email_commercialista?: string, note?: string }
-// ═══════════════════════════════════════════════════════════════════
-app.post('/api/ddts/:id/prefattura', async (c) => {
-  const id = c.req.param('id')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
-
-    // ── DDT ─────────────────────────────────────────────────────────
-    const ddt = await c.env.DB.prepare(
-      `SELECT * FROM ddts WHERE id = ? OR numero_ddt = ? LIMIT 1`
-    ).bind(id, id).first() as any
-    if (!ddt) return c.json({ success: false, error: 'DDT non trovato' }, 404)
-
-    // ── Contratto + lead ─────────────────────────────────────────────
-    let contractRow: any = null
-    if (ddt.contract_code) {
-      contractRow = await c.env.DB.prepare(
-        `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
-                c.leadId,
-                l.intestatarioContratto,
-                l.nomeRichiedente, l.cognomeRichiedente,
-                l.nomeAssistito, l.cognomeAssistito,
-                l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
-                l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
-                l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata,
-                l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                l.riserva_dominio AS lead_riserva_dominio
-         FROM contracts c
-         LEFT JOIN leads l ON l.id = c.leadId
-         WHERE c.codice_contratto = ? OR c.id = ?
-         LIMIT 1`
-      ).bind(ddt.contract_code, ddt.contract_code).first() as any
-    }
-    if (!contractRow) {
-      const leadIdFromNote = (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-      if (leadIdFromNote) {
-        contractRow = await c.env.DB.prepare(
-          `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
-                  c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
-                  c.leadId,
-                  l.intestatarioContratto,
-                  l.nomeRichiedente, l.cognomeRichiedente,
-                  l.nomeAssistito, l.cognomeAssistito,
-                  l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
-                  l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
-                  l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata,
-                  l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                  l.riserva_dominio AS lead_riserva_dominio
-           FROM contracts c
-           LEFT JOIN leads l ON l.id = c.leadId
-           WHERE c.leadId = ?
-           LIMIT 1`
-        ).bind(leadIdFromNote).first() as any
-      }
-    }
-
-    // ── Body request ─────────────────────────────────────────────────
-    let bodyData: any = {}
-    try { bodyData = await c.req.json() } catch (_) {}
-
-    // ── Email commercialista (body → system_settings → default info@ecura.it) ──
-    let emailCommercialista = bodyData.email_commercialista || ''
-    if (!emailCommercialista) {
-      try {
-        const settingRow = await c.env.DB.prepare(
-          `SELECT value FROM system_settings WHERE key = 'email_commercialista' LIMIT 1`
-        ).first() as any
-        emailCommercialista = settingRow?.value || ''
-      } catch (_) {}
-    }
-    // Default: info@ecura.it se non configurato
-    if (!emailCommercialista) emailCommercialista = 'info@ecura.it'
-
-    // ── Prezzi ────────────────────────────────────────────────────────
-    const ivaAgevolata = !!(contractRow?.iva_agevolata)
-    const ivaPct       = ivaAgevolata ? 4 : 22
-    const servizioRawP = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
-    const pianoRawP    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
-    const pricingP     = getPricing(servizioRawP, pianoRawP)
-    const imponibileP  = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
-    const ivaAmtP      = Math.round(imponibileP * ivaPct / 100 * 100) / 100
-    const totaleP      = Math.round((imponibileP + ivaAmtP) * 100) / 100
-
-    // ── Rate da rate_pagamento ────────────────────────────────────────────
-    // Fallback: usa leads.rateizzazione_attiva se contracts non è sincronizzato
-    const isRateizzatoP  = !!(contractRow?.rateizzazione_attiva || contractRow?.lead_rateizzazione_attiva)
-    const leadIdForRateP = contractRow?.leadId
-      || (ddt.note || '').match(/LeadID:([\w-]+)/)?.[1] || null
-    let ratePagamentoRowsP: any[] = []
-    if (leadIdForRateP) {
-      try {
-        const rateResP = await c.env.DB.prepare(
-          `SELECT numero_rata, importo, data_scadenza, status, note
-           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-        ).bind(leadIdForRateP).all()
-        ratePagamentoRowsP = rateResP.results || []
-      } catch (_) {}
-    }
-    const rateizzazioneAttivaP = isRateizzatoP || ratePagamentoRowsP.length > 0
-    const riservaDominioP = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
-
-    // ── Intestatario ─────────────────────────────────────────────────
-    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
-    let nomeIntP: string, cognomeIntP: string
-    if (intestatario === 'assistito') {
-      nomeIntP    = contractRow?.nomeAssistito    || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeIntP = contractRow?.cognomeAssistito || contractRow?.cognomeRichiedente || ''
-    } else {
-      nomeIntP    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeIntP = contractRow?.cognomeRichiedente || ''
-    }
-
-    // ── Numero pre-fattura ────────────────────────────────────────────
-    const numPF      = `PF-${ddt.numero_ddt || ddt.id}`
-    const pfId       = `pf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-    const oggi       = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-
-    // ── Assicura che la tabella prefatture esista (robustness) ──────────
-    try {
-      await c.env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS prefatture (
-          id TEXT PRIMARY KEY, numero_prefattura TEXT UNIQUE NOT NULL,
-          ddt_id TEXT, contract_code TEXT,
-          destinatario_nome TEXT, destinatario_indirizzo TEXT, destinatario_cap TEXT,
-          destinatario_citta TEXT, destinatario_provincia TEXT, cf_intestatario TEXT,
-          dispositivo TEXT, serial_number TEXT, sim_number TEXT,
-          imponibile REAL, iva_pct INTEGER DEFAULT 22, iva_amt REAL, totale REAL,
-          rateizzazione_attiva INTEGER DEFAULT 0, rate_json TEXT, riserva_dominio INTEGER DEFAULT 0,
-          inviata_commercialista INTEGER DEFAULT 0, data_invio_commercialista DATETIME,
-          email_commercialista TEXT, note TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `).run()
-    } catch (_) { /* tabella già esiste */ }
-
-    // ── Salva in DB (idempotente: se esiste già per questo DDT, aggiorna) ──
-    // Cerca se esiste già una prefattura per questo ddt_id
-    const existingPF = await c.env.DB.prepare(
-      `SELECT id, numero_prefattura FROM prefatture WHERE ddt_id = ? LIMIT 1`
-    ).bind(ddt.id).first() as any
-
-    const finalPfId    = existingPF?.id || pfId
-    const finalNumPF   = existingPF?.numero_prefattura || numPF
-
-    if (existingPF) {
-      // UPDATE: rigenera con dati aggiornati
-      await c.env.DB.prepare(`
-        UPDATE prefatture SET
-          contract_code = ?, destinatario_nome = ?, destinatario_indirizzo = ?,
-          destinatario_cap = ?, destinatario_citta = ?, destinatario_provincia = ?,
-          cf_intestatario = ?, dispositivo = ?, serial_number = ?, sim_number = ?,
-          imponibile = ?, iva_pct = ?, iva_amt = ?, totale = ?,
-          rateizzazione_attiva = ?, rate_json = ?, riserva_dominio = ?,
-          note = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE ddt_id = ?
-      `).bind(
-        ddt.contract_code || null,
-        ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null,
-        ddt.destinatario_cap || null, ddt.destinatario_citta || null,
-        ddt.destinatario_provincia || null,
-        (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
-        ddt.dispositivo || null, ddt.serial_number || null,
-        (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
-        imponibileP, ivaPct, ivaAmtP, totaleP,
-        rateizzazioneAttivaP ? 1 : 0,
-        ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
-        riservaDominioP ? 1 : 0,
-        bodyData.note || null,
-        ddt.id
-      ).run()
-    } else {
-      // INSERT nuovo
-      await c.env.DB.prepare(`
-        INSERT INTO prefatture (
-          id, numero_prefattura, ddt_id, contract_code,
-          destinatario_nome, destinatario_indirizzo, destinatario_cap,
-          destinatario_citta, destinatario_provincia, cf_intestatario,
-          dispositivo, serial_number, sim_number,
-          imponibile, iva_pct, iva_amt, totale,
-          rateizzazione_attiva, rate_json, riserva_dominio,
-          note, created_at, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-      `).bind(
-        finalPfId, finalNumPF, ddt.id, ddt.contract_code || null,
-        ddt.destinatario_nome || null, ddt.destinatario_indirizzo || null, ddt.destinatario_cap || null,
-        ddt.destinatario_citta || null, ddt.destinatario_provincia || null,
-        (contractRow?.cfIntestatario || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || null),
-        ddt.dispositivo || null, ddt.serial_number || null,
-        (ddt.sim_number || (ddt.note || '').match(/SIM:([^\s|]+)/i)?.[1] || null),
-        imponibileP, ivaPct, ivaAmtP, totaleP,
-        rateizzazioneAttivaP ? 1 : 0,
-        ratePagamentoRowsP.length > 0 ? JSON.stringify(ratePagamentoRowsP) : null,
-        riservaDominioP ? 1 : 0,
-        bodyData.note || null
-      ).run()
-    }
-
-    // ── Invia email al commercialista (se configurato) ─────────────────
-    let emailInviata = false
-    let emailError   = ''
-    if (emailCommercialista) {
-      try {
-        const baseUrl = new URL(c.req.url).origin
-        const prefatturaUrl = `${baseUrl}/api/ddts/${encodeURIComponent(ddt.id || ddt.numero_ddt)}/prefattura-html`
-        const fmtE = (n: number) => n.toFixed(2).replace('.', ',')
-
-        const emailHtml = `
-<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;max-width:600px;">
-  <div style="background:#6b21a8;color:white;padding:12px 18px;border-radius:4px 4px 0 0;">
-    <strong>eCura – Medica GB S.r.l.</strong><br>
-    <span style="font-size:9pt;opacity:.9;">Pre-Fattura ${finalNumPF} – ${oggi}</span>
-  </div>
-  <div style="border:1px solid #ddd;border-top:none;padding:16px 18px;">
-    <p>Buongiorno,</p>
-    <p>si trasmette in allegato (visualizzabile al link sotto) la <strong>pre-fattura ${finalNumPF}</strong>
-       relativa alla fornitura per il cliente <strong>${nomeIntP} ${cognomeIntP}</strong>.</p>
-    <table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:9.5pt;">
-      <tr style="background:#f3e8ff;">
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">DDT</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.numero_ddt || ddt.id}</td>
-      </tr>
-      <tr>
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Contratto</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.contract_code || '—'}</td>
-      </tr>
-      <tr style="background:#f3e8ff;">
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Cliente</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">${nomeIntP} ${cognomeIntP}</td>
-      </tr>
-      <tr>
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Dispositivo</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.dispositivo || '—'}</td>
-      </tr>
-      <tr style="background:#f3e8ff;">
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Imponibile</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(imponibileP)}</td>
-      </tr>
-      <tr>
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">IVA ${ivaPct}%${ivaAgevolata ? ' (agevolata)' : ''}</td>
-        <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(ivaAmtP)}</td>
-      </tr>
-      <tr style="background:#6b21a8;color:white;">
-        <td style="padding:6px 8px;font-weight:bold;border:1px solid #6b21a8;">TOTALE</td>
-        <td style="padding:6px 8px;font-weight:bold;font-size:11pt;border:1px solid #6b21a8;">€ ${fmtE(totaleP)}</td>
-      </tr>
-    </table>
-    <p style="margin:10px 0;">
-      <a href="${prefatturaUrl}" style="background:#6b21a8;color:white;padding:8px 16px;border-radius:4px;text-decoration:none;font-weight:bold;">
-        📄 Visualizza / Stampa Pre-Fattura
-      </a>
-    </p>
-    ${bodyData.note ? `<p style="background:#fff7ed;border:1px solid #f97316;border-radius:3px;padding:8px 12px;font-size:9pt;"><strong>Note:</strong> ${bodyData.note}</p>` : ''}
-    <hr style="margin:16px 0;border:none;border-top:1px solid #eee;">
-    <p style="font-size:8.5pt;color:#555;">
-      Medica GB S.r.l. – Corso Garibaldi, 34 – 20121 Milano<br>
-      P.IVA 12435130963 – PEC: medicagbsrl@pecimprese.it
-    </p>
-  </div>
-</div>`
-
-        const emailService = new EmailService(c.env)
-        const result = await emailService.sendEmail({
-          to: emailCommercialista,
-          from: c.env?.RESEND_FROM || 'info@ecura.it',
-          subject: `Pre-Fattura ${finalNumPF} – ${nomeIntP} ${cognomeIntP} – eCura Medica GB`,
-          html: emailHtml,
-          text: `Pre-Fattura ${finalNumPF} - ${nomeIntP} ${cognomeIntP} - Imponibile: €${fmtE(imponibileP)} IVA ${ivaPct}%: €${fmtE(ivaAmtP)} Totale: €${fmtE(totaleP)}\nLink: ${prefatturaUrl}`
-        })
-        emailInviata = result.success
-        if (!result.success) emailError = result.error || 'Invio fallito'
-
-        if (emailInviata) {
-          await c.env.DB.prepare(
-            `UPDATE prefatture SET inviata_commercialista=1, data_invio_commercialista=CURRENT_TIMESTAMP, email_commercialista=? WHERE id=?`
-          ).bind(emailCommercialista, pfId).run()
-        }
-      } catch (emailErr: any) {
-        emailError = emailErr.message || String(emailErr)
-        console.error('❌ [PREFATTURA] Errore invio email commercialista:', emailErr)
-      }
-    }
-
-    return c.json({
-      success: true,
-      prefattura_id: pfId,
-      numero_prefattura: finalNumPF,
-      imponibile: imponibileP,
-      iva_pct: ivaPct,
-      iva_amt: ivaAmtP,
-      totale: totaleP,
-      email_inviata: emailInviata,
-      email_commercialista: emailCommercialista || null,
-      email_error: emailError || null,
-      prefattura_url: `/api/ddts/${encodeURIComponent(ddt.id || ddt.numero_ddt)}/prefattura-html`
-    })
-  } catch (error: any) {
-    console.error('❌ [PREFATTURA POST]', error)
-    return c.json({ success: false, error: error.message || String(error) }, 500)
-  }
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// GET /api/prefatture — Lista pre-fatture (con filtro opzionale ?ddt_id=)
-// ═══════════════════════════════════════════════════════════════════
-app.get('/api/prefatture', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
-    const ddtId = c.req.query('ddt_id')
-    let rows: any
-    if (ddtId) {
-      rows = await c.env.DB.prepare(
-        `SELECT * FROM prefatture WHERE ddt_id = ? ORDER BY created_at DESC`
-      ).bind(ddtId).all()
-    } else {
-      rows = await c.env.DB.prepare(
-        `SELECT * FROM prefatture ORDER BY created_at DESC LIMIT 200`
-      ).all()
-    }
-    return c.json({ success: true, prefatture: rows.results || [] })
-  } catch (error: any) {
-    return c.json({ success: false, error: error.message || String(error) }, 500)
   }
 })
 
@@ -14545,7 +13374,6 @@ app.put('/api/leads/:id', async (c) => {
       piano: 'piano',
       canale: 'fonte',  // Il form invia 'canale' ma il DB ha 'fonte'
       fonte: 'fonte',
-      canale_acquisizione: 'canale_acquisizione',
       
       // Preferenze
       vuoleBrochure: 'vuoleBrochure',
@@ -14562,9 +13390,6 @@ app.put('/api/leads/:id', async (c) => {
       
       // Stato lead
       stato: 'stato',
-      
-      // Temperatura lead (calcolata da stato o sovrascritta manualmente)
-      temperatura: 'temperatura',
       
       // HubSpot integration
       external_source_id: 'external_source_id',
@@ -14611,18 +13436,6 @@ app.put('/api/leads/:id', async (c) => {
       if (data[frontendKey] !== undefined) {
         updateFields.push(`${dbKey} = ?`)
         binds.push(data[frontendKey])
-      }
-    }
-
-    // 🌡️ RICALCOLA TEMPERATURA automaticamente se lo stato è cambiato
-    // (solo se temperatura non è stata esplicitamente sovrascritta nel payload)
-    if (data.stato !== undefined && data.temperatura === undefined) {
-      const tempAuto = calcolaTemperatura(data.stato)
-      // Aggiorna solo se non è già nel payload (evita duplicati)
-      const tempIdx = updateFields.findIndex(f => f.startsWith('temperatura'))
-      if (tempIdx === -1) {
-        updateFields.push('temperatura = ?')
-        binds.push(tempAuto)
       }
     }
     
@@ -14898,39 +13711,26 @@ app.put('/api/leads/:id/cm', async (c) => {
   }
 })
 
-// ============================================================================
-// PATCH /api/leads/:id/temperatura — Aggiorna temperatura (manuale o reset auto)
-// Body: { temperatura: 'caldo'|'tiepido'|'freddo'|'auto' }
-// Se temperatura='auto', ricalcola dallo stato corrente del lead
-// ============================================================================
-app.patch('/api/leads/:id/temperatura', async (c) => {
-  const id = c.req.param('id')
+// PUT /api/leads/:id/temperatura - Aggiorna temperatura lead (caldo/tiepido/freddo)
+app.put('/api/leads/:id/temperatura', async (c) => {
+  const leadId = c.req.param('id')
   try {
-    const body = await c.req.json() as { temperatura?: string }
-    if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
-
-    let nuovaTemperatura: string
-
-    if (body.temperatura === 'auto') {
-      // Ricalcola automaticamente dallo stato corrente
-      const lead = await c.env.DB.prepare('SELECT stato FROM leads WHERE id = ?').bind(id).first() as any
-      if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
-      nuovaTemperatura = calcolaTemperatura(lead.stato)
-    } else if (['caldo', 'tiepido', 'freddo'].includes(body.temperatura || '')) {
-      nuovaTemperatura = body.temperatura!
-    } else {
-      return c.json({ success: false, error: 'Valore temperatura non valido. Usare: caldo, tiepido, freddo, auto' }, 400)
+    const { temperatura } = await c.req.json()
+    const validValues = ['caldo', 'tiepido', 'freddo', null, '']
+    if (!validValues.includes(temperatura)) {
+      return c.json({ success: false, error: 'Valore temperatura non valido' }, 400)
     }
-
-    await c.env.DB.prepare(
-      'UPDATE leads SET temperatura = ?, updated_at = ? WHERE id = ?'
-    ).bind(nuovaTemperatura, new Date().toISOString(), id).run()
-
-    console.log(`🌡️ Temperatura lead ${id} aggiornata → ${nuovaTemperatura}`)
-    return c.json({ success: true, id, temperatura: nuovaTemperatura })
-  } catch (err: any) {
-    console.error('Errore PATCH temperatura:', err)
-    return c.json({ success: false, error: err.message }, 500)
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+    await c.env.DB.prepare(`
+      UPDATE leads SET temperatura = ?, updated_at = ? WHERE id = ?
+    `).bind(temperatura || null, new Date().toISOString(), leadId).run()
+    console.log(`✅ Temperatura aggiornata per lead ${leadId}: ${temperatura}`)
+    return c.json({ success: true, leadId, temperatura })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento temperatura:', error)
+    return c.json({ error: 'Errore aggiornamento temperatura' }, 500)
   }
 })
 
@@ -16020,7 +14820,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
               indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario,
               indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
               iva_agevolata,
-              rateizzazione_attiva, riserva_dominio
+              imei_dispositivo, numero_sim, sn_dispositivo
        FROM leads WHERE id = ?`
     ).bind(contract.leadId).first() as any
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
@@ -16055,78 +14855,14 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
     const totale       = Math.round((netto + ivaAmt) * 100) / 100
     const fmt          = (n: number) => n.toFixed(2).replace('.', ',')
 
-    // Dispositivo — SIM/SN: cerca prima nel DDT collegato, poi usa placeholder
+    // Dispositivo
     const servizio   = contract.servizio || ''
     const piano      = contract.piano    || 'BASE'
     const dispositivo= servizio.includes('PREMIUM') || servizio.toLowerCase().includes('vital')
       ? 'SiDLY VITAL CARE' : 'SiDLY Care PRO'
     const bdRdm      = dispositivo.includes('VITAL') ? '2853300' : '2853576'
-
-    // Cerca DDT collegato per avere SIM e S/N
-    let snDev = '—'
-    let sim   = '—'
-    try {
-      const ddtRow = await c.env.DB.prepare(
-        `SELECT sim_number, serial_number FROM ddts WHERE contract_code = ? OR contract_code = ? LIMIT 1`
-      ).bind(contract.codice_contratto || '', contractId).first() as any
-      if (ddtRow) {
-        snDev = ddtRow.serial_number || '—'
-        sim   = ddtRow.sim_number   || '—'
-      }
-    } catch (_) {}
-
-    // Rate da rate_pagamento (fallback su leads.rateizzazione_attiva)
-    const isRateizzatoPI = !!(lead.rateizzazione_attiva)
-    let ratePagamentoRowsPI: any[] = []
-    if (contract.leadId) {
-      try {
-        const rateResPI = await c.env.DB.prepare(
-          `SELECT numero_rata, importo, data_scadenza, status, note
-           FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-        ).bind(contract.leadId).all()
-        ratePagamentoRowsPI = rateResPI.results || []
-      } catch (_) {}
-    }
-    const hasRatePI   = isRateizzatoPI || ratePagamentoRowsPI.length > 0
-    const riservaDominioPI = !!(lead.riserva_dominio)
-
-    // Blocco rate HTML (inserito nel template come {{RATE_BLOCK}})
-    const fmtPI = (n: number) => n.toFixed(2).replace('.', ',')
-    let rateBlockPI = ''
-    if (hasRatePI && ratePagamentoRowsPI.length > 0) {
-      const righe = ratePagamentoRowsPI.map((r: any, i: number) => `
-        <tr>
-          <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.numero_rata ?? i+1}</td>
-          <td style="border:1px solid #aaa;padding:4px 8px;text-align:right;">€ ${fmtPI(Number(r.importo ?? 0))}</td>
-          <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
-          <td style="border:1px solid #aaa;padding:4px 8px;">${r.note ?? ''}</td>
-        </tr>`).join('')
-      rateBlockPI = `
-<div style="margin-top:14px;">
-  <div style="font-size:10.5pt;font-weight:bold;border-bottom:1px solid #555;margin-bottom:6px;padding-bottom:2px;">PIANO DI RATEIZZAZIONE</div>
-  <table style="width:100%;border-collapse:collapse;font-size:9.5pt;">
-    <thead>
-      <tr style="background:#eef2ff;">
-        <th style="border:1px solid #aaa;padding:4px 8px;">Rata N°</th>
-        <th style="border:1px solid #aaa;padding:4px 8px;">Importo</th>
-        <th style="border:1px solid #aaa;padding:4px 8px;">Scadenza</th>
-        <th style="border:1px solid #aaa;padding:4px 8px;">Note</th>
-      </tr>
-    </thead>
-    <tbody>${righe}</tbody>
-  </table>
-</div>`
-    }
-
-    // Clausola riserva di dominio (art. 1523 c.c.)
-    const riservaDominioBlockPI = riservaDominioPI ? `
-<div style="border:1px solid #b8860b;background:#fffbe6;border-radius:4px;padding:10px 14px;margin-top:14px;font-size:9pt;">
-  <strong>CLAUSOLA DI RISERVA DI PROPRIETÀ (art. 1523 c.c.)</strong><br>
-  Il dispositivo consegnato rimane di proprietà di Medica GB S.r.l. fino al completo pagamento del
-  prezzo convenuto. Fino a tale momento, il Cliente non potrà cedere, dare in pegno o comunque
-  alienare il dispositivo a terzi. Al verificarsi dell'inadempimento nel pagamento di una o più rate,
-  Medica GB S.r.l. avrà diritto di richiedere la restituzione immediata del dispositivo.
-</div>` : ''
+    const snDev      = lead.sn_dispositivo || '—'
+    const sim        = lead.numero_sim     || '—'
 
     // Data doc
     const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -16181,8 +14917,6 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
       TITOLO_PRESTAZIONE: titoloPrestatazione,
       BADGE_RINNOVO: badgeRinnovo,
       CAUSALE_BONIFICO: causale,
-      RATE_BLOCK: rateBlockPI,
-      RISERVA_DOMINIO_BLOCK: riservaDominioBlockPI,
     }
     const html = PROFORMA_INTERNA_TEMPLATE.replace(/\{\{([A-Z_]+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`)
 
@@ -21275,24 +20009,19 @@ app.post('/api/leads/public', async (c) => {
         new Date().toISOString(),
         (existing as any).id
       ).run()
-      // Fix prezzi dopo UPDATE duplicato
-      try {
-        const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-        await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-      } catch (_) {}
       return c.json({ success: true, id: (existing as any).id, duplicate: true })
     }
 
-    // Genera ID lead LEAD-eCura-XXXXX
+    // Genera ID lead LEAD-LANDING-XXXXX
     const lastLead = await c.env.DB.prepare(
-      `SELECT id FROM leads WHERE id LIKE 'LEAD-eCura-%' ORDER BY id DESC LIMIT 1`
+      `SELECT id FROM leads WHERE id LIKE 'LEAD-LANDING-%' ORDER BY id DESC LIMIT 1`
     ).first()
     let nextNum = 1
     if (lastLead?.id) {
-      const m = (lastLead.id as string).match(/LEAD-eCura-(\d+)/)
+      const m = (lastLead.id as string).match(/LEAD-LANDING-(\d+)/)
       if (m) nextNum = parseInt(m[1]) + 1
     }
-    const leadId = `LEAD-eCura-${nextNum.toString().padStart(5, '0')}`
+    const leadId = `LEAD-LANDING-${nextNum.toString().padStart(5, '0')}`
 
     await c.env.DB.prepare(`
       INSERT INTO leads (
@@ -21333,66 +20062,60 @@ app.post('/api/leads/public', async (c) => {
 
     console.log(`✅ [LANDING] Nuovo lead: ${leadId} (${email})`)
 
-    // Fix prezzi dopo INSERT
-    try {
-      const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-      await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
-    } catch (_) {}
+    // ─────────────────────────────────────────────────────────────────────────
+    // ⚡ RISPOSTA IMMEDIATA AL BROWSER — il lead è già salvato nel DB.
+    //    Tutte le operazioni successive (email admin, email lead, GSheet, ecc.)
+    //    vengono eseguite in background tramite waitUntil: il browser riceve
+    //    il 200 in <200ms senza aspettare le chiamate email/API esterne.
+    // ─────────────────────────────────────────────────────────────────────────
+    const backgroundWork = async () => {
+      // ── 1. Notifica admin (mail a info@ecura.it) ──────────────
+      try {
+        await sendNewLeadNotification(leadId, {
+          nomeRichiedente: nomeRichiedente.trim(),
+          cognomeRichiedente: cognomeRichiedente?.trim() || '',
+          email: email.trim().toLowerCase(),
+          telefono: telefono.trim(),
+          servizio: servizio || 'eCura PRO',
+          piano: piano || 'BASE',
+          fonte: 'Form eCura',
+          note: note || undefined,
+          created_at: new Date().toISOString()
+        }, c.env)
+        console.log(`📧 [LANDING-BG] Notifica admin inviata per ${leadId}`)
+      } catch (notifErr) {
+        console.error(`⚠️ [LANDING-BG] Errore notifica admin per ${leadId}:`, notifErr)
+      }
 
-    // ── 1. Notifica admin (mail a info@ecura.it) ──────────────
-    try {
-      await sendNewLeadNotification(leadId, {
-        nomeRichiedente: nomeRichiedente.trim(),
-        cognomeRichiedente: cognomeRichiedente?.trim() || '',
-        email: email.trim().toLowerCase(),
-        telefono: telefono.trim(),
-        servizio: servizio || 'eCura PRO',
-        piano: piano || 'BASE',
-        fonte: 'Form eCura',
-        note: note || undefined,
-        created_at: new Date().toISOString()
-      }, c.env)
-      console.log(`📧 [LANDING] Notifica admin inviata per ${leadId}`)
-    } catch (notifErr) {
-      console.error(`⚠️ [LANDING] Errore notifica admin per ${leadId}:`, notifErr)
-    }
+      // ── 2. Email "Completa la tua richiesta" al lead ──────────
+      try {
+        const leadEmailSetting = await c.env.DB.prepare(
+          "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
+        ).first()
+        const leadEmailEnabled = (leadEmailSetting as any)?.value === 'true'
 
-    // ── 2. Email "Completa la tua richiesta" al lead ──────────
-    // Stesso codice identico a hubspot-auto-import.ts (processo collaudato)
-    try {
-      const leadEmailSetting = await c.env.DB.prepare(
-        "SELECT value FROM settings WHERE key = 'lead_email_notifications_enabled' LIMIT 1"
-      ).first()
-      const leadEmailEnabled = (leadEmailSetting as any)?.value === 'true'
+        console.log(`🔍 [LANDING-BG] Check email conditions: leadEmailEnabled=${leadEmailEnabled} email=${!!email}`)
 
-      console.log(`🔍 [LANDING] Check email conditions:`, {
-        leadEmailEnabled,
-        hasEmail: !!email,
-        email: email.trim().toLowerCase(),
-        leadId
-      })
+        if (leadEmailEnabled && email) {
+          console.log(`🚨 [LANDING-BG] INIZIO INVIO EMAIL AL LEAD`)
+          try {
+            const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
+            const EmailServiceMod = (await import('./modules/email-service')).default
+            const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
 
-      if (leadEmailEnabled && email) {
-        console.log(`🚨🚨🚨 [LANDING] INIZIO INVIO EMAIL AL LEAD 🚨🚨🚨`)
-        try {
-          const { createCompletionToken, getMissingFields, getSystemConfig } = await import('./modules/lead-completion')
-          const EmailServiceMod = (await import('./modules/email-service')).default
-          const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+            const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
+            if (!insertedLead) throw new Error('Lead not found after insert')
 
-          const insertedLead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first()
-          if (!insertedLead) throw new Error('Lead not found after insert')
+            const config = await getSystemConfig(c.env.DB)
+            const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
+            console.log(`✅ [LANDING-BG] Token creato: ${token.token}`)
 
-          const config = await getSystemConfig(c.env.DB)
-          const token = await createCompletionToken(c.env.DB, leadId, config.auto_completion_token_days)
-          console.log(`✅ [LANDING] Token creato: ${token.token}`)
+            const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
+            const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
 
-          const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
-          const completionUrl = `${baseUrl}/api/form/${leadId}?leadId=${leadId}`
+            const { missing, available } = getMissingFields(insertedLead)
 
-          const { missing, available } = getMissingFields(insertedLead)
-
-          // Carica template dal database (STESSO del pulsante manuale e auto-import!)
-          const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
+            const template = await loadEmailTemplate('email_richiesta_completamento_form', c.env.DB, c.env)
 
           const availableFieldsList = Object.entries(available as Record<string, any>).map(([label, value]) => ({
             FIELD_LABEL: label,
@@ -21459,10 +20182,8 @@ app.post('/api/leads/public', async (c) => {
             MISSING_FIELDS:     missingFieldsList
           }
 
-          // renderTemplate riceve il template intero (non .content) — identico a auto-import
           const emailHtml = renderTemplate(template, templateData)
 
-          // new EmailService(env) + sendEmail — identico a auto-import
           const emailService = new EmailServiceMod(c.env)
           await emailService.sendEmail({
             to: email.trim().toLowerCase(),
@@ -21472,26 +20193,23 @@ app.post('/api/leads/public', async (c) => {
             text: `Gentile ${(insertedLead as any).nomeRichiedente}, per completare la tua richiesta eCura abbiamo bisogno di alcuni dati aggiuntivi. Rispondi a questa email o contattaci a info@ecura.it`
           })
 
-          console.log(`✅✅✅ [LANDING] Email completamento inviata a ${email} ✅✅✅`)
+          console.log(`✅ [LANDING-BG] Email completamento inviata a ${email}`)
         } catch (innerErr) {
-          console.error(`⚠️ [LANDING] Errore email completamento:`, innerErr)
-          console.error(`⚠️ [LANDING] Error details:`, {
-            message: (innerErr as Error).message,
-            stack: (innerErr as Error).stack,
-            leadId
-          })
+          console.error(`⚠️ [LANDING-BG] Errore email completamento:`, innerErr)
         }
       } else {
-        console.log(`⏭️⏭️⏭️ [LANDING] Email completamento NON inviata`)
-        console.log(`   leadEmailEnabled: ${leadEmailEnabled}`)
-        console.log(`   Motivo: ${!leadEmailEnabled ? 'Switch OFF' : 'Email mancante'}`)
+        console.log(`⏭️ [LANDING-BG] Email completamento NON inviata — leadEmailEnabled=${leadEmailEnabled}`)
       }
     } catch (emailErr) {
-      console.error(`⚠️ [LANDING] Errore workflow completamento per ${leadId}:`, emailErr)
-      // Non blocca la risposta al form
+      console.error(`⚠️ [LANDING-BG] Errore workflow completamento per ${leadId}:`, emailErr)
     }
+    // fine backgroundWork
+  }
 
-    return c.json({ success: true, id: leadId })
+    // ⚡ Avvia il background work SENZA attendere, poi risponde subito
+    c.executionCtx.waitUntil(backgroundWork())
+
+    return c.json({ success: true, leadId })
 
   } catch (error: any) {
     console.error('❌ [LANDING] Errore:', error)
@@ -22515,13 +21233,19 @@ app.post('/api/cron/rata-reminders', async (c) => {
     await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_sent_at TEXT DEFAULT NULL`)
     await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_count INTEGER DEFAULT 0`)
 
-    // ── Query: rate con scadenza entro 7 giorni, non ancora pagate, reminder non
-    //    inviato oggi. Il join con leads e proforma ci dà tutti i dati necessari. ─
+    // ── Query: rate in scadenza nei prossimi 7 giorni O già scadute (fino a 30 gg
+    //    fa) e non ancora pagate, senza reminder inviato oggi.
+    //    La finestra "passato" cattura anche rate scadute senza che il reminder
+    //    sia mai partito (es. cron saltato, colonna reminder_sent_at aggiunta
+    //    in ritardo, rateizzazione inserita dopo la data di scadenza).
     const oggi = new Date()
     const tra7gg = new Date(oggi)
     tra7gg.setDate(tra7gg.getDate() + 7)
+    const fa30gg = new Date(oggi)
+    fa30gg.setDate(fa30gg.getDate() - 30)
     const oggiStr    = oggi.toISOString().slice(0, 10)
     const tra7ggStr  = tra7gg.toISOString().slice(0, 10)
+    const fa30ggStr  = fa30gg.toISOString().slice(0, 10)
 
     type RataRow = {
       rata_id: number
@@ -22558,21 +21282,27 @@ app.post('/api/cron/rata-reminders', async (c) => {
         COALESCE(l.iva_agevolata, 0) AS iva_agevolata,
         p.id           AS proforma_id,
         p.numero_proforma,
-        p.tipo_servizio AS servizio,
-        p.tipo_servizio AS piano
+        p.servizio,
+        p.piano
       FROM rate_pagamento r
       JOIN leads l ON l.id = r.lead_id
-      LEFT JOIN proforma p ON p.leadId = r.lead_id
+      LEFT JOIN proforma p ON p.lead_id = r.lead_id
       WHERE r.status NOT IN ('PAGATA', 'paid', 'ANNULLATA')
         AND r.data_scadenza BETWEEN ? AND ?
         AND (r.reminder_sent_at IS NULL OR date(r.reminder_sent_at) < ?)
         AND l.email IS NOT NULL
         AND l.email != ''
       ORDER BY r.data_scadenza ASC, r.lead_id ASC, r.numero_rata ASC
-    `).bind(oggiStr, tra7ggStr, oggiStr).all<RataRow>()
+    `).bind(fa30ggStr, tra7ggStr, oggiStr).all<RataRow>()
 
     const rate = rateResult.results || []
-    console.log(`📅 [CRON-RATA] Rate trovate in scadenza: ${rate.length}`)
+    console.log(`📅 [CRON-RATA] Rate trovate in scadenza/scadute: ${rate.length}`)
+    if (rate.length > 0) {
+      rate.forEach(r => console.log(
+        `   → rata_id=${r.rata_id} lead=${r.lead_id} rata=${r.numero_rata} ` +
+        `scadenza=${r.data_scadenza} email=${r.email}`
+      ))
+    }
 
     if (rate.length === 0) {
       return c.json({
@@ -24768,7 +23498,6 @@ app.get('/api/assistiti', async (c) => {
         c.status as contratto_status,
         COALESCE(a.fonte_override, l.fonte) as fonte,
         l.canale_acquisizione as canale_acquisizione,
-        l.dettaglio_fonte as dettaglio_fonte,
         l.iva_agevolata as iva_agevolata
       FROM assistiti a
       LEFT JOIN contracts c ON c.id = (
@@ -34783,55 +33512,6 @@ app.post('/api/oneshot-fix-ddt-vismara-contract-code-8pz5r', async (c) => {
   }
 })
 
-// POST /api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q
-// La DDT di Gavazzi ha contract_code = 'CTR-LEAD-IRBEMA-00551' (formato lead ID)
-// Il contratto firmato ha codice_contratto = 'CTR-GAVAZZI-2026' (piano AVANZATO)
-// Fix: aggiorna contract_code sulla DDT con il codice contratto corretto
-app.post('/api/oneshot-fix-ddt-gavazzi-contract-code-7rk2q', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
-    const vecchioCodice = 'CTR-LEAD-IRBEMA-00551'
-    const nuovoCodice = 'CTR-GAVAZZI-2026'
-
-    // Trova la DDT tramite il contract_code attuale (non l'id che potrebbe differire)
-    const before = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, contract_code FROM ddts WHERE contract_code = ? LIMIT 1`
-    ).bind(vecchioCodice).first() as any
-    if (!before) return c.json({ success: false, error: `DDT con contract_code=${vecchioCodice} non trovata` }, 404)
-
-    // Verifica che il contratto di destinazione esista
-    const contratto = await c.env.DB.prepare(
-      `SELECT codice_contratto, piano, servizio, signature_timestamp, signed_at FROM contracts WHERE codice_contratto = ? LIMIT 1`
-    ).bind(nuovoCodice).first() as any
-    if (!contratto) return c.json({ success: false, error: `Contratto ${nuovoCodice} non trovato in DB` }, 404)
-
-    // Aggiorna contract_code sulla DDT
-    await c.env.DB.prepare(
-      `UPDATE ddts SET contract_code = ?, updated_at = ? WHERE id = ?`
-    ).bind(nuovoCodice, new Date().toISOString(), before.id).run()
-
-    const after = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, contract_code FROM ddts WHERE id = ?`
-    ).bind(before.id).first()
-
-    return c.json({
-      success: true,
-      ddt_id: before.id,
-      prima: vecchioCodice,
-      dopo: nuovoCodice,
-      contratto_trovato: {
-        codice_contratto: contratto.codice_contratto,
-        piano: contratto.piano,
-        servizio: contratto.servizio,
-        signed_at: contratto.signed_at
-      },
-      ddt_after: after
-    })
-  } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
-
 // GET /api/oneshot-diagnosi-fonte-lead-reminder-9kx3v
 // Diagnostica: mostra la distribuzione delle fonti tra i lead che hanno (o avevano) token reminder
 // Utile per verificare quali lead NON-eCura ricevevano erroneamente i reminder
@@ -34894,405 +33574,6 @@ app.get('/api/oneshot-diagnosi-fonte-lead-reminder-9kx3v', async (c) => {
       lead_non_ecura: leadNonEcura.results,
       lead_fonte_null: leadFonteNull.results,
       nota: 'I lead in lead_non_ecura e lead_fonte_null NON ricevono più reminder grazie al filtro fonte IN (Form eCura, IRBEMA)'
-    })
-  } catch (e: any) {
-    return c.json({ error: e.message }, 500)
-  }
-})
-
-// GET /api/oneshot-diagnosi-reminder-recenti-7x2q9
-// Diagnostica: mostra lead recenti (ultimi 15 giorni), i loro token e system_config
-// Permette di capire perché alcuni lead non ricevono reminder
-app.get('/api/oneshot-diagnosi-reminder-recenti-7x2q9', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-    const db = c.env.DB
-
-    // 1. system_config + settings correnti
-    const sysConfig = await db.prepare(`SELECT key, value FROM system_config ORDER BY key`).all()
-    // Leggi anche tabella settings (contiene lead_email_notifications_enabled)
-    let settingsMap: Record<string, string> = {}
-    try {
-      const settingsRes = await db.prepare(`SELECT key, value FROM settings ORDER BY key`).all()
-      ;(settingsRes.results as any[]).forEach(r => { settingsMap[r.key] = r.value })
-    } catch (_) {}
-
-    // 2. Lead arrivati negli ultimi 15 giorni con il loro token
-    const leadsRecenti = await db.prepare(`
-      SELECT
-        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
-        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
-        t.id as token_id,
-        t.created_at as token_created_at,
-        t.reminder_count,
-        t.reminder_sent_at,
-        t.completed,
-        t.expires_at
-      FROM leads l
-      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
-      WHERE l.created_at >= datetime('now', '-35 days')
-      ORDER BY l.created_at DESC
-      LIMIT 50
-    `).all()
-
-    // 3. Token che la query getTokensNeedingReminder restituirebbe ADESSO
-    // (replica esatta della query, con i valori di config dal DB)
-    const configMap: Record<string, string> = {}
-    ;(sysConfig.results as any[]).forEach(r => { configMap[r.key] = r.value })
-    const reminderDays = parseInt(configMap['auto_completion_reminder_days'] || '7', 10)
-    const maxReminders = parseInt(configMap['auto_completion_max_reminders'] || '2', 10)
-    const cronEnabled = configMap['cron_enabled'] === 'true'
-
-    const reminderDate = new Date()
-    reminderDate.setDate(reminderDate.getDate() - reminderDays)
-    const minTimeBetweenReminders = new Date()
-    minTimeBetweenReminders.setHours(minTimeBetweenReminders.getHours() - 23)
-
-    const tokensPronti = await db.prepare(`
-      SELECT t.id, t.lead_id, t.reminder_count, t.reminder_sent_at, t.created_at,
-             l.nomeRichiedente, l.cognomeRichiedente, l.stato, l.status, l.fonte
-      FROM lead_completion_tokens t
-      JOIN leads l ON t.lead_id = l.id
-      WHERE t.completed = 0
-        AND t.expires_at > datetime('now')
-        AND t.reminder_count < ?
-        AND (
-          t.reminder_sent_at IS NULL
-          OR (t.reminder_sent_at < ? AND t.reminder_sent_at < ?)
-        )
-        AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
-        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
-        AND (
-          l.stato IN ('in_trattativa', 'interessato', 'da_ricontattare')
-          OR l.stato IS NULL OR l.stato = ''
-        )
-        AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
-      ORDER BY l.created_at ASC
-    `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
-
-    // 4. Token bloccati per waiting period (creati meno di reminderDays giorni fa)
-    const tokensInAttesa = await db.prepare(`
-      SELECT t.id, t.lead_id, t.reminder_count, t.created_at,
-             l.nomeRichiedente, l.cognomeRichiedente, l.stato, l.fonte,
-             CAST((julianday('now') - julianday(t.created_at)) AS INTEGER) as giorni_token
-      FROM lead_completion_tokens t
-      JOIN leads l ON t.lead_id = l.id
-      WHERE t.completed = 0
-        AND t.expires_at > datetime('now')
-        AND t.reminder_count < ?
-        AND (t.reminder_sent_at IS NULL OR t.reminder_sent_at < ?)
-        AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
-        AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
-        AND (l.fonte IS NULL OR l.fonte NOT IN ('B2B IRBEMA'))
-        AND t.created_at > ?
-      ORDER BY t.created_at ASC
-    `).bind(maxReminders, minTimeBetweenReminders.toISOString(), reminderDate.toISOString()).all()
-
-    return c.json({
-      ora_server: new Date().toISOString(),
-      system_config: configMap,
-      settings: settingsMap,
-      lead_email_notifications_enabled: settingsMap['lead_email_notifications_enabled'] || 'NOT_SET',
-      cron_enabled: cronEnabled,
-      reminder_days: reminderDays,
-      max_reminders: maxReminders,
-      reminder_threshold: reminderDate.toISOString(),
-      tokens_pronti_ora: {
-        count: (tokensPronti.results || []).length,
-        tokens: tokensPronti.results
-      },
-      tokens_in_attesa_periodo: {
-        count: (tokensInAttesa.results || []).length,
-        nota: `Token creati meno di ${reminderDays} giorni fa — il cron non li invia ancora`,
-        tokens: tokensInAttesa.results
-      },
-      leads_recenti_15gg: {
-        count: (leadsRecenti.results || []).length,
-        leads: leadsRecenti.results
-      }
-    })
-  } catch (e: any) {
-    return c.json({ error: e.message }, 500)
-  }
-})
-
-// GET /api/oneshot-diagnosi-email-provider-4k8m2
-// Diagnostica: verifica quali provider email sono configurati (API key presenti) e
-// mostra i log più recenti (ultimi 8 giorni) degli invii email dal DB email_logs se esiste.
-// Risponde con: provider_status, email_logs_recenti, lead_recenti_senza_token
-app.get('/api/oneshot-diagnosi-email-provider-4k8m2', async (c) => {
-  try {
-    const env = c.env
-
-    // ── 1. VERIFICA API KEY PROVIDER ──────────────────────────────────────
-    const providerStatus = {
-      resend: {
-        key_presente: !!env?.RESEND_API_KEY,
-        key_preview: env?.RESEND_API_KEY ? (env.RESEND_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA',
-        from: env?.RESEND_FROM || 'NON_CONFIGURATA'
-      },
-      brevo: {
-        key_presente: !!env?.BREVO_API_KEY,
-        key_preview: env?.BREVO_API_KEY ? (env.BREVO_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA'
-      },
-      sendgrid: {
-        key_presente: !!env?.SENDGRID_API_KEY,
-        key_preview: env?.SENDGRID_API_KEY ? (env.SENDGRID_API_KEY as string).substring(0, 12) + '...' : 'NON_CONFIGURATA'
-      },
-      emergency_stop: env?.EMAIL_EMERGENCY_STOP || 'non_impostato'
-    }
-
-    // Provider attivo dedotto dalla catena di fallback
-    let provider_attivo_stimato = 'DEMO_MODE_nessuna_chiave_valida'
-    if (providerStatus.resend.key_presente) provider_attivo_stimato = 'RESEND (primario)'
-    else if (providerStatus.brevo.key_presente) provider_attivo_stimato = 'BREVO (fallback-1, Resend assente)'
-    else if (providerStatus.sendgrid.key_presente) provider_attivo_stimato = 'SENDGRID (fallback-2, Resend+Brevo assenti)'
-
-    // ── 2. TEST LIVE RESEND (solo status HTTP, senza inviare email reale) ──
-    let resend_api_test: any = { skipped: 'RESEND_API_KEY non presente' }
-    if (env?.RESEND_API_KEY) {
-      try {
-        // GET /domains verifica la chiave senza inviare email
-        const resp = await fetch('https://api.resend.com/domains', {
-          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }
-        })
-        const body = await resp.json() as any
-        resend_api_test = {
-          http_status: resp.status,
-          ok: resp.ok,
-          domains: resp.ok ? (body.data || body.domains || body) : undefined,
-          error: !resp.ok ? body : undefined,
-          interpretazione: resp.ok
-            ? '✅ Chiave Resend VALIDA — se non invia, problema è quota/dominio'
-            : resp.status === 401 ? '🔴 Chiave Resend NON VALIDA o revocata (401 Unauthorized)'
-            : resp.status === 403 ? '🔴 Chiave Resend senza permessi (403 Forbidden)'
-            : `⚠️ Resend risponde con errore ${resp.status}`
-        }
-      } catch (e: any) {
-        resend_api_test = { error: e.message, interpretazione: '🔴 Resend irraggiungibile (network error)' }
-      }
-    }
-
-    // ── 3. TEST LIVE BREVO ────────────────────────────────────────────────
-    let brevo_api_test: any = { skipped: 'BREVO_API_KEY non presente' }
-    if (env?.BREVO_API_KEY) {
-      try {
-        const resp = await fetch('https://api.brevo.com/v3/account', {
-          headers: { 'api-key': env.BREVO_API_KEY as string, 'accept': 'application/json' }
-        })
-        const body = await resp.json() as any
-        brevo_api_test = {
-          http_status: resp.status,
-          ok: resp.ok,
-          plan: resp.ok ? body.plan : undefined,
-          email_limite_giornaliero: resp.ok ? body.plan?.dailyLimit : undefined,
-          email_inviati_oggi: resp.ok ? body.plan?.creditsUsed : undefined,
-          error: !resp.ok ? body : undefined,
-          interpretazione: resp.ok
-            ? '✅ Chiave Brevo VALIDA e attiva'
-            : resp.status === 401 ? '🔴 Chiave Brevo NON VALIDA (401)'
-            : `⚠️ Brevo risponde con errore ${resp.status}`
-        }
-      } catch (e: any) {
-        brevo_api_test = { error: e.message, interpretazione: '🔴 Brevo irraggiungibile (network error)' }
-      }
-    }
-
-    // ── 4. TEST LIVE SENDGRID ─────────────────────────────────────────────
-    let sendgrid_api_test: any = { skipped: 'SENDGRID_API_KEY non presente' }
-    if (env?.SENDGRID_API_KEY) {
-      try {
-        const resp = await fetch('https://api.sendgrid.com/v3/user/profile', {
-          headers: { 'Authorization': `Bearer ${env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' }
-        })
-        const body = await resp.json() as any
-        sendgrid_api_test = {
-          http_status: resp.status,
-          ok: resp.ok,
-          username: resp.ok ? body.username : undefined,
-          error: !resp.ok ? body : undefined,
-          interpretazione: resp.ok
-            ? '✅ Chiave SendGrid VALIDA'
-            : resp.status === 401 ? '🔴 Chiave SendGrid NON VALIDA (401)'
-            : `⚠️ SendGrid risponde con errore ${resp.status}`
-        }
-      } catch (e: any) {
-        sendgrid_api_test = { error: e.message, interpretazione: '🔴 SendGrid irraggiungibile' }
-      }
-    }
-
-    // ── 5. LEAD SENZA TOKEN (email di completamento mai inviata) ──────────
-    let leads_senza_token: any[] = []
-    if (env?.DB) {
-      try {
-        const res = await env.DB.prepare(`
-          SELECT l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
-                 l.created_at, l.fonte, l.dettaglio_fonte
-          FROM leads l
-          LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id
-          WHERE t.id IS NULL
-            AND l.created_at >= datetime('now', '-30 days')
-          ORDER BY l.created_at DESC
-          LIMIT 20
-        `).all()
-        leads_senza_token = res.results as any[]
-      } catch (_) {}
-    }
-
-    // ── 6. TOKEN ESISTENTI (per capire chi ha ricevuto email) ─────────────
-    let token_recenti: any[] = []
-    if (env?.DB) {
-      try {
-        const res = await env.DB.prepare(`
-          SELECT t.id, t.lead_id, t.created_at as token_created_at,
-                 t.reminder_count, t.reminder_sent_at, t.completed,
-                 l.nomeRichiedente, l.cognomeRichiedente, l.email, l.created_at as lead_created_at
-          FROM lead_completion_tokens t
-          JOIN leads l ON t.lead_id = l.id
-          WHERE t.created_at >= datetime('now', '-30 days')
-          ORDER BY t.created_at DESC
-          LIMIT 30
-        `).all()
-        token_recenti = res.results as any[]
-      } catch (_) {}
-    }
-
-    return c.json({
-      ora_server: new Date().toISOString(),
-      // ────────────────────────────────────────────────────
-      riepilogo: {
-        provider_attivo_stimato,
-        nota_cc: 'info@ecura.it riceve CC automatico da QUALSIASI provider riesca ad inviare',
-        nota_demo_mode: 'Se tutti i provider falliscono, il sistema restituisce success:true ma NON invia nulla'
-      },
-      // ────────────────────────────────────────────────────
-      provider_status: providerStatus,
-      // ────────────────────────────────────────────────────
-      test_live_api: {
-        resend: resend_api_test,
-        brevo: brevo_api_test,
-        sendgrid: sendgrid_api_test
-      },
-      // ────────────────────────────────────────────────────
-      leads_senza_token_ultimi_30gg: {
-        count: leads_senza_token.length,
-        nota: 'Questi lead NON hanno token → nessuna email di completamento è stata inviata',
-        leads: leads_senza_token
-      },
-      token_recenti_30gg: {
-        count: token_recenti.length,
-        nota: 'Token creati = email di completamento inviata al momento della creazione',
-        tokens: token_recenti
-      }
-    })
-  } catch (e: any) {
-    return c.json({ error: e.message, stack: e.stack }, 500)
-  }
-})
-
-// GET /api/oneshot-report-leads-ga4-9v2k5
-// Report lead per periodo (nuovo: 9ago-3set, vecchio: 1feb-28lug) con dettaglio fonte
-app.get('/api/oneshot-report-leads-ga4-9v2k5', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-    const db = c.env.DB
-
-    // Lead periodo NUOVO: 9 ago - 3 set 2026
-    const leadsNuovi = await db.prepare(`
-      SELECT
-        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
-        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
-        CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
-      FROM leads l
-      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
-      WHERE l.created_at >= '2026-08-09T00:00:00.000Z'
-        AND l.created_at <= '2026-09-03T23:59:59.999Z'
-      ORDER BY l.created_at DESC
-    `).all()
-
-    // Lead periodo VECCHIO: 1 feb - 28 lug 2026
-    const leadsVecchi = await db.prepare(`
-      SELECT
-        l.id, l.nomeRichiedente, l.cognomeRichiedente, l.email,
-        l.created_at, l.stato, l.status, l.fonte, l.dettaglio_fonte,
-        CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END as ha_token
-      FROM leads l
-      LEFT JOIN lead_completion_tokens t ON t.lead_id = l.id AND t.reminder_count = 0
-      WHERE l.created_at >= '2026-02-01T00:00:00.000Z'
-        AND l.created_at <= '2026-07-28T23:59:59.999Z'
-      ORDER BY l.created_at DESC
-    `).all()
-
-    // Aggregazione per fonte - NUOVO
-    const aggNew: Record<string, number> = {}
-    const aggNewDettaglio: Record<string, number> = {}
-    for (const l of (leadsNuovi.results as any[])) {
-      const f = l.fonte || 'non_specificata'
-      aggNew[f] = (aggNew[f] || 0) + 1
-      const d = l.dettaglio_fonte || l.fonte || 'non_specificata'
-      aggNewDettaglio[d] = (aggNewDettaglio[d] || 0) + 1
-    }
-
-    // Aggregazione per fonte - VECCHIO
-    const aggOld: Record<string, number> = {}
-    const aggOldDettaglio: Record<string, number> = {}
-    for (const l of (leadsVecchi.results as any[])) {
-      const f = l.fonte || 'non_specificata'
-      aggOld[f] = (aggOld[f] || 0) + 1
-      const d = l.dettaglio_fonte || l.fonte || 'non_specificata'
-      aggOldDettaglio[d] = (aggOldDettaglio[d] || 0) + 1
-    }
-
-    // Lead per giorno - NUOVO (per grafico trend)
-    const leadsByDayNew: Record<string, number> = {}
-    for (const l of (leadsNuovi.results as any[])) {
-      const day = (l.created_at || '').substring(0, 10)
-      leadsByDayNew[day] = (leadsByDayNew[day] || 0) + 1
-    }
-
-    // Lead per giorno - VECCHIO
-    const leadsByDayOld: Record<string, number> = {}
-    for (const l of (leadsVecchi.results as any[])) {
-      const day = (l.created_at || '').substring(0, 10)
-      leadsByDayOld[day] = (leadsByDayOld[day] || 0) + 1
-    }
-
-    // Lead convertiti (stato = convertito / CONTRACT_SIGNED / ACTIVE)
-    const convertitiNew = (leadsNuovi.results as any[]).filter(l =>
-      ['convertito','CONTRACT_SIGNED','ACTIVE'].includes(l.stato || l.status || '')).length
-    const convertitiOld = (leadsVecchi.results as any[]).filter(l =>
-      ['convertito','CONTRACT_SIGNED','ACTIVE'].includes(l.stato || l.status || '')).length
-
-    return c.json({
-      ora_server: new Date().toISOString(),
-      periodo_nuovo: { da: '2026-08-09', a: '2026-09-03', giorni: 26 },
-      periodo_vecchio: { da: '2026-02-01', a: '2026-07-28', giorni: 178 },
-      riepilogo: {
-        nuovo: {
-          totale_leads: (leadsNuovi.results as any[]).length,
-          convertiti: convertitiNew,
-          tasso_conv_pct: (leadsNuovi.results as any[]).length > 0
-            ? ((convertitiNew / (leadsNuovi.results as any[]).length) * 100).toFixed(1)
-            : '0',
-          leads_per_giorno_media: ((leadsNuovi.results as any[]).length / 26).toFixed(1)
-        },
-        vecchio: {
-          totale_leads: (leadsVecchi.results as any[]).length,
-          convertiti: convertitiOld,
-          tasso_conv_pct: (leadsVecchi.results as any[]).length > 0
-            ? ((convertitiOld / (leadsVecchi.results as any[]).length) * 100).toFixed(1)
-            : '0',
-          leads_per_giorno_media: ((leadsVecchi.results as any[]).length / 178).toFixed(1)
-        }
-      },
-      per_fonte_nuovo: aggNew,
-      per_dettaglio_fonte_nuovo: aggNewDettaglio,
-      per_fonte_vecchio: aggOld,
-      per_dettaglio_fonte_vecchio: aggOldDettaglio,
-      trend_giornaliero_nuovo: leadsByDayNew,
-      trend_giornaliero_vecchio: leadsByDayOld,
-      leads_nuovo: leadsNuovi.results,
-      leads_vecchio: leadsVecchi.results
     })
   } catch (e: any) {
     return c.json({ error: e.message }, 500)
@@ -36220,69 +34501,6 @@ app.post('/api/oneshot-set-intestatario-lead-4vr2k', async (c) => {
     ).bind(contract.leadId).first()
     return c.json({ success: true, message: `✅ intestatarioContratto = '${intestatario}' aggiornato`, updated })
   } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
-
-// ============================================================================
-// POST /api/oneshot-migrate-temperatura-8z4xk
-// Migrazione one-shot: aggiunge colonna temperatura + popola valori esistenti
-// DA ESEGUIRE UNA SOLA VOLTA dopo il deploy
-// ============================================================================
-app.post('/api/oneshot-migrate-temperatura-8z4xk', async (c) => {
-  if (!c.env?.DB) return c.json({ error: 'DB non disponibile' }, 500)
-  try {
-    const results: string[] = []
-
-    // Step 1: Aggiungi colonna (ignora errore se esiste già)
-    try {
-      await c.env.DB.prepare('ALTER TABLE leads ADD COLUMN temperatura TEXT DEFAULT NULL').run()
-      results.push('✅ Colonna temperatura aggiunta')
-    } catch (e: any) {
-      if (e.message?.includes('duplicate column')) {
-        results.push('ℹ️ Colonna temperatura già esistente — skip')
-      } else {
-        throw e
-      }
-    }
-
-    // Step 2: Popola temperatura per tutti i lead esistenti senza valore
-    const leadsToUpdate = await c.env.DB.prepare(
-      `SELECT id, stato FROM leads WHERE temperatura IS NULL OR temperatura = ''`
-    ).all()
-
-    const rows = (leadsToUpdate.results || []) as any[]
-    let updated = 0
-
-    // Batch update in gruppi da 50
-    const batchSize = 50
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize)
-      const stmts = batch.map((row: any) => {
-        const temp = calcolaTemperatura(row.stato)
-        return c.env.DB.prepare(
-          'UPDATE leads SET temperatura = ? WHERE id = ?'
-        ).bind(temp, row.id)
-      })
-      await c.env.DB.batch(stmts)
-      updated += batch.length
-    }
-
-    results.push(`✅ ${updated} leads aggiornati con temperatura calcolata dallo stato`)
-
-    // Step 3: Report distribuzione
-    const stats = await c.env.DB.prepare(
-      `SELECT temperatura, COUNT(*) as cnt FROM leads GROUP BY temperatura ORDER BY cnt DESC`
-    ).all()
-
-    return c.json({
-      success: true,
-      steps: results,
-      distribuzione: stats.results,
-      message: `Migrazione completata. ${updated} leads aggiornati.`
-    })
-  } catch (e: any) {
-    console.error('Errore migrazione temperatura:', e)
     return c.json({ success: false, error: e.message }, 500)
   }
 })
